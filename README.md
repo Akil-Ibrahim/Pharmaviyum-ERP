@@ -48,17 +48,31 @@ This repository contains two branches:
 > Note: No real client data or proprietary business logic is included.
 
 ---
+---
 
-## Tech Stack (2026 — Light & Modern)
+## 🚀 Tech Stack (2026 — Light & Modern)
 
-**Backend:** Python 3.12, Django 5.2 LTS, Django REST Framework 3.20  
-**API / RAG:** FastAPI 0.124, OpenAPI / Swagger  
-**Database:** PostgreSQL 16  
-**Async Tasks:** Celery 5.6, Redis 7  
-**Frontend:** React 18, Tailwind CSS 3, Lucide Icons 0.268  
-**DevOps:** Docker 24, Docker Compose 2.20, GitHub Actions  
-**Testing:** Pytest 8, Jest 29 + React Testing Library 14  
-**AI/RAG:** LangChain 1.2
+![Python 3.12](https://img.shields.io/badge/Python-3.12-yellow) 
+![Django 5.2 LTS](https://img.shields.io/badge/Django-5.2%20LTS-blue) 
+![DRF 3.20](https://img.shields.io/badge/DRF-3.20-lightgrey) 
+![FastAPI 0.124](https://img.shields.io/badge/FastAPI-0.124-green) 
+![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-blue) 
+![Celery 5.6](https://img.shields.io/badge/Celery-5.6-orange) 
+![Redis 7](https://img.shields.io/badge/Redis-7-red) 
+![React 18](https://img.shields.io/badge/React-18-blue) 
+![Tailwind CSS 3](https://img.shields.io/badge/Tailwind-3-lightblue) 
+![Lucide Icons 0.268](https://img.shields.io/badge/Lucide%20Icons-0.268-pink) 
+![Docker 24](https://img.shields.io/badge/Docker-24-blue) 
+![Docker Compose 2.20](https://img.shields.io/badge/Docker%20Compose-2.20-lightblue) 
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-Yes-black) 
+![Pytest 8](https://img.shields.io/badge/Pytest-8-purple) 
+![Jest 29](https://img.shields.io/badge/Jest-29-red) 
+![React Testing Library 14](https://img.shields.io/badge/RTL-14-green) 
+![LangChain 1.2](https://img.shields.io/badge/LangChain-1.2-orange)
+
+---
+
+## Architecture Diagram
 
 ---
 
