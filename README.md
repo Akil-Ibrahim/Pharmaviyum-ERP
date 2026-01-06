@@ -1,22 +1,19 @@
 # 🌿 Pharmavium-CRM → /ˌfɑːr.məˈviː.əm/
 
-![Demo](https://img.shields.io/badge/Demo-Safe-green)
-![NDA](https://img.shields.io/badge/NDA-Yes-blue)
-![DB](https://img.shields.io/badge/DB-PostgreSQL-blue)
+![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![DB](https://img.shields.io/badge/DB-PostgreSQL-blue)
 
-**Pharmavium** is a CRM platform for pharmacies, designed to integrate with existing ERP systems and support pharmacists in client-oriented workflows, order handling, and analytical insights.  
+**Pharmavium** is a CRM platform for pharmacies, designed to integrate with existing ERP systems and support pharmacists in client-oriented workflows, order handling, and analytical insights.
 
-**Core purpose:** centralize client interactions, support pharmacy operations, and enhance service quality without replacing core ERP systems.  
+**Core purpose:** centralize client interactions, support pharmacy operations, and enhance service quality without replacing core ERP systems.
 
 
 
 ## Demo Repository Notice
 
-This repository contains both **production** and **demo** branches.  
-For **employer review and technical evaluation**, only the **demo branch** is intended to be shared.
+This repository provides a **demo branch** derived from the production codebase.  
 
-The demo version is a safe, NDA-compliant representation of the system architecture and development approach, using only **synthetic client and order data**.  
-No real client data, proprietary business rules, or production integrations are included.
+The demo is safe, NDA-compliant, and uses **synthetic client and order data**.  
+No real client data or proprietary logic is included.
 
 
 
@@ -36,6 +33,7 @@ No real client data, proprietary business rules, or production integrations are 
 🔹 Shared only with the author’s permission  
 🔹 Periodically synchronized from production to reflect current architecture  
 
+---
 
 ## MVP Demo Highlights
 
@@ -76,7 +74,7 @@ This demo is intended for architectural and technical discussion.
 This project is protected under a **Non-Disclosure Agreement (NDA)**.  
 No part of this repository may be copied, distributed, or used beyond evaluation purposes without explicit written permission from the author.  
 
-All demo data is synthetic, and no real client data or proprietary business logic is included.
+All demo data is synthetic and used solely for demonstration.
 
 
 
@@ -90,5 +88,5 @@ your.email@example.com
 
 
 © 2026 Pharmavium. All rights reserved.  
-Unauthorized use, copying, or distribution is strictly prohibited.
-
+Unauthorized use, copying, or distribution is strictly prohibited.  
+The demo version is protected under NDA and may only be shared with the author’s permission.
