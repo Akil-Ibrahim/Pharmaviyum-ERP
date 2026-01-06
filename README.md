@@ -33,7 +33,7 @@ No real client data or proprietary logic is included.
 🔹 Shared only with the author’s permission  
 🔹 Periodically synchronized from production to reflect current architecture  
 
----
+
 
 ## MVP Demo Highlights
 
