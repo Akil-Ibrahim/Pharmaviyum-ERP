@@ -22,34 +22,19 @@
 
 ## Project Versions
 
-This repository contains two branches:
+This repository contains **two branches**:
 
-**Production (`main` / `production`)**
-- Full codebase with all features, real integrations, and proprietary business logic  
-- Uses **PostgreSQL production database** with real client and order data  
-- Private access only  
+### 🔹 Production (`main` / `production`) 🛠️  
+🔹 Full codebase with all features, real integrations, and proprietary business logic  
+🔹 Uses **PostgreSQL production database** with real client and order data  
+🔹 **Private access only**  
 
-**Demo (`demo`)**
-- Safe demonstration version for evaluation or employer review  
-- Uses **PostgreSQL demo database** with fake/test data  
-- Abstracts proprietary business logic and protected under NDA  
-- Maintained in private access; can be shared **with author’s permission**  
-- Periodically synchronized from production to reflect current system architecture  
-
----
-
-## MVP Demo Highlights
-
-- Core CRM interface and workflow  
-- High-level system architecture  
-- Abstract examples of code patterns and structure  
-- RAG module functionality with demo documents  
-
-> Note: No real client data or proprietary business logic is included.
-
----
----
-
+### 🔹 Demo (`demo`)  
+🔹 Safe demonstration version for evaluation or employer review  
+🔹 Uses **PostgreSQL demo database** with fake/test data  
+🔹 Abstracts proprietary business logic and **protected under NDA** 🔒  
+🔹 Maintained in private access; can be shared **with author’s permission**  
+🔹 Periodically synchronized from production to reflect current system architecture
 ## 🚀 Tech Stack (2026 — Light & Modern)
 
 ![Python 3.12](https://img.shields.io/badge/Python-3.12-yellow) 
