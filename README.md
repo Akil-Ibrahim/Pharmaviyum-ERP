@@ -12,7 +12,7 @@
 
 This repository contains **two branches**:
 
-### 🔹 Production (`main` / `production`) 🛠️  
+### 🔹 Production (`main` / `production`)  
 🔹 Full codebase with all features, real integrations, and proprietary business logic  
 🔹 Uses **PostgreSQL production database** with real client and order data  
 🔹 **Private access only**  
