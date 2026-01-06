@@ -39,8 +39,18 @@ The demo version allows you to:
 ---
 
 ## Repository Structure (Demo Overview)
-/backend ├─ manage.py ├─ requirements.txt └─ /pharmavium ├─ settings/ │   ├─ base.py        # shared settings for all environments │   ├─ prod.py        # production PostgreSQL database, real integrations │   └─ demo.py        # demo PostgreSQL database with fake data, NDA compliance /frontend            # React + Tailwind frontend /apps/rag_fastapi    # FastAPI RAG module (demo documents only) /tests               # Unit and integration tests /docs                # Documentation and demo guides
-
+/backend
+    ├─ manage.py
+    ├─ requirements.txt
+    └─ /pharmavium
+        ├─ settings/
+        │   ├─ base.py        # shared settings for all environments
+        │   ├─ prod.py        # production PostgreSQL database, real integrations
+        │   └─ demo.py        # demo PostgreSQL database with fake data, NDA compliance
+/frontend            # React + Tailwind frontend
+/apps/rag_fastapi    # FastAPI RAG module (demo documents only)
+/tests               # Unit and integration tests
+/docs                # Documentation and demo guides
 
 > Production branch includes all apps, real data, and integrations not included in demo.
 
