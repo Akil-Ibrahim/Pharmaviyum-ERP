@@ -1,24 +1,12 @@
 ![Demo](https://img.shields.io/badge/Demo-Safe-green) 
 ![NDA](https://img.shields.io/badge/NDA-Yes-blue) 
-![DB](https://img.shields.io/badge/DB-PostgreSQL-blue) 
-![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-lightgrey) 
-![Coverage](https://img.shields.io/badge/Coverage-95%25-brightgreen)
+![DB](https://img.shields.io/badge/DB-PostgreSQL-blue)
 
 # Pharmavium-CRM → /ˌfɑːr.məˈviː.əm/
 
 **Pharmavium** is a CRM platform for pharmacies, integrated with ERP systems, helping pharmacists efficiently engage with clients, manage orders, and analyze data.
 
 **Core Purpose:** Centralize client management, streamline pharmacy operations, and provide actionable insights for better customer experience.
-
----
-
-## Table of Contents
-1. [Project Versions](#project-versions)
-2. [MVP Demo Highlights](#mvp-demo-highlights)
-3. [Tech Stack](#tech-stack-2026-light--modern)
-4. [Contact](#contact)
-
----
 
 ## Project Versions
 
@@ -34,7 +22,18 @@ This repository contains **two branches**:
 🔹 Uses **PostgreSQL demo database** with fake/test data  
 🔹 Abstracts proprietary business logic and **protected under NDA** 🔒  
 🔹 Maintained in private access; can be shared **with author’s permission**  
-🔹 Periodically synchronized from production to reflect current system architecture
+🔹 Periodically synchronized from production to reflect current system architecture  
+
+## MVP Demo Highlights
+
+🔹 Core CRM interface and workflow  
+🔹 High-level system architecture  
+🔹 Abstract examples of code patterns and structure  
+🔹 RAG module functionality with demo documents  
+
+> ⚠️ **Note:** No real client data or proprietary business logic is included.
+
+
 ## 🚀 Tech Stack (2026 — Light & Modern)
 
 ![Python 3.12](https://img.shields.io/badge/Python-3.12-yellow) 
@@ -55,17 +54,9 @@ This repository contains **two branches**:
 ![React Testing Library 14](https://img.shields.io/badge/RTL-14-green) 
 ![LangChain 1.2](https://img.shields.io/badge/LangChain-1.2-orange)
 
----
-
-## Architecture Diagram
-
----
-
 ## Contact
 
-For a technical walkthrough or demo access, contact **[Your Name]** at your.email@example.com
-
----
+For a technical walkthrough or demo access, contact **[Your Name]** at your.email@example.co
 
 © 2026 Pharmavium. All rights reserved.  
 Unauthorized use, copying, or distribution is strictly prohibited.  
