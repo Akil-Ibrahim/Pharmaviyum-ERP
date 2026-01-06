@@ -1,4 +1,4 @@
-# Pharmavium-CRM → /ˌfɑːr.məˈviː.əm/
+# 🌿 Pharmavium-CRM → /ˌfɑːr.məˈviː.əm/
 
 ![Demo](https://img.shields.io/badge/Demo-Safe-green)
 ![NDA](https://img.shields.io/badge/NDA-Yes-blue)
