@@ -7,14 +7,12 @@
 **Core purpose:** centralize client interactions, support pharmacy operations, and enhance service quality without replacing core ERP systems.
 
 
-
 ## Demo Repository Notice
 
 This repository provides a **demo branch** derived from the production codebase.  
 
 The demo is safe, NDA-compliant, and uses **synthetic client and order data**.  
 No real client data or proprietary logic is included.
-
 
 
 ## Project Versions
@@ -34,7 +32,6 @@ No real client data or proprietary logic is included.
 🔹 Periodically synchronized from production to reflect current architecture  
 
 
-
 ## MVP Demo Highlights
 
 The demo version demonstrates:
@@ -45,7 +42,6 @@ The demo version demonstrates:
 🔹 RAG module behavior using demo documents only  
 
 This demo is intended for architectural and technical discussion.
-
 
 
 ## 🚀 Tech Stack (2026 — Light & Modern)
@@ -68,7 +64,6 @@ This demo is intended for architectural and technical discussion.
 ![React Testing Library 14](https://img.shields.io/badge/RTL-14-green) 
 ![LangChain 1.2](https://img.shields.io/badge/LangChain-1.2-orange)
 
-
 ## Legal Notice
 
 This project is protected under a **Non-Disclosure Agreement (NDA)**.  
@@ -76,15 +71,12 @@ No part of this repository may be copied, distributed, or used beyond evaluation
 
 All demo data is synthetic and used solely for demonstration.
 
-
-
 ## Contact
 
 For technical walkthroughs, architectural discussion, or evaluation access, please contact:
 
 **[Your Name]**  
 your.email@example.com
-
 
 
 © 2026 Pharmavium. All rights reserved.  
