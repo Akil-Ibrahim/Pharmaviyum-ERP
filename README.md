@@ -1,4 +1,3 @@
-
 # 🌿 Pharmavium-CRM → /ˌfɑːr.məˈviː.əm/
 
 ![Demo](https://img.shields.io/badge/Demo-Safe-green)  
