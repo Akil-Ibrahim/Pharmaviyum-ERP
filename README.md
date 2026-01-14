@@ -39,8 +39,26 @@ This demo is intended for architectural and technical discussion.
 
 ## 🚀 Tech Stack (2026 — Light & Modern)
 
-![Python 3.14.2](https://img.shields.io/badge/Python-3.14.2-blue) ![FastAPI 0.116.4](https://img.shields.io/badge/FastAPI-0.116.4-green) ![Pydantic 2.4.1](https://img.shields.io/badge/Pydantic-2.4.1-brightgreen) ![SQLAlchemy 2.2.7](https://img.shields.io/badge/SQLAlchemy-2.2.7-orange) ![Alembic 1.16.3](https://img.shields.io/badge/Alembic-1.16.3-yellow) ![Uvicorn 0.35.2](https://img.shields.io/badge/Uvicorn-0.35.2-red) ![PostgreSQL 16.4](https://img.shields.io/badge/PostgreSQL-16.4-blueviolet) ![Redis 7.6.2](https://img.shields.io/badge/Redis-7.6.2-ff69b4) ![Celery 5.6.5](https://img.shields.io/badge/Celery-5.6.5-lightblue) ![React 19.1.0](https://img.shields.io/badge/React-19.1.0-blue) ![Vite 7.8.2](https://img.shields.io/badge/Vite-7.8.2-yellowgreen) ![TypeScript 5.10.4](https://img.shields.io/badge/TypeScript-5.10.4-007acc) ![Tailwind CSS 4.4.1](https://img.shields.io/badge/TailwindCSS-4.4.1-teal) ![React Router 7.10.1](https://img.shields.io/badge/ReactRouter-7.10.1-purple) ![Redux Toolkit 2.4.1](https://img.shields.io/badge/ReduxToolkit-2.4.1-violet) ![Zustand 7.1.2](https://img.shields.io/badge/Zustand-7.1.2-orange) ![Axios 1.6.3](https://img.shields.io/badge/Axios-1.6.3-red) ![Vitest 1.5.3](https://img.shields.io/badge/Vitest-1.5.3-blue) ![Jest 31.2.0](https://img.shields.io/badge/Jest-31.2.0-pink) ![Storybook 9.0.5](https://img.shields.io/badge/Storybook-9.0.5-orange) ![Lucide Icons 0.4.7](https://img.shields.io/badge/LucideIcons-0.4.7-lightgrey) ![Docker 24.1.2](https://img.shields.io/badge/Docker-24.1.2-blue) ![Docker Compose 2.22.1](https://img.shields.io/badge/DockerCompose-2.22.1-blueviolet) ![Nginx 1.26.5](https://img.shields.io/badge/Nginx-1.26.5-green) ![Prometheus 2.52.1](https://img.shields.io/badge/Prometheus-2.52.1-orange) ![Grafana 10.6.4](https://img.shields.io/badge/Grafana-10.6.4-red) ![Sentry 10.4.2](https://img.shields.io/badge/Sentry-10.4.2-black)
-
+![Python 3.14.2](https://img.shields.io/badge/Python-3.14.2-1E90FF?style=flat-square&logo=python&logoColor=white) 
+![FastAPI 0.111.0](https://img.shields.io/badge/FastAPI-0.111.0-20B2AA?style=flat-square&logo=fastapi&logoColor=white) 
+![Pydantic 2.7.2](https://img.shields.io/badge/Pydantic-2.7.2-32CD32?style=flat-square&logo=pydantic&logoColor=white) 
+![Uvicorn 2.9.2](https://img.shields.io/badge/Uvicorn-2.9.2-1E90FF?style=flat-square&logo=uvicorn&logoColor=white) 
+![PostgreSQL 16.1](https://img.shields.io/badge/PostgreSQL-16.1-006400?style=flat-square&logo=postgresql&logoColor=white) 
+![Redis 7.2](https://img.shields.io/badge/Redis-7.2-FF4500?style=flat-square&logo=redis&logoColor=white) 
+![React 19.1](https://img.shields.io/badge/React-19.1-007ACC?style=flat-square&logo=react&logoColor=white) 
+![Vite 5.5.0](https://img.shields.io/badge/Vite-5.5.0-FF61DA?style=flat-square&logo=vite&logoColor=white) 
+![TypeScript 5.3](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=flat-square&logo=typescript&logoColor=white) 
+![TailwindCSS 4.3](https://img.shields.io/badge/TailwindCSS-4.3-06B6D4?style=flat-square&logo=tailwind-css&logoColor=white) 
+![Redux 5.2](https://img.shields.io/badge/Redux-5.2-764ABC?style=flat-square&logo=redux&logoColor=white) 
+![Vitest 1.5](https://img.shields.io/badge/Vitest-1.5-F7DF1E?style=flat-square&logo=vitest&logoColor=black) 
+![Storybook 7.2](https://img.shields.io/badge/Storybook-7.2-FF4785?style=flat-square&logo=storybook&logoColor=white) 
+![Lucide](https://img.shields.io/badge/Lucide-Icons-9932CC?style=flat-square&logo=lucide&logoColor=white) 
+![Docker 24.0](https://img.shields.io/badge/Docker-24.0-2496ED?style=flat-square&logo=docker&logoColor=white) 
+![Nginx 2.1](https://img.shields.io/badge/Nginx-2.1-009639?style=flat-square&logo=nginx&logoColor=white) 
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-Active-2088FF?style=flat-square&logo=github-actions&logoColor=white) 
+![Prometheus 3.10](https://img.shields.io/badge/Prometheus-3.10-FF6347?style=flat-square&logo=prometheus&logoColor=white) 
+![Grafana 10.3](https://img.shields.io/badge/Grafana-10.3-F46800?style=flat-square&logo=grafana&logoColor=white) 
+![Sentry 11.6](https://img.shields.io/badge/Sentry-11.6-362D59?style=flat-square&logo=sentry&logoColor=white)
 
 ## Legal Notice
 
