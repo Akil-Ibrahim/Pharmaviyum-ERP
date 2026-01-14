@@ -39,26 +39,7 @@ This demo is intended for architectural and technical discussion.
 
 ## 🚀 Tech Stack (2026 — Light & Modern)
 
-![Python 3.14.2](https://img.shields.io/badge/Python-3.14.2-1E90FF?style=flat-square&logo=python&logoColor=white) 
-![FastAPI 0.111.0](https://img.shields.io/badge/FastAPI-0.111.0-20B2AA?style=flat-square&logo=fastapi&logoColor=white) 
-![Pydantic 2.7.2](https://img.shields.io/badge/Pydantic-2.7.2-32CD32?style=flat-square&logo=pydantic&logoColor=white) 
-![Uvicorn 2.9.2](https://img.shields.io/badge/Uvicorn-2.9.2-1E90FF?style=flat-square&logo=uvicorn&logoColor=white) 
-![PostgreSQL 16.1](https://img.shields.io/badge/PostgreSQL-16.1-006400?style=flat-square&logo=postgresql&logoColor=white) 
-![Redis 7.2](https://img.shields.io/badge/Redis-7.2-FF4500?style=flat-square&logo=redis&logoColor=white) 
-![React 19.1](https://img.shields.io/badge/React-19.1-007ACC?style=flat-square&logo=react&logoColor=white) 
-![Vite 5.5.0](https://img.shields.io/badge/Vite-5.5.0-FF61DA?style=flat-square&logo=vite&logoColor=white) 
-![TypeScript 5.3](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=flat-square&logo=typescript&logoColor=white) 
-![TailwindCSS 4.3](https://img.shields.io/badge/TailwindCSS-4.3-06B6D4?style=flat-square&logo=tailwind-css&logoColor=white) 
-![Redux 5.2](https://img.shields.io/badge/Redux-5.2-764ABC?style=flat-square&logo=redux&logoColor=white) 
-![Vitest 1.5](https://img.shields.io/badge/Vitest-1.5-F7DF1E?style=flat-square&logo=vitest&logoColor=black) 
-![Storybook 7.2](https://img.shields.io/badge/Storybook-7.2-FF4785?style=flat-square&logo=storybook&logoColor=white) 
-![Lucide](https://img.shields.io/badge/Lucide-Icons-9932CC?style=flat-square&logo=lucide&logoColor=white) 
-![Docker 24.0](https://img.shields.io/badge/Docker-24.0-2496ED?style=flat-square&logo=docker&logoColor=white) 
-![Nginx 2.1](https://img.shields.io/badge/Nginx-2.1-009639?style=flat-square&logo=nginx&logoColor=white) 
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-Active-2088FF?style=flat-square&logo=github-actions&logoColor=white) 
-![Prometheus 3.10](https://img.shields.io/badge/Prometheus-3.10-FF6347?style=flat-square&logo=prometheus&logoColor=white) 
-![Grafana 10.3](https://img.shields.io/badge/Grafana-10.3-F46800?style=flat-square&logo=grafana&logoColor=white) 
-![Sentry 11.6](https://img.shields.io/badge/Sentry-11.6-362D59?style=flat-square&logo=sentry&logoColor=white)
+![Python 3.14.2](https://img.shields.io/badge/Python-3.14.2-lightgrey) ![FastAPI 0.110](https://img.shields.io/badge/FastAPI-0.110-lightblue) ![Pydantic 2.3](https://img.shields.io/badge/Pydantic-2.3-lightblue) ![Uvicorn 0.25](https://img.shields.io/badge/Uvicorn-0.25-lightblue) ![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-lightgreen) ![Redis 7.2](https://img.shields.io/badge/Redis-7.2-orange) ![Celery 6.3](https://img.shields.io/badge/Celery-6.3-purple) ![React 19](https://img.shields.io/badge/React-19-blue) ![Vite 5](https://img.shields.io/badge/Vite-5-lightgreen) ![TypeScript 5.3](https://img.shields.io/badge/TypeScript-5.3-blue) ![TailwindCSS 4](https://img.shields.io/badge/TailwindCSS-4-teal) ![Redux 9](https://img.shields.io/badge/Redux-9-purple) ![Vitest 1.3](https://img.shields.io/badge/Vitest-1.3-lightblue) ![Storybook 7](https://img.shields.io/badge/Storybook-7-orange) ![Lucide Icons](https://img.shields.io/badge/Lucide-Icons-lightgrey) ![Docker 24](https://img.shields.io/badge/Docker-24-blue) ![Nginx 2.1](https://img.shields.io/badge/Nginx-2.1-lightgreen) ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-lightgrey) ![Prometheus 2.48](https://img.shields.io/badge/Prometheus-2.48-orange) ![Grafana 10](https://img.shields.io/badge/Grafana-10-red) ![Sentry 11](https://img.shields.io/badge/Sentry-11-purple) ![LangChain 1.2](https://img.shields.io/badge/LangChain-1.2-lightblue) ![OpenAI 2.1](https://img.shields.io/badge/OpenAI-2.1-lightgrey) ![Vectorstores 1.0](https://img.shields.io/badge/Vectorstores-1.0-lightgreen) ![Playwright 2.3](https://img.shields.io/badge/Playwright-2.3-lightblue) ![Pytest 8.4](https://img.shields.io/badge/Pytest-8.4-lightgreen)
 
 ## Legal Notice
 
