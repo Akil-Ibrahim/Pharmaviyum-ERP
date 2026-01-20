@@ -16,42 +16,27 @@ if [ ! -d "$PROJECT_DIR" ]; then
   echo "❌ Project directory '$PROJECT_DIR' not found! Clone the repository first."
   exit 1
 fi
-
 cd "$PROJECT_DIR" || exit
 
 # -------------------
-# CREATE BRANCHES (if they don't exist)
+# CREATE BRANCHES (idempotent)
 # -------------------
 echo "🚀 Creating git branches if they don't exist..."
-
 git fetch origin
 
-# Prod branch
-if git rev-parse --verify prod >/dev/null 2>&1; then
-  echo "✅ Branch 'prod' already exists"
-else
-  git checkout -b prod
-  git commit --allow-empty -m "Initial commit on prod"
-  git push origin prod
-fi
+for branch in prod dev demo; do
+  if git rev-parse --verify "$branch" >/dev/null 2>&1; then
+    echo "✅ Branch '$branch' already exists"
+  else
+    base="prod"
+    [ "$branch" == "prod" ] && base=""
+    git checkout -b "$branch" ${base:+$base}
+    git commit --allow-empty -m "Initial commit on $branch"
+    git push origin "$branch"
+  fi
+done
 
-# Dev branch
-if git rev-parse --verify dev >/dev/null 2>&1; then
-  echo "✅ Branch 'dev' already exists"
-else
-  git checkout -b dev prod
-  git push origin dev
-fi
-
-# Demo branch
-if git rev-parse --verify demo >/dev/null 2>&1; then
-  echo "✅ Branch 'demo' already exists"
-else
-  git checkout -b demo prod
-  git push origin demo
-fi
-
-# Switch back to dev for ongoing development
+# Switch to dev for ongoing development
 git checkout dev
 
 # -------------------
@@ -94,16 +79,13 @@ __pycache__/
 EOL
 
 # -------------------
-# CREATE GITHUB ACTIONS WORKFLOWS
+# GITHUB ACTIONS WORKFLOWS
 # -------------------
 echo "⚙️ Setting up GitHub Actions workflows..."
 mkdir -p .github/workflows
 
-# -------------------
 # DEV WORKFLOW
-# -------------------
-if [ ! -f ".github/workflows/dev.yml" ]; then
-cat > .github/workflows/dev.yml <<EOL
+[ ! -f ".github/workflows/dev.yml" ] && cat > .github/workflows/dev.yml <<EOL
 name: Dev Workflow
 on:
   push:
@@ -164,15 +146,9 @@ jobs:
           base: prod
           branch: dev
 EOL
-else
-  echo "✅ dev.yml workflow already exists, skipping"
-fi
 
-# -------------------
 # DEMO WORKFLOW
-# -------------------
-if [ ! -f ".github/workflows/demo.yml" ]; then
-cat > .github/workflows/demo.yml <<EOL
+[ ! -f ".github/workflows/demo.yml" ] && cat > .github/workflows/demo.yml <<EOL
 name: Demo Workflow
 on:
   pull_request:
@@ -186,15 +162,9 @@ jobs:
       - name: Deploy Demo (Placeholder)
         run: echo "Deploy demo environment here using secrets"
 EOL
-else
-  echo "✅ demo.yml workflow already exists, skipping"
-fi
 
-# -------------------
 # PROD WORKFLOW
-# -------------------
-if [ ! -f ".github/workflows/prod.yml" ]; then
-cat > .github/workflows/prod.yml <<EOL
+[ ! -f ".github/workflows/prod.yml" ] && cat > .github/workflows/prod.yml <<EOL
 name: Production Deployment
 on:
   push:
@@ -208,9 +178,6 @@ jobs:
       - name: Deploy Production (Placeholder)
         run: echo "Deploy production environment here using secrets"
 EOL
-else
-  echo "✅ prod.yml workflow already exists, skipping"
-fi
 
 # -------------------
 # COMMIT AND PUSH
