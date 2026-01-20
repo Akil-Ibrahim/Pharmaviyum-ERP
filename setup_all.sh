@@ -8,6 +8,8 @@
 # CONFIG
 # -------------------
 PROJECT_DIR="Pharmavium-CRM"
+VENV_DIR=".venv"
+REQ_FILE="requirements.txt"
 
 # -------------------
 # MOVE TO PROJECT DIRECTORY
@@ -19,24 +21,36 @@ fi
 cd "$PROJECT_DIR" || exit
 
 # -------------------
-# CREATE BRANCHES (idempotent)
+# CREATE BRANCHES (if they don't exist)
 # -------------------
 echo "🚀 Creating git branches if they don't exist..."
 git fetch origin
 
-for branch in prod dev demo; do
-  if git rev-parse --verify "$branch" >/dev/null 2>&1; then
-    echo "✅ Branch '$branch' already exists"
-  else
-    base="prod"
-    [ "$branch" == "prod" ] && base=""
-    git checkout -b "$branch" ${base:+$base}
-    git commit --allow-empty -m "Initial commit on $branch"
-    git push origin "$branch"
-  fi
-done
+# Prod branch
+if git rev-parse --verify prod >/dev/null 2>&1; then
+  echo "✅ Branch 'prod' already exists"
+else
+  git checkout -b prod
+  git commit --allow-empty -m "Initial commit on prod"
+  git push origin prod
+fi
 
-# Switch to dev for ongoing development
+# Dev branch
+if git rev-parse --verify dev >/dev/null 2>&1; then
+  echo "✅ Branch 'dev' already exists"
+else
+  git checkout -b dev prod
+  git push origin dev
+fi
+
+# Demo branch
+if git rev-parse --verify demo >/dev/null 2>&1; then
+  echo "✅ Branch 'demo' already exists"
+else
+  git checkout -b demo prod
+  git push origin demo
+fi
+
 git checkout dev
 
 # -------------------
@@ -79,13 +93,71 @@ __pycache__/
 EOL
 
 # -------------------
-# GITHUB ACTIONS WORKFLOWS
+# CREATE requirements.txt
+# -------------------
+echo "📦 Creating requirements.txt..."
+cat > $REQ_FILE <<EOL
+# ==============================
+# Production Dependencies
+# ==============================
+fastapi==0.128.0
+pydantic==2.8.0
+uvicorn==0.22.0
+SQLAlchemy==2.4.0
+alembic==1.20.0
+psycopg2-binary==2.9.9
+redis==7.6.8
+celery==5.8.2
+sentry-sdk==1.22.0
+opentelemetry-api==1.22.0
+opentelemetry-sdk==1.22.0
+python-dotenv==1.0.0
+
+# ==============================
+# Development Dependencies
+# ==============================
+[dev]
+flake8==7.0.0
+black==24.10.0
+isort==6.0.0
+mypy==1.5.1
+
+# ==============================
+# Testing Dependencies
+# ==============================
+[test]
+pytest==8.3.0
+pytest-asyncio==0.22.0
+pytest-cov==4.1.0
+EOL
+
+# -------------------
+# CREATE VIRTUAL ENVIRONMENT AND INSTALL DEPENDENCIES
+# -------------------
+echo "🐍 Creating virtual environment and installing dependencies..."
+if [ ! -d "$VENV_DIR" ]; then
+  python3 -m venv $VENV_DIR
+fi
+source $VENV_DIR/bin/activate
+
+echo "Installing production dependencies..."
+pip install -r $REQ_FILE
+
+echo "Installing dev dependencies..."
+pip install ".[dev]"
+
+echo "Installing test dependencies..."
+pip install ".[test]"
+
+# -------------------
+# CREATE GITHUB ACTIONS WORKFLOWS
 # -------------------
 echo "⚙️ Setting up GitHub Actions workflows..."
 mkdir -p .github/workflows
 
-# DEV WORKFLOW
-[ ! -f ".github/workflows/dev.yml" ] && cat > .github/workflows/dev.yml <<EOL
+# DEV workflow
+if [ ! -f ".github/workflows/dev.yml" ]; then
+cat > .github/workflows/dev.yml <<EOL
 name: Dev Workflow
 on:
   push:
@@ -146,9 +218,13 @@ jobs:
           base: prod
           branch: dev
 EOL
+else
+  echo "✅ dev.yml workflow already exists, skipping"
+fi
 
-# DEMO WORKFLOW
-[ ! -f ".github/workflows/demo.yml" ] && cat > .github/workflows/demo.yml <<EOL
+# DEMO workflow
+if [ ! -f ".github/workflows/demo.yml" ]; then
+cat > .github/workflows/demo.yml <<EOL
 name: Demo Workflow
 on:
   pull_request:
@@ -162,9 +238,13 @@ jobs:
       - name: Deploy Demo (Placeholder)
         run: echo "Deploy demo environment here using secrets"
 EOL
+else
+  echo "✅ demo.yml workflow already exists, skipping"
+fi
 
-# PROD WORKFLOW
-[ ! -f ".github/workflows/prod.yml" ] && cat > .github/workflows/prod.yml <<EOL
+# PROD workflow
+if [ ! -f ".github/workflows/prod.yml" ]; then
+cat > .github/workflows/prod.yml <<EOL
 name: Production Deployment
 on:
   push:
@@ -178,13 +258,16 @@ jobs:
       - name: Deploy Production (Placeholder)
         run: echo "Deploy production environment here using secrets"
 EOL
+else
+  echo "✅ prod.yml workflow already exists, skipping"
+fi
 
 # -------------------
 # COMMIT AND PUSH
 # -------------------
 echo "💾 Committing and pushing changes..."
 git add .
-git commit -m "chore: initial project structure and CI/CD workflows" || echo "Nothing to commit"
+git commit -m "chore: initial project setup with structure, branches, dependencies, and CI/CD workflows" || echo "Nothing to commit"
 git push origin dev
 
 # -------------------
@@ -197,3 +280,4 @@ echo "Workflows:"
 echo "  - Dev: CI + auto PR to prod"
 echo "  - Prod: deploy on push"
 echo "  - Demo: inherits from prod (PR)"
+echo "Virtual environment: $VENV_DIR created and dependencies installed"
