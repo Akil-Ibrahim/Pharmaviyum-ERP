@@ -1,6 +1,6 @@
 #!/bin/bash
 # ======================================================
-# Pharmavium-CRM Full Setup Script (Best Practices)
+# Pharmavium-CRM Master Setup Script (Best Practices)
 # For already cloned repository
 # ======================================================
 
@@ -10,35 +10,65 @@
 PROJECT_DIR="Pharmavium-CRM"
 
 # -------------------
-# MOVE TO PROJECT
+# MOVE TO PROJECT DIRECTORY
 # -------------------
-cd "$PROJECT_DIR" || { echo "Project directory not found!"; exit 1; }
+if [ ! -d "$PROJECT_DIR" ]; then
+  echo "❌ Project directory '$PROJECT_DIR' not found! Clone the repository first."
+  exit 1
+fi
+
+cd "$PROJECT_DIR" || exit
 
 # -------------------
-# CREATE BRANCHES
+# CREATE BRANCHES (if they don't exist)
 # -------------------
-git checkout -b prod
-git commit --allow-empty -m "Initial commit on prod"
-git push origin prod
+echo "🚀 Creating git branches if they don't exist..."
 
-git checkout -b dev prod
-git push origin dev
+git fetch origin
 
-git checkout -b demo prod
-git push origin demo
+# Prod branch
+if git rev-parse --verify prod >/dev/null 2>&1; then
+  echo "✅ Branch 'prod' already exists"
+else
+  git checkout -b prod
+  git commit --allow-empty -m "Initial commit on prod"
+  git push origin prod
+fi
 
+# Dev branch
+if git rev-parse --verify dev >/dev/null 2>&1; then
+  echo "✅ Branch 'dev' already exists"
+else
+  git checkout -b dev prod
+  git push origin dev
+fi
+
+# Demo branch
+if git rev-parse --verify demo >/dev/null 2>&1; then
+  echo "✅ Branch 'demo' already exists"
+else
+  git checkout -b demo prod
+  git push origin demo
+fi
+
+# Switch back to dev for ongoing development
 git checkout dev
 
 # -------------------
 # CREATE PROJECT STRUCTURE
 # -------------------
-echo "Creating project structure..."
-chmod +x create_structure.sh
-./create_structure.sh
+echo "📁 Creating project structure..."
+if [ -f "./create_structure.sh" ]; then
+  chmod +x create_structure.sh
+  ./create_structure.sh
+else
+  echo "❌ create_structure.sh not found!"
+fi
 
 # -------------------
 # CREATE .gitignore
 # -------------------
+echo "📝 Creating .gitignore..."
 cat > .gitignore <<EOL
 # Node
 node_modules/
@@ -64,11 +94,15 @@ __pycache__/
 EOL
 
 # -------------------
-# GITHUB ACTIONS WORKFLOWS
+# CREATE GITHUB ACTIONS WORKFLOWS
 # -------------------
+echo "⚙️ Setting up GitHub Actions workflows..."
 mkdir -p .github/workflows
 
-# Dev workflow (frontend + backend + auto PR to prod)
+# -------------------
+# DEV WORKFLOW
+# -------------------
+if [ ! -f ".github/workflows/dev.yml" ]; then
 cat > .github/workflows/dev.yml <<EOL
 name: Dev Workflow
 on:
@@ -130,8 +164,14 @@ jobs:
           base: prod
           branch: dev
 EOL
+else
+  echo "✅ dev.yml workflow already exists, skipping"
+fi
 
-# Demo workflow (PR prod -> demo)
+# -------------------
+# DEMO WORKFLOW
+# -------------------
+if [ ! -f ".github/workflows/demo.yml" ]; then
 cat > .github/workflows/demo.yml <<EOL
 name: Demo Workflow
 on:
@@ -146,8 +186,14 @@ jobs:
       - name: Deploy Demo (Placeholder)
         run: echo "Deploy demo environment here using secrets"
 EOL
+else
+  echo "✅ demo.yml workflow already exists, skipping"
+fi
 
-# Prod workflow (push prod -> deploy prod)
+# -------------------
+# PROD WORKFLOW
+# -------------------
+if [ ! -f ".github/workflows/prod.yml" ]; then
 cat > .github/workflows/prod.yml <<EOL
 name: Production Deployment
 on:
@@ -162,14 +208,25 @@ jobs:
       - name: Deploy Production (Placeholder)
         run: echo "Deploy production environment here using secrets"
 EOL
+else
+  echo "✅ prod.yml workflow already exists, skipping"
+fi
 
 # -------------------
 # COMMIT AND PUSH
 # -------------------
+echo "💾 Committing and pushing changes..."
 git add .
-git commit -m "Add full project structure, .gitignore, and workflows with Node 20.10.0, Python 3.14.2, Postgres 16.6"
+git commit -m "chore: initial project structure and CI/CD workflows" || echo "Nothing to commit"
 git push origin dev
 
+# -------------------
+# FINAL OUTPUT
+# -------------------
 echo "✅ Setup complete!"
-echo "Branches: prod, dev, demo"
-echo "Workflows: Dev (auto PR), Demo (PR), Prod (push prod)"
+echo "Branches: dev, prod, demo"
+echo "Flow: dev → prod → demo"
+echo "Workflows:"
+echo "  - Dev: CI + auto PR to prod"
+echo "  - Prod: deploy on push"
+echo "  - Demo: inherits from prod (PR)"
