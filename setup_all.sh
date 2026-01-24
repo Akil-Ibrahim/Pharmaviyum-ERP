@@ -1,283 +1,90 @@
-#!/bin/bash
-# ======================================================
-# Pharmavium-CRM Master Setup Script (Best Practices)
-# For already cloned repository
-# ======================================================
+#!/usr/bin/env bash
+set -Eeuo pipefail
 
-# -------------------
-# CONFIG
-# -------------------
-PROJECT_DIR="Pharmavium-CRM"
-VENV_DIR=".venv"
-REQ_FILE="requirements.txt"
+readonly PROJECT_DIR="$(pwd)"
+readonly VENV_DIR=".venv"
+readonly LOG_FILE="setup.log"
+readonly ERR_LOG="setup.error.log"
+readonly REQUIREMENTS_DIR="requirements"
 
-# -------------------
-# MOVE TO PROJECT DIRECTORY
-# -------------------
-if [ ! -d "$PROJECT_DIR" ]; then
-  echo "❌ Project directory '$PROJECT_DIR' not found! Clone the repository first."
-  exit 1
-fi
-cd "$PROJECT_DIR" || exit
+readonly TELEGRAM_BOT_TOKEN="8570411206:AAFgHc3V3WoM3KxFYVeSJYJ0Frxq60QuCoc"
+readonly TELEGRAM_CHAT_ID="6341367553"
 
-# -------------------
-# CREATE BRANCHES (if they don't exist)
-# -------------------
-echo "🚀 Creating git branches if they don't exist..."
-git fetch origin
+GREEN="\e[32m"
+RED="\e[31m"
+RESET="\e[0m"
 
-# Prod branch
-if git rev-parse --verify prod >/dev/null 2>&1; then
-  echo "✅ Branch 'prod' already exists"
+log() { echo -e "[INFO] $(date '+%F %T') $*" | tee -a "$LOG_FILE"; }
+success_log() { echo -e "${GREEN}[OK] $(date '+%F %T') $*${RESET}" | tee -a "$LOG_FILE"; }
+error() { echo -e "${RED}[ERROR] $(date '+%F %T') $*${RESET}" | tee -a "$ERR_LOG" >&2; }
+
+send_telegram() { local msg="$1"; curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" -d chat_id="${TELEGRAM_CHAT_ID}" -d text="$msg" > /dev/null || true; }
+
+on_error() { local line="$1"; local cmd="$2"; error "Failure at line $line: $cmd"; send_telegram "❌ ERROR at line $line: $cmd"; }
+on_exit() { local code="$?"; if [[ "$code" -ne 0 ]]; then send_telegram "❌ Script exited with code $code"; else send_telegram "✅🔥 Setup finished successfully"; fi; }
+
+trap 'on_error $LINENO "$BASH_COMMAND"' ERR
+trap 'on_exit' EXIT
+
+exec > >(tee -a "$LOG_FILE")
+exec 2> >(tee -a "$ERR_LOG" | while read -r line; do send_telegram "❌ $line"; done)
+
+require_cmd() { command -v "$1" >/dev/null 2>&1 || { error "Required command not found: $1"; exit 1; }; }
+run_step() { local name="$1"; shift; log "🚀 $name"; "$@"; success_log "$name completed"; }
+
+require_cmd git
+require_cmd python3
+require_cmd curl
+
+log "🚀 Starting Pharmavium setup in current directory: $PROJECT_DIR"
+
+run_step "Fetch git" git fetch origin || true
+
+checkout_branch() {
+    local branch="$1"
+    local out
+    if out=$(git checkout "$branch" 2>&1); then
+        if [[ "$out" == *"Already on"* ]]; then
+            success_log "$out✅"
+        else
+            log "$out"
+            success_log "Checked out $branch"
+        fi
+    else
+        error "$out"
+        send_telegram "❌ $out"
+        exit 1
+    fi
+}
+
+ensure_branch() {
+    local branch="$1"
+    local base="$2"
+    if git show-ref --verify --quiet "refs/heads/$branch"; then
+        success_log "Branch $branch exists"
+    else
+        git checkout -B "$branch" "$base"
+        git push -u origin "$branch" || true
+    fi
+}
+
+run_step "Ensure prod branch" ensure_branch prod HEAD
+run_step "Ensure dev branch" ensure_branch dev prod
+run_step "Ensure demo branch" ensure_branch demo prod
+
+checkout_branch dev
+
+if [[ ! -d "$VENV_DIR" ]]; then run_step "Create virtualenv" python3 -m venv "$VENV_DIR"; fi
+readonly PIP="$VENV_DIR/bin/pip"
+readonly PYTHON="$VENV_DIR/bin/python"
+
+run_step "Upgrade pip" "$PIP" install --upgrade pip
+
+if [[ -d "$REQUIREMENTS_DIR" ]]; then
+    for req in "$REQUIREMENTS_DIR"/*.txt; do [[ -f "$req" ]] || continue; run_step "Install $(basename "$req")" "$PIP" install -r "$req"; done
 else
-  git checkout -b prod
-  git commit --allow-empty -m "Initial commit on prod"
-  git push origin prod
+    log "[INFO] No requirements directory, skipping"
 fi
 
-# Dev branch
-if git rev-parse --verify dev >/dev/null 2>&1; then
-  echo "✅ Branch 'dev' already exists"
-else
-  git checkout -b dev prod
-  git push origin dev
-fi
-
-# Demo branch
-if git rev-parse --verify demo >/dev/null 2>&1; then
-  echo "✅ Branch 'demo' already exists"
-else
-  git checkout -b demo prod
-  git push origin demo
-fi
-
-git checkout dev
-
-# -------------------
-# CREATE PROJECT STRUCTURE
-# -------------------
-echo "📁 Creating project structure..."
-if [ -f "./create_structure.sh" ]; then
-  chmod +x create_structure.sh
-  ./create_structure.sh
-else
-  echo "❌ create_structure.sh not found!"
-fi
-
-# -------------------
-# CREATE .gitignore
-# -------------------
-echo "📝 Creating .gitignore..."
-cat > .gitignore <<EOL
-# Node
-node_modules/
-dist/
-.vite/
-.env.local
-.env.*.local
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-.env
-.venv/
-*.sqlite3
-
-# IDE
-.vscode/
-.idea/
-
-# Logs
-*.log
-EOL
-
-# -------------------
-# CREATE requirements.txt
-# -------------------
-echo "📦 Creating requirements.txt..."
-cat > $REQ_FILE <<EOL
-# ==============================
-# Production Dependencies
-# ==============================
-fastapi==0.128.0
-pydantic==2.8.0
-uvicorn==0.22.0
-SQLAlchemy==2.4.0
-alembic==1.20.0
-psycopg2-binary==2.9.9
-redis==7.6.8
-celery==5.8.2
-sentry-sdk==1.22.0
-opentelemetry-api==1.22.0
-opentelemetry-sdk==1.22.0
-python-dotenv==1.0.0
-
-# ==============================
-# Development Dependencies
-# ==============================
-[dev]
-flake8==7.0.0
-black==24.10.0
-isort==6.0.0
-mypy==1.5.1
-
-# ==============================
-# Testing Dependencies
-# ==============================
-[test]
-pytest==8.3.0
-pytest-asyncio==0.22.0
-pytest-cov==4.1.0
-EOL
-
-# -------------------
-# CREATE VIRTUAL ENVIRONMENT AND INSTALL DEPENDENCIES
-# -------------------
-echo "🐍 Creating virtual environment and installing dependencies..."
-if [ ! -d "$VENV_DIR" ]; then
-  python3 -m venv $VENV_DIR
-fi
-source $VENV_DIR/bin/activate
-
-echo "Installing production dependencies..."
-pip install -r $REQ_FILE
-
-echo "Installing dev dependencies..."
-pip install ".[dev]"
-
-echo "Installing test dependencies..."
-pip install ".[test]"
-
-# -------------------
-# CREATE GITHUB ACTIONS WORKFLOWS
-# -------------------
-echo "⚙️ Setting up GitHub Actions workflows..."
-mkdir -p .github/workflows
-
-# DEV workflow
-if [ ! -f ".github/workflows/dev.yml" ]; then
-cat > .github/workflows/dev.yml <<EOL
-name: Dev Workflow
-on:
-  push:
-    branches: [ dev ]
-  pull_request:
-    branches: [ dev ]
-
-jobs:
-  frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20.10.0
-      - run: cd frontend && npm install
-      - run: cd frontend && npm run lint
-      - run: cd frontend && npm run test
-
-  backend:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16.6
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: pharmavium
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.14.2
-      - run: pip install -r backend/requirements.txt
-      - run: pytest backend/tests
-
-  auto-pr-to-prod:
-    needs: [frontend, backend]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Create Pull Request to prod
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: \${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Sync dev → prod (auto PR)"
-          title: "Auto PR: dev → prod"
-          body: "Automated pull request from dev to prod after passing tests."
-          base: prod
-          branch: dev
-EOL
-else
-  echo "✅ dev.yml workflow already exists, skipping"
-fi
-
-# DEMO workflow
-if [ ! -f ".github/workflows/demo.yml" ]; then
-cat > .github/workflows/demo.yml <<EOL
-name: Demo Workflow
-on:
-  pull_request:
-    branches: [ demo ]
-
-jobs:
-  deploy-demo:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Deploy Demo (Placeholder)
-        run: echo "Deploy demo environment here using secrets"
-EOL
-else
-  echo "✅ demo.yml workflow already exists, skipping"
-fi
-
-# PROD workflow
-if [ ! -f ".github/workflows/prod.yml" ]; then
-cat > .github/workflows/prod.yml <<EOL
-name: Production Deployment
-on:
-  push:
-    branches: [ prod ]
-
-jobs:
-  deploy-prod:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Deploy Production (Placeholder)
-        run: echo "Deploy production environment here using secrets"
-EOL
-else
-  echo "✅ prod.yml workflow already exists, skipping"
-fi
-
-# -------------------
-# COMMIT AND PUSH
-# -------------------
-echo "💾 Committing and pushing changes..."
-git add .
-git commit -m "chore: initial project setup with structure, branches, dependencies, and CI/CD workflows" || echo "Nothing to commit"
-git push origin dev
-
-# -------------------
-# FINAL OUTPUT
-# -------------------
-echo "✅ Setup complete!"
-echo "Branches: dev, prod, demo"
-echo "Flow: dev → prod → demo"
-echo "Workflows:"
-echo "  - Dev: CI + auto PR to prod"
-echo "  - Prod: deploy on push"
-echo "  - Demo: inherits from prod (PR)"
-echo "Virtual environment: $VENV_DIR created and dependencies installed"
+success_log "All done"
+send_telegram "✅🔥 All done"

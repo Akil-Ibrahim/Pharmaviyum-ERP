@@ -1,0 +1,2 @@
+./setup_all.sh: line 63: warning: here-document at line 48 delimited by end-of-file (wanted `EOF')
+./setup_all.sh: line 64: syntax error: ,unexpected end of file from `{' command on line 43
