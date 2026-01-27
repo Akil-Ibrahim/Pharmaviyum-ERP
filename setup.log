@@ -1,922 +1,0 @@
-./setup_all.sh: line 91: warning: here-document at line 77 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 92: syntax error: unexpected end of file from `{' command on line 73
-./setup_all.sh: line 91: warning: here-document at line 77 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 92: syntax error: unexpected end of file from `{' command on line 73
-ls: cannot access 'nonexistentfile': No such file or directory
-ls: cannot access 'nonexistentfile': No such file or directory
-./setup_all.sh: line 91: warning: here-document at line 77 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 92: syntax error: unexpected end of file from `{' command on line 73
-./setup_all.sh: line 91: warning: here-document at line 77 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 92: syntax error: unexpected end of file from `{' command on line 73
-./setup_all.sh: line 93: warning: here-document at line 78 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 94: syntax error: unexpected end of file from `{' command on line 73
-./setup_all.sh: line 93: warning: here-document at line 78 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 94: syntax error: unexpected end of file from `{' command on line 73
-./setup_all.sh: line 93: warning: here-document at line 78 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 94: syntax error: unexpected end of file from `{' command on line 73
-./setup_all.sh: line 93: warning: here-document at line 78 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 94: syntax error: unexpected end of file from `{' command on line 73
-./setup_all.sh: line 119: warning: here-document at line 104 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 120: syntax error: unexpected end of file from `{' command on line 99
-./setup_all.sh: line 119: warning: here-document at line 104 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 120: syntax error: unexpected end of file from `{' command on line 99
-./setup_all.sh: line 117: warning: here-document at line 102 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 118: syntax error: unexpected end of file from `{' command on line 97
-./setup_all.sh: line 117: warning: here-document at line 102 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 118: syntax error: unexpected end of file from `{' command on line 97
-./setup_all.sh: line 117: warning: here-document at line 102 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 118: syntax error: unexpected end of file from `{' command on line 97
-./setup_all.sh: line 117: warning: here-document at line 102 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 118: syntax error: unexpected end of file from `{' command on line 97
-./setup_all.sh: line 117: warning: here-document at line 102 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 118: syntax error: unexpected end of file from `{' command on line 97
-./setup_all.sh: line 117: warning: here-document at line 102 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 118: syntax error: unexpected end of file from `{' command on line 97
-./setup_all.sh: line 117: warning: here-document at line 102 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 118: syntax error: unexpected end of file from `{' command on line 97
-./setup_all.sh: line 117: warning: here-document at line 102 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 118: syntax error: unexpected end of file from `{' command on line 97
-./setup_all.sh: line 98: warning: here-document at line 83 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 99: syntax error: unexpected end of file from `{' command on line 79
-./setup_all.sh: line 98: warning: here-document at line 83 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 99: syntax error: unexpected end of file from `{' command on line 79
-./setup_all.sh: line 116: warning: here-document at line 101 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 117: syntax error: unexpected end of file from `{' command on line 97
-./setup_all.sh: line 116: warning: here-document at line 101 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 117: syntax error: unexpected end of file from `{' command on line 97
-[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;D;0]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Trap unexpected exit
-[?2004l# Trap unexpected exit
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Btrap 'send_telegram "❌ Script ended unexpectedly at line $LINENO with exit code $?"' EXIT
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Btrap 'send_telegram "❌ Script ended unexpectedly at line $LINENO with exit code $?"' EXIT
-[?2004l]633;E;trap 'send_telegram "❌ Script ended unexpectedly at line $LINENO with exit code $?"' EXIT;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D;0]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Brun_step() {
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Brun_step() {
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    local step_name="$1"    local step_name="$1"
-[?2004l
-[?2004l[?2004h[?2004h]633;F> ]633;G]633;F> ]633;G    shift
-[?2004l    shift
-[?2004h[?2004l[?2004h]633;F> ]633;G]633;F> ]633;G    log "🚀 Starting: $step_name"
-[?2004l    log "🚀 Starting: $step_name"
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    "$@" 
-[?2004l[?2004h]633;F> ]633;G    local status=$?
-[?2004l    "$@" 
-[?2004l[?2004h]633;F> ]633;G    local status=$?
-[?2004l[?2004h[?2004h]633;F> ]633;G]633;F> ]633;G    if [ $status -ne 0 ]; then
-[?2004l    if [ $status -ne 0 ]; then
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G        local msg="❌ Step '$step_name' failed with exit code $status"
-[?2004l[?2004h]633;F> ]633;G        local msg="❌ Step '$step_name' failed with exit code $status"
-[?2004l[?2004h]633;F> ]633;G        log "$msg"
-[?2004l[?2004h]633;F> ]633;G        send_telegram "$msg"
-[?2004l[?2004h]633;F> ]633;G        log "$msg"
-[?2004l[?2004h]633;F> ]633;G        send_telegram "$msg"
-[?2004l[?2004h]633;F> ]633;G        exit $status
-[?2004l        exit $status
-[?2004l[?2004h]633;F> ]633;G    fi
-[?2004l[?2004h]633;F> ]633;G    log "✅ Finished: $step_name"
-[?2004l[?2004h]633;F> ]633;G    fi
-[?2004l[?2004h]633;F> ]633;G    log "✅ Finished: $step_name"
-[?2004l[?2004h[?2004h]633;F> ]633;G}
-]633;F> ]633;G}
-[?2004l[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Git branch creation
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Git branch creation
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bcreate_branch() {
-[?2004lcreate_branch() {
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    local branch="$1"
-[?2004l    local branch="$1"
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    local base="$2"
-[?2004l    local base="$2"
-[?2004l[?2004h[?2004h]633;F> ]633;G]633;F> ]633;G    if git show-ref --verify --quiet "refs/heads/$branch"; then
-[?2004l    if git show-ref --verify --quiet "refs/heads/$branch"; then
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G        log "✅ Branch '$branch' exists"
-[?2004l        log "✅ Branch '$branch' exists"
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    else    else
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G        run_step "Create branch $branch" git checkout -b "$branch" "$base"
-[?2004l        run_step "Create branch $branch" git checkout -b "$branch" "$base"
-[?2004l[?2004h[?2004h]633;F> ]633;G        run_step "Push branch $branch" git push origin "$branch"]633;F> ]633;G        run_step "Push branch $branch" git push origin "$branch"
-[?2004l
-[?2004l[?2004h]633;F> ]633;G    fi
-[?2004l[?2004h]633;F> ]633;G    fi
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Python dependencies
-[?2004l# Python dependencies
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Binstall_dependencies() {
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Binstall_dependencies() {
-[?2004l[?2004h]633;F> ]633;G    log "📦 Installing Python dependencies..."
-    log "📦 Installing Python dependencies..."
-[?2004l[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    run_step "Upgrade pip" pip install --upgrade pip
-[?2004l    run_step "Upgrade pip" pip install --upgrade pip
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    for req in "$REQUIREMENTS_DIR"/*.txt; do
-[?2004l    for req in "$REQUIREMENTS_DIR"/*.txt; do
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G        if [[ -f "$req" ]]; then
-[?2004l        if [[ -f "$req" ]]; then
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G            run_step "Install $req" pip install -r "$req"
-[?2004l            run_step "Install $req" pip install -r "$req"
-[?2004l[?2004h]633;F> ]633;G        fi
-[?2004l[?2004h]633;F> ]633;G    done
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G        fi
-[?2004l[?2004h]633;F> ]633;G    done
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l}
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# GitHub Actions workflows
-[?2004l# GitHub Actions workflows
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bsetup_github_actions() {
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bsetup_github_actions() {
-[?2004l[?2004h]633;F> ]633;G    log "⚙️ Setting up GitHub Actions workflows..."
-[?2004l[?2004h]633;F> ]633;G    log "⚙️ Setting up GitHub Actions workflows..."
-[?2004l[?2004h]633;F> ]633;G    mkdir -p .github/workflows
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/dev.yml <<EOF
-[?2004l[?2004h]633;F> ]633;Gname: Dev CI
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l    mkdir -p .github/workflows
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/dev.yml <<EOF
-[?2004l[?2004h]633;F> ]633;Gname: Dev CI
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  push:
-[?2004l[?2004h]633;F> ]633;G    branches: [dev]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  push:
-[?2004l[?2004h]633;F> ]633;G    branches: [dev]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  backend:
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G  backend:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest    runs-on: ubuntu-latest
-[?2004l
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - uses: actions/checkout@v3
-[?2004l    steps:
-[?2004l[?2004h]633;F> ]633;G      - uses: actions/checkout@v3
-[?2004l[?2004h[?2004h]633;F> ]633;G]633;F> ]633;G      - uses: actions/setup-python@v4
-[?2004l      - uses: actions/setup-python@v4
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G        with:
-        with:
-[?2004l[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G          python-version: "$PYTHON_VERSION"
-          python-version: "$PYTHON_VERSION"
-[?2004l[?2004h]633;F> ]633;G[?2004l[?2004h]633;F> ]633;G      - run: pip install -r requirements/prod.txt -r requirements/dev.txt
-[?2004l[?2004h]633;F> ]633;G      - run: pip install -r requirements/prod.txt -r requirements/dev.txt
-[?2004l[?2004h]633;F> ]633;G      - run: pytest || true
-[?2004l      - run: pytest || true
-[?2004l[?2004h[?2004h]633;F> ]633;GEOF
-]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/prod.yml <<EOF
-[?2004l    cat > .github/workflows/prod.yml <<EOF
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;Gname: Prod Deployname: Prod Deploy
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  push:
-[?2004l[?2004h]633;F> ]633;G    branches: [prod]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  deploy:
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  push:
-[?2004l[?2004h]633;F> ]633;G    branches: [prod]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  deploy:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - run: echo "🚀 Deploy production"
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - run: echo "🚀 Deploy production"
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/demo.yml <<EOF
-[?2004l    cat > .github/workflows/demo.yml <<EOF
-[?2004l[?2004h]633;F> ]633;Gname: Demo Deploy
-[?2004l[?2004h]633;F> ]633;Gname: Demo Deploy
-[?2004l[?2004h[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  pull_request:
-[?2004l[?2004h]633;F> ]633;G    branches: [demo]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  deploy:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - run: echo "🧪 Deploy demo"
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  pull_request:
-[?2004l[?2004h]633;F> ]633;G    branches: [demo]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  deploy:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - run: echo "🧪 Deploy demo"
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# MAIN SCRIPT
-[?2004l# MAIN SCRIPT
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l# -------------------
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Blog "🚀 Starting setup for $PROJECT_DIR"
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Blog "🚀 Starting setup for $PROJECT_DIR"
-[?2004l]633;E;log "🚀 Starting setup for $PROJECT_DIR";72447409-cf62-416a-9f67-94c211eda791]633;C[2026-01-24 00:54:13] 🚀 Starting setup for Pharmavium-CRM
-[2026-01-24 00:54:13] 🚀 Starting setup for Pharmavium-CRM
-]633;D;0]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;72447409-cf62-416a-9f67-94c211eda791]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bif [ ! -d "$PROJECT_DIR" ]; thenif [ ! -d "$PROJECT_DIR" ]; then
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    msg="❌ Project directory '$PROJECT_DIR' not found!"    msg="❌ Project directory '$PROJECT_DIR' not found!"
-
-[?2004l[?2004l[?2004h[?2004h]633;F> ]633;G    log "$msg"
-[?2004l[?2004h]633;F> ]633;G]633;F> ]633;G    log "$msg"
-[?2004l[?2004h]633;F> ]633;G    send_telegram "$msg"    send_telegram "$msg"
-[?2004l
-[?2004l[?2004h[?2004h]633;F> ]633;G    exit 1
-[?2004l]633;F> ]633;G    exit 1
-[?2004l[?2004h]633;F> ]633;Gfi
-[?2004l[?2004h]633;F> ]633;Gfi
-[?2004l]633;E;[ ! -d "$PROJECT_DIR" ];72447409-cf62-416a-9f67-94c211eda791]633;C[2026-01-24 00:54:13] ❌ Project directory 'Pharmavium-CRM' not found!
-[2026-01-24 00:54:13] ❌ Project directory 'Pharmavium-CRM' not found!
-exit
-exit
-./setup_all.sh: line 110: warning: here-document at line 95 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 111: syntax error: unexpected end of file from `{' command on line 90
-./setup_all.sh: line 110: warning: here-document at line 95 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 111: syntax error: unexpected end of file from `{' command on line 90
-./setup_all.sh: line 103: warning: here-document at line 88 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 104: syntax error: unexpected end of file from `{' command on line 84
-./setup_all.sh: line 103: warning: here-document at line 88 delimited by end-of-file (wanted `EOF')
-./setup_all.sh: line 104: syntax error: unexpected end of file from `{' command on line 84
-]633;D;0]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM]633;E;trap 'send_telegram "❌ Script ended unexpectedly at line $LINENO with exit code $?"' EXIT;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D;0]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Trap unexpected exit
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Btrap 'send_telegram "❌ Script ended unexpectedly at line $LINENO with exit code $?"' EXIT
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Trap unexpected exit
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Btrap 'send_telegram "❌ Script ended unexpectedly at line $LINENO with exit code $?"' EXIT
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Brun_step() {
-[?2004l[?2004h]633;F> ]633;G    local step_name="$1"
-[?2004l[?2004h]633;F> ]633;G    shift
-[?2004l[?2004h]633;F> ]633;G    log "🚀 Starting: $step_name"
-[?2004l[?2004h]633;F> ]633;G    "$@" 
-[?2004l[?2004h]633;F> ]633;G    local status=$?
-[?2004l[?2004h]633;F> ]633;G    if [ $status -ne 0 ]; then
-[?2004l[?2004h]633;F> ]633;G        local msg="❌ Step '$step_name' failed with exit code $status"
-[?2004l[?2004h]633;F> ]633;G        log "$msg"
-[?2004l[?2004h]633;F> ]633;G        send_telegram "$msg"
-[?2004l[?2004h]633;F> ]633;G        exit $status
-[?2004l[?2004h]633;F> ]633;G    fi
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Brun_step() {
-[?2004l[?2004h]633;F> ]633;G    local step_name="$1"
-[?2004l[?2004h]633;F> ]633;G    shift
-[?2004l[?2004h]633;F> ]633;G    log "🚀 Starting: $step_name"
-[?2004l[?2004h]633;F> ]633;G    "$@" 
-[?2004l[?2004h]633;F> ]633;G    local status=$?
-[?2004l[?2004h]633;F> ]633;G    if [ $status -ne 0 ]; then
-[?2004l[?2004h]633;F> ]633;G        local msg="❌ Step '$step_name' failed with exit code $status"
-[?2004l[?2004h]633;F> ]633;G        log "$msg"
-[?2004l[?2004h]633;F> ]633;G        send_telegram "$msg"
-[?2004l[?2004h]633;F> ]633;G        exit $status
-[?2004l[?2004h]633;F> ]633;G    fi
-[?2004l[?2004h]633;F> ]633;G    log "✅ Finished: $step_name"    log "✅ Finished: $step_name"
-[?2004l
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l# -------------------
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Git branch creation
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Git branch creation
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bcreate_branch() {
-]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bcreate_branch() {
-[?2004l[?2004h[?2004l[?2004h]633;F> ]633;G]633;F> ]633;G    local branch="$1"
-[?2004l[?2004h]633;F> ]633;G    local base="$2"
-[?2004l[?2004h]633;F> ]633;G    local branch="$1"
-[?2004l[?2004h]633;F> ]633;G    local base="$2"
-[?2004l[?2004h]633;F> ]633;G    if git show-ref --verify --quiet "refs/heads/$branch"; then
-[?2004l[?2004h]633;F> ]633;G    if git show-ref --verify --quiet "refs/heads/$branch"; then
-[?2004l[?2004h]633;F> ]633;G        log "✅ Branch '$branch' exists"
-[?2004l[?2004h]633;F> ]633;G    else
-[?2004l[?2004h]633;F> ]633;G        log "✅ Branch '$branch' exists"
-[?2004l[?2004h]633;F> ]633;G    else
-[?2004l[?2004h]633;F> ]633;G        run_step "Create branch $branch" git checkout -b "$branch" "$base"
-[?2004l[?2004h]633;F> ]633;G        run_step "Create branch $branch" git checkout -b "$branch" "$base"
-[?2004l[?2004h]633;F> ]633;G        run_step "Push branch $branch" git push origin "$branch"
-[?2004l        run_step "Push branch $branch" git push origin "$branch"
-[?2004l[?2004h]633;F> ]633;G    fi
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l[?2004h]633;F> ]633;G    fi
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Python dependencies
-[?2004l# Python dependencies
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------# -------------------
-[?2004l
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Binstall_dependencies() {
-[?2004linstall_dependencies() {
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    log "📦 Installing Python dependencies..."
-[?2004l[?2004h]633;F> ]633;G    log "📦 Installing Python dependencies..."
-[?2004l[?2004h]633;F> ]633;G    run_step "Upgrade pip" pip install --upgrade pip    run_step "Upgrade pip" pip install --upgrade pip
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    for req in "$REQUIREMENTS_DIR"/*.txt; do    for req in "$REQUIREMENTS_DIR"/*.txt; do
-[?2004l
-[?2004l[?2004h[?2004h]633;F> ]633;G]633;F> ]633;G        if [[ -f "$req" ]]; then        if [[ -f "$req" ]]; then
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G            run_step "Install $req" pip install -r "$req"
-[?2004l[?2004h]633;F> ]633;G            run_step "Install $req" pip install -r "$req"
-[?2004l[?2004h]633;F> ]633;G        fi
-[?2004l        fi
-[?2004l[?2004h[?2004h]633;F> ]633;G]633;F> ]633;G    done
-[?2004l    done
-[?2004l[?2004h[?2004h]633;F> ]633;G]633;F> ]633;G}
-[?2004l}
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# GitHub Actions workflows
-[?2004l# GitHub Actions workflows
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bsetup_github_actions() {
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bsetup_github_actions() {
-[?2004l[?2004h]633;F> ]633;G    log "⚙️ Setting up GitHub Actions workflows..."
-[?2004l[?2004h]633;F> ]633;G    mkdir -p .github/workflows
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    # DEV workflow
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    log "⚙️ Setting up GitHub Actions workflows..."
-[?2004l[?2004h]633;F> ]633;G    mkdir -p .github/workflows
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    # DEV workflow
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/dev.yml <<EOF    cat > .github/workflows/dev.yml <<EOF
-
-[?2004l[?2004l[?2004h]633;F> ]633;Gname: Dev CI
-[?2004h]633;F> ]633;Gname: Dev CI
-[?2004l[?2004l[?2004h[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  push:
-[?2004l[?2004h]633;F> ]633;G    branches: [dev]
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  push:
-[?2004l[?2004h]633;F> ]633;G    branches: [dev]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  backend:
-[?2004l[?2004h]633;F> ]633;G]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  backend:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - uses: actions/checkout@v3
-[?2004l[?2004h]633;F> ]633;G      - uses: actions/setup-python@v4
-[?2004l[?2004h]633;F> ]633;G        with:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - uses: actions/checkout@v3
-[?2004l[?2004h]633;F> ]633;G      - uses: actions/setup-python@v4
-[?2004l[?2004h]633;F> ]633;G        with:
-[?2004l[?2004h]633;F> ]633;G          python-version: "$PYTHON_VERSION"          python-version: "$PYTHON_VERSION"
-
-[?2004l[?2004l[?2004h]633;F> ]633;G      - run: pip install -r requirements/prod.txt -r requirements/dev.txt
-[?2004l[?2004h]633;F> ]633;G      - run: pytest || true
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    # PROD workflow
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/prod.yml <<EOF
-[?2004l[?2004h]633;F> ]633;Gname: Prod Deploy
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  push:
-[?2004l[?2004h]633;F> ]633;G    branches: [prod]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  deploy:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - run: echo "🚀 Deploy production"
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    # DEMO workflow
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/demo.yml <<EOF
-[?2004l[?2004h]633;F> ]633;G      - run: pip install -r requirements/prod.txt -r requirements/dev.txt
-[?2004l[?2004h]633;F> ]633;G      - run: pytest || true
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    # PROD workflow
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/prod.yml <<EOF
-[?2004l[?2004h]633;F> ]633;Gname: Prod Deploy
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  push:
-[?2004l[?2004h]633;F> ]633;G    branches: [prod]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  deploy:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - run: echo "🚀 Deploy production"
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    # DEMO workflow
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/demo.yml <<EOF
-[?2004l[?2004h[?2004h]633;F> ]633;G]633;F> ]633;Gname: Demo Deployname: Demo Deploy
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  pull_request:
-[?2004l[?2004h]633;F> ]633;G    branches: [demo]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  deploy:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - run: echo "🧪 Deploy demo"
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  pull_request:
-[?2004l[?2004h]633;F> ]633;G    branches: [demo]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  deploy:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - run: echo "🧪 Deploy demo"
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l# -------------------
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# MAIN SCRIPT
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# MAIN SCRIPT
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l# -------------------
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D[?2004h]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Blog "🚀 Starting setup for $PROJECT_DIR"
-[?2004l]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Blog "🚀 Starting setup for $PROJECT_DIR"
-[?2004l]633;E;log "🚀 Starting setup for $PROJECT_DIR";f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C[2026-01-24 01:03:52] 🚀 Starting setup for Pharmavium-CRM
-[2026-01-24 01:03:52] 🚀 Starting setup for Pharmavium-CRM
-]633;D;0]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004l]633;E;;f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bif [ ! -d "$PROJECT_DIR" ]; then
-[?2004l[?2004h]633;F> ]633;G    msg="❌ Project directory '$PROJECT_DIR' not found!"
-[?2004l[?2004h]633;F> ]633;G    log "$msg"
-[?2004l[?2004h]633;F> ]633;G    send_telegram "$msg"
-[?2004l[?2004h]633;F> ]633;G    exit 1
-[?2004l[?2004h]633;F> ]633;Gfi
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bif [ ! -d "$PROJECT_DIR" ]; then
-[?2004l[?2004h]633;F> ]633;G    msg="❌ Project directory '$PROJECT_DIR' not found!"
-[?2004l[?2004h]633;F> ]633;G    log "$msg"
-[?2004l[?2004h]633;F> ]633;G    send_telegram "$msg"
-[?2004l[?2004h]633;F> ]633;G    exit 1
-[?2004l[?2004h]633;F> ]633;Gfi
-[?2004l]633;E;[ ! -d "$PROJECT_DIR" ];f70dceb6-d74b-4218-8c5b-0e4902639b75]633;C[2026-01-24 01:03:52] ❌ Project directory 'Pharmavium-CRM' not found!
-[2026-01-24 01:03:52] ❌ Project directory 'Pharmavium-CRM' not found!
-exit
-exit
-]633;D;0]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D[?2004h]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Trap unexpected exit
-[?2004l# Trap unexpected exit
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Btrap 'send_telegram "❌ Script ended unexpectedly at line $LINENO with exit code $?"' EXIT
-[?2004ltrap 'send_telegram "❌ Script ended unexpectedly at line $LINENO with exit code $?"' EXIT
-[?2004l]633;E;trap 'send_telegram "❌ Script ended unexpectedly at line $LINENO with exit code $?"' EXIT;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D;0]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Brun_step() {
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Brun_step() {
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    local step_name="$1"    local step_name="$1"
-[?2004l[?2004h]633;F> ]633;G    shift
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    shift
-[?2004l[?2004h]633;F> ]633;G    log "🚀 Starting: $step_name"
-[?2004l    log "🚀 Starting: $step_name"
-[?2004l[?2004h]633;F> ]633;G    "$@" 
-[?2004l[?2004h]633;F> ]633;G    "$@" 
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    local status=$?
-[?2004l[?2004h]633;F> ]633;G    if [ $status -ne 0 ]; then
-[?2004l[?2004h]633;F> ]633;G        local msg="❌ Step '$step_name' failed with exit code $status"
-[?2004l    local status=$?
-[?2004l[?2004h]633;F> ]633;G    if [ $status -ne 0 ]; then
-[?2004l[?2004h]633;F> ]633;G        local msg="❌ Step '$step_name' failed with exit code $status"
-[?2004l[?2004h]633;F> ]633;G        log "$msg"
-[?2004l[?2004h]633;F> ]633;G        send_telegram "$msg"
-[?2004h]633;F> ]633;G        log "$msg"
-[?2004l[?2004h]633;F> ]633;G        send_telegram "$msg"
-[?2004l[?2004h[?2004l[?2004h]633;F> ]633;G]633;F> ]633;G        exit $status
-[?2004l        exit $status
-[?2004l[?2004h]633;F> ]633;G    fi
-[?2004l[?2004h]633;F> ]633;G    log "✅ Finished: $step_name"
-[?2004l[?2004h]633;F> ]633;G    fi
-[?2004l[?2004h]633;F> ]633;G    log "✅ Finished: $step_name"
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Git branch creation
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Git branch creation
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l# -------------------
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bcreate_branch() {
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bcreate_branch() {
-[?2004l[?2004h]633;F> ]633;G    local branch="$1"
-[?2004l[?2004h]633;F> ]633;G    local branch="$1"
-[?2004l[?2004h[?2004h]633;F> ]633;G    local base="$2"
-[?2004l]633;F> ]633;G    local base="$2"
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    if git show-ref --verify --quiet "refs/heads/$branch"; then
-[?2004l    if git show-ref --verify --quiet "refs/heads/$branch"; then
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G        log "✅ Branch '$branch' exists"
-[?2004l[?2004h]633;F> ]633;G    else
-[?2004l[?2004h]633;F> ]633;G        run_step "Create branch $branch" git checkout -b "$branch" "$base"
-[?2004l[?2004h]633;F> ]633;G        run_step "Push branch $branch" git push origin "$branch"
-[?2004l[?2004h]633;F> ]633;G    fi
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l        log "✅ Branch '$branch' exists"
-[?2004l[?2004h]633;F> ]633;G    else
-[?2004l[?2004h]633;F> ]633;G        run_step "Create branch $branch" git checkout -b "$branch" "$base"
-[?2004l[?2004h]633;F> ]633;G        run_step "Push branch $branch" git push origin "$branch"
-[?2004l[?2004h]633;F> ]633;G    fi
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l# -------------------
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Python dependencies
-[?2004l]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# Python dependencies
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Binstall_dependencies() {
-[?2004linstall_dependencies() {
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    log "📦 Installing Python dependencies..."
-[?2004l    log "📦 Installing Python dependencies..."
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    run_step "Upgrade pip" pip install --upgrade pip
-[?2004l    run_step "Upgrade pip" pip install --upgrade pip
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G    for req in "$REQUIREMENTS_DIR"/*.txt; do
-[?2004l[?2004h]633;F> ]633;G        if [[ -f "$req" ]]; then
-[?2004l[?2004h]633;F> ]633;G            run_step "Install $req" pip install -r "$req"
-[?2004l    for req in "$REQUIREMENTS_DIR"/*.txt; do
-[?2004l[?2004h]633;F> ]633;G        if [[ -f "$req" ]]; then
-[?2004l[?2004h]633;F> ]633;G            run_step "Install $req" pip install -r "$req"
-[?2004l[?2004h[?2004h]633;F> ]633;G]633;F> ]633;G        fi
-[?2004l[?2004h]633;F> ]633;G        fi
-[?2004l[?2004h]633;F> ]633;G    done
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l    done
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# GitHub Actions workflows
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# GitHub Actions workflows
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l# -------------------
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bsetup_github_actions() {
-[?2004l[?2004h]633;F> ]633;G    log "⚙️ Setting up GitHub Actions workflows..."
-[?2004l[?2004h]633;F> ]633;G    mkdir -p .github/workflows
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/dev.yml <<EOF
-[?2004l[?2004h]633;F> ]633;Gname: Dev CI
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  push:
-[?2004l[?2004h]633;F> ]633;G    branches: [dev]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  backend:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bsetup_github_actions() {
-[?2004l[?2004h]633;F> ]633;G    log "⚙️ Setting up GitHub Actions workflows..."
-[?2004l[?2004h]633;F> ]633;G    mkdir -p .github/workflows
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/dev.yml <<EOF
-[?2004l[?2004h]633;F> ]633;Gname: Dev CI
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  push:
-[?2004l[?2004h]633;F> ]633;G    branches: [dev]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  backend:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - uses: actions/checkout@v3
-[?2004l[?2004h]633;F> ]633;G      - uses: actions/setup-python@v4
-[?2004l      - uses: actions/checkout@v3
-[?2004l[?2004h]633;F> ]633;G      - uses: actions/setup-python@v4
-[?2004l[?2004h]633;F> ]633;G        with:
-[?2004l[?2004h]633;F> ]633;G          python-version: "$PYTHON_VERSION"
-[?2004l[?2004h]633;F> ]633;G        with:
-[?2004l[?2004h]633;F> ]633;G          python-version: "$PYTHON_VERSION"
-[?2004l[?2004h]633;F> ]633;G      - run: pip install -r requirements/prod.txt -r requirements/dev.txt
-[?2004h]633;F> ]633;G      - run: pip install -r requirements/prod.txt -r requirements/dev.txt
-[?2004l[?2004l[?2004h]633;F> ]633;G      - run: pytest || true
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/prod.yml <<EOF
-[?2004l[?2004h]633;F> ]633;Gname: Prod Deploy
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  push:
-[?2004l[?2004h[?2004h]633;F> ]633;G      - run: pytest || true
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/prod.yml <<EOF
-[?2004l[?2004h]633;F> ]633;Gname: Prod Deploy
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  push:
-[?2004l[?2004h]633;F> ]633;G    branches: [prod]
-[?2004l]633;F> ]633;G    branches: [prod]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  deploy:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - run: echo "🚀 Deploy production"
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/demo.yml <<EOF  deploy:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - run: echo "🚀 Deploy production"
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    cat > .github/workflows/demo.yml <<EOF
-[?2004l[?2004h]633;F> ]633;Gname: Demo Deploy
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h
-[?2004l[?2004h]633;F> ]633;Gname: Demo Deploy
-[?2004l[?2004h]633;F> ]633;Gon:
-[?2004l[?2004h]633;F> ]633;G  pull_request:
-[?2004l[?2004h]633;F> ]633;G    branches: [demo]
-[?2004l]633;F> ]633;G  pull_request:
-[?2004l[?2004h]633;F> ]633;G    branches: [demo]
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  deploy:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;Gjobs:
-[?2004l[?2004h]633;F> ]633;G  deploy:
-[?2004l[?2004h]633;F> ]633;G    runs-on: ubuntu-latest
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G
-[?2004l[?2004h]633;F> ]633;G    steps:
-[?2004l[?2004h]633;F> ]633;G      - run: echo "🧪 Deploy demo"
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l      - run: echo "🧪 Deploy demo"
-[?2004l[?2004h]633;F> ]633;GEOF
-[?2004l[?2004h]633;F> ]633;G}
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# MAIN SCRIPT
-[?2004l# MAIN SCRIPT
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B# -------------------
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Blog "🚀 Starting setup for $PROJECT_DIR"
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Blog "🚀 Starting setup for $PROJECT_DIR"
-[?2004l]633;E;log "🚀 Starting setup for $PROJECT_DIR";4c57d174-cf4e-498d-abbc-d878897b0152]633;C[2026-01-24 01:06:52] 🚀 Starting setup for Pharmavium-CRM
-[2026-01-24 01:06:52] 🚀 Starting setup for Pharmavium-CRM
-]633;D;0]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;B
-[?2004l]633;E;;4c57d174-cf4e-498d-abbc-d878897b0152]633;C]633;D]633;P;Cwd=/data/data/com.termux/files/home/Pharmavium-CRM[?2004h[?2004h]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bif [ ! -d "$PROJECT_DIR" ]; then
-[?2004l[?2004h]633;F> ]633;G]633;A((.venv) ) ]633;A[0;32m~/Pharmavium-CRM[0m [0;97m$[0m ]633;B]633;Bif [ ! -d "$PROJECT_DIR" ]; then
-[?2004l[?2004h]633;F> ]633;G    msg="❌ Project directory '$PROJECT_DIR' not found!"
-[?2004l[?2004h]633;F> ]633;G    log "$msg"
-[?2004l[?2004h]633;F> ]633;G    send_telegram "$msg"
-[?2004l[?2004h]633;F> ]633;G    exit 1
-[?2004l[?2004h]633;F> ]633;Gfi
-[?2004l    msg="❌ Project directory '$PROJECT_DIR' not found!"
-[?2004l[?2004h]633;F> ]633;G    log "$msg"
-[?2004l[?2004h]633;F> ]633;G    send_telegram "$msg"
-[?2004l[?2004h]633;F> ]633;G    exit 1
-[?2004l[?2004h]633;F> ]633;Gfi
-[?2004l]633;E;[ ! -d "$PROJECT_DIR" ];4c57d174-cf4e-498d-abbc-d878897b0152]633;C[2026-01-24 01:06:52] ❌ Project directory 'Pharmavium-CRM' not found!
-[2026-01-24 01:06:52] ❌ Project directory 'Pharmavium-CRM' not found!
-exit
-exit
-[INFO] 2026-01-24 14:29:04 🚀 Starting Pharmavium setup
-[INFO] 2026-01-24 14:29:04 🚀 Starting Pharmavium setup
-[INFO] 2026-01-24 14:37:55 🚀 Starting Pharmavium setup in /data/data/com.termux/files/home/Pharmavium-CRM
-[INFO] 2026-01-24 14:37:55 🚀 Starting Pharmavium setup in /data/data/com.termux/files/home/Pharmavium-CRM
-[INFO] 2026-01-24 14:37:55 ▶ Fetch git
-[INFO] 2026-01-24 14:37:55 ▶ Fetch git
-[INFO] 2026-01-24 14:37:57 ✔ Fetch git completed
-[INFO] 2026-01-24 14:37:57 ✔ Fetch git completed
-[INFO] 2026-01-24 14:37:57 ▶ Ensure prod branch
-[INFO] 2026-01-24 14:37:57 ▶ Ensure prod branch
-[INFO] 2026-01-24 14:37:57 Branch prod exists
-[INFO] 2026-01-24 14:37:57 Branch prod exists
-[INFO] 2026-01-24 14:37:57 ✔ Ensure prod branch completed
-[INFO] 2026-01-24 14:37:57 ✔ Ensure prod branch completed
-[INFO] 2026-01-24 14:37:57 ▶ Ensure dev branch
-[INFO] 2026-01-24 14:37:57 ▶ Ensure dev branch
-[INFO] 2026-01-24 14:37:57 Branch dev exists
-[INFO] 2026-01-24 14:37:57 Branch dev exists
-[INFO] 2026-01-24 14:37:57 ✔ Ensure dev branch completed
-[INFO] 2026-01-24 14:37:57 ✔ Ensure dev branch completed
-[INFO] 2026-01-24 14:37:58 ▶ Ensure demo branch
-[INFO] 2026-01-24 14:37:58 ▶ Ensure demo branch
-[INFO] 2026-01-24 14:37:58 Branch demo exists
-[INFO] 2026-01-24 14:37:58 Branch demo exists
-[INFO] 2026-01-24 14:37:58 ✔ Ensure demo branch completed
-[INFO] 2026-01-24 14:37:58 ✔ Ensure demo branch completed
-M	create_structure.sh
-M	setup_all.sh
-[INFO] 2026-01-24 14:37:58 ▶ Upgrade pip
-[INFO] 2026-01-24 14:37:58 ▶ Upgrade pip
-Requirement already satisfied: pip in ./.venv/lib/python3.12/site-packages (25.0.1)
-Collecting pip
-  Using cached pip-25.3-py3-none-any.whl.metadata (4.7 kB)
-Using cached pip-25.3-py3-none-any.whl (1.8 MB)
-Installing collected packages: pip
-  Attempting uninstall: pip
-    Found existing installation: pip 25.0.1
-    Uninstalling pip-25.0.1:
-      Successfully uninstalled pip-25.0.1
-Successfully installed pip-25.3
-[INFO] 2026-01-24 14:38:05 ✔ Upgrade pip completed
-[INFO] 2026-01-24 14:38:05 ✔ Upgrade pip completed
-[INFO] 2026-01-24 14:38:05 No requirements directory, skipping
-[INFO] 2026-01-24 14:38:05 No requirements directory, skipping
-[INFO] 2026-01-24 14:38:05 🎉 All done
-[INFO] 2026-01-24 14:38:05 🎉 All done
-[INFO] 2026-01-24 14:41:35 🚀 Starting Pharmavium setup in current directory: /data/data/com.termux/files/home/Pharmavium-CRM
-[INFO] 2026-01-24 14:41:35 🚀 Starting Pharmavium setup in current directory: /data/data/com.termux/files/home/Pharmavium-CRM
-[INFO] 2026-01-24 14:41:35 ▶ Fetch git
-[INFO] 2026-01-24 14:41:35 ▶ Fetch git
-[INFO] 2026-01-24 14:41:37 ✔ Fetch git completed
-[INFO] 2026-01-24 14:41:37 ✔ Fetch git completed
-[INFO] 2026-01-24 14:41:37 ▶ Ensure prod branch
-[INFO] 2026-01-24 14:41:37 ▶ Ensure prod branch
-[INFO] 2026-01-24 14:41:37 Branch prod exists
-[INFO] 2026-01-24 14:41:37 Branch prod exists
-[INFO] 2026-01-24 14:41:37 ✔ Ensure prod branch completed
-[INFO] 2026-01-24 14:41:37 ✔ Ensure prod branch completed
-[INFO] 2026-01-24 14:41:37 ▶ Ensure dev branch
-[INFO] 2026-01-24 14:41:37 ▶ Ensure dev branch
-[INFO] 2026-01-24 14:41:37 Branch dev exists
-[INFO] 2026-01-24 14:41:37 Branch dev exists
-[INFO] 2026-01-24 14:41:37 ✔ Ensure dev branch completed
-[INFO] 2026-01-24 14:41:37 ✔ Ensure dev branch completed
-[INFO] 2026-01-24 14:41:37 ▶ Ensure demo branch
-[INFO] 2026-01-24 14:41:37 ▶ Ensure demo branch
-[INFO] 2026-01-24 14:41:37 Branch demo exists
-[INFO] 2026-01-24 14:41:37 Branch demo exists
-[INFO] 2026-01-24 14:41:37 ✔ Ensure demo branch completed
-[INFO] 2026-01-24 14:41:37 ✔ Ensure demo branch completed
-M	create_structure.sh
-M	setup_all.sh
-[INFO] 2026-01-24 14:41:37 ▶ Upgrade pip
-[INFO] 2026-01-24 14:41:37 ▶ Upgrade pip
-Requirement already satisfied: pip in ./.venv/lib/python3.12/site-packages (25.3)
-[INFO] 2026-01-24 14:41:40 ✔ Upgrade pip completed
-[INFO] 2026-01-24 14:41:40 ✔ Upgrade pip completed
-[INFO] 2026-01-24 14:41:40 No requirements directory, skipping
-[INFO] 2026-01-24 14:41:40 No requirements directory, skipping
-[INFO] 2026-01-24 14:41:40 🎉 All done
-[INFO] 2026-01-24 14:41:40 🎉 All done
-[INFO] 2026-01-24 14:52:12 🚀 Starting Pharmavium setup in current directory: /data/data/com.termux/files/home/Pharmavium-CRM
-[INFO] 2026-01-24 14:52:12 🚀 Starting Pharmavium setup in current directory: /data/data/com.termux/files/home/Pharmavium-CRM
-[INFO] 2026-01-24 14:52:12 🚀 Fetch git
-[INFO] 2026-01-24 14:52:12 🚀 Fetch git
-[32m[OK] 2026-01-24 14:52:14 Fetch git completed[0m
-[32m[OK] 2026-01-24 14:52:14 Fetch git completed[0m
-[INFO] 2026-01-24 14:52:14 🚀 Ensure prod branch
-[INFO] 2026-01-24 14:52:14 🚀 Ensure prod branch
-[32m[OK] 2026-01-24 14:52:14 Branch prod exists[0m
-[32m[OK] 2026-01-24 14:52:14 Branch prod exists[0m
-[32m[OK] 2026-01-24 14:52:14 Ensure prod branch completed[0m
-[32m[OK] 2026-01-24 14:52:14 Ensure prod branch completed[0m
-[INFO] 2026-01-24 14:52:14 🚀 Ensure dev branch
-[INFO] 2026-01-24 14:52:14 🚀 Ensure dev branch
-[32m[OK] 2026-01-24 14:52:15 Branch dev exists[0m
-[32m[OK] 2026-01-24 14:52:15 Branch dev exists[0m
-[32m[OK] 2026-01-24 14:52:15 Ensure dev branch completed[0m
-[32m[OK] 2026-01-24 14:52:15 Ensure dev branch completed[0m
-[INFO] 2026-01-24 14:52:15 🚀 Ensure demo branch
-[INFO] 2026-01-24 14:52:15 🚀 Ensure demo branch
-[32m[OK] 2026-01-24 14:52:15 Branch demo exists[0m
-[32m[OK] 2026-01-24 14:52:15 Branch demo exists[0m
-[32m[OK] 2026-01-24 14:52:15 Ensure demo branch completed[0m
-[32m[OK] 2026-01-24 14:52:15 Ensure demo branch completed[0m
-M	create_structure.sh
-M	setup_all.sh
-[INFO] 2026-01-24 14:52:15 🚀 Upgrade pip
-[INFO] 2026-01-24 14:52:15 🚀 Upgrade pip
-Requirement already satisfied: pip in ./.venv/lib/python3.12/site-packages (25.3)
-[32m[OK] 2026-01-24 14:52:18 Upgrade pip completed[0m
-[32m[OK] 2026-01-24 14:52:18 Upgrade pip completed[0m
-[INFO] 2026-01-24 14:52:18 [INFO] No requirements directory, skipping
-[INFO] 2026-01-24 14:52:18 [INFO] No requirements directory, skipping
-[32m[OK] 2026-01-24 14:52:18 All done[0m
-[32m[OK] 2026-01-24 14:52:18 All done[0m
-[INFO] 2026-01-24 14:55:38 🚀 Starting Pharmavium setup in current directory: /data/data/com.termux/files/home/Pharmavium-CRM
-[INFO] 2026-01-24 14:55:38 🚀 Starting Pharmavium setup in current directory: /data/data/com.termux/files/home/Pharmavium-CRM
-[INFO] 2026-01-24 14:55:38 🚀 Fetch git
-[INFO] 2026-01-24 14:55:38 🚀 Fetch git
-[32m[OK] 2026-01-24 14:55:40 Fetch git completed[0m
-[32m[OK] 2026-01-24 14:55:40 Fetch git completed[0m
-[INFO] 2026-01-24 14:55:40 🚀 Ensure prod branch
-[INFO] 2026-01-24 14:55:40 🚀 Ensure prod branch
-[32m[OK] 2026-01-24 14:55:40 Branch prod exists[0m
-[32m[OK] 2026-01-24 14:55:40 Branch prod exists[0m
-[32m[OK] 2026-01-24 14:55:40 Ensure prod branch completed[0m
-[32m[OK] 2026-01-24 14:55:40 Ensure prod branch completed[0m
-[INFO] 2026-01-24 14:55:40 🚀 Ensure dev branch
-[INFO] 2026-01-24 14:55:40 🚀 Ensure dev branch
-[32m[OK] 2026-01-24 14:55:40 Branch dev exists[0m
-[32m[OK] 2026-01-24 14:55:40 Branch dev exists[0m
-[32m[OK] 2026-01-24 14:55:40 Ensure dev branch completed[0m
-[32m[OK] 2026-01-24 14:55:40 Ensure dev branch completed[0m
-[INFO] 2026-01-24 14:55:40 🚀 Ensure demo branch
-[INFO] 2026-01-24 14:55:40 🚀 Ensure demo branch
-[32m[OK] 2026-01-24 14:55:40 Branch demo exists[0m
-[32m[OK] 2026-01-24 14:55:40 Branch demo exists[0m
-[32m[OK] 2026-01-24 14:55:40 Ensure demo branch completed[0m
-[32m[OK] 2026-01-24 14:55:40 Ensure demo branch completed[0m
-[INFO] 2026-01-24 14:55:40 Already on 'dev'
-M	create_structure.sh
-M	setup_all.sh
-[INFO] 2026-01-24 14:55:40 Already on 'dev'
-M	create_structure.sh
-M	setup_all.sh
-[32m[OK] 2026-01-24 14:55:41 Checked out dev[0m
-[32m[OK] 2026-01-24 14:55:41 Checked out dev[0m
-[INFO] 2026-01-24 14:55:41 🚀 Upgrade pip
-[INFO] 2026-01-24 14:55:41 🚀 Upgrade pip
-Requirement already satisfied: pip in ./.venv/lib/python3.12/site-packages (25.3)
-[32m[OK] 2026-01-24 14:55:43 Upgrade pip completed[0m
-[32m[OK] 2026-01-24 14:55:43 Upgrade pip completed[0m
-[INFO] 2026-01-24 14:55:43 [INFO] No requirements directory, skipping
-[INFO] 2026-01-24 14:55:43 [INFO] No requirements directory, skipping
-[32m[OK] 2026-01-24 14:55:43 All done[0m
-[32m[OK] 2026-01-24 14:55:43 All done[0m
-[INFO] 2026-01-24 14:58:29 🚀 Starting Pharmavium setup in current directory: /data/data/com.termux/files/home/Pharmavium-CRM
-[INFO] 2026-01-24 14:58:29 🚀 Starting Pharmavium setup in current directory: /data/data/com.termux/files/home/Pharmavium-CRM
-[INFO] 2026-01-24 14:58:29 🚀 Fetch git
-[INFO] 2026-01-24 14:58:29 🚀 Fetch git
-[32m[OK] 2026-01-24 14:58:31 Fetch git completed[0m
-[32m[OK] 2026-01-24 14:58:31 Fetch git completed[0m
-[INFO] 2026-01-24 14:58:31 🚀 Ensure prod branch
-[INFO] 2026-01-24 14:58:31 🚀 Ensure prod branch
-[32m[OK] 2026-01-24 14:58:31 Branch prod exists[0m
-[32m[OK] 2026-01-24 14:58:31 Branch prod exists[0m
-[32m[OK] 2026-01-24 14:58:31 Ensure prod branch completed[0m
-[32m[OK] 2026-01-24 14:58:31 Ensure prod branch completed[0m
-[INFO] 2026-01-24 14:58:31 🚀 Ensure dev branch
-[INFO] 2026-01-24 14:58:31 🚀 Ensure dev branch
-[32m[OK] 2026-01-24 14:58:31 Branch dev exists[0m
-[32m[OK] 2026-01-24 14:58:31 Branch dev exists[0m
-[32m[OK] 2026-01-24 14:58:31 Ensure dev branch completed[0m
-[32m[OK] 2026-01-24 14:58:31 Ensure dev branch completed[0m
-[INFO] 2026-01-24 14:58:31 🚀 Ensure demo branch
-[INFO] 2026-01-24 14:58:31 🚀 Ensure demo branch
-[32m[OK] 2026-01-24 14:58:31 Branch demo exists[0m
-[32m[OK] 2026-01-24 14:58:31 Branch demo exists[0m
-[32m[OK] 2026-01-24 14:58:31 Ensure demo branch completed[0m
-[32m[OK] 2026-01-24 14:58:31 Ensure demo branch completed[0m
-[32m[OK] 2026-01-24 14:58:31 Already on 'dev'
-[32m[OK] 2026-01-24 14:58:31 Already on 'dev'
-M	create_structure.sh
-M	setup_all.sh✅[0m
-M	create_structure.sh
-M	setup_all.sh✅[0m
-[INFO] 2026-01-24 14:58:31 🚀 Upgrade pip
-[INFO] 2026-01-24 14:58:31 🚀 Upgrade pip
-Requirement already satisfied: pip in ./.venv/lib/python3.12/site-packages (25.3)
-[32m[OK] 2026-01-24 14:58:33 Upgrade pip completed[0m
-[32m[OK] 2026-01-24 14:58:33 Upgrade pip completed[0m
-[INFO] 2026-01-24 14:58:33 [INFO] No requirements directory, skipping
-[INFO] 2026-01-24 14:58:33 [INFO] No requirements directory, skipping
-[32m[OK] 2026-01-24 14:58:33 All done[0m
-[32m[OK] 2026-01-24 14:58:33 All done[0m

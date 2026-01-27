@@ -1,6 +1,8 @@
-# ==============================
-# Testing Dependencies
-# ==============================
-pytest==8.3.0
-pytest-asyncio==0.22.0
-pytest-cov==4.1.0
+# Testing frameworks
+pytest==8.2.2             # Core testing framework
+pytest-asyncio==0.21.0    # Async support for pytest
+pytest-cov==4.1.0         # Coverage reporting
+requests-mock==1.10.0     # Mock HTTP requests
+factory-boy==3.2.1        # Fixtures / test data generation
+faker==19.0.1             # Fake data generation
+
