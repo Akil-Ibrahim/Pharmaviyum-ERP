@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pharmavium-CRM full project structure creation script
+# PharmaViyum full project structure creation script
 
 # Function to create directories and files
 create_file() {
@@ -9,7 +9,7 @@ create_file() {
     touch "$dir/$file"
 }
 
-echo "Creating Pharmavium-CRM project structure..."
+echo "Creating PharmaViyum project structure..."
 
 # -------------------
 # Root files
@@ -240,4 +240,4 @@ touch docs/api/endpoints.md docs/onboarding/guide.md docs/demo/demo_steps.md
 mkdir -p scripts
 touch scripts/{db_reset.py,rag_rebuild.py,serverless_deploy.py,backup.py}
 
-echo "Pharmavium-CRM full project structure created successfully."
+echo "PharmaViyum full project structure created successfully."
