@@ -2,7 +2,7 @@
 
 ![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![DB](https://img.shields.io/badge/DB-PostgreSQL-blue)
 
-**Pharmavium** is a CRM platform for pharmacies, designed to integrate with existing ERP systems and support pharmacists in client-oriented workflows, order handling, and analytical insights.
+**PharmaViyum** is a CRM platform for pharmacies, designed to integrate with existing ERP systems and support pharmacists in client-oriented workflows, order handling, and analytical insights.
 
 **Core purpose:** centralize client interactions, support pharmacy operations, and enhance service quality without replacing core ERP systems.
 
