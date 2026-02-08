@@ -89,6 +89,6 @@ For technical walkthroughs, architectural discussion, or evaluation access, plea
 **[Your Name]**  
 your.email@example.com
 
-© 2026 Pharmavium. All rights reserved.  
+© 2026 PharmaViyum. All rights reserved.  
 Unauthorized use, copying, or distribution is strictly prohibited.  
 The demo version is protected under NDA and may only be shared with the author’s permission.
