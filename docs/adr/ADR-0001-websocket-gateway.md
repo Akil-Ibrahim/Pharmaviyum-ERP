@@ -4,7 +4,7 @@
 Accepted
 
 ## Context
-Pharmavium CRM requires real-time communication between clients, on-duty pharmacists, and pharmacy managers.  
+PharmaViyum requires real-time communication between clients, on-duty pharmacists, and pharmacy managers.  
 The system must support chat, notifications, and presence updates.  
 
 Currently, the project is a monolith, but we want to design WebSocket support in a modular way that allows future horizontal scaling.
