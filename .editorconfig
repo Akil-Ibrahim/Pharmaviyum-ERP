@@ -1,4 +1,4 @@
-# EditorConfig для PharmaViyum
+rm -rf venv# EditorConfig для PharmaViyum
 # https://editorconfig.org
 
 root = true
