@@ -1,0 +1,163 @@
+[build-system]
+requires = ["hatchling", "versioningit"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pharmaviyum-crm"
+dynamic = ["version"]
+description = "PharmaViyum CRM - AI powered pharmacy management system"
+readme = "README.md"
+long_description_content_type = "text/markdown"
+requires-python = ">=3.11,<3.15"
+license = {text = "MIT"}
+
+authors = [
+    {name = "PharmaViyum", email = "dev@pharmaviyum.com"}
+]
+
+keywords = ["fastapi", "crm", "pharmacy", "ai", "rag", "healthcare"]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Framework :: FastAPI",
+]
+
+dependencies = [
+    # Web / API
+    "fastapi>=0.95,<1",
+    "uvicorn[standard]>=0.30,<1",
+    "httpx>=0.27,<1",
+    "passlib[bcrypt]>=1.7,<2",
+    "authlib>=1.3,<2",
+    "cryptography>=42,<44",
+    "itsdangerous>=2.2,<3",
+
+    # Database
+    "sqlalchemy>=2.0,<3",
+    "sqlmodel>=0.0.23,<1",
+    "alembic>=1.14,<2",
+    "asyncpg>=0.29,<1",
+    "psycopg[binary]>=3.2,<4",
+    "redis>=5.0,<6",
+    "pgvector>=0.2,<1",
+
+    # Background tasks (core)
+    "dramatiq[redis]>=2.0,<3",
+
+    # Validation / Settings
+    "pydantic>=2.7,<3",
+    "pydantic-settings>=2.2,<3",
+    "python-dotenv>=1.0,<2",
+
+    # Serialization
+    "orjson>=3.10,<4",
+    "python-multipart>=0.0.9,<1",
+    "email-validator>=2.1,<3",
+
+    # Observability
+    "structlog>=24,<25",
+    "prometheus-client>=0.20,<1",
+    "sentry-sdk[fastapi]>=2,<3",
+
+    # AI / RAG
+    "openai>=1.30,<2",
+    "tiktoken>=0.7,<1",
+    "numpy>=1.26,<2.1",
+
+    # Utilities
+    "typing-extensions>=4.11"
+]
+
+[project.urls]
+Homepage = "https://pharmaviyum.com"
+Repository = "https://github.com/pharmaviyum/pharmaviyum-crm"
+
+[project.scripts]
+pharmaviyum = "pharmaviyum.cli:main"
+
+[project.entry-points."pharmaviyum.plugins"]
+ai_assistant = "pharmaviyum.plugins.ai:AssistantPlugin"
+sms_twilio = "pharmaviyum.plugins.twilio:TwilioPlugin"
+email_sendgrid = "pharmaviyum.plugins.email:SendgridPlugin"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<9",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-mock",
+    "factory-boy",
+    "faker",
+    "ruff",
+    "mypy>=1.5.1,<2",
+    "pyright",
+    "ipython",
+    "watchfiles",
+    "pre-commit",
+    "bandit",
+]
+prod = [
+    "gunicorn>=21,<22",
+    "uvloop>=0.19,<1",
+]
+celery = ["celery>=5.4,<6"]
+
+[dependency-groups]
+dev = ["project.optional-dependencies.dev"]
+prod = ["project.optional-dependencies.prod"]
+celery = ["project.optional-dependencies.celery"]
+
+[tool.hatch.build]
+packages = ["pharmaviyum"]
+package-dir = {"" = "src"}
+
+[tool.hatch.build.targets.wheel]
+packages = ["pharmaviyum"]
+
+[tool.versioningit]
+default-version = "0.1.0"
+
+[tool.versioningit.vcs]
+method = "git"
+match = ["v*"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+extend-select = ["I"]
+
+[tool.ruff.lint]
+select = ["E","F","I","B","UP","SIM","C4","PERF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pharmaviyum"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+ignore_missing_imports = true
+files = "src/pharmaviyum"
+
+[tool.pytest.ini_options]
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["src/pharmaviyum"]
+
+[tool.coverage.report]
+fail_under = 85
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "async def .*",
+]
