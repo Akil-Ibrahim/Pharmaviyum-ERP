@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/Pharmavium-CRM/.venv/bin/python
+#!/workspaces/PharmaViyum-CRM/.venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys
