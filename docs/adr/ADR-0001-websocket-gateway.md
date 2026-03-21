@@ -48,7 +48,7 @@ Currently, the project is a monolith, but we want to design WebSocket support in
 - `docs/websocket-protocol.md` — message contract
 - `backend/app/api/websocket/` — implementation modules
 
-**Author:** [Your Name]  
+**Author:** [Ibrahim Akil]  
 **Date:** 2026-01-28
 
 
