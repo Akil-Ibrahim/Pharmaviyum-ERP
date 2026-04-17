@@ -1,0 +1,31 @@
+services:
+  backend_api:
+    type: web
+    port: 8000
+    environment:
+      DATABASE_URL: postgres://user:password@db:5432/pharma_db
+      SECRET_KEY: your_secret_key
+    buildCommand: docker build -t backend_api .
+    startCommand: docker run -p 8000:8000 backend_api
+    routes:
+      - src: /
+        dest: backend_api:8000
+
+  rag_service:
+    type: web
+    port: 8001
+    environment:
+      RAG_API_KEY: your_rag_api_key
+    buildCommand: docker build -t rag_service .
+    startCommand: docker run -p 8001:8001 rag_service
+    routes:
+      - src: /
+        dest: rag_service:8001
+
+  notifications_worker:
+    type: worker
+    port: 8002
+    environment:
+      QUEUE_NAME: notifications_queue
+    buildCommand: docker build -t notifications_worker .
+    startCommand: docker run notifications_worker
