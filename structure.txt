@@ -1,0 +1,536 @@
+.
+├── .editorconfig
+├── .env
+├── .env.example
+├── .flake8
+├── .gitignore
+├── CHANGELOG.md
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── Dockerfile
+├── LICENSE
+├── Makefile
+├── README.md
+├── architecture
+│   ├── decision-records
+│   │   ├── 001_auth.md
+│   │   └── 002_rag.md
+│   ├── diagrams
+│   │   ├── architecture.png
+│   │   └── database.png
+│   ├── scalability-notes.md
+│   └── system-design.md
+├── ci-cd
+│   ├── blue_green_deploy.yml
+│   ├── build.yml
+│   ├── canary_deploy.yml
+│   ├── chaos_test.yml
+│   ├── deploy.yml
+│   ├── load_test.yml
+│   ├── security_scan.yml
+│   ├── test.yml
+│   └── trigger_workflow.sh
+├── docker-compose.yml
+├── docs
+│   ├── adr
+│   │   └── ADR-0001-websocket-gateway.md
+│   ├── api
+│   │   └── endpoints.md
+│   ├── demo
+│   │   └── demo_steps.md
+│   ├── high_load
+│   │   ├── load_testing_report.md
+│   │   ├── scaling_guidelines.md
+│   │   └── sla.md
+│   ├── onboarding
+│   │   └── guide.md
+│   └── websocket-protocol.md
+├── frontend
+│   ├── .env
+│   ├── .env.demo
+│   ├── .env.production
+│   ├── .eslintrc.cjs
+│   ├── .gitignore
+│   ├── .prettierrc
+│   ├── index.html
+│   ├── lib
+│   │   └── api-client.ts
+│   ├── package.json
+│   ├── pnpm-lock.yaml
+│   ├── postcss.config.js
+│   ├── public
+│   │   ├── favicon.svg
+│   │   └── robots.txt
+│   ├── src
+│   │   ├── App.tsx
+│   │   ├── assets
+│   │   │   ├── icons
+│   │   │   │   ├── dashboard.svg
+│   │   │   │   ├── order.svg
+│   │   │   │   └── user.svg
+│   │   │   └── images
+│   │   │       ├── banner.jpg
+│   │   │       ├── logo.png
+│   │   │       └── pharmaviyum_logo.png
+│   │   ├── components
+│   │   │   ├── charts
+│   │   │   │   ├── BarChart.tsx
+│   │   │   │   └── LineChart.tsx
+│   │   │   ├── loaders
+│   │   │   │   ├── Skeleton.tsx
+│   │   │   │   └── Spinner.tsx
+│   │   │   ├── table
+│   │   │   │   ├── DataTable.tsx
+│   │   │   │   └── TableRow.tsx
+│   │   │   └── ui
+│   │   │       ├── Button.tsx
+│   │   │       ├── Input.tsx
+│   │   │       └── Modal.tsx
+│   │   ├── error-boundaries
+│   │   │   └── ErrorBoundary.tsx
+│   │   ├── feature_flags
+│   │   │   ├── flags.ts
+│   │   │   └── types.ts
+│   │   ├── features
+│   │   │   ├── auth
+│   │   │   │   └── .gitkeep
+│   │   │   ├── clients
+│   │   │   │   └── .gitkeep
+│   │   │   ├── orders
+│   │   │   │   └── .gitkeep
+│   │   │   ├── products
+│   │   │   │   └── .gitkeep
+│   │   │   ├── rag
+│   │   │   │   ├── rag.api.ts
+│   │   │   │   ├── rag.chat.tsx
+│   │   │   │   ├── rag.store.ts
+│   │   │   │   └── types.ts
+│   │   │   └── reports
+│   │   │       └── .gitkeep
+│   │   ├── hooks
+│   │   │   ├── useAuth.ts
+│   │   │   ├── useDebounce.ts
+│   │   │   ├── useFeatureFlag.ts
+│   │   │   └── usePermissions.ts
+│   │   ├── i18n
+│   │   │   ├── de.json
+│   │   │   ├── en.json
+│   │   │   └── index.ts
+│   │   ├── icons
+│   │   │   ├── custom
+│   │   │   │   ├── CustomDashboardIcon.tsx
+│   │   │   │   ├── CustomOrderIcon.tsx
+│   │   │   │   ├── CustomSettingsIcon.tsx
+│   │   │   │   └── CustomUserIcon.tsx
+│   │   │   ├── index.ts
+│   │   │   └── lucide
+│   │   │       ├── dashboard.svg
+│   │   │       ├── order.svg
+│   │   │       ├── settings.svg
+│   │   │       └── user.svg
+│   │   ├── layouts
+│   │   │   ├── AuthLayout.tsx
+│   │   │   └── MainLayout.tsx
+│   │   ├── main.tsx
+│   │   ├── pages
+│   │   │   ├── ClientsPage.tsx
+│   │   │   ├── DashboardPage.tsx
+│   │   │   ├── LoginPage.tsx
+│   │   │   ├── OrdersPage.tsx
+│   │   │   ├── ProductsPage.tsx
+│   │   │   ├── RagAssistantPage.tsx
+│   │   │   └── ReportsPage.tsx
+│   │   ├── router
+│   │   │   ├── index.tsx
+│   │   │   └── routes.ts
+│   │   ├── services
+│   │   │   ├── auth.service.ts
+│   │   │   ├── http.ts
+│   │   │   ├── pharmaviyum.service.ts
+│   │   │   └── rag.service.ts
+│   │   ├── store
+│   │   │   └── index.ts
+│   │   ├── styles
+│   │   │   ├── index.css
+│   │   │   └── tailwind.css
+│   │   ├── types
+│   │   │   ├── api.ts
+│   │   │   ├── common.ts
+│   │   │   └── user.ts
+│   │   ├── utils
+│   │   │   ├── constants.ts
+│   │   │   ├── env.ts
+│   │   │   ├── formatters.ts
+│   │   │   └── permissions.ts
+│   │   └── websocket
+│   │       ├── client.ts
+│   │       └── types.ts
+│   ├── tailwind.config.js
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   ├── vite.config.ts
+│   └── yarn.lock
+├── gateway
+│   ├── api_gateway.py
+│   ├── rate_limit_config.yaml
+│   └── throttling_rules.py
+├── infra
+│   ├── docker
+│   │   └── docker-compose.override.yml
+│   ├── k8s
+│   │   ├── backend.yaml
+│   │   ├── configmap.yaml
+│   │   ├── ingress.yaml
+│   │   └── rag.yaml
+│   ├── scripts
+│   │   ├── deploy.sh
+│   │   └── scale.sh
+│   └── terraform
+│       ├── main.tf
+│       ├── outputs.tf
+│       └── variables.tf
+├── load_tests
+│   ├── k6
+│   │   ├── config.json
+│   │   └── script.js
+│   ├── locustfile.py
+│   └── readme.md
+├── mobile
+│   └── react-native
+│       ├── App.tsx
+│       ├── package.json
+│       ├── screens
+│       │   ├── ClientScreen.tsx
+│       │   ├── DashboardScreen.tsx
+│       │   └── LoginScreen.tsx
+│       └── tsconfig.json
+├── monitoring
+│   ├── grafana
+│   │   ├── dashboards.json
+│   │   └── datasource.yaml
+│   ├── prometheus
+│   │   └── prometheus.yml
+│   └── sentry
+│       └── sentry_config.yaml
+├── nginx
+│   └── nginx.conf
+├── notifications
+│   ├── email_service.py
+│   ├── push_service.py
+│   ├── sms_service.py
+│   └── templates
+│       ├── client_update.html
+│       └── new_order.html
+├── package.json
+├── playbooks
+│   ├── disaster_recovery.md
+│   ├── incident_response.md
+│   ├── maintenance_tasks.md
+│   └── scaling_guide.md
+├── pyproject.toml
+├── pytest.ini
+├── qa
+│   ├── regression
+│   │   ├── regression_202601.md
+│   │   └── regression_202602.md
+│   ├── test-cases
+│   │   ├── login_tests.md
+│   │   └── orders_tests.md
+│   └── test-plans
+│       ├── sprint1_plan.md
+│       └── sprint2_plan.md
+├── rag
+│   ├── common
+│   │   ├── embeddings.py
+│   │   ├── llm.py
+│   │   ├── permissions.py
+│   │   ├── retrievers.py
+│   │   └── vectorstores.py
+│   ├── configs
+│   │   ├── default.yaml
+│   │   ├── dev.yaml
+│   │   └── prod.yaml
+│   ├── developer
+│   │   ├── demo
+│   │   │   └── docs
+│   │   │       ├── api_guide.md
+│   │   │       └── example_doc.md
+│   │   ├── prod
+│   │   │   └── docs
+│   │   │       ├── api_guide.md
+│   │   │       └── example_doc.md
+│   │   └── prompts
+│   │       ├── dev_prompt1.txt
+│   │       └── dev_prompt2.txt
+│   ├── observability
+│   │   ├── error_tracker.py
+│   │   ├── latency_metrics.py
+│   │   └── request_logger.py
+│   ├── pharmacist
+│   │   ├── demo
+│   │   │   ├── documents
+│   │   │   │   ├── doc1.pdf
+│   │   │   │   ├── doc2.pdf
+│   │   │   │   └── faq.md
+│   │   │   └── prompts
+│   │   │       ├── prompt1.txt
+│   │   │       └── prompt2.txt
+│   │   └── prod
+│   │       ├── documents
+│   │       │   ├── doc1.pdf
+│   │       │   ├── doc2.pdf
+│   │       │   └── faq.md
+│   │       └── prompts
+│   │           ├── prompt1.txt
+│   │           └── prompt2.txt
+│   ├── pipelines
+│   │   ├── cache_layer.py
+│   │   ├── index.py
+│   │   ├── ingest.py
+│   │   └── query.py
+│   ├── scripts
+│   │   ├── clear_cache.py
+│   │   ├── ingest_docs.py
+│   │   └── rebuild_index.py
+│   ├── services
+│   │   ├── analytics_service.py
+│   │   ├── notification_service.py
+│   │   └── rag_orchestrator.py
+│   └── tests
+│       ├── e2e
+│       │   └── test_rag_flow.py
+│       ├── integration
+│       │   └── test_rag_orchestrator.py
+│       └── unit
+│           ├── test_embeddings.py
+│           └── test_retrievers.py
+├── render
+│   ├── backend.yaml
+│   ├── frontend.yaml
+│   └── serverless.yaml
+├── render.yaml
+├── requirements.txt
+├── scripts
+│   ├── backup.py
+│   ├── db_reset.py
+│   ├── rag_rebuild.py
+│   ├── serverless_deploy.py
+│   ├── telegram.sh
+│   ├── telegram_deploy.s
+│   ├── telegram_logs.sh
+│   └── telegram_monitor.sh
+├── security
+│   ├── penetration-tests
+│   │   ├── test_report_202601.md
+│   │   └── test_report_202602.md
+│   ├── security-checklist.md
+│   └── threat-model.md
+├── serverless
+│   ├── README.md
+│   └── functions
+│       ├── analytics_event.py
+│       ├── notify_new_order.py
+│       └── sync_inventory.py
+├── src
+│   └── pharmaviyum
+│       ├── __init__.py
+│       ├── api
+│       │   ├── __init__.py
+│       │   ├── v1
+│       │   │   ├── __init__.py
+│       │   │   ├── auth.py
+│       │   │   ├── clients.py
+│       │   │   ├── endpoints
+│       │   │   │   ├── __init__.py
+│       │   │   │   └── health.py
+│       │   │   ├── erp.py
+│       │   │   ├── models
+│       │   │   │   └── __init__.py
+│       │   │   ├── orders.py
+│       │   │   ├── products.py
+│       │   │   ├── rag.py
+│       │   │   └── users.py
+│       │   └── websocket
+│       │       ├── __init__.py
+│       │       ├── auth.py
+│       │       ├── channels.py
+│       │       ├── events.py
+│       │       ├── handlers
+│       │       │   ├── __init__.py
+│       │       │   ├── chat.py
+│       │       │   ├── notifications.py
+│       │       │   └── presence.py
+│       │       ├── logger.py
+│       │       ├── manager.py
+│       │       ├── redis_pubsub.py
+│       │       ├── router.py
+│       │       └── schemas.py
+│       ├── archiving
+│       │   ├── __init__.py
+│       │   ├── archive_orders.py
+│       │   └── cleanup_old_data.py
+│       ├── audit_logs.py
+│       ├── cache
+│       │   ├── __init__.py
+│       │   ├── cache_utils.py
+│       │   └── redis_config.py
+│       ├── config.py
+│       ├── constants.py
+│       ├── core
+│       │   ├── __init__.py
+│       │   ├── config.py
+│       │   ├── cors.py
+│       │   ├── exceptions.py
+│       │   ├── feature_flags.py
+│       │   ├── logging.py
+│       │   ├── oauth2.py
+│       │   ├── permissions.py
+│       │   ├── rate_limiter.py
+│       │   ├── security.py
+│       │   └── tenancy.py
+│       ├── cqrs
+│       │   ├── __init__.py
+│       │   ├── commands
+│       │   │   ├── __init__.py
+│       │   │   └── create_order.py
+│       │   ├── event_store.py
+│       │   └── queries
+│       │       ├── __init__.py
+│       │       └── get_orders.py
+│       ├── db
+│       │   ├── __init__.py
+│       │   ├── base.py
+│       │   ├── migrations
+│       │   │   ├── __init__.py
+│       │   │   ├── env.py
+│       │   │   ├── script.py.mako
+│       │   │   └── versions
+│       │   │       ├── 20260101_init.py
+│       │   │       ├── 20260215_add_orders_table.py
+│       │   │       ├── 20260320_update_clients.py
+│       │   │       └── __init__.py
+│       │   ├── repository.py
+│       │   ├── seeds
+│       │   │   ├── __init__.py
+│       │   │   ├── clients_seed.py
+│       │   │   ├── products_seed.py
+│       │   │   └── users_seed.py
+│       │   ├── session.py
+│       │   └── unit_of_work.py
+│       ├── dependencies.py
+│       ├── events
+│       │   ├── __init__.py
+│       │   ├── event_bus.py
+│       │   ├── publishers
+│       │   │   ├── __init__.py
+│       │   │   └── order_created.py
+│       │   └── subscribers
+│       │       ├── __init__.py
+│       │       └── notify_user.py
+│       ├── fixtures
+│       │   └── __init__.py
+│       ├── health
+│       │   ├── __init__.py
+│       │   ├── cache_health.py
+│       │   ├── db_health.py
+│       │   └── health_routes.py
+│       ├── healthcheck.py
+│       ├── main.py
+│       ├── metrics
+│       │   ├── __init__.py
+│       │   ├── prometheus_client.py
+│       │   └── routes.py
+│       ├── middleware
+│       │   ├── __init__.py
+│       │   ├── auth_middleware.py
+│       │   ├── error_handler.py
+│       │   └── logging_middleware.py
+│       ├── models
+│       │   ├── __init__.py
+│       │   ├── audit_log.py
+│       │   ├── client.py
+│       │   ├── order.py
+│       │   ├── product.py
+│       │   └── user.py
+│       ├── queue
+│       │   ├── __init__.py
+│       │   └── task_queue.py
+│       ├── repositories
+│       │   ├── __init__.py
+│       │   └── base_repository.py
+│       ├── requirements.txt
+│       ├── schemas
+│       │   ├── __init__.py
+│       │   ├── client_schema.py
+│       │   ├── order_schema.py
+│       │   └── user_schema.py
+│       ├── services
+│       │   ├── __init__.py
+│       │   ├── analytics_service.py
+│       │   ├── base_service.py
+│       │   ├── erp_service.py
+│       │   ├── notification_service.py
+│       │   └── rag_service.py
+│       ├── tasks
+│       │   ├── __init__.py
+│       │   ├── celery_app.py
+│       │   ├── tasks
+│       │   │   ├── __init__.py
+│       │   │   ├── analytics_event.py
+│       │   │   ├── notify_new_order.py
+│       │   │   └── sync_inventory.py
+│       │   └── worker.py
+│       ├── tests
+│       │   └── __init__.py
+│       └── utils
+│           ├── __init__.py
+│           ├── exceptions.py
+│           ├── logger.py
+│           ├── pagination.py
+│           ├── swagger_schemas.py
+│           └── validators.py
+├── structure.txt
+├── tests
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── e2e
+│   │   ├── __init__.py
+│   │   ├── test_end_to_end.py
+│   │   └── test_rag_assistant.py
+│   ├── factories
+│   │   ├── __init__.py
+│   │   ├── client_factory.py
+│   │   ├── order_factory.py
+│   │   └── user_factory.py
+│   ├── fixtures
+│   │   └── __init__.py
+│   ├── integration
+│   │   ├── __init__.py
+│   │   ├── test_erp_integration.py
+│   │   └── test_orders.py
+│   ├── mock_data
+│   │   ├── __init__.py
+│   │   ├── clients.json
+│   │   ├── orders.json
+│   │   └── users.json
+│   ├── unit
+│   │   ├── __init__.py
+│   │   ├── test_clients.py
+│   │   ├── test_products.py
+│   │   └── test_users.py
+│   └── websocket
+│       ├── __init__.py
+│       ├── test_chat.py
+│       └── test_connection.py
+└── ux-ui
+    ├── design-system
+    │   ├── colors.md
+    │   └── typography.md
+    ├── prototypes
+    │   ├── dashboard.fig
+    │   └── login.fig
+    └── wireframes
+        ├── clients.png
+        └── dashboard.png
+
+145 directories, 389 files
