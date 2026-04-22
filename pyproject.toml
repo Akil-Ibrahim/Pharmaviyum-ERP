@@ -8,20 +8,19 @@ dynamic = ["version"]
 description = "PharmaViyum CRM - AI powered pharmacy management system"
 readme = "README.md"
 long_description_content_type = "text/markdown"
-requires-python = ">=3.12,<3.15"
+requires-python = ">=3.13,<3.15"
 license = {text = "MIT"}
 
 authors = [
-{name = "PharmaViyum", email = "dev@pharmaviyum.com"}
+{name = "PharmaViyum"}
 ]
 
 keywords = ["fastapi", "crm", "pharmacy", "ai", "rag", "healthcare"]
 
 classifiers = [
 "Development Status :: 4 - Beta",
-"Programming Language :: Python :: 3.12",
 "Programming Language :: Python :: 3.13",
-"Programming Language :: Python :: 3.14",
+"Programming Language :: Python :: 3.14.3",
 "Framework :: FastAPI",
 ]
 
@@ -73,7 +72,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://pharmaviyum.com"
+
 Repository = "https://github.com/pharmaviyum/pharmaviyum-crm"
 
 [project.scripts]
@@ -141,7 +140,7 @@ known-first-party = ["pharmaviyum"]
 quote-style = "double"
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.14.3"
 strict = true
 ignore_missing_imports = true
 files = "src/pharmaviyum"
@@ -175,7 +174,7 @@ line-length = 100
 target-version = ["py312"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
