@@ -2,7 +2,7 @@
   <img src="assets/logo.png" alt="PharmaViyum Logo" width="300"/>
     <h1>PharmaViyum - Pharmacy CRM</h1>
     </div>
-
+    
 ![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![DB](https://img.shields.io/badge/DB-PostgreSQL-blue)
 
 **PharmaViyum** is a CRM platform for pharmacies, designed to integrate with existing ERP systems and support pharmacists in client-oriented workflows, order handling, and analytical insights.
