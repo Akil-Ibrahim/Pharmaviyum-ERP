@@ -1,4 +1,6 @@
-# 🌿 PharmaViyum
+![PharmaViyum Logo](assets/logo.png)
+
+# PharmaViyum - Pharmacy CRM
 
 ![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![DB](https://img.shields.io/badge/DB-PostgreSQL-blue)
 
