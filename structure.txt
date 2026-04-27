@@ -4,7 +4,6 @@
 ├── CONTRIBUTING.md
 ├── Dockerfile
 ├── LICENSE
-├── Makefile
 ├── README.md
 ├── architecture
 │   ├── decision-records
@@ -17,6 +16,7 @@
 │   └── system-design.md
 ├── assets
 │   └── logo.png
+├── biome.json
 ├── ci-cd
 │   ├── blue_green_deploy.yml
 │   ├── build.yml
@@ -46,18 +46,8 @@
 │   ├── AGENTS.md
 │   ├── CLAUDE.md
 │   ├── README.md
-│   ├── app
-│   │   ├── favicon.ico
-│   │   ├── globals.css
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   ├── components
-│   │   └── ui
-│   │       └── button.tsx
 │   ├── components.json
 │   ├── eslint.config.mjs
-│   ├── lib
-│   │   └── utils.ts
 │   ├── next-env.d.ts
 │   ├── next.config.ts
 │   ├── package.json
@@ -71,17 +61,16 @@
 │   │   ├── vercel.svg
 │   │   └── window.svg
 │   ├── src
+│   │   ├── app
+│   │   │   ├── favicon.ico
+│   │   │   ├── globals.css
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx
 │   │   ├── components
-│   │   │   ├── entities
-│   │   │   │   ├── OrderForm.tsx
-│   │   │   │   └── OrderTable.tsx
 │   │   │   └── ui
-│   │   │       └── data-table.tsx
-│   │   ├── hooks
-│   │   │   └── useOrders.ts
+│   │   │       └── button.tsx
 │   │   └── lib
-│   │       ├── api.ts
-│   │       └── types.ts
+│   │       └── utils.ts
 │   └── tsconfig.json
 ├── gateway
 │   ├── api_gateway.py
@@ -134,13 +123,12 @@
 │   └── templates
 │       ├── client_update.html
 │       └── new_order.html
-├── package-lock.json
-├── package.json
 ├── playbooks
 │   ├── disaster_recovery.md
 │   ├── incident_response.md
 │   ├── maintenance_tasks.md
 │   └── scaling_guide.md
+├── pnpm-lock.yaml
 ├── pyproject.toml
 ├── pytest.ini
 ├── qa
@@ -447,4 +435,4 @@
         ├── clients.png
         └── dashboard.png
 
-123 directories, 325 files
+118 directories, 318 files
