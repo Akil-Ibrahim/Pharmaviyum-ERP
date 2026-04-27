@@ -3,9 +3,9 @@
  * Mirrors FastAPI /api/v1/orders/ endpoints.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { Order } from "@/lib/types";
+import type { Order } from "@/lib/types";
 
 export function useOrders(page = 1, size = 20) {
   const [data, setData] = useState<Order[]>([]);
@@ -17,7 +17,9 @@ export function useOrders(page = 1, size = 20) {
     setError(null);
     try {
       // FastAPI returns paginated JSON. Adjust path to your exact endpoint.
-      const res = await api.get<{ items: Order[] }>(`/orders/?page=${page}&size=${size}`);
+      const res = await api.get<{ items: Order[] }>(
+        `/orders/?page=${page}&size=${size}`,
+      );
       setData(res.items);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch orders");
@@ -26,11 +28,23 @@ export function useOrders(page = 1, size = 20) {
     }
   }, [page, size]);
 
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
-  const createOrder = async (payload: Record<string, unknown>) => api.post<Order>("/orders/", payload);
-  const updateOrder = async (id: string, payload: Record<string, unknown>) => api.put<Order>(`/orders/${id}`, payload);
+  const createOrder = async (payload: Record<string, unknown>) =>
+    api.post<Order>("/orders/", payload);
+  const updateOrder = async (id: string, payload: Record<string, unknown>) =>
+    api.put<Order>(`/orders/${id}`, payload);
   const deleteOrder = async (id: string) => api.delete(`/orders/${id}`);
 
-  return { data, loading, error, refetch: fetchOrders, createOrder, updateOrder, deleteOrder };
+  return {
+    data,
+    loading,
+    error,
+    refetch: fetchOrders,
+    createOrder,
+    updateOrder,
+    deleteOrder,
+  };
 }
