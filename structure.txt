@@ -1,8 +1,4 @@
 .
-├── .editorconfig
-├── .env.example
-├── .flake8
-├── .gitignore
 ├── CHANGELOG.md
 ├── CODE_OF_CONDUCT.md
 ├── CONTRIBUTING.md
@@ -19,6 +15,8 @@
 │   │   └── database.png
 │   ├── scalability-notes.md
 │   └── system-design.md
+├── assets
+│   └── logo.png
 ├── ci-cd
 │   ├── blue_green_deploy.yml
 │   ├── build.yml
@@ -45,8 +43,6 @@
 │   │   └── guide.md
 │   └── websocket-protocol.md
 ├── frontend
-│   ├── .env
-│   ├── .gitignore
 │   ├── AGENTS.md
 │   ├── CLAUDE.md
 │   ├── README.md
@@ -75,8 +71,6 @@
 │   │   ├── vercel.svg
 │   │   └── window.svg
 │   ├── src
-│   │   ├── app
-│   │   │   └── (dashboard)
 │   │   ├── components
 │   │   │   ├── entities
 │   │   │   │   ├── OrderForm.tsx
@@ -140,6 +134,7 @@
 │   └── templates
 │       ├── client_update.html
 │       └── new_order.html
+├── package-lock.json
 ├── package.json
 ├── playbooks
 │   ├── disaster_recovery.md
@@ -253,25 +248,14 @@
 ├── src
 │   └── pharmaviyum
 │       ├── __init__.py
-│       ├── __pycache__
-│       │   ├── __init__.cpython-312.pyc
-│       │   ├── constants.cpython-312.pyc
-│       │   └── main.cpython-312.pyc
 │       ├── api
 │       │   ├── __init__.py
-│       │   ├── __pycache__
-│       │   │   └── __init__.cpython-312.pyc
 │       │   ├── v1
 │       │   │   ├── __init__.py
-│       │   │   ├── __pycache__
-│       │   │   │   └── __init__.cpython-312.pyc
 │       │   │   ├── auth.py
 │       │   │   ├── clients.py
 │       │   │   ├── endpoints
 │       │   │   │   ├── __init__.py
-│       │   │   │   ├── __pycache__
-│       │   │   │   │   ├── __init__.cpython-312.pyc
-│       │   │   │   │   └── health.cpython-312.pyc
 │       │   │   │   └── health.py
 │       │   │   ├── erp.py
 │       │   │   ├── models
@@ -384,8 +368,6 @@
 │       │   └── user.py
 │       ├── queue
 │       │   ├── __init__.py
-│       │   ├── __pycache__
-│       │   │   └── __init__.cpython-312.pyc
 │       │   └── task_queue.py
 │       ├── repositories
 │       │   ├── __init__.py
@@ -416,9 +398,6 @@
 │       │   └── __init__.py
 │       └── utils
 │           ├── __init__.py
-│           ├── __pycache__
-│           │   ├── __init__.cpython-312.pyc
-│           │   └── logger.cpython-312.pyc
 │           ├── exceptions.py
 │           ├── logger.py
 │           ├── pagination.py
@@ -468,4 +447,4 @@
         ├── clients.png
         └── dashboard.png
 
-130 directories, 339 files
+123 directories, 325 files
