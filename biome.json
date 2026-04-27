@@ -18,8 +18,10 @@
     "indentStyle": "space",
     "indentWidth": 2
   },
-  "files": {
-    "includes": ["**/frontend/**/*.{ts,tsx,js,jsx,json,css}"]
+  "vcs": {
+    "clientKind": "git",
+    "useIgnoreFile": true,
+    "enabled": true
   },
   "css": {
     "parser": {
