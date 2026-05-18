@@ -1,6 +1,11 @@
-<div align="center">
-  <img src="assets/logo.png" alt="PharmaViyum Logo" width="100%" style="max-width: 800px;"/>
-    </div>
+<p align="center">
+  <img
+    src="assets/banner.png"
+    alt="PharmaViyum CRM Banner"
+    width="100%"
+    style="border-radius: 18px; max-height: 520px; object-fit: cover;"
+  />
+</p>
 
 ![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![DB](https://img.shields.io/badge/DB-PostgreSQL-blue)
 
