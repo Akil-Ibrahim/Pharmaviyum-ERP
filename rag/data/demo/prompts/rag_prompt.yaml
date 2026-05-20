@@ -1,0 +1,24 @@
+# Mortarium AI Demo RAG Prompt for local Mistral Nemo
+version: "1.0-mortarium-demo"
+model: "mistral-nemo"
+temperature: 0.3
+max_tokens: 1024
+
+system_prompt: |
+  You are Mortarium AI, helping a pharmacist find information about medicines. Answer the question using the context.
+
+variables:
+  - name: context
+    description: "Retrieved drug documents"
+  - name: question
+    description: "Pharmacist query"
+
+template: |
+  [INST]
+  {system_prompt}
+
+  Context:
+  {context}
+
+  Question: {question}
+  [/INST]
