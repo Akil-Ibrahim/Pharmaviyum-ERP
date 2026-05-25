@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pharmaviyum CRM - Frontend
 
-## Getting Started
+Modern admin dashboard for pharmacy management, integrated with ERP systems.
 
-First, run the development server:
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+
+- pnpm (recommended)
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd frontend
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Development
 
-## Learn More
+```bash
+pnpm dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Build
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm build
+pnpm start
+```
 
-## Deploy on Vercel
+## 📚 Technology Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Framework**: Next.js 16.2.4
+- **UI Library**: React 19.2.4
+- **Component System**: Shadcn/UI + Radix UI
+- **Styling**: Tailwind CSS 4
+- **Database**: Drizzle ORM + PostgreSQL (Neon)
+- **Authentication**: Better Auth
+- **Form Validation**: React Hook Form + Zod
+- **State Management**: Zustand
+- **Charts**: Recharts
+- **Type Safety**: TypeScript
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📁 Project Structure
+
+```
+frontend/
+├── src/
+│   ├── app/                # Next.js App Router
+│   ├── components/         # Reusable UI components
+│   ├── lib/               # Utilities and helpers
+│   ├── contexts/          # React contexts (Auth, Theme, Font)
+│   ├── hooks/             # Custom React hooks
+│   ├── db/                # Database schemas and queries
+│   └── config/            # Configuration files
+├── public/                # Static assets
+├── scripts/               # Utility scripts (seeding, etc.)
+└── package.json
+```
+
+## 🔧 Available Scripts
+
+### Development
+```bash
+pnpm dev          # Start development server
+pnpm lint         # Run ESLint
+pnpm format       # Format with Prettier
+```
+
+### Database
+```bash
+pnpm db:generate  # Generate migrations
+pnpm db:migrate   # Run migrations
+pnpm db:push      # Push schema to database
+pnpm db:studio    # Open Drizzle Studio
+pnpm db:seed      # Seed test data
+```
+
+### Production
+```bash
+pnpm build        # Build for production
+pnpm start        # Start production server
+```
+
+## 📖 Features
+
+- ✅ Modern Dashboard
+- ✅ User Management
+- ✅ Authentication (Email/Password, GitHub, Google)
+- ✅ Real-time Analytics
+- ✅ Inventory Management
+- ✅ Order Processing
+- ✅ Dark/Light Theme
+- ✅ Responsive Design
+- ✅ Type-safe Development
+
+## 🔐 Environment Variables
+
+See `.env.example` for required environment variables.
+
+## 📝 License
+
+This project is part of Pharmaviyum CRM platform.
