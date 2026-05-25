@@ -1,0 +1,36 @@
+# Dependency directories
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+
+# Production
+build
+dist
+.next
+out
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Vercel
+.vercel
+
+# Lock files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
