@@ -1,0 +1,91 @@
+"use client";
+
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import {
+  ArrowUpRight,
+  BarChart3,
+  DollarSign,
+  ShoppingCart,
+  TrendingDown,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+
+const performanceMetrics = [
+  {
+    title: "Total Revenue",
+    current: "$54,230",
+    previous: "$48,420",
+    growth: 12.0,
+    icon: DollarSign,
+  },
+  {
+    title: "Active Customers",
+    current: "2,350",
+    previous: "2,234",
+    growth: 5.2,
+    icon: Users,
+  },
+  {
+    title: "Total Orders",
+    current: "1,247",
+    previous: "1,274",
+    growth: -2.1,
+    icon: ShoppingCart,
+  },
+  {
+    title: "Conversion Rate",
+    current: "3.24%",
+    previous: "2.99%",
+    growth: 8.3,
+    icon: BarChart3,
+  },
+];
+
+export function MetricsOverview() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 @5xl:grid-cols-4">
+      {performanceMetrics.map((metric, index) => (
+        <Card key={index} className="border">
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <metric.icon className="text-muted-foreground size-6" />
+              <Badge
+                variant="outline"
+                className={cn(
+                  metric.growth >= 0
+                    ? "border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/20 dark:text-green-400"
+                    : "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/20 dark:text-red-400",
+                )}
+              >
+                {metric.growth >= 0 ? (
+                  <>
+                    <TrendingUp className="me-1 size-3" />+{metric.growth}%
+                  </>
+                ) : (
+                  <>
+                    <TrendingDown className="me-1 size-3" />
+                    {metric.growth}%
+                  </>
+                )}
+              </Badge>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-muted-foreground text-sm font-medium">
+                {metric.title}
+              </p>
+              <div className="text-2xl font-bold">{metric.current}</div>
+              <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                <span>from {metric.previous}</span>
+                <ArrowUpRight className="size-3" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
