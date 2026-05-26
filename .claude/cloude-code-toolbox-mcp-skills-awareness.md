@@ -1,6 +1,6 @@
 # Cloude Code ToolBox — MCP & Skills awareness
 
-_Generated: 2026-05-20T19:40:29.124Z_
+_Generated: 2026-05-26T09:40:01.587Z_
 
 ## How to use this report
 
@@ -13,15 +13,15 @@ _Generated: 2026-05-20T19:40:29.124Z_
 
 ## MCP — workspace
 
-Workspace `mcp.json` _(folder: PharmaViyum-CRM)_
+Workspace `mcp.json` _(folder: Pharmaviyum-CRM)_
 
-- **/workspaces/PharmaViyum-CRM/.mcp.json** — _File missing_
+- **/workspaces/Pharmaviyum-CRM/.mcp.json** — _File missing_
 
 _No active workspace servers in mcp.json._
 
 ## MCP — user profile
 
-- **/home/vscode/.claude.json** — _File missing_
+- **/home/codespace/.claude.json** — _File missing_
 
 _No active user-scoped servers in mcp.json._
 
