@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/pharmaviyum.png" alt="PharmaViyum CRM Banner" width="100%">
+  <img src="assets/pharmaviyum.png" alt="Pharmaviyum CRM Banner" width="100%">
 </p>
 
 ![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![DB](https://img.shields.io/badge/DB-PostgreSQL-blue)
