@@ -1,0 +1,59 @@
+rag
+├── agents
+│   └── mortarium_agent.py
+├── common
+│   ├── embeddings.py
+│   ├── llm.py
+│   ├── permissions.py
+│   ├── retrievers.py
+│   └── vectorstores.py
+├── configs
+│   ├── default.yaml
+│   ├── dev.yaml
+│   └── prod.yaml
+├── context_builders
+│   └── client_context.py
+├── data
+│   ├── demo
+│   │   └── prompts
+│   └── prod
+│       └── prompts
+├── evaluators
+│   └── relevance.py
+├── observability
+│   ├── error_tracker.py
+│   ├── latency_metrics.py
+│   └── request_logger.py
+├── pipelines
+│   ├── cache_layer.py
+│   ├── index.py
+│   ├── ingest.py
+│   ├── query.py
+│   └── rerankers
+│       └── cross_encoder.py
+├── retrievers
+│   ├── hybrid.py
+│   └── keyword.py
+├── routers
+│   └── semantic_router.py
+├── scripts
+│   ├── clear_cache.py
+│   ├── ingest_docs.py
+│   └── rebuild_index.py
+├── services
+│   ├── analytics_service.py
+│   ├── notification_service.py
+│   └── rag_orchestrator.py
+├── tests
+│   ├── e2e
+│   │   └── test_rag_flow.py
+│   ├── integration
+│   │   └── test_rag_orchestrator.py
+│   └── unit
+│       ├── test_embeddings.py
+│       └── test_retrievers.py
+└── tools
+    ├── dosage_calculator.py
+    └── interaction_checker.py
+
+23 directories, 34 files
