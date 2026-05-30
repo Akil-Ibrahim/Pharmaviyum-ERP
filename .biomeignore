@@ -1,8 +1,0 @@
-.next/**/*
-node_modules/**/*
-venv/**/*
-frontend/node_modules/**/*
-frontend/.next/**/*
-**/*.min.js
-**/dist/**/*
-**/build/**/*
