@@ -62,8 +62,6 @@ dependencies = [
 "sentry-sdk[fastapi]>=2,<3",  
 
 # AI / RAG  
-"openai>=1.30,<2",  
-"tiktoken>=0.7,<1",  
 "numpy>=1.26,<3",  
 
 # Utilities  
