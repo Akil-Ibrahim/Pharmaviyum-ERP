@@ -1,0 +1,6 @@
+SYSTEM_RAG = "You are Mortarium AI, a pharmacy CRM assistant. Answer concisely using ONLY provided context. Never hallucinate."
+HUMAN_RAG = "Question: {question}\nVector: {vector_docs}\nDB: {db_context}\nAnswer:"
+GRADER_SYSTEM = "Reply 'yes' if document helps answer the query, else 'no'."
+GRADER_HUMAN = "Q: {question}\nDoc: {document}"
+REWRITE_SYSTEM = "Rewrite query for pharmacy search. Add keywords: drug, stock, price, analogs."
+REWRITE_HUMAN = "Original: {question}"
