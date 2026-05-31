@@ -1,0 +1,92 @@
+# Mortarium AI - Production Docker Compose
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mortarium-api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:pass@db:5432/mortarium_db
+      REDIS_URL: redis://cache:6379/0
+      OTEL_EXPORTER_ENDPOINT: http://otel-collector:4317
+      LOG_LEVEL: INFO
+    volumes:
+      - ./models:/app/models:ro
+      - vector_data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    networks:
+      - mortarium_net
+    restart: unless-stopped
+
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: mortarium-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: mortarium_db
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mortarium_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mortarium_net
+    restart: unless-stopped
+
+  cache:
+    image: redis:7-alpine
+    container_name: mortarium-cache
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mortarium_net
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.110.0
+    container_name: mortarium-otel
+    ports:
+      - "4317:4317"
+    volumes:
+      - ./otel-config.yaml:/etc/otel/config.yaml:ro
+    command: ["--config=/etc/otel/config.yaml"]
+    networks:
+      - mortarium_net
+    depends_on:
+      - jaeger
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.60
+    container_name: mortarium-jaeger
+    ports:
+      - "16686:16686"
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    networks:
+      - mortarium_net
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  redis_data:
+  vector_data:
+
+networks:
+  mortarium_net:
+    driver: bridge

@@ -1,0 +1,47 @@
+# Mortarium AI - Production Dependencies
+
+# Build dependencies
+scikit-build-core>=0.9.0
+
+# FastAPI & ASGI Server
+fastapi==0.136.3
+uvicorn[standard]==0.34.0
+
+# Validation & Settings
+pydantic==2.10.6
+pydantic-settings==2.8.1
+
+# LangGraph & LangChain for RAG orchestration
+langgraph>=0.4.0
+langchain-core>=0.3.45
+langchain-community>=0.3.20
+
+# LLM Inference (GGUF format)
+llama-cpp-python>=0.3.5
+
+# Vector Database
+pgvector==0.3.6
+
+# Database & Cache
+asyncpg==0.30.0
+sqlalchemy[asyncio]>=2.0.38
+redis[hiredis]==5.2.0
+
+# Resilience & Rate Limiting
+tenacity==8.4.1
+slowapi==0.1.9
+
+# Observability
+opentelemetry-api==1.28.1
+opentelemetry-sdk==1.28.1
+opentelemetry-instrumentation-fastapi==0.49b1
+opentelemetry-exporter-otlp-proto-grpc==1.28.1
+structlog==24.4.0
+
+# Embeddings
+sentence-transformers>=3.3.0
+
+# Utilities
+httpx==0.28.1
+python-dotenv==1.0.1
+alembic==1.14.0
