@@ -1,44 +1,58 @@
-FROM python:3.14.5-slim AS builder
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential cmake git libpq-dev curl python3-dev && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install uv
-RUN pip install uv
+# Stage 1: Build environment
+FROM python:3.13-slim AS builder
 
 WORKDIR /build
-COPY requirements.txt .
 
-# Install build dependencies first
-RUN uv pip install --no-cache scikit-build-core pybind11
-
-# Then install main requirements
-RUN uv venv /opt/venv && \
-    . /opt/venv/bin/activate && \
-    uv pip install --no-cache --upgrade pip && \
-    uv pip install --no-cache -r requirements.txt
-
-FROM python:3.14.5-slim AS runtime
-
-RUN groupadd --gid 1000 mortarium && \
-    useradd --uid 1000 --gid 1000 --create-home mortarium
-
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 curl && rm -rf /var/lib/apt/lists/*
+    gcc \
+    libpq-dev \
+    cmake \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/* && apt-get clean
+
+ENV PIP_NO_CACHE_DIR=1 PYTHONUNBUFFERED=1
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Stage 2: Runtime environment
+FROM python:3.13-slim AS runtime
+
+LABEL maintainer="Mortarium AI Team"
+LABEL version="1.0.0"
+
+# Install runtime dependencies INCLUDING curl for health checks
+RUN groupadd --gid 1000 mortarium && \
+    useradd --uid 1000 --gid 1000 --create-home --shell /bin/bash mortarium && \
+    apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/* && apt-get clean
 
 WORKDIR /app
-COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
 
+# Copy packages from builder
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy application code
 COPY --chown=mortarium:mortarium . .
-RUN mkdir -p models data/vector_store logs && chown -R mortarium:mortarium /app
+
+# Create directories
+RUN mkdir -p /app/models /app/data/vector_store /app/logs && \
+    chown -R mortarium:mortarium /app && \
+    chmod -R 750 /app
+
+ENV PYTHONPATH=/app \
+    PYTHONDONTWRITEBYTECODE=1 \
+    MODEL_PATH=/app/models \
+    VECTOR_STORE_PATH=/app/data/vector_store
 
 USER mortarium
+EXPOSE 8000
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-EXPOSE 8000
-CMD ["python", "main.py"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

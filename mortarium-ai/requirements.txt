@@ -1,47 +1,50 @@
-# Mortarium AI - Production Dependencies
+# ==========================================
+# FASTAPI ECOSYSTEM (LATEST STABLE)
+# Modern, fast, async web framework
+# ==========================================
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0  # ASGI server with performance extras
+pydantic>=2.9.0            # Data validation
+pydantic-settings>=2.6.0   # Settings management
+python-multipart>=0.0.9    # Form data parsing
 
-# Build dependencies
-scikit-build-core>=0.9.0
+# ==========================================
+# HTTP & API CLIENTS
+# ==========================================
+httpx>=0.27.0              # Async HTTP client
 
-# FastAPI & ASGI Server
-fastapi==0.136.3
-uvicorn[standard]==0.34.0
+# ==========================================
+# LANGGRAPH & RAG STACK
+# Orchestration for stateful, multi-actor applications
+# ==========================================
+langgraph>=0.2.30          # Graph-based orchestration
+langchain>=0.3.0           # LLM application framework
+langchain-core>=0.3.0      # Core abstractions
+langchain-community>=0.3.0 # Community integrations
 
-# Validation & Settings
-pydantic==2.10.6
-pydantic-settings==2.8.1
+# ==========================================
+# VECTOR DATABASE & EMBEDDINGS
+# NO PYTORCH - Using ONNX-based lightweight models
+# ==========================================
+chromadb>=0.5.0            # Vector database
+fastembed>=0.3.0           # Fast ONNX embeddings (replaces sentence-transformers)
 
-# LangGraph & LangChain for RAG orchestration
-langgraph>=0.4.0
-langchain-core>=0.3.45
-langchain-community>=0.3.20
+# ==========================================
+# DATABASE CONNECTORS
+# ==========================================
+psycopg2-binary>=2.9.9     # PostgreSQL adapter (binary for simplicity)
+redis>=5.0.0               # Redis client for caching/queues
 
-# LLM Inference (GGUF format)
-llama-cpp-python>=0.3.5
+# ==========================================
+# UTILITIES & LOGGING
+# ==========================================
+python-dotenv>=1.0.0       # Environment variables from .env file
+structlog>=24.4.0          # Structured logging
+pyyaml>=6.0.1              # YAML parsing (for configs)
 
-# Vector Database
-pgvector==0.3.6
-
-# Database & Cache
-asyncpg==0.30.0
-sqlalchemy[asyncio]>=2.0.38
-redis[hiredis]==5.2.0
-
-# Resilience & Rate Limiting
-tenacity==8.4.1
-slowapi==0.1.9
-
-# Observability
-opentelemetry-api==1.28.1
-opentelemetry-sdk==1.28.1
-opentelemetry-instrumentation-fastapi==0.49b1
-opentelemetry-exporter-otlp-proto-grpc==1.28.1
-structlog==24.4.0
-
-# Embeddings
-sentence-transformers>=3.3.0
-
-# Utilities
-httpx==0.28.1
-python-dotenv==1.0.1
-alembic==1.14.0
+# ==========================================
+# OPTIONAL: EXTERNAL LLM PROVIDERS
+# Uncomment if using cloud APIs instead of local models
+# ==========================================
+# langchain-openai>=0.2.0  # OpenAI API integration
+# langchain-anthropic>=0.2.0  # Anthropic Claude API
