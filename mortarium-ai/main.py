@@ -1,8 +1,22 @@
-"""Entry point for Uvicorn server."""
-import uvicorn
-from config import settings
-from loguru import logger
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+
+app = FastAPI(
+    title="Mortarium AI",
+    description="Pharmacy RAG System",
+    version="1.0.0"
+)
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "service": "mortarium-ai"}
+
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {"message": "Mortarium AI is running", "docs": "/docs"}
 
 if __name__ == "__main__":
-    logger.info(f"Mortarium AI starting on 0.0.0.0:8000")
-    uvicorn.run("api.server:app", host="0.0.0.0", port=8000, reload=False, workers=1, log_level=settings.LOG_LEVEL.lower(), access_log=True)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

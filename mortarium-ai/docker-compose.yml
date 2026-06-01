@@ -1,51 +1,80 @@
-# Mortarium AI - Production Docker Compose
+version: '3.8'
+
 services:
-  api:
+  mortarium-ai:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: mortarium-api
+    container_name: mortarium-ai
+    restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:pass@db:5432/mortarium_db
-      REDIS_URL: redis://cache:6379/0
-      OTEL_EXPORTER_ENDPOINT: http://otel-collector:4317
-      LOG_LEVEL: INFO
+      # Direct database connection (PgBouncer disabled for now)
+      - DATABASE_URL=postgresql://app_user:changeme@db:5432/pharmaviyum
+      - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./models:/app/models:ro
-      - vector_data:/app/data
+      - ./data:/app/data
+      - ./logs:/app/logs
     depends_on:
+      # pgbouncer:
+      #   condition: service_healthy
+      redis:
+        condition: service_healthy
       db:
         condition: service_healthy
-      cache:
-        condition: service_healthy
     networks:
-      - mortarium_net
-    restart: unless-stopped
+      - mortarium-net
 
   db:
-    image: pgvector/pgvector:pg16
+    image: postgres:15-alpine
     container_name: mortarium-db
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: pass
-      POSTGRES_DB: mortarium_db
+      - POSTGRES_DB=pharmaviyum
+      - POSTGRES_USER=app_user
+      - POSTGRES_PASSWORD=changeme
     volumes:
-      - pg_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d mortarium_db"]
+      test: ["CMD-SHELL", "pg_isready -U app_user -d pharmaviyum"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - mortarium_net
-    restart: unless-stopped
+      - mortarium-net
 
-  cache:
+  # ==========================================
+  # PGBOUNCER - DISABLED (TEMPORARY)
+  # Connection pooler for PostgreSQL
+  # Re-enable when ready for production load
+  # ==========================================
+  # pgbouncer:
+  #   image: edoburu/pgbouncer:latest
+  #   container_name: mortarium-pgbouncer
+  #   restart: unless-stopped
+  #   environment:
+  #     - DATABASE_URL=postgres://app_user:changeme@db:5432/pharmaviyum
+  #     - PGBOUNCER_MAX_CLIENT_CONN=50
+  #     - PGBOUNCER_DEFAULT_POOL_SIZE=20
+  #     - PGBOUNCER_POOL_MODE=transaction
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -h localhost -U app_user -d pharmaviyum -p 6432"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - mortarium-net
+
+  redis:
     image: redis:7-alpine
-    container_name: mortarium-cache
+    container_name: mortarium-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     healthcheck:
@@ -54,39 +83,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - mortarium_net
-    restart: unless-stopped
-
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.110.0
-    container_name: mortarium-otel
-    ports:
-      - "4317:4317"
-    volumes:
-      - ./otel-config.yaml:/etc/otel/config.yaml:ro
-    command: ["--config=/etc/otel/config.yaml"]
-    networks:
-      - mortarium_net
-    depends_on:
-      - jaeger
-    restart: unless-stopped
-
-  jaeger:
-    image: jaegertracing/all-in-one:1.60
-    container_name: mortarium-jaeger
-    ports:
-      - "16686:16686"
-    environment:
-      COLLECTOR_OTLP_ENABLED: "true"
-    networks:
-      - mortarium_net
-    restart: unless-stopped
+      - mortarium-net
 
 volumes:
-  pg_data:
+  postgres_data:
   redis_data:
-  vector_data:
 
 networks:
-  mortarium_net:
+  mortarium-net:
     driver: bridge
