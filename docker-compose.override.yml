@@ -1,0 +1,16 @@
+# Development overrides
+# Automatically applied when running 'docker compose up'
+# Adds code mounting, ports, and debugging features
+
+services:
+  backend:
+    # Mount local source code for hot-reloading during development
+    volumes:
+      - ./src:/app/src
+      - ./logs:/app/logs
+    # Expose backend port for direct access from host
+    ports:
+      - "8000:8000"
+    # Environment variables for development mode
+    environment:
+      - DEBUG=true

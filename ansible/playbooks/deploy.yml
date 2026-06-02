@@ -1,0 +1,56 @@
+---
+# Main deployment playbook for Pharmaviyum-CRM
+# Executes roles in order: system prep → Docker → DB → app → proxy
+
+- name: Prepare pharmacy server infrastructure
+  hosts: pharmacy_servers
+  become: true
+  gather_facts: true
+  roles:
+    - role: docker
+      tags: [docker, infrastructure]
+    - role: postgresql
+      tags: [database, postgresql]
+      when: "'mortarium_ai_servers' not in group_names"
+
+- name: Deploy Pharmaviyum-CRM backend and Mortarium AI
+  hosts: pharmacy_servers
+  become: true
+  gather_facts: false
+  roles:
+    - role: app-backend
+      tags: [backend, api]
+    - role: mortarium-ai
+      tags: [rag, ai, mortarium]
+      when: inventory_hostname in groups['mortarium_ai_servers']
+    - role: nginx
+      tags: [proxy, nginx]
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+    - name: reload docker compose
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_directory }}"
+        state: present
+        restarted: true
+      listen: "restart application"
+
+- name: Post-deployment validation
+  hosts: pharmacy_servers
+  become: false
+  gather_facts: false
+  tasks:
+    - name: Wait for backend to be ready
+      ansible.builtin.uri:
+        url: "http://localhost:{{ backend_port }}/health"
+        status_code: 200
+      register: health_check
+      retries: 10
+      delay: 5
+      until: health_check.status == 200
+
+    - name: Log deployment success
+      ansible.builtin.debug:
+        msg: "✅ Pharmaviyum-CRM deployed successfully on {{ inventory_hostname }}"
