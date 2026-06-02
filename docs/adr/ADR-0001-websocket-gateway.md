@@ -14,7 +14,7 @@ Currently, the project is a monolith, but we want to design WebSocket support in
 - Use a single `/ws` endpoint with JWT authentication.
 - Version the protocol (`v1`) for backward compatibility.
 - Define channels/rooms based on roles:
-  - `client:{id}`
+  - `clients:{id}`
   - `pharmacy:{id}`
   - `duty:{city}`
   - `admins`
