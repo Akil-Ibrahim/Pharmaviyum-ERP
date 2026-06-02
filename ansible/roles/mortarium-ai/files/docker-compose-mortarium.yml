@@ -1,0 +1,63 @@
+# Docker Compose for Mortarium AI RAG Service
+# Qwen3-8B-Instruct with vector store and embeddings
+
+services:
+  # Mortarium AI RAG Service
+  mortarium-ai:
+    build:
+      context: ../../../mortarium-ai
+      dockerfile: Dockerfile
+    container_name: mortarium-ai
+    restart: unless-stopped
+    env_file:
+      - ./mortarium/.env
+    environment:
+      - MODEL_PATH=${MODEL_PATH:-/app/models/Qwen3-8B-Instruct-Q4_K_M.gguf}
+      - VECTOR_STORE_PATH=${VECTOR_STORE_PATH:-/app/data/vector_store}
+      - CONTEXT_LENGTH=${CONTEXT_LENGTH:-32000}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-http://backend:8000/v1}
+    volumes:
+      # Mount models directory (host path for large model files)
+      - ${HOST_MODEL_PATH:-./models}:/app/models:ro
+      # Vector store for embeddings persistence
+      - mortarium_vector_store:/app/data/vector_store
+      # Application logs
+      - ./logs:/app/logs
+    ports:
+      - "${MORTARIUM_PORT:-8001}:8000"
+    # Resource limits for pharmacy PCs with limited RAM
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s  # GGUF model loading can be slow
+    networks:
+      - pharmaviyum-network
+    # Ensure backend is available for API calls
+    depends_on:
+      - backend
+
+  # Backend dependency (reference to main compose)
+  # Note: In production, run both services together or use external network
+  backend:
+    external: true
+    name: pharmaviyum-backend
+
+volumes:
+  mortarium_vector_store:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${VECTOR_STORE_PATH:-./data/vector_store}
+      o: bind
+
+networks:
+  pharmaviyum-network:
+    external: true

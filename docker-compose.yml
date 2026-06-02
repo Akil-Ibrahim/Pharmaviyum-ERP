@@ -1,0 +1,64 @@
+# Base configuration for Pharmaviyum-CRM stack
+# Contains core services, volumes, and network definitions
+# This file is inherited by both development and production setups
+
+services:
+  # PostgreSQL Database Service
+  # Handles data persistence for the CRM application
+  db:
+    image: postgres:15-alpine
+    container_name: pharmaviyum-db
+    restart: unless-stopped
+    environment:
+      # Database credentials loaded from environment variables or defaults
+      POSTGRES_DB: ${POSTGRES_DB:-pharmaviyum}
+      POSTGRES_USER: ${POSTGRES_USER:-app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      # Persistent volume for database data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # Checks if PostgreSQL is ready to accept connections
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user} -d ${POSTGRES_DB:-pharmaviyum}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pharmaviyum-network
+
+  # Redis Cache Service
+  # Used for session management and caching
+  redis:
+    image: redis:7-alpine
+    container_name: pharmaviyum-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - pharmaviyum-network
+
+  # FastAPI Backend Service
+  # Main application entry point
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pharmaviyum-backend
+    restart: unless-stopped
+    # Backend depends on DB being healthy before starting
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - pharmaviyum-network
+
+# Internal network for container communication
+networks:
+  pharmaviyum-network:
+    driver: bridge
+
+# Docker volumes for data persistence
+volumes:
+  postgres_data:
+  redis_data:

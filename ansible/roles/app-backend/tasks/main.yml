@@ -1,0 +1,37 @@
+---
+# Deploy Pharmaviyum-CRM FastAPI backend
+# Handles directory structure, env injection, and container orchestration
+
+- name: Ensure backend deployment directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    mode: "0755"
+  loop:
+    - "{{ app_directory }}/backend"
+    - "{{ app_directory }}/logs"
+
+- name: Deploy backend Docker Compose configuration
+  ansible.builtin.copy:
+    src: files/docker-compose-backend.yml
+    dest: "{{ app_directory }}/docker-compose.yml"
+    mode: "0644"
+
+- name: Write backend .env from vaulted variable
+  ansible.builtin.copy:
+    content: "{{ vault_backend_env }}"
+    dest: "{{ app_directory }}/backend/.env"
+    mode: "0600"
+    owner: "{{ deploy_user }}"
+
+- name: Start production stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_directory }}"
+    files:
+      - docker-compose.yml
+      - docker-compose.prod.yml
+    state: present
+    build: false  # In production, build on CI/CD, just pull images here
+    pull: always
+    remove_orphans: true
