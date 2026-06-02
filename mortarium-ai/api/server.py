@@ -5,7 +5,10 @@ Includes caching, rate limiting, and OpenTelemetry tracing.
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+try:
+    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+except ImportError:  # pragma: no cover
+    FastAPIInstrumentor = None
 from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -32,7 +35,8 @@ async def lifespan(app: FastAPI):
     logger.info("Mortarium AI shut down")
 
 app = FastAPI(title="Mortarium AI API", version="2.2.0", lifespan=lifespan)
-FastAPIInstrumentor.instrument_app(app)
+if FastAPIInstrumentor is not None:
+    FastAPIInstrumentor.instrument_app(app)
 app.add_middleware(RequestIDMiddleware)
 setup_cors(app)
 app.state.limiter = Limiter(key_func=get_remote_address)
@@ -46,7 +50,8 @@ class QueryResponse(BaseModel):
     answer: str
     sources: list[dict]
     cached: bool
-    processing_ms: float    request_id: str
+    processing_ms: float
+    request_id: str
 
 @app.get("/health")
 async def health():

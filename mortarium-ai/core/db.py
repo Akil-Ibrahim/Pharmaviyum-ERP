@@ -1,3 +1,4 @@
+from sqlalchemy import Column, Integer, Text, JSON
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from pgvector.sqlalchemy import Vector
@@ -18,10 +19,10 @@ async def init_db_extensions():
 
 class PharmacyDocument(Base):
     __tablename__ = "pharmacy_documents"
-    id = Base.Column("id", Base.Integer, primary_key=True)
-    content = Base.Column("content", Base.Text, nullable=False)
-    metadata_ = Base.Column("metadata", Base.JSON, default={})
-    embedding = Base.Column("embedding", Vector(384))
+    id = Column("id", Integer, primary_key=True)
+    content = Column("content", Text, nullable=False)
+    metadata_ = Column("metadata", JSON, default={})
+    embedding = Column("embedding", Vector(384))
 
 async def get_db_session():
     async with async_session_factory() as session:
