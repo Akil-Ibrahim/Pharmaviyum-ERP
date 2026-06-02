@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "PharmaViyum CRM - AI powered pharmacy management system"
 readme = "README.md"
 long_description_content_type = "text/markdown"
-requires-python = ">=3.13,<3.15"
+requires-python = ">=3.13,<3.14"
 license = {text = "MIT"}
 
 authors = [
@@ -20,7 +20,6 @@ keywords = ["fastapi", "crm", "pharmacy", "ai", "rag", "healthcare"]
 classifiers = [
 "Development Status :: 4 - Beta",
 "Programming Language :: Python :: 3.13",
-"Programming Language :: Python :: 3.14.3",
 "Framework :: FastAPI",
 ]
 
@@ -123,10 +122,13 @@ method = "git"
 match = ["v*"]
 
 [tool.ruff]
-line-length = 88
-target-version = "py311"
+line-length = 100
+target-version = ["py313"]
 extend-select = ["I"]
 extend-ignore = ["E203"]
+select = ["E", "F", "I", "B", "UP", "SIM", "C4", "PERF"]
+ignore = ["E501"]
+exclude = [".git", "__pycache__", ".venv", "build", "dist"]
 
 [tool.ruff.lint]
 select = ["E","F","I","B","UP","SIM","C4","PERF"]
@@ -138,10 +140,13 @@ known-first-party = ["pharmaviyum"]
 quote-style = "double"
 
 [tool.mypy]
-python_version = "3.14.3"
+python_version = "3.13"
 strict = true
 ignore_missing_imports = true
 files = "src/pharmaviyum"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
 
 [tool.pytest.ini_options]
 addopts = "-ra -q --strict-markers"
@@ -160,19 +165,6 @@ exclude_lines = [
 "async def .*",
 ]
 
-[tool.ruff]
-line-length = 100
-target-version = "py312"
-select = ["E", "F", "W", "I", "C", "B"]
-ignore = ["E501"]
-exclude = [".git", "__pycache__", ".venv", "build", "dist"]
-
 [tool.black]
 line-length = 100
-target-version = ["py312"]
-
-[tool.mypy]
-python_version = "3.14"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = false
+target-version = ["py313"]
