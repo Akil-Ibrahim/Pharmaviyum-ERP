@@ -13,6 +13,8 @@ This file helps AI coding agents work effectively in the Pharmaviyum demo reposi
 - Default model path is `mortarium-ai/models/Qwen3-8B-Instruct-Q4_K_M.gguf` via `mortarium-ai/config.py`.
 - If the model file is missing, the service falls back to a mock LLM implementation to keep startup working.
 - The loader uses `langchain_community.llms.LlamaCpp` with `chat_format="qwen2"`.
+- The Mortarium AI service can work with any Qwen GGUF model, including Qwen 3.6 or 3.7 versions, by setting `MODEL_PATH` appropriately.
+- Use `MODEL_PATH` to select the exact model file rather than changing code.
 - Configuration defaults are controlled by environment variables and the `.env` file in `mortarium-ai`.
 - Best practice: keep `MODEL_PATH` in `mortarium-ai/.env` and mount model files read-only into `mortarium-ai/models/`.
 
@@ -36,6 +38,6 @@ This file helps AI coding agents work effectively in the Pharmaviyum demo reposi
 - Do not assume the Qwen model is present in the repo; model files are external assets and may be mounted at runtime.
 
 ## Notes
-- There is no existing `AGENTS.md` or `.github/copilot-instructions.md` in this repository.
+- The repository includes a developer Copilot persona file at `.github/copilot-instructions.md`.
 - The frontend workflow at `frontend/shadcn-admin/.github/workflows/claude-review.yml` references `CLAUDE.md`, but this repo does not currently include that file.
 - Use documentation links rather than duplicating full content from existing docs.
