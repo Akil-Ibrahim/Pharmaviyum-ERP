@@ -1,117 +1,67 @@
 version: '3.8'
 
 services:
-mortarium-ai:
-build:
-context: .
-dockerfile: Dockerfile
-container_name: mortarium-ai
-restart: unless-stopped
-ports:
-- "8001:8000"
-environment:
-# Direct database connection (PgBouncer disabled for now)
-- DATABASE_URL=postgresql://app_user:changeme@db:5432/pharmaviyum
-- REDIS_URL=redis://redis:6379/0
-volumes:
-- ./models:/app/models:ro
-- ./data:/app/data
-- ./logs:/app/logs
-depends_on:
-# pgbouncer:
-#   condition: service_healthy
-redis:
-condition: service_healthy
-db:
-condition: service_healthy
-networks:
-- mortarium-net
+  mortarium-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mortarium-ai
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      - DATABASE_URL=postgresql://app_user:changeme@db:5432/pharmaviyum
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./models:/app/models:ro
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - mortarium-net
+    command: uvicorn api.server:app --host 0.0.0.0 --port 8000
 
-db:
-image: postgres:15-alpine
-container_name: mortarium-db
-restart: unless-stopped
-environment:
-- POSTGRES_DB=pharmaviyum
-- POSTGRES_USER=app_user
-- POSTGRES_PASSWORD=changeme
-volumes:
-- postgres_data:/var/lib/postgresql/data
-healthcheck:
-test: ["CMD-SHELL", "pg_isready -U app_user -d pharmaviyum"]
-interval: 10s
-timeout: 5s
-retries: 5
-networks:
-- mortarium-net
+  db:
+    image: postgres:15-alpine
+    container_name: mortarium-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=pharmaviyum
+      - POSTGRES_USER=app_user
+      - POSTGRES_PASSWORD=changeme
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d pharmaviyum"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mortarium-net
 
-==========================================
-
-PGBOUNCER - DISABLED (TEMPORARY)
-
-Connection pooler for PostgreSQL
-
-Re-enable when ready for production load
-
-==========================================
-
-pgbouncer:
-
-image: edoburu/pgbouncer:latest
-
-container_name: mortarium-pgbouncer
-
-restart: unless-stopped
-
-environment:
-
-- DATABASE_URL=postgres://app_user:changeme@db:5432/pharmaviyum
-
-- PGBOUNCER_MAX_CLIENT_CONN=50
-
-- PGBOUNCER_DEFAULT_POOL_SIZE=20
-
-- PGBOUNCER_POOL_MODE=transaction
-
-depends_on:
-
-db:
-
-condition: service_healthy
-
-healthcheck:
-
-test: ["CMD-SHELL", "pg_isready -h localhost -U app_user -d pharmaviyum -p 6432"]
-
-interval: 10s
-
-timeout: 5s
-
-retries: 5
-
-networks:
-
-- mortarium-net
-
-redis:
-image: redis:7-alpine
-container_name: mortarium-redis
-restart: unless-stopped
-command: redis-server --appendonly yes
-volumes:
-- redis_data:/data
-healthcheck:
-test: ["CMD", "redis-cli", "ping"]
-interval: 10s
-timeout: 5s
-retries: 5
-networks:
-- mortarium-net
+  redis:
+    image: redis:7-alpine
+    container_name: mortarium-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mortarium-net
 
 volumes:
-postgres_data:
-redis_data:
+  postgres_data:
+  redis_data:
 
 networks:
-mortarium-net:
-driver: bridge
+  mortarium-net:
+    driver: bridge
