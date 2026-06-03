@@ -2,7 +2,7 @@
 """Простой CLI-клиент для работы с локальным Mortarium AI (Qwen-based).
 
 Пример:
-  python tools/qwen_dev_agent.py --question "Объясни функцию в src/..." 
+  python tools/qwen_dev_agent.py --question "Объясни функцию в src/..."
 """
 import argparse
 import json

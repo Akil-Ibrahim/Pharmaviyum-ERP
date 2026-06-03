@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS pharmacy_documents (
 );
 
 -- Create index for efficient cosine similarity search
-CREATE INDEX IF NOT EXISTS idx_pharmacy_documents_embedding 
-ON pharmacy_documents 
-USING ivfflat (embedding vector_cosine_ops) 
+CREATE INDEX IF NOT EXISTS idx_pharmacy_documents_embedding
+ON pharmacy_documents
+USING ivfflat (embedding vector_cosine_ops)
 WITH (lists = 100);
 
 -- Grant permissions

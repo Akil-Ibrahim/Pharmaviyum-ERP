@@ -23,5 +23,3 @@ _send_telegram() {
 send_info()    { _send_telegram "ℹ️ *INFO*\n$1"; }
 send_success() { _send_telegram "✅ *SUCCESS*\n$1"; }
 send_error()   { _send_telegram "❌ *ERROR*\n$1"; }
-
-

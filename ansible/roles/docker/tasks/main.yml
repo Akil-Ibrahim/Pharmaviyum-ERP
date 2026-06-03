@@ -2,7 +2,7 @@
 # Install and configure Docker Engine for containerized deployment
 
 - name: Install prerequisite packages
-  apt:
+  ansible.builtin.apt:
     name:
       - apt-transport-https
       - ca-certificates
@@ -11,42 +11,42 @@
       - lsb-release
     state: present
     update_cache: true
-  tags: docker-install
+  tags: [docker-install]
 
 - name: Add Docker GPG key
-  apt_key:
+  ansible.builtin.apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
     state: present
-  tags: docker-install
+  tags: [docker-install]
 
 - name: Add Docker repository
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable"
     state: present
     filename: docker
-  tags: docker-install
+  tags: [docker-install]
 
 - name: Install Docker Engine and Compose plugin
-  apt:
+  ansible.builtin.apt:
     name:
       - docker-ce
       - docker-ce-cli
       - containerd.io
       - docker-compose-plugin
     state: present
-  tags: docker-install
+  tags: [docker-install]
 
 - name: Add deploy user to docker group
-  user:
+  ansible.builtin.user:
     name: "{{ deploy_user }}"
     groups: docker
     append: true
-  tags: docker-config
+  tags: [docker-config]
 
 - name: Enable and start Docker service
-  systemd:
+  ansible.builtin.systemd:
     name: docker
     enabled: true
     state: started
     daemon_reload: true
-  tags: docker-service
+  tags: [docker-service]

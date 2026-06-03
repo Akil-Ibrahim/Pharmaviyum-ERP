@@ -35,10 +35,10 @@ def client(db_session):
     """Create test client"""
     from src.pharmaviyum.main import app
     from src.pharmaviyum.dependencies import get_db
-    
+
     app.dependency_overrides[get_db] = lambda: db_session
-    
+
     with TestClient(app) as test_client:
         yield test_client
-    
+
     app.dependency_overrides.clear()

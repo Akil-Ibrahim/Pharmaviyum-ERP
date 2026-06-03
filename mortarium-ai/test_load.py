@@ -45,27 +45,27 @@ def run_concurrency_test(num_workers: int = 5):
     """
     print(f"🚀 Starting Load Test: {num_workers} concurrent workers")
     results = []
-    
+
     # Fire requests simultaneously
     with ThreadPoolExecutor(max_workers=num_workers) as executor:
         futures = [executor.submit(send_request, i) for i in range(num_workers)]
         for future in as_completed(futures):
             results.append(future.result())
-            
+
     # Analyze results
     successful = [r for r in results if r["success"]]
     failed = [r for r in results if not r["success"]]
     cached_count = sum(1 for r in successful if r["cached"])
-    
+
     print(f"\n📊 Results Summary:")
     print(f"   ✅ Success: {len(successful)} / {num_workers}")
     print(f"   ❌ Failed: {len(failed)}")
     print(f"   💾 Cache Hits: {cached_count}")
-    
+
     if successful:
         avg_api_time = sum(r["api_time"] for r in successful) / len(successful)
         print(f"   ⏱️  Avg API Latency: {avg_api_time:.2f}ms")
-        
+
     if failed:
         print(f"\n❌ Errors detected:")
         for f in failed:

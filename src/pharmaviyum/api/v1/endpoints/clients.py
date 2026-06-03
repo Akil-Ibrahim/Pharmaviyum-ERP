@@ -84,7 +84,7 @@ async def get_client_recommendations(
     client = await crud.get(client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    
+
     prompt = ClientContextBuilder.build_prompt(client)
     # TODO: Connect to Mortarium AI
     return {

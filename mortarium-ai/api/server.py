@@ -71,12 +71,12 @@ async def readiness():
 async def ask(req: QueryRequest, request: Request):
     metadata = {"user_id": req.user_id, "pharmacy_id": req.pharmacy_id}
     cache_key = _build_cache_key(req.question, metadata)
-    
+
     # Check cache first
     cached = await get_cached_response(cache_key)
     if cached:
         return QueryResponse(**cached, cached=True, processing_ms=0.0, request_id=request.state.request_id)
-    
+
     start = asyncio.get_event_loop().time()
     try:
         state = {
@@ -89,13 +89,13 @@ async def ask(req: QueryRequest, request: Request):
         }
         # Execute LangGraph workflow in threadpool to avoid blocking event loop
         result = await run_in_threadpool(graph.invoke, state)
-        
+
         response_data = {
             "answer": result["generation"],
             "sources": result["documents"][:3]
         }
         await cache_response(cache_key, response_data)
-        
+
         elapsed_ms = (asyncio.get_event_loop().time() - start) * 1000
         return QueryResponse(**response_data, cached=False, processing_ms=round(elapsed_ms, 2), request_id=request.state.request_id)
     except Exception as e:

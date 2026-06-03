@@ -1,6 +1,5 @@
 ---
 # Automated PostgreSQL backup playbook for Pharmaviyum-CRM
-# Usage: ansible-playbook playbooks/backup.yml --ask-vault-pass
 
 - name: Backup PostgreSQL and manage retention
   hosts: pharmacy_servers
@@ -20,15 +19,16 @@
         backup_ts: "{{ ansible_date_time.iso8601_basic_short }}"
 
     - name: Create compressed PostgreSQL dump
-      ansible.builtin.shell: |
-        docker compose -f {{ app_directory }}/docker-compose.yml exec -T db \
-          pg_dump -U {{ postgres_user }} -d {{ postgres_db }} \
-          | gzip > "{{ app_directory }}/backups/pharmaviyum_{{ backup_ts }}.sql.gz"
+      ansible.builtin.shell: >
+        set -o pipefail &&
+        docker compose -f {{ app_directory }}/docker-compose.yml
+        exec -T db pg_dump -U {{ postgres_user }} -d {{ postgres_db }}
+        | gzip > "{{ app_directory }}/backups/pharmaviyum_{{ backup_ts }}.sql.gz"
       args:
         executable: /bin/bash
       changed_when: true
 
-    - name: Find backups older than retention period
+    - name: Find old backups
       ansible.builtin.find:
         paths: "{{ app_directory }}/backups"
         patterns: "pharmaviyum_*.sql.gz"
@@ -46,6 +46,7 @@
         name: "Pharmaviyum DB Backup"
         minute: "0"
         hour: "2"
-        job: "ansible-playbook /opt/ansible/playbooks/backup.yml --vault-password-file /opt/ansible/vault.key > /dev/null 2>&1"
+        job: "ansible-playbook /opt/ansible/playbooks/backup.yml
+              --vault-password-file /opt/ansible/vault.key"
         user: root
       when: backup_enabled | bool

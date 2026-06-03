@@ -42,5 +42,3 @@ send_logs() {
         send_log "$log_file"
     done
 }
-
-

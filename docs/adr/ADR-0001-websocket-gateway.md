@@ -4,8 +4,8 @@
 Accepted
 
 ## Context
-PharmaViyum requires real-time communication between clients, on-duty pharmacists, and pharmacy managers.  
-The system must support chat, notifications, and presence updates.  
+PharmaViyum requires real-time communication between clients, on-duty pharmacists, and pharmacy managers.
+The system must support chat, notifications, and presence updates.
 
 Currently, the project is a monolith, but we want to design WebSocket support in a modular way that allows future horizontal scaling.
 
@@ -48,7 +48,5 @@ Currently, the project is a monolith, but we want to design WebSocket support in
 - `docs/websocket-protocol.md` — message contract
 - `backend/app/api/websocket/` — implementation modules
 
-**Author:** [Ibrahim Akil]  
+**Author:** [Ibrahim Akil]
 **Date:** 2026-01-28
-
-
