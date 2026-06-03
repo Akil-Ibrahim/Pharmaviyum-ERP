@@ -49,5 +49,3 @@ else
     send_error "❌ Failed to trigger workflow $workflow on $ref"
     exit 1
 fi
-
-

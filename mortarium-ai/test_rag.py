@@ -41,20 +41,20 @@ def validate_response(data: dict) -> bool:
     """
     required_fields = ["answer", "sources", "cached", "processing_ms", "request_id"]
     missing = [f for f in required_fields if f not in data]
-    
+
     if missing:
         print(f"❌ Schema validation failed. Missing fields: {missing}")
         return False
-    
+
     if not isinstance(data["answer"], str):        print("❌ 'answer' field is not a string.")
         return False
-        
+
     return True
 
 def run_test_scenario(description: str, question: str, expected_contains: str = None):
     """
     Helper to run a single test scenario.
-    
+
     Args:
         description: Test case name
         question: The user query
@@ -62,11 +62,11 @@ def run_test_scenario(description: str, question: str, expected_contains: str = 
     """
     print(f"\n🧪 [Test]: {description}")
     print(f"❓ Query: {question}")
-    
+
     start = time.time()
     result = send_query(question)
     duration = time.time() - start
-    
+
     if result is None:
         print("❌ FAILED: No response from API")
         return
@@ -89,23 +89,23 @@ def run_test_scenario(description: str, question: str, expected_contains: str = 
 
 if __name__ == "__main__":
     print(" Starting Mortarium AI LangGraph Tests...")
-    
+
     # Test 1: Basic retrieval
     run_test_scenario(
         description="Basic Drug Retrieval",
         question="What are the analogs of Nurofen?",
         expected_contains="ibuprofen"
-    )    
+    )
     # Test 2: Structured Data (Postgres)
     run_test_scenario(
         description="Inventory Check (Postgres)",
         question="How much stock is there for Paracetamol?"
     )
-    
+
     # Test 3: Cache verification
     run_test_scenario(
         description="Repeated Query (Cache Check)",
         question="What are the analogs of Nurofen?"
     )
-    
+
     print("\n✅ Test suite finished.")

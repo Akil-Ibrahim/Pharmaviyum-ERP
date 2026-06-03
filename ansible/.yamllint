@@ -1,0 +1,32 @@
+---
+extends: default
+
+rules:
+  line-length:
+    max: 120
+    level: warning
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no']
+    level: warning
+  comments:
+    level: warning
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+  hyphens:
+    max-spaces-after: 1
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+  colons:
+    max-spaces-after: 1
+  commas:
+    max-spaces-after: 1
+  document-start: disable
+  empty-lines:
+    max: 2
+    max-start: 0
+    max-end: 0

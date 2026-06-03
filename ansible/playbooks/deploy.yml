@@ -26,16 +26,16 @@
     - role: nginx
       tags: [proxy, nginx]
   handlers:
-    - name: restart nginx
-      service:
+    - name: Restart nginx
+      ansible.builtin.service:
         name: nginx
         state: restarted
-    - name: reload docker compose
+    - name: Reload docker compose
       community.docker.docker_compose_v2:
         project_src: "{{ app_directory }}"
         state: present
         restarted: true
-      listen: "restart application"
+      listen: "Restart application"
 
 - name: Post-deployment validation
   hosts: pharmacy_servers

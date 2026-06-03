@@ -48,6 +48,3 @@ check_services() {
     check_postgres
     check_celery
 }
-
-
-

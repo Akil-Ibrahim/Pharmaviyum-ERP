@@ -26,12 +26,12 @@ fi
 query() {
     local text=$1
     echo -e "\n${YELLOW}💊 Query:${NC} $text"
-    
+
     # Send request with pretty formatting
     response=$(curl -s -X POST "$API_ENDPOINT" \
         -H "Content-Type: application/json" \
         -d "{\"question\": \"$text\", \"user_id\": \"cli_test\"}")
-        
+
     # Check for error keys in JSON
     if echo "$response" | grep -q "detail"; then
         echo -e "${RED}❌ Error: $response${NC}"

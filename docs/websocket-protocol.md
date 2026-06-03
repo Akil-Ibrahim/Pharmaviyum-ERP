@@ -1,7 +1,7 @@
 # WebSocket Protocol (v1)
 
 ## Overview
-This document describes the real-time WebSocket communication protocol used in **Pharmaviyum CRM**.  
+This document describes the real-time WebSocket communication protocol used in **Pharmaviyum CRM**.
 It enables communication between clients, pharmacists, and pharmacy managers, ensuring real-time updates for chat, notifications, and presence.
 
 **Key points:**

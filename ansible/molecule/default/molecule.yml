@@ -1,0 +1,54 @@
+---
+# Molecule configuration for app-backend role
+# Tests role in isolated Docker containers
+
+dependency:
+  name: galaxy
+  options:
+    ignore-errors: true
+
+driver:
+  name: docker
+
+platforms:
+  - name: ubuntu-focal
+    image: docker.io/pycontribs/ubuntu:focal
+    pre_build_image: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    privileged: true
+  - name: debian-bookworm
+    image: docker.io/pycontribs/debian:bookworm
+    pre_build_image: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    privileged: true
+
+provisioner:
+  name: ansible
+  playbooks:
+    converge: ${MOLECULE_PLAYBOOK:-converge.yml}
+  config_options:
+    defaults:
+      interpreter_python: auto_silent
+      callbacks_enabled: profile_tasks, timer
+
+verifier:
+  name: ansible
+
+scenario:
+  test_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - cleanup
+    - destroy
