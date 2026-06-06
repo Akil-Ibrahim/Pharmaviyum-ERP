@@ -1,37 +1,63 @@
 ---
-# Deploy Pharmaviyum-CRM FastAPI backend
-# Handles directory structure, env injection, and container orchestration
-
-- name: Ensure backend deployment directories exist
+- name: Ensure application directory exists
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ app_directory }}"
     state: directory
     owner: "{{ deploy_user }}"
     mode: "0755"
-  loop:
-    - "{{ app_directory }}/backend"
-    - "{{ app_directory }}/logs"
 
-- name: Deploy backend Docker Compose configuration
+- name: Copy src directory
   ansible.builtin.copy:
-    src: files/docker-compose-backend.yml
-    dest: "{{ app_directory }}/docker-compose.yml"
-    mode: "0644"
-
-- name: Write backend .env from vaulted variable
-  ansible.builtin.copy:
-    content: "{{ vault_backend_env }}"
-    dest: "{{ app_directory }}/backend/.env"
-    mode: "0600"
+    src: "{{ playbook_dir }}/../../src"
+    dest: "{{ app_directory }}/src"
     owner: "{{ deploy_user }}"
+    mode: "0755"
+    force: true
 
-- name: Start production stack
+- name: Copy mortarium-ai directory
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../mortarium-ai"
+    dest: "{{ app_directory }}/mortarium-ai"
+    owner: "{{ deploy_user }}"
+    mode: "0755"
+    force: true
+
+- name: Copy nginx directory
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../nginx"
+    dest: "{{ app_directory }}/nginx"
+    owner: "{{ deploy_user }}"
+    mode: "0755"
+    force: true
+
+- name: Copy docker-compose.yml
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../docker-compose.yml"
+    dest: "{{ app_directory }}/docker-compose.yml"
+    owner: "{{ deploy_user }}"
+    mode: "0644"
+    force: true
+
+- name: Copy Dockerfile from root
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../Dockerfile"
+    dest: "{{ app_directory }}/Dockerfile"
+    owner: "{{ deploy_user }}"
+    mode: "0644"
+    force: true
+
+- name: Copy requirements.txt
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../requirements.txt"
+    dest: "{{ app_directory }}/requirements.txt"
+    owner: "{{ deploy_user }}"
+    mode: "0644"
+    force: true
+
+- name: Deploy via Docker Compose
   community.docker.docker_compose_v2:
     project_src: "{{ app_directory }}"
-    files:
-      - docker-compose.yml
-      - docker-compose.prod.yml
+    project_name: "{{ docker_compose_project }}"
     state: present
-    build: false  # In production, build on CI/CD, just pull images here
+    build: always
     pull: always
-    remove_orphans: true

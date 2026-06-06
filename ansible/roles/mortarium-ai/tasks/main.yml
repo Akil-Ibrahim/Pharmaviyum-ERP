@@ -1,47 +1,33 @@
 ---
-# Deploy Mortarium AI RAG service
-# Handles model paths, env configuration, and container startup
+# =============================================================================
+# Mortarium AI Role - Deploy RAG service with Qwen3-8B LLM
+# =============================================================================
 
-- name: Create Mortarium AI directories
+- name: Ensure AI model directory exists
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ ai_model_path | dirname }}"
     state: directory
     owner: "{{ deploy_user }}"
     mode: "0755"
-  loop:
-    - "{{ app_directory }}/mortarium"
-    - "{{ app_directory }}/models"
-    - "{{ app_directory }}/data/vector_store"
 
-- name: Deploy Mortarium AI docker-compose configuration
-  ansible.builtin.copy:
-    src: files/docker-compose-mortarium.yml
-    dest: "{{ app_directory }}/docker-compose-mortarium.yml"
-    mode: "0644"
-
-- name: Write Mortarium .env from vaulted variable
-  ansible.builtin.copy:
-    content: "{{ vault_mortarium_env }}"
-    dest: "{{ app_directory }}/mortarium/.env"
-    mode: "0600"
+- name: Ensure vector store directory exists
+  ansible.builtin.file:
+    path: "{{ ai_vector_store_path }}"
+    state: directory
     owner: "{{ deploy_user }}"
+    mode: "0755"
 
-- name: Validate model file existence
-  ansible.builtin.stat:
-    path: "{{ mortarium_model_path }}"
-  register: model_check
-
-- name: Warn if RAG model is missing
-  ansible.builtin.debug:
-    msg: "⚠️ Model not found at {{ mortarium_model_path }}. Place it manually before first run."
-  when: not model_check.stat.exists
-
-- name: Start Mortarium AI container
+- name: Deploy Mortarium AI via Docker Compose
   community.docker.docker_compose_v2:
     project_src: "{{ app_directory }}"
-    project_name: mortarium
+    project_name: "{{ docker_compose_project }}"
     state: present
-    build: true
-    pull: missing
-    services: ["mortarium-ai"]
-    remove_orphans: true
+    services:
+      - mortarium-ai
+    build: always
+    pull: always
+  register: ai_compose_result
+
+- name: Log AI deployment result
+  ansible.builtin.debug:
+    msg: "Mortarium AI deployed: {{ ai_compose_result.services | default('unknown') }}"

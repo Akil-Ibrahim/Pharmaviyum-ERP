@@ -1,5 +1,9 @@
 ---
-# Automated PostgreSQL backup playbook for Pharmaviyum-CRM
+# =============================================================================
+# Pharmaviyum-CRM - Automated Backup Playbook
+# Backs up PostgreSQL database and manages retention policy
+# Usage: ansible-playbook playbooks/backup.yml --ask-vault-pass
+# =============================================================================
 
 - name: Backup PostgreSQL and manage retention
   hosts: pharmacy_servers
@@ -28,7 +32,7 @@
         executable: /bin/bash
       changed_when: true
 
-    - name: Find old backups
+    - name: Find backups older than retention period
       ansible.builtin.find:
         paths: "{{ app_directory }}/backups"
         patterns: "pharmaviyum_*.sql.gz"
