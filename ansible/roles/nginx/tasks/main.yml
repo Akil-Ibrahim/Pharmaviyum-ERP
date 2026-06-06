@@ -1,0 +1,27 @@
+---
+# =============================================================================
+# Nginx Role - Configure reverse proxy for backend and AI services
+# =============================================================================
+
+- name: Ensure nginx configuration directory exists
+  ansible.builtin.file:
+    path: "{{ app_directory }}/nginx"
+    state: directory
+    owner: "{{ deploy_user }}"
+    mode: "0755"
+
+- name: Deploy nginx configuration
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: "{{ app_directory }}/nginx/nginx.conf"
+    owner: "{{ deploy_user }}"
+    mode: "0644"
+  notify: Restart nginx
+
+- name: Ensure nginx is running via Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_directory }}"
+    project_name: "{{ docker_compose_project }}"
+    state: present
+    services:
+      - nginx

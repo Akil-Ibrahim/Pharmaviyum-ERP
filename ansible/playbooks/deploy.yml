@@ -1,7 +1,13 @@
 ---
-# Main deployment playbook for Pharmaviyum-CRM
-# Executes roles in order: system prep → Docker → DB → app → proxy
+# =============================================================================
+# Pharmaviyum-CRM - Main Deployment Playbook
+# Deploys infrastructure, backend, AI service, and reverse proxy
+# =============================================================================
 
+# -----------------------------------------------------------------------------
+# Stage 1: Infrastructure Preparation
+# Installs Docker, configures system, prepares directories
+# -----------------------------------------------------------------------------
 - name: Prepare pharmacy server infrastructure
   hosts: pharmacy_servers
   become: true
@@ -13,6 +19,10 @@
       tags: [database, postgresql]
       when: "'mortarium_ai_servers' not in group_names"
 
+# -----------------------------------------------------------------------------
+# Stage 2: Application Deployment
+# Deploys backend, AI service (if applicable), and nginx proxy
+# -----------------------------------------------------------------------------
 - name: Deploy Pharmaviyum-CRM backend and Mortarium AI
   hosts: pharmacy_servers
   become: true
@@ -37,6 +47,10 @@
         restarted: true
       listen: "Restart application"
 
+# -----------------------------------------------------------------------------
+# Stage 3: Post-Deployment Validation
+# Health checks and logging
+# -----------------------------------------------------------------------------
 - name: Post-deployment validation
   hosts: pharmacy_servers
   become: false
