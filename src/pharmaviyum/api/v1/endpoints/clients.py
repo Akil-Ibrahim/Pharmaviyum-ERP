@@ -79,17 +79,43 @@ async def get_client_recommendations(
     db: AsyncSession = Depends(get_db)
 ):
     """Get personalized product recommendations via Mortarium AI"""
-    from rag.context_builders.client_context import ClientContextBuilder
+    from src.pharmaviyum.config import settings
+    import httpx
+
     crud = ClientCRUD(db)
     client = await crud.get(client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
 
-    prompt = ClientContextBuilder.build_prompt(client)
-    # TODO: Connect to Mortarium AI
+    # Build a concise prompt for the RAG model using available client data
+    prompt_parts = [
+        f"Client: {client.full_name}",
+        f"Phone: {client.phone}",
+    ]
+    if getattr(client, "chronic_diseases", None):
+        prompt_parts.append(f"Chronic diseases: {client.chronic_diseases}")
+    if getattr(client, "allergies", None):
+        prompt_parts.append(f"Allergies: {client.allergies}")
+    if getattr(client, "regular_medications", None):
+        prompt_parts.append(f"Medications: {client.regular_medications}")
+    prompt_parts.append(f"Total purchases: {getattr(client, 'total_purchases', 0)}")
+    prompt_parts.append(f"Total spent: {getattr(client, 'total_spent', 0.0)}")
+
+    prompt = "\n".join(prompt_parts) + "\n\nProvide 3 personalized product recommendations (concise). Include reasons and any safety notes."
+
+    ai_url = settings.AI_SERVICE_URL.rstrip("/") + "/api/ask"
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as c:
+            resp = await c.post(ai_url, json={"question": prompt})
+            resp.raise_for_status()
+            body = resp.json()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"AI service error: {e}")
+
     return {
         "client_id": client_id,
         "client_name": client.full_name,
-        "prompt_for_rag": prompt,
-        "message": "Integrate with Mortarium AI here"
+        "recommendations": body.get("answer"),
+        "sources": body.get("sources", []),
+        "prompt": prompt,
     }
