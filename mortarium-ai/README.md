@@ -4,7 +4,7 @@ This folder contains the local Mortarium AI service used for RAG and agent workf
 
 ## Best practice
 - Keep model configuration in environment variables, not hard-coded in application logic.
-- Use `MODEL_PATH` to point to a specific `.gguf` file or a directory containing one. To force a specific Qwen version, set `MODEL_PATH` to the exact `.gguf` filename (for example `MODEL_PATH=/app/models/Qwen3-8B-Instruct-Q4_K_M.gguf`).
+- Use `MODEL_PATH` to point to a specific `.gguf` file or a directory containing one. To force a specific Qwen version, set `MODEL_PATH` to the exact `.gguf` filename (for example `MODEL_PATH=/app/models/qwen2.5-7b-instruct-q4_k_m.gguf`).
 - Mount model files into the container as read-only when using Docker.
 - Do not commit `.env` or model binaries to source control.
 - If the model is missing, the service falls back to a mock LLM to avoid startup failure, but this is not suitable for real inference.
@@ -18,7 +18,7 @@ This folder contains the local Mortarium AI service used for RAG and agent workf
    - `API_SECRET_KEY`
    - `DATABASE_URL`
    - `REDIS_URL`
-   - `MODEL_PATH=/app/models/Qwen3-8B-Instruct-Q4_K_M.gguf`
+   - `MODEL_PATH=/app/models/qwen2.5-7b-instruct-q4_k_m.gguf`
 3. Place the Qwen model file into `mortarium-ai/models/`.
 4. Keep `mortarium-ai/models/` in Git with a `.gitkeep` file if the directory is otherwise empty.
 

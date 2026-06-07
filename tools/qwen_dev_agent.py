@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Простой CLI-клиент для работы с локальным Mortarium AI (Qwen-based).
+"""Simple CLI client for working with local Mortarium AI (Qwen-based).
 
-Пример:
-  python tools/qwen_dev_agent.py --question "Объясни функцию в src/..."
+Example:
+  python tools/qwen_dev_agent.py --question "Explain the function in src/..."
 """
 import argparse
 import json
@@ -43,8 +43,8 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--local-url", default="http://localhost:8000/api/ask", help="Mortarium AI endpoint")
     p.add_argument("--remote-url", default=os.getenv("REMOTE_API_URL"), help="Optional remote LLM API endpoint")
-    p.add_argument("--question", required=True, help="Вопрос или промпт для агента")
-    p.add_argument("--user", default=None, help="user_id для контекста")
+    p.add_argument("--question", required=True, help="Question or prompt for the agent")
+    p.add_argument("--user", default=None, help="user_id for context")
     args = p.parse_args()
 
     # Try remote provider first if configured
@@ -53,9 +53,9 @@ def main():
         try:
             resp = ask_remote_via_url(args.remote_url, args.question, args.user)
             if resp is None:
-                print("Удалённый провайдер вернул ошибку авторизации/платежа — переключаюсь на локальный.", file=sys.stderr)
+                print("Remote provider returned authorization/payment error — switching to local.", file=sys.stderr)
         except Exception as e:
-            print(f"Ошибка общения с удалённым провайдером: {e}", file=sys.stderr)
+            print(f"Error communicating with remote provider: {e}", file=sys.stderr)
             resp = None
 
     # If remote not set or failed, use OPENAI if available
@@ -73,14 +73,14 @@ def main():
         try:
             resp = ask_local(args.local_url, args.question, args.user)
         except Exception as e:
-            print(f"Ошибка при обращении к локальной Mortarium AI: {e}", file=sys.stderr)
+            print(f"Error communicating with local Mortarium AI: {e}", file=sys.stderr)
             sys.exit(2)
 
-    # Печатаем читаемый ответ
-    print("--- Ответ агента ---")
+    # Print agent response in readable format
+    print("--- Agent Response ---")
     print(resp.get("answer", json.dumps(resp, ensure_ascii=False, indent=2)))
     if resp.get("sources"):
-        print("\n--- Источники ---")
+        print("\n--- Sources ---")
         for s in resp["sources"]:
             print(json.dumps(s, ensure_ascii=False))
 
