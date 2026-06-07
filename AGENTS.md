@@ -10,7 +10,7 @@ This file helps AI coding agents work effectively in the Pharmaviyum demo reposi
 
 ## Qwen / AI model guidance
 - The repository uses a local Qwen model loader in `mortarium-ai/core/model.py`.
-- Default model path is `mortarium-ai/models/Qwen3-8B-Instruct-Q4_K_M.gguf` via `mortarium-ai/config.py`.
+- Default model path is `mortarium-ai/models/qwen2.5-7b-instruct-q4_k_m.gguf` via `mortarium-ai/config.py`.
 - If the model file is missing, the service falls back to a mock LLM implementation to keep startup working.
 - The loader uses `langchain_community.llms.LlamaCpp` with `chat_format="qwen2"`.
 - Configuration defaults are controlled by environment variables and the `.env` file in `mortarium-ai`.
