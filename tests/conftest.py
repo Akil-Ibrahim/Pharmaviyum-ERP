@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from fastapi.testclient import TestClient
 
-# Для локальных тестов используется SQLite
+# SQLite is used for local tests
 TEST_DATABASE_URL = "sqlite:///./test.db"
 
 

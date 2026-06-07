@@ -10,8 +10,8 @@ repos:
       - id: check-added-large-files
       - id: check-merge-conflict
 
-  # ansible-lint отключен из-за конфликтов зависимостей
-  # Запускай отдельно: ./ansible/scripts/test.sh
+  # ansible-lint disabled due to dependency conflicts
+  # Run separately: ./ansible/scripts/test.sh
 
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.33.0
