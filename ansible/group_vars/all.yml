@@ -25,7 +25,7 @@ backend_log_level: info
 
 # Mortarium AI RAG service settings
 mortarium_port: 8001
-mortarium_model_path: /opt/pharmaviyum/models/Qwen3-8B-Instruct-Q4_K_M.gguf
+mortarium_model_path: /opt/pharmaviyum/models/qwen2.5-7b-instruct-q4_k_m.gguf
 mortarium_context_length: 32000
 mortarium_vector_store_path: /opt/pharmaviyum/data/vector_store
 
