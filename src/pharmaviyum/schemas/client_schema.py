@@ -32,7 +32,10 @@ class ClientBase(BaseModel):
         return v
 
 class ClientCreate(ClientBase):
-    pass
+    """Schema for creating a new client."""
+
+    class Config:
+        from_attributes = True
 
 class ClientUpdate(BaseModel):
     full_name: Optional[str] = None
