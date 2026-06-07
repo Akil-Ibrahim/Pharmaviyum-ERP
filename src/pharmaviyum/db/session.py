@@ -1,27 +1,15 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import os
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
-# Get database URL from environment variables
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Async DB engine and session for FastAPI
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:pass@localhost:5432/pharmaviyum")
 
-# Create SQLAlchemy engine
-engine = create_engine(DATABASE_URL)
+engine = create_async_engine(DATABASE_URL, future=True, echo=False)
+AsyncSessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
-# Create SessionLocal class
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Base class for models
-Base = DeclarativeBase()
+async def get_db() -> AsyncSession:
+    """Async dependency that yields an `AsyncSession` and ensures close."""
+    async with AsyncSessionLocal() as session:
+        yield session
 
-# Dependency for FastAPI routes
-def get_db():
-    """
-    Dependency that provides a database session.
-    Ensures the session is closed after the request is finished.
-    """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
