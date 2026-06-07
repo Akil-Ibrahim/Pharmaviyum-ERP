@@ -7,6 +7,9 @@ class Settings(BaseSettings):
 	AI_SERVICE_URL: AnyHttpUrl = "http://mortarium-ai:8000"
 	LOG_LEVEL: str = "INFO"
 	MORTARIUM_TIMEOUT_SECONDS: int = 15
+	API_SECRET_KEY: str | None = None
+	ADMIN_USER: str = "admin"
+	ADMIN_PASSWORD: str | None = None
 
 	class Config:
 		env_file = ".env"
