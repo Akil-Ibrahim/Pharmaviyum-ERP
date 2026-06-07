@@ -46,7 +46,7 @@ RUN mkdir -p /app/models /app/data/vector_store /app/logs && \
 
 ENV PYTHONPATH=/app \
     PYTHONDONTWRITEBYTECODE=1 \
-    MODEL_PATH=/app/models/Qwen3-8B-Instruct-Q4_K_M.gguf \
+    MODEL_PATH=/app/models/qwen2.5-7b-instruct-q4_k_m.gguf \
     VECTOR_STORE_PATH=/app/data/vector_store
 
 USER mortarium
