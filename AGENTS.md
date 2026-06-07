@@ -38,6 +38,6 @@ This file helps AI coding agents work effectively in the Pharmaviyum demo reposi
 - Do not assume the Qwen model is present in the repo; model files are external assets and may be mounted at runtime.
 
 ## Notes
-- There is no existing `AGENTS.md` or `.github/copilot-instructions.md` in this repository.
+- This repository includes `AGENTS.md` and `.github/copilot-instructions.md` for AI guidance.
 - The frontend workflow at `frontend/shadcn-admin/.github/workflows/claude-review.yml` references `CLAUDE.md`, but this repo does not currently include that file.
 - Use documentation links rather than duplicating full content from existing docs.
