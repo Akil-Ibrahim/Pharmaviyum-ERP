@@ -88,6 +88,33 @@ export const sidebarData: SidebarData = {
       ],
     },
     {
+      title: "CRM",
+      items: [
+        {
+          title: "Clients",
+          url: "/clients",
+          icon: IconUsers,
+        },
+        {
+          title: "Products",
+          url: "/products",
+          icon: IconTable,
+        },
+        {
+          title: "Orders",
+          url: "/orders",
+          icon: IconArrowsExchange,
+        },
+        {
+          title: "Mortarium AI",
+          url: "/ai-chat",
+          icon: IconBrain,
+          badge: "AI",
+          badgeColor: "green",
+        },
+      ],
+    },
+    {
       title: "General",
       items: [
         {
