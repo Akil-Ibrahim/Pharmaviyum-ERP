@@ -10,14 +10,64 @@ __pycache__/
 *.pyc
 .env
 .venv/
+venv/
+*.egg-info/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.DS_Store
 
 # Logs
 *.log
 setup*.log
+
+# Ansible
+ansible/vault.key
+ansible/.vault
+ansible/ansible.log
+ansible/inventory/secrets/
+
+# Models & Data
+mortarium-ai/models/*.gguf
+mortarium-ai/models/*.bin
+mortarium-ai/data/vector_store/
+models/
+*.onnx
+
+# Secrets & Credentials
+.env.local
+.env.*.local
+secrets/
+*.key
+*.pem
+.aws/
+.ssh/
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temp
+/tmp/
+/temp/
+*.tmp
 setup*.txt
 
 # Qwen model weights
