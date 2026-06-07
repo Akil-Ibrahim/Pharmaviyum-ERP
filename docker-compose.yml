@@ -56,7 +56,7 @@ services:
     container_name: pharmaviyum-ai
     restart: unless-stopped
     environment:
-      - MODEL_NAME=Qwen3-8B-Instruct-Q4_K_M.gguf
+      - MODEL_NAME=qwen2.5-7b-instruct-q4_k_m.gguf
     volumes:
       - ./mortarium-ai/models:/app/models
       - ./mortarium-ai/data:/app/data
