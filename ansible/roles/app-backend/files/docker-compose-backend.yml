@@ -52,7 +52,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-app_user}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-pharmaviyum}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-app_user}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-pharmaviyum}
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./logs:/app/logs

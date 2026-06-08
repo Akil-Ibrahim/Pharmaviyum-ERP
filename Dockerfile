@@ -2,7 +2,7 @@
 # Security-hardened multi-stage build following best practices
 
 # ========== BUILD STAGE ==========
-FROM python:3.13-slim AS builder
+FROM python:3.14-slim AS builder
 
 WORKDIR /build
 
@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir --upgrade pip \
     && rm -rf ~/.cache/pip
 
 # ========== RUNTIME STAGE ==========
-FROM python:3.13-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 # Labels for image metadata
 LABEL maintainer="Akil Ibrahim <akil.ibrahim@example.com>" \
@@ -44,23 +44,25 @@ RUN groupadd --gid 1000 --system appgroup \
 WORKDIR /app
 
 # Copy Python packages from builder (only necessary binaries)
-COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
+COPY --from=builder /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
 COPY --from=builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 COPY --from=builder /usr/local/bin/gunicorn /usr/local/bin/gunicorn
 COPY --from=builder /usr/local/bin/pip /usr/local/bin/pip
 
 # Clean Python cache in site-packages
-RUN find /usr/local/lib/python3.13/site-packages/ -type d -name "__pycache__" -exec rm -rf {} + \
-    && find /usr/local/lib/python3.13/site-packages/ -name "*.pyc" -delete \
-    && find /usr/local/lib/python3.13/site-packages/ -name "*.pyo" -delete
+RUN find /usr/local/lib/python3.14/site-packages/ -type d -name "__pycache__" -exec rm -rf {} + \
+    && find /usr/local/lib/python3.14/site-packages/ -name "*.pyc" -delete \
+    && find /usr/local/lib/python3.14/site-packages/ -name "*.pyo" -delete
 
 # Copy application code with proper ownership
 COPY --chown=appuser:appgroup . .
 
 # Create necessary directories
 RUN mkdir -p /app/data /app/logs /app/models \
-    && chown -R appuser:appgroup /app \
-    && chmod -R 750 /app
+    && chown appuser:appgroup /app \
+    && chown -R appuser:appgroup /app/data /app/logs /app/models \
+    && chmod 750 /app \
+    && chmod -R 750 /app/data /app/logs /app/models
 
 # Set secure environment variables
 ENV PYTHONPATH=/app/src \

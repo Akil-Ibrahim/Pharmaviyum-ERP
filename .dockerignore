@@ -86,3 +86,10 @@ Jenkinsfile
 .DS_Store
 Thumbs.db
 *.orig
+
+# Exclude large build artifacts and model files from root build context
+mortarium-ai/models/
+mortarium-ai/data/
+frontend/shadcn-admin/node_modules/
+frontend/shadcn-admin/.next/
+frontend/shadcn-admin/.pnpm-store/
