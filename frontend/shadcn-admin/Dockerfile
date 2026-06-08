@@ -5,6 +5,10 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
+# Disable husky and run in CI mode during image build to avoid interactive
+# prompts and failures when .git is not present in the build context.
+ENV HUSKY=0
+ENV CI=true
 COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
