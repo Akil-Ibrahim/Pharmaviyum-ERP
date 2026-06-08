@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
     BASE_DIR: Path = Path(__file__).resolve().parent
     VECTOR_STORE_PATH: Path = BASE_DIR / "data" / "vector_store"
-    MODEL_PATH: Path = BASE_DIR / "models" / "qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf"
+    MODEL_PATH: Path = BASE_DIR / "models" / "qwen2.5-7b-instruct-q4_k_m.gguf"
     MODEL_N_CTX: int = 32000
     MODEL_N_GPU_LAYERS: int = -1
     MODEL_TEMPERATURE: float = 0.15

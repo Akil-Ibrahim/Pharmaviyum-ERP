@@ -10,7 +10,7 @@ services:
     ports:
       - "8001:8000"
     environment:
-      - DATABASE_URL=postgresql://app_user:changeme@db:5432/pharmaviyum
+      - DATABASE_URL=postgresql+asyncpg://app_user:changeme@db:5432/pharmaviyum
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./models:/app/models:ro
