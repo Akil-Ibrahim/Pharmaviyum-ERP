@@ -82,6 +82,13 @@ export const sidebarData: SidebarData = {
           url: "/orders",
           icon: IconArrowsExchange,
         },
+        {
+          title: "Mortarium AI",
+          url: "/ai-chat",
+          icon: IconBrain,
+          badge: "AI",
+          badgeColor: "green",
+        },
         
       ],
     },
