@@ -42,17 +42,40 @@ function createRealAuth() {
 }
 
 function createStubAuth() {
+  // Minimal stub that provides the same surface as `betterAuth` so callers
+  // (middleware, routes) don't crash during local development when auth is
+  // not configured. Important: keep `api.getSession()` returning `null` so
+  // the app behaves unauthenticated by default.
   const stub = {
     api: {
       async getSession() {
-        // In dev without auth configured, behave like unauthenticated.
         return null;
       },
       async createSession() {
         throw new Error("Auth is not configured in this environment.");
       },
     },
-    // Other helper methods can be added as needed.
+    // A handler property is expected by `toNextJsHandler(auth.handler)`.
+    // Provide a simple handler that returns a 501 JSON response. This makes
+    // `/api/auth/*` routes return a clear message instead of crashing.
+    handler: async (request: any) => {
+      // Lazily import NextResponse to avoid bundling server-only code in
+      // environments where it's not available.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { NextResponse } = require("next/server");
+        return NextResponse.json(
+          { error: "Auth not configured in this environment" },
+          { status: 501 }
+        );
+      } catch (e) {
+        // If NextResponse isn't available, return a minimal object.
+        return {
+          status: 501,
+          json: async () => ({ error: "Auth not configured in this environment" }),
+        };
+      }
+    },
   };
   return stub;
 }
