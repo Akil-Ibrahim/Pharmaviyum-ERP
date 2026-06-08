@@ -1,9 +1,8 @@
-import { Icons } from "@/features/discord/components/icons";
 import type { SidebarData } from "@/lib/types";
 import {
   IconArrowsExchange,
   IconBarrierBlock,
-  IconBrain,
+  
   IconBrowserCheck,
   IconBug,
   IconCalendar,
@@ -33,8 +32,7 @@ import {
   AudioWaveform,
   Command,
   GalleryVerticalEnd,
-  KanbanIcon,
-  MailIcon,
+  
 } from "lucide-react";
 
 export const sidebarData: SidebarData = {
@@ -60,30 +58,9 @@ export const sidebarData: SidebarData = {
       title: "Dashboard",
       items: [
         {
-          title: "Dashboard",
-          url: "/dashboard",
-          icon: IconLayoutDashboard,
-        },
-        {
           title: "Business Dashboard",
           url: "/dashboard2",
           icon: IconChartBar,
-        },
-        {
-          title: "Payment Dashboard",
-          icon: IconReportMoney,
-          items: [
-            {
-              title: "Payment Dashboard",
-              url: "/payment-dashboard",
-              icon: IconCreditCard,
-            },
-            {
-              title: "Payment Transactions",
-              url: "/payment-transactions",
-              icon: IconArrowsExchange,
-            },
-          ],
         },
       ],
     },
@@ -105,33 +82,12 @@ export const sidebarData: SidebarData = {
           url: "/orders",
           icon: IconArrowsExchange,
         },
-        {
-          title: "Mortarium AI",
-          url: "/ai-chat",
-          icon: IconBrain,
-          badge: "AI",
-          badgeColor: "green",
-        },
+        
       ],
     },
     {
       title: "General",
       items: [
-        {
-          title: "Mail",
-          url: "/mail",
-          icon: MailIcon,
-          // badge: "Coming Soon",
-          // badge: "New",
-          badgeColor: "green",
-        },
-        {
-          title: "Discord",
-          url: "/discord",
-          icon: Icons.discord,
-          // badge: "New",
-          badgeColor: "green",
-        },
         {
           title: "Tasks",
           url: "/tasks",
@@ -152,20 +108,6 @@ export const sidebarData: SidebarData = {
           title: "Calendar",
           url: "/calendar",
           icon: IconCalendar,
-        },
-        {
-          title: "AI Chat",
-          url: "/ai-chat",
-          icon: IconBrain,
-          // badge: "New",
-          badgeColor: "green",
-        },
-        {
-          title: "Kanban",
-          url: "/kanban",
-          icon: KanbanIcon,
-          // badge: "New",
-          badgeColor: "green",
         },
       ],
     },
@@ -202,28 +144,7 @@ export const sidebarData: SidebarData = {
             },
           ],
         },
-        {
-          title: "Pricing",
-          icon: IconCreditCard,
-          // badge: "Coming Soon",
-          items: [
-            {
-              title: "Column Pricing",
-              url: "/pricing/column",
-              icon: IconColumns,
-            },
-            {
-              title: "Table Pricing",
-              url: "/pricing/table",
-              icon: IconTable,
-            },
-            {
-              title: "Single Pricing",
-              url: "/pricing/single",
-              icon: IconCoin,
-            },
-          ],
-        },
+        
         {
           title: "Errors",
           icon: IconBug,
