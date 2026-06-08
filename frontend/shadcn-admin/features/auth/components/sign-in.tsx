@@ -54,6 +54,7 @@ export default function SignIn() {
   const onSubmit = async (data: SignInSchema) => {
     try {
       setIsLoading(true);
+      // Use email as username for login
       await login(data.email, data.password);
       toast.success("Signed in successfully!");
       const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
