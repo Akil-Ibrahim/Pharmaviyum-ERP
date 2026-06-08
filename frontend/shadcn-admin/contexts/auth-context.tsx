@@ -1,6 +1,5 @@
 "use client";
 
-import { authClient } from "@/lib/auth-client";
 import { User } from "@/lib/types";
 import {
   ReactNode,
@@ -14,92 +13,107 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signInSocial: (
-    provider: "google" | "github",
-    callbackUrl?: string,
-  ) => Promise<void>;
+  token: string | null;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  error: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const API_URL = process.env.NEXT_PUBLIC_API_V1_URL || "http://localhost:8000/api/v1";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Restore session from localStorage on mount
   useEffect(() => {
-    const initAuth = async () => {
+    const restoreSession = async () => {
       try {
-        const { data: session } = await authClient.getSession();
+        const savedToken = localStorage.getItem("auth_token");
+        const savedUser = localStorage.getItem("auth_user");
 
-        if (session?.user) {
-          setUser({
-            id: session.user.id,
-            name: session.user.name,
-            email: session.user.email,
-            avatar: session.user.image || "",
-            role: "user",
-          });
+        if (savedToken && savedUser) {
+          setToken(savedToken);
+          setUser(JSON.parse(savedUser));
         }
-      } catch (error) {
-        console.error("Failed to get session:", error);
+      } catch (err) {
+        console.error("Failed to restore session:", err);
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("auth_user");
       } finally {
         setIsLoading(false);
       }
     };
 
-    initAuth();
+    restoreSession();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const { data, error } = await authClient.signIn.email({
-      email,
-      password,
-    });
-
-    if (error) {
-      throw new Error(error.message || "Failed to sign in");
-    }
-
-    if (data?.user) {
-      setUser({
-        id: data.user.id,
-        name: data.user.name,
-        email: data.user.email,
-        avatar: data.user.image || "",
-        role: "user",
+  // Login with username and password
+  const login = async (username: string, password: string) => {
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL}/auth/token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          username,
+          password,
+        }),
       });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.detail || "Login failed");
+      }
+
+      const data = await response.json();
+      const { access_token } = data;
+
+      // Store token in localStorage and cookie
+      localStorage.setItem("auth_token", access_token);
+      // Set cookie for middleware to detect auth state
+      document.cookie = `auth_token=${access_token}; path=/; max-age=86400`; // 24 hours
+
+      // Create user object from username
+      const userData: User = {
+        id: username,
+        email: `${username}@pharmaviyum.local`,
+        name: username,
+        avatar: "",
+        role: "user",
+      };
+
+      localStorage.setItem("auth_user", JSON.stringify(userData));
+      setToken(access_token);
+      setUser(userData);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Login failed";
+      setError(errorMessage);
+      throw err;
     }
   };
 
-  const signInSocial = async (
-    provider: "google" | "github",
-    callbackUrl?: string,
-  ) => {
-    const redirectUrl = callbackUrl || "/dashboard";
-    const urlWithParam = redirectUrl.includes("?")
-      ? `${redirectUrl}&auth=success`
-      : `${redirectUrl}?auth=success`;
-
-    await authClient.signIn.social({
-      provider,
-      callbackURL: urlWithParam,
-    });
-  };
-
+  // Logout
   const logout = async () => {
     try {
-      await authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            setUser(null);
-          },
-        },
-      });
-    } catch (error) {
-      console.error("Logout failed:", error);
+      // Clear token from localStorage and cookie
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
+      // Clear cookie
+      document.cookie = "auth_token=; path=/; max-age=0";
+      setToken(null);
       setUser(null);
+      setError(null);
+    } catch (err) {
+      console.error("Logout failed:", err);
+      setUser(null);
+      setToken(null);
     }
   };
 
@@ -107,11 +121,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !!token,
         isLoading,
+        token,
         login,
-        signInSocial,
         logout,
+        error,
       }}
     >
       {children}

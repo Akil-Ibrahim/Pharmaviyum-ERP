@@ -1,34 +1,14 @@
-import { db } from "@/db";
-import * as schema from "@/db/schema";
-import { generateRandomUUID } from "@/lib/generate-random-uuid";
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
+/**
+ * Auth library - now using FastAPI JWT backend instead of Better Auth
+ * Frontend communicates with FastAPI /api/v1/auth/token endpoint
+ */
 
-export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL!,
-  trustedOrigins: [process.env.BETTER_AUTH_URL!],
-  database: drizzleAdapter(db, {
-    provider: "pg",
-    schema,
-  }),
-  emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: false,
-  },
-  socialProviders: {
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    },
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      prompt: "select_account",
+// Placeholder export for compatibility
+// Real auth is handled in lib/api.ts and contexts/auth-context.tsx
+export const auth = {
+  api: {
+    async getSession() {
+      return null;
     },
   },
-  advanced: {
-    database: {
-      generateId: generateRandomUUID,
-    },
-  },
-});
+};

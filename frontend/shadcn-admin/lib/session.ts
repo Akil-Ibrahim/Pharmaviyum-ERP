@@ -1,33 +1,41 @@
-import { auth } from "@/lib/auth";
+/**
+ * Server-side session retrieval using FastAPI JWT token from localStorage
+ * Note: For production, tokens should be in httpOnly cookies
+ */
+
 import { cookies, headers } from "next/headers";
 
-export async function getServerSession() {
+export interface AuthUser {
+  id?: string;
+  email?: string;
+  name?: string;
+  username?: string;
+}
+
+export interface AuthSession {
+  user?: AuthUser;
+  token?: string;
+}
+
+export async function getServerSession(): Promise<AuthSession | null> {
   try {
+    // Try to get token from cookie (set by client after login)
     const cookieStore = await cookies();
-    const headersList = await headers();
+    const token = cookieStore.get("auth_token")?.value;
 
-    const cookieHeader = cookieStore
-      .getAll()
-      .map((c) => `${c.name}=${c.value}`)
-      .join("; ");
+    if (!token) {
+      return null;
+    }
 
-    const host = headersList.get("host") || "localhost";
-    const protocol = headersList.get("x-forwarded-proto") || "http";
-    const url = `${protocol}://${host}/api/auth/session`;
-
-    const request = new Request(url, {
-      method: "GET",
-      headers: {
-        cookie: cookieHeader,
-        host: host,
+    // Optional: Verify token is still valid by calling backend
+    // For now, just return basic session structure
+    // The actual user data should be fetched from client context
+    return {
+      token,
+      user: {
+        username: "user", // Placeholder
       },
-    });
-
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    return session;
+    };
   } catch (error) {
     console.error("Failed to get server session:", error);
     return null;
@@ -36,5 +44,5 @@ export async function getServerSession() {
 
 export async function isAuthenticated(): Promise<boolean> {
   const session = await getServerSession();
-  return !!session?.user;
+  return !!session?.token;
 }
