@@ -1,6 +1,6 @@
 "use client";
 
-import { CommandSearch, SearchTrigger } from "@/components/layout/command-search";
+// Command search removed — related components deleted
 import { ProfileDropdown } from "@/components/layout/profile-dropdown";
 import { ThemeCustomizer } from "@/components/shared/theme-customizer";
 import { ToggleTheme } from "@/components/shared/theme-toggle";
@@ -14,7 +14,6 @@ import { toast } from "sonner";
 
 export function DashboardHeader() {
   const [themeCustomizerOpen, setThemeCustomizerOpen] = React.useState(false);
-  const [commandSearchOpen, setCommandSearchOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -23,17 +22,7 @@ export function DashboardHeader() {
     setMounted(true);
   }, []);
 
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setCommandSearchOpen((open) => !open);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  // command search keyboard shortcut removed
 
   React.useEffect(() => {
     if (!mounted) return;
@@ -67,11 +56,7 @@ export function DashboardHeader() {
     <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b border-border/50 bg-background/80 px-4 backdrop-blur-xl">
       <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground transition-colors" />
       <Separator orientation="vertical" className="mx-2 h-6! bg-border/50" />
-      <SearchTrigger onClick={() => setCommandSearchOpen(true)} />
-      <CommandSearch
-        open={commandSearchOpen}
-        onOpenChange={setCommandSearchOpen}
-      />
+      {/* Command search UI removed */}
       <div className="ml-auto flex items-center gap-1">
         <ToggleTheme />
 
