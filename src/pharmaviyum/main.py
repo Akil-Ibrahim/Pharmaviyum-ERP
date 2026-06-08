@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from src.pharmaviyum import constants
 from src.pharmaviyum.utils.logger import setup_logging
 from src.pharmaviyum.api.v1 import api_router
+from src.pharmaviyum.middleware.auth_middleware import add_auth_middleware
 
 setup_logging()
 
@@ -35,7 +36,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
+# Attach auth middleware and include routers
+add_auth_middleware(app)
 app.include_router(api_router, prefix=constants.API_V1_STR)
 
 

@@ -33,9 +33,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
             token = auth.split(" ", 1)[1].strip()
 
         user = None
-        if token:
+        if token and self.secret:
             try:
-                payload = jwt.decode(token, self.secret, algorithms=["HS256"])  # type: ignore[arg-type]
+                payload = jwt.decode(token, self.secret, algorithms=[settings.JWT_ALGORITHM])  # type: ignore[arg-type]
                 user = {"username": payload.get("sub")}
             except Exception:
                 user = None
