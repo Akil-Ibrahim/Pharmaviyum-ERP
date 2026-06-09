@@ -87,6 +87,9 @@ services:
       AI_SERVICE_URL: http://mortarium-ai:8000
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DEBUG: "${DEBUG:-false}"
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      API_SECRET_KEY: ${API_SECRET_KEY:-dev_api_secret_key_32_chars_minimum_for_jwt_signing}
     depends_on:
       db:
         condition: service_healthy
