@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     MORTARIUM_TIMEOUT_SECONDS: int = 15
     API_SECRET_KEY: str = "dev_api_secret_key_32_chars_minimum_for_jwt_signing"
     ADMIN_USER: str = "admin"
-    ADMIN_PASSWORD: str | None = None
+    ADMIN_PASSWORD: str = "admin"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRY_HOURS: int = 24
 
