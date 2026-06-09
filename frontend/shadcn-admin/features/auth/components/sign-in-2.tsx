@@ -29,7 +29,7 @@ export function SignIn2({ className, ...props }: React.ComponentProps<"div">) {
   const form = useForm<SignIn2Schema>({
     resolver: zodResolver(signIn2Schema),
     defaultValues: {
-      email: "",
+      login: "",
       password: "",
     },
   });
@@ -48,14 +48,38 @@ export function SignIn2({ className, ...props }: React.ComponentProps<"div">) {
   };
 
   const onSubmit = async (data: SignIn2Schema) => {
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL ?? ''}${process.env.NEXT_PUBLIC_API_BASE ?? '/api/v1'}/auth/token`;
     try {
       setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log("Login data:", data);
-      toast.success("Signed in successfully!");
-      window.location.href = "/dashboard";
-    } catch {
-      toast.error("Failed to sign in. Please check your credentials.");
+      const body = new URLSearchParams();
+      // OAuth2 password form expects 'username' and 'password'
+      // backend accepts admin fallback when username local part equals admin
+      body.append('username', data.login as string);
+      body.append('password', data.password as string);
+
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.detail || 'Failed to sign in. Please check your credentials.');
+        return;
+      }
+
+      const dataJson = await res.json();
+      const token = dataJson?.access_token;
+      if (token) {
+        localStorage.setItem('access_token', token);
+        toast.success('Signed in successfully!');
+        window.location.href = '/dashboard';
+      } else {
+        toast.error('Authentication failed: no token returned');
+      }
+    } catch (e) {
+      toast.error('Failed to sign in. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -170,14 +194,14 @@ export function SignIn2({ className, ...props }: React.ComponentProps<"div">) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="email"
+              name="login"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Login</FormLabel>
                   <FormControl>
                     <Input
-                      type="email"
-                      placeholder="name@example.com"
+                      type="text"
+                      placeholder="admin"
                       disabled={isLoading}
                       className="h-11 bg-muted/30 border-muted-foreground/20"
                       {...field}
