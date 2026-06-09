@@ -15,14 +15,16 @@ This file helps AI coding agents work effectively in the Pharmaviyum demo reposi
 - The loader uses `langchain_community.llms.LlamaCpp` with `chat_format="qwen2"`.
 - Configuration defaults are controlled by environment variables and the `.env` file in `mortarium-ai`.
 - Best practice: keep `MODEL_PATH` in `mortarium-ai/.env` and mount model files read-only into `mortarium-ai/models/`.
- - Developer agent: there is a lightweight Qwen-based developer agent documented in `docs/qwen-dev-agent.md` and a CLI client at `tools/qwen_dev_agent.py`.
- - Use Qwen 3.6/3.7/3.8 GGUF models for best code-understanding results.
+- Local Qwen setup and developer-agent behavior are documented in `qwen.agent.md`, `docs/qwen-dev-agent.md`, and `docs/qwen3-setup.md`.
+- Developer agent: there is a lightweight Qwen-based developer agent documented in `docs/qwen-dev-agent.md` and a CLI client at `tools/qwen_dev_agent.py`.
+- Use Qwen 3.6/3.7/3.8 GGUF models for best code-understanding results.
 
 ## Important files
 - `mortarium-ai/core/model.py` — Qwen model loading and fallback behavior.
 - `mortarium-ai/config.py` — local AI service settings, model path, database, Redis, and runtime config.
 - `mortarium-ai/api/server.py` — local Mortarium AI FastAPI app endpoints.
 - `mortarium-ai/main.py` — entrypoint for running the Mortarium AI service.
+- `qwen.agent.md` — local Qwen developer agent guidance for this repository.
 - `src/pharmaviyum` — main backend application code.
 - `tests` — Python test suite.
 

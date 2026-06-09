@@ -3,7 +3,9 @@
  * This is a simple API client for authentication
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_V1_URL || "http://localhost:8000/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL
+  ? `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_API_BASE || "/api/v1"}`
+  : process.env.NEXT_PUBLIC_API_V1_URL || "http://localhost:8000/api/v1";
 
 export interface AuthResponse {
   access_token: string;
