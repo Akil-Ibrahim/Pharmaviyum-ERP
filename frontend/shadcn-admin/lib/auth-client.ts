@@ -1,29 +1,10 @@
 /**
- * Auth client - now using FastAPI JWT backend
- * This is a simple API client for authentication
+ * Auth client - using frontend proxy for auth requests
+ * This ensures browser requests work properly with same-origin policy
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "/api/v1";
-const API_URL = (() => {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL
-    ? `${process.env.NEXT_PUBLIC_API_URL}${API_BASE}`
-    : process.env.NEXT_PUBLIC_API_V1_URL || "http://localhost:8000/api/v1";
-
-  if (typeof window === "undefined") {
-    return apiUrl;
-  }
-
-  try {
-    const url = new URL(apiUrl);
-    if (url.hostname === "backend") {
-      return `${window.location.protocol}//${window.location.hostname}:8000${url.pathname}`;
-    }
-  } catch {
-    // Ignore invalid URL and use resolved apiUrl
-  }
-
-  return apiUrl;
-})();
+// Use frontend proxy endpoint for auth (always available from browser)
+const AUTH_URL = "/api/backend/auth/token";
 
 export interface AuthResponse {
   access_token: string;
@@ -36,7 +17,7 @@ export const authClient = {
    * Returns JWT token
    */
   async login(username: string, password: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_URL}/auth/token`, {
+    const response = await fetch(AUTH_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",

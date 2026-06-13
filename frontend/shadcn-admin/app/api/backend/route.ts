@@ -33,15 +33,25 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const url = new URL(request.url);
   const path = url.searchParams.get('path') || '';
-  const body = await request.json().catch(() => ({}));
+  const contentType = request.headers.get('content-type') || '';
+  let body: any = {};
+
+  if (contentType.includes('application/json')) {
+    body = await request.json().catch(() => ({}));
+  } else if (contentType.includes('application/x-www-form-urlencoded')) {
+    const text = await request.text();
+    body = Object.fromEntries(new URLSearchParams(text));
+  }
 
   try {
     const response = await fetch(`${BACKEND_URL}${path}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': contentType || 'application/json',
       },
-      body: JSON.stringify(body),
+      body: contentType.includes('application/json')
+        ? JSON.stringify(body)
+        : new URLSearchParams(body),
     });
 
     const data = await response.json();

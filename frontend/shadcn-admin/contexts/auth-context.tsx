@@ -21,27 +21,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "/api/v1";
-const API_URL = (() => {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL
-    ? `${process.env.NEXT_PUBLIC_API_URL}${API_BASE}`
-    : process.env.NEXT_PUBLIC_API_V1_URL || "http://localhost:8000/api/v1";
-
-  if (typeof window === "undefined") {
-    return apiUrl;
-  }
-
-  try {
-    const url = new URL(apiUrl);
-    if (url.hostname === "backend") {
-      return `${window.location.protocol}//${window.location.hostname}:8000${url.pathname}`;
-    }
-  } catch {
-    // Ignore invalid URL and use resolved apiUrl
-  }
-
-  return apiUrl;
-})();
+// Use frontend proxy for auth requests (same-origin)
+const AUTH_URL = "/api/backend/auth/token";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -76,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string) => {
     setError(null);
     try {
-      const response = await fetch(`${API_URL}/auth/token`, {
+      const response = await fetch(AUTH_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
