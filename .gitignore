@@ -75,3 +75,4 @@ mortarium-ai/models/*.gguf
 
 # Temporary / stack files
 project_stack_list.*
+frontend/shadcn-admin/.pnpm-store
