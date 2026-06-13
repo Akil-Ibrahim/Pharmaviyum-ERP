@@ -148,13 +148,6 @@ export default function SignIn() {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-2xl border border-muted p-4 bg-muted/5 text-sm text-muted-foreground">
-              Use admin credentials:
-              <div className="mt-2 font-medium text-foreground">
-                admin / admin
-              </div>
-            </div>
-
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
@@ -204,6 +197,9 @@ export default function SignIn() {
                             onBeforeInput={blockDisallowedPasswordChars}
                             {...field}
                           />
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            Use password: <span className="font-medium text-foreground">Admin123!@#</span>
+                          </p>
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}

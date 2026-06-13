@@ -9,7 +9,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # prompts and failures when .git is not present in the build context.
 ENV HUSKY=0
 ENV CI=true
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
@@ -47,7 +47,7 @@ RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 
-RUN mkdir .next
+RUN mkdir -p .next
 RUN chown nextjs:nodejs .next
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -60,4 +60,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
+ENTRYPOINT []
 CMD ["node", "server.js"]

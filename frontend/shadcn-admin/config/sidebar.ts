@@ -2,6 +2,7 @@ import type { SidebarData } from "@/lib/types";
 import {
   IconArrowsExchange,
   IconBarrierBlock,
+  IconBrain,
   
   IconBrowserCheck,
   IconBug,

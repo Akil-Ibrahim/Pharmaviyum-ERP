@@ -3,9 +3,27 @@
  * This is a simple API client for authentication
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
-  ? `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_API_BASE || "/api/v1"}`
-  : process.env.NEXT_PUBLIC_API_V1_URL || "http://localhost:8000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "/api/v1";
+const API_URL = (() => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    ? `${process.env.NEXT_PUBLIC_API_URL}${API_BASE}`
+    : process.env.NEXT_PUBLIC_API_V1_URL || "http://localhost:8000/api/v1";
+
+  if (typeof window === "undefined") {
+    return apiUrl;
+  }
+
+  try {
+    const url = new URL(apiUrl);
+    if (url.hostname === "backend") {
+      return `${window.location.protocol}//${window.location.hostname}:8000${url.pathname}`;
+    }
+  } catch {
+    // Ignore invalid URL and use resolved apiUrl
+  }
+
+  return apiUrl;
+})();
 
 export interface AuthResponse {
   access_token: string;

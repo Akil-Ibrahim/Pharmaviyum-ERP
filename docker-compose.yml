@@ -88,7 +88,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DEBUG: "${DEBUG:-false}"
       ADMIN_USER: ${ADMIN_USER:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123!@#}
       API_SECRET_KEY: ${API_SECRET_KEY:-dev_api_secret_key_32_chars_minimum_for_jwt_signing}
     depends_on:
       db:
@@ -192,7 +192,7 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://backend:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8000
       NEXT_PUBLIC_API_BASE: /api/v1
       NEXT_PUBLIC_AI_SERVICE_URL: http://mortarium-ai:8000
       BETTER_AUTH_URL: http://localhost:3000

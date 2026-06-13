@@ -16,19 +16,11 @@ services:
       - DEBUG=true
 
   frontend:
-    # Mount local source code for hot-reloading during development
-    volumes:
-      - ./frontend/shadcn-admin:/app
-      - /app/node_modules
-      - /app/.next
-    # Expose frontend port for direct access from host
-    ports:
-      - "3000:3000"
-    # Environment variables for development mode
+    # Use production-built image without mounting source code
+    # Environment variables for local access
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://localhost:8000
       - NEXT_PUBLIC_API_BASE=/api/v1
       - NEXT_PUBLIC_AI_SERVICE_URL=http://localhost:8001
-    command: pnpm dev
 

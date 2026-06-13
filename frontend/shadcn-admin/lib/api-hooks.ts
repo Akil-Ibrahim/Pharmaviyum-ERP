@@ -6,6 +6,10 @@
 import { useCallback, useState, useEffect } from 'react';
 import { api, ApiError } from './api-client';
 
+interface ApiRequestInit extends RequestInit {
+  headers?: Record<string, string>;
+}
+
 interface UseQueryOptions {
   enabled?: boolean;
   refetchInterval?: number;
@@ -84,7 +88,12 @@ export function useMutation<T, V = unknown>(
       try {
         setLoading(true);
         setError(null);
-        const result = await (api[method] as any)<T>(endpoint, payload);
+        const apiMethod = (api as any)[method] as <T>(
+          endpoint: string,
+          data?: unknown,
+          options?: ApiRequestInit
+        ) => Promise<T>;
+        const result = await apiMethod<T>(endpoint, payload);
         setData(result);
         options.onSuccess?.(result);
         return result;
