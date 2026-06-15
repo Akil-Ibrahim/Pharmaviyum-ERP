@@ -67,11 +67,6 @@ export default function SignIn() {
           />
         </div>
 
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">Admin Login</h1>
-          <p className="text-sm text-muted-foreground">Secure access to your dashboard</p>
-        </div>
-
         <div className="space-y-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
