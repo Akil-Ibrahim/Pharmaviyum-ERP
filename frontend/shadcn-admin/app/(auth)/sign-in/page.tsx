@@ -9,7 +9,7 @@ function SignInFallback() {
           <img
             src="/Pharmaviyum1.png"
             alt="Pharmaviyum welcome"
-            className="h-64 w-full object-cover brightness-105 contrast-110 animate-pulse"
+            className="w-full object-contain brightness-105 contrast-110 animate-pulse"
           />
         </div>
 

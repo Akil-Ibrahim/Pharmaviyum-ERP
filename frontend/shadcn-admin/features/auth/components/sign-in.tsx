@@ -63,7 +63,7 @@ export default function SignIn() {
           <img
             src="/Pharmaviyum1.png"
             alt="Pharmaviyum welcome"
-            className="h-64 w-full object-cover brightness-105 contrast-110 hover:brightness-110 transition-all duration-300"
+            className="w-full object-contain brightness-105 contrast-110 hover:brightness-110 transition-all duration-300"
           />
         </div>
 
