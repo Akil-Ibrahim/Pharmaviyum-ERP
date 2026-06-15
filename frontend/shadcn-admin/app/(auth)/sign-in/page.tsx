@@ -4,7 +4,7 @@ import { Suspense } from "react";
 function SignInFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-6 lg:p-12">
-      <div className="mx-auto w-full max-w-[420px] space-y-8">
+      <div className="mx-auto w-full max-w-[420px]">
         <div className="overflow-hidden rounded-2xl border border-gradient-to-r from-violet-500/20 to-fuchsia-500/20 bg-gradient-to-br from-muted/5 to-muted/10 shadow-xl shadow-violet-500/10">
           <img
             src="/Pharmaviyum1.png"
