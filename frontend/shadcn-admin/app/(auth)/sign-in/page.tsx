@@ -12,8 +12,6 @@ function SignInFallback() {
             className="w-full object-contain brightness-105 contrast-110 animate-pulse"
           />
         </div>
-
-        <div className="space-y-6">
       </div>
     </div>
   );
