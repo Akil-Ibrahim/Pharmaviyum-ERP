@@ -6,7 +6,7 @@
 
 ### Запуск всех контейнеров
 ```bash
-docker-compose up -d
+docker compose -f docker-compose.yml up -d --build
 ```
 Запускает все сервисы в фоне (detached mode):
 - Frontend (http://localhost:3000)
@@ -15,6 +15,28 @@ docker-compose up -d
 - Redis кеш (6379)
 - Mortarium AI (http://localhost:8001)
 - Nginx reverse proxy (http://localhost)
+
+### Правильный запуск из корня проекта
+```bash
+cd /workspaces/Pharmaviyum-CRM
+docker compose -f docker-compose.yml up -d --build
+```
+
+### Если сервисы созданы, но не запущены
+Если контейнеры находятся в состоянии `Created`, а не `Up`, выполните:
+```bash
+cd /workspaces/Pharmaviyum-CRM
+docker compose -f docker-compose.yml start frontend mortarium-ai nginx
+```
+
+### Исправление ошибки сборки frontend
+Если при сборке frontend появляется ошибка, связанная с отсутствием `pnpm-lock.yaml`:
+```bash
+cd /workspaces/Pharmaviyum-CRM/frontend/shadcn-admin
+corepack pnpm install --lockfile-only
+cd /workspaces/Pharmaviyum-CRM
+docker compose -f docker-compose.yml up -d --build
+```
 
 ### Остановка всех контейнеров
 ```bash
