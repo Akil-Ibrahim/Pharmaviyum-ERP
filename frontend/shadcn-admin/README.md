@@ -67,7 +67,10 @@ Then update `.env` with your values.
 
 ### 2. Build and run with Docker Compose
 
+Run this from the repository root, not from `frontend/shadcn-admin`:
+
 ```bash
+cd /path/to/Pharmaviyum-CRM
 docker compose up --build
 ```
 

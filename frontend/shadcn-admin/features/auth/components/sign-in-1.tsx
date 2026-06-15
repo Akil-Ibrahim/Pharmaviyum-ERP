@@ -48,7 +48,7 @@ export function SignIn1({ className, ...props }: React.ComponentProps<"div">) {
       setIsSocialLoading(provider);
       await new Promise((resolve) => setTimeout(resolve, 1500));
       toast.success(`Signed in with ${provider} successfully!`);
-      window.location.href = "/dashboard";
+      window.location.href = "/dashboard2";
     } catch {
       toast.error(`Failed to sign in with ${provider}. Please try again.`);
     } finally {
@@ -62,7 +62,7 @@ export function SignIn1({ className, ...props }: React.ComponentProps<"div">) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       console.log("Login data:", data);
       toast.success("Signed in successfully!");
-      window.location.href = "/dashboard";
+      window.location.href = "/dashboard2";
     } catch {
       toast.error("Failed to sign in. Please check your credentials.");
     } finally {

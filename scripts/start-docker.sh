@@ -19,6 +19,10 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
+# Ensure the script runs from the repository root so docker compose can find docker-compose.yml
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
 # Build and start services
 docker compose up --build
 

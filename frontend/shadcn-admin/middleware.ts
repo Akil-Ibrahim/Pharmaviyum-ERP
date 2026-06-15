@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes that don't require authentication
@@ -14,6 +14,11 @@ export async function proxy(request: NextRequest) {
   const authToken = request.cookies.get("auth_token")?.value;
   const hasSession = !!authToken;
 
+  // Alias legacy dashboard path to the current dashboard route
+  if (pathname === "/dashboard") {
+    return NextResponse.redirect(new URL("/dashboard2", request.url));
+  }
+
   // If accessing a protected route without a session, redirect to sign-in
   if (!isPublicRoute && !hasSession) {
     const signInUrl = new URL("/sign-in", request.url);
@@ -23,12 +28,12 @@ export async function proxy(request: NextRequest) {
 
   // If accessing sign-in page while authenticated, redirect to dashboard
   if (pathname === "/sign-in" && hasSession) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/dashboard2", request.url));
   }
 
   // If accessing root page while authenticated, redirect to dashboard
   if (pathname === "/" && hasSession) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/dashboard2", request.url));
   }
 
   return NextResponse.next();

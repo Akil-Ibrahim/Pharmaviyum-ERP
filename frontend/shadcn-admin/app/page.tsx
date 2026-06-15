@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// Redirect to dashboard - middleware will handle authentication
+// Redirect to sign-in for unauthenticated users
 export default function Home() {
-  redirect("/users");
+  redirect("/sign-in");
 }

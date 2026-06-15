@@ -53,7 +53,7 @@ export function SignUp1({ className, ...props }: React.ComponentProps<"div">) {
       setIsSocialLoading(provider);
       await new Promise((resolve) => setTimeout(resolve, 1500));
       toast.success(`Signed up with ${provider} successfully!`);
-      window.location.href = "/dashboard";
+      window.location.href = "/dashboard2";
     } catch {
       toast.error(`Failed to sign up with ${provider}. Please try again.`);
     } finally {
@@ -67,7 +67,7 @@ export function SignUp1({ className, ...props }: React.ComponentProps<"div">) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       console.log("Sign up data:", data);
       toast.success("Account created successfully!");
-      window.location.href = "/dashboard";
+      window.location.href = "/dashboard2";
     } catch {
       toast.error("Failed to create account. Please try again.");
     } finally {

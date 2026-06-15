@@ -235,6 +235,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./assets:/usr/share/nginx/html/assets:ro
       - ./logs/nginx:/var/log/nginx
     networks:
       - app-network

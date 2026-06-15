@@ -39,7 +39,7 @@ export function SignIn2({ className, ...props }: React.ComponentProps<"div">) {
       setIsSocialLoading(provider);
       await new Promise((resolve) => setTimeout(resolve, 1500));
       toast.success(`Signed in with ${provider} successfully!`);
-      window.location.href = "/dashboard";
+      window.location.href = "/dashboard2";
     } catch {
       toast.error(`Failed to sign in with ${provider}. Please try again.`);
     } finally {
@@ -74,7 +74,7 @@ export function SignIn2({ className, ...props }: React.ComponentProps<"div">) {
       if (token) {
         localStorage.setItem('access_token', token);
         toast.success('Signed in successfully!');
-        window.location.href = '/dashboard';
+        window.location.href = '/dashboard2';
       } else {
         toast.error('Authentication failed: no token returned');
       }

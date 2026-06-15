@@ -24,13 +24,23 @@ export async function POST(request: Request) {
 
     console.log(`[Auth Proxy] Backend response status: ${response.status}`);
 
-    // Return backend response
+    // Return backend response and set cookie so SSR can detect session
     const data = await response.json();
+
+    // If backend returned access_token, set it as a cookie on the response
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (response.ok && data && data.access_token) {
+      const token = data.access_token;
+      // Set cookie for 24 hours; not HttpOnly because client code reads it
+      headers['Set-Cookie'] = `auth_token=${token}; Path=/; Max-Age=86400`;
+    }
+
     return new Response(JSON.stringify(data), {
       status: response.status,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
   } catch (error) {
     console.error('[Auth Proxy] Error:', error);
