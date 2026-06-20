@@ -1,5 +1,3 @@
-"""FastAPI application entry point"""
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -27,13 +25,32 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS middleware
+# =============================================================================
+# CORS Configuration - Production Security
+# =============================================================================
+# Define allowed origins based on environment
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",           # Frontend dev server
+    "http://localhost:8000",           # Backend direct access
+    "http://127.0.0.1:3000",          # Alternative localhost
+    # Add production domains here:
+    # "https://your-domain.com",
+    # "https://admin.your-domain.com",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,     # Restricted origins (not wildcard)
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "X-Requested-With",
+        "X-Request-ID",
+    ],
+    expose_headers=["X-Request-ID"],
+    max_age=600,  # Cache preflight response for 10 minutes
 )
 
 # Attach auth middleware and include routers
