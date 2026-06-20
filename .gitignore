@@ -76,3 +76,14 @@ mortarium-ai/models/*.gguf
 # Temporary / stack files
 project_stack_list.*
 frontend/shadcn-admin/.pnpm-store
+
+# Environment files
+.env
+.env.local
+.env.production
+!.env.example
+!.env.development
+
+# Backups
+*.backup.*
+backups/

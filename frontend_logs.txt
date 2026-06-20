@@ -1,0 +1,146 @@
+pharmaviyum-frontend  | ▲ Next.js 16.2.2
+pharmaviyum-frontend  | - Local:         http://localhost:3000
+pharmaviyum-frontend  | - Network:       http://0.0.0.0:3000
+pharmaviyum-frontend  | ✓ Ready in 0ms
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | ▲ Next.js 16.2.2
+pharmaviyum-frontend  | - Local:         http://localhost:3000
+pharmaviyum-frontend  | - Network:       http://0.0.0.0:3000
+pharmaviyum-frontend  | ✓ Ready in 0ms
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | ▲ Next.js 16.2.2
+pharmaviyum-frontend  | - Local:         http://localhost:3000
+pharmaviyum-frontend  | - Network:       http://0.0.0.0:3000
+pharmaviyum-frontend  | ✓ Ready in 0ms
+pharmaviyum-frontend  | ▲ Next.js 16.2.2
+pharmaviyum-frontend  | - Local:         http://localhost:3000
+pharmaviyum-frontend  | - Network:       http://0.0.0.0:3000
+pharmaviyum-frontend  | ✓ Ready in 0ms
+pharmaviyum-frontend  | ▲ Next.js 16.2.2
+pharmaviyum-frontend  | - Local:         http://localhost:3000
+pharmaviyum-frontend  | - Network:       http://0.0.0.0:3000
+pharmaviyum-frontend  | ✓ Ready in 0ms
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)
+pharmaviyum-frontend  | [Auth Proxy] Forwarding to: http://backend:8000/api/v1/auth/token
+pharmaviyum-frontend  | [Auth Proxy] Backend response status: 500
+pharmaviyum-frontend  | [Auth Proxy] Error: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+pharmaviyum-frontend  |     at JSON.parse (<anonymous>)
+pharmaviyum-frontend  |     at async f (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:1285)
+pharmaviyum-frontend  |     at async l (.next/server/chunks/[root-of-the-server]__0eac73i._.js:1:4882)

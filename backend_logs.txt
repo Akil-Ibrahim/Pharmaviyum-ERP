@@ -1,0 +1,1530 @@
+pharmaviyum-backend  | [2026-06-20 16:33:06 +0000] [7] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:33:06 +0000] [7] [INFO] Listening at: http://0.0.0.0:8000 (7)
+pharmaviyum-backend  | [2026-06-20 16:33:06 +0000] [7] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:33:06 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:33:07 +0000] [9] [INFO] Booting worker with pid: 9
+pharmaviyum-backend  | [2026-06-20 16:33:07 +0000] [7] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:33:11 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:11 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:33:11 +0000] [9] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:11 +0000] [9] [INFO] Worker exiting (pid: 9)
+pharmaviyum-backend  | [2026-06-20 16:33:11 +0000] [7] [ERROR] Worker (pid:8) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:33:11 +0000] [7] [INFO] Worker (pid:9) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:33:12 +0000] [7] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:33:12 +0000] [7] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:33:13 +0000] [7] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:33:13 +0000] [7] [INFO] Listening at: http://0.0.0.0:8000 (7)
+pharmaviyum-backend  | [2026-06-20 16:33:13 +0000] [7] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:33:13 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:33:13 +0000] [9] [INFO] Booting worker with pid: 9
+pharmaviyum-backend  | [2026-06-20 16:33:13 +0000] [7] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:33:18 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:18 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:33:18 +0000] [9] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:18 +0000] [9] [INFO] Worker exiting (pid: 9)
+pharmaviyum-backend  | [2026-06-20 16:33:19 +0000] [7] [ERROR] Worker (pid:8) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:33:19 +0000] [7] [INFO] Worker (pid:9) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:33:19 +0000] [7] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:33:19 +0000] [7] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:33:20 +0000] [7] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:33:20 +0000] [7] [INFO] Listening at: http://0.0.0.0:8000 (7)
+pharmaviyum-backend  | [2026-06-20 16:33:20 +0000] [7] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:33:20 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:33:20 +0000] [9] [INFO] Booting worker with pid: 9
+pharmaviyum-backend  | [2026-06-20 16:33:21 +0000] [7] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:33:24 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:24 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:33:25 +0000] [9] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:25 +0000] [9] [INFO] Worker exiting (pid: 9)
+pharmaviyum-backend  | [2026-06-20 16:33:25 +0000] [7] [ERROR] Worker (pid:8) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:33:25 +0000] [7] [INFO] Worker (pid:9) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:33:25 +0000] [7] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:33:25 +0000] [7] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:33:27 +0000] [7] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:33:27 +0000] [7] [INFO] Listening at: http://0.0.0.0:8000 (7)
+pharmaviyum-backend  | [2026-06-20 16:33:27 +0000] [7] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:33:27 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:33:27 +0000] [9] [INFO] Booting worker with pid: 9
+pharmaviyum-backend  | [2026-06-20 16:33:27 +0000] [7] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:33:31 +0000] [9] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:31 +0000] [9] [INFO] Worker exiting (pid: 9)
+pharmaviyum-backend  | [2026-06-20 16:33:31 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:31 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:33:31 +0000] [7] [ERROR] Worker (pid:9) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:33:31 +0000] [7] [INFO] Worker (pid:8) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:33:31 +0000] [7] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:33:31 +0000] [7] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:33:33 +0000] [6] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:33:33 +0000] [6] [INFO] Listening at: http://0.0.0.0:8000 (6)
+pharmaviyum-backend  | [2026-06-20 16:33:33 +0000] [6] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:33:33 +0000] [7] [INFO] Booting worker with pid: 7
+pharmaviyum-backend  | [2026-06-20 16:33:33 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:33:33 +0000] [6] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:33:37 +0000] [7] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:37 +0000] [7] [INFO] Worker exiting (pid: 7)
+pharmaviyum-backend  | [2026-06-20 16:33:37 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:37 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:33:38 +0000] [6] [ERROR] Worker (pid:7) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:33:38 +0000] [6] [INFO] Worker (pid:8) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:33:38 +0000] [6] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:33:38 +0000] [6] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:33:41 +0000] [7] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:33:41 +0000] [7] [INFO] Listening at: http://0.0.0.0:8000 (7)
+pharmaviyum-backend  | [2026-06-20 16:33:41 +0000] [7] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:33:41 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:33:41 +0000] [9] [INFO] Booting worker with pid: 9
+pharmaviyum-backend  | [2026-06-20 16:33:41 +0000] [7] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:33:44 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:44 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:33:45 +0000] [9] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:45 +0000] [9] [INFO] Worker exiting (pid: 9)
+pharmaviyum-backend  | [2026-06-20 16:33:45 +0000] [7] [ERROR] Worker (pid:8) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:33:45 +0000] [7] [INFO] Worker (pid:9) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:33:45 +0000] [7] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:33:45 +0000] [7] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:33:49 +0000] [7] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:33:49 +0000] [7] [INFO] Listening at: http://0.0.0.0:8000 (7)
+pharmaviyum-backend  | [2026-06-20 16:33:49 +0000] [7] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:33:49 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:33:50 +0000] [9] [INFO] Booting worker with pid: 9
+pharmaviyum-backend  | [2026-06-20 16:33:50 +0000] [7] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:33:53 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:53 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:33:53 +0000] [9] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:33:53 +0000] [9] [INFO] Worker exiting (pid: 9)
+pharmaviyum-backend  | [2026-06-20 16:33:54 +0000] [7] [ERROR] Worker (pid:8) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:33:54 +0000] [7] [INFO] Worker (pid:9) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:33:54 +0000] [7] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:33:54 +0000] [7] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:34:01 +0000] [7] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:34:01 +0000] [7] [INFO] Listening at: http://0.0.0.0:8000 (7)
+pharmaviyum-backend  | [2026-06-20 16:34:01 +0000] [7] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:34:01 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:34:01 +0000] [9] [INFO] Booting worker with pid: 9
+pharmaviyum-backend  | [2026-06-20 16:34:01 +0000] [7] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:34:05 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | [2026-06-20 16:34:05 +0000] [9] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:34:05 +0000] [9] [INFO] Worker exiting (pid: 9)
+pharmaviyum-backend  | [2026-06-20 16:34:05 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:34:06 +0000] [7] [ERROR] Worker (pid:9) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:34:06 +0000] [7] [INFO] Worker (pid:8) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:34:06 +0000] [7] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:34:06 +0000] [7] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:34:20 +0000] [7] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:34:20 +0000] [7] [INFO] Listening at: http://0.0.0.0:8000 (7)
+pharmaviyum-backend  | [2026-06-20 16:34:20 +0000] [7] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:34:20 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:34:20 +0000] [9] [INFO] Booting worker with pid: 9
+pharmaviyum-backend  | [2026-06-20 16:34:20 +0000] [7] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:34:25 +0000] [9] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:34:25 +0000] [9] [INFO] Worker exiting (pid: 9)
+pharmaviyum-backend  | [2026-06-20 16:34:25 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:34:25 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:34:25 +0000] [7] [ERROR] Worker (pid:9) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:34:25 +0000] [7] [INFO] Worker (pid:8) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:34:25 +0000] [7] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:34:25 +0000] [7] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:34:52 +0000] [7] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:34:52 +0000] [7] [INFO] Listening at: http://0.0.0.0:8000 (7)
+pharmaviyum-backend  | [2026-06-20 16:34:52 +0000] [7] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:34:52 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:34:52 +0000] [9] [INFO] Booting worker with pid: 9
+pharmaviyum-backend  | [2026-06-20 16:34:52 +0000] [7] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:34:56 +0000] [9] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:34:56 +0000] [9] [INFO] Worker exiting (pid: 9)
+pharmaviyum-backend  | [2026-06-20 16:34:56 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:34:56 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:34:57 +0000] [7] [ERROR] Worker (pid:9) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:34:57 +0000] [7] [INFO] Worker (pid:8) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:34:57 +0000] [7] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:34:57 +0000] [7] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:35:49 +0000] [7] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:35:49 +0000] [7] [INFO] Listening at: http://0.0.0.0:8000 (7)
+pharmaviyum-backend  | [2026-06-20 16:35:49 +0000] [7] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:35:49 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:35:49 +0000] [9] [INFO] Booting worker with pid: 9
+pharmaviyum-backend  | [2026-06-20 16:35:49 +0000] [7] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:35:53 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:35:53 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:35:53 +0000] [9] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:35:53 +0000] [9] [INFO] Worker exiting (pid: 9)
+pharmaviyum-backend  | [2026-06-20 16:35:53 +0000] [7] [ERROR] Worker (pid:8) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:35:54 +0000] [7] [INFO] Worker (pid:9) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:35:54 +0000] [7] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:35:54 +0000] [7] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:36:55 +0000] [7] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:36:55 +0000] [7] [INFO] Listening at: http://0.0.0.0:8000 (7)
+pharmaviyum-backend  | [2026-06-20 16:36:55 +0000] [7] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:36:55 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:36:55 +0000] [9] [INFO] Booting worker with pid: 9
+pharmaviyum-backend  | [2026-06-20 16:36:55 +0000] [7] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:36:59 +0000] [9] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:36:59 +0000] [9] [INFO] Worker exiting (pid: 9)
+pharmaviyum-backend  | [2026-06-20 16:36:59 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:36:59 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:36:59 +0000] [7] [ERROR] Worker (pid:9) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:36:59 +0000] [7] [INFO] Worker (pid:8) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:37:00 +0000] [7] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:37:00 +0000] [7] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:38:01 +0000] [7] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:38:01 +0000] [7] [INFO] Listening at: http://0.0.0.0:8000 (7)
+pharmaviyum-backend  | [2026-06-20 16:38:01 +0000] [7] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:38:01 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:38:01 +0000] [9] [INFO] Booting worker with pid: 9
+pharmaviyum-backend  | [2026-06-20 16:38:01 +0000] [7] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:38:05 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:38:05 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:38:05 +0000] [9] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:38:05 +0000] [9] [INFO] Worker exiting (pid: 9)
+pharmaviyum-backend  | [2026-06-20 16:38:05 +0000] [7] [ERROR] Worker (pid:8) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:38:05 +0000] [7] [INFO] Worker (pid:9) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:38:05 +0000] [7] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:38:05 +0000] [7] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:39:06 +0000] [6] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:39:06 +0000] [6] [INFO] Listening at: http://0.0.0.0:8000 (6)
+pharmaviyum-backend  | [2026-06-20 16:39:06 +0000] [6] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:39:06 +0000] [7] [INFO] Booting worker with pid: 7
+pharmaviyum-backend  | [2026-06-20 16:39:06 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:39:06 +0000] [6] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:39:10 +0000] [7] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:39:10 +0000] [7] [INFO] Worker exiting (pid: 7)
+pharmaviyum-backend  | [2026-06-20 16:39:10 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:39:10 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:39:11 +0000] [6] [ERROR] Worker (pid:7) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:39:11 +0000] [6] [INFO] Worker (pid:8) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:39:11 +0000] [6] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:39:11 +0000] [6] [ERROR] Reason: Worker failed to boot.
+pharmaviyum-backend  | [2026-06-20 16:40:12 +0000] [7] [INFO] Starting gunicorn 26.0.0
+pharmaviyum-backend  | [2026-06-20 16:40:12 +0000] [7] [INFO] Listening at: http://0.0.0.0:8000 (7)
+pharmaviyum-backend  | [2026-06-20 16:40:12 +0000] [7] [INFO] Using worker: uvicorn.workers.UvicornWorker
+pharmaviyum-backend  | [2026-06-20 16:40:12 +0000] [8] [INFO] Booting worker with pid: 8
+pharmaviyum-backend  | [2026-06-20 16:40:12 +0000] [9] [INFO] Booting worker with pid: 9
+pharmaviyum-backend  | [2026-06-20 16:40:12 +0000] [7] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+pharmaviyum-backend  | [2026-06-20 16:40:16 +0000] [8] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:40:16 +0000] [8] [INFO] Worker exiting (pid: 8)
+pharmaviyum-backend  | [2026-06-20 16:40:16 +0000] [9] [ERROR] Exception in worker process
+pharmaviyum-backend  | Traceback (most recent call last):
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/arbiter.py", line 713, in spawn_worker
+pharmaviyum-backend  |     worker.init_process()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 136, in init_process
+pharmaviyum-backend  |     self.load_wsgi()
+pharmaviyum-backend  |     ~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/workers/base.py", line 148, in load_wsgi
+pharmaviyum-backend  |     self.wsgi = self.app.wsgi()
+pharmaviyum-backend  |                 ~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/base.py", line 66, in wsgi
+pharmaviyum-backend  |     self.callable = self.load()
+pharmaviyum-backend  |                     ~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+pharmaviyum-backend  |     return self.load_wsgiapp()
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+pharmaviyum-backend  |     return util.import_app(self.app_uri)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/site-packages/gunicorn/util.py", line 411, in import_app
+pharmaviyum-backend  |     mod = importlib.import_module(module)
+pharmaviyum-backend  |   File "/usr/local/lib/python3.14/importlib/__init__.py", line 88, in import_module
+pharmaviyum-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+pharmaviyum-backend  |            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+pharmaviyum-backend  |   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/main.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/__init__.py", line 8, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1 import api_router
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/__init__.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.api.v1.endpoints import health
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/api/v1/endpoints/health.py", line 12, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.database import get_db
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/database.py", line 4, in <module>
+pharmaviyum-backend  |     from src.pharmaviyum.config import settings
+pharmaviyum-backend  |   File "/app/src/pharmaviyum/config.py", line 47
+pharmaviyum-backend  |     ALLOWED_ORIGINS: List[str] = [
+pharmaviyum-backend  | IndentationError: unexpected indent
+pharmaviyum-backend  | unexpected indent (config.py, line 47)
+pharmaviyum-backend  | [2026-06-20 16:40:16 +0000] [9] [INFO] Worker exiting (pid: 9)
+pharmaviyum-backend  | [2026-06-20 16:40:16 +0000] [7] [ERROR] Worker (pid:8) exited with code 3.
+pharmaviyum-backend  | [2026-06-20 16:40:17 +0000] [7] [INFO] Worker (pid:9) was sent SIGTERM!
+pharmaviyum-backend  | [2026-06-20 16:40:17 +0000] [7] [ERROR] Shutting down: Master
+pharmaviyum-backend  | [2026-06-20 16:40:17 +0000] [7] [ERROR] Reason: Worker failed to boot.

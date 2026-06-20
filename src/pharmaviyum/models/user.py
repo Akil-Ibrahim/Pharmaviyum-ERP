@@ -1,16 +1,12 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
-from datetime import datetime
-from src.pharmaviyum.db.base import Base
-
+from sqlalchemy import String, Boolean, Integer
+from sqlalchemy.orm import Mapped, mapped_column
+from src.pharmaviyum.database import Base
 
 class User(Base):
-	__tablename__ = "users"
-
-	id = Column(Integer, primary_key=True, index=True)
-	username = Column(String(100), unique=True, index=True, nullable=False)
-	email = Column(String(200), nullable=True)
-	hashed_password = Column(String(256), nullable=False)
-	is_active = Column(Boolean, default=True)
-	roles = Column(Text, nullable=True)
-	created_at = Column(DateTime, default=datetime.utcnow)
-	updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    __tablename__ = 'users'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    username: Mapped[str] = mapped_column(String(100), unique=True)
+    hashed_password: Mapped[str] = mapped_column(String(255))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
