@@ -1,48 +1,47 @@
-# =============================================================================
-# PharmaViyum CRM - Backend Dependencies
-# =============================================================================
-# Web Framework & Server
-fastapi>=0.136
-uvicorn[standard]>=0.49
-httpx>=0.27
+# =========================================
+# Core
+# =========================================
+fastapi==0.139.0
+uvicorn[standard]==0.35.0
+pydantic==2.11.7
+pydantic-settings==2.10.1
 
-# Authentication & Security
-authlib>=1.3
-python-jose[cryptography]>=3.3
-cryptography>=42
-itsdangerous>=2.2
-bcrypt==4.0.1
+# =========================================
+# Database
+# =========================================
+sqlalchemy==2.0.41
+asyncpg==0.30.0
+alembic==1.16.2
+pgvector==0.4.1
+
+# =========================================
+# Redis
+# =========================================
+redis==6.2.0
+
+# =========================================
+# Security
+# =========================================
+python-jose[cryptography]==3.5.0
 passlib[bcrypt]==1.7.4
+python-multipart==0.0.20
 
-# Rate Limiting
-slowapi>=0.1.9
+# =========================================
+# AI / RAG / Agents
+# =========================================
+langchain==0.3.27
+langgraph==0.6.5
+llama-cpp-python==0.3.16
+sentence-transformers==5.0.0
 
-# Database & ORM
-sqlalchemy>=2.0
-sqlmodel>=0.0.22
-alembic>=1.14
-asyncpg>=0.29
-psycopg[binary]>=3.2
-psycopg2-binary
-pgvector>=0.2
+# =========================================
+# HTTP Clients
+# =========================================
+httpx==0.28.1
+aiohttp==3.12.14
 
-# Cache & Queue
-redis>=5.0
-dramatiq[redis]>=2.0
-
-# Validation & Settings
-pydantic>=2.7
-pydantic-settings>=2.2
-python-dotenv>=1.0
-email-validator>=2.1
-
-# Serialization & Utilities
-orjson>=3.10
-python-multipart>=0.0.30
-numpy>=1.26
-typing-extensions>=4.11
-
-# Observability
-structlog>=24
-prometheus-client>=0.20
-sentry-sdk[fastapi]>=2.0
+# =========================================
+# Utilities
+# =========================================
+python-dotenv==1.1.1
+email-validator==2.2.0
