@@ -1,78 +1,53 @@
+"""
+Pharmaviyum CRM - Main FastAPI application
+First AI-powered CRM for pharmacy retail in SEA
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-from src.pharmaviyum import constants
-from src.pharmaviyum.utils.logger import setup_logging
-from src.pharmaviyum.api.v1 import api_router
-from src.pharmaviyum.middleware.auth_middleware import add_auth_middleware
-
-setup_logging()
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Startup and shutdown events"""
-    # Startup
-    print("🚀 Starting PharmaViyum...")
-    yield
-    # Shutdown
-    print("🛑 Shutting down PharmaViyum...")
+from src.pharmaviyum.core.config import settings
+from src.pharmaviyum.api.v1.router import api_router
 
 
 app = FastAPI(
-    title=constants.PROJECT_NAME,
-    version=constants.PROJECT_VERSION,
-    lifespan=lifespan,
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    description="AI-powered CRM for pharmacy retail in Southeast Asia",
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
 )
 
-# =============================================================================
-# CORS Configuration - Production Security
-# =============================================================================
-# Define allowed origins based on environment
-ALLOWED_ORIGINS = [
-    "http://localhost:3000",           # Frontend dev server
-    "http://localhost:8000",           # Backend direct access
-    "http://127.0.0.1:3000",          # Alternative localhost
-    # Add production domains here:
-    # "https://your-domain.com",
-    # "https://admin.your-domain.com",
-]
 
+# CORS middleware for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,     # Restricted origins (not wildcard)
+    allow_origins=["http://localhost:3000"],  # Next.js dev server
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=[
-        "Authorization",
-        "Content-Type",
-        "X-Requested-With",
-        "X-Request-ID",
-    ],
-    expose_headers=["X-Request-ID"],
-    max_age=600,  # Cache preflight response for 10 minutes
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Attach auth middleware and include routers
-add_auth_middleware(app)
-app.include_router(api_router, prefix=constants.API_V1_STR)
 
-
-@app.get("/")
-async def root():
-    return {"message": "Welcome to PharmaViyum CRM"}
+# Include API router
+app.include_router(api_router)
 
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    """Health check endpoint for monitoring"""
+    return {
+        "status": "healthy",
+        "app": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "environment": settings.ENVIRONMENT,
+    }
 
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "src.pharmaviyum.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-    )
+@app.get("/")
+async def root():
+    """Root endpoint with API info"""
+    return {
+        "name": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "docs": "/docs" if settings.DEBUG else "Disabled in production",
+        "health": "/health",
+    }

@@ -1,1 +1,4 @@
-from .clients import router as clients_router
+"""API v1 endpoints package"""
+from .patients import router as patients_router
+
+__all__ = ["patients_router"]
