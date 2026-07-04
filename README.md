@@ -2,13 +2,13 @@
   <img src="assets/pharmaviyum.png" alt="Pharmaviyum CRM Banner" width="100%">
 </p>
 
-[![Demo](https://img.shields.io/badge/Demo‑Safe‑green)](#demo)
-[![NDA](https://img.shields.io/badge/NDA‑Yes‑blue)](#legal-notice)
-[![DB](https://img.shields.io/badge/DB‑PostgreSQL‑blue)](#database)
-[![Python](https://img.shields.io/badge/Python‑3.14%2B‑blue?logo=python)](#technical-stack)
-[![FastAPI](https://img.shields.io/badge/FastAPI‑0.139.0‑black?logo=fastapi)](#technical-stack)
-[![React](https://img.shields.io/badge/React‑19.2.1‑61DAFB?logo=react)](#technical-stack)
-[![Next.js](https://img.shields.io/badge/Next.js‑16.2.2‑000000?logo=nextdotjs)](#technical-stack)
+[![Demo](https://img.shields.io/badge/Demo‑Safe‑green)](#demo)  
+[![NDA](https://img.shields.io/badge/NDA‑Yes‑blue)](#legal-notice)  
+[![DB](https://img.shields.io/badge/DB‑PostgreSQL‑blue)](#database)  
+[![Python](https://img.shields.io/badge/Python‑3.14%2B‑blue?logo=python)](#technical-stack)  
+[![FastAPI](https://img.shields.io/badge/FastAPI‑0.139.0‑black?logo=fastapi)](#technical-stack)  
+[![React](https://img.shields.io/badge/React‑19.2.1‑61DAFB?logo=react)](#technical-stack)  
+[![Next.js](https://img.shields.io/badge/Next.js‑16.2.2‑000000?logo=nextdotjs)](#technical-stack)  
 [![Docker](https://img.shields.io/badge/Docker‑✓‑2496ED?logo=docker)](#cicd--docker)
 
 # Pharmaviyum CRM
