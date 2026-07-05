@@ -1,83 +1,89 @@
-# ============================================================================
-# Multi-stage Dockerfile for Pharmaviyum CRM
-# Best practice 2026: Security, size optimization, layer caching
-# ============================================================================
+# ===========================================================================
+# Multi‑stage Dockerfile for Pharmaviyum CRM
+# Updated for CI stability and best practices (2026)
+# ===========================================================================
 
-# ----------------------------------------------------------------------------
-# Stage 1: Builder - Install dependencies
-# ----------------------------------------------------------------------------
-FROM python:3.14.6-slim as builder
+# ---------------------------------------------------------------------------
+# Stage 1 – Builder (install build‑time dependencies)
+# ---------------------------------------------------------------------------
+FROM python:3.14.6-slim AS builder
 
-# Set environment variables
+# Make apt non‑interactive to avoid debconf dialogs in CI
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Environment variables for Python
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install system dependencies for building
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+# Install system packages required to compile Python wheels
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc && \
+    rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Copy requirements first for better layer caching
+# Cache‑friendly copy of requirements
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies (cache layer for pip)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir -r requirements.txt && \
+    rm -rf /root/.cache/pip
 
-# ----------------------------------------------------------------------------
-# Stage 2: Production - Minimal runtime image
-# ----------------------------------------------------------------------------
-FROM python:3.14.6-slim as production
+# ---------------------------------------------------------------------------
+# Stage 2 – Production (minimal runtime image)
+# ---------------------------------------------------------------------------
+FROM python:3.14.6-slim AS production
 
-# Metadata
 LABEL maintainer="Pharmaviyum Team <dev@pharmaviyum.com>" \
       version="1.0.0" \
-      description="AI-powered CRM for pharmacy retail in Southeast Asia"
+      description="AI‑powered CRM for pharmacy retail in SE Asia"
 
-# Set environment variables
+# Non‑interactive flag for the second stage as well
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Runtime environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
     PORT=8000 \
     ENVIRONMENT=production
 
-# Install runtime system dependencies only
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && useradd --create-home --shell /bin/bash app
+# Install only runtime‑only packages (curl) and create the app user.
+# `--no-log-init` avoids writing to /var/log/lastlog which can be problematic
+# in slim images.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/* && \
+    useradd --create-home --shell /bin/bash --no-log-init app
 
-# Set working directory
 WORKDIR /app
 
-# Copy Python packages from builder
+# Copy Python packages and binaries from the builder stage
 COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy application code
+# Copy application source code, changing ownership to the non‑root user.
+# The user already exists (created above), so `--chown` works reliably.
 COPY --chown=app:app src/ ./src
 COPY --chown=app:app alembic/ ./alembic
 COPY --chown=app:app alembic.ini .
-
-# Copy entrypoint script
 COPY --chown=app:app docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Switch to non-root user
+# Run the container as the non‑root user
 USER app
 
-# Expose port
 EXPOSE 8000
 
-# Health check
+# Lightweight healthcheck using curl (silent, fail fast)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -fsS http://localhost:8000/health || exit 1
 
-# Default command
+# Entrypoint & default command
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["uvicorn", "src.pharmaviyum.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
