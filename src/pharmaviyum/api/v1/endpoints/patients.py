@@ -1,276 +1,373 @@
 """
-Patient API endpoints
-CRUD operations for patient management
+Patient API endpoints - Rewritten with 2026 best practices
+Uses Service layer, Response Envelope, Pagination, RBAC, Feature Flags
 """
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, or_
-from typing import Optional
 from src.pharmaviyum.core.database import get_db
-from src.pharmaviyum.models.patients import Patient
+from src.pharmaviyum.core.uow import UnitOfWork
+from src.pharmaviyum.core.schemas import ResponseEnvelope, PaginatedResponse
+from src.pharmaviyum.core.security.rbac import get_current_active_user, require_role
+from src.pharmaviyum.core.feature_flags import is_feature_enabled
+from src.pharmaviyum.repositories.patient import PatientRepository
+from src.pharmaviyum.services.patient import PatientService
 from src.pharmaviyum.schemas.patient import (
     PatientCreate,
     PatientUpdate,
     PatientResponse,
     PatientListResponse,
+    PatientAIProfile,
 )
+from src.pharmaviyum.core.exceptions import NotFoundException, ConflictException
+from src.pharmaviyum.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/patients", tags=["patients"])
 
 
-@router.post("/", response_model=PatientResponse, status_code=status.HTTP_201_CREATED)
+# ============================================================================
+# DEPENDENCY INJECTION
+# ============================================================================
+
+def get_patient_service(db: AsyncSession = Depends(get_db)) -> PatientService:
+    """Dependency: Patient service with repository"""
+    repository = PatientRepository(db)
+    return PatientService(repository)
+
+
+# ============================================================================
+# ENDPOINTS
+# ============================================================================
+
+@router.post(
+    "/",
+    response_model=ResponseEnvelope[PatientResponse],
+    status_code=status.HTTP_201_CREATED,
+    summary="Create new patient",
+    description="Create a new patient with validation and event emission",
+)
 async def create_patient(
     patient_data: PatientCreate,
-    db: AsyncSession = Depends(get_db),
+    request: Request,
+    service: PatientService = Depends(get_patient_service),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """
     Create a new patient
     
-    Args:
-        patient_data: Patient creation data
-        db: Database session
-        
-    Returns:
-        Created patient object
-        
-    Raises:
-        HTTPException 400: If phone already exists
+    - Validates phone/email uniqueness
+    - Emits patient.created event
+    - Records metrics
+    - Requires authentication
     """
-    # Check if phone already exists
-    existing = await db.execute(
-        select(Patient).where(Patient.phone == patient_data.phone)
-    )
-    if existing.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Patient with this phone already exists"
+    try:
+        patient = await service.create_patient(
+            data=patient_data,
+            created_by=current_user.get("sub"),
+        )
+        
+        return ResponseEnvelope.success_response(
+            data=PatientResponse.model_validate(patient),
+            meta={
+                "correlation_id": getattr(request.state, "correlation_id", None),
+            },
         )
     
-    # Create patient
-    patient = Patient(
-        **patient_data.model_dump(),
-        full_name=f"{patient_data.first_name} {patient_data.last_name}",
-    )
-    db.add(patient)
-    await db.flush()
-    await db.refresh(patient)
-    
-    return patient
+    except ValueError as e:
+        raise ConflictException(str(e))
 
 
-@router.get("/", response_model=list[PatientListResponse])
+@router.get(
+    "/",
+    response_model=ResponseEnvelope[PaginatedResponse[PatientListResponse]],
+    summary="List patients",
+    description="List patients with filtering, search, and pagination",
+)
 async def list_patients(
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(50, ge=1, le=100, description="Max records to return"),
-    search: Optional[str] = Query(None, description="Search by name or phone"),
-    city: Optional[str] = Query(None, description="Filter by city"),
-    country: Optional[str] = Query(None, description="Filter by country"),
-    loyalty_tier: Optional[str] = Query(None, description="Filter by loyalty tier"),
-    is_active: Optional[bool] = Query(None, description="Filter by active status"),
-    db: AsyncSession = Depends(get_db),
+    request: Request,
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+    search: str = Query(None, description="Search by name, phone, or email"),
+    city: str = Query(None, description="Filter by city"),
+    country: str = Query(None, description="Filter by country"),
+    loyalty_tier: str = Query(None, description="Filter by loyalty tier"),
+    is_active: bool = Query(None, description="Filter by active status"),
+    service: PatientService = Depends(get_patient_service),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """
-    List patients with filtering and pagination
+    List patients with advanced filtering
     
-    Args:
-        skip: Pagination offset
-        limit: Pagination limit
-        search: Search query (name or phone)
-        city: City filter
-        country: Country filter
-        loyalty_tier: Loyalty tier filter
-        is_active: Active status filter
-        db: Database session
-        
-    Returns:
-        List of patients
+    - Supports text search
+    - Multiple filter options
+    - Pagination with metadata
+    - Requires authentication
     """
-    query = select(Patient)
-    
-    # Apply filters
-    if search:
-        search_pattern = f"%{search}%"
-        query = query.where(
-            or_(
-                Patient.full_name.ilike(search_pattern),
-                Patient.phone.ilike(search_pattern),
-            )
-        )
-    if city:
-        query = query.where(Patient.city == city)
-    if country:
-        query = query.where(Patient.country == country)
-    if loyalty_tier:
-        query = query.where(Patient.loyalty_tier == loyalty_tier)
-    if is_active is not None:
-        query = query.where(Patient.is_active == is_active)
-    
-    # Apply pagination
-    query = query.offset(skip).limit(limit).order_by(Patient.updated_at.desc())
-    
-    result = await db.execute(query)
-    return result.scalars().all()
-
-
-@router.get("/count")
-async def count_patients(
-    is_active: Optional[bool] = Query(None),
-    country: Optional[str] = Query(None),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Count patients with optional filters
-    
-    Returns:
-        Dictionary with count
-    """
-    query = select(func.count(Patient.id))
-    
-    if is_active is not None:
-        query = query.where(Patient.is_active == is_active)
-    if country:
-        query = query.where(Patient.country == country)
-    
-    result = await db.execute(query)
-    return {"count": result.scalar_one()}
-
-
-@router.get("/{patient_id}", response_model=PatientResponse)
-async def get_patient(
-    patient_id: int,
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Get patient by ID
-    
-    Args:
-        patient_id: Patient ID
-        db: Database session
-        
-    Returns:
-        Patient object
-        
-    Raises:
-        HTTPException 404: If patient not found
-    """
-    result = await db.execute(
-        select(Patient).where(Patient.id == patient_id)
+    patients, total = await service.list_patients(
+        query_text=search,
+        city=city,
+        country=country,
+        loyalty_tier=loyalty_tier,
+        is_active=is_active,
+        page=page,
+        page_size=page_size,
     )
-    patient = result.scalar_one_or_none()
     
-    if not patient:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Patient not found"
-        )
+    paginated = PaginatedResponse.create(
+        items=[PatientListResponse.model_validate(p) for p in patients],
+        page=page,
+        page_size=page_size,
+        total_items=total,
+    )
     
-    return patient
+    return ResponseEnvelope.success_response(
+        data=paginated,
+        meta={
+            "correlation_id": getattr(request.state, "correlation_id", None),
+        },
+    )
 
 
-@router.get("/phone/{phone}", response_model=PatientResponse)
+@router.get(
+    "/statistics",
+    response_model=ResponseEnvelope[dict],
+    summary="Get patient statistics",
+    description="Get aggregated patient statistics",
+)
+@require_role("manager")
+async def get_patient_statistics(
+    request: Request,
+    service: PatientService = Depends(get_patient_service),
+    current_user: dict = Depends(get_current_active_user),
+):
+    """
+    Get patient statistics
+    
+    - Total/active/inactive counts
+    - Breakdown by loyalty tier
+    - Breakdown by country
+    - Requires manager role
+    """
+    stats = await service.get_statistics()
+    
+    return ResponseEnvelope.success_response(
+        data=stats,
+        meta={
+            "correlation_id": getattr(request.state, "correlation_id", None),
+        },
+    )
+
+
+@router.get(
+    "/phone/{phone}",
+    response_model=ResponseEnvelope[PatientResponse],
+    summary="Get patient by phone",
+    description="Get patient by phone number with caching",
+)
 async def get_patient_by_phone(
     phone: str,
-    db: AsyncSession = Depends(get_db),
+    request: Request,
+    service: PatientService = Depends(get_patient_service),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """
     Get patient by phone number
     
-    Args:
-        phone: Patient phone number
-        db: Database session
-        
-    Returns:
-        Patient object
-        
-    Raises:
-        HTTPException 404: If patient not found
+    - Uses cache for performance
+    - Requires authentication
     """
-    result = await db.execute(
-        select(Patient).where(Patient.phone == phone)
-    )
-    patient = result.scalar_one_or_none()
+    patient = await service.get_patient_by_phone(phone)
     
     if not patient:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Patient not found"
-        )
+        raise NotFoundException("Patient", phone)
     
-    return patient
+    return ResponseEnvelope.success_response(
+        data=PatientResponse.model_validate(patient),
+        meta={
+            "correlation_id": getattr(request.state, "correlation_id", None),
+            "cached": True,  # Indicate if from cache
+        },
+    )
 
 
-@router.put("/{patient_id}", response_model=PatientResponse)
+@router.get(
+    "/{patient_id}",
+    response_model=ResponseEnvelope[PatientResponse],
+    summary="Get patient by ID",
+    description="Get patient by ID with all relationships",
+)
+async def get_patient(
+    patient_id: int,
+    request: Request,
+    service: PatientService = Depends(get_patient_service),
+    current_user: dict = Depends(get_current_active_user),
+):
+    """
+    Get patient by ID
+    
+    - Includes allergies, conditions, insurances
+    - Uses cache
+    - Requires authentication
+    """
+    patient = await service.get_patient(patient_id)
+    
+    if not patient:
+        raise NotFoundException("Patient", patient_id)
+    
+    return ResponseEnvelope.success_response(
+        data=PatientResponse.model_validate(patient),
+        meta={
+            "correlation_id": getattr(request.state, "correlation_id", None),
+        },
+    )
+
+
+@router.get(
+    "/{patient_id}/ai-profile",
+    response_model=ResponseEnvelope[PatientAIProfile],
+    summary="Get AI-optimized patient profile",
+    description="Get patient profile optimized for Mortarium AI",
+)
+async def get_patient_ai_profile(
+    patient_id: int,
+    request: Request,
+    service: PatientService = Depends(get_patient_service),
+    current_user: dict = Depends(get_current_active_user),
+):
+    """
+    Get AI-optimized patient profile for Mortarium
+    
+    - Controlled by feature flag: ai_patient_profiles
+    - Includes allergies, conditions
+    - Optimized for AI context
+    - Requires authentication
+    """
+    # Check feature flag
+    if not await is_feature_enabled("ai_patient_profiles", user_id=current_user.get("sub")):
+        raise NotFoundException("AI profile feature", "disabled")
+    
+    profile = await service.get_ai_profile(patient_id)
+    
+    if not profile:
+        raise NotFoundException("Patient", patient_id)
+    
+    return ResponseEnvelope.success_response(
+        data=profile,
+        meta={
+            "correlation_id": getattr(request.state, "correlation_id", None),
+            "feature_flag": "ai_patient_profiles",
+        },
+    )
+
+
+@router.put(
+    "/{patient_id}",
+    response_model=ResponseEnvelope[PatientResponse],
+    summary="Update patient",
+    description="Update patient with validation and event emission",
+)
 async def update_patient(
     patient_id: int,
     patient_data: PatientUpdate,
-    db: AsyncSession = Depends(get_db),
+    request: Request,
+    service: PatientService = Depends(get_patient_service),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """
-    Update patient data
+    Update patient
     
-    Args:
-        patient_id: Patient ID
-        patient_data: Update data (only provided fields)
-        db: Database session
-        
-    Returns:
-        Updated patient object
-        
-    Raises:
-        HTTPException 404: If patient not found
+    - Validates uniqueness constraints
+    - Emits patient.updated event
+    - Invalidates cache
+    - Requires authentication
     """
-    result = await db.execute(
-        select(Patient).where(Patient.id == patient_id)
-    )
-    patient = result.scalar_one_or_none()
-    
-    if not patient:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Patient not found"
+    try:
+        patient = await service.update_patient(
+            id=patient_id,
+            data=patient_data,
+            updated_by=current_user.get("sub"),
+        )
+        
+        if not patient:
+            raise NotFoundException("Patient", patient_id)
+        
+        return ResponseEnvelope.success_response(
+            data=PatientResponse.model_validate(patient),
+            meta={
+                "correlation_id": getattr(request.state, "correlation_id", None),
+            },
         )
     
-    # Update only provided fields
-    update_data = patient_data.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(patient, field, value)
-    
-    # Update full_name if first/last name changed
-    if "first_name" in update_data or "last_name" in update_data:
-        patient.full_name = f"{patient.first_name} {patient.last_name}"
-    
-    await db.flush()
-    await db.refresh(patient)
-    
-    return patient
+    except ValueError as e:
+        raise ConflictException(str(e))
 
 
-@router.delete("/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{patient_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete patient",
+    description="Soft delete patient (or hard delete with feature flag)",
+)
 async def delete_patient(
     patient_id: int,
-    db: AsyncSession = Depends(get_db),
+    request: Request,
+    hard_delete: bool = Query(False, description="Hard delete (requires feature flag)"),
+    service: PatientService = Depends(get_patient_service),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """
-    Delete patient (soft delete - set is_active=False)
+    Delete patient
     
-    Args:
-        patient_id: Patient ID
-        db: Database session
-        
-    Raises:
-        HTTPException 404: If patient not found
+    - Default: soft delete (is_active=False)
+    - Hard delete requires feature flag: patient_hard_delete
+    - Emits patient.deleted event
+    - Requires authentication
     """
-    result = await db.execute(
-        select(Patient).where(Patient.id == patient_id)
+    deleted = await service.delete_patient(
+        id=patient_id,
+        deleted_by=current_user.get("sub"),
+        hard_delete=hard_delete,
     )
-    patient = result.scalar_one_or_none()
+    
+    if not deleted:
+        raise NotFoundException("Patient", patient_id)
+    
+    return None
+
+
+@router.post(
+    "/{patient_id}/visit",
+    response_model=ResponseEnvelope[PatientResponse],
+    summary="Record patient visit",
+    description="Record patient visit and update statistics",
+)
+async def record_visit(
+    patient_id: int,
+    request: Request,
+    purchase_amount: int = Query(0, ge=0, description="Purchase amount"),
+    service: PatientService = Depends(get_patient_service),
+    current_user: dict = Depends(get_current_active_user),
+):
+    """
+    Record patient visit
+    
+    - Updates visit_count
+    - Updates total_purchases
+    - Updates last_visit_date
+    - Emits patient.visit_recorded event
+    """
+    patient = await service.record_visit(
+        id=patient_id,
+        purchase_amount=purchase_amount,
+    )
     
     if not patient:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Patient not found"
-        )
+        raise NotFoundException("Patient", patient_id)
     
-    # Soft delete
-    patient.is_active = False
-    await db.flush()
+    return ResponseEnvelope.success_response(
+        data=PatientResponse.model_validate(patient),
+        meta={
+            "correlation_id": getattr(request.state, "correlation_id", None),
+        },
+    )

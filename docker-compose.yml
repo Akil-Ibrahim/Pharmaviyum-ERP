@@ -1,268 +1,160 @@
-version: "3.9"
-# =============================================================================
-# Pharmaviyum-CRM Docker Compose Configuration
-# Production-ready with health checks, security, and resource limits
-# =============================================================================
+# ============================================================================
+# Docker Compose for Development
+# Best practice 2026: Hot reload, debugging, local development
+# ============================================================================
+
+version: '3.8'
 
 services:
-  # Database Service
-  db:
-    image: postgres:15-alpine
-    container_name: pharmaviyum-db
-    restart: unless-stopped
+  # --------------------------------------------------------------------------
+  # PostgreSQL Database
+  # --------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: pharmaviyum-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-app_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_password}  # Override in .env
-      POSTGRES_DB: ${POSTGRES_DB:-pharmaviyum}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./mortarium-ai/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pharmaviyum
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    networks:
-      - app-network
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user} -d ${POSTGRES_DB:-pharmaviyum}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    networks:
+      - pharmaviyum-network
 
-  # Redis Cache Service
+  # --------------------------------------------------------------------------
+  # Redis Cache & Queue
+  # --------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
     container_name: pharmaviyum-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secure_pass}
+    ports:
+      - "6379:6379"
     volumes:
-      - redis-data:/data
-    networks:
-      - app-network
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
+      - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    command: redis-server --appendonly yes
+    networks:
+      - pharmaviyum-network
 
-  # FastAPI Backend Service
-  backend:
+  # --------------------------------------------------------------------------
+  # FastAPI Application
+  # --------------------------------------------------------------------------
+  api:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        PYTHON_VERSION: "3.14.6"
-    container_name: pharmaviyum-backend
-    restart: unless-stopped
+      target: production
+    container_name: pharmaviyum-api
     environment:
-      PYTHONPATH: /app/src
-      PYTHONUNBUFFERED: "1"
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-app_user}:${POSTGRES_PASSWORD:-secure_password}@db:5432/${POSTGRES_DB:-pharmaviyum}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_secure_pass}@redis:6379/0
-      AI_SERVICE_URL: http://mortarium-ai:8000
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-      DEBUG: "${DEBUG:-false}"
-      ADMIN_USER: ${ADMIN_USER:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123!@#}
-      API_SECRET_KEY: ${API_SECRET_KEY:-dev_api_secret_key_32_chars_minimum_for_jwt_signing}
+      ENVIRONMENT: development
+      DEBUG: "true"
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: dev-secret-key-change-in-production
+      LOG_LEVEL: DEBUG
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src:ro
+      - ./alembic:/app/alembic:ro
+      - ./alembic.ini:/app/alembic.ini:ro
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports:
-      - "${BACKEND_PORT:-8000}:8000"
-    volumes:
-      - ./src:/app/src:ro
-      - ./logs:/app/logs
-    networks:
-      - app-network
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
+    command: uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - pharmaviyum-network
 
-  # Mortarium AI (LLM/RAG) Service
-  mortarium-ai:
+  # --------------------------------------------------------------------------
+  # Background Worker
+  # --------------------------------------------------------------------------
+  worker:
     build:
-      context: ./mortarium-ai
-      dockerfile: Dockerfile
-      args:
-        PYTHON_VERSION: "3.14.6"
-    container_name: pharmaviyum-ai
-    restart: unless-stopped
+      context: .
+      dockerfile: Dockerfile.worker
+      target: production
+    container_name: pharmaviyum-worker
     environment:
-      PYTHONUNBUFFERED: "1"
-      MODEL_PATH: ${MODEL_PATH:-/app/models/qwen2.5-7b-instruct-q4_k_m.gguf}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-app_user}:${POSTGRES_PASSWORD:-secure_password}@db:5432/${POSTGRES_DB:-pharmaviyum}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_secure_pass}@redis:6379/1
-      LOG_LEVEL: ${LOG_LEVEL:-info}
+      ENVIRONMENT: development
+      DEBUG: "true"
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
+      REDIS_URL: redis://redis:6379/0
+      LOG_LEVEL: DEBUG
+    volumes:
+      - ./src:/app/src:ro
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./mortarium-ai/models:/app/models:ro
-      - ./mortarium-ai/data:/app/data
-      - ./mortarium-ai/core:/app/core:ro
-    ports:
-      - "${MORTARIUM_PORT:-8001}:8000"
+    command: python -m src.pharmaviyum.workers.worker
     networks:
-      - app-network
-    deploy:
-      resources:
-        limits:
-          cpus: '1.8'
-          memory: 6G
-        reservations:
-          cpus: '1'
-          memory: 3G
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
+      - pharmaviyum-network
 
-  # Next.js Frontend Service
-  frontend:
-    build:
-      context: ./frontend/shadcn-admin
-      dockerfile: Dockerfile
-      args:
-        BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-dev-secret-key}
-        BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
-        DATABASE_URL: ${DATABASE_URL:-postgresql://app_user:secure_password@db:5432/pharmaviyum}
-        GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
-        GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
-        GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-        GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-        GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY:-}
-    container_name: pharmaviyum-frontend
-    restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_healthy
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+  # --------------------------------------------------------------------------
+  # Redis Commander (Redis GUI for development)
+  # --------------------------------------------------------------------------
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: pharmaviyum-redis-gui
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
-      NEXT_PUBLIC_API_BASE: /api/v1
-      NEXT_PUBLIC_AI_SERVICE_URL: http://mortarium-ai:8000
-      BETTER_AUTH_URL: http://localhost:3000
-      NODE_ENV: ${NODE_ENV:-production}
-    networks:
-      - app-network
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # Nginx Reverse Proxy
-  nginx:
-    image: nginx:1.25-alpine
-    container_name: pharmaviyum-nginx
-    restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_healthy
-      frontend:
-        condition: service_healthy
+      REDIS_HOSTS: local:redis:6379
     ports:
-      - "${NGINX_HTTP_PORT:-80}:80"
-      - "${NGINX_HTTPS_PORT:-443}:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-      - ./assets:/usr/share/nginx/html/assets:ro
-      - ./logs/nginx:/var/log/nginx
+      - "8081:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
     networks:
-      - app-network
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 256M
-        reservations:
-          cpus: '0.5'
-          memory: 128M
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      - pharmaviyum-network
 
+  # --------------------------------------------------------------------------
+  # Adminer (Database GUI for development)
+  # --------------------------------------------------------------------------
+  adminer:
+    image: adminer:latest
+    container_name: pharmaviyum-db-gui
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pharmaviyum-network
+
+# ============================================================================
+# Volumes
+# ============================================================================
 volumes:
-  pgdata:
-  redis-data:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
 
+# ============================================================================
+# Networks
+# ============================================================================
 networks:
-  app-network:
+  pharmaviyum-network:
     driver: bridge

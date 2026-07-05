@@ -8,6 +8,8 @@ from .rate_limit import RateLimitMiddleware
 from .idempotency import IdempotencyMiddleware
 from .sanitization import SanitizationMiddleware
 from .timeout import TimeoutMiddleware
+from .metrics import MetricsMiddleware
+from .feature_flags import FeatureFlagMiddleware
 
 __all__ = [
     "CorrelationIdMiddleware",
@@ -16,4 +18,6 @@ __all__ = [
     "IdempotencyMiddleware",
     "SanitizationMiddleware",
     "TimeoutMiddleware",
+    "MetricsMiddleware",
+    "FeatureFlagMiddleware",
 ]

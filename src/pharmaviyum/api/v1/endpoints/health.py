@@ -1,114 +1,117 @@
 """
-Health Check Endpoint
-Best Practice: Health checks must verify all critical dependencies.
-A healthy response means the service can actually handle requests.
+Health and readiness endpoints
+Best practice 2026: Kubernetes-compatible health checks
 """
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from redis.asyncio import Redis
-import structlog
-import httpx
+from fastapi import APIRouter, Response
+from src.pharmaviyum.core.health import health_checker, HealthStatus
+from src.pharmaviyum.core.metrics import get_metrics, APP_HEALTH_STATUS
+from src.pharmaviyum.core.config import settings
 
-from src.pharmaviyum.database import get_db
-from src.pharmaviyum.redis_client import get_redis
-from src.pharmaviyum.config import settings
-
-logger = structlog.get_logger()
 router = APIRouter(tags=["health"])
 
 
 @router.get("/health")
-async def health_check(
-    db: AsyncSession = Depends(get_db),
-    redis: Redis = Depends(get_redis),
-):
+async def health_check():
     """
-    Comprehensive health check that validates all dependencies.
+    Liveness probe endpoint
     
-    Best Practices:
-    - Check database connectivity
-    - Check Redis connectivity
-    - Check external services (AI, etc.)
-    - Return detailed status for each component
-    - Use appropriate HTTP status codes
+    Returns overall health status.
+    Used by Kubernetes livenessProbe.
+    
+    Returns:
+        200 if healthy or degraded
+        503 if unhealthy
     """
-    health_status = {
-        "status": "healthy",
-        "version": settings.PROJECT_VERSION,
-        "components": {},
-    }
+    health = await health_checker.check_all()
     
-    all_healthy = True
+    # Update metrics
+    if health.status == HealthStatus.HEALTHY:
+        APP_HEALTH_STATUS.state("healthy")
+    elif health.status == HealthStatus.DEGRADED:
+        APP_HEALTH_STATUS.state("degraded")
+    elif health.status == HealthStatus.UNHEALTHY:
+        APP_HEALTH_STATUS.state("unhealthy")
+    else:
+        APP_HEALTH_STATUS.state("unknown")
     
-    # ✅ GOOD: Check database connectivity
-    # ❌ BAD: Return healthy without checking dependencies
-    try:
-        await db.execute("SELECT 1")
-        health_status["components"]["database"] = {            "status": "healthy",
-            "latency_ms": 0,  # Could measure actual latency
-        }
-    except Exception as e:
-        logger.error("health_check_db_failed", error=str(e))
-        health_status["components"]["database"] = {
-            "status": "unhealthy",
-            "error": str(e),
-        }
-        all_healthy = False
+    # Return appropriate status code
+    status_code = 200 if health.status != HealthStatus.UNHEALTHY else 503
     
-    # ✅ GOOD: Check Redis connectivity
-    try:
-        await redis.ping()
-        health_status["components"]["redis"] = {
-            "status": "healthy",
-        }
-    except Exception as e:
-        logger.error("health_check_redis_failed", error=str(e))
-        health_status["components"]["redis"] = {
-            "status": "unhealthy",
-            "error": str(e),
-        }
-        all_healthy = False
-    
-    # ✅ GOOD: Check AI service connectivity (if enabled)
-    if settings.MORTARIUM_AI_ENABLED:
-        try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                response = await client.get(f"{settings.MORTARIUM_AI_URL}/health")
-                if response.status_code == 200:
-                    health_status["components"]["mortarium_ai"] = {
-                        "status": "healthy",
-                    }
-                else:
-                    raise Exception(f"AI service returned {response.status_code}")
-        except Exception as e:
-            logger.error("health_check_ai_failed", error=str(e))
-            health_status["components"]["mortarium_ai"] = {
-                "status": "unhealthy",
-                "error": str(e),
-            }
-            # Don't mark as unhealthy if AI is optional
-            # all_healthy = False
-    
-    # ✅ GOOD: Return appropriate status code
-    if not all_healthy:
-        health_status["status"] = "unhealthy"
-        raise HTTPException(status_code=503, detail=health_status)
-        return health_status
+    return Response(
+        content=__import__("json").dumps(health.to_dict(), ensure_ascii=False),
+        status_code=status_code,
+        media_type="application/json",
+    )
 
 
-@router.get("/health/ready")
+@router.get("/ready")
 async def readiness_check():
     """
-    Readiness probe for Kubernetes/load balancers.
-    Checks if the service is ready to accept traffic.
+    Readiness probe endpoint
+    
+    Checks if application is ready to accept traffic.
+    Used by Kubernetes readinessProbe.
+    
+    Returns:
+        200 if ready
+        503 if not ready
     """
-    return {"status": "ready"}
+    # For readiness, we check only critical dependencies
+    critical_checks = ["database", "redis"]
+    
+    results = []
+    all_healthy = True
+    
+    for check_name in critical_checks:
+        result = await health_checker.check(check_name)
+        results.append(result)
+        if result.status != HealthStatus.HEALTHY:
+            all_healthy = False
+    
+    status_code = 200 if all_healthy else 503
+    
+    return Response(
+        content=__import__("json").dumps({
+            "status": "ready" if all_healthy else "not_ready",
+            "checks": {
+                r.name: {
+                    "status": r.status.value,
+                    "message": r.message,
+                }
+                for r in results
+            },
+        }, ensure_ascii=False),
+        status_code=status_code,
+        media_type="application/json",
+    )
 
 
-@router.get("/health/live")
-async def liveness_check():
+@router.get("/metrics")
+async def metrics():
     """
-    Liveness probe for Kubernetes.
-    Simple check to verify the process is running.
+    Prometheus metrics endpoint
+    
+    Returns metrics in Prometheus text format.
+    Used by Prometheus server for scraping.
     """
-    return {"status": "alive"}
+    metrics_bytes, content_type = get_metrics()
+    
+    return Response(
+        content=metrics_bytes,
+        media_type=content_type,
+    )
+
+
+@router.get("/version")
+async def version():
+    """
+    Application version endpoint
+    
+    Returns version information for debugging.
+    """
+    return {
+        "name": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "environment": settings.ENVIRONMENT.value,
+        "python_version": __import__("sys").version,
+    }

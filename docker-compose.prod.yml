@@ -1,22 +1,241 @@
-# Production overrides
-# Applied via: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-# Optimizes for security, stability, and resource management
+# ============================================================================
+# Docker Compose for Production
+# Best practice 2026: Security, monitoring, scaling, backups
+# ============================================================================
+
+version: '3.8'
 
 services:
-  backend:
-    # Use a pre-built production image instead of building from source
-    image: pharmaviyum-crm-backend:latest
-    # Always restart the container to ensure high availability
-    restart: always
-    # Production environment settings
+  # --------------------------------------------------------------------------
+  # PostgreSQL Database (Production)
+  # --------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: pharmaviyum-postgres-prod
     environment:
-      - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=info
-    # Resource constraints to prevent memory leaks on pharmacy PCs
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "127.0.0.1:5432:5432"  # Only accessible from localhost
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups/postgres:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     deploy:
       resources:
         limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    restart: unless-stopped
+    networks:
+      - pharmaviyum-network
+
+  # --------------------------------------------------------------------------
+  # Redis Cache & Queue (Production)
+  # --------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: pharmaviyum-redis-prod
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 1gb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "127.0.0.1:6379:6379"  # Only accessible from localhost
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1.5G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    restart: unless-stopped
+    networks:
+      - pharmaviyum-network
+
+  # --------------------------------------------------------------------------
+  # FastAPI Application (Production)
+  # --------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: pharmaviyum-api-prod
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      SECRET_KEY: ${SECRET_KEY}
+      LOG_LEVEL: INFO
+      RATE_LIMIT_PER_MINUTE: 100
+    ports:
+      - "127.0.0.1:8000:8000"  # Only accessible from localhost (use reverse proxy)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      replicas: 2  # Run 2 instances for high availability
+      resources:
+        limits:
+          cpus: '2'
           memory: 2G
         reservations:
-          memory: 512M
-    # Do not expose ports directly; access only through Nginx reverse proxy
+          cpus: '1'
+          memory: 1G
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - pharmaviyum-network
+
+  # --------------------------------------------------------------------------
+  # Background Worker (Production)
+  # --------------------------------------------------------------------------
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+      target: production
+    container_name: pharmaviyum-worker-prod
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      LOG_LEVEL: INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: python -m src.pharmaviyum.workers.worker
+    deploy:
+      replicas: 2  # Run 2 workers for parallel processing
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - pharmaviyum-network
+
+  # --------------------------------------------------------------------------
+  # Nginx Reverse Proxy (Production)
+  # --------------------------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: pharmaviyum-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - ./docker/nginx/logs:/var/log/nginx
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - pharmaviyum-network
+
+  # --------------------------------------------------------------------------
+  # Prometheus Monitoring (Production)
+  # --------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pharmaviyum-prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    restart: unless-stopped
+    networks:
+      - pharmaviyum-network
+
+  # --------------------------------------------------------------------------
+  # Grafana Dashboard (Production)
+  # --------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pharmaviyum-grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    restart: unless-stopped
+    networks:
+      - pharmaviyum-network
+
+# ============================================================================
+# Volumes
+# ============================================================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# ============================================================================
+# Networks
+# ============================================================================
+networks:
+  pharmaviyum-network:
+    driver: bridge

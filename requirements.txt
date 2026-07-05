@@ -45,3 +45,23 @@ aiohttp==3.12.14
 # =========================================
 python-dotenv==1.1.1
 email-validator==2.2.0
+
+# Background jobs (ARQ alternative - using Redis directly)
+# Note: Using custom Redis-based queue for more control
+
+# =========================================
+# Observability
+# =========================================
+prometheus-client==0.21.0
+opentelemetry-api==1.27.0
+opentelemetry-sdk==1.27.0
+opentelemetry-exporter-otlp==1.27.0
+opentelemetry-instrumentation-fastapi==0.48b0
+opentelemetry-instrumentation-sqlalchemy==0.48b0
+opentelemetry-instrumentation-redis==0.48b0
+opentelemetry-instrumentation-httpx==0.48b0
+
+# =========================================
+# System monitoring
+# =========================================
+psutil==6.0.0

@@ -1,7 +1,19 @@
-# Version control
+# ============================================================================
+# Docker Ignore File
+# Best practice 2026: Exclude unnecessary files from build context
+# ============================================================================
+
+# Git
 .git
 .gitignore
 .gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
 
 # Python
 __pycache__
@@ -9,87 +21,67 @@ __pycache__
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
-.env
-.venv
 env/
 venv/
 ENV/
-env.bak/
-venv.bak/
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.project
-.pydevproject
-.settings/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
 
 # Testing
-.pytest_cache/
+.pytest_cache
 .coverage
 htmlcov/
-.tox/
-.nox/
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
+.tox
+.nox
 
 # Documentation
-docs/
-*.md
-!README.md
-CHANGELOG.md
-LICENSE
-CONTRIBUTING.md
+docs/_build/
 
 # Docker
-Dockerfile*
 docker-compose*.yml
+Dockerfile*
 .dockerignore
-Dockerfile.prod
-Dockerfile.dev
 
-# CI/CD
-.github/
-.gitlab-ci.yml
-.travis.yml
-Jenkinsfile
-.circleci/
+# Environment
+.env
+.env.*
+!.env.example
 
-# Misc
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
 *.log
-*.tmp
-*.bak
-*.cache
+logs/
+
+# OS
 .DS_Store
 Thumbs.db
-*.orig
 
-# Exclude large build artifacts and model files from root build context
-mortarium-ai/models/
-mortarium-ai/data/
-frontend/shadcn-admin/node_modules/
-frontend/shadcn-admin/.next/
-frontend/shadcn-admin/.pnpm-store/
+# Build
+dist/
+build/
+*.egg-info/
+
+# Backups
+backups/
+*.bak
+*.backup
+
+# Node modules (if any frontend)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# AI Models (too large for Docker)
+models/
+*.gguf
+*.bin
+
+# Temporary files
+tmp/
+temp/
+*.tmp

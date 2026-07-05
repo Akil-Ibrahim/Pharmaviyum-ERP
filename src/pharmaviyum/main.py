@@ -1,7 +1,7 @@
 """
 Pharmaviyum CRM - Main FastAPI application
 First AI-powered CRM for pharmacy retail in SEA
-Best practice 2026 architecture
+Best practice 2026 architecture with feature flags
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,8 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from src.pharmaviyum.core.config import settings
-from src.pharmaviyum.core.logging import setup_logging, get_logger
-from src.pharmaviyum.core.telemetry import setup_telemetry
+from src.pharmaviyum.core.lifecycle import lifespan
 from src.pharmaviyum.core.middleware import (
     CorrelationIdMiddleware,
     AuditMiddleware,
@@ -18,6 +17,8 @@ from src.pharmaviyum.core.middleware import (
     IdempotencyMiddleware,
     SanitizationMiddleware,
     TimeoutMiddleware,
+    MetricsMiddleware,
+    FeatureFlagMiddleware,
 )
 from src.pharmaviyum.core.exceptions import (
     PharmaviyumException,
@@ -28,15 +29,10 @@ from src.pharmaviyum.core.exceptions import (
     sqlalchemy_error_handler,
     generic_exception_handler,
 )
-from src.pharmaviyum.api.v1.router import api_router
+from src.pharmaviyum.api.v1.router import api_router, system_router
 
 
-# Setup logging
-setup_logging()
-logger = get_logger(__name__)
-
-
-# Create FastAPI app
+# Create FastAPI app with lifespan
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -44,11 +40,8 @@ app = FastAPI(
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
     openapi_url="/openapi.json" if settings.DEBUG else None,
+    lifespan=lifespan,
 )
-
-
-# Setup OpenTelemetry
-setup_telemetry(app=app)
 
 
 # Register exception handlers
@@ -66,19 +59,25 @@ app.add_middleware(TimeoutMiddleware, timeout=30)
 # 2. Rate limiting
 app.add_middleware(RateLimitMiddleware)
 
-# 3. Idempotency
+# 3. Metrics (before idempotency to capture all requests)
+app.add_middleware(MetricsMiddleware)
+
+# 4. Feature flags (inject into request context)
+app.add_middleware(FeatureFlagMiddleware)
+
+# 5. Idempotency
 app.add_middleware(IdempotencyMiddleware)
 
-# 4. Sanitization
+# 6. Sanitization
 app.add_middleware(SanitizationMiddleware)
 
-# 5. Audit logging
+# 7. Audit logging
 app.add_middleware(AuditMiddleware)
 
-# 6. Correlation ID
+# 8. Correlation ID
 app.add_middleware(CorrelationIdMiddleware)
 
-# 7. CORS (innermost)
+# 9. CORS (innermost)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -88,34 +87,9 @@ app.add_middleware(
 )
 
 
-# Include API router
-app.include_router(api_router)
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Application startup event"""
-    logger.info(
-        f"Starting {settings.APP_NAME} v{settings.APP_VERSION}",
-        extra={"environment": settings.ENVIRONMENT.value}
-    )
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Application shutdown event"""
-    logger.info("Shutting down application")
-
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint for monitoring"""
-    return {
-        "status": "healthy",
-        "app": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "environment": settings.ENVIRONMENT.value,
-    }
+# Include routers
+app.include_router(system_router)  # /health, /ready, /metrics, /debug
+app.include_router(api_router)     # /api/v1/...
 
 
 @app.get("/")
@@ -126,4 +100,7 @@ async def root():
         "version": settings.APP_VERSION,
         "docs": "/docs" if settings.DEBUG else "Disabled in production",
         "health": "/health",
+        "ready": "/ready",
+        "metrics": "/metrics",
+        "feature_flags": "/api/v1/feature-flags",
     }
