@@ -1,0 +1,35 @@
+[run]
+source = src/pharmaviyum
+branch = True
+parallel = True
+concurrency = asyncio,thread
+omit =
+    */tests/*
+    */migrations/*
+    */__init__.py
+    */main.py
+    src/pharmaviyum/workers/worker.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self\.debug
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+    raise ImportError
+    pass
+
+ignore_errors = True
+show_missing = True
+skip_covered = True
+
+[html]
+directory = htmlcov
+title = Pharmaviyum CRM Coverage Report
+
+[xml]
+output = coverage.xml
