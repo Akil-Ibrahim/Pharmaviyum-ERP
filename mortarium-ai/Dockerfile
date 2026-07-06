@@ -1,5 +1,5 @@
 # Stage 1: Build environment
-FROM python:3.14-slim AS builder
+FROM python:3.13-slim AS builder
 
 WORKDIR /build
 
@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime environment
-FROM python:3.14-slim AS runtime
+FROM python:3.13-slim AS runtime
 
 LABEL maintainer="Mortarium AI Team"
 LABEL version="1.0.0"
@@ -33,7 +33,7 @@ RUN groupadd --gid 1000 mortarium && \
 WORKDIR /app
 
 # Copy packages from builder
-COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code

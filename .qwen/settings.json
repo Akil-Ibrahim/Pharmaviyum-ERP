@@ -9,7 +9,8 @@
       "Bash(test *)",
       "Bash(curl *)",
       "Bash(docker build *)",
-      "Bash(pip install *)"
+      "Bash(pip install *)",
+      "Bash(free *)"
     ]
   },
   "$version": 4

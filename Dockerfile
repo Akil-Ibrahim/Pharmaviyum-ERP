@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------
 # Stage 1 – Builder (install build‑time dependencies)
 # ---------------------------------------------------------------------------
-FROM python:3.14.6-slim AS builder
+FROM python:3.13-slim AS builder
 
 # Make apt non‑interactive to avoid debconf dialogs in CI
 ARG DEBIAN_FRONTEND=noninteractive
@@ -15,13 +15,16 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
 
 # Install system packages required to compile Python wheels
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
-        gcc && \
+        gcc \
+        g++ \
+        cmake && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -31,13 +34,12 @@ COPY requirements.txt .
 
 # Install Python dependencies (cache layer for pip)
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir -r requirements.txt && \
-    rm -rf /root/.cache/pip
+    pip install --no-cache-dir -r requirements.txt
 
 # ---------------------------------------------------------------------------
 # Stage 2 – Production (minimal runtime image)
 # ---------------------------------------------------------------------------
-FROM python:3.14.6-slim AS production
+FROM python:3.13-slim AS production
 
 LABEL maintainer="Pharmaviyum Team <dev@pharmaviyum.com>" \
       version="1.0.0" \
@@ -64,7 +66,7 @@ RUN apt-get update && \
 WORKDIR /app
 
 # Copy Python packages and binaries from the builder stage
-COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application source code, changing ownership to the non‑root user.
