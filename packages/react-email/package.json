@@ -1,0 +1,18 @@
+{
+  "name": "@pharmaviyum/emails",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "email dev",
+    "build": "email build",
+    "export": "email export --outDir ../../backend/app/email-templates"
+  },
+  "dependencies": {
+    "@react-email/components": "^0.0.25",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "react-email": "^2.1.0"
+  }
+}

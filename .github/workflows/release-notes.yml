@@ -1,0 +1,19 @@
+name: Generate Release Notes
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - uses: tiangolo/latest-changes@0.4.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          latest_changes_file: release-notes.md
+          latest_changes_token: "<!-- latest-changes -->"

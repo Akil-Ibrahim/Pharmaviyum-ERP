@@ -1,0 +1,9 @@
+{
+  "patient.created": "Created patient {name} successfully",
+  "patient.not_found": "Patient not found",
+  "prescription.created": "Prescription created successfully",
+  "prescription.expired": "Prescription has expired",
+  "auth.login_success": "Login successful",
+  "auth.login_failed": "Invalid username or password",
+  "error.generic": "An error occurred. Please try again."
+}

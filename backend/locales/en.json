@@ -1,0 +1,16 @@
+{
+  "patient.created": "Patient {name} created successfully",
+  "patient.updated": "Patient information updated",
+  "patient.not_found": "Patient not found",
+  "prescription.created": "Prescription created successfully",
+  "prescription.expired": "Prescription has expired",
+  "prescription.filled": "Prescription has been filled",
+  "order.created": "Order #{order_number} has been created",
+  "order.confirmed": "Order has been confirmed",
+  "order.delivered": "Order has been delivered successfully",
+  "auth.login_success": "Login successful",
+  "auth.login_failed": "Invalid username or password",
+  "error.generic": "An error occurred. Please try again later.",
+  "error.validation": "Invalid data: {field}",
+  "error.not_found": "Not found: {resource}"
+}

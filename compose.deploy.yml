@@ -1,0 +1,27 @@
+# Production deployment config
+services:
+  backend:
+    restart: always
+    environment:
+      DEBUG: "false"
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+  
+  traefik:
+    image: traefik:v2.10
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./infra/traefik:/etc/traefik:ro
+      - letsencrypt:/letsencrypt
+    labels:
+      - "traefik.enable=true"
+
+volumes:
+  letsencrypt:
