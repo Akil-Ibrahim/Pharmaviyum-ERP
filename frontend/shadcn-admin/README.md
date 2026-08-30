@@ -1,101 +1,119 @@
-# Shadcn Admin
+# Shadcn Admin Dashboard
 
-Production-ready admin dashboard powered by Next.js, Shadcn/UI and Better-Auth. Includes authentication flows, interactive charts, data tables, and a distinctive gradient-accented design system.
+Admin Dashboard UI crafted with Shadcn and Vite. Built with responsiveness and accessibility in mind.
 
-<img width="1440" height="812" alt="Image" src="https://github.com/user-attachments/assets/63c9b66e-9b66-4a98-96b0-76a65d44e781" />
+![alt text](public/images/shadcn-admin.png)
 
-## Getting Started
+[![Sponsored by Clerk](https://img.shields.io/badge/Sponsored%20by-Clerk-5b6ee1?logo=clerk)](https://go.clerk.com/GttUAaK)
 
-### 1. Clone the repository
+I've been creating dashboard UIs at work and for my personal projects. I always wanted to make a reusable collection of dashboard UI for future projects; and here it is now. While I've created a few custom components, some of the code is directly adapted from ShadcnUI examples.
 
-```bash
-git clone https://github.com/Its-Nyein/shadcn-admin.git
-cd shadcn-admin
-```
+> This is not a starter project (template) though. I'll probably make one in the future.
 
-### 2. Install dependencies
+## Features
 
-```bash
-pnpm install
-```
+- Light/dark mode
+- Responsive
+- Accessible
+- With built-in Sidebar component
+- Global search command
+- 10+ pages
+- Extra custom components
+- RTL support
 
-### 3. Set up environment variables
+<details>
+<summary>Customized Components (click to expand)</summary>
 
-```bash
-cp .env.example .env
-```
+This project uses Shadcn UI components, but some have been slightly modified for better RTL (Right-to-Left) support and other improvements. These customized components differ from the original Shadcn UI versions.
 
-Then update `.env` with your values.
+If you want to update components using the Shadcn CLI (e.g., `npx shadcn@latest add <component>`), it's generally safe for non-customized components. For the listed customized ones, you may need to manually merge changes to preserve the project's modifications and avoid overwriting RTL support or other updates.
 
-### 4. Set up database
+> If you don't require RTL support, you can safely update the 'RTL Updated Components' via the Shadcn CLI, as these changes are primarily for RTL compatibility. The 'Modified Components' may have other customizations to consider.
 
-```bash
-pnpm db:generate
-pnpm db:migrate
-```
+### Modified Components
 
-### 5. Seed the database
+- scroll-area
+- sonner
+- separator
 
-```bash
-pnpm db:seed
-```
+### RTL Updated Components
 
-### 6. Run the development server
+- alert-dialog
+- calendar
+- command
+- dialog
+- dropdown-menu
+- select
+- table
+- sheet
+- sidebar
+- switch
 
-```bash
-pnpm dev
-```
+**Notes:**
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+- **Modified Components**: These have general updates, potentially including RTL adjustments.
+- **RTL Updated Components**: These have specific changes for RTL language support (e.g., layout, positioning).
+- For implementation details, check the source files in `src/components/ui/`.
+- All other Shadcn UI components in the project are standard and can be safely updated via the CLI.
 
-## Test Credentials
+</details>
 
-After seeding the database, you can sign in with:
+## Tech Stack
 
-- **Email:** admin@example.com
-- **Password:** Admin123!@#
+**UI:** [ShadcnUI](https://ui.shadcn.com) (TailwindCSS + RadixUI)
 
-## Docker Setup
+**Build Tool:** [Vite](https://vitejs.dev/)
 
-### 1. Set up environment variables
+**Routing:** [TanStack Router](https://tanstack.com/router/latest)
 
-```bash
-cp .env.example .env
-```
+**Type Checking:** [TypeScript](https://www.typescriptlang.org/)
 
-Then update `.env` with your values.
+**Linting/Formatting:** [ESLint](https://eslint.org/) & [Prettier](https://prettier.io/)
 
-### 2. Build and run with Docker Compose
+**Icons:** [Lucide Icons](https://lucide.dev/icons/), [Tabler Icons](https://tabler.io/icons) (Brand icons only)
 
-Run this from the repository root, not from `frontend/shadcn-admin`:
+**Auth (partial):** [Clerk](https://go.clerk.com/GttUAaK)
 
-```bash
-cd /path/to/Pharmaviyum-CRM
-docker compose up --build
-```
+## Run Locally
 
-This will build the production image and start the app at [http://localhost:3000](http://localhost:3000).
-
-### 3. Or build and run manually
-
-```bash
-docker build -t shadcn-admin .
-docker run -p 3000:3000 --env-file .env shadcn-admin
-```
-
-### Stop the container
+Clone the project
 
 ```bash
-docker compose down
+  git clone https://github.com/satnaing/shadcn-admin.git
 ```
 
-## Database Commands
+Go to the project directory
 
-| Command                   | Description             |
-| ------------------------- | ----------------------- |
-| `pnpm db:push`            | Push schema to database |
-| `pnpm db:studio`          | Open Drizzle Studio     |
-| `pnpm db:generate`        | Generate migrations     |
-| `pnpm db:migrate`         | Run migrations          |
-| `pnpm db:seed`            | Seed test user          |
-| `pnpm db:seed -- --force` | Recreate test user      |
+```bash
+  cd shadcn-admin
+```
+
+Install dependencies
+
+```bash
+  pnpm install
+```
+
+Start the server
+
+```bash
+  pnpm run dev
+```
+
+## Sponsoring this project ❤️
+
+If you find this project helpful or use this in your own work, consider [sponsoring me](https://github.com/sponsors/satnaing) to support development and maintenance. You can [buy me a coffee](https://buymeacoffee.com/satnaing) as well. Don’t worry, every penny helps. Thank you! 🙏
+
+For questions or sponsorship inquiries, feel free to reach out at [satnaingdev@gmail.com](mailto:satnaingdev@gmail.com).
+
+### Current Sponsor
+
+- [Clerk](https://go.clerk.com/GttUAaK) - authentication and user management for the modern web
+
+## Author
+
+Crafted with 🤍 by [@satnaing](https://github.com/satnaing)
+
+## License
+
+Licensed under the [MIT License](https://choosealicense.com/licenses/mit/)

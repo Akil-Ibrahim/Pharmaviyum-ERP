@@ -1,35 +1,19 @@
-# Dependencies
-node_modules
-.pnp
-.pnp.*
+# Ignore everything
+/*
 
-# Build outputs
-.next
-out
-build
-dist
+# Except these files & folders
+!/src
+!index.html
+!package.json
+!tailwind.config.js
+!tsconfig.json
+!tsconfig.node.json
+!vite.config.ts
+!.prettierrc
+!README.md
+!eslint.config.js
+!postcss.config.js
+!.vscode/
 
-# Testing
-coverage
-
-# Misc
-.DS_Store
-*.pem
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# Env files
-.env*
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-
-# Package manager
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+# Ignore auto generated routeTree.gen.ts
+/src/routeTree.gen.ts
