@@ -26,12 +26,6 @@ dependencies = [
     "passlib[bcrypt]==1.7.4",
     "python-multipart==0.0.20",
 
-    # AI / RAG / Agents
-    "langchain==0.3.27",
-    "langgraph==0.6.5",
-    "llama-cpp-python==0.3.16",
-    "sentence-transformers==5.0.0",
-
     # HTTP
     "httpx==0.28.1",
     "aiohttp==3.12.14",

@@ -1,17 +1,19 @@
 # Development overrides (auto-applied in dev)
 services:
-  backend:
+  api:
     volumes:
-      - ./src:/app/src
+      - ./src:/app/src:ro
+      - ./alembic:/app/alembic:ro
+      - ./alembic.ini:/app/alembic.ini:ro
     environment:
       DEBUG: "true"
       LOG_LEVEL: "DEBUG"
-  
+
   mailpit:
     image: axllent/mailpit
     ports:
       - "8025:8025"
-  
+
   pgadmin:
     image: dpage/pgadmin4
     ports:

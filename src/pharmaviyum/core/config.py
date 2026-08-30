@@ -60,7 +60,10 @@ class Settings(BaseSettings):
     MORTARIUM_MAX_CONCURRENT: int = 5
     
     # Telemetry (OpenTelemetry 2026)
-    OTEL_ENABLED: bool = True
+    # Disable by default for Python 3.14 compatibility because the OTLP/protobuf
+    # stack can fail during import on newer interpreters. It can be re-enabled in
+    # a compatible environment if needed.
+    OTEL_ENABLED: bool = False
     OTEL_SERVICE_NAME: str = "pharmaviyum-crm"
     OTEL_EXPORTER_ENDPOINT: Optional[str] = None
     OTEL_TRACES_SAMPLE_RATE: float = 0.1

@@ -75,11 +75,15 @@ async def token(
         subject = user.username
     else:
         # Fallback to environment admin credentials
-        admin_user = settings.ADMIN_USER
+        admin_user = getattr(settings, "ADMIN_USER", "admin")
         admin_pass = settings.ADMIN_PASSWORD
         local_username = username_or_email.split("@", 1)[0]
-        
-        if not (admin_pass and local_username == admin_user and form_data.password == admin_pass):
+
+        if not (
+            admin_pass
+            and local_username.casefold() == admin_user.casefold()
+            and form_data.password == admin_pass
+        ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials"

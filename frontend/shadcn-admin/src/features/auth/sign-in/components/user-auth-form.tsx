@@ -51,34 +51,54 @@ export function UserAuthForm({
     },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true)
 
-    toast.promise(sleep(2000), {
-      loading: 'Signing in...',
-      success: () => {
-        setIsLoading(false)
-
-        // Mock successful authentication with expiry computed at success time
-        const mockUser = {
-          accountNo: 'ACC001',
-          email: data.email,
-          role: ['user'],
-          exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000'}/api/v1/auth/token`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            username: data.email.trim(),
+            password: data.password,
+          }).toString(),
         }
+      )
 
-        // Set user and access token
-        auth.setUser(mockUser)
-        auth.setAccessToken('mock-access-token')
+      const result = await response.json().catch(() => ({}))
 
-        // Redirect to the stored location or default to dashboard
-        const targetPath = redirectTo || '/'
-        navigate({ to: targetPath, replace: true })
+      if (!response.ok) {
+        throw new Error(
+          result?.detail && typeof result.detail === 'string'
+            ? result.detail
+            : 'Invalid credentials'
+        )
+      }
 
-        return `Welcome back, ${data.email}!`
-      },
-      error: 'Error',
-    })
+      const user = {
+        accountNo: 'ADMIN-001',
+        email: data.email.trim(),
+        role: ['admin'],
+        exp: Date.now() + 24 * 60 * 60 * 1000,
+      }
+
+      auth.setUser(user)
+      auth.setAccessToken(result.access_token)
+
+      const targetPath = redirectTo || '/'
+      navigate({ to: targetPath, replace: true })
+      toast.success(`Welcome back, ${data.email}!`)
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Unable to sign in. Please try again.'
+      )
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (

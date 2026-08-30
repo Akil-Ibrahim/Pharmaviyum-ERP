@@ -31,6 +31,7 @@ class Settings(BaseSettings):
         default="dev_secret_key_for_local_testing_only_32_chars_min",
         min_length=32
     )
+    ADMIN_USER: str = "admin"
     ADMIN_EMAIL: str = "Admin"
     ADMIN_PASSWORD: str = "Admin123!@#"
 

@@ -55,11 +55,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PORT=8000 \
     ENVIRONMENT=production
 
-# Install only runtime‑only packages (curl) and create the app user.
+# Install runtime tools required by the startup entrypoint and health checks.
+# pg_isready is required for DB readiness, redis-cli for Redis readiness.
 # `--no-log-init` avoids writing to /var/log/lastlog which can be problematic
 # in slim images.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        postgresql-client \
+        redis-tools \
+        python3-setuptools && \
     rm -rf /var/lib/apt/lists/* && \
     useradd --create-home --shell /bin/bash --no-log-init app
 
