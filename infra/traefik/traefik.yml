@@ -1,4 +1,4 @@
-# Traefik Configuration - Automatic HTTPS with Let's Encrypt
+# Traefik with automatic HTTPS via Let's Encrypt
 global:
   checkNewVersion: true
   sendAnonymousUsage: false
@@ -31,9 +31,6 @@ providers:
     watch: true
     exposedByDefault: false
     network: pharmaviyum-network
-
-api:
-  dashboard: false
 
 log:
   level: INFO

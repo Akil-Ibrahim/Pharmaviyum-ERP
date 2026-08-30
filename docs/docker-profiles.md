@@ -1,14 +1,12 @@
 # Docker Compose Profiles
 
-## Profiles Available
-
-### Development (`--profile dev`)
+## Development (`--profile dev`)
 - backend, db, redis, mailpit, pgadmin
 
-### Staging (`--profile staging`)
+## Staging (`--profile staging`)
 - dev + prometheus, grafana
 
-### Production (`--profile prod`)
+## Production (`--profile prod`)
 - staging + traefik, backup service
 
 ## Usage

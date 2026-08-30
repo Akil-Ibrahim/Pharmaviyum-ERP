@@ -18,11 +18,10 @@ create_secret() {
     fi
     
     echo "$value" | docker secret create "$name" -
-    echo "Created secret: $name"
+    echo "✅ Created secret: $name"
 }
 
 create_secret "pharmaviyum_db_password" "DB_PASSWORD"
 create_secret "pharmaviyum_jwt_secret" "JWT_SECRET_KEY"
 create_secret "pharmaviyum_redis_password" "REDIS_PASSWORD"
-
-echo "All secrets created"
+echo "✅ All secrets created"

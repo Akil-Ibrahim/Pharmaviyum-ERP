@@ -1,6 +1,6 @@
 /**
- * Theme management hook with localStorage persistence.
- * Supports: light, dark, system (follow OS preference).
+ * Theme management with localStorage persistence.
+ * Supports: light, dark, system (follow OS).
  */
 import { useState, useEffect } from 'react';
 
@@ -20,11 +20,8 @@ export function useTheme() {
     root.classList.remove('light', 'dark');
     
     let appliedTheme: 'light' | 'dark';
-    
     if (theme === 'system') {
-      appliedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light';
+      appliedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     } else {
       appliedTheme = theme;
     }
@@ -34,9 +31,5 @@ export function useTheme() {
     localStorage.setItem('pharmaviyum-theme', theme);
   }, [theme]);
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-  };
-
-  return { theme, setTheme, resolvedTheme };
+  return { theme, setTheme: setThemeState, resolvedTheme };
 }

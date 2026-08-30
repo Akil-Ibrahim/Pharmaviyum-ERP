@@ -7,7 +7,7 @@ Modular monolith with domain-driven modules. Each module owns its data.
 ```python
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
-from app.shared.core.database import Base
+from src.pharmaviyum.database import Base
 
 class Patient(Base):
     __tablename__ = "patients"

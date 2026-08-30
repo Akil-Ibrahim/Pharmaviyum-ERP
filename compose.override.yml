@@ -2,7 +2,7 @@
 services:
   backend:
     volumes:
-      - ./backend:/app
+      - ./src:/app/src
     environment:
       DEBUG: "true"
       LOG_LEVEL: "DEBUG"

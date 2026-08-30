@@ -1,6 +1,6 @@
 # Production deployment config
 services:
-  backend:
+  app:
     restart: always
     environment:
       DEBUG: "false"
@@ -20,8 +20,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./infra/traefik:/etc/traefik:ro
       - letsencrypt:/letsencrypt
-    labels:
-      - "traefik.enable=true"
 
 volumes:
   letsencrypt:

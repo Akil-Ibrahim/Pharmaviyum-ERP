@@ -1,10 +1,5 @@
 /**
  * Patient Detail Route with Data Loading.
- * 
- * Uses TanStack Router for type-safe routing with:
- * - Automatic data loading
- * - Search params validation
- * - Type-safe navigation
  */
 import { createFileRoute } from '@tanstack/react-router';
 import axios from 'axios';
@@ -14,13 +9,11 @@ const apiClient = axios.create({
 });
 
 export const Route = createFileRoute('/patients/$patientId')({
-  // Load data before rendering
   loader: async ({ params }) => {
     const response = await apiClient.get(`/patients/${params.patientId}`);
     return { patient: response.data.data };
   },
   
-  // Validate search params
   validateSearch: (search) => ({
     tab: (search.tab as string) || 'overview',
   }),

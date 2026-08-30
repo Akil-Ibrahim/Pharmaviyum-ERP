@@ -22,13 +22,8 @@ export function ThemeToggle() {
           onClick={() => setTheme(value)}
           aria-label={label}
           aria-pressed={theme === value}
-          className={`
-            h-8 w-8 inline-flex items-center justify-center rounded-md
-            transition-colors
-            ${theme === value
-              ? 'bg-primary text-primary-foreground'
-              : 'text-muted-foreground hover:bg-muted'
-            }
+          className={`h-8 w-8 inline-flex items-center justify-center rounded-md transition-colors
+            ${theme === value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}
           `}
         >
           <Icon className="h-4 w-4" />
