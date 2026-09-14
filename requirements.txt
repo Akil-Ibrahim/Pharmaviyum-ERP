@@ -11,6 +11,15 @@ pydantic-settings==2.10.1
 # =========================================
 sqlalchemy==2.0.41
 pgvector==0.4.1
+psycopg[binary,pool]==3.3.5
+
+# =========================================
+# LangGraph / LangChain
+# =========================================
+langgraph==1.2.11
+langgraph-checkpoint-postgres==3.1.2
+langchain==1.4.0
+langchain-ollama==1.1.0
 
 # =========================================
 # Redis
