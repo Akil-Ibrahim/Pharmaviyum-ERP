@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, dev]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, dev]
 
 env:
   PYTHON_VERSION: '3.14'
@@ -46,7 +46,7 @@ jobs:
 
       - name: Type checking with MyPy
         run: mypy src/pharmaviyum/
-        continue-on-error: true  # Allow failures during migration
+        continue-on-error: true
 
   # ============================================================================
   # Unit Tests
@@ -249,9 +249,8 @@ jobs:
 
       - name: Deploy to server
         run: |
-          echo "🚀 Deploying to production..."
+          echo "Deploying to production..."
           # Add your deployment script here
-          # Example: SSH into server and run deploy.sh
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
