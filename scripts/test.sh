@@ -1,26 +1,40 @@
 #!/bin/bash
-# Run All Tests in Docker Isolation
+# ============================================================================
+# Run Test Suite
+# Usage: ./scripts/test.sh [unit|integration|all|coverage]
+# ============================================================================
+
 set -e
 
-echo "Running tests in isolated Docker environment..."
+COMMAND=${1:-unit}
 
-docker run -d --name pharmaviyum-test-db \
-    -e POSTGRES_USER=postgres \
-    -e POSTGRES_PASSWORD=postgres \
-    -e POSTGRES_DB=pharmaviyum_test \
-    pgvector/pgvector:pg16
+echo "🧪 Running tests: $COMMAND"
+echo ""
 
-sleep 5
+case $COMMAND in
+    unit)
+        echo "📦 Running unit tests..."
+        pytest tests/ -m unit -v
+        ;;
+    integration)
+        echo "🔗 Running integration tests..."
+        pytest tests/ -m integration -v
+        ;;
+    all)
+        echo " Running all tests..."
+        pytest tests/ -v
+        ;;
+    coverage)
+        echo "📊 Running tests with coverage..."
+        pytest tests/ --cov=src.pharmaviyum --cov-report=html --cov-report=term -v
+        echo ""
+        echo "📄 Coverage report: htmlcov/index.html"
+        ;;
+    *)
+        echo "❓ Usage: $0 [unit|integration|all|coverage]"
+        exit 1
+        ;;
+esac
 
-docker run --rm \
-    --network host \
-    -e DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test \
-    -v $(pwd):/app \
-    -w /app \
-    python:3.12-slim \
-    bash -c "pip install -r requirements.txt pytest && pytest tests/ -v"
-
-docker stop pharmaviyum-test-db
-docker rm pharmaviyum-test-db
-
-echo "Tests complete!"
+echo ""
+echo "✅ Tests completed!"

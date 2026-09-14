@@ -1,265 +1,217 @@
 """
-Global pytest fixtures
-Best practice 2026: Comprehensive test setup with database isolation
+Global pytest fixtures for Pharmaviyum AI tests.
+
+Provides:
+- Mock LLM providers
+- Mock Redis client
+- Mock database sessions
+- Test data factories
+- FastAPI test client
 """
 import pytest
-import asyncio
+from unittest.mock import AsyncMock, MagicMock
+from fastapi.testclient import TestClient
 from typing import AsyncGenerator
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    create_async_engine,
-    async_sessionmaker,
-)
-from redis import asyncio as aioredis
-from httpx import AsyncClient, ASGITransport
-from src.pharmaviyum.core.database import Base
-from src.pharmaviyum.main import app
-from src.pharmaviyum.core.config import settings
-
 
 # ============================================================================
-# EVENT LOOP
-# ============================================================================
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for async tests"""
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    yield loop
-    loop.close()
-
-
-# ============================================================================
-# DATABASE FIXTURES
-# ============================================================================
-
-@pytest.fixture(scope="session")
-async def test_engine():
-    """Create test database engine"""
-    # Use separate test database
-    test_db_url = settings.DATABASE_URL.replace("pharmaviyum", "pharmaviyum_test")
-    
-    engine = create_async_engine(
-        test_db_url,
-        echo=False,
-        pool_pre_ping=True,
-    )
-    
-    yield engine
-    
-    await engine.dispose()
-
-
-@pytest.fixture(scope="function")
-async def test_db(test_engine) -> AsyncGenerator[AsyncSession, None]:
-    """
-    Create test database session with rollback
-    
-    Each test gets a fresh database state.
-    All changes are rolled back after test.
-    """
-    # Create all tables
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    
-    # Create session
-    async_session_factory = async_sessionmaker(
-        test_engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-    )
-    
-    async with async_session_factory() as session:
-        yield session
-        
-        # Rollback all changes
-        await session.rollback()
-    
-    # Drop all tables
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
-
-@pytest.fixture
-async def db_session(test_db: AsyncSession) -> AsyncSession:
-    """Alias for test_db for convenience"""
-    return test_db
-
-
-# ============================================================================
-# REDIS FIXTURES
-# ============================================================================
-
-@pytest.fixture(scope="session")
-async def test_redis():
-    """Create test Redis connection"""
-    # Use separate Redis DB for tests
-    test_redis_url = settings.REDIS_URL.rstrip("/").rsplit("/", 1)[0] + "/15"
-    
-    redis = aioredis.from_url(
-        test_redis_url,
-        encoding="utf-8",
-        decode_responses=True,
-    )
-    
-    # Flush test database
-    await redis.flushdb()
-    
-    yield redis
-    
-    # Cleanup
-    await redis.flushdb()
-    await redis.close()
-
-
-@pytest.fixture
-async def redis_client(test_redis) -> aioredis.Redis:
-    """Alias for test_redis"""
-    return test_redis
-
-
-# ============================================================================
-# HTTP CLIENT FIXTURES
+# Mock LLM Providers
 # ============================================================================
 
 @pytest.fixture
-async def client(test_db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    """
-    Create async HTTP client for testing
+def mock_ollama_llm():
+    """Mock Ollama LLM that returns predefined responses."""
+    mock = AsyncMock()
+    mock.ainvoke = AsyncMock(return_value=MagicMock(
+        content="This is a mock LLM response for testing."
+    ))
+    mock.astream = AsyncMock(return_value=iter([
+        MagicMock(content="This "),
+        MagicMock(content="is "),
+        MagicMock(content="a "),
+        MagicMock(content="streaming "),
+        MagicMock(content="response."),
+    ]))
+    return mock
+
+
+@pytest.fixture
+def mock_evaluator_llm():
+    """Mock LLM for evaluation (LLM-as-a-judge)."""
+    mock = AsyncMock()
+    mock.ainvoke = AsyncMock(return_value=MagicMock(
+        content='{"accuracy": 0.9, "safety": 1.0, "completeness": 0.85, "compliance": 0.95, "feedback": "Good response"}'
+    ))
+    return mock
+
+
+# ============================================================================
+# Mock Redis Client
+# ============================================================================
+
+@pytest.fixture
+def mock_redis():
+    """Mock Redis client for testing."""
+    mock = AsyncMock()
     
-    Overrides database dependency to use test database.
-    """
-    # Override database dependency
-    async def override_get_db():
-        yield test_db
+    # Basic operations
+    mock.get = AsyncMock(return_value=None)
+    mock.set = AsyncMock(return_value=True)
+    mock.setex = AsyncMock(return_value=True)
+    mock.delete = AsyncMock(return_value=1)
+    mock.exists = AsyncMock(return_value=0)
+    mock.ping = AsyncMock(return_value=True)
+    mock.keys = AsyncMock(return_value=[])
     
-    app.dependency_overrides[
-        __import__("src.pharmaviyum.core.database", fromlist=["get_db"]).get_db
-    ] = override_get_db
+    # List operations
+    mock.lpush = AsyncMock(return_value=1)
+    mock.llen = AsyncMock(return_value=0)
+    mock.lrem = AsyncMock(return_value=1)
     
-    # Create client
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
+    # Sorted set operations
+    mock.zadd = AsyncMock(return_value=1)
+    mock.zrevrange = AsyncMock(return_value=[])
+    
+    # Scan
+    mock.scan_iter = AsyncMock(return_value=iter([]))
+    
+    # Close
+    mock.aclose = AsyncMock()
+    
+    return mock
+
+
+# ============================================================================
+# Mock Database Session
+# ============================================================================
+
+@pytest.fixture
+def mock_db_session():
+    """Mock SQLAlchemy async session."""
+    mock = AsyncMock()
+    mock.execute = AsyncMock(return_value=MagicMock(
+        fetchall=MagicMock(return_value=[]),
+        fetchone=MagicMock(return_value=None),
+        scalar_one=MagicMock(return_value=0),
+    ))
+    mock.commit = AsyncMock()
+    mock.rollback = AsyncMock()
+    mock.close = AsyncMock()
+    
+    # Context manager support
+    mock.__aenter__ = AsyncMock(return_value=mock)
+    mock.__aexit__ = AsyncMock(return_value=False)
+    
+    return mock
+
+
+@pytest.fixture
+def mock_session_factory(mock_db_session):
+    """Mock session factory that returns mock session."""
+    factory = MagicMock()
+    factory.return_value = mock_db_session
+    return factory
+
+
+# ============================================================================
+# Mock MCP Client
+# ============================================================================
+
+@pytest.fixture
+def mock_mcp_client():
+    """Mock MCP client for testing tool calls."""
+    mock = AsyncMock()
+    
+    mock.call_tool = AsyncMock(return_value=MagicMock(
+        success=True,
+        data={"status": "success", "interactions": []},
+        error=None,
+        latency_ms=50.0,
+    ))
+    
+    return mock
+
+
+# ============================================================================
+# Test Data Factories
+# ============================================================================
+
+@pytest.fixture
+def sample_document():
+    """Create a sample Document for testing."""
+    from src.pharmaviyum.ai.rag.schemas import Document
+    
+    return Document(
+        id="test-doc-123",
+        content="Paracetamol is a common analgesic and antipyretic medication.",
+        source="test_source.pdf",
+        doc_type="drug_info",
+        metadata={"page": 1, "source_type": "pdf"},
+        country="VN",
+        language="en",
+    )
+
+
+@pytest.fixture
+def sample_chunk():
+    """Create a sample Chunk for testing."""
+    from src.pharmaviyum.ai.rag.schemas import Chunk
+    
+    return Chunk(
+        id="test-chunk-456",
+        document_id="test-doc-123",
+        chunk_index=0,
+        content="Paracetamol dosage for adults is 500mg-1000mg every 4-6 hours.",
+        metadata={"source": "test.pdf", "page": 1},
+    )
+
+
+@pytest.fixture
+def sample_query_context():
+    """Create a sample QueryContext for testing."""
+    from src.pharmaviyum.ai.rag.schemas import QueryContext
+    
+    return QueryContext(
+        query="What is the dosage of Paracetamol?",
+        country="VN",
+        language="en",
+        halal_filter=False,
+        top_k=5,
+    )
+
+
+@pytest.fixture
+def sample_patient():
+    """Create a sample patient record for testing."""
+    return {
+        "patient_id": 123,
+        "name": "Nguyen Van A",
+        "age": 45,
+        "conditions": ["hypertension", "diabetes"],
+        "allergies": ["penicillin"],
+        "current_medications": ["Warfarin", "Metformin"],
+    }
+
+
+# ============================================================================
+# FastAPI Test Client
+# ============================================================================
+
+@pytest.fixture
+def test_client():
+    """Create FastAPI test client with mocked dependencies."""
+    from src.pharmaviyum.main import app
+    
+    # Override dependencies with mocks
+    from src.pharmaviyum.ai.dependencies import get_redis_client, get_ai_container
+    
+    async def override_get_redis():
+        from tests.conftest import mock_redis
+        yield mock_redis
+    
+    app.dependency_overrides[get_redis_client] = override_get_redis
+    
+    with TestClient(app) as client:
         yield client
     
     # Clear overrides
     app.dependency_overrides.clear()
-
-
-@pytest.fixture
-async def authenticated_client(client: AsyncClient, test_db: AsyncSession) -> AsyncClient:
-    """
-    Create authenticated HTTP client
-    
-    Adds authentication headers to all requests.
-    """
-    from src.pharmaviyum.core.security import create_access_token
-    
-    # Create test user token
-    token = create_access_token(
-        data={
-            "sub": "1",
-            "email": "test@example.com",
-            "role": "admin",
-            "is_active": True,
-        }
-    )
-    
-    client.headers["Authorization"] = f"Bearer {token}"
-    
-    return client
-
-
-# ============================================================================
-# FACTORY FIXTURES
-# ============================================================================
-
-@pytest.fixture
-def patient_factory(test_db: AsyncSession):
-    """Patient factory with test database session"""
-    from tests.factories import PatientFactory
-    
-    PatientFactory._meta.sqlalchemy_session = test_db
-    
-    return PatientFactory
-
-
-@pytest.fixture
-def patient_allergy_factory(test_db: AsyncSession):
-    """Patient allergy factory"""
-    from tests.factories import PatientAllergyFactory
-    
-    PatientAllergyFactory._meta.sqlalchemy_session = test_db
-    
-    return PatientAllergyFactory
-
-
-@pytest.fixture
-def patient_condition_factory(test_db: AsyncSession):
-    """Patient condition factory"""
-    from tests.factories import PatientConditionFactory
-    
-    PatientConditionFactory._meta.sqlalchemy_session = test_db
-    
-    return PatientConditionFactory
-
-
-# ============================================================================
-# MOCK FIXTURES
-# ============================================================================
-
-@pytest.fixture
-def mock_cache_service(mocker):
-    """Mock cache service"""
-    mock = mocker.AsyncMock()
-    mock.get = mocker.AsyncMock(return_value=None)
-    mock.set = mocker.AsyncMock(return_value=True)
-    mock.delete = mocker.AsyncMock(return_value=True)
-    
-    mocker.patch(
-        "src.pharmaviyum.services.patient.cache_service",
-        mock,
-    )
-    
-    return mock
-
-
-@pytest.fixture
-def mock_event_bus(mocker):
-    """Mock event bus"""
-    mock = mocker.AsyncMock()
-    mock.emit = mocker.AsyncMock()
-    
-    mocker.patch(
-        "src.pharmaviyum.services.patient.event_bus",
-        mock,
-    )
-    
-    return mock
-
-
-# ============================================================================
-# UTILITY FIXTURES
-# ============================================================================
-
-@pytest.fixture
-def sample_patient_data():
-    """Sample patient creation data"""
-    return {
-        "first_name": "Ibrahim",
-        "last_name": "Тестов",
-        "phone": "+84123456789",
-        "email": "ibragim@example.com",
-        "country": "VN",
-        "preferred_language": "vi",
-    }
-
-
-@pytest.fixture
-def sample_patient_update_data():
-    """Sample patient update data"""
-    return {
-        "first_name": "Новое имя",
-        "loyalty_tier": "Gold",
-    }

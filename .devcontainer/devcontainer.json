@@ -1,91 +1,50 @@
-
-
 {
-  "name": "Pharmaviyum CRM",
-  "dockerComposeFile": [
-    "docker-compose.devcontainer.yml"
-  ],
-  "service": "app",
-  "runServices": [
-    "app",
-    "postgres",
-    "redis"
-  ],
-  "workspaceFolder": "/workspaces/Pharmaviyum-CRM",
-  "shutdownAction": "stopCompose",
-  "overrideCommand": false,
-  "remoteUser": "vscode",
+  "name": "Pharmaviyum AI",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "20"
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest"
     },
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    }
   },
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "ms-python.debugpy",
-        "charliermarsh.ruff",
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
-        "redhat.vscode-yaml",
         "ms-azuretools.vscode-docker",
-        "github.vscode-pull-request-github"
+        "redhat.vscode-yaml",
+        "esbenp.prettier-vscode",
+        "charliermarsh.ruff"
       ],
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python",
-        "python.testing.pytestEnabled": true,
-        "python.testing.pytestArgs": [
-          "tests"
-        ],
-        "python.analysis.typeCheckingMode": "basic",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": false,
+        "python.linting.ruffEnabled": true,
         "editor.formatOnSave": true,
-        "files.exclude": {
-          "**/__pycache__": true,
-          "**/.pytest_cache": true,
-          "**/.mypy_cache": true
-        }
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
       }
     }
   },
-  "forwardPorts": [
-    8000,
-    5432,
-    6379,
-    8081,
-    8082
-  ],
+  "forwardPorts": [8000, 5432, 6379],
   "portsAttributes": {
     "8000": {
-      "label": "FastAPI API",
+      "label": "FastAPI",
       "onAutoForward": "notify"
     },
     "5432": {
-      "label": "PostgreSQL",
-      "onAutoForward": "silent"
+      "label": "PostgreSQL"
     },
     "6379": {
-      "label": "Redis",
-      "onAutoForward": "silent"
-    },
-    "8081": {
-      "label": "Redis Commander",
-      "onAutoForward": "openBrowser"
-    },
-    "8082": {
-      "label": "Adminer",
-      "onAutoForward": "openBrowser"
+      "label": "Redis"
     }
   },
-  "updateContentCommand": "python -m pip install --upgrade pip && python -m pip install -r requirements.txt && if [ -f frontend/shadcn-admin/package.json ]; then cd frontend/shadcn-admin && npm install; fi",
-  "postCreateCommand": "python -m pip install -r requirements.txt >/dev/null 2>&1 || true",
-  "containerEnv": {
-    "PYTHONPATH": "/workspaces/Pharmaviyum-CRM/src",
-    "ENVIRONMENT": "development",
-    "DEBUG": "true",
-    "DATABASE_URL": "postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum",
-    "REDIS_URL": "redis://redis:6379/0"
-  }
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "remoteUser": "vscode",
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ]
 }

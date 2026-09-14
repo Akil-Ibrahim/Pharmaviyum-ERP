@@ -1,14 +1,15 @@
-"""API V1 router"""
-
+"""
+API v1 Router Aggregation.
+"""
 from fastapi import APIRouter
-from src.pharmaviyum.api.v1.endpoints import health
-from src.pharmaviyum.api.v1 import auth, users, products, orders
+from .ai import router as ai_router
+from .ingestion import router as ingestion_router
+from .monitoring import router as monitoring_router
 
-api_router = APIRouter()
+api_v1_router = APIRouter()
 
-# Include endpoint routers
-api_router.include_router(health.router, prefix="/health", tags=["health"])
-api_router.include_router(auth.router)
-api_router.include_router(users.router)
-api_router.include_router(products.router)
-api_router.include_router(orders.router)
+api_v1_router.include_router(ai_router)
+api_v1_router.include_router(ingestion_router)
+api_v1_router.include_router(monitoring_router)
+
+__all__ = ["api_v1_router"]

@@ -1,14 +1,12 @@
 # ============================================================================
-# Docker Compose for Development
-# Best practice 2026: Hot reload, debugging, local development
+# PHARMAVIYUM AI - Full Stack Docker Compose
+# Python 3.14 + PostgreSQL 16 (pgvector) + Redis 7 + Ollama + Celery
 # ============================================================================
 
 version: '3.8'
 
 services:
-  # --------------------------------------------------------------------------
-  # PostgreSQL Database
-  # --------------------------------------------------------------------------
+  # PostgreSQL 16 with pgvector
   postgres:
     image: pgvector/pgvector:pg16
     container_name: pharmaviyum-postgres
@@ -16,23 +14,22 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: pharmaviyum
-      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pharmaviyum"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
     networks:
       - pharmaviyum-network
 
-  # --------------------------------------------------------------------------
-  # Redis Cache & Queue
-  # --------------------------------------------------------------------------
+  # Redis 7
   redis:
     image: redis:7-alpine
     container_name: pharmaviyum-redis
@@ -40,121 +37,119 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-    command: redis-server --appendonly yes
+    restart: unless-stopped
     networks:
       - pharmaviyum-network
 
-  # --------------------------------------------------------------------------
+  # Ollama (Local LLM)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: pharmaviyum-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - pharmaviyum-network
+
   # FastAPI Application
-  # --------------------------------------------------------------------------
   api:
     build:
       context: .
       dockerfile: Dockerfile
-      target: production
     container_name: pharmaviyum-api
-    environment:
-      ENVIRONMENT: development
-      DEBUG: "true"
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
-      REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: dev-secret-key-change-in-production
-      LOG_LEVEL: DEBUG
     ports:
       - "8000:8000"
-    volumes:
-      # Mount source code for hot reload
-      - ./src:/app/src:ro
-      - ./alembic:/app/alembic:ro
-      - ./alembic.ini:/app/alembic.ini:ro
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      REDIS_URL: redis://redis:6379/0
+      PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_FAST_MODEL: ${OLLAMA_FAST_MODEL:-qwen2.5:1.5b}
+      OLLAMA_MAIN_MODEL: ${OLLAMA_MAIN_MODEL:-qwen2.5:7b}
+      OLLAMA_COMPLEX_MODEL: ${OLLAMA_COMPLEX_MODEL:-qwen2.5:72b}
+      OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-mxbai-embed-large}
+      LANGSMITH_ENABLED: ${LANGSMITH_ENABLED:-false}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-pharmaviyum-pharmacist-agent}
+      OTEL_ENABLED: ${OTEL_ENABLED:-true}
+      OTEL_EXPORTER_ENDPOINT: ${OTEL_EXPORTER_ENDPOINT:-http://otel-collector:4317}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    command: uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port 8000 --reload
+      ollama:
+        condition: service_started
+    volumes:
+      - ./src:/app/src
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    command: >
+      sh -c "
+        echo '⏳ Waiting for services...' &&
+        sleep 5 &&
+        echo '️  Running database migrations...' &&
+        alembic upgrade head &&
+        echo '✅ Migrations complete. Starting FastAPI...' &&
+        uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    restart: unless-stopped
     networks:
       - pharmaviyum-network
 
-  # --------------------------------------------------------------------------
-  # Background Worker
-  # --------------------------------------------------------------------------
-  worker:
+  # Celery Worker
+  celery-worker:
     build:
       context: .
-      dockerfile: Dockerfile.worker
-      target: production
-    container_name: pharmaviyum-worker
+      dockerfile: Dockerfile
+    container_name: pharmaviyum-celery-worker
     environment:
-      ENVIRONMENT: development
-      DEBUG: "true"
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       REDIS_URL: redis://redis:6379/0
-      LOG_LEVEL: DEBUG
+      PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
+      OLLAMA_BASE_URL: http://ollama:11434
+    depends_on:
+      - postgres
+      - redis
+      - ollama
     volumes:
-      - ./src:/app/src:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    command: python -m src.pharmaviyum.workers.worker
+      - ./src:/app/src
+    command: >
+      sh -c "
+        echo '🔄 Starting Celery worker...' &&
+        celery -A src.pharmaviyum.ai.rag.ingestion.celery_app worker 
+          --loglevel=info 
+          --concurrency=2 
+          --queues=ingestion,maintenance
+      "
+    restart: unless-stopped
     networks:
       - pharmaviyum-network
 
-  # --------------------------------------------------------------------------
-  # Redis Commander (Redis GUI for development)
-  # --------------------------------------------------------------------------
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    container_name: pharmaviyum-redis-gui
-    environment:
-      REDIS_HOSTS: local:redis:6379
-    ports:
-      - "8081:8081"
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - pharmaviyum-network
-
-  # --------------------------------------------------------------------------
-  # Adminer (Database GUI for development)
-  # --------------------------------------------------------------------------
-  adminer:
-    image: adminer:latest
-    container_name: pharmaviyum-db-gui
-    ports:
-      - "8082:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - pharmaviyum-network
-
-# ============================================================================
-# Volumes
-# ============================================================================
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
+  ollama_data:
+    driver: local
 
-# ============================================================================
-# Networks
-# ============================================================================
 networks:
   pharmaviyum-network:
     driver: bridge
+    name: pharmaviyum-network

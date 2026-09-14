@@ -1,87 +1,76 @@
 # ============================================================================
-# Docker Ignore File
-# Best practice 2026: Exclude unnecessary files from build context
+# Docker build context exclusions
 # ============================================================================
 
-# Git
-.git
-.gitignore
-.gitattributes
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pyd
+.Python
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+env/
+venv/
+ENV/
+.venv/
 
 # IDE
-.vscode
-.idea
+.vscode/
+.idea/
 *.swp
 *.swo
 *~
 
-# Python
-__pycache__
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-.venv
-pip-log.txt
-pip-delete-this-directory.txt
+# Git
+.git
+.gitignore
 
-# Testing
-.pytest_cache
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Testing & coverage
+.pytest_cache/
 .coverage
 htmlcov/
-.tox
-.nox
+coverage.xml
+*.cover
 
-# Documentation
-docs/_build/
+# Documentation (not needed in image)
+docs/
+*.md
+!README.md
+
+# Tests (not needed in production image)
+tests/
 
 # Docker
-docker-compose*.yml
-Dockerfile*
+Dockerfile
+docker-compose.yml
 .dockerignore
-
-# Environment
-.env
-.env.*
-!.env.example
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Logs
-*.log
-logs/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Build
-dist/
-build/
-*.egg-info/
+# Logs
+*.log
+logs/
 
-# Backups
-backups/
-*.bak
-*.backup
-
-# Node modules (if any frontend)
-node_modules/
-npm-debug.log
-yarn-error.log
-
-# AI Models (too large for Docker)
-models/
-*.gguf
-*.bin
-
-# Temporary files
+# Temp files
 tmp/
 temp/
 *.tmp
+
+# Node (if any frontend)
+node_modules/
+package-lock.json
+yarn.lock
