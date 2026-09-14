@@ -1,47 +1,44 @@
 """
 RAG Pipeline Module — End-to-end Retrieval-Augmented Generation.
 
-Best practice 2026:
-- Clean public API via __all__
-- Lazy imports to avoid circular dependencies
-- Type-safe exports for IDE autocompletion
-
 Public API:
+    Pipeline:
     - RAGPipeline: Main orchestrator (ingest + query + stream)
-    - MedicalChunker: Domain-aware chunking (vi/en/th/id)
-    - PgVectorStore: pgvector-backed hybrid search
-    - EmbeddingsFactory: Create embeddings providers
-    - OllamaEmbeddings: Local embeddings via Ollama
-    - CachedEmbeddings: Redis-cached embeddings wrapper
-    - Document, Chunk, RetrievalResult, RAGResponse, QueryContext: Schemas
-
-Usage:
-    from src.pharmaviyum.ai.rag import RAGPipeline, Document, QueryContext
+    - IngestionOrchestrator: Full ingestion with dedup/versioning
     
-    pipeline = RAGPipeline(vector_store, embeddings, llm)
-    await pipeline.ingest([document])
-    response = await pipeline.query("drug interactions?", context)
+    Components:
+    - MedicalChunker: Domain-aware chunking (vi/en/th/id/ar)
+    - PgVectorStore: pgvector with HNSW + hybrid search + RRF
+    - MultiLanguageEmbeddingRouter: Language-aware model selection
+    - EmbeddingQualityEvaluator: Retrieval metrics (recall@k, MRR, NDCG)
+    - DriftDetector: Embedding quality drift monitoring
+    
+    Schemas:
+    - Document, Chunk, RetrievalResult, RAGResponse, QueryContext
 """
 from .schemas import (
-    Document,
-    Chunk,
-    RetrievalResult,
-    RAGResponse,
-    QueryContext,
+    Document, Chunk, RetrievalResult, RAGResponse, QueryContext,
 )
 from .chunking import MedicalChunker
 from .vector_store import PgVectorStore
 from .embeddings import (
-    EmbeddingsFactory,
-    EmbeddingsProvider,
-    OllamaEmbeddings,
-    CachedEmbeddings,
+    EmbeddingsFactory, EmbeddingsProvider, OllamaEmbeddings, CachedEmbeddings,
+)
+from .embeddings_multilang import (
+    MultiLanguageEmbeddingRouter, LANGUAGE_MODEL_MAP,
+)
+from .quality_metrics import (
+    EmbeddingQualityEvaluator, DriftDetector,
+    RetrievalMetrics, EmbeddingDriftReport,
 )
 from .pipeline import RAGPipeline
+from .preprocessing import DocumentPreprocessor
+from .ingestion import IngestionOrchestrator
 
 __all__ = [
     # Pipeline
     "RAGPipeline",
+    "IngestionOrchestrator",
     # Chunking
     "MedicalChunker",
     # Vector store
@@ -51,6 +48,15 @@ __all__ = [
     "EmbeddingsProvider",
     "OllamaEmbeddings",
     "CachedEmbeddings",
+    "MultiLanguageEmbeddingRouter",
+    "LANGUAGE_MODEL_MAP",
+    # Quality
+    "EmbeddingQualityEvaluator",
+    "DriftDetector",
+    "RetrievalMetrics",
+    "EmbeddingDriftReport",
+    # Preprocessing
+    "DocumentPreprocessor",
     # Schemas
     "Document",
     "Chunk",
