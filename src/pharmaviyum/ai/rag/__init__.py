@@ -3,22 +3,26 @@ RAG Pipeline Module — End-to-end Retrieval-Augmented Generation.
 
 Public API:
     Pipeline:
-    - RAGPipeline: Main orchestrator
+    - RAGPipeline: Main orchestrator (linear / ingest path)
+    - LangGraphRAG: Query path orchestrated by LangGraph StateGraph
     - IngestionOrchestrator: Full ingestion with dedup/versioning
-    
+
     Retrieval Enhancements:
     - QueryTransformer: HyDE, multi-query, decomposition
     - ContextualCompressor: Sentence-level compression + Lost-in-the-Middle mitigation
-    
+
     Components:
     - MedicalChunker: Domain-aware chunking
     - PgVectorStore: pgvector with HNSW + hybrid search + RRF
     - MultiLanguageEmbeddingRouter: Language-aware model selection
     - EmbeddingQualityEvaluator: Retrieval metrics
     - DriftDetector: Embedding quality drift monitoring
-    
+
     Schemas:
     - Document, Chunk, RetrievalResult, RAGResponse, QueryContext
+
+    LangGraph:
+    - RAGState: TypedDict state for the RAG graph
 """
 from .schemas import (
     Document, Chunk, RetrievalResult, RAGResponse, QueryContext,
@@ -41,9 +45,15 @@ from .ingestion import IngestionOrchestrator
 from .query_transformer import QueryTransformer, QueryVariation
 from .contextual_compression import ContextualCompressor, CompressedContext
 
+# LangGraph-based query path
+from .graph import LangGraphRAG
+from .state import RAGState
+
 __all__ = [
     # Pipeline
     "RAGPipeline",
+    "LangGraphRAG",
+    "RAGState",
     "IngestionOrchestrator",
     # Chunking
     "MedicalChunker",
