@@ -7,7 +7,7 @@ on:
     branches: [main, develop]
 
 env:
-  PYTHON_VERSION: '3.13'
+  PYTHON_VERSION: '3.14'
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: postgres
   POSTGRES_DB: pharmaviyum_test
@@ -19,35 +19,35 @@ jobs:
   lint:
     name: Lint and Format
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install ruff black isort mypy
-      
+
       - name: Run Ruff linter
         run: ruff check src/ tests/
-      
+
       - name: Check formatting with Black
         run: black --check src/ tests/
-      
+
       - name: Check import sorting
         run: isort --check-only src/ tests/
-      
+
       - name: Type checking with MyPy
         run: mypy src/pharmaviyum/
         continue-on-error: true  # Allow failures during migration
-  
+
   # ============================================================================
   # Unit Tests
   # ============================================================================
@@ -55,7 +55,7 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     needs: lint
-    
+
     services:
       redis:
         image: redis:7-alpine
@@ -66,25 +66,26 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      
+
       - name: Run unit tests
         env:
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
+          DATABASE_URL: >
+            postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
           REDIS_URL: redis://localhost:6379/15
           ENVIRONMENT: testing
         run: |
@@ -94,14 +95,14 @@ jobs:
             --cov-report=xml \
             --cov-report=term-missing \
             -m unit
-      
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
           flags: unittests
           fail_ci_if_error: false
-  
+
   # ============================================================================
   # Integration Tests
   # ============================================================================
@@ -109,7 +110,7 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: lint
-    
+
     services:
       postgres:
         image: postgres:16-alpine
@@ -124,7 +125,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      
+
       redis:
         image: redis:7-alpine
         ports:
@@ -134,22 +135,22 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      
+
       - name: Run integration tests
         env:
           DATABASE_URL: postgresql+asyncpg://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
@@ -162,42 +163,42 @@ jobs:
             --cov-report=xml \
             --cov-report=term-missing \
             -m integration
-      
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
           flags: integration
           fail_ci_if_error: false
-  
+
   # ============================================================================
   # Security Scan
   # ============================================================================
   security:
     name: Security Scan
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
+
       - name: Install security tools
         run: |
           pip install safety bandit
-      
+
       - name: Run Safety (dependency vulnerabilities)
         run: safety check -r requirements.txt
         continue-on-error: true
-      
+
       - name: Run Bandit (security linting)
         run: bandit -r src/pharmaviyum/ -ll
         continue-on-error: true
-  
+
   # ============================================================================
   # Build Docker Image
   # ============================================================================
@@ -206,20 +207,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-unit, test-integration]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -231,7 +232,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/pharmaviyum-crm:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-  
+
   # ============================================================================
   # Deploy to Production (Manual Trigger)
   # ============================================================================
@@ -241,11 +242,11 @@ jobs:
     needs: build
     if: github.event_name == 'workflow_dispatch'
     environment: production
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Deploy to server
         run: |
           echo "🚀 Deploying to production..."

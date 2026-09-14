@@ -4,7 +4,13 @@ on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: '3.14'
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: pharmaviyum_test
 
 jobs:
   lint:
@@ -13,30 +19,38 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
-      - run: pip install ruff black mypy
-      - run: ruff check backend/
-      - run: black --check backend/
-  
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - run: pip install --upgrade pip ruff black isort mypy
+      - run: ruff check src/ tests/
+      - run: black --check src/ tests/
+      - run: isort --check-only src/ tests/
+
   test:
     runs-on: ubuntu-latest
     needs: lint
     services:
       postgres:
-        image: pgvector/pgvector:pg16
+        image: postgres:16-alpine
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: pharmaviyum_test
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
         ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
-      - run: pip install -r backend/requirements.txt pytest
-      - run: pytest backend/tests/
-  
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - run: pip install --upgrade pip -r requirements.txt pytest
+      - run: pytest tests/ -v
+
   build:
     runs-on: ubuntu-latest
     needs: test
@@ -46,6 +60,9 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: .
+          file: ./Dockerfile
           push: false
-          tags: pharmaviyum:${{ github.sha }}
+          tags: |
+            pharmaviyum-crm:latest
+            pharmaviyum-crm:${{ github.sha }}
