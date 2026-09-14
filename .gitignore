@@ -125,3 +125,18 @@ frontend/shadcn-admin/.pnpm-store
 # =============================================================================
 *.backup.*
 backups/
+
+# --- Added by Cleanup Script ---
+*.log
+logs/
+.env.local
+.env.*.local
+.DS_Store
+Thumbs.db
+coverage.xml
+htmlcov/
+.pytest_cache/
+__pycache__/
+*.egg-info/
+.ruff_cache/
+.mypy_cache/
