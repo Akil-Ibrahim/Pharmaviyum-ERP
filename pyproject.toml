@@ -21,6 +21,12 @@ dependencies = [
     # Redis
     "redis==6.2.0",
 
+    # AI / LangGraph
+    "langgraph==1.2.11",
+    "langgraph-checkpoint-postgres==3.0.3",
+    "langchain==1.4.0",
+    "langchain-ollama==1.1.0",
+
     # Security
     "python-jose[cryptography]==3.5.0",
     "passlib[bcrypt]==1.7.4",
