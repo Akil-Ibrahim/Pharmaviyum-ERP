@@ -18,24 +18,15 @@ from langchain_ollama import ChatOllama
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.pharmaviyum.ai.agents import (
-    AgentCheckpointer,
-    AgentStreamManager,
-    PharmacistAgent,
-    create_callback_manager,
-)
+from src.pharmaviyum.ai.agents import AgentCheckpointer, PharmacistAgent
 from src.pharmaviyum.ai.config import settings
 from src.pharmaviyum.ai.evaluation import AgentEvaluator
 from src.pharmaviyum.ai.harness import (
     AgentHarness,
-    ContextWindowManager,
     DialogueMemory,
-    GracefulDegradation,
-    HumanReviewQueue,
     MedicalGuardrails,
     ModelRouter,
     PromptCache,
-    ToolCallingLayer,
 )
 from src.pharmaviyum.ai.mcp import MCPClient, mcp_client
 from src.pharmaviyum.ai.observability import ObservabilityTracer, tracer
@@ -44,7 +35,6 @@ from src.pharmaviyum.ai.rag import (
     IngestionOrchestrator,
     LangGraphRAG,
     PgVectorStore,
-    RAGPipeline,
 )
 from src.pharmaviyum.core.logging import logger
 
@@ -186,9 +176,6 @@ class AIComponents:
                 country_code=settings.halal.default_country,
             )
 
-            # Initialize one durable PostgreSQL checkpointer and inject its saver
-            # into both LangGraph workflows. RAG query thread IDs are namespaced
-            # separately to avoid state collisions with the pharmacist agent.
             self.checkpointer = AgentCheckpointer(
                 database_url=settings.pgvector.database_url.get_secret_value().replace(
                     "postgresql+asyncpg", "postgresql"
