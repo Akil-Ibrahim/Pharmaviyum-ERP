@@ -17,7 +17,13 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.ai.config import settings
-from src.pharmaviyum.ai.rag import RAGPipeline, IngestionOrchestrator
+from src.pharmaviyum.ai.rag import (
+    RAGPipeline,
+    IngestionOrchestrator,
+    LangGraphRAG,
+    PgVectorStore,
+    EmbeddingsFactory,
+)
 from src.pharmaviyum.ai.mcp import MCPClient, mcp_client
 from src.pharmaviyum.ai.agents import (
     PharmacistAgent,
@@ -126,7 +132,7 @@ class AIComponents:
         self._lock = asyncio.Lock()
         
         # Components
-        self.rag_pipeline: RAGPipeline | None = None
+        self.rag_pipeline: LangGraphRAG | None = None  # LangGraph query path
         self.ingestion_orchestrator: IngestionOrchestrator | None = None
         self.agent_harness: AgentHarness | None = None
         self.mcp_client: MCPClient = mcp_client
@@ -148,28 +154,49 @@ class AIComponents:
             
             logger.info("Initializing AI components...")
             
-            # 1. RAG Pipeline
-            self.rag_pipeline = RAGPipeline(
-                redis_client=redis,
+            # 1. Vector store + embeddings (shared by RAG query path)
+            vector_store = PgVectorStore(
                 session_factory=db_session_factory,
+                table_name=settings.pgvector.table_name,
+                dimensions=settings.pgvector.vector_dimensions,
             )
-            
-            # 2. Ingestion Orchestrator
+            if db_session_factory is not None:
+                try:
+                    await vector_store.initialize()
+                except Exception as e:
+                    logger.warning(f"PgVectorStore initialize deferred: {e}")
+
+            embeddings = EmbeddingsFactory.create(
+                provider="ollama",
+                use_cache=True,
+                redis_client=redis,
+            )
+
+            # 2. Ingestion Orchestrator (batch path — unchanged)
             self.ingestion_orchestrator = IngestionOrchestrator(
                 session_factory=db_session_factory,
                 redis_client=redis,
                 embeddings_provider="ollama",
             )
-            
+
             # 3. Harness Components
             memory = DialogueMemory(
                 redis_client=redis,
                 max_short_term_messages=settings.agent.max_history_messages,
                 summarization_threshold=settings.agent.summarization_threshold,
             )
-            
+
             guardrails = MedicalGuardrails(
                 country_code=settings.halal.default_country,
+            )
+
+            # 3b. LangGraph RAG (query path — replaces linear RAGPipeline.query)
+            self.rag_pipeline = LangGraphRAG(
+                vector_store=vector_store,
+                embeddings=embeddings,
+                llm=get_llm_main(),
+                fast_llm=get_llm_fast(),
+                guardrails=guardrails,
             )
             
             cache = PromptCache(
@@ -246,9 +273,9 @@ async def get_ai_container(
 
 async def get_rag_pipeline(
     container: AIComponents = Depends(get_ai_container),
-) -> RAGPipeline:
+) -> LangGraphRAG:
     if not container.rag_pipeline:
-        raise HTTPException(status_code=500, detail="RAG Pipeline not initialized")
+        raise HTTPException(status_code=500, detail="LangGraph RAG not initialized")
     return container.rag_pipeline
 
 
