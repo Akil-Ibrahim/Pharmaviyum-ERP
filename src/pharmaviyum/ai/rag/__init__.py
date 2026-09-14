@@ -3,14 +3,18 @@ RAG Pipeline Module — End-to-end Retrieval-Augmented Generation.
 
 Public API:
     Pipeline:
-    - RAGPipeline: Main orchestrator (ingest + query + stream)
+    - RAGPipeline: Main orchestrator
     - IngestionOrchestrator: Full ingestion with dedup/versioning
     
+    Retrieval Enhancements:
+    - QueryTransformer: HyDE, multi-query, decomposition
+    - ContextualCompressor: Sentence-level compression + Lost-in-the-Middle mitigation
+    
     Components:
-    - MedicalChunker: Domain-aware chunking (vi/en/th/id/ar)
+    - MedicalChunker: Domain-aware chunking
     - PgVectorStore: pgvector with HNSW + hybrid search + RRF
     - MultiLanguageEmbeddingRouter: Language-aware model selection
-    - EmbeddingQualityEvaluator: Retrieval metrics (recall@k, MRR, NDCG)
+    - EmbeddingQualityEvaluator: Retrieval metrics
     - DriftDetector: Embedding quality drift monitoring
     
     Schemas:
@@ -34,6 +38,8 @@ from .quality_metrics import (
 from .pipeline import RAGPipeline
 from .preprocessing import DocumentPreprocessor
 from .ingestion import IngestionOrchestrator
+from .query_transformer import QueryTransformer, QueryVariation
+from .contextual_compression import ContextualCompressor, CompressedContext
 
 __all__ = [
     # Pipeline
@@ -57,6 +63,11 @@ __all__ = [
     "EmbeddingDriftReport",
     # Preprocessing
     "DocumentPreprocessor",
+    # Retrieval enhancements
+    "QueryTransformer",
+    "QueryVariation",
+    "ContextualCompressor",
+    "CompressedContext",
     # Schemas
     "Document",
     "Chunk",
