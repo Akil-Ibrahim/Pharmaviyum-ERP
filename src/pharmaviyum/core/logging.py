@@ -94,3 +94,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         
         kwargs["extra"] = extra
         return msg, kwargs
+
+
+# Initialize default logger
+logger = get_logger("pharmaviyum")
