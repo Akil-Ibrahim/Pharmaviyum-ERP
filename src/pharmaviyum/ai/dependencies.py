@@ -5,46 +5,49 @@ Best practice 2026:
 - Lazy initialization of heavy components (LLMs, Vector Stores)
 - Request-scoped dependencies for DB sessions
 - Singleton pattern for stateless services (Guardrails, Routers)
-- Graceful degradation if dependencies fail to initialize
+- Durable PostgreSQL persistence for LangGraph workflows
 """
 from __future__ import annotations
+
 import asyncio
-from typing import AsyncGenerator, Any
 from functools import lru_cache
-from fastapi import Depends, HTTPException, status, Request
+from typing import Any, AsyncGenerator
+
+from fastapi import Depends, HTTPException, Request, status
 from langchain_ollama import ChatOllama
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.pharmaviyum.ai.agents import (
+    AgentCheckpointer,
+    AgentStreamManager,
+    PharmacistAgent,
+    create_callback_manager,
+)
 from src.pharmaviyum.ai.config import settings
+from src.pharmaviyum.ai.evaluation import AgentEvaluator
+from src.pharmaviyum.ai.harness import (
+    AgentHarness,
+    ContextWindowManager,
+    DialogueMemory,
+    GracefulDegradation,
+    HumanReviewQueue,
+    MedicalGuardrails,
+    ModelRouter,
+    PromptCache,
+    ToolCallingLayer,
+)
+from src.pharmaviyum.ai.mcp import MCPClient, mcp_client
+from src.pharmaviyum.ai.observability import ObservabilityTracer, tracer
 from src.pharmaviyum.ai.rag import (
-    RAGPipeline,
+    EmbeddingsFactory,
     IngestionOrchestrator,
     LangGraphRAG,
     PgVectorStore,
-    EmbeddingsFactory,
+    RAGPipeline,
 )
-from src.pharmaviyum.ai.mcp import MCPClient, mcp_client
-from src.pharmaviyum.ai.agents import (
-    PharmacistAgent,
-    AgentCheckpointer,
-    AgentStreamManager,
-    create_callback_manager,
-)
-from src.pharmaviyum.ai.harness import (
-    AgentHarness,
-    DialogueMemory,
-    MedicalGuardrails,
-    PromptCache,
-    ModelRouter,
-    ToolCallingLayer,
-    ContextWindowManager,
-    GracefulDegradation,
-    HumanReviewQueue,
-)
-from src.pharmaviyum.ai.evaluation import AgentEvaluator
-from src.pharmaviyum.ai.observability import ObservabilityTracer, tracer
 from src.pharmaviyum.core.logging import logger
+
 
 # ============================================================================
 # CORE INFRASTRUCTURE DEPENDENCIES
@@ -58,7 +61,6 @@ async def get_redis_client() -> AsyncGenerator[Redis, None]:
             decode_responses=True,
             health_check_interval=30,
         )
-        # Test connection
         await redis.ping()
         yield redis
         await redis.aclose()
@@ -71,18 +73,13 @@ async def get_redis_client() -> AsyncGenerator[Redis, None]:
 
 
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
-    """
-    Get async SQLAlchemy session from the main app's state.
-    Assumes main.py sets up `request.state.db_session_factory`.
-    """
-    # Fallback to a mock or the actual factory if configured
+    """Get async SQLAlchemy session from the main app's state."""
     factory = getattr(request.app.state, "db_session_factory", None)
     if not factory:
-        # Mock for standalone AI module testing
         logger.warning("DB session factory not found in app.state, using mock")
         yield None
         return
-    
+
     async with factory() as session:
         yield session
 
@@ -127,17 +124,19 @@ def get_llm_complex():
 
 class AIComponents:
     """Container for all initialized AI components."""
+
     def __init__(self):
         self._initialized = False
         self._lock = asyncio.Lock()
-        
-        # Components
-        self.rag_pipeline: LangGraphRAG | None = None  # LangGraph query path
+
+        self.rag_pipeline: LangGraphRAG | None = None
         self.ingestion_orchestrator: IngestionOrchestrator | None = None
         self.agent_harness: AgentHarness | None = None
         self.mcp_client: MCPClient = mcp_client
         self.evaluator: AgentEvaluator | None = None
         self.tracer: ObservabilityTracer = tracer
+        self.checkpointer: AgentCheckpointer | None = None
+        self.checkpoint_saver: Any | None = None
 
     async def initialize(
         self,
@@ -147,14 +146,13 @@ class AIComponents:
         """Lazy initialization of heavy AI components."""
         if self._initialized:
             return
-            
+
         async with self._lock:
-            if self._initialized:  # Double-check locking
+            if self._initialized:
                 return
-            
+
             logger.info("Initializing AI components...")
-            
-            # 1. Vector store + embeddings (shared by RAG query path)
+
             vector_store = PgVectorStore(
                 session_factory=db_session_factory,
                 table_name=settings.pgvector.table_name,
@@ -172,14 +170,12 @@ class AIComponents:
                 redis_client=redis,
             )
 
-            # 2. Ingestion Orchestrator (batch path — unchanged)
             self.ingestion_orchestrator = IngestionOrchestrator(
                 session_factory=db_session_factory,
                 redis_client=redis,
                 embeddings_provider="ollama",
             )
 
-            # 3. Harness Components
             memory = DialogueMemory(
                 redis_client=redis,
                 max_short_term_messages=settings.agent.max_history_messages,
@@ -190,46 +186,46 @@ class AIComponents:
                 country_code=settings.halal.default_country,
             )
 
-            # 3b. LangGraph RAG (query path — replaces linear RAGPipeline.query)
+            # Initialize one durable PostgreSQL checkpointer and inject its saver
+            # into both LangGraph workflows. RAG query thread IDs are namespaced
+            # separately to avoid state collisions with the pharmacist agent.
+            self.checkpointer = AgentCheckpointer(
+                database_url=settings.pgvector.database_url.get_secret_value().replace(
+                    "postgresql+asyncpg", "postgresql"
+                ),
+            )
+            self.checkpoint_saver = await self.checkpointer.initialize()
+
             self.rag_pipeline = LangGraphRAG(
                 vector_store=vector_store,
                 embeddings=embeddings,
                 llm=get_llm_main(),
                 fast_llm=get_llm_fast(),
                 guardrails=guardrails,
+                checkpointer=self.checkpoint_saver,
             )
-            
+
             cache = PromptCache(
                 redis_client=redis,
                 similarity_threshold=settings.rag.similarity_threshold,
             )
-            
+
             model_router = ModelRouter(
                 models={
                     "fast": get_llm_fast(),
                     "main": get_llm_main(),
                     "complex": get_llm_complex(),
-                    "fallback": get_llm_main(),  # Fallback to main if complex fails
+                    "fallback": get_llm_main(),
                 }
             )
-            
-            # 4. LangGraph Agent
-            checkpointer = AgentCheckpointer(
-                database_url=settings.pgvector.database_url.get_secret_value().replace("postgresql+asyncpg", "postgresql"),
-            )
-            saver = await checkpointer.initialize()
-            
+
             agent = PharmacistAgent(
                 router_llm=get_llm_fast(),
                 main_llm=get_llm_main(),
                 mcp_client=self.mcp_client,
                 rag_pipeline=self.rag_pipeline,
             )
-            
-            # Inject checkpointer into agent graph (if supported by your graph setup)
-            # agent.graph.checkpointer = saver
-            
-            # 5. Agent Harness
+
             self.agent_harness = AgentHarness(
                 agent=agent,
                 memory=memory,
@@ -237,18 +233,16 @@ class AIComponents:
                 cache=cache,
                 model_router=model_router,
             )
-            
-            # 6. Evaluator
+
             self.evaluator = AgentEvaluator(
                 eval_llm=get_llm_complex(),
                 evaluator_model_name=settings.ollama.complex_model,
             )
-            
+
             self._initialized = True
-            logger.info("✅ AI components initialized successfully")
+            logger.info("AI components initialized successfully")
 
 
-# Global singleton instance
 ai_container = AIComponents()
 
 
@@ -256,20 +250,11 @@ async def get_ai_container(
     redis: Redis = Depends(get_redis_client),
     request: Request = None,
 ) -> AIComponents:
-    """
-    Main dependency that ensures all AI components are initialized.
-    Returns the singleton container.
-    """
-    # Extract DB factory from app state if available
+    """Ensure all AI components are initialized and return the singleton."""
     db_factory = getattr(request.app.state, "db_session_factory", None) if request else None
-    
     await ai_container.initialize(redis=redis, db_session_factory=db_factory)
     return ai_container
 
-
-# ============================================================================
-# CONVENIENCE DEPENDENCIES (for specific endpoints)
-# ============================================================================
 
 async def get_rag_pipeline(
     container: AIComponents = Depends(get_ai_container),
