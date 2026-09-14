@@ -3,7 +3,8 @@
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "version": "latest"
+      "version": "latest",
+      "moby": false
     },
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts"
