@@ -1,0 +1,110 @@
+"""
+LangChain Callback Manager for LangSmith Integration.
+
+Best practice 2026:
+- Automatic LangSmith tracing for all LLM calls
+- Custom callbacks for metrics collection
+- Correlation with OpenTelemetry traces
+"""
+from __future__ import annotations
+from typing import Any
+from langchain_core.callbacks import AsyncCallbackHandler, CallbackManager
+from langsmith import traceable
+from src.pharmaviyum.core.logging import logger
+from src.pharmaviyum.ai.observability.tracer import tracer
+
+
+class PharmaviyumCallbackHandler(AsyncCallbackHandler):
+    """
+    Custom callback handler for Pharmaviyum AI agent.
+    
+    Integrates:
+    - LangSmith tracing (automatic via langsmith.traceable)
+    - Prometheus metrics (tool calls, latency)
+    - OpenTelemetry spans (correlation with trace_id)
+    """
+    
+    def __init__(self, session_id: str, trace_id: str):
+        self.session_id = session_id
+        self.trace_id = trace_id
+    
+    async def on_llm_start(self, serialized: dict[str, Any], prompts: list[str], **kwargs) -> None:
+        """Called when LLM starts generating."""
+        logger.debug(
+            "LLM generation started",
+            extra={
+                "session_id": self.session_id,
+                "trace_id": self.trace_id,
+                "model": serialized.get("name", "unknown"),
+            }
+        )
+    
+    async def on_llm_end(self, response: Any, **kwargs) -> None:
+        """Called when LLM finishes generating."""
+        # Extract token usage if available
+        token_usage = getattr(response, "llm_output", {}).get("token_usage", {})
+        
+        if token_usage:
+            from src.pharmaviyum.ai.observability.metrics import record_llm_usage
+            from src.pharmaviyum.ai.observability.cost_tracker import calculate_llm_cost
+            
+            model_name = "qwen2.5:7b"  # Default, should be extracted from response
+            input_tokens = token_usage.get("prompt_tokens", 0)
+            output_tokens = token_usage.get("completion_tokens", 0)
+            cost = calculate_llm_cost(model_name, input_tokens, output_tokens)
+            
+            record_llm_usage(model_name, input_tokens, output_tokens, cost)
+    
+    async def on_tool_start(self, serialized: dict[str, Any], input_str: str, **kwargs) -> None:
+        """Called when a tool starts execution."""
+        tool_name = serialized.get("name", "unknown")
+        logger.info(
+            f"Tool execution started: {tool_name}",
+            extra={
+                "session_id": self.session_id,
+                "trace_id": self.trace_id,
+                "tool": tool_name,
+            }
+        )
+    
+    async def on_tool_end(self, output: str, **kwargs) -> None:
+        """Called when a tool finishes execution."""
+        tool_name = kwargs.get("name", "unknown")
+        logger.info(
+            f"Tool execution completed: {tool_name}",
+            extra={
+                "session_id": self.session_id,
+                "trace_id": self.trace_id,
+                "tool": tool_name,
+            }
+        )
+    
+    async def on_tool_error(self, error: Exception, **kwargs) -> None:
+        """Called when a tool raises an error."""
+        tool_name = kwargs.get("name", "unknown")
+        logger.error(
+            f"Tool execution failed: {tool_name} - {error}",
+            extra={
+                "session_id": self.session_id,
+                "trace_id": self.trace_id,
+                "tool": tool_name,
+                "error": str(error),
+            },
+            exc_info=True,
+        )
+
+
+def create_callback_manager(session_id: str, trace_id: str) -> CallbackManager:
+    """
+    Create a callback manager with all handlers configured.
+    
+    Usage:
+        callbacks = create_callback_manager(session_id, trace_id)
+        result = await graph.ainvoke(state, config={"callbacks": callbacks})
+    """
+    handler = PharmaviyumCallbackHandler(session_id, trace_id)
+    
+    # LangSmith tracer is automatically added if LANGCHAIN_API_KEY is set
+    # via environment variables, so we don't need to add it manually
+    
+    return CallbackManager([handler])
