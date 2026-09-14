@@ -74,6 +74,12 @@ class MCPClient:
         self,
         tool_name: str,
         input_data: dict[str, Any],
+        user_role: str = "system",
+        trace_id: str | None = None,
+    ) -> "ToolExecutionResult":
+        self,
+        tool_name: str,
+        input_data: dict[str, Any],
         trace_id: str | None = None,
     ) -> ToolExecutionResult:
         """
