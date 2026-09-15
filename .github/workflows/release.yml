@@ -123,24 +123,31 @@ jobs:
           OLLAMA_COMPLEX_MODEL: ${{ vars.STAGING_OLLAMA_COMPLEX_MODEL }}
           OLLAMA_EMBEDDING_MODEL: ${{ vars.STAGING_OLLAMA_EMBEDDING_MODEL }}
         run: |
-          cat > /tmp/pharmaviyum-release.env <<EOF
-          APP_IMAGE=$IMAGE_REPOSITORY:$IMAGE_SHA
-          DATABASE_URL=$DATABASE_URL
-          PGVECTOR_DATABASE_URL=$PGVECTOR_DATABASE_URL
-          REDIS_URL=$REDIS_URL
-          OLLAMA_BASE_URL=$OLLAMA_BASE_URL
-          OLLAMA_API_KEY=$OLLAMA_API_KEY
-          OLLAMA_FAST_MODEL=${OLLAMA_FAST_MODEL:-qwen2.5:1.5b}
-          OLLAMA_MAIN_MODEL=${OLLAMA_MAIN_MODEL:-qwen2.5:7b}
-          OLLAMA_COMPLEX_MODEL=${OLLAMA_COMPLEX_MODEL:-qwen2.5:72b}
-          OLLAMA_EMBEDDING_MODEL=${OLLAMA_EMBEDDING_MODEL:-mxbai-embed-large}
-          ENVIRONMENT=staging
-          EOF
-          scp -i ~/.ssh/staging_key /tmp/pharmaviyum-release.env \
+          set -Eeuo pipefail
+          release_env="$(mktemp)"
+          trap 'rm -f "$release_env"' EXIT
+
+          write_env() {
+            printf '%s=%q\n' "$1" "$2" >> "$release_env"
+          }
+
+          : > "$release_env"
+          write_env APP_IMAGE "$IMAGE_REPOSITORY:$IMAGE_SHA"
+          write_env DATABASE_URL "$DATABASE_URL"
+          write_env PGVECTOR_DATABASE_URL "$PGVECTOR_DATABASE_URL"
+          write_env REDIS_URL "$REDIS_URL"
+          write_env OLLAMA_BASE_URL "$OLLAMA_BASE_URL"
+          write_env OLLAMA_API_KEY "$OLLAMA_API_KEY"
+          write_env OLLAMA_FAST_MODEL "${OLLAMA_FAST_MODEL:-qwen2.5:1.5b}"
+          write_env OLLAMA_MAIN_MODEL "${OLLAMA_MAIN_MODEL:-qwen2.5:7b}"
+          write_env OLLAMA_COMPLEX_MODEL "${OLLAMA_COMPLEX_MODEL:-qwen2.5:72b}"
+          write_env OLLAMA_EMBEDDING_MODEL "${OLLAMA_EMBEDDING_MODEL:-mxbai-embed-large}"
+          write_env ENVIRONMENT staging
+
+          scp -i ~/.ssh/staging_key "$release_env" \
             "$SSH_USER@$SSH_HOST:~/pharmaviyum-release/.env"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" \
             'chmod 600 ~/pharmaviyum-release/.env && chmod 700 ~/pharmaviyum-release/deploy.sh && cd ~/pharmaviyum-release && set -a && . ./.env && set +a && ./deploy.sh'
-          rm -f /tmp/pharmaviyum-release.env
 
       - name: External staging smoke test
         env:
