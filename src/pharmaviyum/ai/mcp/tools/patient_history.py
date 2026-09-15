@@ -9,6 +9,7 @@ Best practice 2026:
 - Time-bounded queries (months_back)
 - Privacy-aware: no sensitive data leakage
 - Structured output for LLM consumption
+- Tenant authorization is enforced from trusted MCP context, never tool input
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.core.logging import logger
 
+from ..client import get_authorization_context
 from ..registry import registry
 from ..schemas import AllergyInfo, ConditionInfo, PatientHistory, PatientHistoryRequest
 
@@ -53,38 +55,38 @@ def calculate_age(dob: date | None) -> int | None:
     tags=["patient", "clinical", "safety", "context"],
 )
 async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
-    """
-    Load patient medical history with eager-loaded relationships.
-
-    Algorithm:
-    1. Fetch patient with selectinload for allergies + conditions
-    2. Optionally fetch recent prescriptions (filtered by months_back)
-    3. Compute derived fields (age, active prescription count)
-    4. Return structured history for LLM context
-    """
+    """Load patient history only inside the authenticated pharmacy tenant."""
     start = time.perf_counter()
+    auth_context = get_authorization_context()
+    if auth_context is None:
+        raise PermissionError("Trusted MCP tenant context is required for patient history")
 
     # Lazy import to avoid circular dependencies
     from src.pharmaviyum.modules.patients.models import Patient
     from src.pharmaviyum.shared.core.database import async_session_factory
 
     async with async_session_factory() as session:
-        # Single query with eager loading (no N+1)
+        # Tenant scope is a security invariant. pharmacy_id comes from the
+        # authenticated application context, not from LLM-controlled input.
         query = (
             select(Patient)
             .options(
                 selectinload(Patient.allergies),
                 selectinload(Patient.conditions),
             )
-            .where(Patient.id == input.patient_id)
+            .where(
+                Patient.id == input.patient_id,
+                Patient.pharmacy_id == auth_context.pharmacy_id,
+                Patient.is_active.is_(True),
+            )
         )
         result = await session.execute(query)
         patient = result.scalar_one_or_none()
 
         if not patient:
+            # Do not distinguish "not found" from "outside tenant".
             raise ValueError(f"Patient not found: {input.patient_id}")
 
-        # Build allergies list
         allergies: list[AllergyInfo] = []
         if input.include_allergies:
             allergies = [
@@ -97,7 +99,6 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
                 for a in patient.allergies
             ]
 
-        # Build conditions list
         conditions: list[ConditionInfo] = []
         if input.include_conditions:
             conditions = [
@@ -110,26 +111,25 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
                 for c in patient.conditions
             ]
 
-        # Count active prescriptions (if requested)
         active_prescriptions = 0
         if input.include_prescriptions:
             active_prescriptions = await _count_active_prescriptions(
-                session, input.patient_id, input.months_back
+                session, input.patient_id, input.months_back, auth_context.pharmacy_id
             )
 
-        # Count recent orders (if requested)
         recent_orders = 0
         if input.include_orders:
             recent_orders = await _count_recent_orders(
-                session, input.patient_id, input.months_back
+                session, input.patient_id, input.months_back, auth_context.pharmacy_id
             )
 
         latency_ms = (time.perf_counter() - start) * 1000
 
         logger.info(
-            f"Patient history loaded: {patient.full_name}",
+            "Patient history loaded",
             extra={
-                "patient_id": input.patient_id,
+                "patient_id": patient.id,
+                "pharmacy_id": auth_context.pharmacy_id,
                 "allergies": len(allergies),
                 "conditions": len(conditions),
                 "latency_ms": latency_ms,
@@ -155,19 +155,24 @@ async def _count_active_prescriptions(
     session: AsyncSession,
     patient_id: int,
     months_back: int,
+    pharmacy_id: int,
 ) -> int:
-    """Count prescriptions issued within months_back."""
+    """Count prescriptions within the authenticated pharmacy tenant."""
     try:
         from src.pharmaviyum.modules.prescriptions.models import Prescription
 
         cutoff = datetime.utcnow() - __import__("datetime").timedelta(
             days=months_back * 30
         )
-
-        query = select(func.count(Prescription.id)).where(
-            Prescription.patient_id == patient_id,
-            Prescription.date_issued >= cutoff,
-            Prescription.status.in_(["active", "filled"]),
+        query = (
+            select(func.count(Prescription.id))
+            .join(Patient, Prescription.patient_id == Patient.id)
+            .where(
+                Prescription.patient_id == patient_id,
+                Patient.pharmacy_id == pharmacy_id,
+                Prescription.date_issued >= cutoff,
+                Prescription.status.in_(["active", "filled"]),
+            )
         )
         result = await session.execute(query)
         return result.scalar_one()
@@ -180,18 +185,23 @@ async def _count_recent_orders(
     session: AsyncSession,
     patient_id: int,
     months_back: int,
+    pharmacy_id: int,
 ) -> int:
-    """Count orders within months_back."""
+    """Count orders within the authenticated pharmacy tenant."""
     try:
         from src.pharmaviyum.modules.orders.models import InternetOrder
 
         cutoff = datetime.utcnow() - __import__("datetime").timedelta(
             days=months_back * 30
         )
-
-        query = select(func.count(InternetOrder.id)).where(
-            InternetOrder.patient_id == patient_id,
-            InternetOrder.created_at >= cutoff,
+        query = (
+            select(func.count(InternetOrder.id))
+            .join(Patient, InternetOrder.patient_id == Patient.id)
+            .where(
+                InternetOrder.patient_id == patient_id,
+                Patient.pharmacy_id == pharmacy_id,
+                InternetOrder.created_at >= cutoff,
+            )
         )
         result = await session.execute(query)
         return result.scalar_one()
