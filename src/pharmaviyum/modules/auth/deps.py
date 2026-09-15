@@ -8,9 +8,10 @@ Provides reusable dependency functions for:
 - Database session
 """
 from typing import Annotated
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+import jwt
 from sqlalchemy.orm import Session
 import uuid
 
@@ -55,7 +56,7 @@ def get_current_user(
         if user_id_str is None:
             raise credentials_exception
         user_id = uuid.UUID(user_id_str)
-    except (JWTError, ValueError):
+    except (jwt.PyJWTError, ValueError):
         raise credentials_exception
     
     user = session.get(User, user_id)
