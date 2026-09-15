@@ -6,8 +6,8 @@ from pydantic import BaseModel
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "mortarium-ai"))
 
-from config import settings
-from core.model import MockLLM, load_qwen_model
+from config import settings  # noqa: E402
+from core.model import MockLLM, load_qwen_model  # noqa: E402
 
 
 class StructuredMockSchema(BaseModel):
