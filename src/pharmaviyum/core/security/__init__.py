@@ -12,7 +12,7 @@ exports are defined here explicitly.
 
 from datetime import datetime, timedelta
 
-from jose import JWTError, jwt
+import jwt
 from passlib.context import CryptContext
 
 from src.pharmaviyum.core.config import settings
@@ -48,5 +48,5 @@ def decode_access_token(token: str) -> dict | None:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
-    except JWTError:
+    except jwt.PyJWTError:
         return None
