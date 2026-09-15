@@ -11,17 +11,15 @@ from __future__ import annotations
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Annotated
 
-from fastapi import (APIRouter, Depends, File, Form, HTTPException, UploadFile,
-                     status)
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
 from src.pharmaviyum.ai.dependencies import get_redis_client
 from src.pharmaviyum.ai.rag.ingestion import ingest_document
-from src.pharmaviyum.modules.auth.deps import CurrentSuperuser
 from src.pharmaviyum.core.logging import logger
+from src.pharmaviyum.modules.auth.deps import CurrentSuperuser
 
 router = APIRouter(prefix="/api/v1/ingest", tags=["Ingestion"])
 
@@ -33,10 +31,7 @@ class IngestURLRequest(BaseModel):
     language: str = Field(default="vi")
 
 
-@router.post(
-    "/documents/upload",
-    response_model=dict,
-)
+@router.post("/documents/upload", response_model=dict)
 async def upload_and_ingest_document(
     file: UploadFile = File(..., description="PDF, DOCX, or HTML file"),
     country: str = Form(default="VN"),
@@ -44,7 +39,7 @@ async def upload_and_ingest_document(
     extract_tables: bool = Form(default=True),
     ocr_enabled: bool = Form(default=True),
     redis: Redis = Depends(get_redis_client),
-    _current_user: CurrentSuperuser = None,
+    _current_user: CurrentSuperuser,
 ):
     """Upload a document and trigger asynchronous ingestion."""
     allowed_extensions = {".pdf", ".docx", ".html", ".htm"}
@@ -110,7 +105,7 @@ async def upload_and_ingest_document(
 async def ingest_from_url(
     request: IngestURLRequest,
     redis: Redis = Depends(get_redis_client),
-    _current_user: CurrentSuperuser = None,
+    _current_user: CurrentSuperuser,
 ):
     """Trigger ingestion from a URL or local path for administrators only.
 
@@ -138,7 +133,7 @@ async def ingest_from_url(
 async def get_job_status(
     job_id: str,
     redis: Redis = Depends(get_redis_client),
-    _current_user: CurrentSuperuser = None,
+    _current_user: CurrentSuperuser,
 ):
     """Get ingestion status for an administrator."""
     from src.pharmaviyum.ai.rag.ingestion import IngestionProgressTracker
@@ -155,7 +150,7 @@ async def list_jobs(
     status_filter: str | None = None,
     limit: int = 20,
     redis: Redis = Depends(get_redis_client),
-    _current_user: CurrentSuperuser = None,
+    _current_user: CurrentSuperuser,
 ):
     """List ingestion jobs for an administrator."""
     from src.pharmaviyum.ai.rag.ingestion import IngestionProgressTracker
