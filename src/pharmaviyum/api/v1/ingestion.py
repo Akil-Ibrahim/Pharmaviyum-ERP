@@ -12,8 +12,7 @@ import tempfile
 import uuid
 from pathlib import Path
 
-from fastapi import (APIRouter, Depends, File, Form, HTTPException, UploadFile,
-                     status)
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
@@ -34,13 +33,13 @@ class IngestURLRequest(BaseModel):
 
 @router.post("/documents/upload", response_model=dict)
 async def upload_and_ingest_document(
+    _current_user: CurrentSuperuser,
     file: UploadFile = File(..., description="PDF, DOCX, or HTML file"),
     country: str = Form(default="VN"),
     language: str = Form(default="vi"),
     extract_tables: bool = Form(default=True),
     ocr_enabled: bool = Form(default=True),
     redis: Redis = Depends(get_redis_client),
-    _current_user: CurrentSuperuser,
 ):
     """Upload a document and trigger asynchronous ingestion."""
     allowed_extensions = {".pdf", ".docx", ".html", ".htm"}
@@ -105,8 +104,8 @@ async def upload_and_ingest_document(
 @router.post("/documents/url", response_model=dict)
 async def ingest_from_url(
     request: IngestURLRequest,
-    redis: Redis = Depends(get_redis_client),
     _current_user: CurrentSuperuser,
+    redis: Redis = Depends(get_redis_client),
 ):
     """Trigger ingestion from a URL or local path for administrators only.
 
@@ -133,8 +132,8 @@ async def ingest_from_url(
 @router.get("/jobs/{job_id}")
 async def get_job_status(
     job_id: str,
-    redis: Redis = Depends(get_redis_client),
     _current_user: CurrentSuperuser,
+    redis: Redis = Depends(get_redis_client),
 ):
     """Get ingestion status for an administrator."""
     from src.pharmaviyum.ai.rag.ingestion import IngestionProgressTracker
@@ -148,10 +147,10 @@ async def get_job_status(
 
 @router.get("/jobs")
 async def list_jobs(
+    _current_user: CurrentSuperuser,
     status_filter: str | None = None,
     limit: int = 20,
     redis: Redis = Depends(get_redis_client),
-    _current_user: CurrentSuperuser,
 ):
     """List ingestion jobs for an administrator."""
     from src.pharmaviyum.ai.rag.ingestion import IngestionProgressTracker
