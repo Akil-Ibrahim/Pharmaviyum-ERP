@@ -102,6 +102,24 @@ class LangGraphRAG:
         question = state["question"]
         ctx = state["context"]
         ctx_dict = {"language": ctx.language, "country": ctx.country}
+        if self.guardrails is not None:
+            pre_process = getattr(self.guardrails, "pre_process", None)
+            if pre_process is not None:
+                guardrail_result = await pre_process(question)
+                if not getattr(guardrail_result, "is_safe", True):
+                    return {
+                        "transformed_queries": [],
+                        "rewrite_count": 0,
+                        "warnings": list(getattr(guardrail_result, "warnings", None) or [])
+                        + ["input_blocked_by_guardrails"],
+                        "answer": getattr(guardrail_result, "blocked_reason", None)
+                        or "The request was blocked by safety guardrails.",
+                        "confidence": 0.0,
+                        "model_used": "none",
+                        "tokens_used": 0,
+                        "grade_decision": "insufficient",
+                    }
+                question = getattr(guardrail_result, "sanitized_input", None) or question
         variations = await self.transformer.generate_multi_query(
             query=question,
             num_variations=2,
@@ -285,8 +303,23 @@ class LangGraphRAG:
         if self.guardrails is not None:
             post = getattr(self.guardrails, "post_process", None)
             if post is not None:
-                result = await post(answer, state["context"])
-                answer = getattr(result, "sanitized_output", None) or answer
+                result = await post(
+                    answer,
+                    state["question"],
+                    state.get("graded") or [],
+                )
+                if not getattr(result, "is_safe", True):
+                    return {
+                        "answer": "The generated response was blocked by medical safety guardrails.",
+                        "warnings": list(getattr(result, "warnings", None) or [])
+                        + ["output_blocked_by_guardrails"],
+                        "confidence": 0.0,
+                    }
+                answer = (
+                    getattr(result, "validated_output", None)
+                    or getattr(result, "sanitized_output", None)
+                    or answer
+                )
                 extra_warnings.extend(getattr(result, "warnings", None) or [])
 
         lower = answer.lower()
@@ -371,7 +404,10 @@ class LangGraphRAG:
 
     def _build_filters(self, context: QueryContext) -> dict[str, Any]:
         """Build mandatory tenant-first retrieval filters."""
-        filters: dict[str, Any] = {"pharmacy_id": context.pharmacy_id, "country": context.country}
+        filters: dict[str, Any] = {
+            "pharmacy_id": context.pharmacy_id,
+            "country": context.country,
+        }
         if context.category:
             filters["category"] = context.category
         if context.halal_filter:
