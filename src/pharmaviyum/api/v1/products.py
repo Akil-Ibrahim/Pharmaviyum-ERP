@@ -1,10 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.product import Product
-from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser
+from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
 from src.pharmaviyum.schemas.product_schema import ProductCreate, ProductResponse, ProductUpdate
 
 router = APIRouter(prefix="/products", tags=["Products"])
@@ -13,8 +11,8 @@ router = APIRouter(prefix="/products", tags=["Products"])
 @router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
     data: ProductCreate,
-    db: AsyncSession = Depends(get_db),
-    _: CurrentSuperuser = None,
+    db: SessionDep,
+    _: CurrentSuperuser,
 ) -> Product:
     product = Product(**data.model_dump())
     db.add(product)
@@ -24,11 +22,7 @@ async def create_product(
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
-async def get_product(
-    product_id: int,
-    db: AsyncSession = Depends(get_db),
-    _: CurrentUser = None,
-) -> Product:
+async def get_product(product_id: int, db: SessionDep, _: CurrentUser) -> Product:
     result = await db.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()
     if not product:
@@ -38,10 +32,10 @@ async def get_product(
 
 @router.get("/", response_model=list[ProductResponse])
 async def list_products(
+    db: SessionDep,
+    _: CurrentUser,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    db: AsyncSession = Depends(get_db),
-    _: CurrentUser = None,
 ) -> list[Product]:
     result = await db.execute(
         select(Product).where(Product.is_active).offset(skip).limit(limit)
@@ -53,8 +47,8 @@ async def list_products(
 async def update_product(
     product_id: int,
     data: ProductUpdate,
-    db: AsyncSession = Depends(get_db),
-    _: CurrentSuperuser = None,
+    db: SessionDep,
+    _: CurrentSuperuser,
 ) -> Product:
     result = await db.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()
@@ -70,8 +64,8 @@ async def update_product(
 @router.delete("/{product_id}")
 async def delete_product(
     product_id: int,
-    db: AsyncSession = Depends(get_db),
-    _: CurrentSuperuser = None,
+    db: SessionDep,
+    _: CurrentSuperuser,
 ) -> dict[str, str]:
     result = await db.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()
