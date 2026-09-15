@@ -9,18 +9,50 @@ Best practice 2026:
 - Execution tracing for LangSmith integration
 - Circuit breaker pattern for failing tools
 - Centralized RBAC through the MCP registry
+- Trusted tenant context propagated separately from model-controlled tool input
 """
 
 from __future__ import annotations
 
 import asyncio
 import time
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any
+from uuid import UUID
 
 from src.pharmaviyum.core.logging import logger
 
 from .registry import UserRole, registry
+
+
+@dataclass(frozen=True)
+class MCPAuthorizationContext:
+    """Trusted identity and tenant context for one MCP execution."""
+
+    user_id: UUID
+    pharmacy_id: int
+
+
+_current_authorization_context: ContextVar[MCPAuthorizationContext | None] = ContextVar(
+    "mcp_authorization_context", default=None
+)
+
+
+def get_authorization_context() -> MCPAuthorizationContext | None:
+    """Return trusted MCP authorization context for the current async task."""
+    return _current_authorization_context.get()
+
+
+@contextmanager
+def authorization_context(context: MCPAuthorizationContext):
+    """Bind trusted authorization context for the duration of a tool call."""
+    token = _current_authorization_context.set(context)
+    try:
+        yield context
+    finally:
+        _current_authorization_context.reset(token)
 
 
 @dataclass
@@ -58,12 +90,15 @@ class MCPClient:
         input_data: dict[str, Any],
         user_role: UserRole | None = None,
         trace_id: str | None = None,
+        user_id: UUID | None = None,
+        pharmacy_id: int | None = None,
     ) -> ToolExecutionResult:
-        """Call an MCP tool with retry while enforcing centralized RBAC.
+        """Call an MCP tool with retry while enforcing RBAC and tenant context.
 
         ``user_role`` is intentionally required for production callers. Missing
         authorization context fails closed instead of silently becoming a
-        privileged ``system`` call.
+        privileged ``system`` call. Tenant context is kept outside tool input
+        so the LLM cannot select or override the pharmacy scope.
         """
         start = time.perf_counter()
 
@@ -74,6 +109,20 @@ class MCPClient:
                 error="MCP authorization context is required",
                 latency_ms=(time.perf_counter() - start) * 1000,
             )
+
+        if (user_id is None) != (pharmacy_id is None):
+            return ToolExecutionResult(
+                tool_name=tool_name,
+                success=False,
+                error="Incomplete MCP tenant context",
+                latency_ms=(time.perf_counter() - start) * 1000,
+            )
+
+        context = (
+            MCPAuthorizationContext(user_id=user_id, pharmacy_id=pharmacy_id)
+            if user_id is not None and pharmacy_id is not None
+            else None
+        )
 
         if self.enable_circuit_breaker and self._is_circuit_open(tool_name):
             logger.warning("Circuit breaker open for tool: %s", tool_name)
@@ -97,14 +146,15 @@ class MCPClient:
 
         for attempt in range(self.max_retries + 1):
             try:
-                result = await asyncio.wait_for(
-                    registry.call_tool(
-                        tool_name,
-                        input_data,
-                        user_role=user_role,
-                    ),
-                    timeout=self.timeout_seconds,
-                )
+                with authorization_context(context) if context else _null_context():
+                    result = await asyncio.wait_for(
+                        registry.call_tool(
+                            tool_name,
+                            input_data,
+                            user_role=user_role,
+                        ),
+                        timeout=self.timeout_seconds,
+                    )
                 latency_ms = (time.perf_counter() - start) * 1000
                 logger.info(
                     "Tool %s executed successfully",
@@ -115,6 +165,7 @@ class MCPClient:
                         "retry_count": retry_count,
                         "trace_id": trace_id,
                         "user_role": user_role,
+                        "pharmacy_id": pharmacy_id,
                     },
                 )
                 self._circuit_breaker.pop(tool_name, None)
@@ -124,7 +175,11 @@ class MCPClient:
                     data=result,
                     latency_ms=latency_ms,
                     retry_count=retry_count,
-                    metadata={"trace_id": trace_id, "user_role": user_role},
+                    metadata={
+                        "trace_id": trace_id,
+                        "user_role": user_role,
+                        "pharmacy_id": pharmacy_id,
+                    },
                 )
             except asyncio.TimeoutError:
                 last_error = f"Tool {tool_name} timed out after {self.timeout_seconds}s"
@@ -163,7 +218,11 @@ class MCPClient:
             error=last_error,
             latency_ms=latency_ms,
             retry_count=retry_count,
-            metadata={"trace_id": trace_id, "user_role": user_role},
+            metadata={
+                "trace_id": trace_id,
+                "user_role": user_role,
+                "pharmacy_id": pharmacy_id,
+            },
         )
 
     def _is_circuit_open(self, tool_name: str) -> bool:
@@ -220,6 +279,11 @@ class MCPClient:
         else:
             self._circuit_breaker.clear()
             logger.info("All circuit breakers reset")
+
+
+@contextmanager
+def _null_context():
+    yield None
 
 
 mcp_client = MCPClient()
