@@ -11,6 +11,7 @@ Best practice 2026: Environment-aware configuration with:
 from enum import Enum
 from typing import Optional
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -31,7 +32,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "Pharmaviyum CRM"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
-    ENVIRONMENT: Environment = Environment.PRODUCTION
+    ENVIRONMENT: Environment = Environment.DEVELOPMENT
     LOG_LEVEL: str = "INFO"
 
     # Database (single URL, best practice 2026)
@@ -46,9 +47,22 @@ class Settings(BaseSettings):
     REDIS_CACHE_TTL: int = 3600
 
     # Security
-    SECRET_KEY: str = "change-this-in-production"
+    # A secret is mandatory outside local development. Never fall back to a
+    # known value in staging/production.
+    SECRET_KEY: Optional[str] = None
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
+    @model_validator(mode="after")
+    def validate_security_configuration(self) -> "Settings":
+        """Fail closed when a deployment environment lacks a JWT secret."""
+        if self.ENVIRONMENT in {Environment.STAGING, Environment.PRODUCTION}:
+            if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
+                raise ValueError(
+                    "SECRET_KEY must be set to at least 32 characters in staging "
+                    "and production"
+                )
+        return self
 
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
