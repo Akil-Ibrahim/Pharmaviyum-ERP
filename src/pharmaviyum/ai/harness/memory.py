@@ -153,14 +153,6 @@ class DialogueMemory:
         if not raw_messages:
             return
 
-        # Extract text for summarization
-        conversation_text = "\n".join(
-            [
-                f"{'User' if json.loads(m)['role'] == 'user' else 'Assistant'}: {json.loads(m)['content']}"
-                for m in raw_messages
-            ]
-        )
-
         # TODO: Inject LLM summarization here in the full harness
         # For now, we create a placeholder summary
         summary = f"Summarized {to_summarize_count} turns of conversation. Key topics: medical consultation."
