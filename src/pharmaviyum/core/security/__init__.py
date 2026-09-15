@@ -1,6 +1,8 @@
 """Security package exports for authentication and authorization."""
 
-from datetime import datetime, timedelta
+import secrets
+import uuid
+from datetime import datetime, timedelta, timezone
 
 import jwt
 from passlib.context import CryptContext
@@ -20,26 +22,62 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
+def _signing_key() -> str:
+    """Return the configured signing key, with a process-local dev key."""
+    if settings.SECRET_KEY:
+        return settings.SECRET_KEY
+    if not hasattr(_signing_key, "_dev_key"):
+        _signing_key._dev_key = secrets.token_urlsafe(48)  # type: ignore[attr-defined]
+    return _signing_key._dev_key  # type: ignore[attr-defined]
+
+
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
-    """Create a JWT access token with an explicit access-token type."""
+    """Create a short-lived JWT access token."""
     to_encode = data.copy()
     to_encode["type"] = "access"
-    expire = datetime.utcnow() + (
+    now = datetime.now(timezone.utc)
+    expire = now + (
         expires_delta
         if expires_delta is not None
         else timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
+    to_encode["iat"] = now
     to_encode["exp"] = expire
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return jwt.encode(to_encode, _signing_key(), algorithm=settings.ALGORITHM)
+
+
+def create_refresh_token(subject: str, expires_delta: timedelta | None = None) -> str:
+    """Create a refresh JWT with a unique identifier for rotation/revocation."""
+    now = datetime.now(timezone.utc)
+    expire = now + (
+        expires_delta
+        if expires_delta is not None
+        else timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    )
+    payload = {
+        "sub": str(subject),
+        "type": "refresh",
+        "jti": str(uuid.uuid4()),
+        "iat": now,
+        "exp": expire,
+    }
+    return jwt.encode(payload, _signing_key(), algorithm=settings.ALGORITHM)
 
 
 def decode_access_token(token: str) -> dict | None:
-    """Decode a JWT and accept only tokens explicitly issued as access tokens."""
+    """Decode and accept only explicitly issued access tokens."""
     try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
-        if payload.get("type") != "access":
+        payload = jwt.decode(token, _signing_key(), algorithms=[settings.ALGORITHM])
+        return payload if payload.get("type") == "access" else None
+    except jwt.PyJWTError:
+        return None
+
+
+def decode_refresh_token(token: str) -> dict | None:
+    """Decode and accept only refresh tokens carrying a unique JTI."""
+    try:
+        payload = jwt.decode(token, _signing_key(), algorithms=[settings.ALGORITHM])
+        if payload.get("type") != "refresh" or not payload.get("jti"):
             return None
         return payload
     except jwt.PyJWTError:
