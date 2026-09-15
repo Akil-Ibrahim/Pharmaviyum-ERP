@@ -11,7 +11,9 @@ from datetime import datetime, timedelta
 import logging
 from dataclasses import dataclass
 from typing import Any
-from jose import jwt
+
+import jwt
+
 from ...shared.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -175,7 +177,7 @@ def verify_password_reset_token(token: str) -> str | None:
             return None
         
         return payload.get("sub")
-    except Exception:
+    except jwt.PyJWTError:
         return None
 
 
