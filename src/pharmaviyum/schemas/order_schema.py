@@ -1,16 +1,16 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class OrderCreate(BaseModel):
-    client_id: int
-    total_amount: float
+    patient_id: int = Field(..., gt=0)
+    total_amount: float = Field(..., ge=0)
 
 
 class OrderResponse(BaseModel):
     id: int
-    client_id: int
+    patient_id: int
     total_amount: float
     status: str
     created_at: datetime
