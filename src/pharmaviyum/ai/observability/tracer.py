@@ -1,40 +1,24 @@
-"""
-Unified Observability Tracer: OpenTelemetry + LangSmith.
-
-Best practice 2026:
-- OpenTelemetry for distributed tracing across microservices (FastAPI -> Agent -> DB)
-- LangSmith for LLM-specific tracing (prompts, token usage, tool calls, evaluations)
-- Async-friendly span management
-- Automatic correlation ID propagation
-"""
+"""Unified OpenTelemetry and LangSmith observability tracer."""
 from __future__ import annotations
+
 import os
-import json
-from typing import Any, Optional
 from contextlib import contextmanager
+from typing import Any, Iterator
+
+from langsmith import Client as LangSmithClient
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.trace import Status, StatusCode
-from langsmith import Client as LangSmithClient
-from langsmith.run_helpers import traceable
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.trace import Span, Status, StatusCode
+
 from src.pharmaviyum.core.logging import logger
 
 
 class ObservabilityTracer:
-    """
-    Production-ready tracer combining OpenTelemetry and LangSmith.
-    
-    Usage:
-        tracer = ObservabilityTracer()
-        
-        with tracer.start_span("agent_execution", session_id="123"):
-            # ... agent logic ...
-            tracer.log_to_langsmith(run_name="pharmacist_agent", inputs=..., outputs=...)
-    """
-    
+    """Production tracer combining OpenTelemetry and LangSmith."""
+
     def __init__(
         self,
         service_name: str = "pharmaviyum-ai",
@@ -43,99 +27,89 @@ class ObservabilityTracer:
         langsmith_project: str = "pharmaviyum-pharmacist-agent",
     ):
         self.service_name = service_name
-        
-        # 1. Initialize OpenTelemetry
         self._init_otel(otel_endpoint)
-        
-        # 2. Initialize LangSmith
         self._init_langsmith(langsmith_api_key, langsmith_project)
-        
         self.tracer = trace.get_tracer(service_name)
-    
-    def _init_otel(self, endpoint: str | None):
-        """Initialize OpenTelemetry TracerProvider with OTLP exporter."""
-        # Resource attributes for filtering in Grafana/Jaeger
-        resource = Resource.create({
-            "service.name": self.service_name,
-            "deployment.environment": os.getenv("ENVIRONMENT", "development"),
-        })
-        
+
+    def _init_otel(self, endpoint: str | None) -> None:
+        """Initialize OpenTelemetry with an optional OTLP exporter."""
+        resource = Resource.create(
+            {
+                "service.name": self.service_name,
+                "deployment.environment": os.getenv("ENVIRONMENT", "development"),
+            }
+        )
         provider = TracerProvider(resource=resource)
-        trace.set_tracer_provider(provider)
-        
-        # Export to OpenTelemetry Collector (or directly to Jaeger/Datadog)
-        otlp_endpoint = endpoint or os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317")
-        
+        try:
+            trace.set_tracer_provider(provider)
+        except Exception:
+            # Another library may already have installed the global provider.
+            pass
+
+        otlp_endpoint = endpoint or os.getenv(
+            "OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317"
+        )
+        if not os.getenv("OTEL_ENABLED", "false").lower() == "true":
+            logger.info("OpenTelemetry exporter disabled")
+            return
         try:
             exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
-            processor = BatchSpanProcessor(exporter)
-            provider.add_span_processor(processor)
-            logger.info(f"OpenTelemetry initialized, exporting to {otlp_endpoint}")
-        except Exception as e:
-            logger.warning(f"Failed to initialize OpenTelemetry exporter: {e}")
-    
-    def _init_langsmith(self, api_key: str | None, project: str):
-        """Initialize LangSmith client for LLM-specific tracing."""
+            provider.add_span_processor(BatchSpanProcessor(exporter))
+            logger.info("OpenTelemetry initialized, exporting to %s", otlp_endpoint)
+        except Exception as exc:
+            logger.warning("Failed to initialize OpenTelemetry exporter: %s", exc)
+
+    def _init_langsmith(self, api_key: str | None, project: str) -> None:
+        """Initialize LangSmith tracing only when explicitly configured."""
         ls_key = api_key or os.getenv("LANGCHAIN_API_KEY")
-        ls_endpoint = os.getenv("LANGCHAIN_ENDPOINT")
-        
-        if ls_key:
-            os.environ["LANGCHAIN_API_KEY"] = ls_key
-            os.environ["LANGCHAIN_PROJECT"] = project
-            os.environ["LANGCHAIN_TRACING_V2"] = "true"
-            if ls_endpoint:
-                os.environ["LANGCHAIN_ENDPOINT"] = ls_endpoint
-            
-            self.langsmith_client = LangSmithClient()
-            logger.info(f"LangSmith initialized for project: {project}")
-        else:
+        if not ls_key:
             self.langsmith_client = None
-            logger.warning("LangSmith API key not found. LLM tracing disabled.")
-    
+            logger.info("LangSmith API key not found; LLM tracing disabled")
+            return
+
+        os.environ["LANGCHAIN_API_KEY"] = ls_key
+        os.environ["LANGCHAIN_PROJECT"] = project
+        os.environ["LANGCHAIN_TRACING_V2"] = "true"
+        endpoint = os.getenv("LANGCHAIN_ENDPOINT")
+        if endpoint:
+            os.environ["LANGCHAIN_ENDPOINT"] = endpoint
+        try:
+            self.langsmith_client = LangSmithClient()
+            logger.info("LangSmith initialized for project: %s", project)
+        except Exception as exc:
+            self.langsmith_client = None
+            logger.warning("Failed to initialize LangSmith client: %s", exc)
+
     @contextmanager
-    def start_span(self, name: str, **attributes):
-        """
-        Context manager for OpenTelemetry spans.
-        
-        Usage:
-            with tracer.start_span("rag_retrieval", query_length=len(query)) as span:
-                # do work
-                span.set_attribute("retrieved_chunks", 5)
-        """
+    def start_span(self, name: str, **attributes: Any) -> Iterator[Span]:
+        """Create an OpenTelemetry span and record failures."""
         with self.tracer.start_as_current_span(name) as span:
-            # Set initial attributes
             for key, value in attributes.items():
-                span.set_attribute(key, str(value) if not isinstance(value, (bool, int, float)) else value)
-            
+                span.set_attribute(
+                    key, value if isinstance(value, (bool, int, float, str)) else str(value)
+                )
             try:
                 yield span
                 span.set_status(Status(StatusCode.OK))
-            except Exception as e:
-                span.set_status(Status(StatusCode.ERROR, str(e)))
-                span.record_exception(e)
+            except Exception as exc:
+                span.set_status(Status(StatusCode.ERROR, str(exc)))
+                span.record_exception(exc)
                 raise
-    
+
     def log_to_langsmith(
         self,
         run_name: str,
-        run_type: str = "llm",
         inputs: dict[str, Any],
+        run_type: str = "llm",
         outputs: dict[str, Any] | None = None,
         metadata: dict[str, Any] | None = None,
         tags: list[str] | None = None,
         session_id: str | None = None,
     ) -> str | None:
-        """
-        Log an execution to LangSmith.
-        
-        Returns:
-            The LangSmith run ID (for linking with OpenTelemetry traces)
-        """
+        """Log an execution to LangSmith when configured."""
         if not self.langsmith_client:
             return None
-        
         try:
-            # Create run
             run = self.langsmith_client.create_run(
                 name=run_name,
                 run_type=run_type,
@@ -145,14 +119,11 @@ class ObservabilityTracer:
                 tags=tags or [],
                 session_id=session_id,
             )
-            
-            logger.debug(f"Logged to LangSmith: {run_name} (ID: {run.id})")
             return str(run.id)
-            
-        except Exception as e:
-            logger.error(f"Failed to log to LangSmith: {e}", exc_info=True)
+        except Exception as exc:
+            logger.error("Failed to log to LangSmith: %s", exc, exc_info=True)
             return None
-    
+
     def log_tool_call(
         self,
         tool_name: str,
@@ -161,9 +132,9 @@ class ObservabilityTracer:
         latency_ms: float,
         success: bool,
         session_id: str | None = None,
-    ):
-        """Convenience method for logging MCP tool executions to LangSmith."""
-        self.log_to_langsmith(
+    ) -> str | None:
+        """Log an MCP tool execution to LangSmith."""
+        return self.log_to_langsmith(
             run_name=f"tool_{tool_name}",
             run_type="tool",
             inputs=inputs,
@@ -172,20 +143,18 @@ class ObservabilityTracer:
             tags=["mcp_tool", tool_name],
             session_id=session_id,
         )
-    
+
     def log_evaluation(
         self,
         query: str,
         answer: str,
         evaluation_result: dict[str, Any],
         session_id: str | None = None,
-    ):
-        """Log evaluation results to LangSmith as a separate run or feedback."""
+    ) -> None:
+        """Log an evaluation result to LangSmith."""
         if not self.langsmith_client:
             return
-        
         try:
-            # Log as an 'evaluator' run
             self.langsmith_client.create_run(
                 name="agent_evaluation",
                 run_type="evaluator",
@@ -194,9 +163,8 @@ class ObservabilityTracer:
                 tags=["evaluation", "llm_as_judge"],
                 session_id=session_id,
             )
-        except Exception as e:
-            logger.error(f"Failed to log evaluation to LangSmith: {e}")
+        except Exception as exc:
+            logger.error("Failed to log evaluation to LangSmith: %s", exc)
 
 
-# Global singleton instance
 tracer = ObservabilityTracer()
