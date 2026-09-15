@@ -1,27 +1,10 @@
-"""
-Pydantic schemas for User authentication.
-
-Schema hierarchy (as in template):
-- UserRegister: Public signup (email, password, full_name only)
-- UserCreate: Admin creation (all fields, used internally)
-- UserPublic: Public response (no password)
-- UserUpdate: Admin update
-- UserUpdateMe: Self-update (limited fields)
-- UpdatePassword: Password change (current + new)
-- NewPassword: Reset password (token + new password)
-- Token: Login response
-- Message: Generic message response
-"""
+"""Pydantic schemas for User authentication."""
 
 import uuid
 from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
-
-# ============================================================================
-# USER SCHEMAS
-# ============================================================================
 
 
 class UserBase(BaseModel):
@@ -34,13 +17,7 @@ class UserBase(BaseModel):
 
 
 class UserRegister(BaseModel):
-    """
-    Schema for public user registration (POST /users/signup).
-
-    Intentionally limited fields:
-    - No is_superuser (security: cannot self-assign admin)
-    - No is_active (always True for new users)
-    """
+    """Schema for public user registration."""
 
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=100)
@@ -48,13 +25,13 @@ class UserRegister(BaseModel):
 
 
 class UserCreate(UserBase):
-    """Schema for admin user creation (POST /users/)."""
+    """Schema for admin user creation."""
 
     password: str = Field(..., min_length=8, max_length=100)
 
 
 class UserUpdate(BaseModel):
-    """Schema for admin user update (PATCH /users/{id})."""
+    """Schema for admin user update."""
 
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
@@ -64,14 +41,14 @@ class UserUpdate(BaseModel):
 
 
 class UserUpdateMe(BaseModel):
-    """Schema for self-update (PATCH /users/me)."""
+    """Schema for self-update."""
 
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
 
 
 class UpdatePassword(BaseModel):
-    """Schema for password change (PATCH /users/me/password)."""
+    """Schema for changing the current password."""
 
     current_password: str = Field(..., min_length=8, max_length=100)
     new_password: str = Field(..., min_length=8, max_length=100)
@@ -97,20 +74,22 @@ class UsersPublic(BaseModel):
     count: int
 
 
-# ============================================================================
-# AUTH SCHEMAS
-# ============================================================================
-
-
 class Token(BaseModel):
-    """OAuth2 token response (matches template structure)."""
+    """OAuth2 access/refresh token response."""
 
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
 
 
+class RefreshTokenRequest(BaseModel):
+    """Request body for refresh-token rotation."""
+
+    refresh_token: str = Field(..., min_length=1)
+
+
 class NewPassword(BaseModel):
-    """Schema for password reset (POST /reset-password)."""
+    """Schema for password reset."""
 
     token: str
     new_password: str = Field(..., min_length=8, max_length=100)
