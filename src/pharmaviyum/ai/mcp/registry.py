@@ -1,9 +1,10 @@
 """
 MCP Tool Registry — central registry for all available tools.
 
-Updated to support:
+Supports:
 - Tool versioning (e.g., "check_drug_interactions:v2")
 - Role-Based Access Control (RBAC)
+- Role-filtered tool discovery for LLM tool binding
 """
 
 from __future__ import annotations
@@ -33,7 +34,6 @@ class ToolMetadata:
     requires_rag: bool = False
     requires_external_api: bool = False
     tags: list[str] = field(default_factory=list)
-    # NEW: RBAC and Versioning
     required_roles: list[UserRole] = field(
         default_factory=lambda: ["pharmacist", "admin", "system"]
     )
@@ -89,7 +89,7 @@ class MCPToolRegistry:
         return decorator
 
     async def call_tool(
-        self, name: str, input_data: dict[str, Any], user_role: UserRole = "system"
+        self, name: str, input_data: dict[str, Any], user_role: UserRole
     ) -> Any:
         """Call a registered tool with RBAC and validation."""
         from .tool_management import (
@@ -99,48 +99,41 @@ class MCPToolRegistry:
             resolve_tool_version,
         )
 
-        # 1. Resolve version
         resolved_name = resolve_tool_version(name)
-
         if resolved_name not in self._tools:
             raise ValueError(f"Unknown tool: {name}")
 
         metadata, func = self._tools[resolved_name]
 
-        # 2. Check deprecation
         if metadata.deprecated:
             logger.warning(
-                f"Deprecated tool called: {resolved_name}. {metadata.deprecation_message}"
+                "Deprecated tool called: %s. %s",
+                resolved_name,
+                metadata.deprecation_message,
             )
 
-        # 3. Check RBAC
         if not check_rbac(user_role, metadata.required_roles):
             raise PermissionError(
-                f"Role '{user_role}' is not authorized to use tool '{resolved_name}'. Required: {metadata.required_roles}"
+                f"Role '{user_role}' is not authorized to use tool '{resolved_name}'. "
+                f"Required: {metadata.required_roles}"
             )
 
-        # 4. Health check (lightweight)
         health = await health_checker.check_tool_health(resolved_name)
         if health["status"] == "unhealthy":
             raise RuntimeError(f"Tool dependency unhealthy: {health['details']}")
 
-        # 5. Validate input
         try:
             validated_input = metadata.input_schema(**input_data)
-        except Exception as e:
-            raise ValueError(f"Invalid input for tool {resolved_name}: {e}")
+        except Exception as exc:
+            raise ValueError(f"Invalid input for tool {resolved_name}: {exc}") from exc
 
-        # 6. Execute with timing
         start = time.perf_counter()
         try:
             result = await func(validated_input)
             latency_ms = (time.perf_counter() - start) * 1000
-
-            # Validate output
             if not isinstance(result, metadata.output_schema):
                 result = metadata.output_schema.model_validate(result)
 
-            # 7. Record analytics
             from .tool_management import ToolUsageRecord
 
             analytics_tracker.record_usage(
@@ -152,20 +145,21 @@ class MCPToolRegistry:
                     latency_ms=latency_ms,
                 )
             )
-
             logger.info(
-                f"Tool {resolved_name} executed in {latency_ms:.2f}ms by {user_role}"
+                "Tool %s executed in %.2fms by %s",
+                resolved_name,
+                latency_ms,
+                user_role,
             )
             return result
-
-        except Exception as e:
+        except Exception as exc:
             latency_ms = (time.perf_counter() - start) * 1000
             logger.error(
-                f"Tool {resolved_name} failed: {e}",
+                "Tool %s failed: %s",
+                resolved_name,
+                exc,
                 extra={"tool": resolved_name, "role": user_role},
             )
-
-            # Record failure in analytics
             from .tool_management import ToolUsageRecord
 
             analytics_tracker.record_usage(
@@ -181,6 +175,33 @@ class MCPToolRegistry:
 
     def list_tools(self) -> list[ToolMetadata]:
         return [meta for meta, _ in self._tools.values()]
+
+    def list_tools_for_role(self, user_role: UserRole) -> list[ToolMetadata]:
+        """Return only tools the role is authorized to invoke."""
+        from .tool_management import check_rbac
+
+        return [
+            meta
+            for meta, _ in self._tools.values()
+            if check_rbac(user_role, meta.required_roles)
+        ]
+
+    def to_openai_tools(self, user_role: UserRole) -> list[dict[str, Any]]:
+        """Build OpenAI-compatible tool schemas after RBAC filtering."""
+        tools: list[dict[str, Any]] = []
+        for metadata in self.list_tools_for_role(user_role):
+            schema = metadata.input_schema.model_json_schema()
+            tools.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": metadata.name,
+                        "description": metadata.description,
+                        "parameters": schema,
+                    },
+                }
+            )
+        return tools
 
     def get_tool(self, name: str) -> tuple[ToolMetadata, Callable] | None:
         return self._tools.get(name)
