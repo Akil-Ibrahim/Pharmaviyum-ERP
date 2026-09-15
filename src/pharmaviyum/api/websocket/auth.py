@@ -6,7 +6,9 @@ connections (e.g., token validation). Keep logic small and reuse
 """
 
 from typing import Optional
-from jose import jwt
+
+import jwt
+
 from src.pharmaviyum.config import settings
 
 
@@ -17,9 +19,9 @@ def validate_ws_token(token: str) -> Optional[str]:
 	auth backend requires network calls.
 	"""
 	try:
-		payload = jwt.decode(token, settings.API_SECRET_KEY or "", algorithms=["HS256"])  # type: ignore[arg-type]
+		payload = jwt.decode(token, settings.API_SECRET_KEY or "", algorithms=["HS256"])
 		return payload.get("sub")
-	except Exception:
+	except jwt.PyJWTError:
 		return None
 
 
