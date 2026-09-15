@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "src.pharmaviyum.main:app",
-        host="0.0.0.0",  # nosec B104: container must listen on all interfaces  # nosec B104: container must listen on all interfaces
+        host="0.0.0.0",  # nosec B104: container must listen on all interfaces  # nosec B104: container must listen on all interfaces  # nosec B104: container must listen on all interfaces
         port=8000,
         reload=settings.environment == "development",
         log_level=settings.log_level.lower(),
