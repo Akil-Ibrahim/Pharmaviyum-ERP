@@ -1,56 +1,42 @@
 import {
-  Construction,
-  LayoutDashboard,
-  Monitor,
-  Bug,
-  ListTodo,
-  FileX,
-  HelpCircle,
-  Lock,
+  Activity,
   Bell,
+  Boxes,
+  ClipboardList,
+  FileText,
+  HelpCircle,
+  LayoutDashboard,
+  Lock,
+  MapPin,
   Package,
   Palette,
-  ServerOff,
   Settings,
-  Wrench,
+  ShieldCheck,
+  Truck,
   UserCog,
   UserX,
   Users,
-  MessagesSquare,
-  ShieldCheck,
-  AudioWaveform,
-  Command,
-  GalleryVerticalEnd,
+  Wrench,
+  Zap,
 } from 'lucide-react'
-import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
 
 export const sidebarData: SidebarData = {
   user: {
-    name: 'satnaing',
-    email: 'satnaingdev@gmail.com',
+    name: 'Pharmaviyum Admin',
+    email: 'admin@pharmaviyum.local',
     avatar: '/avatars/shadcn.jpg',
   },
   teams: [
     {
-      name: 'Shadcn Admin',
-      logo: Command,
-      plan: 'Vite + ShadcnUI',
-    },
-    {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
+      name: 'Pharmaviyum',
+      logo: ShieldCheck,
+      plan: 'Pharmacy CRM',
     },
   ],
   navGroups: [
     {
-      title: 'General',
+      title: 'Operations',
       items: [
         {
           title: 'Dashboard',
@@ -58,110 +44,79 @@ export const sidebarData: SidebarData = {
           icon: LayoutDashboard,
         },
         {
-          title: 'Tasks',
-          url: '/tasks',
-          icon: ListTodo,
+          title: 'Patients',
+          url: '/patients',
+          icon: Users,
         },
         {
-          title: 'Apps',
-          url: '/apps',
+          title: 'Orders',
+          url: '/orders',
+          icon: ClipboardList,
+        },
+        {
+          title: 'Products',
+          url: '/products',
           icon: Package,
         },
         {
-          title: 'Chats',
-          url: '/chats',
-          badge: '3',
-          icon: MessagesSquare,
+          title: 'Inventory',
+          url: '/inventory',
+          icon: Boxes,
         },
+        {
+          title: 'Prescriptions',
+          url: '/prescriptions',
+          icon: FileText,
+        },
+      ],
+    },
+    {
+      title: 'Infrastructure',
+      items: [
+        {
+          title: 'Pharmacies',
+          url: '/pharmacies',
+          icon: MapPin,
+        },
+        {
+          title: 'Suppliers',
+          url: '/suppliers',
+          icon: Truck,
+        },
+        {
+          title: 'ERP Sync',
+          url: '/erp-sync',
+          icon: Zap,
+        },
+      ],
+    },
+    {
+      title: 'Intelligence',
+      items: [
+        {
+          title: 'Mortarium AI',
+          url: '/mortarium-ai',
+          icon: Activity,
+        },
+      ],
+    },
+    {
+      title: 'Administration',
+      items: [
         {
           title: 'Users',
           url: '/users',
           icon: Users,
         },
         {
-          title: 'Secured by Clerk',
-          icon: ClerkLogo,
-          items: [
-            {
-              title: 'Sign In',
-              url: '/clerk/sign-in',
-            },
-            {
-              title: 'Sign Up',
-              url: '/clerk/sign-up',
-            },
-            {
-              title: 'User Management',
-              url: '/clerk/user-management',
-            },
-          ],
+          title: 'Audit Logs',
+          url: '/audit-logs',
+          icon: Lock,
         },
       ],
     },
     {
-      title: 'Pages',
-      items: [
-        {
-          title: 'Auth',
-          icon: ShieldCheck,
-          items: [
-            {
-              title: 'Sign In',
-              url: '/sign-in',
-            },
-            {
-              title: 'Sign In (2 Col)',
-              url: '/sign-in-2',
-            },
-            {
-              title: 'Sign Up',
-              url: '/sign-up',
-            },
-            {
-              title: 'Forgot Password',
-              url: '/forgot-password',
-            },
-            {
-              title: 'OTP',
-              url: '/otp',
-            },
-          ],
-        },
-        {
-          title: 'Errors',
-          icon: Bug,
-          items: [
-            {
-              title: 'Unauthorized',
-              url: '/errors/unauthorized',
-              icon: Lock,
-            },
-            {
-              title: 'Forbidden',
-              url: '/errors/forbidden',
-              icon: UserX,
-            },
-            {
-              title: 'Not Found',
-              url: '/errors/not-found',
-              icon: FileX,
-            },
-            {
-              title: 'Internal Server Error',
-              url: '/errors/internal-server-error',
-              icon: ServerOff,
-            },
-            {
-              title: 'Maintenance Error',
-              url: '/errors/maintenance-error',
-              icon: Construction,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      title: 'Other',
+      title: 'Settings',
       items: [
         {
           title: 'Settings',
@@ -187,17 +142,17 @@ export const sidebarData: SidebarData = {
               url: '/settings/notifications',
               icon: Bell,
             },
-            {
-              title: 'Display',
-              url: '/settings/display',
-              icon: Monitor,
-            },
           ],
         },
         {
           title: 'Help Center',
           url: '/help-center',
           icon: HelpCircle,
+        },
+        {
+          title: 'Forbidden',
+          url: '/errors/forbidden',
+          icon: UserX,
         },
       ],
     },
