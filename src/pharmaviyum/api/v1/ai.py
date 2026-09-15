@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from typing import cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -12,6 +13,8 @@ from pydantic import BaseModel, Field
 from src.pharmaviyum.ai.dependencies import get_agent_harness
 from src.pharmaviyum.ai.harness import AgentResponse
 from src.pharmaviyum.ai.mcp import tool_registry
+from src.pharmaviyum.ai.mcp.context import MCPAuthorizationContext, reset_mcp_context, set_mcp_context
+from src.pharmaviyum.ai.mcp.registry import UserRole
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
@@ -30,12 +33,22 @@ class QueryRequest(BaseModel):
     force_fresh: bool = Field(default=False, description="Bypass prompt cache")
 
 
-async def _tenant_context(
-    pharmacy_id: int,
-    current_user: CurrentUser,
-    session: SessionDep,
-):
+async def _tenant_context(pharmacy_id: int, current_user: CurrentUser, session: SessionDep):
     return await require_pharmacy_tenant(pharmacy_id, current_user, session)
+
+
+def _set_mcp_context(tenant, current_user: CurrentUser):
+    return set_mcp_context(
+        MCPAuthorizationContext(
+            user_id=tenant.user_id,
+            pharmacy_id=tenant.pharmacy_id,
+            user_role=cast(UserRole, current_user.role),
+        )
+    )
+
+
+def _scoped_session_id(session_id: str, tenant, current_user: CurrentUser) -> str:
+    return f"pharmacy:{tenant.pharmacy_id}:user:{current_user.id}:session:{session_id}"
 
 
 @router.post("/query", response_model=AgentResponse, status_code=status.HTTP_200_OK)
@@ -47,7 +60,8 @@ async def query_agent(
 ):
     """Synchronous AI query bound to the authenticated pharmacy tenant."""
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
-    session_id = request.session_id or str(uuid.uuid4())
+    raw_session_id = request.session_id or str(uuid.uuid4())
+    session_id = _scoped_session_id(raw_session_id, tenant, current_user)
     context = {
         "user_id": tenant.user_id,
         "pharmacy_id": tenant.pharmacy_id,
@@ -58,47 +72,43 @@ async def query_agent(
         "force_fresh": request.force_fresh,
     }
 
-    logger.info(
-        "AI Query: user=%s pharmacy=%s session=%s query=%s...",
-        tenant.user_id,
-        tenant.pharmacy_id,
-        session_id,
-        request.query[:50],
-    )
-
+    token = _set_mcp_context(tenant, current_user)
     try:
-        result = await harness.run(session_id=session_id, query=request.query, context=context)
-        if not result.get("success"):
+        try:
+            result = await harness.run(session_id=session_id, query=request.query, context=context)
+            if not result.get("success"):
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=result.get("error", "Agent execution failed"),
+                )
+
+            return AgentResponse(
+                session_id=raw_session_id,
+                query=request.query,
+                answer=result["answer"],
+                sources=[],
+                tool_calls=[],
+                confidence=0.9 if not result.get("warnings") else 0.7,
+                requires_human_review="human_review_required" in result.get("warnings", []),
+                safety_score=0.95 if not result.get("warnings") else 0.8,
+                warnings=[
+                    {"code": w, "severity": "warning", "message": w}
+                    for w in result.get("warnings", [])
+                ],
+                model_used="qwen2.5:7b",
+                total_latency_ms=result.get("latency_ms", 0.0),
+                trace_id=result.get("trace_id", ""),
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Query endpoint failed: %s", e, exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("error", "Agent execution failed"),
-            )
-
-        return AgentResponse(
-            session_id=session_id,
-            query=request.query,
-            answer=result["answer"],
-            sources=[],
-            tool_calls=[],
-            confidence=0.9 if not result.get("warnings") else 0.7,
-            requires_human_review="human_review_required" in result.get("warnings", []),
-            safety_score=0.95 if not result.get("warnings") else 0.8,
-            warnings=[
-                {"code": w, "severity": "warning", "message": w}
-                for w in result.get("warnings", [])
-            ],
-            model_used="qwen2.5:7b",
-            total_latency_ms=result.get("latency_ms", 0.0),
-            trace_id=result.get("trace_id", ""),
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("Query endpoint failed: %s", e, exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error during AI processing",
-        ) from e
+                detail="Internal server error during AI processing",
+            ) from e
+    finally:
+        reset_mcp_context(token)
 
 
 @router.post("/query/stream")
@@ -110,7 +120,8 @@ async def query_agent_stream(
 ):
     """Streaming AI query bound to the authenticated pharmacy tenant."""
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
-    session_id = request.session_id or str(uuid.uuid4())
+    raw_session_id = request.session_id or str(uuid.uuid4())
+    session_id = _scoped_session_id(raw_session_id, tenant, current_user)
     context = {
         "user_id": tenant.user_id,
         "pharmacy_id": tenant.pharmacy_id,
@@ -121,6 +132,7 @@ async def query_agent_stream(
     }
 
     async def event_generator():
+        token = _set_mcp_context(tenant, current_user)
         try:
             async for event in harness.astream(
                 session_id=session_id,
@@ -132,6 +144,8 @@ async def query_agent_stream(
         except Exception as e:
             logger.error("Stream endpoint failed: %s", e, exc_info=True)
             yield f"data: {json.dumps({'event': 'error', 'message': 'AI processing failed'})}\n\n"
+        finally:
+            reset_mcp_context(token)
 
     return StreamingResponse(
         event_generator(),
@@ -146,9 +160,10 @@ async def query_agent_stream(
 
 @router.get("/tools")
 async def list_tools(current_user: CurrentUser):
-    """List MCP tools only after authentication."""
+    """List only MCP tools authorized for the authenticated user's role."""
+    role = cast(UserRole, current_user.role)
     tools = []
-    for meta in tool_registry.list_tools():
+    for meta in tool_registry.list_tools_for_role(role):
         tools.append(
             {
                 "name": meta.name,
@@ -156,7 +171,6 @@ async def list_tools(current_user: CurrentUser):
                 "description": meta.description,
                 "category": meta.category,
                 "input_schema": meta.input_schema.model_json_schema(),
-                "required_roles": meta.required_roles,
             }
         )
     return {"tools": tools, "authenticated_user_id": str(current_user.id)}
