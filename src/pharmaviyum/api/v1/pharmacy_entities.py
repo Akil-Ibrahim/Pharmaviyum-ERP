@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +13,7 @@ from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.mortarium_ai import MortariumAISession
 from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.prescription import Prescription
+from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.models.supplier import Supplier
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
 
@@ -35,11 +36,20 @@ class SupplierIn(BaseModel):
 
 
 class InventoryIn(BaseModel):
-    product_id: int
-    pharmacy_id: int
+    product_id: int = Field(gt=0)
+    pharmacy_id: int = Field(gt=0)
     quantity: int = Field(default=0, ge=0)
     reserved_quantity: int = Field(default=0, ge=0)
-    lot_number: str | None = None
+    reorder_level: int = Field(default=0, ge=0)
+    lot_number: str | None = Field(default=None, max_length=100)
+    expires_at: datetime | None = None
+
+
+class InventoryUpdate(BaseModel):
+    quantity: int | None = Field(default=None, ge=0)
+    reserved_quantity: int | None = Field(default=None, ge=0)
+    reorder_level: int | None = Field(default=None, ge=0)
+    lot_number: str | None = Field(default=None, max_length=100)
     expires_at: datetime | None = None
 
 
@@ -82,6 +92,25 @@ async def _list(session: AsyncSession, model: type[Any]) -> list[Any]:
     return list(result.scalars().all())
 
 
+async def _require_inventory_dependencies(
+    session: AsyncSession, product_id: int, pharmacy_id: int
+) -> None:
+    product = await session.get(Product, product_id)
+    if product is None or not product.is_active:
+        raise HTTPException(status_code=404, detail="Active product not found")
+    pharmacy = await session.get(Pharmacy, pharmacy_id)
+    if pharmacy is None or not pharmacy.is_active:
+        raise HTTPException(status_code=404, detail="Active pharmacy not found")
+
+
+def _validate_inventory_levels(quantity: int, reserved_quantity: int) -> None:
+    if reserved_quantity > quantity:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="reserved_quantity cannot exceed quantity",
+        )
+
+
 @router.get("/pharmacies")
 async def list_pharmacies(_: CurrentUser, session: SessionDep) -> list[Pharmacy]:
     return await _list(session, Pharmacy)
@@ -111,17 +140,93 @@ async def create_supplier(data: SupplierIn, _: CurrentSuperuser, session: Sessio
 
 
 @router.get("/inventory")
-async def list_inventory(_: CurrentUser, session: SessionDep) -> list[Inventory]:
-    return await _list(session, Inventory)
+async def list_inventory(
+    _: CurrentUser,
+    session: SessionDep,
+    product_id: int | None = Query(default=None, gt=0),
+    pharmacy_id: int | None = Query(default=None, gt=0),
+    low_stock: bool = False,
+) -> list[Inventory]:
+    query = select(Inventory)
+    if product_id is not None:
+        query = query.where(Inventory.product_id == product_id)
+    if pharmacy_id is not None:
+        query = query.where(Inventory.pharmacy_id == pharmacy_id)
+    if low_stock:
+        query = query.where(Inventory.quantity - Inventory.reserved_quantity <= Inventory.reorder_level)
+    query = query.order_by(Inventory.id.desc())
+    result = await session.execute(query)
+    return list(result.scalars().all())
 
 
 @router.post("/inventory", status_code=status.HTTP_201_CREATED)
-async def create_inventory(data: InventoryIn, _: CurrentSuperuser, session: SessionDep) -> Inventory:
+async def create_inventory(
+    data: InventoryIn, _: CurrentSuperuser, session: SessionDep
+) -> Inventory:
+    _validate_inventory_levels(data.quantity, data.reserved_quantity)
+    await _require_inventory_dependencies(session, data.product_id, data.pharmacy_id)
+
+    existing = await session.scalar(
+        select(Inventory).where(
+            Inventory.product_id == data.product_id,
+            Inventory.pharmacy_id == data.pharmacy_id,
+            Inventory.lot_number == data.lot_number,
+        )
+    )
+    if existing is not None:
+        raise HTTPException(status_code=409, detail="Inventory lot already exists")
+
     inventory = Inventory(**data.model_dump())
     session.add(inventory)
     await session.commit()
     await session.refresh(inventory)
     return inventory
+
+
+@router.patch("/inventory/{inventory_id}")
+async def update_inventory(
+    inventory_id: int,
+    data: InventoryUpdate,
+    _: CurrentSuperuser,
+    session: SessionDep,
+) -> Inventory:
+    inventory = await session.get(Inventory, inventory_id)
+    if inventory is None:
+        raise HTTPException(status_code=404, detail="Inventory record not found")
+
+    values = data.model_dump(exclude_unset=True)
+    quantity = values.get("quantity", inventory.quantity)
+    reserved_quantity = values.get("reserved_quantity", inventory.reserved_quantity)
+    _validate_inventory_levels(quantity, reserved_quantity)
+
+    if "lot_number" in values and values["lot_number"] != inventory.lot_number:
+        duplicate = await session.scalar(
+            select(Inventory).where(
+                Inventory.product_id == inventory.product_id,
+                Inventory.pharmacy_id == inventory.pharmacy_id,
+                Inventory.lot_number == values["lot_number"],
+                Inventory.id != inventory.id,
+            )
+        )
+        if duplicate is not None:
+            raise HTTPException(status_code=409, detail="Inventory lot already exists")
+
+    for key, value in values.items():
+        setattr(inventory, key, value)
+    await session.commit()
+    await session.refresh(inventory)
+    return inventory
+
+
+@router.delete("/inventory/{inventory_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_inventory(
+    inventory_id: int, _: CurrentSuperuser, session: SessionDep
+) -> None:
+    inventory = await session.get(Inventory, inventory_id)
+    if inventory is None:
+        raise HTTPException(status_code=404, detail="Inventory record not found")
+    await session.delete(inventory)
+    await session.commit()
 
 
 @router.get("/prescriptions")
