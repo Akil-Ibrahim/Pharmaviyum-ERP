@@ -3,8 +3,6 @@ name: Auto-fix lint baseline
 on:
   push:
     branches: [dev]
-  schedule:
-    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:
