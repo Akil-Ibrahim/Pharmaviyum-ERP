@@ -1,14 +1,4 @@
-"""Security package exports for authentication and authorization.
-
-This package is intentionally kept compatible with the existing import pattern:
-
-    from src.pharmaviyum.core.security import decode_access_token
-    from src.pharmaviyum.core.security.rbac import get_current_active_user
-
-The legacy module path src/pharmaviyum/core/security.py was causing a shadowing
-collision with the security/ package directory on Python 3.14, so the package
-exports are defined here explicitly.
-"""
+"""Security package exports for authentication and authorization."""
 
 from datetime import datetime, timedelta
 
@@ -17,7 +7,6 @@ from passlib.context import CryptContext
 
 from src.pharmaviyum.core.config import settings
 
-# Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -32,25 +21,26 @@ def get_password_hash(password: str) -> str:
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
-    """Create JWT access token."""
+    """Create a JWT access token with an explicit access-token type."""
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
-
-    to_encode.update({"exp": expire})
+    to_encode["type"] = "access"
+    expire = datetime.utcnow() + (
+        expires_delta
+        if expires_delta is not None
+        else timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    to_encode["exp"] = expire
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 def decode_access_token(token: str) -> dict | None:
-    """Decode JWT access token."""
+    """Decode a JWT and accept only tokens explicitly issued as access tokens."""
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
+        if payload.get("type") != "access":
+            return None
         return payload
     except jwt.PyJWTError:
         return None
