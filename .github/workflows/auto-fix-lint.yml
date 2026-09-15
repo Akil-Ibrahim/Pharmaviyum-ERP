@@ -118,11 +118,11 @@ jobs:
                   path.write_text(text)
           PY
 
-      - name: Format with Black
-        run: black src/ tests/
-
       - name: Sort imports
         run: isort src/ tests/
+
+      - name: Format with Black
+        run: black src/ tests/
 
       - name: Commit safe lint fixes
         run: |
