@@ -2,8 +2,10 @@
 import hmac
 from datetime import datetime, timedelta
 from typing import Any
-from jose import jwt
+
+import jwt
 from passlib.context import CryptContext
+
 from src.pharmaviyum.config import settings
 
 
@@ -49,5 +51,5 @@ def verify_token(token: str, expected_type: str = "access") -> dict | None:
         if payload.get("type") != expected_type:
             return None
         return payload
-    except Exception:
+    except jwt.PyJWTError:
         return None
