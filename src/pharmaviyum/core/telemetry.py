@@ -56,7 +56,6 @@ def setup_telemetry(app=None, engine=None) -> None:
         return
 
     try:
-        # Create resource with service info
         resource = Resource.create(
             {
                 "service.name": settings.OTEL_SERVICE_NAME,
@@ -65,10 +64,8 @@ def setup_telemetry(app=None, engine=None) -> None:
             }
         )
 
-        # Create tracer provider
         provider = TracerProvider(resource=resource)
 
-        # Add exporters
         if settings.OTEL_EXPORTER_ENDPOINT and _otlp_exporter_available():
             from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
                 OTLPSpanExporter,
@@ -88,7 +85,6 @@ def setup_telemetry(app=None, engine=None) -> None:
 
         trace.set_tracer_provider(provider)
 
-        # Instrument libraries
         if app and FastAPIInstrumentor is not None:
             FastAPIInstrumentor.instrument_app(app)
 
@@ -100,8 +96,6 @@ def setup_telemetry(app=None, engine=None) -> None:
         if HTTPXClientInstrumentor is not None:
             HTTPXClientInstrumentor().instrument()
     except Exception:
-        # Best-effort telemetry: never fail the app startup because the tracing stack
-        # is optional and the project must remain runnable on newer Python versions.
         return
 
 
