@@ -2,8 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import (Boolean, Date, DateTime, ForeignKey, Integer, String,
-                        Text)
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.pharmaviyum.db.base import Base
@@ -24,6 +23,8 @@ class PatientCondition(Base):
     notes: Mapped[str | None] = mapped_column(Text)
     is_chronic: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     patient = relationship("Patient", back_populates="conditions")
