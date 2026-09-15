@@ -97,7 +97,7 @@ class PgVectorStore:
             ]
             await session.execute(
                 text(  # nosec B608: table_name is validated as a SQL identifier
-                    f"""
+                    f"""  # nosec B608: table_name is validated as a SQL identifier
                 INSERT INTO {self.table_name}
                 (id, document_id, content, chunk_index, chunk_type, metadata, token_count, embedding)
                 VALUES
@@ -126,7 +126,7 @@ class PgVectorStore:
         filter_clause, filter_params = self._build_filter_clause(filters)
         async with self.session_factory() as session:
             query_sql = text(  # nosec B608: table_name and filter keys are validated
-                f"""
+                f"""  # nosec B608: table_name and filter keys are validated
                 SELECT id, document_id, content, chunk_index, chunk_type,
                        metadata, token_count,
                        1 - (embedding <=> :query_embedding::vector) AS score
@@ -161,7 +161,7 @@ class PgVectorStore:
         and_clause = "AND" if filter_clause else "WHERE"
         async with self.session_factory() as session:
             query_sql = text(  # nosec B608: table_name and filter keys are validated
-                f"""
+                f"""  # nosec B608: table_name and filter keys are validated
                 SELECT id, document_id, content, chunk_index, chunk_type,
                        metadata, token_count,
                        ts_rank(to_tsvector('english', content), plainto_tsquery('english', :query)) AS score
