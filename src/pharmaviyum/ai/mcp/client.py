@@ -8,6 +8,7 @@ Best practice 2026:
 - OpenAI function schema generation
 - Execution tracing for LangSmith integration
 - Circuit breaker pattern for failing tools
+- Centralized RBAC through the MCP registry
 """
 
 from __future__ import annotations
@@ -15,11 +16,11 @@ from __future__ import annotations
 import asyncio
 import time
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 from src.pharmaviyum.core.logging import logger
 
-from .registry import ToolMetadata, registry
+from .registry import UserRole, registry
 
 
 @dataclass
@@ -55,12 +56,24 @@ class MCPClient:
         self,
         tool_name: str,
         input_data: dict[str, Any],
-        user_role: str = "system",
+        user_role: UserRole | None = None,
         trace_id: str | None = None,
     ) -> ToolExecutionResult:
-        """Call an MCP tool with retry and error handling."""
-        del user_role  # Reserved for future authorization policy enforcement.
+        """Call an MCP tool with retry while enforcing centralized RBAC.
+
+        ``user_role`` is intentionally required for production callers. Missing
+        authorization context fails closed instead of silently becoming a
+        privileged ``system`` call.
+        """
         start = time.perf_counter()
+
+        if user_role is None:
+            return ToolExecutionResult(
+                tool_name=tool_name,
+                success=False,
+                error="MCP authorization context is required",
+                latency_ms=(time.perf_counter() - start) * 1000,
+            )
 
         if self.enable_circuit_breaker and self._is_circuit_open(tool_name):
             logger.warning("Circuit breaker open for tool: %s", tool_name)
@@ -71,8 +84,7 @@ class MCPClient:
                 latency_ms=(time.perf_counter() - start) * 1000,
             )
 
-        tool_info = registry.get_tool(tool_name)
-        if not tool_info:
+        if not registry.get_tool(tool_name):
             return ToolExecutionResult(
                 tool_name=tool_name,
                 success=False,
@@ -80,14 +92,17 @@ class MCPClient:
                 latency_ms=(time.perf_counter() - start) * 1000,
             )
 
-        metadata, func = tool_info
         retry_count = 0
         last_error: str | None = None
 
         for attempt in range(self.max_retries + 1):
             try:
                 result = await asyncio.wait_for(
-                    self._execute_tool(func, input_data, metadata),
+                    registry.call_tool(
+                        tool_name,
+                        input_data,
+                        user_role=user_role,
+                    ),
                     timeout=self.timeout_seconds,
                 )
                 latency_ms = (time.perf_counter() - start) * 1000
@@ -99,6 +114,7 @@ class MCPClient:
                         "latency_ms": latency_ms,
                         "retry_count": retry_count,
                         "trace_id": trace_id,
+                        "user_role": user_role,
                     },
                 )
                 self._circuit_breaker.pop(tool_name, None)
@@ -108,7 +124,7 @@ class MCPClient:
                     data=result,
                     latency_ms=latency_ms,
                     retry_count=retry_count,
-                    metadata={"trace_id": trace_id} if trace_id else {},
+                    metadata={"trace_id": trace_id, "user_role": user_role},
                 )
             except asyncio.TimeoutError:
                 last_error = f"Tool {tool_name} timed out after {self.timeout_seconds}s"
@@ -116,6 +132,14 @@ class MCPClient:
                     last_error,
                     extra={"tool": tool_name, "attempt": attempt + 1},
                 )
+            except PermissionError as exc:
+                # Authorization failures are deterministic and must never retry.
+                last_error = str(exc)
+                logger.warning(
+                    "MCP tool authorization denied",
+                    extra={"tool": tool_name, "user_role": user_role},
+                )
+                break
             except Exception as exc:
                 last_error = f"Tool {tool_name} failed: {exc}"
                 logger.error(
@@ -130,7 +154,7 @@ class MCPClient:
                 await asyncio.sleep(wait_time)
 
         latency_ms = (time.perf_counter() - start) * 1000
-        if self.enable_circuit_breaker:
+        if self.enable_circuit_breaker and last_error and "not authorized" not in last_error:
             self._record_failure(tool_name)
 
         return ToolExecutionResult(
@@ -139,30 +163,8 @@ class MCPClient:
             error=last_error,
             latency_ms=latency_ms,
             retry_count=retry_count,
-            metadata={"trace_id": trace_id} if trace_id else {},
+            metadata={"trace_id": trace_id, "user_role": user_role},
         )
-
-    async def _execute_tool(
-        self,
-        func: Callable[..., Any],
-        input_data: dict[str, Any],
-        metadata: ToolMetadata,
-    ) -> Any:
-        """Execute tool function with input and output validation."""
-        try:
-            validated_input = metadata.input_schema(**input_data)
-        except Exception as exc:
-            raise ValueError(f"Invalid input for tool {metadata.name}: {exc}") from exc
-
-        result = await func(validated_input)
-        if not isinstance(result, metadata.output_schema):
-            try:
-                result = metadata.output_schema.model_validate(result)
-            except Exception as exc:
-                raise ValueError(
-                    f"Invalid output from tool {metadata.name}: {exc}"
-                ) from exc
-        return result
 
     def _is_circuit_open(self, tool_name: str) -> bool:
         if tool_name not in self._circuit_breaker:
@@ -185,22 +187,30 @@ class MCPClient:
         state["failures"] = int(state["failures"]) + 1
         state["last_failure"] = time.time()
 
-    def list_tools(self) -> list[ToolMetadata]:
-        return registry.list_tools()
+    def list_tools(self, user_role: UserRole | None = None) -> list[Any]:
+        """Return only tools authorized for the supplied role."""
+        if user_role is None:
+            return []
+        return registry.list_tools_for_role(user_role)
 
-    def get_tool_metadata(self, tool_name: str) -> ToolMetadata | None:
+    def get_tool_metadata(self, tool_name: str) -> Any | None:
         tool_info = registry.get_tool(tool_name)
         return tool_info[0] if tool_info else None
 
-    def to_openai_tools(self) -> list[dict[str, Any]]:
-        return registry.to_openai_tools()
+    def to_openai_tools(self, user_role: UserRole | None = None) -> list[dict[str, Any]]:
+        """Expose only tools the caller is authorized to invoke."""
+        if user_role is None:
+            return []
+        return registry.to_openai_tools(user_role=user_role)
 
-    def get_tools_by_category(self, category: str) -> list[ToolMetadata]:
-        return registry.get_tools_by_category(category)
+    def get_tools_by_category(self, category: str) -> list[Any]:
+        return [tool for tool in self.list_tools() if tool.category == category]
 
-    def get_tools_by_tags(self, tags: list[str]) -> list[ToolMetadata]:
+    def get_tools_by_tags(self, tags: list[str], user_role: UserRole | None = None) -> list[Any]:
         return [
-            tool for tool in self.list_tools() if any(tag in tool.tags for tag in tags)
+            tool
+            for tool in self.list_tools(user_role)
+            if any(tag in tool.tags for tag in tags)
         ]
 
     def reset_circuit_breaker(self, tool_name: str | None = None) -> None:
