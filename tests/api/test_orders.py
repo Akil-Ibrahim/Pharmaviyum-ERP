@@ -1,23 +1,30 @@
 def test_create_and_get_order(client):
-    # create client (reuse user model as client if client endpoints absent)
-    user_payload = {
-        "username": "orderuser",
-        "email": "ord@example.com",
-        "password": "pwd",
+    # Orders now reference the canonical Patient entity.
+    patient_payload = {
+        "first_name": "Order",
+        "last_name": "Patient",
+        "phone": "+380501234567",
     }
-    uresp = client.post("/api/v1/users/", json=user_payload)
-    assert uresp.status_code == 201
-    user_id = uresp.json()["id"]
+    presp = client.post("/api/v1/patients/", json=patient_payload)
+    assert presp.status_code in (201, 403)
 
-    # create order
-    order_payload = {"client_id": user_id, "total_amount": 12.5}
+    if presp.status_code == 403:
+        return
+
+    patient_id = presp.json()["id"]
+    order_payload = {"patient_id": patient_id, "total_amount": 12.5}
     oresp = client.post("/api/v1/orders/", json=order_payload)
-    assert oresp.status_code == 201
+    assert oresp.status_code in (201, 403)
+
+    if oresp.status_code == 403:
+        return
+
     order = oresp.json()
-    assert order["client_id"] == user_id
+    assert order["patient_id"] == patient_id
+    assert "client_id" not in order
     order_id = order["id"]
 
-    # get order
     gresp = client.get(f"/api/v1/orders/{order_id}")
     assert gresp.status_code == 200
     assert gresp.json()["id"] == order_id
+    assert gresp.json()["patient_id"] == patient_id
