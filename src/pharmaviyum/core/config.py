@@ -6,6 +6,7 @@ Best practice 2026: Environment-aware, feature flags, telemetry config
 from enum import Enum
 from typing import Optional
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -26,7 +27,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "Pharmaviyum CRM"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
-    ENVIRONMENT: Environment = Environment.PRODUCTION
+    ENVIRONMENT: Environment = Environment.DEVELOPMENT
     LOG_LEVEL: str = "INFO"
 
     # Database
@@ -42,12 +43,23 @@ class Settings(BaseSettings):
     REDIS_CACHE_TTL: int = 3600
 
     # Security
-    SECRET_KEY: str = "change-this-in-production"
+    SECRET_KEY: Optional[str] = None
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     PASSWORD_MIN_LENGTH: int = 8
     MAX_LOGIN_ATTEMPTS: int = 5
+
+    @model_validator(mode="after")
+    def validate_security_configuration(self) -> "Settings":
+        """Fail closed when a deployment environment lacks a JWT secret."""
+        if self.ENVIRONMENT in {Environment.STAGING, Environment.PRODUCTION}:
+            if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
+                raise ValueError(
+                    "SECRET_KEY must be set to at least 32 characters in staging "
+                    "and production"
+                )
+        return self
 
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
