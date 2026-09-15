@@ -1,35 +1,34 @@
 from datetime import datetime
-from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProductCreate(BaseModel):
-    name: str = Field(..., min_length=1)
-    sku: str = Field(..., min_length=1)
-    description: Optional[str] = None
-    price: float = 0.0
-    stock: int = 0
+    name: str = Field(min_length=1, max_length=200)
+    sku: str = Field(min_length=1, max_length=64)
+    description: str | None = Field(default=None, max_length=1000)
+    price: float = Field(default=0.0, ge=0)
+    # Kept for backward compatibility; per-pharmacy stock belongs to Inventory.
+    stock: int = Field(default=0, ge=0)
 
 
 class ProductUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    price: Optional[float] = None
-    stock: Optional[int] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=1000)
+    price: float | None = Field(default=None, ge=0)
+    stock: int | None = Field(default=None, ge=0)
+    is_active: bool | None = None
 
 
 class ProductResponse(BaseModel):
     id: int
     name: str
     sku: str
-    description: Optional[str] = None
+    description: str | None = None
     price: float
     stock: int
     is_active: bool
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
