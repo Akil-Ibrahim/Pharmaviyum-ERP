@@ -11,19 +11,15 @@ Provides reusable dependency functions for:
 import uuid
 from typing import Annotated
 
-import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from ...shared.core.config import settings
 from ...shared.core.database import get_session
+from ...core.security import decode_access_token
 from .models import User
 
-# OAuth2 scheme: extracts Bearer token from Authorization header
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/login/access-token")
-
-# Type alias for database session
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login/access-token")
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
@@ -31,33 +27,25 @@ def get_current_user(
     session: SessionDep,
     token: Annotated[str, Depends(oauth2_scheme)],
 ) -> User:
-    """
-    Dependency: Extract and validate current user from JWT token.
-
-    Raises:
-        HTTPException 400: Invalid token
-        HTTPException 400: User not found
-
-    Returns:
-        Current authenticated user
-    """
+    """Extract and validate an access token, then load the current user."""
     credentials_exception = HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
+        status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
     )
 
-    try:
-        payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM],
-        )
-        user_id_str: str = payload.get("sub")
-        if user_id_str is None:
-            raise credentials_exception
-        user_id = uuid.UUID(user_id_str)
-    except (jwt.PyJWTError, ValueError):
+    payload = decode_access_token(token)
+    if payload is None:
         raise credentials_exception
+
+    user_id_str = payload.get("sub")
+    if not user_id_str:
+        raise credentials_exception
+
+    try:
+        user_id = uuid.UUID(str(user_id_str))
+    except ValueError as exc:
+        raise credentials_exception from exc
 
     user = session.get(User, user_id)
     if user is None:
@@ -69,18 +57,10 @@ def get_current_user(
 def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
-    """
-    Dependency: Ensure current user is active.
-
-    Raises:
-        HTTPException 400: Inactive user
-
-    Returns:
-        Active user
-    """
+    """Ensure the authenticated user is active."""
     if not current_user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Inactive user",
         )
     return current_user
@@ -89,15 +69,7 @@ def get_current_active_user(
 def get_current_active_superuser(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> User:
-    """
-    Dependency: Ensure current user is active superuser.
-
-    Raises:
-        HTTPException 403: Not authorized
-
-    Returns:
-        Active superuser
-    """
+    """Ensure the authenticated user is an active superuser."""
     if not current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -106,6 +78,5 @@ def get_current_active_superuser(
     return current_user
 
 
-# Type aliases for cleaner endpoint signatures
 CurrentUser = Annotated[User, Depends(get_current_active_user)]
 CurrentSuperuser = Annotated[User, Depends(get_current_active_superuser)]
