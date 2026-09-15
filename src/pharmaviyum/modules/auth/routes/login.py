@@ -11,18 +11,15 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.config import settings
-from ...core.security import (
-    create_access_token,
-    create_refresh_token,
-    decode_password_reset_token,
-    decode_refresh_token,
-    get_password_hash,
-    verify_password,
-)
+from ...core.security import (create_access_token, create_refresh_token,
+                              decode_password_reset_token,
+                              decode_refresh_token, get_password_hash,
+                              verify_password)
 from ...shared.core.database import get_session
 from ..models import User
 from ..schemas import Message, NewPassword, RefreshTokenRequest, Token
-from ..utils import generate_password_reset_token, generate_reset_password_email, send_email
+from ..utils import (generate_password_reset_token,
+                     generate_reset_password_email, send_email)
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
@@ -35,7 +32,9 @@ def _token_key(prefix: str, value: str) -> str:
 
 
 def _redis():
-    return aioredis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True)
+    return aioredis.from_url(
+        settings.REDIS_URL, encoding="utf-8", decode_responses=True
+    )
 
 
 def _ttl(exp: int) -> int:
@@ -67,7 +66,9 @@ async def login_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user"
+        )
     return await _issue_token_pair(str(user.id))
 
 
@@ -76,7 +77,9 @@ async def refresh_access_token(body: RefreshTokenRequest, session: SessionDep) -
     """Rotate a refresh token exactly once using an atomic Redis claim."""
     payload = decode_refresh_token(body.refresh_token)
     if not payload or not payload.get("sub") or not payload.get("jti"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+        )
 
     redis = _redis()
     try:
@@ -87,10 +90,15 @@ async def refresh_access_token(body: RefreshTokenRequest, session: SessionDep) -
             nx=True,
         )
         if not claimed:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token has been revoked")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token has been revoked",
+            )
         user = await session.get(User, payload["sub"])
         if user is None or not user.is_active:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+            )
         return await _issue_token_pair(str(user.id))
     finally:
         await redis.aclose()
@@ -124,7 +132,9 @@ async def recover_password(email: str, session: SessionDep) -> Message:
         email_data = generate_reset_password_email(email, user.email, token)
         if getattr(settings, "EMAILS_ENABLED", False):
             send_email(email, email_data.subject, email_data.html_content)
-    return Message(message="If that email is registered, you will receive a recovery email")
+    return Message(
+        message="If that email is registered, you will receive a recovery email"
+    )
 
 
 @router.post("/reset-password/", response_model=Message)
@@ -132,20 +142,28 @@ async def reset_password(body: NewPassword, session: SessionDep) -> Message:
     """Consume a password-reset token exactly once and update the password."""
     payload = decode_password_reset_token(body.token)
     if not payload or not payload.get("sub") or not payload.get("jti"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired reset token")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token",
+        )
 
     redis = _redis()
     used_key = _token_key("password-reset-used", payload["jti"])
     try:
         claimed = await redis.set(used_key, "1", ex=_ttl(int(payload["exp"])), nx=True)
         if not claimed:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Reset token has already been used")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Reset token has already been used",
+            )
 
         result = await session.execute(select(User).where(User.email == payload["sub"]))
         user = result.scalar_one_or_none()
         if user is None or not user.is_active:
             await redis.delete(used_key)
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token"
+            )
 
         user.hashed_password = get_password_hash(body.new_password)
         session.add(user)

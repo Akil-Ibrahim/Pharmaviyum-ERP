@@ -26,7 +26,9 @@ class Settings(BaseSettings):
     ENVIRONMENT: Environment = Environment.DEVELOPMENT
     LOG_LEVEL: str = "INFO"
 
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum"
+    DATABASE_URL: str = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum"
+    )
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 10
     DB_POOL_RECYCLE: int = 3600

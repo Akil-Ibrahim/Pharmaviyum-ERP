@@ -53,7 +53,8 @@ def create_refresh_token(subject: str, expires_delta: timedelta | None = None) -
         "type": "refresh",
         "jti": str(uuid.uuid4()),
         "iat": now,
-        "exp": now + (
+        "exp": now
+        + (
             expires_delta
             if expires_delta is not None
             else timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)

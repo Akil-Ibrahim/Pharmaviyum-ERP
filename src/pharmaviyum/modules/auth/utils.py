@@ -4,7 +4,8 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 
-from ...core.security import create_password_reset_token, decode_password_reset_token
+from ...core.security import (create_password_reset_token,
+                              decode_password_reset_token)
 from ...shared.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,9 @@ def generate_email_logo_and_footer() -> tuple[str, str]:
     return logo_html, footer_html
 
 
-def generate_new_account_email(email_to: str, username: str, password: str) -> EmailData:
+def generate_new_account_email(
+    email_to: str, username: str, password: str
+) -> EmailData:
     """Generate a welcome email for a newly created user."""
     logo, footer = generate_email_logo_and_footer()
     app_url = getattr(settings, "APP_URL", "http://localhost:3000")
