@@ -10,6 +10,7 @@ Best practice 2026:
 
 from __future__ import annotations
 
+import re
 from typing import Literal
 
 from sqlalchemy import text
@@ -20,14 +21,9 @@ DedupStrategy = Literal["strict", "fuzzy", "disabled"]
 
 
 class DocumentDeduplicator:
-    """
-    Prevents duplicate documents from polluting the vector store.
+    """Prevent duplicate documents from polluting the vector store."""
 
-    Strategies:
-    - strict: Exact content hash match (SHA-256)
-    - fuzzy: Embedding similarity > 0.98 threshold
-    - disabled: No deduplication
-    """
+    _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
     def __init__(
         self,
@@ -36,6 +32,8 @@ class DocumentDeduplicator:
         strategy: DedupStrategy = "strict",
         similarity_threshold: float = 0.98,
     ):
+        if not self._IDENTIFIER_RE.fullmatch(table_name):
+            raise ValueError("table_name must be a simple SQL identifier")
         self.session_factory = session_factory
         self.table_name = table_name
         self.strategy = strategy
@@ -46,24 +44,14 @@ class DocumentDeduplicator:
         content_hashes: list[str],
         document_ids: list[str],
     ) -> tuple[list[str], list[str]]:
-        """
-        Filter out documents that already exist in the vector store.
-
-        Returns:
-            (new_hashes, new_document_ids) — only documents not yet in DB
-        """
+        """Filter out documents that already exist in the vector store."""
         if self.strategy == "disabled":
             return content_hashes, document_ids
-
         if self.strategy == "strict":
             return await self._strict_dedup(content_hashes, document_ids)
-
         if self.strategy == "fuzzy":
-            # For fuzzy, we still do strict first, then check similarity
             new_hashes, new_ids = await self._strict_dedup(content_hashes, document_ids)
-            # TODO: Implement fuzzy dedup via embedding similarity
             return new_hashes, new_ids
-
         return content_hashes, document_ids
 
     async def _strict_dedup(
@@ -76,7 +64,6 @@ class DocumentDeduplicator:
             return [], []
 
         async with self.session_factory() as session:
-            # Query for existing hashes in metadata
             query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""
                 SELECT DISTINCT metadata->>'content_hash' as hash,
@@ -85,15 +72,12 @@ class DocumentDeduplicator:
                 WHERE metadata->>'content_hash' = ANY(:hashes)
             """
             )
-
             result = await session.execute(query, {"hashes": content_hashes})
             existing = {row.hash: row.document_id for row in result}
 
-        # Filter out existing
         new_hashes = []
         new_ids = []
         duplicates_count = 0
-
         for h, doc_id in zip(content_hashes, document_ids):
             if h in existing:
                 duplicates_count += 1
@@ -106,7 +90,6 @@ class DocumentDeduplicator:
             logger.info(
                 f"Deduplication: skipped {duplicates_count} duplicate documents"
             )
-
         return new_hashes, new_ids
 
     async def get_duplicate_stats(self) -> dict:
@@ -114,7 +97,7 @@ class DocumentDeduplicator:
         async with self.session_factory() as session:
             query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""
-                SELECT 
+                SELECT
                     COUNT(*) as total_chunks,
                     COUNT(DISTINCT metadata->>'content_hash') as unique_hashes,
                     COUNT(*) - COUNT(DISTINCT metadata->>'content_hash') as potential_duplicates
@@ -123,7 +106,6 @@ class DocumentDeduplicator:
             )
             result = await session.execute(query)
             row = result.fetchone()
-
             return {
                 "total_chunks": row[0],
                 "unique_hashes": row[1],
