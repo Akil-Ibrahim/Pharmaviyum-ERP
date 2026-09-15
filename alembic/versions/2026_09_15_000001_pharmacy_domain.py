@@ -1,7 +1,7 @@
 """Add pharmacy domain entities and ERP sync state.
 
 Revision ID: 20260915_pharmacy_domain
-Revises:
+Revises: 2026_09_15_000001
 """
 
 from alembic import op
@@ -9,7 +9,7 @@ import sqlalchemy as sa
 
 
 revision = "20260915_pharmacy_domain"
-down_revision = None
+down_revision = "2026_09_15_000001"
 branch_labels = None
 depends_on = None
 
