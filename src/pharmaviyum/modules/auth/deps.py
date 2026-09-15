@@ -13,17 +13,17 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.security import decode_access_token
 from ...shared.core.database import get_session
 from .models import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login/access-token")
-SessionDep = Annotated[Session, Depends(get_session)]
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
-def get_current_user(
+async def get_current_user(
     session: SessionDep,
     token: Annotated[str, Depends(oauth2_scheme)],
 ) -> User:
@@ -47,14 +47,14 @@ def get_current_user(
     except ValueError as exc:
         raise credentials_exception from exc
 
-    user = session.get(User, user_id)
+    user = await session.get(User, user_id)
     if user is None:
         raise credentials_exception
 
     return user
 
 
-def get_current_active_user(
+async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
     """Ensure the authenticated user is active."""
@@ -66,7 +66,7 @@ def get_current_active_user(
     return current_user
 
 
-def get_current_active_superuser(
+async def get_current_active_superuser(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> User:
     """Ensure the authenticated user is an active superuser."""
