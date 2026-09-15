@@ -1,6 +1,7 @@
 import pytest
 
-from src.pharmaviyum.api.v1.pharmacy_entities import InventoryIn, _validate_inventory_levels
+from src.pharmaviyum.api.v1.pharmacy_entities import (
+    InventoryIn, _validate_inventory_levels)
 from src.pharmaviyum.models.erp_sync import ERPSyncEvent
 from src.pharmaviyum.models.inventory import Inventory
 
@@ -32,7 +33,9 @@ def test_inventory_foreign_keys_and_constraints_match_domain() -> None:
     assert "pharmacies.id" in foreign_keys
 
     constraint_names = {
-        constraint.name for constraint in Inventory.__table__.constraints if constraint.name
+        constraint.name
+        for constraint in Inventory.__table__.constraints
+        if constraint.name
     }
     assert "uq_inventory_product_pharmacy_lot" in constraint_names
     assert "ck_inventory_reserved_lte_quantity" in constraint_names

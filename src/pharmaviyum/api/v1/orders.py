@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.order import Order
 from src.pharmaviyum.models.patients import Patient
-from src.pharmaviyum.modules.auth.deps import get_current_active_user, get_current_active_superuser
+from src.pharmaviyum.modules.auth.deps import (get_current_active_superuser,
+                                               get_current_active_user)
 from src.pharmaviyum.modules.auth.models import User
 from src.pharmaviyum.schemas.order_schema import OrderCreate, OrderResponse
 

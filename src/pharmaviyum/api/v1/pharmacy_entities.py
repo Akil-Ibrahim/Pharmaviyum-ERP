@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +15,8 @@ from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.prescription import Prescription
 from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.models.supplier import Supplier
-from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
+from src.pharmaviyum.modules.auth.deps import (CurrentSuperuser, CurrentUser,
+                                               SessionDep)
 
 router = APIRouter(prefix="/api/v1", tags=["Pharmacy Domain"])
 
@@ -117,7 +118,9 @@ async def list_pharmacies(_: CurrentUser, session: SessionDep) -> list[Pharmacy]
 
 
 @router.post("/pharmacies", status_code=status.HTTP_201_CREATED)
-async def create_pharmacy(data: PharmacyIn, _: CurrentSuperuser, session: SessionDep) -> Pharmacy:
+async def create_pharmacy(
+    data: PharmacyIn, _: CurrentSuperuser, session: SessionDep
+) -> Pharmacy:
     pharmacy = Pharmacy(**data.model_dump())
     session.add(pharmacy)
     await session.commit()
@@ -131,7 +134,9 @@ async def list_suppliers(_: CurrentUser, session: SessionDep) -> list[Supplier]:
 
 
 @router.post("/suppliers", status_code=status.HTTP_201_CREATED)
-async def create_supplier(data: SupplierIn, _: CurrentSuperuser, session: SessionDep) -> Supplier:
+async def create_supplier(
+    data: SupplierIn, _: CurrentSuperuser, session: SessionDep
+) -> Supplier:
     supplier = Supplier(**data.model_dump())
     session.add(supplier)
     await session.commit()
@@ -153,7 +158,9 @@ async def list_inventory(
     if pharmacy_id is not None:
         query = query.where(Inventory.pharmacy_id == pharmacy_id)
     if low_stock:
-        query = query.where(Inventory.quantity - Inventory.reserved_quantity <= Inventory.reorder_level)
+        query = query.where(
+            Inventory.quantity - Inventory.reserved_quantity <= Inventory.reorder_level
+        )
     query = query.order_by(Inventory.id.desc())
     result = await session.execute(query)
     return list(result.scalars().all())
@@ -230,7 +237,9 @@ async def delete_inventory(
 
 
 @router.get("/prescriptions")
-async def list_prescriptions(_: CurrentSuperuser, session: SessionDep) -> list[Prescription]:
+async def list_prescriptions(
+    _: CurrentSuperuser, session: SessionDep
+) -> list[Prescription]:
     """List prescriptions; medical records are restricted to privileged operators."""
     return await _list(session, Prescription)
 
@@ -264,7 +273,9 @@ async def create_erp_integration(
     return integration
 
 
-@router.post("/erp/integrations/{integration_id}/events", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/erp/integrations/{integration_id}/events", status_code=status.HTTP_202_ACCEPTED
+)
 async def ingest_erp_event(
     integration_id: int,
     data: ERPEventIn,
@@ -273,7 +284,9 @@ async def ingest_erp_event(
 ) -> dict[str, str]:
     integration = await session.get(ERPIntegration, integration_id)
     if integration is None or not integration.is_active:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ERP integration not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="ERP integration not found"
+        )
 
     existing = await session.scalar(
         select(ERPSyncEvent).where(ERPSyncEvent.event_id == data.event_id)

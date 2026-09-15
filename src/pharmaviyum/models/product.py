@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, Column, DateTime, Float, Integer, String
+from sqlalchemy import (Boolean, CheckConstraint, Column, DateTime, Float,
+                        Integer, String)
 
 from src.pharmaviyum.db.base import Base
 

@@ -4,16 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.core.database import get_db
-from src.pharmaviyum.modules.auth.deps import get_current_active_superuser, get_current_active_user
-from src.pharmaviyum.models.patients import Patient
+from src.pharmaviyum.modules.auth.deps import (get_current_active_superuser,
+                                               get_current_active_user)
 from src.pharmaviyum.repositories.patient import PatientRepository
-from src.pharmaviyum.schemas.patient import (
-    PatientAIProfile,
-    PatientCreate,
-    PatientListResponse,
-    PatientResponse,
-    PatientUpdate,
-)
+from src.pharmaviyum.schemas.patient import (PatientAIProfile, PatientCreate,
+                                             PatientListResponse,
+                                             PatientResponse, PatientUpdate)
 from src.pharmaviyum.services.patient import PatientService
 
 router = APIRouter(prefix="/patients", tags=["Patients"])
@@ -112,7 +108,9 @@ async def update_patient(
     _: object = Depends(get_current_active_superuser),
 ):
     try:
-        patient = await service.update_patient(id=patient_id, data=data, updated_by=None)
+        patient = await service.update_patient(
+            id=patient_id, data=data, updated_by=None
+        )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     if not patient:
@@ -126,7 +124,9 @@ async def delete_patient(
     service: PatientService = Depends(get_patient_service),
     _: object = Depends(get_current_active_superuser),
 ):
-    deleted = await service.delete_patient(id=patient_id, deleted_by=None, hard_delete=False)
+    deleted = await service.delete_patient(
+        id=patient_id, deleted_by=None, hard_delete=False
+    )
     if not deleted:
         raise HTTPException(status_code=404, detail="Patient not found")
     return None

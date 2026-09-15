@@ -30,7 +30,8 @@ def test_mortarium_sessions_are_authenticated() -> None:
     route = next(
         route
         for route in router.routes
-        if route.path == "/api/v1/mortarium-ai/sessions" and "GET" in (route.methods or set())
+        if route.path == "/api/v1/mortarium-ai/sessions"
+        and "GET" in (route.methods or set())
     )
 
     dependency_names = {
