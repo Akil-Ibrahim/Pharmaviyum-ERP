@@ -6,7 +6,7 @@ Best practice 2026:
 - Strict execution pipeline: Memory → Guardrails → Cache → Router → Agent → Guardrails → Memory
 - Async non-blocking execution
 - Structured, typed responses for API layer
-- Comprehensive logging and error handling
+- Comprehensive logging and error handling without medical-content previews
 """
 
 from __future__ import annotations
@@ -41,6 +41,42 @@ class AgentHarness:
         self.cache = cache
         self.model_router = model_router
 
+    @staticmethod
+    def _cache_context(context: dict[str, Any]) -> dict[str, Any]:
+        return {
+            key: value
+            for key, value in context.items()
+            if key
+            in {
+                "user_id",
+                "pharmacy_id",
+                "patient_id",
+                "country",
+                "language",
+                "halal_filter",
+            }
+        }
+
+    async def _post_process(
+        self,
+        answer: str,
+        question: str,
+        sources: list[dict[str, Any]],
+    ) -> tuple[str, list[str]]:
+        result = await self.guardrails.post_process(
+            answer=answer,
+            question=question,
+            sources=sources,
+        )
+        if not result.is_safe:
+            logger.warning("Output blocked by guardrails")
+            return (
+                "⚠️ I cannot provide this information as it may be unsafe. "
+                "Please consult a licensed pharmacist.",
+                ["output_safety_block"],
+            )
+        return result.validated_output or answer, list(result.warnings)
+
     async def run(
         self,
         session_id: str,
@@ -53,21 +89,14 @@ class AgentHarness:
 
         logger.info(
             "Agent harness execution started",
-            extra={
-                "session_id": session_id,
-                "trace_id": trace_id,
-                "query_preview": query[:50],
-            },
+            extra={"session_id": session_id, "trace_id": trace_id},
         )
 
         try:
             history = await self.memory.load(session_id)
-
             pre_process_result = await self.guardrails.pre_process(query)
             if not pre_process_result.is_safe:
-                logger.warning(
-                    f"Input blocked by guardrails: {pre_process_result.blocked_reason}"
-                )
+                logger.warning("Input blocked by guardrails")
                 return {
                     "success": False,
                     "answer": "I cannot process this request due to safety policies.",
@@ -76,24 +105,12 @@ class AgentHarness:
                 }
 
             safe_query = pre_process_result.sanitized_input or query
-
-            cache_key_context = {
-                k: v
-                for k, v in context.items()
-                if k in [
-                    "user_id",
-                    "pharmacy_id",
-                    "patient_id",
-                    "country",
-                    "language",
-                    "halal_filter",
-                ]
-            }
+            cache_key_context = self._cache_context(context)
             cached_response = await self.cache.get(safe_query, cache_key_context)
 
             if cached_response and not context.get("force_fresh"):
                 logger.info(
-                    "Cache HIT - returning cached response",
+                    "Cache HIT - returning validated response",
                     extra={"trace_id": trace_id},
                 )
                 return {
@@ -119,35 +136,23 @@ class AgentHarness:
                 context={**context, "trace_id": trace_id},
                 thread_id=session_id,
             )
-
             if not agent_result.get("success"):
-                raise RuntimeError(agent_result.get("error", "Agent execution failed"))
+                raise RuntimeError("Agent execution failed")
 
-            raw_answer = agent_result.get("answer", "")
-            agent_warnings = agent_result.get("warnings", [])
-
-            post_process_result = await self.guardrails.post_process(
+            raw_answer = str(agent_result.get("answer", ""))
+            agent_warnings = list(agent_result.get("warnings", []))
+            final_answer, post_warnings = await self._post_process(
                 answer=raw_answer,
                 question=safe_query,
                 sources=agent_result.get("tool_results", []),
             )
-
-            if not post_process_result.is_safe:
-                logger.warning(
-                    f"Output blocked by guardrails: {post_process_result.blocked_reason}"
-                )
-                final_answer = "⚠️ I cannot provide this information as it may be unsafe. Please consult a licensed pharmacist."
-                agent_warnings.append("output_safety_block")
-            else:
-                final_answer = post_process_result.validated_output or raw_answer
-                agent_warnings.extend(post_process_result.warnings)
+            agent_warnings.extend(post_warnings)
 
             await self.memory.save(
                 session_id=session_id,
                 user_message=safe_query,
                 assistant_message=final_answer,
             )
-
             await self.cache.set(
                 prompt=safe_query,
                 response={"answer": final_answer, "warnings": agent_warnings},
@@ -164,7 +169,6 @@ class AgentHarness:
                     "warnings_count": len(agent_warnings),
                 },
             )
-
             return {
                 "success": True,
                 "answer": final_answer,
@@ -174,11 +178,11 @@ class AgentHarness:
                 "latency_ms": latency_ms,
             }
 
-        except Exception as e:
+        except Exception:
             latency_ms = (time.perf_counter() - start_time) * 1000
             logger.error(
-                f"Agent harness execution failed: {e}",
-                extra={"session_id": session_id, "trace_id": trace_id, "error": str(e)},
+                "Agent harness execution failed",
+                extra={"session_id": session_id, "trace_id": trace_id},
                 exc_info=True,
             )
             return {
@@ -195,6 +199,7 @@ class AgentHarness:
         query: str,
         context: dict[str, Any] | None = None,
     ):
+        start_time = time.perf_counter()
         context = context or {}
         trace_id = str(uuid.uuid4())
         yield {"event": "start", "trace_id": trace_id}
@@ -207,30 +212,25 @@ class AgentHarness:
                 return
 
             safe_query = pre_process.sanitized_input or query
+            cache_key_context = self._cache_context(context)
             yield {"event": "status", "message": "Checking knowledge cache..."}
-            cache_key_context = {
-                k: v
-                for k, v in context.items()
-                if k in [
-                    "user_id",
-                    "pharmacy_id",
-                    "patient_id",
-                    "country",
-                    "language",
-                    "halal_filter",
-                ]
-            }
             cached = await self.cache.get(safe_query, cache_key_context)
             if cached and not context.get("force_fresh"):
                 yield {"event": "answer", "text": cached["answer"], "cache_hit": True}
                 return
+
+            final_answer: str | None = None
+            final_warnings: list[str] = []
+            tool_results: list[dict[str, Any]] = []
 
             yield {
                 "event": "status",
                 "message": "Thinking and retrieving information...",
             }
             async for stream_event in self.agent.astream(
-                query=safe_query, context={**context, "trace_id": trace_id}
+                query=safe_query,
+                context={**context, "trace_id": trace_id},
+                thread_id=session_id,
             ):
                 node = stream_event.get("node")
                 data = stream_event.get("data", {})
@@ -242,17 +242,55 @@ class AgentHarness:
                 elif node == "planner":
                     yield {"event": "status", "message": "Planning tool usage..."}
                 elif node == "executor":
+                    tool_results.extend(data.get("tool_results", []))
                     tools = [r.get("tool") for r in data.get("tool_results", [])]
                     yield {
                         "event": "status",
                         "message": f"Executing tools: {', '.join(tools) or 'none'}...",
                     }
                 elif node == "reviewer":
+                    final_answer = data.get("final_answer")
+                    final_warnings.extend(data.get("warnings", []))
                     yield {"event": "status", "message": "Validating medical safety..."}
 
-            yield {"event": "status", "message": "Finalizing response..."}
-            yield {"event": "complete", "message": "Response ready"}
+            if final_answer is None:
+                raise RuntimeError("Streaming agent completed without a final answer")
 
-        except Exception as e:
-            logger.error(f"Streaming failed: {e}", exc_info=True)
+            final_answer, post_warnings = await self._post_process(
+                answer=str(final_answer),
+                question=safe_query,
+                sources=tool_results,
+            )
+            final_warnings.extend(post_warnings)
+
+            await self.memory.save(
+                session_id=session_id,
+                user_message=safe_query,
+                assistant_message=final_answer,
+            )
+            await self.cache.set(
+                prompt=safe_query,
+                response={"answer": final_answer, "warnings": final_warnings},
+                context=cache_key_context,
+            )
+
+            yield {"event": "status", "message": "Finalizing response..."}
+            yield {
+                "event": "answer",
+                "text": final_answer,
+                "warnings": list(set(final_warnings)),
+                "cache_hit": False,
+            }
+            yield {
+                "event": "complete",
+                "message": "Response ready",
+                "latency_ms": (time.perf_counter() - start_time) * 1000,
+            }
+
+        except Exception:
+            logger.error(
+                "Streaming failed",
+                extra={"session_id": session_id, "trace_id": trace_id},
+                exc_info=True,
+            )
             yield {"event": "error", "message": "An error occurred during processing."}
