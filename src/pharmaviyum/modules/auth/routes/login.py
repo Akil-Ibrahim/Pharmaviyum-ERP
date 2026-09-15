@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.security import create_access_token, verify_password
 from ...shared.core.database import get_session
@@ -12,7 +13,7 @@ from ..models import User
 from ..schemas import Token
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
-SessionDep = Annotated[object, Depends(get_session)]
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 @router.post("/login/access-token", response_model=Token)
