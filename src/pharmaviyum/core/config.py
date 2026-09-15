@@ -1,10 +1,9 @@
 """Application configuration using Pydantic Settings."""
 
-import secrets
 from enum import Enum
 from typing import Optional
 
-from pydantic import Field, model_validator
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -34,7 +33,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_CACHE_TTL: int = 3600
 
-    SECRET_KEY: Optional[str] = Field(default=None)
+    SECRET_KEY: Optional[str] = None
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
