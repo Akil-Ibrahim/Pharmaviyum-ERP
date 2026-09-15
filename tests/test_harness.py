@@ -14,6 +14,13 @@ from unittest.mock import MagicMock
 import pytest
 
 
+TENANT_CONTEXT = {
+    "user_id": "user-1",
+    "pharmacy_id": 1,
+    "country": "VN",
+}
+
+
 @pytest.mark.unit
 class TestMedicalGuardrails:
     """Test medical safety guardrails."""
@@ -74,7 +81,7 @@ class TestPromptCache:
 
         cache = PromptCache(redis_client=mock_redis)
 
-        result = await cache.get("test query", {"country": "VN"})
+        result = await cache.get("test query", TENANT_CONTEXT)
 
         assert result is None
 
@@ -87,11 +94,10 @@ class TestPromptCache:
 
         cache = PromptCache(redis_client=mock_redis)
 
-        # Mock Redis to return cached value
         cached_response = {"answer": "Cached answer", "warnings": []}
         mock_redis.get.return_value = json.dumps(cached_response)
 
-        result = await cache.get("test query", {"country": "VN"})
+        result = await cache.get("test query", TENANT_CONTEXT)
 
         assert result is not None
         assert result["answer"] == "Cached answer"
@@ -106,10 +112,9 @@ class TestPromptCache:
         await cache.set(
             prompt="test query",
             response={"answer": "Test answer", "warnings": []},
-            context={"country": "VN"},
+            context=TENANT_CONTEXT,
         )
 
-        # Verify Redis setex was called
         assert mock_redis.setex.called
 
 
@@ -129,7 +134,6 @@ class TestModelRouter:
 
         router = ModelRouter(models=models)
 
-        # Simple query
         complexity = router._estimate_complexity(
             query="Hi", history_length=0, context={}
         )
@@ -148,7 +152,6 @@ class TestModelRouter:
 
         router = ModelRouter(models=models)
 
-        # Complex query with medical keywords
         complexity = router._estimate_complexity(
             query="What are the contraindications and drug interactions for Warfarin in patients with renal impairment?",
             history_length=0,
