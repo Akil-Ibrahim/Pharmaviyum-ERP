@@ -1,9 +1,4 @@
-"""Ports used by the AI/RAG layer.
-
-The RAG orchestration depends on these contracts rather than concrete
-PostgreSQL/Ollama adapters. This keeps LangGraph inside the AI layer and
-prevents infrastructure details from leaking into the orchestration boundary.
-"""
+"""Ports used by the AI/RAG layer."""
 
 from __future__ import annotations
 
@@ -13,48 +8,24 @@ from .schemas import RetrievalResult
 
 
 class RetrieverPort(Protocol):
-    """Retrieve evidence for an AI query."""
-
-    async def hybrid_search(
-        self,
-        *,
-        query: str,
-        query_embedding: Sequence[float],
-        top_k: int,
-        filters: dict[str, Any],
-    ) -> list[RetrievalResult]:
-        ...
+    async def hybrid_search(self, *, query: str, query_embedding: Sequence[float], top_k: int, filters: dict[str, Any]) -> list[RetrievalResult]: ...
 
 
 class EmbeddingsPort(Protocol):
-    """Create embeddings for retrieval queries."""
-
-    async def embed(self, text: str) -> list[float]:
-        ...
+    async def embed(self, text: str) -> list[float]: ...
 
 
 class LLMPort(Protocol):
-    """Minimal async LLM contract required by the RAG graph."""
-
-    async def ainvoke(self, prompt: str) -> Any:
-        ...
+    async def ainvoke(self, prompt: Any) -> Any: ...
 
 
 class GuardrailsPort(Protocol):
-    """Optional post-generation safety boundary."""
-
-    async def post_process(self, answer: str, context: Any) -> Any:
-        ...
+    async def pre_process(self, user_input: str) -> Any: ...
+    async def post_process(self, answer: str, question: str, sources: list[RetrievalResult] | None = None) -> Any: ...
 
 
 class CheckpointerPort(Protocol):
     """LangGraph checkpoint persistence contract."""
 
 
-__all__ = [
-    "CheckpointerPort",
-    "EmbeddingsPort",
-    "GuardrailsPort",
-    "LLMPort",
-    "RetrieverPort",
-]
+__all__ = ["CheckpointerPort", "EmbeddingsPort", "GuardrailsPort", "LLMPort", "RetrieverPort"]
