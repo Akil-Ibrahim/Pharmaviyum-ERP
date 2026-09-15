@@ -29,7 +29,7 @@ dependencies = [
     "langchain-ollama==1.1.0",
 
     # Security
-    "python-jose[cryptography]==3.5.0",
+    "PyJWT==2.14.0",
     "passlib[bcrypt]==1.7.4",
     "python-multipart==0.0.32",
 
@@ -43,6 +43,15 @@ dependencies = [
 
     # Serialization security floor
     "protobuf==5.29.6",
+
+    # Observability
+    "opentelemetry-api==1.44.0",
+    "opentelemetry-sdk==1.44.0",
+    "opentelemetry-exporter-otlp==1.44.0",
+    "opentelemetry-instrumentation-fastapi==0.65b0",
+    "opentelemetry-instrumentation-sqlalchemy==0.65b0",
+    "opentelemetry-instrumentation-redis==0.65b0",
+    "opentelemetry-instrumentation-httpx==0.65b0",
 ]
 
 [dependency-groups]
