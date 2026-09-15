@@ -116,9 +116,6 @@ class DocumentLoader:
         try:
             import pypdf
 
-            async with aiofiles.open(file_path, "rb") as f:
-                content_bytes = await f.read()
-
             # Extract text from PDF
             pdf_reader = pypdf.PdfReader(file_path)
             text_parts = []

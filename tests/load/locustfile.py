@@ -15,10 +15,9 @@ Usage:
 =============================================================================
 """
 
-import json
 import random
 
-from locust import HttpUser, between, events, task
+from locust import HttpUser, between, task
 
 
 class PharmaViyumUser(HttpUser):
