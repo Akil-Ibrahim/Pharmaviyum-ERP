@@ -1,8 +1,6 @@
 name: Docker Smoke Test
 
 on:
-  push:
-    branches: [dev]
   workflow_dispatch:
 
 permissions:
