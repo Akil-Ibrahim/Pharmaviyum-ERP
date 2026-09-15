@@ -11,15 +11,22 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.config import settings
-from ...core.security import (create_access_token, create_refresh_token,
-                              decode_password_reset_token,
-                              decode_refresh_token, get_password_hash,
-                              verify_password)
+from ...core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_password_reset_token,
+    decode_refresh_token,
+    get_password_hash,
+    verify_password,
+)
 from ...shared.core.database import get_session
 from ..models import User
 from ..schemas import Message, NewPassword, RefreshTokenRequest, Token
-from ..utils import (generate_password_reset_token,
-                     generate_reset_password_email, send_email)
+from ..utils import (
+    generate_password_reset_token,
+    generate_reset_password_email,
+    send_email,
+)
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]

@@ -17,8 +17,12 @@ from celery.utils.log import get_task_logger
 
 from src.pharmaviyum.ai.rag.chunking import MedicalChunker
 from src.pharmaviyum.ai.rag.embeddings import EmbeddingsFactory
-from src.pharmaviyum.ai.rag.loaders import (DOCXLoader, HTMLLoader,
-                                            LoaderConfig, PDFLoader)
+from src.pharmaviyum.ai.rag.loaders import (
+    DOCXLoader,
+    HTMLLoader,
+    LoaderConfig,
+    PDFLoader,
+)
 from src.pharmaviyum.ai.rag.preprocessing import DocumentPreprocessor
 from src.pharmaviyum.ai.rag.vector_store import PgVectorStore
 from src.pharmaviyum.core.config import settings

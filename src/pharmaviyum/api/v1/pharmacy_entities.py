@@ -15,8 +15,7 @@ from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.prescription import Prescription
 from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.models.supplier import Supplier
-from src.pharmaviyum.modules.auth.deps import (CurrentSuperuser, CurrentUser,
-                                               SessionDep)
+from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
 
 router = APIRouter(prefix="/api/v1", tags=["Pharmacy Domain"])
 

@@ -16,10 +16,8 @@ def add_middleware(app: Any) -> None:
     """
     # Import lazily to avoid heavy startup work during package import
     from src.pharmaviyum.middleware.auth_middleware import add_auth_middleware
-    from src.pharmaviyum.middleware.error_handler import \
-        register_exception_handlers
-    from src.pharmaviyum.middleware.logging_middleware import \
-        add_logging_middleware
+    from src.pharmaviyum.middleware.error_handler import register_exception_handlers
+    from src.pharmaviyum.middleware.logging_middleware import add_logging_middleware
 
     add_logging_middleware(app)
     add_auth_middleware(app)

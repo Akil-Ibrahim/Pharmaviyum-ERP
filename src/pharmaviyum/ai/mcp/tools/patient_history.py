@@ -23,8 +23,7 @@ from sqlalchemy.orm import selectinload
 from src.pharmaviyum.core.logging import logger
 
 from ..registry import registry
-from ..schemas import (AllergyInfo, ConditionInfo, PatientHistory,
-                       PatientHistoryRequest)
+from ..schemas import AllergyInfo, ConditionInfo, PatientHistory, PatientHistoryRequest
 
 
 def calculate_age(dob: date | None) -> int | None:

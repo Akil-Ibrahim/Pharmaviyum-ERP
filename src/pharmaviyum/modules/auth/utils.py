@@ -4,8 +4,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 
-from ...core.security import (create_password_reset_token,
-                              decode_password_reset_token)
+from ...core.security import create_password_reset_token, decode_password_reset_token
 from ...shared.core.config import settings
 
 logger = logging.getLogger(__name__)

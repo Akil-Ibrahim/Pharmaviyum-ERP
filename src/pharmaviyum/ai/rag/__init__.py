@@ -27,20 +27,27 @@ Public API:
 
 from .chunking import MedicalChunker
 from .contextual_compression import CompressedContext, ContextualCompressor
-from .embeddings import (CachedEmbeddings, EmbeddingsFactory,
-                         EmbeddingsProvider, OllamaEmbeddings)
-from .embeddings_multilang import (LANGUAGE_MODEL_MAP,
-                                   MultiLanguageEmbeddingRouter)
+from .embeddings import (
+    CachedEmbeddings,
+    EmbeddingsFactory,
+    EmbeddingsProvider,
+    OllamaEmbeddings,
+)
+from .embeddings_multilang import LANGUAGE_MODEL_MAP, MultiLanguageEmbeddingRouter
+
 # LangGraph-based query path
 from .graph import LangGraphRAG
 from .ingestion import IngestionOrchestrator
 from .pipeline import RAGPipeline
 from .preprocessing import DocumentPreprocessor
-from .quality_metrics import (DriftDetector, EmbeddingDriftReport,
-                              EmbeddingQualityEvaluator, RetrievalMetrics)
+from .quality_metrics import (
+    DriftDetector,
+    EmbeddingDriftReport,
+    EmbeddingQualityEvaluator,
+    RetrievalMetrics,
+)
 from .query_transformer import QueryTransformer, QueryVariation
-from .schemas import (Chunk, Document, QueryContext, RAGResponse,
-                      RetrievalResult)
+from .schemas import Chunk, Document, QueryContext, RAGResponse, RetrievalResult
 from .state import RAGState
 from .vector_store import PgVectorStore
 

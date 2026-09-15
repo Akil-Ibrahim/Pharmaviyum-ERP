@@ -22,13 +22,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.pharmaviyum.ai.agents import AgentCheckpointer, PharmacistAgent
 from src.pharmaviyum.ai.config import settings
 from src.pharmaviyum.ai.evaluation import AgentEvaluator
-from src.pharmaviyum.ai.harness import (AgentHarness, DialogueMemory,
-                                        MedicalGuardrails, ModelRouter,
-                                        PromptCache)
+from src.pharmaviyum.ai.harness import (
+    AgentHarness,
+    DialogueMemory,
+    MedicalGuardrails,
+    ModelRouter,
+    PromptCache,
+)
 from src.pharmaviyum.ai.mcp import MCPClient, mcp_client
 from src.pharmaviyum.ai.observability import ObservabilityTracer, tracer
-from src.pharmaviyum.ai.rag import (EmbeddingsFactory, IngestionOrchestrator,
-                                    LangGraphRAG, PgVectorStore)
+from src.pharmaviyum.ai.rag import (
+    EmbeddingsFactory,
+    IngestionOrchestrator,
+    LangGraphRAG,
+    PgVectorStore,
+)
 from src.pharmaviyum.core.logging import logger
 
 # ============================================================================

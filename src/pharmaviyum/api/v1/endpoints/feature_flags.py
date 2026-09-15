@@ -7,15 +7,20 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from src.pharmaviyum.core.feature_flags import (FeatureFlag, FlagType,
-                                                feature_flag_service)
-from src.pharmaviyum.schemas.feature_flag import (FeatureFlagCheckRequest,
-                                                  FeatureFlagCheckResponse,
-                                                  FeatureFlagCreate,
-                                                  FeatureFlagListResponse,
-                                                  FeatureFlagResponse,
-                                                  FeatureFlagStatsResponse,
-                                                  FeatureFlagUpdate)
+from src.pharmaviyum.core.feature_flags import (
+    FeatureFlag,
+    FlagType,
+    feature_flag_service,
+)
+from src.pharmaviyum.schemas.feature_flag import (
+    FeatureFlagCheckRequest,
+    FeatureFlagCheckResponse,
+    FeatureFlagCreate,
+    FeatureFlagListResponse,
+    FeatureFlagResponse,
+    FeatureFlagStatsResponse,
+    FeatureFlagUpdate,
+)
 
 router = APIRouter(prefix="/feature-flags", tags=["feature-flags"])
 

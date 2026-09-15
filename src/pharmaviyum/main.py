@@ -12,12 +12,13 @@ from pydantic import ValidationError
 
 from src.pharmaviyum.ai.config import settings
 from src.pharmaviyum.ai.dependencies import ai_container
-from src.pharmaviyum.api.exceptions import (PharmaviyumAPIError,
-                                            general_exception_handler,
-                                            pharmaviyum_api_error_handler,
-                                            validation_exception_handler)
-from src.pharmaviyum.api.middleware import (LoggingMiddleware,
-                                            RequestIDMiddleware)
+from src.pharmaviyum.api.exceptions import (
+    PharmaviyumAPIError,
+    general_exception_handler,
+    pharmaviyum_api_error_handler,
+    validation_exception_handler,
+)
+from src.pharmaviyum.api.middleware import LoggingMiddleware, RequestIDMiddleware
 from src.pharmaviyum.api.v1 import api_v1_router
 from src.pharmaviyum.core.logging import logger
 
@@ -105,7 +106,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "src.pharmaviyum.main:app",
-        host="0.0.0.0",  # nosec B104: container must listen on all interfaces  # nosec B104: container must listen on all interfaces
+        host="0.0.0.0",  # nosec B104: container must listen on all interfaces  # nosec B104: container must listen on all interfaces  # nosec B104: container must listen on all interfaces
         port=8000,
         reload=settings.environment == "development",
         log_level=settings.log_level.lower(),

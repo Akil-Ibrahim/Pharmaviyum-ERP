@@ -23,8 +23,7 @@ from datetime import datetime
 from src.pharmaviyum.core.logging import logger
 
 from ..registry import registry
-from ..schemas import (DrugInteraction, DrugInteractionCheck,
-                       InteractionCheckResult)
+from ..schemas import DrugInteraction, DrugInteractionCheck, InteractionCheckResult
 
 # ============================================================================
 # STATIC INTERACTION DATABASE (curated for SEA pharmacies)

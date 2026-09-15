@@ -12,9 +12,11 @@ from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.core.logging import get_logger
 from src.pharmaviyum.core.repository import BaseRepository
-from src.pharmaviyum.models.prescriptions import (Prescription,
-                                                  PrescriptionFill,
-                                                  PrescriptionItem)
+from src.pharmaviyum.models.prescriptions import (
+    Prescription,
+    PrescriptionFill,
+    PrescriptionItem,
+)
 
 logger = get_logger(__name__)
 

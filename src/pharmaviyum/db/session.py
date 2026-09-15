@@ -1,7 +1,6 @@
 import os
 
-from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
-                                    create_async_engine)
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # Async DB engine and session for FastAPI
 DATABASE_URL = os.getenv(

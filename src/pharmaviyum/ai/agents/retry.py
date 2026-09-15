@@ -12,8 +12,13 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Callable
 
-from tenacity import (before_sleep_log, retry, retry_if_exception_type,
-                      stop_after_attempt, wait_exponential)
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from src.pharmaviyum.core.logging import logger
 

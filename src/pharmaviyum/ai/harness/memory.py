@@ -13,8 +13,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
-from langchain_core.messages import (AIMessage, BaseMessage, HumanMessage,
-                                     SystemMessage)
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
 from src.pharmaviyum.core.logging import logger
 

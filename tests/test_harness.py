@@ -187,8 +187,7 @@ class TestStructuredOutput:
 
     def test_agent_response_with_warnings(self):
         """Test AgentResponse with warnings."""
-        from src.pharmaviyum.ai.harness.structured_output import (
-            AgentResponse, Warning)
+        from src.pharmaviyum.ai.harness.structured_output import AgentResponse, Warning
 
         response = AgentResponse(
             session_id="test-123",

@@ -7,8 +7,12 @@ health checks, and graceful shutdown support.
 
 from typing import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import (AsyncAttrs, AsyncSession,
-                                    async_sessionmaker, create_async_engine)
+from sqlalchemy.ext.asyncio import (
+    AsyncAttrs,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import DeclarativeBase
 
 from .config import settings

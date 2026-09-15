@@ -26,8 +26,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.pharmaviyum.core.logging import logger
 
 from ..registry import registry
-from ..schemas import (PrescriptionCheck, PrescriptionVerification,
-                       PrescriptionVerifyRequest)
+from ..schemas import (
+    PrescriptionCheck,
+    PrescriptionVerification,
+    PrescriptionVerifyRequest,
+)
 
 # ============================================================================
 # CONTROLLED SUBSTANCE LIMITS (SEA regulations)
@@ -107,8 +110,10 @@ async def verify_prescription(
 
     # Lazy imports to avoid circular dependencies
     from src.pharmaviyum.modules.patients.models import Patient
-    from src.pharmaviyum.modules.prescriptions.models import (Prescription,
-                                                              PrescriptionItem)
+    from src.pharmaviyum.modules.prescriptions.models import (
+        Prescription,
+        PrescriptionItem,
+    )
     from src.pharmaviyum.shared.core.database import async_session_factory
 
     checks: list[PrescriptionCheck] = []

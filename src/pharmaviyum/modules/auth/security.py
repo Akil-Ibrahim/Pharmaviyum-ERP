@@ -1,10 +1,15 @@
 """Authentication security API backed by the canonical security package."""
 
-from ...core.security import (create_access_token, create_password_reset_token,
-                              create_refresh_token, decode_access_token,
-                              decode_password_reset_token,
-                              decode_refresh_token, get_password_hash,
-                              verify_password)
+from ...core.security import (
+    create_access_token,
+    create_password_reset_token,
+    create_refresh_token,
+    decode_access_token,
+    decode_password_reset_token,
+    decode_refresh_token,
+    get_password_hash,
+    verify_password,
+)
 
 
 def verify_token(token: str, expected_type: str = "access") -> dict | None:

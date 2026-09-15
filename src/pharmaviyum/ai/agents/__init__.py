@@ -14,8 +14,7 @@ Public API:
 
 from .callbacks import create_callback_manager
 from .checkpointer import AgentCheckpointer
-from .interrupts import (PharmacistApprovalRequest,
-                         require_pharmacist_approval_node)
+from .interrupts import PharmacistApprovalRequest, require_pharmacist_approval_node
 from .pharmacist_agent import PharmacistAgent
 from .retry import NodeExecutionError, node_retry
 from .state import AgentState

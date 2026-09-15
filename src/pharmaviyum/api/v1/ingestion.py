@@ -12,8 +12,7 @@ import tempfile
 import uuid
 from pathlib import Path
 
-from fastapi import (APIRouter, Depends, File, Form, HTTPException, UploadFile,
-                     status)
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 

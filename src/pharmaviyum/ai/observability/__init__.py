@@ -9,9 +9,15 @@ Public API:
 """
 
 from .cost_tracker import calculate_llm_cost, get_model_info
-from .metrics import (AGENT_EXECUTION_DURATION, LLM_TOKENS_USED_TOTAL,
-                      TOOL_CALLS_TOTAL, ai_registry, record_evaluation_scores,
-                      record_llm_usage, record_tool_call)
+from .metrics import (
+    AGENT_EXECUTION_DURATION,
+    LLM_TOKENS_USED_TOTAL,
+    TOOL_CALLS_TOTAL,
+    ai_registry,
+    record_evaluation_scores,
+    record_llm_usage,
+    record_tool_call,
+)
 from .tracer import ObservabilityTracer, tracer
 
 __all__ = [

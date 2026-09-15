@@ -20,8 +20,12 @@ from .registry import MCPToolRegistry
 from .registry import registry as tool_registry
 from .resources import ResourceRegistry, resource_registry
 from .server import MCPServer, mcp_server
-from .tool_management import (analytics_tracker, check_rbac, health_checker,
-                              resolve_tool_version)
+from .tool_management import (
+    analytics_tracker,
+    check_rbac,
+    health_checker,
+    resolve_tool_version,
+)
 
 __all__ = [
     "mcp_server",

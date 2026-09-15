@@ -1,7 +1,9 @@
 import pytest
 
 from src.pharmaviyum.api.v1.pharmacy_entities import (
-    InventoryIn, _validate_inventory_levels)
+    InventoryIn,
+    _validate_inventory_levels,
+)
 from src.pharmaviyum.models.erp_sync import ERPSyncEvent
 from src.pharmaviyum.models.inventory import Inventory
 

@@ -23,8 +23,9 @@ class TestDrugInteractionTool:
     async def test_critical_interaction_detected(self):
         """Test detection of critical drug interactions."""
         from src.pharmaviyum.ai.mcp.schemas import DrugInteractionCheckInput
-        from src.pharmaviyum.ai.mcp.tools.drug_interactions import \
-            check_drug_interactions
+        from src.pharmaviyum.ai.mcp.tools.drug_interactions import (
+            check_drug_interactions,
+        )
 
         input_data = DrugInteractionCheckInput(
             drugs=["Warfarin", "Aspirin"],
@@ -41,8 +42,9 @@ class TestDrugInteractionTool:
     async def test_no_interaction(self):
         """Test drugs with no known interactions."""
         from src.pharmaviyum.ai.mcp.schemas import DrugInteractionCheckInput
-        from src.pharmaviyum.ai.mcp.tools.drug_interactions import \
-            check_drug_interactions
+        from src.pharmaviyum.ai.mcp.tools.drug_interactions import (
+            check_drug_interactions,
+        )
 
         input_data = DrugInteractionCheckInput(
             drugs=["Paracetamol", "Vitamin C"],
@@ -58,8 +60,9 @@ class TestDrugInteractionTool:
     async def test_drug_name_normalization(self):
         """Test drug name normalization (Paracetamol = Acetaminophen)."""
         from src.pharmaviyum.ai.mcp.schemas import DrugInteractionCheckInput
-        from src.pharmaviyum.ai.mcp.tools.drug_interactions import \
-            check_drug_interactions
+        from src.pharmaviyum.ai.mcp.tools.drug_interactions import (
+            check_drug_interactions,
+        )
 
         # Test with alternative name
         input_data = DrugInteractionCheckInput(
@@ -80,8 +83,7 @@ class TestHalalComplianceTool:
     async def test_halal_certified_drug(self):
         """Test drug with halal certification."""
         from src.pharmaviyum.ai.mcp.schemas import HalalComplianceInput
-        from src.pharmaviyum.ai.mcp.tools.halal_compliance import \
-            check_halal_compliance
+        from src.pharmaviyum.ai.mcp.tools.halal_compliance import check_halal_compliance
 
         input_data = HalalComplianceInput(
             drug_name="Paracetamol",
@@ -98,8 +100,7 @@ class TestHalalComplianceTool:
     async def test_shia_fiqh_sistani(self):
         """Test Shia fiqh with Sistani ruling."""
         from src.pharmaviyum.ai.mcp.schemas import HalalComplianceInput
-        from src.pharmaviyum.ai.mcp.tools.halal_compliance import \
-            check_halal_compliance
+        from src.pharmaviyum.ai.mcp.tools.halal_compliance import check_halal_compliance
 
         input_data = HalalComplianceInput(
             drug_name="Amoxicillin",

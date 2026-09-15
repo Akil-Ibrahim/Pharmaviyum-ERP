@@ -16,21 +16,30 @@ from src.pharmaviyum.core.logging import get_logger, setup_logging
 from src.pharmaviyum.workers.dead_letter import dead_letter_queue
 from src.pharmaviyum.workers.dispatcher import task_dispatcher
 from src.pharmaviyum.workers.queues import TaskQueue
-from src.pharmaviyum.workers.tasks.ai_tasks import (CheckDrugInteractionTask,
-                                                    GenerateRecommendationTask,
-                                                    ReviewPrescriptionTask)
+from src.pharmaviyum.workers.tasks.ai_tasks import (
+    CheckDrugInteractionTask,
+    GenerateRecommendationTask,
+    ReviewPrescriptionTask,
+)
+
 # Import all tasks
 from src.pharmaviyum.workers.tasks.notifications import (
-    ProcessAcknowledgmentTask, SendMedicationReminderTask,
-    SendPatientNotificationTask)
-from src.pharmaviyum.workers.tasks.pos_sync import (SyncCustomersTask,
-                                                    SyncInventoryTask,
-                                                    SyncProductsTask,
-                                                    SyncSalesTask)
-from src.pharmaviyum.workers.tasks.scheduled import (CleanupExpiredDataTask,
-                                                     GenerateDailyReportTask,
-                                                     ProcessDueRemindersTask,
-                                                     SyncAllPosTask)
+    ProcessAcknowledgmentTask,
+    SendMedicationReminderTask,
+    SendPatientNotificationTask,
+)
+from src.pharmaviyum.workers.tasks.pos_sync import (
+    SyncCustomersTask,
+    SyncInventoryTask,
+    SyncProductsTask,
+    SyncSalesTask,
+)
+from src.pharmaviyum.workers.tasks.scheduled import (
+    CleanupExpiredDataTask,
+    GenerateDailyReportTask,
+    ProcessDueRemindersTask,
+    SyncAllPosTask,
+)
 
 # Setup logging
 setup_logging()

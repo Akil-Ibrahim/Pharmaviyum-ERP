@@ -3,8 +3,15 @@ Prometheus metrics for observability
 Best practice 2026: Comprehensive metrics for monitoring and alerting
 """
 
-from prometheus_client import (CONTENT_TYPE_LATEST, Counter, Enum, Gauge,
-                               Histogram, Info, generate_latest)
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    Counter,
+    Enum,
+    Gauge,
+    Histogram,
+    Info,
+    generate_latest,
+)
 
 from src.pharmaviyum.core.config import settings
 

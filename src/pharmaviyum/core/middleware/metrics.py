@@ -10,8 +10,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
 from src.pharmaviyum.core.logging import get_logger
-from src.pharmaviyum.core.metrics import (HTTP_REQUESTS_IN_PROGRESS,
-                                          record_http_request)
+from src.pharmaviyum.core.metrics import HTTP_REQUESTS_IN_PROGRESS, record_http_request
 
 logger = get_logger(__name__)
 

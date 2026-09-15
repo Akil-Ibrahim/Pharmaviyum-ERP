@@ -4,12 +4,18 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.core.database import get_db
-from src.pharmaviyum.modules.auth.deps import (get_current_active_superuser,
-                                               get_current_active_user)
+from src.pharmaviyum.modules.auth.deps import (
+    get_current_active_superuser,
+    get_current_active_user,
+)
 from src.pharmaviyum.repositories.patient import PatientRepository
-from src.pharmaviyum.schemas.patient import (PatientAIProfile, PatientCreate,
-                                             PatientListResponse,
-                                             PatientResponse, PatientUpdate)
+from src.pharmaviyum.schemas.patient import (
+    PatientAIProfile,
+    PatientCreate,
+    PatientListResponse,
+    PatientResponse,
+    PatientUpdate,
+)
 from src.pharmaviyum.services.patient import PatientService
 
 router = APIRouter(prefix="/patients", tags=["Patients"])

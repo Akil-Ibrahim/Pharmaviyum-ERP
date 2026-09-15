@@ -7,8 +7,11 @@ from typing import Optional
 
 from src.pharmaviyum.core.feature_flags import is_feature_enabled
 from src.pharmaviyum.core.logging import get_logger
-from src.pharmaviyum.core.metrics import (CACHE_HITS_TOTAL, CACHE_MISSES_TOTAL,
-                                          PATIENTS_CREATED_TOTAL)
+from src.pharmaviyum.core.metrics import (
+    CACHE_HITS_TOTAL,
+    CACHE_MISSES_TOTAL,
+    PATIENTS_CREATED_TOTAL,
+)
 from src.pharmaviyum.models.patients import Patient
 from src.pharmaviyum.repositories.patient import PatientRepository
 from src.pharmaviyum.schemas.patient import PatientCreate, PatientUpdate

@@ -21,8 +21,7 @@ def register_all_handlers() -> None:
         logger.warning("Patient module not available")
 
     try:
-        from ...modules.prescriptions import \
-            events as prescription_events  # noqa: F401
+        from ...modules.prescriptions import events as prescription_events  # noqa: F401
 
         logger.info("Prescription event handlers registered")
     except ImportError:
@@ -36,8 +35,7 @@ def register_all_handlers() -> None:
         logger.warning("Order module not available")
 
     try:
-        from ...modules.notifications import \
-            events as notification_events  # noqa: F401
+        from ...modules.notifications import events as notification_events  # noqa: F401
 
         logger.info("Notification event handlers registered")
     except ImportError:

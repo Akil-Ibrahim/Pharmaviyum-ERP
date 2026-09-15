@@ -2,11 +2,12 @@ from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 
 from src.pharmaviyum.models.product import Product
-from src.pharmaviyum.modules.auth.deps import (CurrentSuperuser, CurrentUser,
-                                               SessionDep)
-from src.pharmaviyum.schemas.product_schema import (ProductCreate,
-                                                    ProductResponse,
-                                                    ProductUpdate)
+from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
+from src.pharmaviyum.schemas.product_schema import (
+    ProductCreate,
+    ProductResponse,
+    ProductUpdate,
+)
 
 router = APIRouter(prefix="/products", tags=["Products"])
 

@@ -48,10 +48,8 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
         token_usage = getattr(response, "llm_output", {}).get("token_usage", {})
 
         if token_usage:
-            from src.pharmaviyum.ai.observability.cost_tracker import \
-                calculate_llm_cost
-            from src.pharmaviyum.ai.observability.metrics import \
-                record_llm_usage
+            from src.pharmaviyum.ai.observability.cost_tracker import calculate_llm_cost
+            from src.pharmaviyum.ai.observability.metrics import record_llm_usage
 
             model_name = "qwen2.5:7b"
             input_tokens = token_usage.get("prompt_tokens", 0)

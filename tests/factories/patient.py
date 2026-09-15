@@ -8,9 +8,12 @@ from datetime import date, timedelta
 import factory
 from factory import fuzzy
 
-from src.pharmaviyum.models.patients import (Patient, PatientAllergy,
-                                             PatientCondition,
-                                             PatientInsurance)
+from src.pharmaviyum.models.patients import (
+    Patient,
+    PatientAllergy,
+    PatientCondition,
+    PatientInsurance,
+)
 
 
 class PatientFactory(factory.async_sqlalchemy.AsyncSQLAlchemyFactory):

@@ -12,8 +12,7 @@ from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.core.logging import get_logger
 from src.pharmaviyum.core.repository import BaseRepository
-from src.pharmaviyum.models.patients import (Patient, PatientAllergy,
-                                             PatientCondition)
+from src.pharmaviyum.models.patients import Patient, PatientAllergy, PatientCondition
 
 logger = get_logger(__name__)
 

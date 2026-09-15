@@ -6,8 +6,14 @@ Scrape endpoint: GET /metrics (Prometheus format)
 import time
 
 from fastapi import APIRouter, Request, Response
-from prometheus_client import (CONTENT_TYPE_LATEST, CollectorRegistry, Counter,
-                               Gauge, Histogram, generate_latest)
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    CollectorRegistry,
+    Counter,
+    Gauge,
+    Histogram,
+    generate_latest,
+)
 from starlette.middleware.base import BaseHTTPMiddleware
 
 metrics_registry = CollectorRegistry()

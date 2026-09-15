@@ -92,8 +92,12 @@ class MCPToolRegistry:
         self, name: str, input_data: dict[str, Any], user_role: UserRole = "system"
     ) -> Any:
         """Call a registered tool with RBAC and validation."""
-        from .tool_management import (analytics_tracker, check_rbac,
-                                      health_checker, resolve_tool_version)
+        from .tool_management import (
+            analytics_tracker,
+            check_rbac,
+            health_checker,
+            resolve_tool_version,
+        )
 
         # 1. Resolve version
         resolved_name = resolve_tool_version(name)
