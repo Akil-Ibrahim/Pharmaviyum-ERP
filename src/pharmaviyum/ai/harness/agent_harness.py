@@ -122,7 +122,7 @@ class AgentHarness:
                 }
 
             # 4. Select optimal model via router
-            selected_llm = self.model_router.select(
+            _selected_llm = self.model_router.select(
                 query=safe_query,
                 history_length=len(history),
                 context=context,
