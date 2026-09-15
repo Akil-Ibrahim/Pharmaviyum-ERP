@@ -1,18 +1,14 @@
-"""
-AI Layer Configuration — Pydantic Settings.
-
-Supports both local (Ollama) and cloud (Groq/OpenAI/Anthropic) LLM providers.
-"""
+"""AI layer configuration — Pydantic settings."""
 from __future__ import annotations
+
 from typing import Literal
+
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class OllamaSettings(BaseSettings):
-    """Ollama LLM provider configuration (local)."""
     model_config = SettingsConfigDict(env_prefix="OLLAMA_")
-    
     base_url: str = "http://localhost:11434"
     fast_model: str = "qwen2.5:1.5b"
     main_model: str = "qwen2.5:7b"
@@ -24,9 +20,7 @@ class OllamaSettings(BaseSettings):
 
 
 class GroqSettings(BaseSettings):
-    """Groq cloud LLM provider (fast, cheap, no GPU needed)."""
     model_config = SettingsConfigDict(env_prefix="GROQ_")
-    
     api_key: SecretStr | None = None
     model: str = "llama-3.1-70b-versatile"
     fast_model: str = "llama-3.1-8b-instant"
@@ -35,9 +29,7 @@ class GroqSettings(BaseSettings):
 
 
 class OpenAISettings(BaseSettings):
-    """OpenAI cloud LLM provider."""
     model_config = SettingsConfigDict(env_prefix="OPENAI_")
-    
     api_key: SecretStr | None = None
     model: str = "gpt-4o-mini"
     complex_model: str = "gpt-4o"
@@ -46,9 +38,7 @@ class OpenAISettings(BaseSettings):
 
 
 class AnthropicSettings(BaseSettings):
-    """Anthropic Claude cloud LLM provider."""
     model_config = SettingsConfigDict(env_prefix="ANTHROPIC_")
-    
     api_key: SecretStr | None = None
     model: str = "claude-3-5-sonnet-20241022"
     timeout_seconds: float = 30.0
@@ -56,9 +46,7 @@ class AnthropicSettings(BaseSettings):
 
 
 class RedisSettings(BaseSettings):
-    """Redis configuration."""
     model_config = SettingsConfigDict(env_prefix="REDIS_")
-    
     url: str = "redis://localhost:6379/0"
     cache_ttl_seconds: int = 86400 * 30
     embedding_cache_ttl: int = 86400 * 30
@@ -67,9 +55,7 @@ class RedisSettings(BaseSettings):
 
 
 class PgVectorSettings(BaseSettings):
-    """PostgreSQL + pgvector configuration."""
     model_config = SettingsConfigDict(env_prefix="PGVECTOR_")
-    
     database_url: SecretStr = SecretStr("postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum")
     table_name: str = "document_chunks"
     hnsw_m: int = 16
@@ -79,9 +65,7 @@ class PgVectorSettings(BaseSettings):
 
 
 class LangSmithSettings(BaseSettings):
-    """LangSmith tracing configuration."""
     model_config = SettingsConfigDict(env_prefix="LANGSMITH_")
-    
     enabled: bool = False
     api_key: SecretStr | None = None
     project: str = "pharmaviyum-pharmacist-agent"
@@ -89,18 +73,14 @@ class LangSmithSettings(BaseSettings):
 
 
 class OTelSettings(BaseSettings):
-    """OpenTelemetry configuration."""
     model_config = SettingsConfigDict(env_prefix="OTEL_")
-    
     enabled: bool = True
     exporter_endpoint: str = "http://otel-collector:4317"
     service_name: str = "pharmaviyum-ai"
 
 
 class RAGSettings(BaseSettings):
-    """RAG pipeline configuration."""
     model_config = SettingsConfigDict(env_prefix="RAG_")
-    
     max_chunk_tokens: int = 512
     chunk_overlap: int = 50
     top_k: int = 10
@@ -114,9 +94,7 @@ class RAGSettings(BaseSettings):
 
 
 class AgentSettings(BaseSettings):
-    """LangGraph agent configuration."""
     model_config = SettingsConfigDict(env_prefix="AGENT_")
-    
     max_iterations: int = 5
     max_history_messages: int = 10
     summarization_threshold: int = 20
@@ -127,9 +105,7 @@ class AgentSettings(BaseSettings):
 
 
 class HalalSettings(BaseSettings):
-    """Halal compliance engine configuration."""
     model_config = SettingsConfigDict(env_prefix="HALAL_")
-    
     default_country: str = "SA"
     default_fiqh: Literal["Hanafi", "Shafii", "Maliki", "Hanbali", "Ja'fari", "Zaydi"] = "Hanbali"
     enable_istihalah_check: bool = True
@@ -138,9 +114,7 @@ class HalalSettings(BaseSettings):
 
 
 class MCPSettings(BaseSettings):
-    """MCP server configuration."""
     model_config = SettingsConfigDict(env_prefix="MCP_")
-    
     server_name: str = "pharmaviyum-mcp"
     server_version: str = "1.0.0"
     tool_timeout_seconds: float = 30.0
@@ -152,38 +126,32 @@ class MCPSettings(BaseSettings):
 
 
 class AISettings(BaseSettings):
-    """Root AI settings."""
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
     )
-    
-    # LLM Providers
+
     ollama: OllamaSettings = Field(default_factory=OllamaSettings)
     groq: GroqSettings = Field(default_factory=GroqSettings)
     openai: OpenAISettings = Field(default_factory=OpenAISettings)
     anthropic: AnthropicSettings = Field(default_factory=AnthropicSettings)
-    
-    # Infrastructure
     redis: RedisSettings = Field(default_factory=RedisSettings)
     pgvector: PgVectorSettings = Field(default_factory=PgVectorSettings)
     langsmith: LangSmithSettings = Field(default_factory=LangSmithSettings)
     otel: OTelSettings = Field(default_factory=OTelSettings)
-    
-    # Application
     rag: RAGSettings = Field(default_factory=RAGSettings)
     agent: AgentSettings = Field(default_factory=AgentSettings)
     halal: HalalSettings = Field(default_factory=HalalSettings)
     mcp: MCPSettings = Field(default_factory=MCPSettings)
-    
-    # Global flags
+
     environment: Literal["development", "staging", "production"] = "development"
     log_level: str = "INFO"
     enable_telemetry: bool = True
-    use_cloud_llm: bool = False  # Set to True in Codespaces
-    
+    use_cloud_llm: bool = False
+    cors_origins: list[str] = Field(default_factory=list)
+
     @field_validator("environment")
     @classmethod
     def validate_environment(cls, v: str) -> str:
@@ -193,5 +161,4 @@ class AISettings(BaseSettings):
         return v
 
 
-# Global singleton
 settings = AISettings()
