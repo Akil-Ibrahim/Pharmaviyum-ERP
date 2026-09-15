@@ -23,7 +23,7 @@ def get_password_hash(password: str) -> str:
 
 
 def _signing_key() -> str:
-    """Return the configured signing key, with a process-local dev key."""
+    """Return the configured signing key, with a process-local development key."""
     if settings.SECRET_KEY:
         return settings.SECRET_KEY
     if not hasattr(_signing_key, "_dev_key"):
@@ -36,30 +36,41 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     to_encode = data.copy()
     to_encode["type"] = "access"
     now = datetime.now(timezone.utc)
-    expire = now + (
+    to_encode["iat"] = now
+    to_encode["exp"] = now + (
         expires_delta
         if expires_delta is not None
         else timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    to_encode["iat"] = now
-    to_encode["exp"] = expire
     return jwt.encode(to_encode, _signing_key(), algorithm=settings.ALGORITHM)
 
 
 def create_refresh_token(subject: str, expires_delta: timedelta | None = None) -> str:
     """Create a refresh JWT with a unique identifier for rotation/revocation."""
     now = datetime.now(timezone.utc)
-    expire = now + (
-        expires_delta
-        if expires_delta is not None
-        else timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    )
     payload = {
         "sub": str(subject),
         "type": "refresh",
         "jti": str(uuid.uuid4()),
         "iat": now,
-        "exp": expire,
+        "exp": now + (
+            expires_delta
+            if expires_delta is not None
+            else timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        ),
+    }
+    return jwt.encode(payload, _signing_key(), algorithm=settings.ALGORITHM)
+
+
+def create_password_reset_token(email: str) -> str:
+    """Create a 48-hour password-reset JWT."""
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": email,
+        "type": "password_reset",
+        "jti": str(uuid.uuid4()),
+        "iat": now,
+        "exp": now + timedelta(hours=48),
     }
     return jwt.encode(payload, _signing_key(), algorithm=settings.ALGORITHM)
 
@@ -78,6 +89,17 @@ def decode_refresh_token(token: str) -> dict | None:
     try:
         payload = jwt.decode(token, _signing_key(), algorithms=[settings.ALGORITHM])
         if payload.get("type") != "refresh" or not payload.get("jti"):
+            return None
+        return payload
+    except jwt.PyJWTError:
+        return None
+
+
+def decode_password_reset_token(token: str) -> dict | None:
+    """Decode and accept only password-reset tokens carrying a unique JTI."""
+    try:
+        payload = jwt.decode(token, _signing_key(), algorithms=[settings.ALGORITHM])
+        if payload.get("type") != "password_reset" or not payload.get("jti"):
             return None
         return payload
     except jwt.PyJWTError:
