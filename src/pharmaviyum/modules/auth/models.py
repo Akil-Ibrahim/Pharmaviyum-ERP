@@ -1,19 +1,23 @@
 """
-User domain model for authentication.
+User and tenant authorization models.
 
-Based on ibrahimengpy/full-stack-fastapi-template structure.
-Uses SQLAlchemy 2.0 Mapped[] type hints for type safety.
+Best practice:
+- Explicit application role for MCP authorization
+- Explicit user-to-pharmacy membership for tenant isolation
+- No implicit privileged/system role at AI boundaries
 """
 
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from ...shared.core.database import Base
+
+UserRole = Literal["patient", "pharmacist", "admin", "system"]
 
 
 class User(Base):
@@ -27,6 +31,7 @@ class User(Base):
     full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    role: Mapped[str] = mapped_column(String(20), nullable=False, default="pharmacist")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
