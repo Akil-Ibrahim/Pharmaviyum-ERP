@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.pharmaviyum.crud.client import ClientCRUD
 from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.order import Order
+from src.pharmaviyum.models.patients import Patient
 from src.pharmaviyum.models.user import User
 from src.pharmaviyum.modules.auth.deps import get_current_user
 from src.pharmaviyum.schemas.order_schema import OrderCreate, OrderResponse
@@ -26,21 +26,21 @@ async def create_order(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Creating orders changes client purchase statistics, so require an admin
-    # until pharmacy/tenant-level roles are persisted in the data model.
     require_superuser(current_user)
 
-    client_crud = ClientCRUD(db)
-    client = await client_crud.get(data.client_id)
-    if not client:
-        raise HTTPException(status_code=404, detail="Client not found")
+    result = await db.execute(select(Patient).where(Patient.id == data.patient_id))
+    patient = result.scalar_one_or_none()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    if not patient.is_active:
+        raise HTTPException(status_code=409, detail="Patient is inactive")
 
-    order = Order(client_id=data.client_id, total_amount=data.total_amount)
+    order = Order(patient_id=data.patient_id, total_amount=data.total_amount)
     db.add(order)
+    patient.total_purchases += data.total_amount
+    patient.visit_count += 1
     await db.commit()
     await db.refresh(order)
-
-    await client_crud.update_purchase_stats(data.client_id, data.total_amount)
     return order
 
 
