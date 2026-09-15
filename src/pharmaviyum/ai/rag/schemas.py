@@ -16,8 +16,8 @@ class Document(BaseModel):
     source: str
     doc_type: Literal["drug_info", "prescription", "guideline", "research_paper", "regulation", "patient_record"]
     metadata: dict[str, Any] = Field(default_factory=dict)
-    country: str = Field(default="VN")
-    language: str = Field(default="vi")
+    country: str = "VN"
+    language: str = "vi"
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -82,7 +82,10 @@ class RAGResponse(BaseModel):
 
 
 class QueryContext(BaseModel):
+    """Immutable, authenticated AI request context."""
+
     model_config = ConfigDict(frozen=True)
+    user_id: str
     pharmacy_id: int
     patient_id: int | None = None
     prescription_id: int | None = None
