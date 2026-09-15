@@ -230,7 +230,8 @@ async def delete_inventory(
 
 
 @router.get("/prescriptions")
-async def list_prescriptions(_: CurrentUser, session: SessionDep) -> list[Prescription]:
+async def list_prescriptions(_: CurrentSuperuser, session: SessionDep) -> list[Prescription]:
+    """List prescriptions; medical records are restricted to privileged operators."""
     return await _list(session, Prescription)
 
 
@@ -246,7 +247,9 @@ async def create_prescription(
 
 
 @router.get("/erp/integrations")
-async def list_erp_integrations(_: CurrentUser, session: SessionDep) -> list[ERPIntegration]:
+async def list_erp_integrations(
+    _: CurrentSuperuser, session: SessionDep
+) -> list[ERPIntegration]:
     return await _list(session, ERPIntegration)
 
 
@@ -287,7 +290,7 @@ async def ingest_erp_event(
 
 @router.get("/erp/integrations/{integration_id}/events")
 async def list_erp_events(
-    integration_id: int, _: CurrentUser, session: SessionDep
+    integration_id: int, _: CurrentSuperuser, session: SessionDep
 ) -> list[ERPSyncEvent]:
     result = await session.execute(
         select(ERPSyncEvent)
@@ -299,8 +302,16 @@ async def list_erp_events(
 
 
 @router.get("/mortarium-ai/sessions")
-async def list_mortarium_sessions(_: CurrentUser, session: SessionDep) -> list[MortariumAISession]:
-    return await _list(session, MortariumAISession)
+async def list_mortarium_sessions(
+    current_user: CurrentUser, session: SessionDep
+) -> list[MortariumAISession]:
+    """List only sessions owned by the authenticated user."""
+    result = await session.execute(
+        select(MortariumAISession)
+        .where(MortariumAISession.user_id == str(current_user.id))
+        .order_by(MortariumAISession.id.desc())
+    )
+    return list(result.scalars().all())
 
 
 @router.post("/mortarium-ai/sessions", status_code=status.HTTP_201_CREATED)
