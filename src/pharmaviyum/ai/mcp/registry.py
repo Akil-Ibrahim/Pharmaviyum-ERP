@@ -5,6 +5,7 @@ Supports:
 - Tool versioning (e.g., "check_drug_interactions:v2")
 - Role-Based Access Control (RBAC)
 - Role-filtered tool discovery for LLM tool binding
+- Trusted tenant context propagation to tool execution
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Literal
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -89,15 +91,23 @@ class MCPToolRegistry:
         return decorator
 
     async def call_tool(
-        self, name: str, input_data: dict[str, Any], user_role: UserRole
+        self,
+        name: str,
+        input_data: dict[str, Any],
+        user_role: UserRole,
+        user_id: UUID | None = None,
+        pharmacy_id: int | None = None,
     ) -> Any:
-        """Call a registered tool with RBAC and validation."""
+        """Call a registered tool with RBAC and trusted tenant context."""
         from .tool_management import (
             analytics_tracker,
             check_rbac,
             health_checker,
             resolve_tool_version,
         )
+
+        if user_id is None or pharmacy_id is None:
+            raise PermissionError("MCP tenant authorization context is required")
 
         resolved_name = resolve_tool_version(name)
         if resolved_name not in self._tools:
@@ -129,7 +139,20 @@ class MCPToolRegistry:
 
         start = time.perf_counter()
         try:
-            result = await func(validated_input)
+            from .context import MCPAuthorizationContext, set_mcp_context, reset_mcp_context
+
+            token = set_mcp_context(
+                MCPAuthorizationContext(
+                    user_id=user_id,
+                    pharmacy_id=pharmacy_id,
+                    user_role=user_role,
+                )
+            )
+            try:
+                result = await func(validated_input)
+            finally:
+                reset_mcp_context(token)
+
             latency_ms = (time.perf_counter() - start) * 1000
             if not isinstance(result, metadata.output_schema):
                 result = metadata.output_schema.model_validate(result)
