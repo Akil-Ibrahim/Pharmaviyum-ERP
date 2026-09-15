@@ -1,8 +1,3 @@
-from sqlalchemy.orm import DeclarativeBase
+from src.pharmaviyum.database import Base
 
-
-class Base(DeclarativeBase):
-    """Base class for ORM models."""
-
-    # DeclarativeBase provides the foundation for ORM models.
-    # Additional common behavior or mixins can be added here if needed.
+__all__ = ["Base"]
