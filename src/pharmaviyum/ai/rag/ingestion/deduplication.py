@@ -65,7 +65,7 @@ class DocumentDeduplicator:
 
         async with self.session_factory() as session:
             query = text(  # nosec B608: table_name is validated as a SQL identifier
-                f"""
+                f"""  # nosec B608: table_name is validated as a SQL identifier
                 SELECT DISTINCT metadata->>'content_hash' as hash,
                        document_id
                 FROM {self.table_name}
@@ -96,7 +96,7 @@ class DocumentDeduplicator:
         """Get statistics about duplicates in the system."""
         async with self.session_factory() as session:
             query = text(  # nosec B608: table_name is validated as a SQL identifier
-                f"""
+                f"""  # nosec B608: table_name is validated as a SQL identifier
                 SELECT
                     COUNT(*) as total_chunks,
                     COUNT(DISTINCT metadata->>'content_hash') as unique_hashes,
