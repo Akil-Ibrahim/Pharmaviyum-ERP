@@ -4,7 +4,7 @@ FastAPI Dependency Injection for AI Layer.
 Best practice 2026:
 - Lazy initialization of heavy components (LLMs, Vector Stores)
 - Request-scoped dependencies for DB sessions
-- Singleton pattern for stateless services (Guardrails, Routers)
+- Singleton pattern for stateless services and shared infrastructure
 - Durable PostgreSQL persistence for LangGraph workflows
 """
 
@@ -39,45 +39,36 @@ from src.pharmaviyum.ai.rag import (
 )
 from src.pharmaviyum.core.logging import logger
 
-# ============================================================================
-# CORE INFRASTRUCTURE DEPENDENCIES
-# ============================================================================
 
-
-async def get_redis_client() -> AsyncGenerator[Redis, None]:
-    """Get async Redis client for caching and memory."""
-    try:
-        redis = Redis.from_url(
-            settings.redis.url,
-            decode_responses=True,
-            health_check_interval=30,
-        )
-        await redis.ping()
-        yield redis
-        await redis.aclose()
-    except Exception as e:
-        logger.error(f"Redis connection failed: {e}")
+async def get_redis_client(request: Request) -> AsyncGenerator[Redis, None]:
+    """Return the application-scoped Redis client."""
+    redis = getattr(request.app.state, "redis_client", None)
+    if redis is None:
+        logger.error("Redis client not initialized in app.state")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Redis service unavailable",
         )
+    yield redis
 
 
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
-    """Get async SQLAlchemy session from the main app's state."""
+    """Get a request-scoped SQLAlchemy session from the shared factory."""
     factory = getattr(request.app.state, "db_session_factory", None)
-    if not factory:
-        logger.warning("DB session factory not found in app.state, using mock")
-        yield None
-        return
+    if factory is None:
+        logger.error("Database session factory not initialized in app.state")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database service unavailable",
+        )
 
     async with factory() as session:
-        yield session
-
-
-# ============================================================================
-# LLM PROVIDER DEPENDENCIES
-# ============================================================================
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 @lru_cache(maxsize=1)
@@ -110,11 +101,6 @@ def get_llm_complex():
     )
 
 
-# ============================================================================
-# AI COMPONENT DEPENDENCIES
-# ============================================================================
-
-
 class AIComponents:
     """Container for all initialized AI components."""
 
@@ -131,12 +117,8 @@ class AIComponents:
         self.checkpointer: AgentCheckpointer | None = None
         self.checkpoint_saver: Any | None = None
 
-    async def initialize(
-        self,
-        redis: Redis,
-        db_session_factory: Any,
-    ):
-        """Lazy initialization of heavy AI components."""
+    async def initialize(self, redis: Redis, db_session_factory: Any):
+        """Initialize heavy AI components exactly once per application process."""
         if self._initialized:
             return
 
@@ -151,11 +133,10 @@ class AIComponents:
                 table_name=settings.pgvector.table_name,
                 dimensions=settings.pgvector.vector_dimensions,
             )
-            if db_session_factory is not None:
-                try:
-                    await vector_store.initialize()
-                except Exception as e:
-                    logger.warning(f"PgVectorStore initialize deferred: {e}")
+            try:
+                await vector_store.initialize()
+            except Exception as e:
+                logger.warning(f"PgVectorStore initialize deferred: {e}")
 
             embeddings = EmbeddingsFactory.create(
                 provider="ollama",
@@ -175,10 +156,6 @@ class AIComponents:
                 summarization_threshold=settings.agent.summarization_threshold,
             )
 
-            guardrails = MedicalGuardrails(
-                country_code=settings.halal.default_country,
-            )
-
             self.checkpointer = AgentCheckpointer(
                 database_url=settings.pgvector.database_url.get_secret_value().replace(
                     "postgresql+asyncpg", "postgresql"
@@ -191,15 +168,15 @@ class AIComponents:
                 embeddings=embeddings,
                 llm=get_llm_main(),
                 fast_llm=get_llm_fast(),
-                guardrails=guardrails,
+                guardrails=MedicalGuardrails(country_code=settings.halal.default_country),
                 checkpointer=self.checkpoint_saver,
             )
 
+            guardrails = MedicalGuardrails(country_code=settings.halal.default_country)
             cache = PromptCache(
                 redis_client=redis,
                 similarity_threshold=settings.rag.similarity_threshold,
             )
-
             model_router = ModelRouter(
                 models={
                     "fast": get_llm_fast(),
@@ -208,14 +185,12 @@ class AIComponents:
                     "fallback": get_llm_main(),
                 }
             )
-
             agent = PharmacistAgent(
                 router_llm=get_llm_fast(),
                 main_llm=get_llm_main(),
                 mcp_client=self.mcp_client,
                 rag_pipeline=self.rag_pipeline,
             )
-
             self.agent_harness = AgentHarness(
                 agent=agent,
                 memory=memory,
@@ -223,7 +198,6 @@ class AIComponents:
                 cache=cache,
                 model_router=model_router,
             )
-
             self.evaluator = AgentEvaluator(
                 eval_llm=get_llm_complex(),
                 evaluator_model_name=settings.ollama.complex_model,
@@ -240,10 +214,15 @@ async def get_ai_container(
     redis: Redis = Depends(get_redis_client),
     request: Request = None,
 ) -> AIComponents:
-    """Ensure all AI components are initialized and return the singleton."""
+    """Return the application-wide AI container."""
     db_factory = (
         getattr(request.app.state, "db_session_factory", None) if request else None
     )
+    if db_factory is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database service unavailable",
+        )
     await ai_container.initialize(redis=redis, db_session_factory=db_factory)
     return ai_container
 
