@@ -42,8 +42,8 @@ async def _tenant_context(
 async def query_agent(
     request: QueryRequest,
     harness=Depends(get_agent_harness),
-    current_user: CurrentUser = None,
-    session: SessionDep = None,
+    current_user: CurrentUser,
+    session: SessionDep,
 ):
     """Synchronous AI query bound to the authenticated pharmacy tenant."""
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
@@ -105,8 +105,8 @@ async def query_agent(
 async def query_agent_stream(
     request: QueryRequest,
     harness=Depends(get_agent_harness),
-    current_user: CurrentUser = None,
-    session: SessionDep = None,
+    current_user: CurrentUser,
+    session: SessionDep,
 ):
     """Streaming AI query bound to the authenticated pharmacy tenant."""
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
