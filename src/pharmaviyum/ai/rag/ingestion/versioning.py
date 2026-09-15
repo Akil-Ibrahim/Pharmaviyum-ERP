@@ -53,7 +53,7 @@ class DocumentVersionManager:
         """
         async with self.session_factory() as session:
             # Find all active chunks for this source with older versions
-            query = text(
+            query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""
                 UPDATE {self.table_name}
                 SET metadata = jsonb_set(
@@ -93,7 +93,7 @@ class DocumentVersionManager:
     async def get_next_version(self, source: str) -> int:
         """Get the next version number for a document source."""
         async with self.session_factory() as session:
-            query = text(
+            query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""
                 SELECT COALESCE(
                     MAX((metadata->>'version_number')::int),
@@ -120,7 +120,7 @@ class DocumentVersionManager:
         """
         async with self.session_factory() as session:
             # Archive current active version
-            archive_query = text(
+            archive_query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""
                 UPDATE {self.table_name}
                 SET metadata = jsonb_set(
@@ -135,7 +135,7 @@ class DocumentVersionManager:
             await session.execute(archive_query, {"source": source})
 
             # Restore target version
-            restore_query = text(
+            restore_query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""
                 UPDATE {self.table_name}
                 SET metadata = jsonb_set(
@@ -166,7 +166,7 @@ class DocumentVersionManager:
     async def get_version_history(self, source: str) -> list[dict]:
         """Get version history for a document source."""
         async with self.session_factory() as session:
-            query = text(
+            query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""
                 SELECT 
                     (metadata->>'version_number')::int as version,

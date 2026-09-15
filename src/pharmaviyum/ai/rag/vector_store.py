@@ -105,7 +105,7 @@ class PgVectorStore:
                 for chunk, embedding in zip(chunks, embeddings)
             ]
             await session.execute(
-                text(
+                text(  # nosec B608: table_name is validated as a SQL identifier
                     f"""
                 INSERT INTO {self.table_name}
                 (id, document_id, content, chunk_index, chunk_type, metadata, token_count, embedding)
@@ -134,7 +134,7 @@ class PgVectorStore:
         """Vector similarity search (cosine distance)."""
         filter_clause, filter_params = self._build_filter_clause(filters)
         async with self.session_factory() as session:
-            query_sql = text(
+            query_sql = text(  # nosec B608: table_name and filter keys are validated
                 f"""
                 SELECT id, document_id, content, chunk_index, chunk_type,
                        metadata, token_count,
@@ -169,7 +169,7 @@ class PgVectorStore:
         filter_clause, filter_params = self._build_filter_clause(filters)
         and_clause = "AND" if filter_clause else "WHERE"
         async with self.session_factory() as session:
-            query_sql = text(
+            query_sql = text(  # nosec B608: table_name and filter keys are validated
                 f"""
                 SELECT id, document_id, content, chunk_index, chunk_type,
                        metadata, token_count,

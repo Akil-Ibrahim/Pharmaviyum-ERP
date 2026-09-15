@@ -309,7 +309,9 @@ class FeatureFlagService:
         variant_key = self._get_deterministic_key(flag.key, user_id)
 
         # Hash to get consistent bucket
-        hash_value = int(hashlib.md5(variant_key.encode()).hexdigest(), 16)
+        hash_value = int(
+            hashlib.md5(variant_key.encode(), usedforsecurity=False).hexdigest(), 16
+        )
         bucket = hash_value % 100
 
         # Distribute users across variants
@@ -338,7 +340,9 @@ class FeatureFlagService:
         Uses deterministic hashing for consistent assignment.
         """
         variant_key = self._get_deterministic_key(key, user_id)
-        hash_value = int(hashlib.md5(variant_key.encode()).hexdigest(), 16)
+        hash_value = int(
+            hashlib.md5(variant_key.encode(), usedforsecurity=False).hexdigest(), 16
+        )
         bucket = hash_value % 100
 
         return bucket < percentage
