@@ -4,20 +4,16 @@ MCP Client — Production-ready wrapper for tool execution.
 Best practice 2026:
 - Automatic retry with exponential backoff
 - Structured error handling with fallback
-- Tool metadata for model routing (latency, cost, complexity)
-- OpenAI function schema generation
-- Execution tracing for LangSmith integration
-- Circuit breaker pattern for failing tools
-- Centralized RBAC through the MCP registry
-- Trusted tenant context propagated separately from model-controlled tool input
+- Tool metadata for model routing
+- Execution tracing
+- Circuit breaker pattern
+- Centralized RBAC and trusted tenant context through the MCP registry
 """
 
 from __future__ import annotations
 
 import asyncio
 import time
-from contextlib import contextmanager
-from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any
 from uuid import UUID
@@ -25,34 +21,6 @@ from uuid import UUID
 from src.pharmaviyum.core.logging import logger
 
 from .registry import UserRole, registry
-
-
-@dataclass(frozen=True)
-class MCPAuthorizationContext:
-    """Trusted identity and tenant context for one MCP execution."""
-
-    user_id: UUID
-    pharmacy_id: int
-
-
-_current_authorization_context: ContextVar[MCPAuthorizationContext | None] = ContextVar(
-    "mcp_authorization_context", default=None
-)
-
-
-def get_authorization_context() -> MCPAuthorizationContext | None:
-    """Return trusted MCP authorization context for the current async task."""
-    return _current_authorization_context.get()
-
-
-@contextmanager
-def authorization_context(context: MCPAuthorizationContext):
-    """Bind trusted authorization context for the duration of a tool call."""
-    token = _current_authorization_context.set(context)
-    try:
-        yield context
-    finally:
-        _current_authorization_context.reset(token)
 
 
 @dataclass
@@ -93,36 +61,20 @@ class MCPClient:
         user_id: UUID | None = None,
         pharmacy_id: int | None = None,
     ) -> ToolExecutionResult:
-        """Call an MCP tool with retry while enforcing RBAC and tenant context.
+        """Call an MCP tool with retry while enforcing RBAC and tenant scope.
 
-        ``user_role`` is intentionally required for production callers. Missing
-        authorization context fails closed instead of silently becoming a
-        privileged ``system`` call. Tenant context is kept outside tool input
-        so the LLM cannot select or override the pharmacy scope.
+        Authorization and tenant identity are supplied by the authenticated
+        application boundary, never by model-controlled tool arguments.
         """
         start = time.perf_counter()
 
-        if user_role is None:
+        if user_role is None or user_id is None or pharmacy_id is None:
             return ToolExecutionResult(
                 tool_name=tool_name,
                 success=False,
-                error="MCP authorization context is required",
+                error="MCP authorization and tenant context are required",
                 latency_ms=(time.perf_counter() - start) * 1000,
             )
-
-        if (user_id is None) != (pharmacy_id is None):
-            return ToolExecutionResult(
-                tool_name=tool_name,
-                success=False,
-                error="Incomplete MCP tenant context",
-                latency_ms=(time.perf_counter() - start) * 1000,
-            )
-
-        context = (
-            MCPAuthorizationContext(user_id=user_id, pharmacy_id=pharmacy_id)
-            if user_id is not None and pharmacy_id is not None
-            else None
-        )
 
         if self.enable_circuit_breaker and self._is_circuit_open(tool_name):
             logger.warning("Circuit breaker open for tool: %s", tool_name)
@@ -146,15 +98,16 @@ class MCPClient:
 
         for attempt in range(self.max_retries + 1):
             try:
-                with authorization_context(context) if context else _null_context():
-                    result = await asyncio.wait_for(
-                        registry.call_tool(
-                            tool_name,
-                            input_data,
-                            user_role=user_role,
-                        ),
-                        timeout=self.timeout_seconds,
-                    )
+                result = await asyncio.wait_for(
+                    registry.call_tool(
+                        tool_name,
+                        input_data,
+                        user_role=user_role,
+                        user_id=user_id,
+                        pharmacy_id=pharmacy_id,
+                    ),
+                    timeout=self.timeout_seconds,
+                )
                 latency_ms = (time.perf_counter() - start) * 1000
                 logger.info(
                     "Tool %s executed successfully",
@@ -188,7 +141,6 @@ class MCPClient:
                     extra={"tool": tool_name, "attempt": attempt + 1},
                 )
             except PermissionError as exc:
-                # Authorization failures are deterministic and must never retry.
                 last_error = str(exc)
                 logger.warning(
                     "MCP tool authorization denied",
@@ -205,8 +157,7 @@ class MCPClient:
 
             retry_count = attempt + 1
             if attempt < self.max_retries:
-                wait_time = min(2**attempt, 10.0)
-                await asyncio.sleep(wait_time)
+                await asyncio.sleep(min(2**attempt, 10.0))
 
         latency_ms = (time.perf_counter() - start) * 1000
         if self.enable_circuit_breaker and last_error and "not authorized" not in last_error:
@@ -231,10 +182,7 @@ class MCPClient:
         cb_state = self._circuit_breaker[tool_name]
         if cb_state["failures"] < self._circuit_breaker_threshold:
             return False
-        if (
-            time.time() - float(cb_state["last_failure"])
-            > self._circuit_breaker_timeout
-        ):
+        if time.time() - float(cb_state["last_failure"]) > self._circuit_breaker_timeout:
             del self._circuit_breaker[tool_name]
             return False
         return True
@@ -262,10 +210,12 @@ class MCPClient:
             return []
         return registry.to_openai_tools(user_role=user_role)
 
-    def get_tools_by_category(self, category: str) -> list[Any]:
-        return [tool for tool in self.list_tools() if tool.category == category]
+    def get_tools_by_category(self, category: str, user_role: UserRole | None = None) -> list[Any]:
+        return [tool for tool in self.list_tools(user_role) if tool.category == category]
 
-    def get_tools_by_tags(self, tags: list[str], user_role: UserRole | None = None) -> list[Any]:
+    def get_tools_by_tags(
+        self, tags: list[str], user_role: UserRole | None = None
+    ) -> list[Any]:
         return [
             tool
             for tool in self.list_tools(user_role)
@@ -279,11 +229,6 @@ class MCPClient:
         else:
             self._circuit_breaker.clear()
             logger.info("All circuit breakers reset")
-
-
-@contextmanager
-def _null_context():
-    yield None
 
 
 mcp_client = MCPClient()
