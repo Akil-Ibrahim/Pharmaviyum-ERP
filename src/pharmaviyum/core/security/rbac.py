@@ -1,90 +1,56 @@
-"""
-Role-Based Access Control (RBAC) decorator
-Best practice 2026: Fine-grained authorization
-"""
+"""Authorization helpers backed by the canonical authenticated User."""
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.pharmaviyum.core.database import get_db
-from src.pharmaviyum.core.logging import get_logger
-from src.pharmaviyum.core.security import decode_access_token
-
-logger = get_logger(__name__)
-
-security = HTTPBearer()
+from src.pharmaviyum.modules.auth.deps import get_current_active_user
+from src.pharmaviyum.modules.auth.models import User
 
 
-# Role hierarchy (higher number = more permissions)
-ROLE_HIERARCHY = {
-    "cashier": 1,
-    "pharmacist": 2,
-    "manager": 3,
-    "admin": 4,
-    "superadmin": 5,
-}
+async def get_current_user(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """Return the canonical authenticated user from the database."""
+    return current_user
 
 
-def require_role(minimum_role: str):
+async def get_current_active_user_alias(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """Backward-compatible alias for routes using the legacy RBAC dependency."""
+    return current_user
+
+
+def require_role(minimum_role: str) -> Callable:
+    """Require a privileged role without trusting a client-controlled JWT claim.
+
+    Until a persisted role model is introduced, ``superuser`` is the only
+    authoritative privileged role. Other role names fail closed.
     """
-    Decorator to require minimum role for endpoint
-
-    Usage:
-        @router.get("/admin-only")
-        @require_role("admin")
-        async def admin_endpoint():
-            ...
-
-    Args:
-        minimum_role: Minimum role required
-    """
+    if minimum_role not in {"admin", "manager", "pharmacist", "cashier", "superadmin"}:
+        raise ValueError(f"Unknown role: {minimum_role}")
 
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            # Get credentials from kwargs (injected by FastAPI)
-            credentials = kwargs.get("credentials")
-            if not credentials:
+            current_user = kwargs.get("current_user")
+            if not isinstance(current_user, User):
                 raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Not authenticated",
                 )
-
-            # Decode token
-            payload = decode_access_token(credentials.credentials)
-            if not payload:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-                )
-
-            # Check role
-            user_role = payload.get("role")
-            if not user_role:
+            if not current_user.is_active:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Role not found in token",
+                    detail="Inactive user",
                 )
-
-            # Compare role hierarchy
-            user_level = ROLE_HIERARCHY.get(user_role, 0)
-            required_level = ROLE_HIERARCHY.get(minimum_role, 0)
-
-            if user_level < required_level:
-                logger.warning(
-                    f"Access denied: user role '{user_role}' < required '{minimum_role}'",
-                    extra={"user_id": payload.get("sub")},
-                )
+            if not current_user.is_superuser:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"Requires {minimum_role} role or higher",
                 )
-
-            # Add user to kwargs
-            kwargs["current_user"] = payload
-
             return await func(*args, **kwargs)
 
         return wrapper
@@ -92,36 +58,5 @@ def require_role(minimum_role: str):
     return decorator
 
 
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """
-    Dependency to get current authenticated user
-
-    Returns:
-        User payload from JWT token
-    """
-    payload = decode_access_token(credentials.credentials)
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        )
-
-    return payload
-
-
-async def get_current_active_user(
-    current_user: dict = Depends(get_current_user),
-) -> dict:
-    """
-    Dependency to get current active user
-
-    Checks if user is active (not disabled)
-    """
-    if not current_user.get("is_active", True):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User account is disabled"
-        )
-
-    return current_user
+# Existing patient routes import this exact name. It now returns the canonical User.
+get_current_active_user_legacy = get_current_active_user_alias
