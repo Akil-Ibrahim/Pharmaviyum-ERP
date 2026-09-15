@@ -52,7 +52,7 @@ def upgrade() -> None:
             ),
             sa.Column("loyalty_tier", sa.String(20), nullable=False, server_default="Bronze"),
             sa.Column("loyalty_points", sa.Integer(), nullable=False, server_default="0"),
-            sa.Column("total_purchases", sa.Integer(), nullable=False, server_default="0"),
+            sa.Column("total_purchases", sa.Float(), nullable=False, server_default="0"),
             sa.Column("visit_count", sa.Integer(), nullable=False, server_default="0"),
             sa.Column("last_visit_date", sa.DateTime(), nullable=True),
             sa.Column("notes", sa.Text(), nullable=True),
