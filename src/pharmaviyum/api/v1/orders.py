@@ -5,14 +5,31 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.pharmaviyum.crud.client import ClientCRUD
 from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.order import Order
+from src.pharmaviyum.models.user import User
+from src.pharmaviyum.modules.auth.deps import get_current_user
 from src.pharmaviyum.schemas.order_schema import OrderCreate, OrderResponse
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
 
+def require_superuser(current_user: User) -> None:
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrator privileges required",
+        )
+
+
 @router.post("/", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
-async def create_order(data: OrderCreate, db: AsyncSession = Depends(get_db)):
-    # ensure client exists
+async def create_order(
+    data: OrderCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # Creating orders changes client purchase statistics, so require an admin
+    # until pharmacy/tenant-level roles are persisted in the data model.
+    require_superuser(current_user)
+
     client_crud = ClientCRUD(db)
     client = await client_crud.get(data.client_id)
     if not client:
@@ -23,14 +40,16 @@ async def create_order(data: OrderCreate, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(order)
 
-    # update client purchase stats
     await client_crud.update_purchase_stats(data.client_id, data.total_amount)
-
     return order
 
 
 @router.get("/{order_id}", response_model=OrderResponse)
-async def get_order(order_id: int, db: AsyncSession = Depends(get_db)):
+async def get_order(
+    order_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     result = await db.execute(select(Order).where(Order.id == order_id))
     order = result.scalar_one_or_none()
     if not order:
