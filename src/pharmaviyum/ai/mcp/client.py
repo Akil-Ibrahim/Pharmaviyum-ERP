@@ -20,6 +20,7 @@ from uuid import UUID
 
 from src.pharmaviyum.core.logging import logger
 
+from .context import require_mcp_context
 from .registry import UserRole, registry
 
 
@@ -63,18 +64,25 @@ class MCPClient:
     ) -> ToolExecutionResult:
         """Call an MCP tool with retry while enforcing RBAC and tenant scope.
 
-        Authorization and tenant identity are supplied by the authenticated
-        application boundary, never by model-controlled tool arguments.
+        Explicit authorization arguments are accepted for trusted internal
+        callers. When omitted, the authenticated request context is required.
+        Model-controlled tool arguments are never used as authorization data.
         """
         start = time.perf_counter()
 
         if user_role is None or user_id is None or pharmacy_id is None:
-            return ToolExecutionResult(
-                tool_name=tool_name,
-                success=False,
-                error="MCP authorization and tenant context are required",
-                latency_ms=(time.perf_counter() - start) * 1000,
-            )
+            try:
+                context = require_mcp_context()
+            except PermissionError as exc:
+                return ToolExecutionResult(
+                    tool_name=tool_name,
+                    success=False,
+                    error=str(exc),
+                    latency_ms=(time.perf_counter() - start) * 1000,
+                )
+            user_role = context.user_role
+            user_id = context.user_id
+            pharmacy_id = context.pharmacy_id
 
         if self.enable_circuit_breaker and self._is_circuit_open(tool_name):
             logger.warning("Circuit breaker open for tool: %s", tool_name)
@@ -95,7 +103,6 @@ class MCPClient:
 
         retry_count = 0
         last_error: str | None = None
-
         for attempt in range(self.max_retries + 1):
             try:
                 result = await asyncio.wait_for(
@@ -136,10 +143,7 @@ class MCPClient:
                 )
             except asyncio.TimeoutError:
                 last_error = f"Tool {tool_name} timed out after {self.timeout_seconds}s"
-                logger.warning(
-                    last_error,
-                    extra={"tool": tool_name, "attempt": attempt + 1},
-                )
+                logger.warning(last_error, extra={"tool": tool_name, "attempt": attempt + 1})
             except PermissionError as exc:
                 last_error = str(exc)
                 logger.warning(
@@ -207,7 +211,10 @@ class MCPClient:
     def to_openai_tools(self, user_role: UserRole | None = None) -> list[dict[str, Any]]:
         """Expose only tools the caller is authorized to invoke."""
         if user_role is None:
-            return []
+            try:
+                user_role = require_mcp_context().user_role
+            except PermissionError:
+                return []
         return registry.to_openai_tools(user_role=user_role)
 
     def get_tools_by_category(self, category: str, user_role: UserRole | None = None) -> list[Any]:
