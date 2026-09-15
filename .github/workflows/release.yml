@@ -23,6 +23,7 @@ jobs:
   validate:
     name: Validate immutable release
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
       image_digest: ${{ steps.resolve.outputs.image_digest }}
     steps:
@@ -59,11 +60,12 @@ jobs:
   deploy-staging:
     name: Deploy staging
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: validate
     environment:
       name: staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ inputs.image_sha }}
           fetch-depth: 1
