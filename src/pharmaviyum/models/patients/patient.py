@@ -14,6 +14,7 @@ class Patient(Base):
     __tablename__ = "patients"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    pharmacy_id: Mapped[int | None] = mapped_column(Integer, index=True)
     external_id: Mapped[str | None] = mapped_column(String(100), unique=True, index=True)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
