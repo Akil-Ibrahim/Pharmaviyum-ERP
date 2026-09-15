@@ -1,5 +1,7 @@
-from pydantic import BaseModel
+from uuid import uuid4
+
 import pytest
+from pydantic import BaseModel
 
 from src.pharmaviyum.ai.mcp.client import MCPClient
 from src.pharmaviyum.ai.mcp.registry import MCPToolRegistry
@@ -46,7 +48,7 @@ async def test_registry_filters_tools_by_role() -> None:
 
 
 @pytest.mark.asyncio
-async def test_mcp_client_fails_closed_without_role() -> None:
+async def test_mcp_client_fails_closed_without_authorization_context() -> None:
     client = MCPClient(max_retries=0)
 
     result = await client.call_tool(
@@ -55,7 +57,7 @@ async def test_mcp_client_fails_closed_without_role() -> None:
     )
 
     assert result.success is False
-    assert result.error == "MCP authorization context is required"
+    assert result.error == "MCP authorization and tenant context are required"
 
 
 @pytest.mark.asyncio
@@ -78,7 +80,6 @@ async def test_mcp_client_rejects_unauthorized_role(monkeypatch) -> None:
     async def healthy(_: str) -> dict[str, str]:
         return {"status": "healthy", "details": ""}
 
-    monkeypatch.setattr(client_module, "registry", registry)
     from src.pharmaviyum.ai.mcp import tool_management
 
     monkeypatch.setattr(tool_management.health_checker, "check_tool_health", healthy)
@@ -88,6 +89,8 @@ async def test_mcp_client_rejects_unauthorized_role(monkeypatch) -> None:
             tool_name="restricted_test_tool",
             input_data={"value": "secret"},
             user_role="patient",
+            user_id=uuid4(),
+            pharmacy_id=1,
         )
         assert result.success is False
         assert result.error is not None
