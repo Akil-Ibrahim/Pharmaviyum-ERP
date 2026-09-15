@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [dev]
   workflow_dispatch:
-  workflow_run:
-    workflows: [Auto-fix lint baseline]
-    types: [completed]
-    branches: [dev]
 
 env:
   PYTHON_VERSION: '3.13'
@@ -42,45 +38,13 @@ jobs:
           pip install -r requirements.txt
           pip install 'ruff==0.12.10' 'black==25.1.0' 'isort==6.0.1' 'mypy==1.17.1'
       - name: Ruff diagnostics
-        shell: bash
-        run: |
-          set +e
-          ruff check src/ tests/ 2>&1 | tee /tmp/ruff.log
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            echo "::error title=Ruff failed::$(tail -n 30 /tmp/ruff.log | tr '\n' ' ')"
-          fi
-          exit "$status"
+        run: ruff check src/ tests/
       - name: Black diagnostics
-        shell: bash
-        run: |
-          set +e
-          black --check src/ tests/ 2>&1 | tee /tmp/black.log
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            echo "::error title=Black formatting failed::$(tail -n 30 /tmp/black.log | tr '\n' ' ')"
-          fi
-          exit "$status"
+        run: black --check src/ tests/
       - name: isort diagnostics
-        shell: bash
-        run: |
-          set +e
-          isort --check-only src/ tests/ 2>&1 | tee /tmp/isort.log
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            echo "::error title=isort failed::$(tail -n 30 /tmp/isort.log | tr '\n' ' ')"
-          fi
-          exit "$status"
+        run: isort --check-only src/ tests/
       - name: mypy diagnostics
-        shell: bash
-        run: |
-          set +e
-          mypy src/pharmaviyum/ 2>&1 | tee /tmp/mypy.log
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            echo "::error title=mypy failed::$(tail -n 30 /tmp/mypy.log | tr '\n' ' ')"
-          fi
-          exit "$status"
+        run: mypy src/pharmaviyum/
 
   test-unit:
     name: Unit Tests
@@ -165,25 +129,9 @@ jobs:
           pip install -r requirements.txt
           pip install 'pip-audit==2.9.0' 'bandit==1.8.6'
       - name: pip-audit diagnostics
-        shell: bash
-        run: |
-          set +e
-          pip-audit -r requirements.txt 2>&1 | tee /tmp/pip-audit.log
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            echo "::error title=pip-audit failed::$(tail -n 30 /tmp/pip-audit.log | tr '\n' ' ')"
-          fi
-          exit "$status"
+        run: pip-audit -r requirements.txt
       - name: Bandit diagnostics
-        shell: bash
-        run: |
-          set +e
-          bandit -r src/pharmaviyum/ -ll 2>&1 | tee /tmp/bandit.log
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            echo "::error title=Bandit failed::$(tail -n 40 /tmp/bandit.log | tr '\n' ' ')"
-          fi
-          exit "$status"
+        run: bandit -r src/pharmaviyum/ -ll
 
   rag-evaluation:
     name: RAG Safety Regression
@@ -252,5 +200,4 @@ jobs:
           name: release-manifest-${{ github.sha }}
           path: release/manifest.json
 
-  # Deployment is intentionally implemented in .github/workflows/release.yml.
-  # CI remains a non-mutating validation/build pipeline.
+# Deployment is intentionally implemented in .github/workflows/release.yml.
