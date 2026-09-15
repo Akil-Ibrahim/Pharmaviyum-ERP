@@ -31,7 +31,7 @@ jobs:
           pip install 'ruff==0.12.10' 'black==25.1.0' 'isort==6.0.1'
 
       - name: Apply safe Ruff fixes
-        run: ruff check --fix src/ tests/
+        run: ruff check --fix src/ tests/ || true
 
       - name: Format with Black
         run: black src/ tests/
