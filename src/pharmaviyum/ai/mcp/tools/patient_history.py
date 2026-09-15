@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.core.logging import logger
+from src.pharmaviyum.modules.patients.models import Patient
 
 from ..client import get_authorization_context
 from ..registry import registry
@@ -61,8 +62,6 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
     if auth_context is None:
         raise PermissionError("Trusted MCP tenant context is required for patient history")
 
-    # Lazy import to avoid circular dependencies
-    from src.pharmaviyum.modules.patients.models import Patient
     from src.pharmaviyum.shared.core.database import async_session_factory
 
     async with async_session_factory() as session:
