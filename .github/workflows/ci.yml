@@ -195,4 +195,4 @@ jobs:
           path: release/manifest.json
 
   # Deployment is intentionally implemented in .github/workflows/release.yml.
-  # CI must remain a non-mutating validation/build pipeline.
+  # CI remains a non-mutating validation/build pipeline.
