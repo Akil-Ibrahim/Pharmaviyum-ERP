@@ -1,8 +1,4 @@
-"""Application-layer repository contracts.
-
-Repositories are infrastructure details; application services depend on these
-ports rather than on SQLAlchemy implementations.
-"""
+"""Application-layer repository contracts."""
 
 from typing import Protocol, TypeVar
 
@@ -12,11 +8,15 @@ EntityT = TypeVar("EntityT")
 
 
 class Repository(Protocol[EntityT]):
-    """Minimal repository contract used by application services."""
+    """Minimal persistence contract used by application services."""
 
     async def get_by_id(self, id: int) -> EntityT | None: ...
 
     async def create(self, entity: EntityT) -> EntityT: ...
+
+    async def update(self, entity: EntityT) -> EntityT: ...
+
+    async def delete(self, id: int) -> bool: ...
 
 
 class PatientRepositoryPort(Repository[Patient], Protocol):
@@ -25,3 +25,19 @@ class PatientRepositoryPort(Repository[Patient], Protocol):
     async def get_by_phone(self, phone: str) -> Patient | None: ...
 
     async def get_by_email(self, email: str) -> Patient | None: ...
+
+    async def get_by_id_with_relations(self, id: int) -> Patient | None: ...
+
+    async def search(self, **filters: object) -> tuple[list[Patient], int]: ...
+
+    async def soft_delete(self, id: int) -> bool: ...
+
+    async def get_ai_profile(self, id: int) -> dict | None: ...
+
+    async def count(self, **filters: object) -> int: ...
+
+    async def get_loyalty_tiers_stats(self) -> dict: ...
+
+    async def get_country_stats(self) -> dict: ...
+
+    async def record_visit(self, id: int, purchase_amount: int = 0) -> Patient | None: ...
