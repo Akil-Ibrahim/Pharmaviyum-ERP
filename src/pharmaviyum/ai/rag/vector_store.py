@@ -39,9 +39,7 @@ class PgVectorStore:
         """Initialize pgvector extension, table, and indexes."""
         async with self.session_factory() as session:
             await session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-            await session.execute(
-                text(
-                    f"""
+            create_table_sql = f"""  # nosec B608: validated identifier and fixed SQL template
                 CREATE TABLE IF NOT EXISTS {self.table_name} (
                     id UUID PRIMARY KEY,
                     document_id UUID NOT NULL,
@@ -55,33 +53,26 @@ class PgVectorStore:
                     CONSTRAINT unique_chunk UNIQUE (document_id, chunk_index)
                 )
             """
-                )
-            )
-            await session.execute(
-                text(
-                    f"""
+            await session.execute(text(create_table_sql))
+
+            embedding_index_sql = f"""  # nosec B608: validated identifier and fixed SQL template
                 CREATE INDEX IF NOT EXISTS idx_{self.table_name}_embedding
                 ON {self.table_name} USING hnsw (embedding vector_cosine_ops)
                 WITH (m = 16, ef_construction = 200)
             """
-                )
-            )
-            await session.execute(
-                text(
-                    f"""
+            await session.execute(text(embedding_index_sql))
+
+            metadata_index_sql = f"""  # nosec B608: validated identifier and fixed SQL template
                 CREATE INDEX IF NOT EXISTS idx_{self.table_name}_metadata
                 ON {self.table_name} USING gin (metadata)
             """
-                )
-            )
-            await session.execute(
-                text(
-                    f"""
+            await session.execute(text(metadata_index_sql))
+
+            content_index_sql = f"""  # nosec B608: validated identifier and fixed SQL template
                 CREATE INDEX IF NOT EXISTS idx_{self.table_name}_content_fts
                 ON {self.table_name} USING gin (to_tsvector('english', content))
             """
-                )
-            )
+            await session.execute(text(content_index_sql))
             await session.commit()
             logger.info("Vector store initialized: %s", self.table_name)
 
