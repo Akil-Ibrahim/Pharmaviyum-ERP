@@ -7,10 +7,12 @@ production you should replace with your full auth flow and role checks.
 """
 
 from typing import Callable
-from starlette.types import ASGIApp
-from starlette.middleware.base import BaseHTTPMiddleware
+
+import jwt
 from fastapi import Request
-from jose import jwt
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp
+
 from src.pharmaviyum.config import settings
 
 
@@ -35,9 +37,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         user = None
         if token and self.secret:
             try:
-                payload = jwt.decode(token, self.secret, algorithms=[settings.JWT_ALGORITHM])  # type: ignore[arg-type]
+                payload = jwt.decode(token, self.secret, algorithms=[settings.JWT_ALGORITHM])
                 user = {"username": payload.get("sub")}
-            except Exception:
+            except jwt.PyJWTError:
                 user = None
 
         request.state.user = user
