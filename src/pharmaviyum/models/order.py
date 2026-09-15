@@ -7,12 +7,12 @@ from src.pharmaviyum.db.base import Base
 
 
 class Order(Base):
-	__tablename__ = "orders"
+    __tablename__ = "orders"
 
-	id = Column(Integer, primary_key=True, index=True)
-	client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
-	total_amount = Column(Float, default=0.0)
-	status = Column(String(50), default="pending")
-	created_at = Column(DateTime, default=datetime.utcnow)
+    id = Column(Integer, primary_key=True, index=True)
+    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False, index=True)
+    total_amount = Column(Float, default=0.0)
+    status = Column(String(50), default="pending")
+    created_at = Column(DateTime, default=datetime.utcnow)
 
-	client = relationship("Client", backref="orders")
+    patient = relationship("Patient", backref="orders")
