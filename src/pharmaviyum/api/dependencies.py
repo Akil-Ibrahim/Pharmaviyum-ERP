@@ -1,59 +1,42 @@
-"""API-level authentication dependencies.
+"""API-level authorization dependencies.
 
-The application uses the canonical JWT authentication path. Legacy API-key
-roles are retained only as an explicit compatibility layer backed by
-environment configuration; there are no hardcoded credentials or implicit
-development bypasses.
+Authentication is provided by the canonical JWT dependency. Authorization is
+based on the persisted User model; no client-controlled role claim or static
+API key can grant privileges.
 """
 
 from __future__ import annotations
 
-from fastapi import Depends, Header, HTTPException, status
-from pydantic import SecretStr
+from typing import Annotated
 
-from src.pharmaviyum.ai.config import settings
-from src.pharmaviyum.modules.auth.deps import get_current_user
+from fastapi import Depends, HTTPException, status
+
+from src.pharmaviyum.modules.auth.deps import get_current_active_user
+from src.pharmaviyum.modules.auth.models import User
+
+CurrentUser = Annotated[User, Depends(get_current_active_user)]
 
 
-async def get_current_role(
-    current_user: dict = Depends(get_current_user),
-    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
-) -> str:
-    """Return a role from the authenticated JWT user.
-
-    The legacy X-API-Key header is accepted only when an explicitly
-    configured compatibility key is present. It is never optional in a
-    protected endpoint and no development-mode bypass is allowed.
-    """
-    role = current_user.get("role")
-    if isinstance(role, str) and role:
-        return role
-
-    # The current User model has no persisted role field. Superusers map to
-    # the administrative role; ordinary users must not gain a privileged role
-    # merely by presenting a client-controlled claim.
-    if current_user.get("is_superuser") is True:
+async def get_current_role(current_user: CurrentUser) -> str:
+    """Return the only role currently represented by the User model."""
+    if current_user.is_superuser:
         return "admin"
-
-    configured_keys: dict[str, SecretStr | None] = {
-        "pharmacist": getattr(settings, "pharmacist_api_key", None),
-        "admin": getattr(settings, "admin_api_key", None),
-        "system": getattr(settings, "system_api_key", None),
-    }
-    for configured_role, configured_key in configured_keys.items():
-        if configured_key is not None and x_api_key == configured_key.get_secret_value():
-            return configured_role
-
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
-        detail="No authorized role is assigned to this account",
+        detail="No privileged role is assigned to this account",
     )
 
 
 def require_role(required_roles: list[str]):
-    """Dependency factory enforcing an explicitly configured role."""
+    """Dependency factory enforcing roles backed by persisted authorization."""
     if not required_roles:
         raise ValueError("required_roles must not be empty")
+    unsupported = set(required_roles) - {"admin"}
+    if unsupported:
+        raise ValueError(
+            "Unsupported roles until a persisted role model is implemented: "
+            + ", ".join(sorted(unsupported))
+        )
 
     async def role_checker(role: str = Depends(get_current_role)) -> str:
         if role not in required_roles:
