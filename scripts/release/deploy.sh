@@ -2,8 +2,10 @@
 set -Eeuo pipefail
 
 # Deploy one immutable application image to a Docker Compose host.
-# Required: APP_IMAGE, DATABASE_URL, PGVECTOR_DATABASE_URL, REDIS_URL, OLLAMA_BASE_URL.
-# Optional: COMPOSE_FILE, COMPOSE_PROJECT_NAME, RELEASE_HEALTH_URL.
+# Migrations run before switching the API. A failed migration never replaces the
+# running application. After a successful migration, application rollback is
+# only attempted when the new container fails its health gate; schema rollback
+# is deliberately not automatic.
 
 : "${APP_IMAGE:?APP_IMAGE must be set to an immutable GHCR image reference}"
 : "${DATABASE_URL:?DATABASE_URL must be set}"
@@ -36,23 +38,21 @@ if docker inspect pharmaviyum-api >/dev/null 2>&1; then
   previous_image="$(docker inspect --format '{{.Config.Image}}' pharmaviyum-api)"
 fi
 
-rollback() {
+rollback_app() {
   if [[ -n "$previous_image" && "$previous_image" != "$APP_IMAGE" ]]; then
-    echo "Deployment failed; rolling back to $previous_image"
+    echo "Application health gate failed; rolling back application image to $previous_image"
     APP_IMAGE="$previous_image" "${compose[@]}" up -d --no-build api || true
   fi
 }
-trap rollback ERR
+
+trap 'rollback_app' ERR
 
 echo "Pulling immutable image: $APP_IMAGE"
 docker pull "$APP_IMAGE"
-
-echo "Running database migrations once"
+echo "Running database migrations before application switch"
 "${compose[@]}" --profile migration run --rm migration
-
-echo "Starting API with immutable image"
+echo "Migration completed. Switching API to immutable image"
 "${compose[@]}" up -d --no-build api
-
 echo "Waiting for health endpoint: $RELEASE_HEALTH_URL"
 for attempt in {1..30}; do
   if curl --fail --silent --show-error "$RELEASE_HEALTH_URL" >/dev/null; then
@@ -63,5 +63,5 @@ for attempt in {1..30}; do
   sleep 2
 done
 
- echo "Release failed health check"
+echo "Release failed health check; application rollback will be attempted"
 exit 1
