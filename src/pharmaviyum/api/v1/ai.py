@@ -41,9 +41,9 @@ async def _tenant_context(
 @router.post("/query", response_model=AgentResponse, status_code=status.HTTP_200_OK)
 async def query_agent(
     request: QueryRequest,
-    harness=Depends(get_agent_harness),
     current_user: CurrentUser,
     session: SessionDep,
+    harness=Depends(get_agent_harness),
 ):
     """Synchronous AI query bound to the authenticated pharmacy tenant."""
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
@@ -104,9 +104,9 @@ async def query_agent(
 @router.post("/query/stream")
 async def query_agent_stream(
     request: QueryRequest,
-    harness=Depends(get_agent_harness),
     current_user: CurrentUser,
     session: SessionDep,
+    harness=Depends(get_agent_harness),
 ):
     """Streaming AI query bound to the authenticated pharmacy tenant."""
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
