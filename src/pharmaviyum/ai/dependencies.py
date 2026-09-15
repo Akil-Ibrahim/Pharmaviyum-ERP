@@ -107,7 +107,6 @@ class AIComponents:
     def __init__(self):
         self._initialized = False
         self._lock = asyncio.Lock()
-
         self.rag_pipeline: LangGraphRAG | None = None
         self.ingestion_orchestrator: IngestionOrchestrator | None = None
         self.agent_harness: AgentHarness | None = None
@@ -127,7 +126,6 @@ class AIComponents:
                 return
 
             logger.info("Initializing AI components...")
-
             vector_store = PgVectorStore(
                 session_factory=db_session_factory,
                 table_name=settings.pgvector.table_name,
@@ -143,18 +141,17 @@ class AIComponents:
                 use_cache=True,
                 redis_client=redis,
             )
-
             self.ingestion_orchestrator = IngestionOrchestrator(
                 session_factory=db_session_factory,
                 redis_client=redis,
                 embeddings_provider="ollama",
             )
-
             memory = DialogueMemory(
                 redis_client=redis,
                 max_short_term_messages=settings.agent.max_history_messages,
                 summarization_threshold=settings.agent.summarization_threshold,
             )
+            guardrails = MedicalGuardrails(country_code=settings.halal.default_country)
 
             self.checkpointer = AgentCheckpointer(
                 database_url=settings.pgvector.database_url.get_secret_value().replace(
@@ -162,17 +159,15 @@ class AIComponents:
                 ),
             )
             self.checkpoint_saver = await self.checkpointer.initialize()
-
             self.rag_pipeline = LangGraphRAG(
                 vector_store=vector_store,
                 embeddings=embeddings,
                 llm=get_llm_main(),
                 fast_llm=get_llm_fast(),
-                guardrails=MedicalGuardrails(country_code=settings.halal.default_country),
+                guardrails=guardrails,
                 checkpointer=self.checkpoint_saver,
             )
 
-            guardrails = MedicalGuardrails(country_code=settings.halal.default_country)
             cache = PromptCache(
                 redis_client=redis,
                 similarity_threshold=settings.rag.similarity_threshold,
@@ -202,7 +197,6 @@ class AIComponents:
                 eval_llm=get_llm_complex(),
                 evaluator_model_name=settings.ollama.complex_model,
             )
-
             self._initialized = True
             logger.info("AI components initialized successfully")
 
