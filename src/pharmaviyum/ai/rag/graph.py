@@ -1,5 +1,4 @@
-"""
-Medical RAG pipeline orchestrated by LangGraph.
+"""Medical RAG pipeline orchestrated by LangGraph.
 
 Production query path:
 
@@ -11,6 +10,11 @@ If retrieval never produces a relevant document, the graph fails closed via
 `no_answer` instead of generating from ungraded evidence.
 
 Ingestion (chunk -> embed -> upsert) stays outside the graph as a batch job.
+
+Architectural boundary:
+LangGraph owns AI/RAG orchestration only. Concrete PostgreSQL/embedding/LLM
+implementations are supplied through ports and may live in infrastructure.
+The graph does not mutate CRM/domain state.
 """
 
 from __future__ import annotations
@@ -25,11 +29,10 @@ from langgraph.graph import END, StateGraph
 from src.pharmaviyum.core.logging import logger
 
 from .contextual_compression import ContextualCompressor
-from .embeddings import EmbeddingsProvider
+from .ports import EmbeddingsPort, GuardrailsPort, LLMPort, RetrieverPort
 from .query_transformer import QueryTransformer
 from .schemas import QueryContext, RAGResponse, RetrievalResult
 from .state import RAGState
-from .vector_store import PgVectorStore
 
 
 class LangGraphRAG:
@@ -42,14 +45,14 @@ class LangGraphRAG:
 
     def __init__(
         self,
-        vector_store: PgVectorStore,
-        embeddings: EmbeddingsProvider,
-        llm: Any,
-        fast_llm: Any | None = None,
-        guardrails: Any | None = None,
+        vector_store: RetrieverPort,
+        embeddings: EmbeddingsPort,
+        llm: LLMPort,
+        fast_llm: LLMPort | None = None,
+        guardrails: GuardrailsPort | None = None,
         checkpointer: Any | None = None,
     ) -> None:
-        """Initialize the production RAG graph with an explicit checkpointer."""
+        """Initialize production RAG with explicit dependency boundaries."""
         if checkpointer is None:
             raise ValueError(
                 "LangGraphRAG requires an explicit production checkpointer; "
@@ -401,12 +404,11 @@ IMPORTANT SAFETY RULES:
 - Never recommend dosages not explicitly stated in sources
 - Always mention contraindications if relevant
 - Flag potential drug interactions
-- For controlled substances, mention regulatory requirements
-- End with: "Consult a licensed pharmacist for personalized advice."
+- For medical emergencies, advise immediate professional care
+
+QUESTION:
+{question}
 
 SOURCES:
 {sources_text}
-
-QUESTION: {question}
-
-ANSWER:"""
+"""
