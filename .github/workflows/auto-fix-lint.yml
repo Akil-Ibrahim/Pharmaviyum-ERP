@@ -1,0 +1,50 @@
+name: Auto-fix lint baseline
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies and formatters
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install 'ruff==0.12.10' 'black==25.1.0' 'isort==6.0.1'
+
+      - name: Apply safe Ruff fixes
+        run: ruff check --fix src/ tests/
+
+      - name: Format with Black
+        run: black src/ tests/
+
+      - name: Sort imports
+        run: isort src/ tests/
+
+      - name: Commit safe lint fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No automatic lint changes required."
+            exit 0
+          fi
+          git add src/ tests/
+          git commit -m "style: apply safe lint fixes"
+          git push origin HEAD:dev
