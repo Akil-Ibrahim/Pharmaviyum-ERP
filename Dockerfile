@@ -1,16 +1,11 @@
 # ============================================================================
-# PHARMAVIYUM AI - Multi-stage Dockerfile
-# Python 3.14 + Tesseract OCR + pgvector support
+# PHARMAVIYUM AI - Production Dockerfile
 # ============================================================================
 
-# ----------------------------------------------------------------------------
-# Stage 1: Builder — install heavy dependencies
-# ----------------------------------------------------------------------------
-FROM python:3.14-slim AS builder
+FROM python:3.13-slim AS builder
 
 WORKDIR /app
 
-# Install build tools (needed for packages without Python 3.14 wheels)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
@@ -21,29 +16,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Copy requirements
-COPY requirements-ai.txt .
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Install Python dependencies
-# Using --no-cache-dir to keep image small
-RUN pip install --no-cache-dir -r requirements-ai.txt
-
-# ----------------------------------------------------------------------------
-# Stage 2: Production — minimal runtime image
-# ----------------------------------------------------------------------------
-FROM python:3.14-slim AS production
+FROM python:3.13-slim AS production
 
 LABEL maintainer="Pharmaviyum Team"
 LABEL description="Enterprise AI/LLM layer for pharmaceutical CRM"
-LABEL version="1.0.0"
 
 WORKDIR /app
 
-# Install runtime dependencies only
-# Tesseract with multi-language support (vi, ar, th, id, en)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     libjpeg62-turbo \
@@ -57,29 +41,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python packages from builder stage
-COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
-
-# Copy application code
+COPY --from=builder /install /usr/local
 COPY src/ ./src/
 COPY alembic/ ./alembic/
 COPY alembic.ini .
-COPY requirements-ai.txt .
 
-# Create non-root user for security
-RUN groupadd -r appgroup && \
-    useradd -r -g appgroup -u 1000 -m appuser && \
+RUN groupadd --system appgroup && \
+    useradd --system --gid appgroup --uid 1000 --create-home appuser && \
     chown -R appuser:appgroup /app
 
 USER appuser
 
-# Expose port
 EXPOSE 8000
 
-# Health check — lightweight curl-based probe
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -fsS http://localhost:8000/health || exit 1
 
-# Default command: run migrations + start API
-CMD ["sh", "-c", "alembic upgrade head && uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port 8000"]
+# Database migrations are a release concern and should run as a separate deployment step.
+CMD ["uvicorn", "src.pharmaviyum.main:app", "--host", "0.0.0.0", "--port", "8000"]
