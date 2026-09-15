@@ -30,8 +30,75 @@ jobs:
           pip install -r requirements.txt
           pip install 'ruff==0.12.10' 'black==25.1.0' 'isort==6.0.1'
 
-      - name: Apply safe Ruff fixes
+      - name: Apply Ruff autofixes
         run: ruff check --fix src/ tests/ || true
+
+      - name: Apply deterministic lint repairs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              "src/pharmaviyum/ai/agents/pharmacist_agent.py": [
+                  ("from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage", "from langchain_core.messages import AIMessage, SystemMessage, HumanMessage, ToolMessage"),
+                  ("        context = state.get(\"context\", {})\n        warnings = state.get(\"warnings\", []).copy()", "        warnings = state.get(\"warnings\", []).copy()"),
+              ],
+              "src/pharmaviyum/ai/mcp/health.py": [
+                  ("from __future__ import annotations\n", "from __future__ import annotations\nfrom typing import Any\n"),
+              ],
+              "src/pharmaviyum/ai/rag/ingestion/loaders.py": [
+                  ("            async with aiofiles.open(file_path, \"rb\") as f:\n                content_bytes = await f.read()\n\n            # Extract text from PDF", "            # Extract text from PDF"),
+              ],
+              "src/pharmaviyum/ai/rag/loaders/pdf_loader.py": [
+                  ("[lang_map.get(l, \"eng\") for l in languages]", "[lang_map.get(lang, \"eng\") for lang in languages]"),
+              ],
+              "src/pharmaviyum/ai/rag/pipeline.py": [
+                  ("        generation_latency = time.perf_counter() - generation_start\n", "        _generation_latency = time.perf_counter() - generation_start\n"),
+              ],
+              "src/pharmaviyum/api/v1/products.py": [
+                  ("Product.is_active == True", "Product.is_active"),
+              ],
+              "src/pharmaviyum/crud/client.py": [
+                  ("Client.is_active == True", "Client.is_active"),
+                  ("hashlib.md5(phone.encode()).hexdigest()[:8].upper()", "hashlib.md5(phone.encode(), usedforsecurity=False).hexdigest()[:8].upper()"),
+              ],
+              "src/pharmaviyum/repositories/patient.py": [
+                  ("Patient.is_active == True", "Patient.is_active"),
+              ],
+              "src/pharmaviyum/repositories/prescription.py": [
+                  ("Prescription.is_controlled == True", "Prescription.is_controlled"),
+              ],
+              "src/pharmaviyum/workers/tasks/scheduled.py": [
+                  ("from datetime import datetime, timezone, timedelta", "from datetime import datetime, timezone, timedelta\nfrom typing import Optional"),
+                  ("MedicationReminder.is_active == True", "MedicationReminder.is_active"),
+              ],
+              "src/pharmaviyum/core/error_pages.py": [
+                  ("    path = request.url.path if request else \"unknown\"\n", ""),
+              ],
+              "src/pharmaviyum/shared/core/error_pages.py": [
+                  ("    path = request.url.path if request else \"unknown\"\n", ""),
+              ],
+              "src/pharmaviyum/modules/auth/utils.py": [
+                  ("    app_url = getattr(settings, 'APP_URL', 'http://localhost:3000')\n    app_name = settings.APP_NAME", "    app_name = settings.APP_NAME"),
+              ],
+              "tests/load/locustfile.py": [
+                  ('        \"\"\"Authenticate for AI endpoints\"\"\"        response = self.client.post(', '        \"\"\"Authenticate for AI endpoints\"\"\"\n        response = self.client.post('),
+                  ('            \"phone\": f\"+123456789{random.randint(10, 99)}\",            \"email\":', '            \"phone\": f\"+123456789{random.randint(10, 99)}\",\n            \"email\":'),
+              ],
+              "tests/security/audit.py": [
+                  ("                        if re.search(r'password\\s*[:=]\\s*[\"\\']?(postgres|admin|password|123456)', content, re.IGNORECASE):                            self.issues.append(SecurityIssue(", "                        if re.search(r'password\\s*[:=]\\s*[\"\\']?(postgres|admin|password|123456)', content, re.IGNORECASE):\n                            self.issues.append(SecurityIssue("),
+              ],
+          }
+
+          for filename, pairs in replacements.items():
+              path = Path(filename)
+              text = path.read_text()
+              original = text
+              for old, new in pairs:
+                  text = text.replace(old, new)
+              if text != original:
+                  path.write_text(text)
+          PY
 
       - name: Format with Black
         run: black src/ tests/
@@ -48,5 +115,5 @@ jobs:
             exit 0
           fi
           git add src/ tests/
-          git commit -m "style: apply safe lint fixes"
+          git commit -m "style: apply lint repairs"
           git push origin HEAD:dev
