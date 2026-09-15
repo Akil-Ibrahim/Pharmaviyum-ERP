@@ -5,8 +5,8 @@ from contextlib import asynccontextmanager
 
 import redis.asyncio as aioredis
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 
 from src.pharmaviyum.ai.config import settings
@@ -63,15 +63,14 @@ app = FastAPI(
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(LoggingMiddleware)
 
-# Production CORS must be explicit. Development keeps the previous permissive behavior.
-allowed_origins = ["*"]
-if settings.environment == "production":
-    allowed_origins = []
+allowed_origins = settings.cors_origins
+if settings.environment != "production" and not allowed_origins:
+    allowed_origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=settings.environment != "production",
+    allow_credentials=settings.environment != "production" or bool(allowed_origins),
     allow_methods=["*"] if settings.environment != "production" else ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["*"] if settings.environment != "production" else ["Authorization", "Content-Type", "X-Request-ID"],
 )
