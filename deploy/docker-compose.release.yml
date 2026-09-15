@@ -3,8 +3,17 @@ services:
     image: ${APP_IMAGE:?APP_IMAGE is required}
     container_name: pharmaviyum-api
     restart: unless-stopped
+    init: true
     ports:
       - "8000:8000"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 512
+    stop_grace_period: 30s
+    labels:
+      org.opencontainers.image.revision: ${IMAGE_SHA:-unknown}
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-staging}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
