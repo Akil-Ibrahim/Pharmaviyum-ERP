@@ -10,6 +10,7 @@ Best practice 2026:
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Literal
 
@@ -21,38 +22,23 @@ VersionStatus = Literal["active", "archived", "deleted"]
 
 
 class DocumentVersionManager:
-    """
-    Manages document versions in the vector store.
+    """Manage document versions in the vector store."""
 
-    Features:
-    - Version tracking via metadata (version_number, is_active, superseded_by)
-    - Soft-delete for audit trail
-    - Version-aware filtering in vector search
-    """
+    _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
     def __init__(
         self,
         session_factory,
         table_name: str = "document_chunks",
     ):
+        if not self._IDENTIFIER_RE.fullmatch(table_name):
+            raise ValueError("table_name must be a simple SQL identifier")
         self.session_factory = session_factory
         self.table_name = table_name
 
-    async def archive_old_versions(
-        self,
-        source: str,
-        new_version: int,
-    ) -> int:
-        """
-        Archive all previous versions of a document source.
-
-        Marks old chunks as 'archived' and links them to the new version.
-
-        Returns:
-            Number of chunks archived
-        """
+    async def archive_old_versions(self, source: str, new_version: int) -> int:
+        """Archive all previous versions of a document source."""
         async with self.session_factory() as session:
-            # Find all active chunks for this source with older versions
             query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""
                 UPDATE {self.table_name}
@@ -65,12 +51,11 @@ class DocumentVersionManager:
                     'archived_at', :now::text
                 )
                 WHERE metadata->>'source' = :source
-                  AND (metadata->>'version_status' IS NULL 
+                  AND (metadata->>'version_status' IS NULL
                        OR metadata->>'version_status' = 'active')
                   AND (metadata->>'version_number')::int < :new_version
             """
             )
-
             result = await session.execute(
                 query,
                 {
@@ -79,15 +64,12 @@ class DocumentVersionManager:
                     "now": datetime.utcnow().isoformat(),
                 },
             )
-
             await session.commit()
             archived_count = result.rowcount
-
             if archived_count > 0:
                 logger.info(
                     f"Archived {archived_count} chunks from previous versions of {source}"
                 )
-
             return archived_count
 
     async def get_next_version(self, source: str) -> int:
@@ -103,23 +85,12 @@ class DocumentVersionManager:
                 WHERE metadata->>'source' = :source
             """
             )
-
             result = await session.execute(query, {"source": source})
             return result.scalar_one()
 
-    async def rollback_to_version(
-        self,
-        source: str,
-        target_version: int,
-    ) -> int:
-        """
-        Rollback: archive current version and restore target version.
-
-        Returns:
-            Number of chunks affected
-        """
+    async def rollback_to_version(self, source: str, target_version: int) -> int:
+        """Rollback to a previous document version."""
         async with self.session_factory() as session:
-            # Archive current active version
             archive_query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""
                 UPDATE {self.table_name}
@@ -134,7 +105,6 @@ class DocumentVersionManager:
             )
             await session.execute(archive_query, {"source": source})
 
-            # Restore target version
             restore_query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""
                 UPDATE {self.table_name}
@@ -149,15 +119,10 @@ class DocumentVersionManager:
             )
             result = await session.execute(
                 restore_query,
-                {
-                    "source": source,
-                    "target_version": target_version,
-                },
+                {"source": source, "target_version": target_version},
             )
-
             await session.commit()
             restored_count = result.rowcount
-
             logger.info(
                 f"Rolled back {source} to version {target_version} ({restored_count} chunks)"
             )
@@ -168,7 +133,7 @@ class DocumentVersionManager:
         async with self.session_factory() as session:
             query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""
-                SELECT 
+                SELECT
                     (metadata->>'version_number')::int as version,
                     metadata->>'version_status' as status,
                     COUNT(*) as chunk_count,
@@ -181,19 +146,14 @@ class DocumentVersionManager:
                 ORDER BY version DESC
             """
             )
-
             result = await session.execute(query, {"source": source})
             return [
                 {
                     "version": row.version,
                     "status": row.status,
                     "chunk_count": row.chunk_count,
-                    "first_seen": (
-                        row.first_seen.isoformat() if row.first_seen else None
-                    ),
-                    "last_updated": (
-                        row.last_updated.isoformat() if row.last_updated else None
-                    ),
+                    "first_seen": row.first_seen.isoformat() if row.first_seen else None,
+                    "last_updated": row.last_updated.isoformat() if row.last_updated else None,
                 }
                 for row in result
             ]
