@@ -58,10 +58,6 @@ jobs:
               "src/pharmaviyum/api/v1/products.py": [
                   ("Product.is_active == True", "Product.is_active"),
               ],
-              "src/pharmaviyum/crud/client.py": [
-                  ("Client.is_active == True", "Client.is_active"),
-                  ("hashlib.md5(phone.encode()).hexdigest()[:8].upper()", "hashlib.md5(phone.encode(), usedforsecurity=False).hexdigest()[:8].upper()"),
-              ],
               "src/pharmaviyum/repositories/patient.py": [
                   ("Patient.is_active == True", "Patient.is_active"),
               ],
@@ -92,6 +88,8 @@ jobs:
 
           for filename, pairs in replacements.items():
               path = Path(filename)
+              if not path.exists():
+                  continue
               text = path.read_text()
               original = text
               for old, new in pairs:
