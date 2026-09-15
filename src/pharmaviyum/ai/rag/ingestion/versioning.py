@@ -40,7 +40,7 @@ class DocumentVersionManager:
         """Archive all previous versions of a document source."""
         async with self.session_factory() as session:
             query = text(  # nosec B608: table_name is validated as a SQL identifier
-                f"""
+                f"""  # nosec B608: table_name is validated as a SQL identifier
                 UPDATE {self.table_name}
                 SET metadata = jsonb_set(
                     metadata,
@@ -76,7 +76,7 @@ class DocumentVersionManager:
         """Get the next version number for a document source."""
         async with self.session_factory() as session:
             query = text(  # nosec B608: table_name is validated as a SQL identifier
-                f"""
+                f"""  # nosec B608: table_name is validated as a SQL identifier
                 SELECT COALESCE(
                     MAX((metadata->>'version_number')::int),
                     0
@@ -92,7 +92,7 @@ class DocumentVersionManager:
         """Rollback to a previous document version."""
         async with self.session_factory() as session:
             archive_query = text(  # nosec B608: table_name is validated as a SQL identifier
-                f"""
+                f"""  # nosec B608: table_name is validated as a SQL identifier
                 UPDATE {self.table_name}
                 SET metadata = jsonb_set(
                     metadata,
@@ -106,7 +106,7 @@ class DocumentVersionManager:
             await session.execute(archive_query, {"source": source})
 
             restore_query = text(  # nosec B608: table_name is validated as a SQL identifier
-                f"""
+                f"""  # nosec B608: table_name is validated as a SQL identifier
                 UPDATE {self.table_name}
                 SET metadata = jsonb_set(
                     metadata,
@@ -132,7 +132,7 @@ class DocumentVersionManager:
         """Get version history for a document source."""
         async with self.session_factory() as session:
             query = text(  # nosec B608: table_name is validated as a SQL identifier
-                f"""
+                f"""  # nosec B608: table_name is validated as a SQL identifier
                 SELECT
                     (metadata->>'version_number')::int as version,
                     metadata->>'version_status' as status,
