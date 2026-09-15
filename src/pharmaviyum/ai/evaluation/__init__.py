@@ -6,9 +6,10 @@ Public API:
 - BenchmarkRunner: Automated dataset runner with aggregation
 - GOLDEN_DATASET: Pre-defined pharmaceutical test cases
 """
-from .evaluator import AgentEvaluator, EvaluationResult
-from .benchmark import BenchmarkRunner, BenchmarkResult
+
+from .benchmark import BenchmarkResult, BenchmarkRunner
 from .datasets import GOLDEN_DATASET, EvaluationCase
+from .evaluator import AgentEvaluator, EvaluationResult
 
 __all__ = [
     "AgentEvaluator",

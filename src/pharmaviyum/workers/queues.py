@@ -2,35 +2,36 @@
 Queue definitions for different task types
 Best practice 2026: Separate queues for different priorities
 """
+
 from enum import Enum
 
 
 class TaskQueue(str, Enum):
     """
     Task queue types
-    
+
     Separation allows:
     - Independent scaling per queue
     - Priority-based processing
     - Isolation of critical tasks
     """
-    
+
     # Critical queues (process first)
     CRITICAL = "critical"  # Security alerts, system health
     NOTIFICATIONS = "notifications"  # Patient notifications (Zalo/LINE/WhatsApp)
-    
+
     # Business queues
     POS_SYNC = "pos_sync"  # KiotViet/Sapo/Viettel sync
     ORDERS = "orders"  # Order processing
     PRESCRIPTIONS = "prescriptions"  # Prescription processing
-    
+
     # AI queues (long-running)
     AI_TASKS = "ai_tasks"  # Mortarium AI requests
-    
+
     # Low priority
     ANALYTICS = "analytics"  # Report generation
     CLEANUP = "cleanup"  # Data cleanup, cache invalidation
-    
+
     # Dead letter queue (failed tasks)
     DEAD_LETTER = "dead_letter"
 

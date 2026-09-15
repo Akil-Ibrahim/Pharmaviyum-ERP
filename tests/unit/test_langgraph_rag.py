@@ -19,15 +19,18 @@ def test_route_after_grade_sufficient(rag: LangGraphRAG) -> None:
 def test_route_after_grade_rewrites_until_budget_is_exhausted(
     rag: LangGraphRAG,
 ) -> None:
-    assert rag._route_after_grade(
-        {"grade_decision": "insufficient", "rewrite_count": 0}
-    ) == "rewrite"
-    assert rag._route_after_grade(
-        {"grade_decision": "insufficient", "rewrite_count": 1}
-    ) == "rewrite"
-    assert rag._route_after_grade(
-        {"grade_decision": "insufficient", "rewrite_count": 2}
-    ) == "give_up"
+    assert (
+        rag._route_after_grade({"grade_decision": "insufficient", "rewrite_count": 0})
+        == "rewrite"
+    )
+    assert (
+        rag._route_after_grade({"grade_decision": "insufficient", "rewrite_count": 1})
+        == "rewrite"
+    )
+    assert (
+        rag._route_after_grade({"grade_decision": "insufficient", "rewrite_count": 2})
+        == "give_up"
+    )
 
 
 def test_thread_id_is_namespaced_and_unique_without_caller_id(

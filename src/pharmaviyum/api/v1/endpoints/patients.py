@@ -2,24 +2,23 @@
 Patient API endpoints - Rewritten with 2026 best practices
 Uses Service layer, Response Envelope, Pagination, RBAC, Feature Flags
 """
-from fastapi import APIRouter, Depends, Query, status, Request
+
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.pharmaviyum.core.database import get_db
-from src.pharmaviyum.core.uow import UnitOfWork
-from src.pharmaviyum.core.schemas import ResponseEnvelope, PaginatedResponse
-from src.pharmaviyum.core.security.rbac import get_current_active_user, require_role
+from src.pharmaviyum.core.exceptions import (ConflictException,
+                                             NotFoundException)
 from src.pharmaviyum.core.feature_flags import is_feature_enabled
-from src.pharmaviyum.repositories.patient import PatientRepository
-from src.pharmaviyum.services.patient import PatientService
-from src.pharmaviyum.schemas.patient import (
-    PatientCreate,
-    PatientUpdate,
-    PatientResponse,
-    PatientListResponse,
-    PatientAIProfile,
-)
-from src.pharmaviyum.core.exceptions import NotFoundException, ConflictException
 from src.pharmaviyum.core.logging import get_logger
+from src.pharmaviyum.core.schemas import PaginatedResponse, ResponseEnvelope
+from src.pharmaviyum.core.security.rbac import (get_current_active_user,
+                                                require_role)
+from src.pharmaviyum.repositories.patient import PatientRepository
+from src.pharmaviyum.schemas.patient import (PatientAIProfile, PatientCreate,
+                                             PatientListResponse,
+                                             PatientResponse, PatientUpdate)
+from src.pharmaviyum.services.patient import PatientService
 
 logger = get_logger(__name__)
 
@@ -30,6 +29,7 @@ router = APIRouter(prefix="/patients", tags=["patients"])
 # DEPENDENCY INJECTION
 # ============================================================================
 
+
 def get_patient_service(db: AsyncSession = Depends(get_db)) -> PatientService:
     """Dependency: Patient service with repository"""
     repository = PatientRepository(db)
@@ -39,6 +39,7 @@ def get_patient_service(db: AsyncSession = Depends(get_db)) -> PatientService:
 # ============================================================================
 # ENDPOINTS
 # ============================================================================
+
 
 @router.post(
     "/",
@@ -55,7 +56,7 @@ async def create_patient(
 ):
     """
     Create a new patient
-    
+
     - Validates phone/email uniqueness
     - Emits patient.created event
     - Records metrics
@@ -66,14 +67,14 @@ async def create_patient(
             data=patient_data,
             created_by=current_user.get("sub"),
         )
-        
+
         return ResponseEnvelope.success_response(
             data=PatientResponse.model_validate(patient),
             meta={
                 "correlation_id": getattr(request.state, "correlation_id", None),
             },
         )
-    
+
     except ValueError as e:
         raise ConflictException(str(e))
 
@@ -98,7 +99,7 @@ async def list_patients(
 ):
     """
     List patients with advanced filtering
-    
+
     - Supports text search
     - Multiple filter options
     - Pagination with metadata
@@ -113,14 +114,14 @@ async def list_patients(
         page=page,
         page_size=page_size,
     )
-    
+
     paginated = PaginatedResponse.create(
         items=[PatientListResponse.model_validate(p) for p in patients],
         page=page,
         page_size=page_size,
         total_items=total,
     )
-    
+
     return ResponseEnvelope.success_response(
         data=paginated,
         meta={
@@ -143,14 +144,14 @@ async def get_patient_statistics(
 ):
     """
     Get patient statistics
-    
+
     - Total/active/inactive counts
     - Breakdown by loyalty tier
     - Breakdown by country
     - Requires manager role
     """
     stats = await service.get_statistics()
-    
+
     return ResponseEnvelope.success_response(
         data=stats,
         meta={
@@ -173,15 +174,15 @@ async def get_patient_by_phone(
 ):
     """
     Get patient by phone number
-    
+
     - Uses cache for performance
     - Requires authentication
     """
     patient = await service.get_patient_by_phone(phone)
-    
+
     if not patient:
         raise NotFoundException("Patient", phone)
-    
+
     return ResponseEnvelope.success_response(
         data=PatientResponse.model_validate(patient),
         meta={
@@ -205,16 +206,16 @@ async def get_patient(
 ):
     """
     Get patient by ID
-    
+
     - Includes allergies, conditions, insurances
     - Uses cache
     - Requires authentication
     """
     patient = await service.get_patient(patient_id)
-    
+
     if not patient:
         raise NotFoundException("Patient", patient_id)
-    
+
     return ResponseEnvelope.success_response(
         data=PatientResponse.model_validate(patient),
         meta={
@@ -237,21 +238,23 @@ async def get_patient_ai_profile(
 ):
     """
     Get AI-optimized patient profile for Mortarium
-    
+
     - Controlled by feature flag: ai_patient_profiles
     - Includes allergies, conditions
     - Optimized for AI context
     - Requires authentication
     """
     # Check feature flag
-    if not await is_feature_enabled("ai_patient_profiles", user_id=current_user.get("sub")):
+    if not await is_feature_enabled(
+        "ai_patient_profiles", user_id=current_user.get("sub")
+    ):
         raise NotFoundException("AI profile feature", "disabled")
-    
+
     profile = await service.get_ai_profile(patient_id)
-    
+
     if not profile:
         raise NotFoundException("Patient", patient_id)
-    
+
     return ResponseEnvelope.success_response(
         data=profile,
         meta={
@@ -276,7 +279,7 @@ async def update_patient(
 ):
     """
     Update patient
-    
+
     - Validates uniqueness constraints
     - Emits patient.updated event
     - Invalidates cache
@@ -288,17 +291,17 @@ async def update_patient(
             data=patient_data,
             updated_by=current_user.get("sub"),
         )
-        
+
         if not patient:
             raise NotFoundException("Patient", patient_id)
-        
+
         return ResponseEnvelope.success_response(
             data=PatientResponse.model_validate(patient),
             meta={
                 "correlation_id": getattr(request.state, "correlation_id", None),
             },
         )
-    
+
     except ValueError as e:
         raise ConflictException(str(e))
 
@@ -318,7 +321,7 @@ async def delete_patient(
 ):
     """
     Delete patient
-    
+
     - Default: soft delete (is_active=False)
     - Hard delete requires feature flag: patient_hard_delete
     - Emits patient.deleted event
@@ -329,10 +332,10 @@ async def delete_patient(
         deleted_by=current_user.get("sub"),
         hard_delete=hard_delete,
     )
-    
+
     if not deleted:
         raise NotFoundException("Patient", patient_id)
-    
+
     return None
 
 
@@ -351,7 +354,7 @@ async def record_visit(
 ):
     """
     Record patient visit
-    
+
     - Updates visit_count
     - Updates total_purchases
     - Updates last_visit_date
@@ -361,10 +364,10 @@ async def record_visit(
         id=patient_id,
         purchase_amount=purchase_amount,
     )
-    
+
     if not patient:
         raise NotFoundException("Patient", patient_id)
-    
+
     return ResponseEnvelope.success_response(
         data=PatientResponse.model_validate(patient),
         meta={

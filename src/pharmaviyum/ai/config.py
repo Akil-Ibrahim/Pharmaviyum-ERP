@@ -1,4 +1,5 @@
 """AI layer configuration — Pydantic settings."""
+
 from __future__ import annotations
 
 from typing import Literal
@@ -56,7 +57,9 @@ class RedisSettings(BaseSettings):
 
 class PgVectorSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PGVECTOR_")
-    database_url: SecretStr = SecretStr("postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum")
+    database_url: SecretStr = SecretStr(
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum"
+    )
     table_name: str = "document_chunks"
     hnsw_m: int = 16
     hnsw_ef_construction: int = 200
@@ -107,7 +110,9 @@ class AgentSettings(BaseSettings):
 class HalalSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="HALAL_")
     default_country: str = "SA"
-    default_fiqh: Literal["Hanafi", "Shafii", "Maliki", "Hanbali", "Ja'fari", "Zaydi"] = "Hanbali"
+    default_fiqh: Literal[
+        "Hanafi", "Shafii", "Maliki", "Hanbali", "Ja'fari", "Zaydi"
+    ] = "Hanbali"
     enable_istihalah_check: bool = True
     enable_darurah_exception: bool = True
     strict_mode: bool = True

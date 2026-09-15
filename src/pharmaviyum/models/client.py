@@ -1,7 +1,10 @@
 # models/client.py - Customer/Client ORM model for pharmacy CRM
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float, Text
 from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text
+
 from src.pharmaviyum.db.base import Base
+
 
 class Client(Base):
     __tablename__ = "clients"

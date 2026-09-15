@@ -24,30 +24,25 @@ Public API:
     LangGraph:
     - RAGState: TypedDict state for the RAG graph
 """
-from .schemas import (
-    Document, Chunk, RetrievalResult, RAGResponse, QueryContext,
-)
-from .chunking import MedicalChunker
-from .vector_store import PgVectorStore
-from .embeddings import (
-    EmbeddingsFactory, EmbeddingsProvider, OllamaEmbeddings, CachedEmbeddings,
-)
-from .embeddings_multilang import (
-    MultiLanguageEmbeddingRouter, LANGUAGE_MODEL_MAP,
-)
-from .quality_metrics import (
-    EmbeddingQualityEvaluator, DriftDetector,
-    RetrievalMetrics, EmbeddingDriftReport,
-)
-from .pipeline import RAGPipeline
-from .preprocessing import DocumentPreprocessor
-from .ingestion import IngestionOrchestrator
-from .query_transformer import QueryTransformer, QueryVariation
-from .contextual_compression import ContextualCompressor, CompressedContext
 
+from .chunking import MedicalChunker
+from .contextual_compression import CompressedContext, ContextualCompressor
+from .embeddings import (CachedEmbeddings, EmbeddingsFactory,
+                         EmbeddingsProvider, OllamaEmbeddings)
+from .embeddings_multilang import (LANGUAGE_MODEL_MAP,
+                                   MultiLanguageEmbeddingRouter)
 # LangGraph-based query path
 from .graph import LangGraphRAG
+from .ingestion import IngestionOrchestrator
+from .pipeline import RAGPipeline
+from .preprocessing import DocumentPreprocessor
+from .quality_metrics import (DriftDetector, EmbeddingDriftReport,
+                              EmbeddingQualityEvaluator, RetrievalMetrics)
+from .query_transformer import QueryTransformer, QueryVariation
+from .schemas import (Chunk, Document, QueryContext, RAGResponse,
+                      RetrievalResult)
 from .state import RAGState
+from .vector_store import PgVectorStore
 
 __all__ = [
     # Pipeline

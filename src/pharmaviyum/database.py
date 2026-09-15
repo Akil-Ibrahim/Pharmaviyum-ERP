@@ -1,12 +1,16 @@
 import structlog
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
+                                    create_async_engine)
 from sqlalchemy.orm import DeclarativeBase
+
 from src.pharmaviyum.config import settings
 
 logger = structlog.get_logger()
 
+
 class Base(DeclarativeBase):
     pass
+
 
 engine = create_async_engine(
     settings.DATABASE_URL,
@@ -26,6 +30,7 @@ AsyncSessionLocal = async_sessionmaker(
     autoflush=False,
 )
 
+
 async def get_db() -> AsyncSession:
     async with AsyncSessionLocal() as session:
         try:
@@ -36,6 +41,7 @@ async def get_db() -> AsyncSession:
             raise
         finally:
             await session.close()
+
 
 async def create_db_and_tables():
     logger.info("creating_database_tables")

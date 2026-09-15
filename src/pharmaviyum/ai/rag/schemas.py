@@ -1,18 +1,29 @@
 """RAG Pipeline Schemas (Pydantic v2, frozen models)."""
+
 from __future__ import annotations
+
 from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID, uuid4
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Document(BaseModel):
     """Input document for ingestion pipeline."""
+
     model_config = ConfigDict(frozen=True)
     id: UUID = Field(default_factory=uuid4)
     content: str = Field(..., min_length=1)
     source: str
-    doc_type: Literal["drug_info", "prescription", "guideline", "research_paper", "regulation", "patient_record"]
+    doc_type: Literal[
+        "drug_info",
+        "prescription",
+        "guideline",
+        "research_paper",
+        "regulation",
+        "patient_record",
+    ]
     metadata: dict[str, Any] = Field(default_factory=dict)
     country: str = Field(default="VN")
     language: str = Field(default="vi")
@@ -21,18 +32,27 @@ class Document(BaseModel):
 
 class Chunk(BaseModel):
     """Semantic chunk of a document."""
+
     model_config = ConfigDict(frozen=True)
     id: UUID = Field(default_factory=uuid4)
     document_id: UUID
     content: str = Field(..., min_length=1)
     chunk_index: int = Field(..., ge=0)
-    chunk_type: Literal["indications", "dosage", "contraindications", "interactions", "side_effects", "general"] = "general"
+    chunk_type: Literal[
+        "indications",
+        "dosage",
+        "contraindications",
+        "interactions",
+        "side_effects",
+        "general",
+    ] = "general"
     metadata: dict[str, Any] = Field(default_factory=dict)
     token_count: int = Field(..., ge=0)
 
 
 class RetrievalResult(BaseModel):
     """Result from vector search."""
+
     model_config = ConfigDict(frozen=True)
     chunk: Chunk
     score: float = Field(..., ge=0.0, le=1.0)
@@ -42,6 +62,7 @@ class RetrievalResult(BaseModel):
 
 class RAGResponse(BaseModel):
     """Final RAG pipeline response."""
+
     answer: str
     sources: list[RetrievalResult] = Field(default_factory=list)
     confidence: float = Field(..., ge=0.0, le=1.0)
@@ -53,6 +74,7 @@ class RAGResponse(BaseModel):
 
 class QueryContext(BaseModel):
     """Context for a RAG query."""
+
     patient_id: int | None = None
     prescription_id: int | None = None
     country: str = "VN"

@@ -1,4 +1,5 @@
 """Custom HTML error pages for better user experience."""
+
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 
@@ -10,8 +11,7 @@ def render_error_page(
     request: Request = None,
 ) -> HTMLResponse:
     """Render a branded HTML error page."""
-    path = request.url.path if request else "unknown"
-    
+
     html = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -70,7 +70,7 @@ def render_error_page(
     </body>
     </html>
     """
-    
+
     return HTMLResponse(content=html, status_code=status_code)
 
 

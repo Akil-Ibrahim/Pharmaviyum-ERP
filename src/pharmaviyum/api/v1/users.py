@@ -1,9 +1,10 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from passlib.context import CryptContext
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.user import User
 from src.pharmaviyum.schemas.user_schema import UserCreate, UserResponse

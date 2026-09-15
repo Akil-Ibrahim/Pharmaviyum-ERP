@@ -8,10 +8,11 @@ Public API:
 - LoaderConfig: Configuration for loaders
 - LoadResult: Result of load operations
 """
+
 from .base import DocumentLoader, LoaderConfig, LoadResult
-from .pdf_loader import PDFLoader
-from .html_loader import HTMLLoader
 from .docx_loader import DOCXLoader
+from .html_loader import HTMLLoader
+from .pdf_loader import PDFLoader
 
 __all__ = [
     "DocumentLoader",

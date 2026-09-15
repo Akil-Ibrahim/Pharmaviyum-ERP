@@ -1,8 +1,7 @@
 """Structured logging configuration"""
 
-import logging
-import sys
 import structlog
+
 
 def setup_logging():
     """Setup structured logging with structlog"""
@@ -16,11 +15,12 @@ def setup_logging():
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
             structlog.processors.UnicodeDecoder(),
-            structlog.processors.JSONRenderer()
+            structlog.processors.JSONRenderer(),
         ],
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
     )
+
 
 logger = structlog.get_logger()

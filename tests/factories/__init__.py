@@ -1,10 +1,7 @@
 """Test factories package"""
-from .patient import (
-    PatientFactory,
-    PatientAllergyFactory,
-    PatientConditionFactory,
-    PatientInsuranceFactory,
-)
+
+from .patient import (PatientAllergyFactory, PatientConditionFactory,
+                      PatientFactory, PatientInsuranceFactory)
 
 __all__ = [
     "PatientFactory",

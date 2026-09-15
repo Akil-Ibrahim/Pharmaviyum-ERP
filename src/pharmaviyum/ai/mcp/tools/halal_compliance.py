@@ -11,14 +11,18 @@ Key principles applied:
 - Darurah (life-saving necessity)
 - Marja'-specific rulings
 """
+
 from __future__ import annotations
+
 import time
-from datetime import date
 from typing import Literal, Optional
+
 from pydantic import BaseModel, Field
-from ..registry import registry
-from .fiqh_authorities import COUNTRY_FIQH, SHIA_MARJA, SUNNI_MADHHABS
+
 from src.pharmaviyum.core.logging import logger
+
+from ..registry import registry
+from .fiqh_authorities import COUNTRY_FIQH
 
 HalalStatus = Literal["halal", "haram", "mushbooh", "darurah_exempt"]
 FiqhSchool = Literal["Hanafi", "Shafii", "Maliki", "Hanbali", "Ja'fari", "Zaydi"]
@@ -28,13 +32,11 @@ class HalalCheckRequest(BaseModel):
     drug_name: str
     country_code: str = Field(default="SA")
     patient_fiqh: Optional[FiqhSchool] = Field(
-        default=None,
-        description="Patient's specific fiqh school (if known)"
+        default=None, description="Patient's specific fiqh school (if known)"
     )
     include_alternatives: bool = True
     is_life_saving: bool = Field(
-        default=False,
-        description="If True, applies Darurah exception"
+        default=False, description="If True, applies Darurah exception"
     )
 
 
@@ -72,9 +74,12 @@ HALAL_DB: dict[str, dict] = {
             "Hanafi": {"ruling": "haram_but_darurah_permits"},
             "Shafii": {"ruling": "haram_but_darurah_permits"},
         },
-        "alternatives": ["Enoxaparin (synthetic LMWH)", "Fondaparinux (fully synthetic)", "Bivalirudin (direct thrombin inhibitor)"],
+        "alternatives": [
+            "Enoxaparin (synthetic LMWH)",
+            "Fondaparinux (fully synthetic)",
+            "Bivalirudin (direct thrombin inhibitor)",
+        ],
     },
-    
     "Insulin (Porcine)": {
         "status": "haram",
         "darurah_exempt": True,
@@ -85,9 +90,13 @@ HALAL_DB: dict[str, dict] = {
                 "note": "Historical ruling: permissible for diabetics when human insulin unavailable. Modern: synthetic analogs preferred.",
             },
         },
-        "alternatives": ["Human insulin (recombinant DNA)", "Insulin Lispro", "Insulin Aspart", "Insulin Glargine"],
+        "alternatives": [
+            "Human insulin (recombinant DNA)",
+            "Insulin Lispro",
+            "Insulin Aspart",
+            "Insulin Glargine",
+        ],
     },
-    
     "Amoxicillin Capsules": {
         "status": "mushbooh",
         "concerns": ["Capsule shell may contain bovine gelatin (source unknown)"],
@@ -103,9 +112,11 @@ HALAL_DB: dict[str, dict] = {
             "Hanafi": {"ruling": "haram_unless_halal_slaughtered"},
             "Shafii": {"ruling": "permissible_if_istihalah_proven"},
         },
-        "alternatives": ["Amoxicillin tablets (gelatin-free)", "Amoxicillin suspension (verify glycerin)"],
+        "alternatives": [
+            "Amoxicillin tablets (gelatin-free)",
+            "Amoxicillin suspension (verify glycerin)",
+        ],
     },
-    
     "Codeine Syrup": {
         "status": "haram",
         "darurah_exempt": False,  # Alternatives exist
@@ -122,7 +133,6 @@ HALAL_DB: dict[str, dict] = {
         },
         "alternatives": ["Codeine tablets", "Dextromethorphan syrup (alcohol-free)"],
     },
-    
     "Omega-3 Fish Oil": {
         "status": "halal",  # But with fiqh-specific nuances
         "fiqh_specific": {
@@ -137,9 +147,11 @@ HALAL_DB: dict[str, dict] = {
             "Shafii": {"ruling": "halal"},  # All sea creatures halal
         },
         "concerns": ["Softgel shell may contain non-halal gelatin"],
-        "alternatives": ["Omega-3 tablets", "Omega-3 drops in MCT oil (vegetarian capsule)"],
+        "alternatives": [
+            "Omega-3 tablets",
+            "Omega-3 drops in MCT oil (vegetarian capsule)",
+        ],
     },
-    
     "Vitamin D3 (Lanolin-derived)": {
         "status": "halal",
         "notes": "Lanolin from sheep wool is halal. Concern is only the softgel shell.",
@@ -149,7 +161,6 @@ HALAL_DB: dict[str, dict] = {
             "Shafii": {"ruling": "halal"},
         },
     },
-    
     "Vaccines (HEK293 cell line)": {
         "status": "mushbooh",
         "darurah_exempt": True,
@@ -175,10 +186,11 @@ HALAL_DB: dict[str, dict] = {
 # ISTIHALA (CHEMICAL TRANSFORMATION) CHECKER
 # ============================================================================
 
+
 def check_istihalah(ingredient: str, final_product: str) -> dict:
     """
     Check if chemical transformation (Istihalah) has occurred.
-    
+
     Shia fiqh (especially Khamenei): requires complete transformation.
     Example: Ethanol evaporated during manufacturing → may be permissible.
     """
@@ -205,6 +217,7 @@ def check_istihalah(ingredient: str, final_product: str) -> dict:
 # MCP TOOL REGISTRATION
 # ============================================================================
 
+
 @registry.tool(
     name="check_halal_compliance",
     description=(
@@ -225,15 +238,17 @@ async def check_halal_compliance(input: HalalCheckRequest) -> HalalCertification
     start = time.perf_counter()
     drug_name = input.drug_name.strip().title()
     country = input.country_code.upper()
-    
+
     # 1. Determine fiqh school
-    country_info = COUNTRY_FIQH.get(country, {"school": "Hanbali", "marja": "state_mufti"})
+    country_info = COUNTRY_FIQH.get(
+        country, {"school": "Hanbali", "marja": "state_mufti"}
+    )
     fiqh_school = input.patient_fiqh or country_info["school"]
     marja = country_info.get("marja")
-    
+
     # 2. Lookup in DB
     cert_data = HALAL_DB.get(drug_name)
-    
+
     if not cert_data:
         # Unknown drug
         return HalalCertification(
@@ -247,35 +262,38 @@ async def check_halal_compliance(input: HalalCheckRequest) -> HalalCertification
             alternatives=[],
             darurah_applied=False,
         )
-    
+
     # 3. Apply fiqh-specific ruling
     status = cert_data["status"]
     notes = cert_data.get("notes", "")
     darurah_applied = False
-    
+
     fiqh_key = fiqh_school
     if fiqh_school == "Ja'fari" and marja:
         fiqh_key = f"Ja'fari_{marja.split('_')[-1]}"  # e.g., "Ja'fari_Sistani"
-    
+
     fiqh_ruling = cert_data.get("fiqh_specific", {}).get(fiqh_key, {})
-    
+
     if fiqh_ruling:
         ruling = fiqh_ruling.get("ruling", status)
         fiqh_note = fiqh_ruling.get("note", "")
-        
+
         # Apply Darurah if life-saving
         if input.is_life_saving and cert_data.get("darurah_exempt"):
             status = "darurah_exempt"
             darurah_applied = True
             notes = f"**DARURAH APPLIED**: Life-saving necessity. {fiqh_note}"
-        elif ruling == "permissible_if_from_bone_without_meat" and fiqh_school == "Ja'fari":
+        elif (
+            ruling == "permissible_if_from_bone_without_meat"
+            and fiqh_school == "Ja'fari"
+        ):
             # Sistani's unique ruling
             status = "mushbooh"
             notes = f"**Sistani's Ruling**: {fiqh_note}"
         else:
             status = ruling.replace("permissible", "halal").replace("haram", "haram")
             notes = fiqh_note
-    
+
     # 4. Check Istihalah
     istihalah_check = None
     for concern in cert_data.get("concerns", []):
@@ -283,17 +301,21 @@ async def check_halal_compliance(input: HalalCheckRequest) -> HalalCertification
             istihalah = check_istihalah("ethanol_evaporated", drug_name)
             if istihalah:
                 istihalah_check = istihalah["note"]
-    
+
     # 5. Enrich alternatives
     alternatives = cert_data.get("alternatives", [])
-    if input.include_alternatives and status in ["haram", "mushbooh"] and not darurah_applied:
+    if (
+        input.include_alternatives
+        and status in ["haram", "mushbooh"]
+        and not darurah_applied
+    ):
         if any("gelatin" in c.lower() for c in cert_data["concerns"]):
             alternatives.extend(["Vegetarian capsules (HPMC)"])
         if any("ethanol" in c.lower() for c in cert_data["concerns"]):
             alternatives.append("Alcohol-free formulation")
-    
+
     latency_ms = (time.perf_counter() - start) * 1000
-    
+
     logger.info(
         f"Global Halal check: {drug_name} ({country}, {fiqh_school}) -> {status.upper()}",
         extra={
@@ -303,9 +325,9 @@ async def check_halal_compliance(input: HalalCheckRequest) -> HalalCertification
             "marja": marja,
             "darurah": darurah_applied,
             "latency_ms": latency_ms,
-        }
+        },
     )
-    
+
     return HalalCertification(
         drug_name=drug_name,
         status=status,

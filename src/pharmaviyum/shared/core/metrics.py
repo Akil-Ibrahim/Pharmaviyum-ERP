@@ -2,16 +2,12 @@
 Prometheus metrics for application monitoring.
 Scrape endpoint: GET /metrics (Prometheus format)
 """
+
 import time
-from prometheus_client import (
-    Counter,
-    Histogram,
-    Gauge,
-    generate_latest,
-    CONTENT_TYPE_LATEST,
-    CollectorRegistry,
-)
-from fastapi import Response, APIRouter, Request
+
+from fastapi import APIRouter, Request, Response
+from prometheus_client import (CONTENT_TYPE_LATEST, CollectorRegistry, Counter,
+                               Gauge, Histogram, generate_latest)
 from starlette.middleware.base import BaseHTTPMiddleware
 
 metrics_registry = CollectorRegistry()
@@ -57,18 +53,18 @@ ORDERS_TOTAL = Counter(
 
 class MetricsMiddleware(BaseHTTPMiddleware):
     """Middleware to automatically track HTTP metrics."""
-    
+
     EXCLUDED_PATHS = {"/metrics", "/health", "/ready", "/docs", "/openapi.json"}
-    
+
     async def dispatch(self, request: Request, call_next):
         if request.url.path in self.EXCLUDED_PATHS:
             return await call_next(request)
-        
+
         method = request.method
         endpoint = self._normalize_path(request.url.path)
         start_time = time.perf_counter()
         status_code = 200
-        
+
         try:
             response = await call_next(request)
             status_code = response.status_code
@@ -78,23 +74,23 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             raise
         finally:
             duration = time.perf_counter() - start_time
-            
+
             HTTP_REQUESTS_TOTAL.labels(
                 method=method,
                 endpoint=endpoint,
                 status=str(status_code),
             ).inc()
-            
+
             HTTP_REQUEST_DURATION.labels(
                 method=method,
                 endpoint=endpoint,
             ).observe(duration)
-    
+
     def _normalize_path(self, path: str) -> str:
         """Normalize path to avoid high-cardinality labels."""
         parts = path.split("/")
         normalized = []
-        
+
         for part in parts:
             if part.isdigit():
                 normalized.append("{id}")
@@ -102,7 +98,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
                 normalized.append("{id}")
             else:
                 normalized.append(part)
-        
+
         return "/".join(normalized)
 
 

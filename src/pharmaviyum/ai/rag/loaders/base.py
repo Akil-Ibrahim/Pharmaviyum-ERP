@@ -7,17 +7,20 @@ Best practice 2026:
 - Structured metadata extraction
 - Error handling with retry hints
 """
+
 from __future__ import annotations
-from typing import Protocol, AsyncIterator, Any, Literal
+
 from dataclasses import dataclass, field
 from datetime import datetime
-from uuid import uuid4
+from typing import Any, AsyncIterator, Literal, Protocol
+
 from src.pharmaviyum.ai.rag.schemas import Document
 
 
 @dataclass
 class LoaderConfig:
     """Configuration for document loading."""
+
     source_type: Literal["pdf", "html", "docx", "database", "web", "file"]
     batch_size: int = 10
     max_file_size_mb: int = 50
@@ -30,15 +33,15 @@ class LoaderConfig:
 
 class DocumentLoader(Protocol):
     """Protocol for all document loaders."""
-    
+
     async def load(self, source: str, config: LoaderConfig) -> AsyncIterator[Document]:
         """Load documents from source asynchronously."""
         ...
-    
+
     async def validate_source(self, source: str) -> bool:
         """Check if source is accessible and valid."""
         ...
-    
+
     def get_loader_info(self) -> dict[str, Any]:
         """Return loader metadata."""
         ...
@@ -47,6 +50,7 @@ class DocumentLoader(Protocol):
 @dataclass
 class LoadResult:
     """Result of a document load operation."""
+
     loader_name: str
     source: str
     documents_loaded: int

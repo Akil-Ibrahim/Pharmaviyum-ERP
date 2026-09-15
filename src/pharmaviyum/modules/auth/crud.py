@@ -9,9 +9,11 @@ Functions:
 - update_user: Update user details
 - delete_user: Delete user
 """
+
 from typing import Any
-from sqlalchemy.orm import Session
+
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from .models import User
 from .schemas import UserCreate, UserUpdate
@@ -32,11 +34,11 @@ def get_user_by_id(session: Session, user_id: Any) -> User | None:
 def authenticate(session: Session, email: str, password: str) -> User | None:
     """
     Authenticate user by email and password.
-    
+
     Returns:
         User if credentials are valid, None otherwise
-        
-    Security: 
+
+    Security:
     - verify_password is constant-time internally (passlib)
     - Runs dummy hash check for non-existent users to prevent timing attacks
     """
@@ -46,27 +48,27 @@ def authenticate(session: Session, email: str, password: str) -> User | None:
         # This makes the response time consistent whether user exists or not
         verify_password(password, get_password_hash("dummy"))
         return None
-    
+
     if not verify_password(password, user.hashed_password):
         return None
-    
+
     return user
 
 
 def create_user(session: Session, user_create: UserCreate) -> User:
     """
     Create a new user with hashed password.
-    
+
     Args:
         session: Database session
         user_create: User data with plain text password
-        
+
     Returns:
         Created user with hashed password
     """
     # Hash the password before storing
     hashed_password = get_password_hash(user_create.password)
-    
+
     # Create user object
     db_user = User(
         email=user_create.email,
@@ -75,35 +77,35 @@ def create_user(session: Session, user_create: UserCreate) -> User:
         is_superuser=user_create.is_superuser,
         hashed_password=hashed_password,
     )
-    
+
     session.add(db_user)
     session.commit()
     session.refresh(db_user)
-    
+
     return db_user
 
 
 def update_user(session: Session, db_user: User, user_in: UserUpdate) -> User:
     """
     Update user details.
-    
+
     If password is provided, it will be hashed before storing.
     """
     update_data = user_in.model_dump(exclude_unset=True)
-    
+
     # Hash password if provided
     if "password" in update_data and update_data["password"]:
         update_data["hashed_password"] = get_password_hash(update_data["password"])
         del update_data["password"]
-    
+
     # Update user attributes
     for field, value in update_data.items():
         setattr(db_user, field, value)
-    
+
     session.add(db_user)
     session.commit()
     session.refresh(db_user)
-    
+
     return db_user
 
 

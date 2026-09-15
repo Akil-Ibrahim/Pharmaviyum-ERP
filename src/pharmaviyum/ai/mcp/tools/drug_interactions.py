@@ -14,18 +14,17 @@ Best practice 2026:
 - Patient-specific checks (allergies, conditions)
 - Immutable response models for agent safety
 """
+
 from __future__ import annotations
+
 import time
 from datetime import datetime
-from ..schemas import (
-    DrugInteractionCheck,
-    DrugInteraction,
-    InteractionCheckResult,
-    MCPToolResponse,
-)
-from ..registry import registry
+
 from src.pharmaviyum.core.logging import logger
 
+from ..registry import registry
+from ..schemas import (DrugInteraction, DrugInteractionCheck,
+                       InteractionCheckResult)
 
 # ============================================================================
 # STATIC INTERACTION DATABASE (curated for SEA pharmacies)
@@ -56,7 +55,6 @@ INTERACTION_DB: dict[tuple[str, str], dict] = {
         "management": "CONTRAINDICATED. Use alternative antibiotic",
         "evidence_level": "A",
     },
-    
     # HIGH severity
     ("Metformin", "Contrast dye"): {
         "severity": "high",
@@ -79,7 +77,6 @@ INTERACTION_DB: dict[tuple[str, str], dict] = {
         "management": "Monitor serum potassium. Avoid routine potassium supplementation with ACE inhibitors",
         "evidence_level": "B",
     },
-    
     # MODERATE severity
     ("Amoxicillin", "Oral contraceptives"): {
         "severity": "moderate",
@@ -102,7 +99,6 @@ INTERACTION_DB: dict[tuple[str, str], dict] = {
         "management": "Limit alcohol intake. Educate patient on lactic acidosis symptoms",
         "evidence_level": "B",
     },
-    
     # LOW severity
     ("Paracetamol", "Warfarin"): {
         "severity": "low",
@@ -157,7 +153,7 @@ def normalize_drug_name(name: str) -> str:
 def find_interaction(drug_a: str, drug_b: str) -> dict | None:
     """Find interaction between two drugs (order-independent)."""
     a, b = normalize_drug_name(drug_a), normalize_drug_name(drug_b)
-    
+
     # Try both orderings
     if (a, b) in INTERACTION_DB:
         return INTERACTION_DB[(a, b)]
@@ -184,6 +180,7 @@ def aggregate_severity(interactions: list[DrugInteraction]) -> str:
 # MCP TOOL REGISTRATION
 # ============================================================================
 
+
 @registry.tool(
     name="check_drug_interactions",
     description=(
@@ -199,10 +196,12 @@ def aggregate_severity(interactions: list[DrugInteraction]) -> str:
     requires_rag=True,
     tags=["safety", "clinical", "pharmacist", "sea"],
 )
-async def check_drug_interactions(input: DrugInteractionCheck) -> InteractionCheckResult:
+async def check_drug_interactions(
+    input: DrugInteractionCheck,
+) -> InteractionCheckResult:
     """
     Check drug-drug interactions for a list of medications.
-    
+
     Algorithm:
     1. Normalize drug names
     2. Check all pairs against static DB
@@ -212,35 +211,37 @@ async def check_drug_interactions(input: DrugInteractionCheck) -> InteractionChe
     """
     start = time.perf_counter()
     drugs = [normalize_drug_name(d) for d in input.drug_names]
-    
+
     # Check all pairs (n*(n-1)/2 combinations)
     interactions: list[DrugInteraction] = []
-    
+
     for i, drug_a in enumerate(drugs):
-        for drug_b in drugs[i + 1:]:
+        for drug_b in drugs[i + 1 :]:
             interaction_data = find_interaction(drug_a, drug_b)
             if interaction_data and input.include_severity:
-                interactions.append(DrugInteraction(
-                    drug_a=drug_a,
-                    drug_b=drug_b,
-                    severity=interaction_data["severity"],
-                    mechanism=interaction_data.get("mechanism"),
-                    clinical_effect=interaction_data["clinical_effect"],
-                    management=interaction_data["management"],
-                    source="Pharmaviyum Interaction DB",
-                    evidence_level=interaction_data.get("evidence_level", "C"),
-                ))
-    
+                interactions.append(
+                    DrugInteraction(
+                        drug_a=drug_a,
+                        drug_b=drug_b,
+                        severity=interaction_data["severity"],
+                        mechanism=interaction_data.get("mechanism"),
+                        clinical_effect=interaction_data["clinical_effect"],
+                        management=interaction_data["management"],
+                        source="Pharmaviyum Interaction DB",
+                        evidence_level=interaction_data.get("evidence_level", "C"),
+                    )
+                )
+
     # Generate recommendations based on severity
     recommendations = _generate_recommendations(interactions, drugs)
-    
+
     # Suggest alternatives for high/critical interactions
     alternatives: dict[str, list[str]] = {}
     if input.include_alternatives:
         alternatives = _suggest_alternatives(interactions)
-    
+
     latency_ms = (time.perf_counter() - start) * 1000
-    
+
     logger.info(
         f"Drug interaction check: {len(drugs)} drugs, {len(interactions)} interactions found",
         extra={
@@ -250,7 +251,7 @@ async def check_drug_interactions(input: DrugInteractionCheck) -> InteractionChe
             "latency_ms": latency_ms,
         },
     )
-    
+
     return InteractionCheckResult(
         drugs_checked=drugs,
         interactions=interactions,
@@ -268,11 +269,11 @@ def _generate_recommendations(
 ) -> list[str]:
     """Generate clinical recommendations based on interactions."""
     recommendations: list[str] = []
-    
+
     critical = [i for i in interactions if i.severity == "critical"]
     high = [i for i in interactions if i.severity == "high"]
     moderate = [i for i in interactions if i.severity == "moderate"]
-    
+
     if critical:
         recommendations.append(
             f"⚠️ CRITICAL: {len(critical)} critical interaction(s) detected. "
@@ -280,46 +281,49 @@ def _generate_recommendations(
         )
         for i in critical:
             recommendations.append(f"  • {i.drug_a} + {i.drug_b}: {i.management}")
-    
+
     if high:
         recommendations.append(
             f"⚡ HIGH: {len(high)} high-severity interaction(s). "
             "Pharmacist verification required before dispensing."
         )
-    
+
     if moderate:
         recommendations.append(
             f"ℹ️ MODERATE: {len(moderate)} moderate interaction(s). "
             "Patient counseling recommended."
         )
-    
+
     if not interactions:
         recommendations.append(
             "✅ No known interactions detected among the specified medications."
         )
-    
+
     return recommendations
 
 
 def _suggest_alternatives(interactions: list[DrugInteraction]) -> dict[str, list[str]]:
     """Suggest safer alternatives for problematic drugs."""
     alternatives: dict[str, list[str]] = {}
-    
+
     # Common alternatives (curated for SEA market)
     ALTERNATIVE_MAP = {
         "Ibuprofen": ["Paracetamol", "Naproxen (with PPI)"],
-        "Aspirin": ["Paracetamol (for pain)", "Clopidogrel (for antiplatelet, if indicated)"],
+        "Aspirin": [
+            "Paracetamol (for pain)",
+            "Clopidogrel (for antiplatelet, if indicated)",
+        ],
         "Omeprazole": ["Pantoprazole", "Famotidine"],
         "Simvastatin": ["Pravastatin", "Rosuvastatin"],
         "Warfarin": ["DOACs (Apixaban, Rivaroxaban) — if appropriate"],
         "Clarithromycin": ["Azithromycin", "Amoxicillin (if susceptible)"],
     }
-    
+
     for interaction in interactions:
         if interaction.severity in ("high", "critical"):
             # Suggest alternative for the second drug (typically the add-on)
             drug_b = interaction.drug_b
             if drug_b in ALTERNATIVE_MAP:
                 alternatives[drug_b] = ALTERNATIVE_MAP[drug_b]
-    
+
     return alternatives

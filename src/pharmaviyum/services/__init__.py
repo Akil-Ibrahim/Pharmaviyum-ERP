@@ -1,6 +1,7 @@
 """Services package - Business logic layer"""
-from .cache import cache_service, CacheService
-from .event_bus import event_bus, EventBus, Event
+
+from .cache import CacheService, cache_service
+from .event_bus import Event, EventBus, event_bus
 from .patient import PatientService
 
 __all__ = [

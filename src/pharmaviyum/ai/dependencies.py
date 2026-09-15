@@ -7,6 +7,7 @@ Best practice 2026:
 - Singleton pattern for stateless services (Guardrails, Routers)
 - Durable PostgreSQL persistence for LangGraph workflows
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -21,27 +22,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.pharmaviyum.ai.agents import AgentCheckpointer, PharmacistAgent
 from src.pharmaviyum.ai.config import settings
 from src.pharmaviyum.ai.evaluation import AgentEvaluator
-from src.pharmaviyum.ai.harness import (
-    AgentHarness,
-    DialogueMemory,
-    MedicalGuardrails,
-    ModelRouter,
-    PromptCache,
-)
+from src.pharmaviyum.ai.harness import (AgentHarness, DialogueMemory,
+                                        MedicalGuardrails, ModelRouter,
+                                        PromptCache)
 from src.pharmaviyum.ai.mcp import MCPClient, mcp_client
 from src.pharmaviyum.ai.observability import ObservabilityTracer, tracer
-from src.pharmaviyum.ai.rag import (
-    EmbeddingsFactory,
-    IngestionOrchestrator,
-    LangGraphRAG,
-    PgVectorStore,
-)
+from src.pharmaviyum.ai.rag import (EmbeddingsFactory, IngestionOrchestrator,
+                                    LangGraphRAG, PgVectorStore)
 from src.pharmaviyum.core.logging import logger
-
 
 # ============================================================================
 # CORE INFRASTRUCTURE DEPENDENCIES
 # ============================================================================
+
 
 async def get_redis_client() -> AsyncGenerator[Redis, None]:
     """Get async Redis client for caching and memory."""
@@ -78,6 +71,7 @@ async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]
 # LLM PROVIDER DEPENDENCIES
 # ============================================================================
 
+
 @lru_cache(maxsize=1)
 def get_llm_fast():
     """Cached fast LLM for routing and simple tasks."""
@@ -111,6 +105,7 @@ def get_llm_complex():
 # ============================================================================
 # AI COMPONENT DEPENDENCIES
 # ============================================================================
+
 
 class AIComponents:
     """Container for all initialized AI components."""
@@ -238,7 +233,9 @@ async def get_ai_container(
     request: Request = None,
 ) -> AIComponents:
     """Ensure all AI components are initialized and return the singleton."""
-    db_factory = getattr(request.app.state, "db_session_factory", None) if request else None
+    db_factory = (
+        getattr(request.app.state, "db_session_factory", None) if request else None
+    )
     await ai_container.initialize(redis=redis, db_session_factory=db_factory)
     return ai_container
 
@@ -255,7 +252,9 @@ async def get_ingestion_orchestrator(
     container: AIComponents = Depends(get_ai_container),
 ) -> IngestionOrchestrator:
     if not container.ingestion_orchestrator:
-        raise HTTPException(status_code=500, detail="Ingestion Orchestrator not initialized")
+        raise HTTPException(
+            status_code=500, detail="Ingestion Orchestrator not initialized"
+        )
     return container.ingestion_orchestrator
 
 

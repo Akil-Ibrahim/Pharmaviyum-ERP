@@ -1,8 +1,8 @@
 """Base repository for data access layer"""
 
-from typing import Generic, TypeVar, List, Optional, Type
+from typing import Generic, List, Optional, Type, TypeVar
+
 from sqlalchemy.orm import Session
-from sqlalchemy import select
 
 T = TypeVar("T")
 
@@ -24,9 +24,7 @@ class BaseRepository(Generic[T]):
 
     def get_by_id(self, obj_id: int) -> Optional[T]:
         """Get object by ID"""
-        return self.db.query(self.model).filter(
-            self.model.id == obj_id
-        ).first()
+        return self.db.query(self.model).filter(self.model.id == obj_id).first()
 
     def get_all(self, skip: int = 0, limit: int = 100) -> List[T]:
         """Get all objects with pagination"""

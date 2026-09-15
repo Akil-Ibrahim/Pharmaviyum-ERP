@@ -12,10 +12,7 @@ the expected request/response formats.
 # Authentication Examples
 # =============================================================================
 
-LOGIN_REQUEST_EXAMPLE = {
-    "username": "admin",
-    "password": "secure_password_123"
-}
+LOGIN_REQUEST_EXAMPLE = {"username": "admin", "password": "secure_password_123"}
 
 LOGIN_RESPONSE_EXAMPLE = {
     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -25,8 +22,8 @@ LOGIN_RESPONSE_EXAMPLE = {
         "id": 1,
         "username": "admin",
         "email": "admin@pharmacy.com",
-        "role": "admin"
-    }
+        "role": "admin",
+    },
 }
 
 # =============================================================================
@@ -40,13 +37,14 @@ CREATE_CLIENT_REQUEST_EXAMPLE = {
     "email": "john.doe@example.com",
     "date_of_birth": "1990-01-15",
     "address": "123 Main St, City, Country",
-    "notes": "Regular customer, prefers brand medications"
+    "notes": "Regular customer, prefers brand medications",
 }
 
 CLIENT_RESPONSE_EXAMPLE = {
     "id": 1,
     "first_name": "John",
-    "last_name": "Doe",    "phone": "+1234567890",
+    "last_name": "Doe",
+    "phone": "+1234567890",
     "email": "john.doe@example.com",
     "date_of_birth": "1990-01-15",
     "address": "123 Main St, City, Country",
@@ -54,7 +52,7 @@ CLIENT_RESPONSE_EXAMPLE = {
     "created_at": "2024-01-01T10:00:00Z",
     "updated_at": "2024-01-15T14:30:00Z",
     "total_purchases": 15,
-    "total_spent": 1250.50
+    "total_spent": 1250.50,
 }
 
 CLIENTS_LIST_RESPONSE_EXAMPLE = {
@@ -68,13 +66,13 @@ CLIENTS_LIST_RESPONSE_EXAMPLE = {
             "email": "jane.smith@example.com",
             "created_at": "2024-01-05T09:00:00Z",
             "total_purchases": 8,
-            "total_spent": 650.00
-        }
+            "total_spent": 650.00,
+        },
     ],
     "total": 2,
     "page": 1,
     "per_page": 20,
-    "pages": 1
+    "pages": 1,
 }
 
 # =============================================================================
@@ -92,10 +90,11 @@ CREATE_PRODUCT_REQUEST_EXAMPLE = {
     "reorder_level": 100,
     "expiry_date": "2026-12-31",
     "description": "Common pain reliever and fever reducer",
-    "requires_prescription": False
+    "requires_prescription": False,
 }
 
-PRODUCT_RESPONSE_EXAMPLE = {    "id": 1,
+PRODUCT_RESPONSE_EXAMPLE = {
+    "id": 1,
     "name": "Paracetamol 500mg",
     "sku": "MED-PARA-500-001",
     "category": "Pain Relief",
@@ -110,7 +109,7 @@ PRODUCT_RESPONSE_EXAMPLE = {    "id": 1,
     "created_at": "2024-01-01T10:00:00Z",
     "updated_at": "2024-01-15T14:30:00Z",
     "is_low_stock": False,
-    "is_expired": False
+    "is_expired": False,
 }
 
 # =============================================================================
@@ -120,20 +119,12 @@ PRODUCT_RESPONSE_EXAMPLE = {    "id": 1,
 CREATE_SALE_REQUEST_EXAMPLE = {
     "client_id": 1,
     "items": [
-        {
-            "product_id": 1,
-            "quantity": 2,
-            "unit_price": 5.99
-        },
-        {
-            "product_id": 5,
-            "quantity": 1,
-            "unit_price": 12.50
-        }
+        {"product_id": 1, "quantity": 2, "unit_price": 5.99},
+        {"product_id": 5, "quantity": 1, "unit_price": 12.50},
     ],
     "payment_method": "cash",
     "discount": 0.0,
-    "notes": "Customer requested bag"
+    "notes": "Customer requested bag",
 }
 
 SALE_RESPONSE_EXAMPLE = {
@@ -144,16 +135,17 @@ SALE_RESPONSE_EXAMPLE = {
         {
             "product_id": 1,
             "product_name": "Paracetamol 500mg",
-            "quantity": 2,            "unit_price": 5.99,
-            "subtotal": 11.98
+            "quantity": 2,
+            "unit_price": 5.99,
+            "subtotal": 11.98,
         },
         {
             "product_id": 5,
             "product_name": "Vitamin C 1000mg",
             "quantity": 1,
             "unit_price": 12.50,
-            "subtotal": 12.50
-        }
+            "subtotal": 12.50,
+        },
     ],
     "subtotal": 24.48,
     "discount": 0.0,
@@ -162,7 +154,7 @@ SALE_RESPONSE_EXAMPLE = {
     "notes": "Customer requested bag",
     "created_at": "2024-01-15T14:30:00Z",
     "pharmacist_id": 1,
-    "pharmacist_name": "Admin User"
+    "pharmacist_name": "Admin User",
 }
 
 # =============================================================================
@@ -173,22 +165,16 @@ AI_QUERY_REQUEST_EXAMPLE = {
     "question": "What are the top selling products this month?",
     "context": "pharmacy_sales",
     "max_tokens": 500,
-    "temperature": 0.7
+    "temperature": 0.7,
 }
 
 AI_QUERY_RESPONSE_EXAMPLE = {
     "question": "What are the top selling products this month?",
     "answer": "Based on the sales data for this month, the top 5 selling products are:\n\n1. **Paracetamol 500mg** - 342 units sold ($2,048.58 revenue)\n2. **Vitamin C 1000mg** - 287 units sold ($3,587.50 revenue)\n3. **Ibuprofen 400mg** - 198 units sold ($1,584.00 revenue)\n4. **Amoxicillin 500mg** - 156 units sold ($2,340.00 revenue)\n5. **Omeprazole 20mg** - 143 units sold ($2,145.00 revenue)\n\nTotal revenue from top 5 products: $11,705.08\n\nWould you like more detailed analytics on any specific product?",
-    "sources": [
-        {
-            "source": "sales_data",
-            "relevance": 0.95,
-            "data_points": 1250
-        }
-    ],
+    "sources": [{"source": "sales_data", "relevance": 0.95, "data_points": 1250}],
     "processing_time_ms": 2340,
     "model": "mortarium-ai-v1",
-    "timestamp": "2024-01-15T14:30:00Z"
+    "timestamp": "2024-01-15T14:30:00Z",
 }
 
 # =============================================================================
@@ -199,20 +185,20 @@ ERROR_400_EXAMPLE = {
     "error_code": "VALIDATION_ERROR",
     "timestamp": "2024-01-15T14:30:00Z",
     "path": "/api/v1/clients/",
-    "method": "POST"
+    "method": "POST",
 }
 
 ERROR_401_EXAMPLE = {
     "detail": "Invalid credentials",
     "error_code": "AUTHENTICATION_FAILED",
-    "timestamp": "2024-01-15T14:30:00Z"
+    "timestamp": "2024-01-15T14:30:00Z",
 }
 
 ERROR_403_EXAMPLE = {
     "detail": "Insufficient permissions",
     "error_code": "FORBIDDEN",
     "timestamp": "2024-01-15T14:30:00Z",
-    "required_role": "admin"
+    "required_role": "admin",
 }
 
 ERROR_404_EXAMPLE = {
@@ -220,7 +206,7 @@ ERROR_404_EXAMPLE = {
     "error_code": "RESOURCE_NOT_FOUND",
     "timestamp": "2024-01-15T14:30:00Z",
     "resource_type": "client",
-    "resource_id": 999
+    "resource_id": 999,
 }
 
 ERROR_429_EXAMPLE = {
@@ -229,12 +215,12 @@ ERROR_429_EXAMPLE = {
     "timestamp": "2024-01-15T14:30:00Z",
     "retry_after": 60,
     "limit": 100,
-    "window": "1 minute"
+    "window": "1 minute",
 }
 
 ERROR_500_EXAMPLE = {
     "detail": "Internal server error",
     "error_code": "INTERNAL_ERROR",
     "timestamp": "2024-01-15T14:30:00Z",
-    "request_id": "req_abc123def456"
+    "request_id": "req_abc123def456",
 }

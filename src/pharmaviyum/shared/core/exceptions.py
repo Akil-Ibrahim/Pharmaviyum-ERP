@@ -4,12 +4,13 @@ Domain exceptions for consistent error handling across modules.
 Each module can raise these exceptions, and they'll be handled
 uniformly by the global exception handler in main.py.
 """
-from typing import Optional, Any
+
+from typing import Any, Optional
 
 
 class PharmaviyumException(Exception):
     """Base exception for all Pharmaviyum modules."""
-    
+
     def __init__(
         self,
         message: str,
@@ -26,7 +27,7 @@ class PharmaviyumException(Exception):
 
 class NotFoundException(PharmaviyumException):
     """Resource not found."""
-    
+
     def __init__(self, resource: str, identifier: Any = None):
         message = f"{resource} not found"
         if identifier is not None:
@@ -36,7 +37,7 @@ class NotFoundException(PharmaviyumException):
 
 class ValidationException(PharmaviyumException):
     """Validation error."""
-    
+
     def __init__(self, message: str, details: Optional[dict] = None):
         super().__init__(
             message=message,
@@ -48,7 +49,7 @@ class ValidationException(PharmaviyumException):
 
 class ConflictException(PharmaviyumException):
     """Resource conflict (e.g., duplicate)."""
-    
+
     def __init__(self, message: str, details: Optional[dict] = None):
         super().__init__(
             message=message,
@@ -60,13 +61,13 @@ class ConflictException(PharmaviyumException):
 
 class UnauthorizedException(PharmaviyumException):
     """Unauthorized access."""
-    
+
     def __init__(self, message: str = "Unauthorized"):
         super().__init__(message=message, code="UNAUTHORIZED", status_code=401)
 
 
 class ForbiddenException(PharmaviyumException):
     """Forbidden access."""
-    
+
     def __init__(self, message: str = "Forbidden"):
         super().__init__(message=message, code="FORBIDDEN", status_code=403)

@@ -6,6 +6,7 @@ Best practice 2026:
 - Supports open-source (Ollama/Qwen) and commercial (OpenAI/Anthropic) models
 - Used for budget alerting and ROI analysis of AI features
 """
+
 from __future__ import annotations
 
 # Approximate pricing per 1,000 tokens (USD)
@@ -16,7 +17,6 @@ MODEL_PRICING: dict[str, dict[str, float]] = {
     "qwen2.5:7b": {"input": 0.0, "output": 0.0},
     "qwen2.5:72b": {"input": 0.0, "output": 0.0},
     "mxbai-embed-large": {"input": 0.0, "output": 0.0},
-    
     # Commercial APIs (Fallback / Enterprise)
     "gpt-4o": {"input": 0.005, "output": 0.015},
     "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
@@ -28,24 +28,24 @@ MODEL_PRICING: dict[str, dict[str, float]] = {
 def calculate_llm_cost(model_name: str, input_tokens: int, output_tokens: int) -> float:
     """
     Calculate estimated cost for an LLM call.
-    
+
     Args:
         model_name: Name of the model used (e.g., "qwen2.5:7b", "gpt-4o")
         input_tokens: Number of prompt tokens
         output_tokens: Number of completion tokens
-    
+
     Returns:
         Estimated cost in USD
     """
     # Normalize model name for lookup
     model_key = model_name.lower().strip()
-    
+
     # Fallback to cheapest commercial model if unknown
     pricing = MODEL_PRICING.get(model_key, MODEL_PRICING["gpt-4o-mini"])
-    
+
     input_cost = (input_tokens / 1000.0) * pricing["input"]
     output_cost = (output_tokens / 1000.0) * pricing["output"]
-    
+
     return round(input_cost + output_cost, 6)
 
 

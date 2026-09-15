@@ -8,12 +8,13 @@ Public API:
 - IngestionProgressTracker: Redis-based progress tracking
 - Celery tasks: ingest_document, ingest_batch, cleanup_old_jobs
 """
-from .orchestrator import IngestionOrchestrator
-from .deduplication import DocumentDeduplicator, DedupStrategy
-from .versioning import DocumentVersionManager, VersionStatus
-from .progress import IngestionProgressTracker, IngestionStatus
+
 from .celery_app import celery_app
-from .tasks import ingest_document, ingest_batch, cleanup_old_jobs
+from .deduplication import DedupStrategy, DocumentDeduplicator
+from .orchestrator import IngestionOrchestrator
+from .progress import IngestionProgressTracker, IngestionStatus
+from .tasks import cleanup_old_jobs, ingest_batch, ingest_document
+from .versioning import DocumentVersionManager, VersionStatus
 
 __all__ = [
     "IngestionOrchestrator",

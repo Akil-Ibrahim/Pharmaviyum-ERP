@@ -2,14 +2,15 @@
 Middleware package
 All middleware components for Pharmaviyum CRM
 """
-from .correlation import CorrelationIdMiddleware
+
 from .audit import AuditMiddleware
-from .rate_limit import RateLimitMiddleware
+from .correlation import CorrelationIdMiddleware
+from .feature_flags import FeatureFlagMiddleware
 from .idempotency import IdempotencyMiddleware
+from .metrics import MetricsMiddleware
+from .rate_limit import RateLimitMiddleware
 from .sanitization import SanitizationMiddleware
 from .timeout import TimeoutMiddleware
-from .metrics import MetricsMiddleware
-from .feature_flags import FeatureFlagMiddleware
 
 __all__ = [
     "CorrelationIdMiddleware",

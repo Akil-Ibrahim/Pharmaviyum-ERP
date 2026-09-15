@@ -7,9 +7,10 @@ Available tools:
 - check_halal_compliance: Halal certification checker (SEA-specific)
 - verify_prescription: Prescription verification (SEA regulations)
 """
+
 from .drug_interactions import check_drug_interactions
-from .patient_history import get_patient_history
 from .halal_compliance import check_halal_compliance
+from .patient_history import get_patient_history
 from .prescription_verification import verify_prescription
 
 __all__ = [

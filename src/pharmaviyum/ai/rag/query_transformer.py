@@ -8,14 +8,19 @@ Best practice 2026:
 - Query decomposition: Break complex queries into sub-queries
 - Language-aware transformations for SEA/MENA markets
 """
+
 from __future__ import annotations
+
 from typing import Any, Literal
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
+
 from src.pharmaviyum.core.logging import logger
 
 
 class QueryVariation(BaseModel):
     """A transformed version of the original query."""
+
     original_query: str
     transformed_query: str
     transformation_type: Literal["hyde", "multi_query", "decomposition", "original"]
@@ -26,20 +31,20 @@ class QueryVariation(BaseModel):
 class QueryTransformer:
     """
     Transforms user queries to improve retrieval quality.
-    
+
     Strategies:
     1. HyDE: Generate hypothetical document, embed it instead of query
     2. Multi-query: Generate 2-3 variations (synonyms, rephrasing)
     3. Decomposition: Split complex queries into sub-queries
     """
-    
+
     def __init__(self, llm):
         """
         Args:
             llm: LLM instance for query generation (can be fast model like Qwen 1.5B)
         """
         self.llm = llm
-    
+
     async def transform_with_hyde(
         self,
         query: str,
@@ -48,7 +53,7 @@ class QueryTransformer:
         """
         HyDE: Generate hypothetical document that answers the query,
         then use that document's embedding for retrieval.
-        
+
         Why it works:
         - Query: "What is the dosage of Paracetamol?"
         - HyDE doc: "Paracetamol dosage for adults is 500mg-1000mg every 4-6 hours..."
@@ -56,7 +61,7 @@ class QueryTransformer:
         """
         context = context or {}
         language = context.get("language", "en")
-        
+
         # Language-specific prompt
         lang_instruction = {
             "vi": "Trả lời bằng tiếng Việt.",
@@ -65,7 +70,7 @@ class QueryTransformer:
             "id": "Jawab dalam bahasa Indonesia.",
             "en": "Answer in English.",
         }.get(language, "Answer in English.")
-        
+
         prompt = f"""You are a pharmaceutical knowledge assistant.
 {lang_instruction}
 
@@ -75,15 +80,15 @@ Do NOT say "I don't know" — make your best educated guess based on pharmaceuti
 Question: {query}
 
 Hypothetical answer:"""
-        
+
         try:
             response = await self.llm.ainvoke(prompt)
             hypothetical_doc = response.content.strip()
-            
+
             logger.debug(
                 f"HyDE transformation: {query[:50]}... → {hypothetical_doc[:80]}..."
             )
-            
+
             return QueryVariation(
                 original_query=query,
                 transformed_query=hypothetical_doc,
@@ -101,7 +106,7 @@ Hypothetical answer:"""
                 language=language,
                 confidence=1.0,
             )
-    
+
     async def generate_multi_query(
         self,
         query: str,
@@ -110,7 +115,7 @@ Hypothetical answer:"""
     ) -> list[QueryVariation]:
         """
         Generate multiple query variations to improve recall.
-        
+
         Example:
         - Original: "drug interactions between Warfarin and Aspirin"
         - Variation 1: "Warfarin Aspirin interaction risks"
@@ -119,7 +124,7 @@ Hypothetical answer:"""
         """
         context = context or {}
         language = context.get("language", "en")
-        
+
         lang_instruction = {
             "vi": "Viết bằng tiếng Việt.",
             "ar": "اكتب باللغة العربية.",
@@ -127,7 +132,7 @@ Hypothetical answer:"""
             "id": "Tulis dalam bahasa Indonesia.",
             "en": "Write in English.",
         }.get(language, "Write in English.")
-        
+
         prompt = f"""You are a query optimization assistant for pharmaceutical search.
 {lang_instruction}
 
@@ -138,11 +143,11 @@ Keep the medical meaning identical.
 Original question: {query}
 
 Generate {num_variations} variations (one per line, no numbering):"""
-        
+
         try:
             response = await self.llm.ainvoke(prompt)
             variations_text = response.content.strip().split("\n")
-            
+
             variations = [
                 QueryVariation(
                     original_query=query,
@@ -154,29 +159,34 @@ Generate {num_variations} variations (one per line, no numbering):"""
                 for v in variations_text[:num_variations]
                 if v.strip()
             ]
-            
+
             # Always include original
-            variations.insert(0, QueryVariation(
-                original_query=query,
-                transformed_query=query,
-                transformation_type="original",
-                language=language,
-                confidence=1.0,
-            ))
-            
+            variations.insert(
+                0,
+                QueryVariation(
+                    original_query=query,
+                    transformed_query=query,
+                    transformation_type="original",
+                    language=language,
+                    confidence=1.0,
+                ),
+            )
+
             logger.debug(f"Generated {len(variations)} query variations")
             return variations
-            
+
         except Exception as e:
             logger.warning(f"Multi-query generation failed: {e}")
-            return [QueryVariation(
-                original_query=query,
-                transformed_query=query,
-                transformation_type="original",
-                language=language,
-                confidence=1.0,
-            )]
-    
+            return [
+                QueryVariation(
+                    original_query=query,
+                    transformed_query=query,
+                    transformation_type="original",
+                    language=language,
+                    confidence=1.0,
+                )
+            ]
+
     async def decompose_query(
         self,
         query: str,
@@ -184,7 +194,7 @@ Generate {num_variations} variations (one per line, no numbering):"""
     ) -> list[QueryVariation]:
         """
         Decompose complex queries into sub-queries.
-        
+
         Example:
         - Original: "What are the interactions between Warfarin and Aspirin, and what are the alternatives?"
         - Sub-query 1: "Warfarin Aspirin drug interactions"
@@ -192,17 +202,21 @@ Generate {num_variations} variations (one per line, no numbering):"""
         """
         context = context or {}
         language = context.get("language", "en")
-        
+
         # Only decompose if query is complex (contains "and", "or", multiple questions)
-        if not any(kw in query.lower() for kw in [" and ", " or ", " also ", " additionally "]):
-            return [QueryVariation(
-                original_query=query,
-                transformed_query=query,
-                transformation_type="original",
-                language=language,
-                confidence=1.0,
-            )]
-        
+        if not any(
+            kw in query.lower() for kw in [" and ", " or ", " also ", " additionally "]
+        ):
+            return [
+                QueryVariation(
+                    original_query=query,
+                    transformed_query=query,
+                    transformation_type="original",
+                    language=language,
+                    confidence=1.0,
+                )
+            ]
+
         lang_instruction = {
             "vi": "Viết bằng tiếng Việt.",
             "ar": "اكتب باللغة العربية.",
@@ -210,7 +224,7 @@ Generate {num_variations} variations (one per line, no numbering):"""
             "id": "Tulis dalam bahasa Indonesia.",
             "en": "Write in English.",
         }.get(language, "Write in English.")
-        
+
         prompt = f"""You are a query decomposition assistant.
 {lang_instruction}
 
@@ -220,11 +234,11 @@ Each sub-question should be answerable independently.
 Complex question: {query}
 
 Sub-questions (one per line, no numbering):"""
-        
+
         try:
             response = await self.llm.ainvoke(prompt)
             subqueries_text = response.content.strip().split("\n")
-            
+
             subqueries = [
                 QueryVariation(
                     original_query=query,
@@ -236,16 +250,18 @@ Sub-questions (one per line, no numbering):"""
                 for sq in subqueries_text[:3]
                 if sq.strip()
             ]
-            
+
             logger.debug(f"Decomposed query into {len(subqueries)} sub-queries")
             return subqueries
-            
+
         except Exception as e:
             logger.warning(f"Query decomposition failed: {e}")
-            return [QueryVariation(
-                original_query=query,
-                transformed_query=query,
-                transformation_type="original",
-                language=language,
-                confidence=1.0,
-            )]
+            return [
+                QueryVariation(
+                    original_query=query,
+                    transformed_query=query,
+                    transformation_type="original",
+                    language=language,
+                    confidence=1.0,
+                )
+            ]

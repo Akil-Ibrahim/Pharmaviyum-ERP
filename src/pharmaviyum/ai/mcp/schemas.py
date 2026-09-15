@@ -7,21 +7,24 @@ Best practice 2026:
 - Frozen models for immutability across tool boundaries
 - Medical-specific types (drug names, dosages, interactions)
 """
-from __future__ import annotations
-from datetime import datetime, date
-from typing import Any, Literal
-from uuid import UUID, uuid4
-from pydantic import BaseModel, Field, ConfigDict
 
+from __future__ import annotations
+
+from datetime import date, datetime
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict, Field
 
 # ============================================================================
 # DRUG INTERACTION TOOL
 # ============================================================================
 
+
 class DrugInteractionCheck(BaseModel):
     """Input for drug interaction checker."""
+
     model_config = ConfigDict(frozen=True)
-    
+
     drug_names: list[str] = Field(..., min_length=2, max_length=20)
     country: str = Field(default="VN", description="ISO country code")
     patient_id: int | None = None
@@ -31,8 +34,9 @@ class DrugInteractionCheck(BaseModel):
 
 class DrugInteraction(BaseModel):
     """Single drug-drug interaction."""
+
     model_config = ConfigDict(frozen=True)
-    
+
     drug_a: str
     drug_b: str
     severity: Literal["low", "moderate", "high", "critical"]
@@ -45,8 +49,9 @@ class DrugInteraction(BaseModel):
 
 class InteractionCheckResult(BaseModel):
     """Result of drug interaction check."""
+
     model_config = ConfigDict(frozen=True)
-    
+
     drugs_checked: list[str]
     interactions: list[DrugInteraction] = Field(default_factory=list)
     overall_severity: Literal["none", "low", "moderate", "high", "critical"]
@@ -60,10 +65,12 @@ class InteractionCheckResult(BaseModel):
 # PATIENT HISTORY TOOL
 # ============================================================================
 
+
 class PatientHistoryRequest(BaseModel):
     """Input for patient history retrieval."""
+
     model_config = ConfigDict(frozen=True)
-    
+
     patient_id: int
     include_allergies: bool = True
     include_conditions: bool = True
@@ -90,8 +97,9 @@ class ConditionInfo(BaseModel):
 
 class PatientHistory(BaseModel):
     """Patient medical history summary."""
+
     model_config = ConfigDict(frozen=True)
-    
+
     patient_id: int
     full_name: str
     age: int | None = None
@@ -109,10 +117,12 @@ class PatientHistory(BaseModel):
 # HALAL COMPLIANCE TOOL
 # ============================================================================
 
+
 class HalalCheckRequest(BaseModel):
     """Input for halal compliance check."""
+
     model_config = ConfigDict(frozen=True)
-    
+
     drug_name: str
     country: str = Field(default="VN")
     include_alternatives: bool = True
@@ -120,8 +130,9 @@ class HalalCheckRequest(BaseModel):
 
 class HalalCertification(BaseModel):
     """Halal certification details."""
+
     model_config = ConfigDict(frozen=True)
-    
+
     drug_name: str
     is_halal: bool
     certification_body: str | None = None
@@ -136,24 +147,38 @@ class HalalCertification(BaseModel):
 # PRESCRIPTION VERIFICATION TOOL
 # ============================================================================
 
+
 class PrescriptionVerifyRequest(BaseModel):
     """Input for prescription verification."""
+
     model_config = ConfigDict(frozen=True)
-    
+
     prescription_number: str
     pharmacist_id: int
-    checks: list[Literal[
-        "expiry", "prescriber_license", "quantity_limits",
-        "duplicate_dispensing", "drug_availability", "interactions"
-    ]] = Field(default_factory=lambda: [
-        "expiry", "prescriber_license", "quantity_limits", "duplicate_dispensing"
-    ])
+    checks: list[
+        Literal[
+            "expiry",
+            "prescriber_license",
+            "quantity_limits",
+            "duplicate_dispensing",
+            "drug_availability",
+            "interactions",
+        ]
+    ] = Field(
+        default_factory=lambda: [
+            "expiry",
+            "prescriber_license",
+            "quantity_limits",
+            "duplicate_dispensing",
+        ]
+    )
 
 
 class PrescriptionCheck(BaseModel):
     """Single prescription check result."""
+
     model_config = ConfigDict(frozen=True)
-    
+
     check_type: str
     passed: bool
     details: str | None = None
@@ -162,8 +187,9 @@ class PrescriptionCheck(BaseModel):
 
 class PrescriptionVerification(BaseModel):
     """Full prescription verification result."""
+
     model_config = ConfigDict(frozen=True)
-    
+
     prescription_number: str
     is_valid: bool
     checks: list[PrescriptionCheck] = Field(default_factory=list)
@@ -178,10 +204,12 @@ class PrescriptionVerification(BaseModel):
 # GENERIC MCP RESPONSE
 # ============================================================================
 
+
 class MCPToolResponse(BaseModel):
     """Standardized MCP tool response wrapper."""
+
     model_config = ConfigDict(frozen=True)
-    
+
     tool_name: str
     success: bool
     data: dict[str, Any] | None = None

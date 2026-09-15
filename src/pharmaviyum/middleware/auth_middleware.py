@@ -37,7 +37,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         user = None
         if token and self.secret:
             try:
-                payload = jwt.decode(token, self.secret, algorithms=[settings.JWT_ALGORITHM])
+                payload = jwt.decode(
+                    token, self.secret, algorithms=[settings.JWT_ALGORITHM]
+                )
                 user = {"username": payload.get("sub")}
             except jwt.PyJWTError:
                 user = None

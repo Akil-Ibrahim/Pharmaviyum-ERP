@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, ForeignKey, Float, DateTime, String
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
+
 from src.pharmaviyum.db.base import Base
 
 

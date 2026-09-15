@@ -6,6 +6,7 @@ Best practice 2026:
 - Custom callbacks for metrics collection
 - Correlation with OpenTelemetry traces
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -29,7 +30,9 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
         self.session_id = session_id
         self.trace_id = trace_id
 
-    async def on_llm_start(self, serialized: dict[str, Any], prompts: list[str], **kwargs) -> None:
+    async def on_llm_start(
+        self, serialized: dict[str, Any], prompts: list[str], **kwargs
+    ) -> None:
         """Called when LLM starts generating."""
         logger.debug(
             "LLM generation started",
@@ -45,8 +48,10 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
         token_usage = getattr(response, "llm_output", {}).get("token_usage", {})
 
         if token_usage:
-            from src.pharmaviyum.ai.observability.cost_tracker import calculate_llm_cost
-            from src.pharmaviyum.ai.observability.metrics import record_llm_usage
+            from src.pharmaviyum.ai.observability.cost_tracker import \
+                calculate_llm_cost
+            from src.pharmaviyum.ai.observability.metrics import \
+                record_llm_usage
 
             model_name = "qwen2.5:7b"
             input_tokens = token_usage.get("prompt_tokens", 0)
@@ -55,7 +60,9 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
 
             record_llm_usage(model_name, input_tokens, output_tokens, cost)
 
-    async def on_tool_start(self, serialized: dict[str, Any], input_str: str, **kwargs) -> None:
+    async def on_tool_start(
+        self, serialized: dict[str, Any], input_str: str, **kwargs
+    ) -> None:
         """Called when a tool starts execution."""
         tool_name = serialized.get("name", "unknown")
         logger.info(

@@ -1,6 +1,10 @@
 def test_create_and_get_order(client):
     # create client (reuse user model as client if client endpoints absent)
-    user_payload = {"username": "orderuser", "email": "ord@example.com", "password": "pwd"}
+    user_payload = {
+        "username": "orderuser",
+        "email": "ord@example.com",
+        "password": "pwd",
+    }
     uresp = client.post("/api/v1/users/", json=user_payload)
     assert uresp.status_code == 201
     user_id = uresp.json()["id"]

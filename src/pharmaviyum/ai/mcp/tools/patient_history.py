@@ -10,20 +10,21 @@ Best practice 2026:
 - Privacy-aware: no sensitive data leakage
 - Structured output for LLM consumption
 """
+
 from __future__ import annotations
+
 import time
-from datetime import datetime, date
-from sqlalchemy import select, func
+from datetime import date, datetime
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from ..schemas import (
-    PatientHistoryRequest,
-    PatientHistory,
-    AllergyInfo,
-    ConditionInfo,
-)
-from ..registry import registry
+
 from src.pharmaviyum.core.logging import logger
+
+from ..registry import registry
+from ..schemas import (AllergyInfo, ConditionInfo, PatientHistory,
+                       PatientHistoryRequest)
 
 
 def calculate_age(dob: date | None) -> int | None:
@@ -55,7 +56,7 @@ def calculate_age(dob: date | None) -> int | None:
 async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
     """
     Load patient medical history with eager-loaded relationships.
-    
+
     Algorithm:
     1. Fetch patient with selectinload for allergies + conditions
     2. Optionally fetch recent prescriptions (filtered by months_back)
@@ -63,13 +64,11 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
     4. Return structured history for LLM context
     """
     start = time.perf_counter()
-    
+
     # Lazy import to avoid circular dependencies
-    from src.pharmaviyum.modules.patients.models import (
-        Patient, PatientAllergy, PatientCondition,
-    )
+    from src.pharmaviyum.modules.patients.models import Patient
     from src.pharmaviyum.shared.core.database import async_session_factory
-    
+
     async with async_session_factory() as session:
         # Single query with eager loading (no N+1)
         query = (
@@ -82,10 +81,10 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
         )
         result = await session.execute(query)
         patient = result.scalar_one_or_none()
-        
+
         if not patient:
             raise ValueError(f"Patient not found: {input.patient_id}")
-        
+
         # Build allergies list
         allergies: list[AllergyInfo] = []
         if input.include_allergies:
@@ -98,7 +97,7 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
                 )
                 for a in patient.allergies
             ]
-        
+
         # Build conditions list
         conditions: list[ConditionInfo] = []
         if input.include_conditions:
@@ -111,23 +110,23 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
                 )
                 for c in patient.conditions
             ]
-        
+
         # Count active prescriptions (if requested)
         active_prescriptions = 0
         if input.include_prescriptions:
             active_prescriptions = await _count_active_prescriptions(
                 session, input.patient_id, input.months_back
             )
-        
+
         # Count recent orders (if requested)
         recent_orders = 0
         if input.include_orders:
             recent_orders = await _count_recent_orders(
                 session, input.patient_id, input.months_back
             )
-        
+
         latency_ms = (time.perf_counter() - start) * 1000
-        
+
         logger.info(
             f"Patient history loaded: {patient.full_name}",
             extra={
@@ -137,7 +136,7 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
                 "latency_ms": latency_ms,
             },
         )
-        
+
         return PatientHistory(
             patient_id=patient.id,
             full_name=patient.full_name,
@@ -161,16 +160,15 @@ async def _count_active_prescriptions(
     """Count prescriptions issued within months_back."""
     try:
         from src.pharmaviyum.modules.prescriptions.models import Prescription
-        
-        cutoff = datetime.utcnow() - __import__("datetime").timedelta(days=months_back * 30)
-        
-        query = (
-            select(func.count(Prescription.id))
-            .where(
-                Prescription.patient_id == patient_id,
-                Prescription.date_issued >= cutoff,
-                Prescription.status.in_(["active", "filled"]),
-            )
+
+        cutoff = datetime.utcnow() - __import__("datetime").timedelta(
+            days=months_back * 30
+        )
+
+        query = select(func.count(Prescription.id)).where(
+            Prescription.patient_id == patient_id,
+            Prescription.date_issued >= cutoff,
+            Prescription.status.in_(["active", "filled"]),
         )
         result = await session.execute(query)
         return result.scalar_one()
@@ -187,15 +185,14 @@ async def _count_recent_orders(
     """Count orders within months_back."""
     try:
         from src.pharmaviyum.modules.orders.models import InternetOrder
-        
-        cutoff = datetime.utcnow() - __import__("datetime").timedelta(days=months_back * 30)
-        
-        query = (
-            select(func.count(InternetOrder.id))
-            .where(
-                InternetOrder.patient_id == patient_id,
-                InternetOrder.created_at >= cutoff,
-            )
+
+        cutoff = datetime.utcnow() - __import__("datetime").timedelta(
+            days=months_back * 30
+        )
+
+        query = select(func.count(InternetOrder.id)).where(
+            InternetOrder.patient_id == patient_id,
+            InternetOrder.created_at >= cutoff,
         )
         result = await session.execute(query)
         return result.scalar_one()

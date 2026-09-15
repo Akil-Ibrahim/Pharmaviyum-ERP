@@ -8,7 +8,8 @@ not direct dependencies. This enables:
 - Async processing of side effects
 - Audit trail of all domain events
 """
-from .bus import event_bus, DomainEvent
+
+from .bus import DomainEvent, event_bus
 from .handlers import register_all_handlers
 
 __all__ = ["event_bus", "DomainEvent", "register_all_handlers"]

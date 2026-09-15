@@ -12,8 +12,10 @@ Fields:
  - created_at: event timestamp
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, Text, JSON
 from datetime import datetime
+
+from sqlalchemy import JSON, Column, DateTime, Integer, String, Text
+
 from src.pharmaviyum.db.base import Base
 
 

@@ -9,6 +9,7 @@ Best practice 2026:
 - Execution tracing for LangSmith integration
 - Circuit breaker pattern for failing tools
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -169,7 +170,10 @@ class MCPClient:
         cb_state = self._circuit_breaker[tool_name]
         if cb_state["failures"] < self._circuit_breaker_threshold:
             return False
-        if time.time() - float(cb_state["last_failure"]) > self._circuit_breaker_timeout:
+        if (
+            time.time() - float(cb_state["last_failure"])
+            > self._circuit_breaker_timeout
+        ):
             del self._circuit_breaker[tool_name]
             return False
         return True
@@ -195,7 +199,9 @@ class MCPClient:
         return registry.get_tools_by_category(category)
 
     def get_tools_by_tags(self, tags: list[str]) -> list[ToolMetadata]:
-        return [tool for tool in self.list_tools() if any(tag in tool.tags for tag in tags)]
+        return [
+            tool for tool in self.list_tools() if any(tag in tool.tags for tag in tags)
+        ]
 
     def reset_circuit_breaker(self, tool_name: str | None = None) -> None:
         if tool_name:

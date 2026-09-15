@@ -1,8 +1,10 @@
 # schemas/client_schema.py - Client Pydantic schemas (single source of truth)
-from pydantic import BaseModel, validator
 from datetime import datetime
-from typing import Optional
 from enum import Enum
+from typing import Optional
+
+from pydantic import BaseModel, validator
+
 
 class ClientSegment(str, Enum):
     NEW = "new"
@@ -10,6 +12,7 @@ class ClientSegment(str, Enum):
     VIP = "vip"
     DORMANT = "dormant"
     PRIVILEGED = "privileged"
+
 
 class ClientBase(BaseModel):
     full_name: str
@@ -25,17 +28,19 @@ class ClientBase(BaseModel):
     regular_medications: Optional[str] = None
     address: Optional[str] = None
 
-    @validator('phone')
+    @validator("phone")
     def validate_phone(cls, v):
         if not v or len(v) < 10:
-            raise ValueError('Phone number must be at least 10 digits')
+            raise ValueError("Phone number must be at least 10 digits")
         return v
+
 
 class ClientCreate(ClientBase):
     """Schema for creating a new client."""
 
     class Config:
         from_attributes = True
+
 
 class ClientUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -50,6 +55,7 @@ class ClientUpdate(BaseModel):
     regular_medications: Optional[str] = None
     address: Optional[str] = None
     is_active: Optional[bool] = None
+
 
 class ClientResponse(BaseModel):
     id: int

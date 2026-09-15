@@ -1,14 +1,21 @@
 """Static file serving for monolithic architecture."""
-from pathlib import Path
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
 
+from pathlib import Path
+
+from fastapi import FastAPI
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 EXCLUDED_PREFIXES = (
-    "api/", "docs", "redoc", "openapi",
-    "metrics", "health", "ready",
-    "favicon.ico", "assets/",
+    "api/",
+    "docs",
+    "redoc",
+    "openapi",
+    "metrics",
+    "health",
+    "ready",
+    "favicon.ico",
+    "assets/",
 )
 
 
@@ -17,7 +24,12 @@ def get_static_path():
     docker_path = Path("/app/static")
     if docker_path.exists():
         return docker_path
-    local_path = Path(__file__).parent.parent.parent.parent / "frontend" / "shadcn-admin" / "dist"
+    local_path = (
+        Path(__file__).parent.parent.parent.parent
+        / "frontend"
+        / "shadcn-admin"
+        / "dist"
+    )
     if local_path.exists():
         return local_path
     alt_path = Path(__file__).parent.parent.parent.parent / "frontend" / "dist"
@@ -32,18 +44,18 @@ def setup_static_files(app: FastAPI):
     if not static_path:
         print("WARNING: Frontend build not found - API-only mode")
         return
-    
+
     assets_path = static_path / "assets"
     if assets_path.exists():
         app.mount("/assets", StaticFiles(directory=str(assets_path)), name="assets")
-    
+
     @app.get("/favicon.ico", include_in_schema=False)
     async def favicon():
         favicon_path = static_path / "favicon.ico"
         if favicon_path.exists():
             return FileResponse(str(favicon_path))
         return JSONResponse(status_code=404, content={"detail": "Not found"})
-    
+
     @app.get("/{full_path:path}", include_in_schema=False)
     async def spa_fallback(full_path: str):
         for prefix in EXCLUDED_PREFIXES:

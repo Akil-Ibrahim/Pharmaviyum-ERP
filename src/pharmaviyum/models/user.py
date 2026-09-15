@@ -1,6 +1,8 @@
-from sqlalchemy import String, Boolean, Integer
+from sqlalchemy import Boolean, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
+
 from src.pharmaviyum.database import Base
+
 
 class User(Base):
     __tablename__ = 'users'

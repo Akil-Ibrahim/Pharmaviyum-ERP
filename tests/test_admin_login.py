@@ -2,7 +2,6 @@ from fastapi.testclient import TestClient
 
 from src.pharmaviyum.main import app
 
-
 client = TestClient(app)
 
 

@@ -1,4 +1,5 @@
-from typing import Generic, TypeVar, Type, List, Optional
+from typing import Generic, List, Optional, Type, TypeVar
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,11 +12,15 @@ class AsyncRepository(Generic[T]):
         self.session = session
 
     async def get(self, id: int) -> Optional[T]:
-        result = await self.session.execute(select(self.model).where(self.model.id == id))
+        result = await self.session.execute(
+            select(self.model).where(self.model.id == id)
+        )
         return result.scalar_one_or_none()
 
     async def list(self, skip: int = 0, limit: int = 100) -> List[T]:
-        result = await self.session.execute(select(self.model).offset(skip).limit(limit))
+        result = await self.session.execute(
+            select(self.model).offset(skip).limit(limit)
+        )
         return result.scalars().all()
 
     async def add(self, obj: T) -> T:

@@ -1,4 +1,5 @@
 """Pharmaviyum Main Application — FastAPI entry point."""
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -11,13 +12,12 @@ from pydantic import ValidationError
 
 from src.pharmaviyum.ai.config import settings
 from src.pharmaviyum.ai.dependencies import ai_container
-from src.pharmaviyum.api.exceptions import (
-    PharmaviyumAPIError,
-    general_exception_handler,
-    pharmaviyum_api_error_handler,
-    validation_exception_handler,
-)
-from src.pharmaviyum.api.middleware import LoggingMiddleware, RequestIDMiddleware
+from src.pharmaviyum.api.exceptions import (PharmaviyumAPIError,
+                                            general_exception_handler,
+                                            pharmaviyum_api_error_handler,
+                                            validation_exception_handler)
+from src.pharmaviyum.api.middleware import (LoggingMiddleware,
+                                            RequestIDMiddleware)
 from src.pharmaviyum.api.v1 import api_v1_router
 from src.pharmaviyum.core.logging import logger
 
@@ -71,8 +71,16 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=settings.environment != "production" or bool(allowed_origins),
-    allow_methods=["*"] if settings.environment != "production" else ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allow_headers=["*"] if settings.environment != "production" else ["Authorization", "Content-Type", "X-Request-ID"],
+    allow_methods=(
+        ["*"]
+        if settings.environment != "production"
+        else ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    ),
+    allow_headers=(
+        ["*"]
+        if settings.environment != "production"
+        else ["Authorization", "Content-Type", "X-Request-ID"]
+    ),
 )
 
 app.add_exception_handler(PharmaviyumAPIError, pharmaviyum_api_error_handler)

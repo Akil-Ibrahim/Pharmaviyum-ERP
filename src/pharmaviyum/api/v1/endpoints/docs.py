@@ -12,8 +12,9 @@ Features:
 =============================================================================
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from fastapi.openapi.utils import get_openapi
+
 from src.pharmaviyum.main import app
 
 router = APIRouter(tags=["Documentation"])
@@ -22,13 +23,13 @@ router = APIRouter(tags=["Documentation"])
 def custom_openapi():
     """
     Generate custom OpenAPI schema with enhanced documentation
-    
+
     Returns:
         dict: OpenAPI schema with custom metadata and examples
     """
     if app.openapi_schema:
         return app.openapi_schema
-    
+
     openapi_schema = get_openapi(
         title="PharmaViyum CRM API",
         version="1.0.0",
@@ -82,47 +83,44 @@ For API support, contact: support@pharmaviyum.com
         tags=[
             {
                 "name": "Authentication",
-                "description": "User authentication and token management"
+                "description": "User authentication and token management",
             },
-            {
-                "name": "Clients",
-                "description": "Client management operations"
-            },
+            {"name": "Clients", "description": "Client management operations"},
             {
                 "name": "Products",
-                "description": "Product catalog and inventory management"
+                "description": "Product catalog and inventory management",
             },
             {
                 "name": "Sales",
-                "description": "Sales transaction tracking and analytics"
-            },            {
-                "name": "AI Assistant",
-                "description": "Mortarium AI-powered business intelligence queries"
+                "description": "Sales transaction tracking and analytics",
             },
             {
-                "name": "Health",
-                "description": "System health checks and monitoring"
+                "name": "AI Assistant",
+                "description": "Mortarium AI-powered business intelligence queries",
             },
+            {"name": "Health", "description": "System health checks and monitoring"},
         ],
     )
-    
+
     # Add security scheme
     openapi_schema["components"]["securitySchemes"] = {
         "BearerAuth": {
             "type": "http",
             "scheme": "bearer",
             "bearerFormat": "JWT",
-            "description": "JWT authentication token"
+            "description": "JWT authentication token",
         }
     }
-    
+
     # Apply security to all endpoints except health and docs
     for path in openapi_schema["paths"].values():
         for method in path.values():
             if "tags" in method:
-                if not any(tag in ["Health", "Documentation"] for tag in method["tags"]):
+                if not any(
+                    tag in ["Health", "Documentation"] for tag in method["tags"]
+                ):
                     method["security"] = [{"BearerAuth": []}]
-    
+
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
@@ -135,9 +133,10 @@ app.openapi = custom_openapi
 async def api_documentation():
     """
     Redirect to Swagger UI documentation
-    
+
     Returns:
         Redirect to /docs endpoint
     """
     from fastapi.responses import RedirectResponse
+
     return RedirectResponse(url="/docs")

@@ -2,12 +2,14 @@
 Unit tests for PatientService
 Best practice 2026: Comprehensive service layer testing with mocks
 """
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from src.pharmaviyum.services.patient import PatientService
-from src.pharmaviyum.schemas.patient import PatientCreate, PatientUpdate
-from src.pharmaviyum.models.patients import Patient
 
+from unittest.mock import AsyncMock, patch
+
+import pytest
+
+from src.pharmaviyum.models.patients import Patient
+from src.pharmaviyum.schemas.patient import PatientCreate, PatientUpdate
+from src.pharmaviyum.services.patient import PatientService
 
 pytestmark = pytest.mark.unit
 
@@ -59,7 +61,7 @@ def sample_patient():
 
 class TestPatientServiceCreate:
     """Tests for create_patient method"""
-    
+
     @pytest.mark.asyncio
     async def test_create_patient_success(
         self,
@@ -76,7 +78,7 @@ class TestPatientServiceCreate:
             email="ibragim@example.com",
             country="VN",
         )
-        
+
         expected_patient = Patient(
             id=1,
             first_name="Ибрагим",
@@ -85,16 +87,16 @@ class TestPatientServiceCreate:
             phone="+84123456789",
         )
         mock_repository.create.return_value = expected_patient
-        
+
         # Act
         result = await patient_service.create_patient(patient_data)
-        
+
         # Assert
         assert result.id == 1
         assert result.full_name == "Ibrahim Ibrahim"
         mock_repository.create.assert_called_once()
         mock_event_bus.emit.assert_called_once()
-    
+
     @pytest.mark.asyncio
     async def test_create_patient_duplicate_phone(
         self,
@@ -108,10 +110,10 @@ class TestPatientServiceCreate:
             last_name="Тестов",
             phone="+84123456789",
         )
-        
+
         existing_patient = Patient(id=1, phone="+84123456789")
         mock_repository.get_by_phone.return_value = existing_patient
-        
+
         # Act & Assert
         with pytest.raises(ValueError, match="already exists"):
             await patient_service.create_patient(patient_data)
@@ -119,7 +121,7 @@ class TestPatientServiceCreate:
 
 class TestPatientServiceGet:
     """Tests for get methods"""
-    
+
     @pytest.mark.asyncio
     async def test_get_patient_with_cache(
         self,
@@ -131,15 +133,15 @@ class TestPatientServiceGet:
         """Test patient retrieval uses cache"""
         # Arrange
         mock_cache_service.get.return_value = sample_patient
-        
+
         # Act
         result = await patient_service.get_patient(1)
-        
+
         # Assert
         assert result.id == 1
         mock_cache_service.get.assert_called_once()
         mock_repository.get_by_id_with_relations.assert_not_called()
-    
+
     @pytest.mark.asyncio
     async def test_get_patient_cache_miss(
         self,
@@ -152,10 +154,10 @@ class TestPatientServiceGet:
         # Arrange
         mock_cache_service.get.return_value = None
         mock_repository.get_by_id_with_relations.return_value = sample_patient
-        
+
         # Act
         result = await patient_service.get_patient(1)
-        
+
         # Assert
         assert result.id == 1
         mock_cache_service.get.assert_called_once()
@@ -165,7 +167,7 @@ class TestPatientServiceGet:
 
 class TestPatientServiceUpdate:
     """Tests for update_patient method"""
-    
+
     @pytest.mark.asyncio
     async def test_update_patient_success(
         self,
@@ -179,18 +181,18 @@ class TestPatientServiceUpdate:
         # Arrange
         mock_repository.get_by_id_with_relations.return_value = sample_patient
         mock_repository.update.return_value = sample_patient
-        
+
         update_data = PatientUpdate(first_name="Новое имя")
-        
+
         # Act
         result = await patient_service.update_patient(1, update_data)
-        
+
         # Assert
         assert result is not None
         mock_repository.update.assert_called_once()
         mock_cache_service.delete.assert_called()
         mock_event_bus.emit.assert_called_once()
-    
+
     @pytest.mark.asyncio
     async def test_update_patient_duplicate_phone(
         self,
@@ -201,12 +203,12 @@ class TestPatientServiceUpdate:
         """Test update fails with duplicate phone"""
         # Arrange
         mock_repository.get_by_id_with_relations.return_value = sample_patient
-        
+
         other_patient = Patient(id=2, phone="+84999999999")
         mock_repository.get_by_phone.return_value = other_patient
-        
+
         update_data = PatientUpdate(phone="+84999999999")
-        
+
         # Act & Assert
         with pytest.raises(ValueError, match="already in use"):
             await patient_service.update_patient(1, update_data)
@@ -214,7 +216,7 @@ class TestPatientServiceUpdate:
 
 class TestPatientServiceDelete:
     """Tests for delete_patient method"""
-    
+
     @pytest.mark.asyncio
     async def test_soft_delete_success(
         self,
@@ -226,16 +228,16 @@ class TestPatientServiceDelete:
         """Test successful soft delete"""
         # Arrange
         mock_repository.soft_delete.return_value = True
-        
+
         # Act
         result = await patient_service.delete_patient(1, hard_delete=False)
-        
+
         # Assert
         assert result is True
         mock_repository.soft_delete.assert_called_once_with(1)
         mock_cache_service.delete.assert_called()
         mock_event_bus.emit.assert_called_once()
-    
+
     @pytest.mark.asyncio
     async def test_hard_delete_with_feature_flag_disabled(
         self,
@@ -245,14 +247,14 @@ class TestPatientServiceDelete:
         """Test hard delete falls back to soft when feature flag disabled"""
         # Arrange
         mock_repository.soft_delete.return_value = True
-        
+
         with patch(
             "src.pharmaviyum.services.patient.is_feature_enabled",
             return_value=False,
         ):
             # Act
             result = await patient_service.delete_patient(1, hard_delete=True)
-        
+
         # Assert
         assert result is True
         mock_repository.soft_delete.assert_called_once()
@@ -260,7 +262,7 @@ class TestPatientServiceDelete:
 
 class TestPatientServiceStatistics:
     """Tests for statistics methods"""
-    
+
     @pytest.mark.asyncio
     async def test_get_statistics(
         self,
@@ -279,10 +281,10 @@ class TestPatientServiceStatistics:
             "VN": 60,
             "TH": 20,
         }
-        
+
         # Act
         result = await patient_service.get_statistics()
-        
+
         # Assert
         assert result["total"] == 100
         assert result["active"] == 80

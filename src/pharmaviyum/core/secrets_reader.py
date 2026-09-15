@@ -1,7 +1,8 @@
 """Docker Secrets Reader with env fallback."""
-from pathlib import Path
-from functools import lru_cache
+
 import os
+from functools import lru_cache
+from pathlib import Path
 
 
 @lru_cache(maxsize=32)

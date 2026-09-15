@@ -1,6 +1,10 @@
 def test_create_and_get_user(client):
     # create user
-    payload = {"username": "testuser", "email": "test@example.com", "password": "secret"}
+    payload = {
+        "username": "testuser",
+        "email": "test@example.com",
+        "password": "secret",
+    }
     resp = client.post("/api/v1/users/", json=payload)
     assert resp.status_code == 201
     data = resp.json()

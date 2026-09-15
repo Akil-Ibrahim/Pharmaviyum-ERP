@@ -8,30 +8,34 @@ Best practice 2026:
 - Medical guardrails for safety
 - Multi-language support (vi/en/th/id)
 """
+
 from __future__ import annotations
+
 import time
 from typing import AsyncIterator
-from .schemas import Document, Chunk, QueryContext, RAGResponse, RetrievalResult
+
+from src.pharmaviyum.core.logging import logger
+
 from .chunking import MedicalChunker
 from .embeddings import EmbeddingsProvider
+from .schemas import Document, QueryContext, RAGResponse, RetrievalResult
 from .vector_store import PgVectorStore
-from src.pharmaviyum.core.logging import logger
 
 
 class RAGPipeline:
     """
     End-to-end RAG pipeline for pharmaceutical knowledge.
-    
+
     Usage:
         pipeline = RAGPipeline(vector_store, embeddings, llm)
-        
+
         # Ingest documents
         await pipeline.ingest([document])
-        
+
         # Query
         response = await pipeline.query("What is the dosage of Paracetamol?", context)
     """
-    
+
     def __init__(
         self,
         vector_store: PgVectorStore,
@@ -45,7 +49,7 @@ class RAGPipeline:
         self.llm = llm
         self.chunker = chunker or MedicalChunker()
         self.guardrails = guardrails
-    
+
     async def ingest(
         self,
         documents: list[Document],
@@ -53,49 +57,49 @@ class RAGPipeline:
     ) -> dict[str, int]:
         """
         Ingest documents into vector store.
-        
+
         Pipeline:
         1. Chunk documents (medical-aware)
         2. Generate embeddings (batched)
         3. Upsert to pgvector
-        
+
         Returns:
             Statistics about ingestion
         """
         start_time = time.perf_counter()
         total_chunks = 0
-        
+
         for document in documents:
             # Step 1: Chunk
             chunks = self.chunker.chunk(document, strategy=chunking_strategy)
             if not chunks:
                 logger.warning(f"No chunks generated for document {document.id}")
                 continue
-            
+
             # Step 2: Embed (batched for throughput)
             embeddings = await self.embeddings.embed_batch(
                 [c.content for c in chunks],
                 batch_size=32,
             )
-            
+
             # Step 3: Upsert to vector store
             await self.vector_store.upsert(chunks, embeddings)
             total_chunks += len(chunks)
-            
+
             logger.info(
                 f"Ingested document {document.id}: {len(chunks)} chunks",
                 extra={"doc_type": document.doc_type, "country": document.country},
             )
-        
+
         latency_ms = (time.perf_counter() - start_time) * 1000
         logger.info(f"Ingestion complete: {total_chunks} chunks in {latency_ms:.2f}ms")
-        
+
         return {
             "documents_processed": len(documents),
             "chunks_created": total_chunks,
             "latency_ms": latency_ms,
         }
-    
+
     async def query(
         self,
         question: str,
@@ -103,7 +107,7 @@ class RAGPipeline:
     ) -> RAGResponse:
         """
         Query the RAG pipeline.
-        
+
         Pipeline:
         1. Embed query
         2. Hybrid search (vector + BM25 + RRF)
@@ -113,10 +117,10 @@ class RAGPipeline:
         6. Return structured response
         """
         start_time = time.perf_counter()
-        
+
         # Step 1: Embed query
         query_embedding = await self.embeddings.embed(question)
-        
+
         # Step 2: Hybrid search
         retrieved = await self.vector_store.hybrid_search(
             query=question,
@@ -125,7 +129,7 @@ class RAGPipeline:
             filters=self._build_filters(context),
             reranker="bge-reranker-v2-m3",
         )
-        
+
         if not retrieved:
             logger.warning(f"No results found for query: {question[:50]}")
             return RAGResponse(
@@ -136,10 +140,10 @@ class RAGPipeline:
                 model_used="none",
                 latency_ms=(time.perf_counter() - start_time) * 1000,
             )
-        
+
         # Step 3: Construct prompt
         prompt = self._build_prompt(question, retrieved, context)
-        
+
         # Step 4: Generate answer
         generation_start = time.perf_counter()
         llm_response = await self.llm.generate(
@@ -147,12 +151,12 @@ class RAGPipeline:
             temperature=context.temperature,
             max_tokens=context.max_tokens,
         )
-        generation_latency = time.perf_counter() - generation_start
-        
+        _generation_latency = time.perf_counter() - generation_start
+
         # Step 5: Apply guardrails
         answer = llm_response.content
         warnings: list[str] = []
-        
+
         if self.guardrails:
             validated = await self.guardrails.validate(
                 answer=answer,
@@ -161,12 +165,12 @@ class RAGPipeline:
             )
             answer = validated.answer
             warnings = validated.warnings
-        
+
         # Step 6: Compute confidence (average retrieval score)
         confidence = sum(r.score for r in retrieved) / len(retrieved)
-        
+
         total_latency = (time.perf_counter() - start_time) * 1000
-        
+
         logger.info(
             f"RAG query complete: {question[:50]}...",
             extra={
@@ -176,7 +180,7 @@ class RAGPipeline:
                 "country": context.country,
             },
         )
-        
+
         return RAGResponse(
             answer=answer,
             sources=retrieved,
@@ -186,7 +190,7 @@ class RAGPipeline:
             latency_ms=total_latency,
             tokens_used=getattr(llm_response, "tokens_used", 0),
         )
-    
+
     async def query_stream(
         self,
         question: str,
@@ -194,7 +198,7 @@ class RAGPipeline:
     ) -> AsyncIterator[str]:
         """
         Streaming query for long responses.
-        
+
         Yields tokens as they're generated.
         Use for real-time UI updates.
         """
@@ -206,13 +210,13 @@ class RAGPipeline:
             top_k=10,
             filters=self._build_filters(context),
         )
-        
+
         if not retrieved:
             yield "I couldn't find relevant information for your question."
             return
-        
+
         prompt = self._build_prompt(question, retrieved, context)
-        
+
         # Stream from LLM
         async for token in self.llm.generate_stream(
             prompt=prompt,
@@ -220,20 +224,20 @@ class RAGPipeline:
             max_tokens=context.max_tokens,
         ):
             yield token
-    
+
     def _build_filters(self, context: QueryContext) -> dict:
         """Build metadata filters from query context."""
         filters = {}
-        
+
         if context.country:
             filters["country"] = context.country
         if context.category:
             filters["category"] = context.category
         if context.halal_filter:
             filters["halal_certified"] = True
-        
+
         return filters
-    
+
     def _build_prompt(
         self,
         question: str,
@@ -242,7 +246,7 @@ class RAGPipeline:
     ) -> str:
         """
         Construct prompt with retrieved context.
-        
+
         Best practice 2026:
         - Clear instruction
         - Numbered sources for citation
@@ -253,9 +257,11 @@ class RAGPipeline:
         sources_text = ""
         for i, source in enumerate(sources, 1):
             sources_text += f"\n[{i}] {source.chunk.content}\n"
-            sources_text += f"    (Source: {source.chunk.metadata.get('source', 'unknown')}, "
+            sources_text += (
+                f"    (Source: {source.chunk.metadata.get('source', 'unknown')}, "
+            )
             sources_text += f"Type: {source.chunk.chunk_type})\n"
-        
+
         # Language-specific instruction
         lang_instructions = {
             "vi": "Trả lời bằng tiếng Việt.",
@@ -263,7 +269,7 @@ class RAGPipeline:
             "th": "ตอบเป็นภาษาไทย.",
             "id": "Jawab dalam bahasa Indonesia.",
         }
-        
+
         prompt = f"""You are a pharmaceutical AI assistant for Southeast Asian pharmacies.
 
 {lang_instructions.get(context.language, "Answer in English.")}
@@ -283,5 +289,5 @@ SOURCES:
 QUESTION: {question}
 
 ANSWER:"""
-        
+
         return prompt

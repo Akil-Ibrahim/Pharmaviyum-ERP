@@ -2,37 +2,37 @@
 Feature flag admin endpoints
 Best practice 2026: Full CRUD + statistics + testing
 """
-from fastapi import APIRouter, HTTPException, status, Query
+
 from typing import Optional
-from src.pharmaviyum.core.feature_flags import (
-    feature_flag_service,
-    FeatureFlag,
-    FlagType,
-)
-from src.pharmaviyum.schemas.feature_flag import (
-    FeatureFlagCreate,
-    FeatureFlagUpdate,
-    FeatureFlagResponse,
-    FeatureFlagListResponse,
-    FeatureFlagStatsResponse,
-    FeatureFlagCheckRequest,
-    FeatureFlagCheckResponse,
-)
+
+from fastapi import APIRouter, HTTPException, Query, status
+
+from src.pharmaviyum.core.feature_flags import (FeatureFlag, FlagType,
+                                                feature_flag_service)
+from src.pharmaviyum.schemas.feature_flag import (FeatureFlagCheckRequest,
+                                                  FeatureFlagCheckResponse,
+                                                  FeatureFlagCreate,
+                                                  FeatureFlagListResponse,
+                                                  FeatureFlagResponse,
+                                                  FeatureFlagStatsResponse,
+                                                  FeatureFlagUpdate)
 
 router = APIRouter(prefix="/feature-flags", tags=["feature-flags"])
 
 
-@router.post("/", response_model=FeatureFlagResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=FeatureFlagResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_feature_flag(flag_data: FeatureFlagCreate):
     """
     Create a new feature flag
-    
+
     Args:
         flag_data: Feature flag creation data
-        
+
     Returns:
         Created feature flag
-        
+
     Raises:
         HTTPException 400: If flag already exists
     """
@@ -48,10 +48,10 @@ async def create_feature_flag(flag_data: FeatureFlagCreate):
             variants=flag_data.variants,
             default_value=flag_data.default_value,
         )
-        
+
         created = await feature_flag_service.create_flag(flag)
         return FeatureFlagResponse(**created.to_dict())
-        
+
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -63,12 +63,12 @@ async def create_feature_flag(flag_data: FeatureFlagCreate):
 async def list_feature_flags():
     """
     List all feature flags
-    
+
     Returns:
         List of feature flags
     """
     flags = await feature_flag_service.list_flags()
-    
+
     return FeatureFlagListResponse(
         flags=[FeatureFlagResponse(**flag.to_dict()) for flag in flags],
         total=len(flags),
@@ -79,13 +79,13 @@ async def list_feature_flags():
 async def get_feature_flag(key: str):
     """
     Get feature flag by key
-    
+
     Args:
         key: Feature flag key
-        
+
     Returns:
         Feature flag
-        
+
     Raises:
         HTTPException 404: If flag not found
     """
@@ -95,7 +95,7 @@ async def get_feature_flag(key: str):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Feature flag '{key}' not found",
         )
-    
+
     return FeatureFlagResponse(**flag.to_dict())
 
 
@@ -103,27 +103,27 @@ async def get_feature_flag(key: str):
 async def update_feature_flag(key: str, flag_data: FeatureFlagUpdate):
     """
     Update feature flag
-    
+
     Args:
         key: Feature flag key
         flag_data: Update data
-        
+
     Returns:
         Updated feature flag
-        
+
     Raises:
         HTTPException 404: If flag not found
     """
     try:
         updates = flag_data.model_dump(exclude_unset=True)
-        
+
         # Convert enum values
         if "flag_type" in updates and updates["flag_type"]:
             updates["flag_type"] = FlagType(updates["flag_type"])
-        
+
         updated = await feature_flag_service.update_flag(key, updates)
         return FeatureFlagResponse(**updated.to_dict())
-        
+
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -135,10 +135,10 @@ async def update_feature_flag(key: str, flag_data: FeatureFlagUpdate):
 async def delete_feature_flag(key: str):
     """
     Delete feature flag
-    
+
     Args:
         key: Feature flag key
-        
+
     Raises:
         HTTPException 404: If flag not found
     """
@@ -154,10 +154,10 @@ async def delete_feature_flag(key: str):
 async def get_feature_flag_stats(key: str):
     """
     Get feature flag statistics
-    
+
     Args:
         key: Feature flag key
-        
+
     Returns:
         Feature flag statistics
     """
@@ -167,7 +167,7 @@ async def get_feature_flag_stats(key: str):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Feature flag '{key}' not found",
         )
-    
+
     return FeatureFlagStatsResponse(**stats)
 
 
@@ -175,10 +175,10 @@ async def get_feature_flag_stats(key: str):
 async def check_feature_flag(request: FeatureFlagCheckRequest):
     """
     Check if feature flag is enabled
-    
+
     Args:
         request: Check request with user context
-        
+
     Returns:
         Check result with enabled status and variant
     """
@@ -187,17 +187,19 @@ async def check_feature_flag(request: FeatureFlagCheckRequest):
         user_id=request.user_id,
         user_segment=request.user_segment,
     )
-    
+
     # Record check for statistics
     await feature_flag_service.record_check(request.key, enabled)
-    
+
     # Get variant if multivariate
     variant = None
     if enabled and request.user_id:
         flag = await feature_flag_service.get_flag(request.key)
         if flag and flag.flag_type == FlagType.MULTIVARIATE:
-            variant = await feature_flag_service.get_variant(request.key, request.user_id)
-    
+            variant = await feature_flag_service.get_variant(
+                request.key, request.user_id
+            )
+
     return FeatureFlagCheckResponse(
         key=request.key,
         enabled=enabled,
@@ -209,7 +211,7 @@ async def check_feature_flag(request: FeatureFlagCheckRequest):
 async def enable_feature_flag(key: str):
     """
     Enable feature flag
-    
+
     Args:
         key: Feature flag key
     """
@@ -227,7 +229,7 @@ async def enable_feature_flag(key: str):
 async def disable_feature_flag(key: str):
     """
     Disable feature flag
-    
+
     Args:
         key: Feature flag key
     """
@@ -248,7 +250,7 @@ async def set_percentage_rollout(
 ):
     """
     Set percentage rollout for feature flag
-    
+
     Args:
         key: Feature flag key
         percentage: Percentage (0-100)
@@ -267,7 +269,7 @@ async def set_percentage_rollout(
 async def invalidate_cache(key: Optional[str] = None):
     """
     Invalidate feature flag cache
-    
+
     Args:
         key: Specific flag key (optional, clears all if not provided)
     """

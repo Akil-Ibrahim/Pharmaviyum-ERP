@@ -1,11 +1,11 @@
 """Rate limiting middleware for production deployments."""
 
+import structlog
 from fastapi import FastAPI, Request
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
-import structlog
 
 from src.pharmaviyum.config import settings
 
@@ -56,6 +56,10 @@ def get_user_identifier(request: Request) -> str:
     """Return an authenticated user identifier, falling back to client IP."""
     user = request.scope.get("user")
     if user:
-        username = user.get("username", "unknown") if isinstance(user, dict) else getattr(user, "username", "unknown")
+        username = (
+            user.get("username", "unknown")
+            if isinstance(user, dict)
+            else getattr(user, "username", "unknown")
+        )
         return f"user:{username}"
     return f"ip:{get_remote_address(request)}"

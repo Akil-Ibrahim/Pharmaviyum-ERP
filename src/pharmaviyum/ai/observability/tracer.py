@@ -1,4 +1,5 @@
 """Unified OpenTelemetry and LangSmith observability tracer."""
+
 from __future__ import annotations
 
 import os
@@ -7,7 +8,8 @@ from typing import Any, Iterator
 
 from langsmith import Client as LangSmithClient
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+    OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -86,7 +88,8 @@ class ObservabilityTracer:
         with self.tracer.start_as_current_span(name) as span:
             for key, value in attributes.items():
                 span.set_attribute(
-                    key, value if isinstance(value, (bool, int, float, str)) else str(value)
+                    key,
+                    value if isinstance(value, (bool, int, float, str)) else str(value),
                 )
             try:
                 yield span

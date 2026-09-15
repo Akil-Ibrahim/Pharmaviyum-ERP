@@ -1,11 +1,15 @@
 # crud/client.py - CRUD operations for Client
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from datetime import datetime
 import hashlib
-from typing import Optional, List
+from datetime import datetime
+from typing import List, Optional
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.pharmaviyum.models.client import Client
-from src.pharmaviyum.schemas.client_schema import ClientCreate, ClientUpdate, ClientSegment
+from src.pharmaviyum.schemas.client_schema import (ClientCreate, ClientSegment,
+                                                   ClientUpdate)
+
 
 class ClientCRUD:
     def __init__(self, db: AsyncSession):
@@ -13,7 +17,9 @@ class ClientCRUD:
 
     @staticmethod
     def _generate_discount_card(phone: str) -> str:
-        hash_digest = hashlib.md5(phone.encode()).hexdigest()[:8].upper()
+        hash_digest = (
+            hashlib.md5(phone.encode(), usedforsecurity=False).hexdigest()[:8].upper()
+        )
         return f"PHARM{hash_digest}"
 
     async def create(self, data: ClientCreate) -> Client:
@@ -25,22 +31,20 @@ class ClientCRUD:
         return db_client
 
     async def get(self, client_id: int) -> Optional[Client]:
-        result = await self.db.execute(
-            select(Client).where(Client.id == client_id)
-        )
+        result = await self.db.execute(select(Client).where(Client.id == client_id))
         return result.scalar_one_or_none()
 
     async def get_by_phone(self, phone: str) -> Optional[Client]:
-        result = await self.db.execute(
-            select(Client).where(Client.phone == phone)
-        )
+        result = await self.db.execute(select(Client).where(Client.phone == phone))
         return result.scalar_one_or_none()
 
-    async def search_by_phone_partial(self, phone_suffix: str, limit: int = 5) -> List[Client]:
+    async def search_by_phone_partial(
+        self, phone_suffix: str, limit: int = 5
+    ) -> List[Client]:
         result = await self.db.execute(
             select(Client)
             .where(Client.phone.endswith(phone_suffix))
-            .where(Client.is_active == True)
+            .where(Client.is_active)
             .limit(limit)
         )
         return result.scalars().all()
@@ -71,14 +75,16 @@ class ClientCRUD:
     async def list_all(self, skip: int = 0, limit: int = 100) -> List[Client]:
         result = await self.db.execute(
             select(Client)
-            .where(Client.is_active == True)
+            .where(Client.is_active)
             .order_by(Client.created_at.desc())
             .offset(skip)
             .limit(limit)
         )
         return result.scalars().all()
 
-    async def update_purchase_stats(self, client_id: int, amount: float) -> Optional[Client]:
+    async def update_purchase_stats(
+        self, client_id: int, amount: float
+    ) -> Optional[Client]:
         client = await self.get(client_id)
         if client:
             client.total_purchases += 1

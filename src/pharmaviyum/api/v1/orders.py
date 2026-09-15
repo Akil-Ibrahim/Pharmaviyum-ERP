@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.pharmaviyum.crud.client import ClientCRUD
 from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.order import Order
 from src.pharmaviyum.schemas.order_schema import OrderCreate, OrderResponse
-from src.pharmaviyum.crud.client import ClientCRUD
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 

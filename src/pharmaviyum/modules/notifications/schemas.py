@@ -1,6 +1,8 @@
 """Notification schemas with Pydantic v2 Discriminated Unions."""
-from pydantic import BaseModel, Field, EmailStr
-from typing import Literal, Union, Annotated
+
+from typing import Annotated, Literal, Union
+
+from pydantic import BaseModel, EmailStr, Field
 
 
 class EmailNotification(BaseModel):

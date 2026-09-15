@@ -6,7 +6,7 @@ and testable.
 """
 
 from .chat import register_chat
-from .presence import register_presence
 from .notifications import register_notifications
+from .presence import register_presence
 
 __all__ = ["register_chat", "register_presence", "register_notifications"]

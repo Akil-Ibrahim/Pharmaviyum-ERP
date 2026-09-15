@@ -1,12 +1,9 @@
 """Database readiness checker with exponential backoff."""
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-)
+
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
+from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
+                      wait_exponential)
 
 
 @retry(
@@ -29,7 +26,7 @@ async def check_database_health(engine) -> dict:
         async with engine.connect() as conn:
             version_result = await conn.execute(text("SELECT version()"))
             version = version_result.scalar()
-            
+
             pool = engine.pool
             pool_stats = {
                 "size": pool.size(),
@@ -37,7 +34,7 @@ async def check_database_health(engine) -> dict:
                 "checked_out": pool.checkedout(),
                 "overflow": pool.overflow(),
             }
-            
+
             return {"status": "healthy", "version": version, "pool": pool_stats}
     except Exception as e:
         return {"status": "unhealthy", "error": str(e)}

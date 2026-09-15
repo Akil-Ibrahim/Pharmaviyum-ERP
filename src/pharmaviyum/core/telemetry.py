@@ -11,13 +11,14 @@ from typing import Any
 
 try:
     from opentelemetry import trace
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
-    from opentelemetry.sdk.resources import Resource
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-    from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
-    from opentelemetry.instrumentation.redis import RedisInstrumentor
     from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+    from opentelemetry.instrumentation.redis import RedisInstrumentor
+    from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+    from opentelemetry.sdk.resources import Resource
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import (BatchSpanProcessor,
+                                                ConsoleSpanExporter)
 except Exception:  # pragma: no cover - compatibility fallback for Python 3.14
     trace = None
     TracerProvider = None
@@ -35,7 +36,9 @@ from src.pharmaviyum.core.config import settings
 def _otlp_exporter_available() -> bool:
     """Return whether the OTLP exporter is importable in this runtime."""
     try:
-        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter  # type: ignore
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+            OTLPSpanExporter  # type: ignore
+
         return OTLPSpanExporter is not None
     except Exception:
         return False
@@ -54,18 +57,21 @@ def setup_telemetry(app=None, engine=None) -> None:
 
     try:
         # Create resource with service info
-        resource = Resource.create({
-            "service.name": settings.OTEL_SERVICE_NAME,
-            "service.version": settings.APP_VERSION,
-            "deployment.environment": settings.ENVIRONMENT.value,
-        })
+        resource = Resource.create(
+            {
+                "service.name": settings.OTEL_SERVICE_NAME,
+                "service.version": settings.APP_VERSION,
+                "deployment.environment": settings.ENVIRONMENT.value,
+            }
+        )
 
         # Create tracer provider
         provider = TracerProvider(resource=resource)
 
         # Add exporters
         if settings.OTEL_EXPORTER_ENDPOINT and _otlp_exporter_available():
-            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter  # type: ignore
+            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+                OTLPSpanExporter  # type: ignore
 
             exporter = OTLPSpanExporter(endpoint=settings.OTEL_EXPORTER_ENDPOINT)
         else:

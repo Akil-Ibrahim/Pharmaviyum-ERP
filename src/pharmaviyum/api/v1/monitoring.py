@@ -1,4 +1,5 @@
 """Monitoring API endpoints: liveness, readiness, and metrics."""
+
 from __future__ import annotations
 
 import asyncio
@@ -64,19 +65,25 @@ async def readiness_check() -> Response:
         errors["ai"] = "not_initialized"
 
     if errors:
-        logger.error("Readiness check failed", extra={"failed_components": list(errors)})
+        logger.error(
+            "Readiness check failed", extra={"failed_components": list(errors)}
+        )
         return JSONResponse(
             status_code=503,
             content={"status": "not_ready", "components": checks, "errors": errors},
         )
 
-    return JSONResponse(status_code=200, content={"status": "ready", "components": checks})
+    return JSONResponse(
+        status_code=200, content={"status": "ready", "components": checks}
+    )
 
 
 @router.get("/metrics")
 async def metrics() -> Response:
     """Prometheus metrics endpoint."""
-    return Response(content=generate_latest(ai_registry), media_type=CONTENT_TYPE_LATEST)
+    return Response(
+        content=generate_latest(ai_registry), media_type=CONTENT_TYPE_LATEST
+    )
 
 
 @router.get("/mcp/health")

@@ -1,8 +1,10 @@
 """Core i18n functionality."""
+
 import json
+from functools import lru_cache
 from pathlib import Path
 from typing import Optional
-from functools import lru_cache
+
 from fastapi import Request
 
 
@@ -11,7 +13,7 @@ class I18n:
         self.default_locale = default_locale
         self.translations: dict[str, dict[str, str]] = {}
         self._load_translations()
-    
+
     def _load_translations(self):
         locales_dir = Path(__file__).parent / "locales"
         if not locales_dir.exists():
@@ -23,7 +25,7 @@ class I18n:
                     self.translations[locale] = json.load(f)
             except Exception as e:
                 print(f"Failed to load {locale_file}: {e}")
-    
+
     def t(self, key: str, locale: Optional[str] = None, **kwargs) -> str:
         locale = locale or self.default_locale
         translation = self.translations.get(locale, {}).get(key)
@@ -37,7 +39,7 @@ class I18n:
             return translation.format(**kwargs)
         except (KeyError, IndexError):
             return translation
-    
+
     def get_locale_from_request(self, request: Request) -> str:
         locale = request.headers.get("X-Locale")
         if locale and locale in self.translations:

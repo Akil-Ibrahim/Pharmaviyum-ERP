@@ -6,9 +6,13 @@ Best practice 2026:
 - Versioned prompts for A/B testing
 - Domain-specific structured prompts
 """
+
 from __future__ import annotations
+
 from typing import Any
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
+
 from src.pharmaviyum.core.logging import logger
 
 
@@ -27,10 +31,10 @@ class PromptTemplate(BaseModel):
 
 class PromptRegistry:
     """Registry for MCP prompt templates."""
-    
+
     def __init__(self):
         self._prompts: dict[str, PromptTemplate] = {}
-    
+
     def prompt(
         self,
         name: str,
@@ -38,6 +42,7 @@ class PromptRegistry:
         arguments: list[PromptArgument],
     ):
         """Decorator to register a prompt template."""
+
         def decorator(func):
             # The function itself becomes the template generator
             self._prompts[name] = PromptTemplate(
@@ -50,8 +55,9 @@ class PromptRegistry:
             self._prompts[name]._generator = func
             logger.info(f"Registered MCP prompt: {name}")
             return func
+
         return decorator
-    
+
     def list_prompts(self) -> list[PromptTemplate]:
         # Return copies without the internal _generator
         return [
@@ -63,17 +69,17 @@ class PromptRegistry:
             )
             for p in self._prompts.values()
         ]
-    
+
     async def get_prompt(self, name: str, arguments: dict[str, Any]) -> str:
         """Generate prompt from template with provided arguments."""
         if name not in self._prompts:
             raise ValueError(f"Prompt not found: {name}")
-        
+
         prompt_obj = self._prompts[name]
         generator = getattr(prompt_obj, "_generator", None)
         if not generator:
             raise ValueError(f"Prompt {name} has no generator function")
-        
+
         return await generator(**arguments)
 
 
@@ -84,16 +90,29 @@ prompt_registry = PromptRegistry()
 # PROMPT DEFINITIONS
 # ============================================================================
 
+
 @prompt_registry.prompt(
     name="halal_consultation",
     description="Generate a structured halal compliance consultation response",
     arguments=[
-        PromptArgument(name="drug_name", description="Name of the medication", required=True),
-        PromptArgument(name="country", description="Patient's country (e.g., ID, SA, IQ)", required=True),
-        PromptArgument(name="fiqh_school", description="Specific fiqh school if known (e.g., Ja'fari_Sistani)", required=False),
+        PromptArgument(
+            name="drug_name", description="Name of the medication", required=True
+        ),
+        PromptArgument(
+            name="country",
+            description="Patient's country (e.g., ID, SA, IQ)",
+            required=True,
+        ),
+        PromptArgument(
+            name="fiqh_school",
+            description="Specific fiqh school if known (e.g., Ja'fari_Sistani)",
+            required=False,
+        ),
     ],
 )
-async def generate_halal_consultation(drug_name: str, country: str, fiqh_school: str = "General") -> str:
+async def generate_halal_consultation(
+    drug_name: str, country: str, fiqh_school: str = "General"
+) -> str:
     return f"""You are a pharmaceutical AI assistant specializing in Halal compliance.
 
 Patient Inquiry: Is "{drug_name}" halal?
@@ -114,12 +133,20 @@ Respond in the patient's local language based on the country context."""
     name="drug_interaction_check",
     description="Generate a structured drug interaction warning for a pharmacist",
     arguments=[
-        PromptArgument(name="drug_list", description="Comma-separated list of drugs", required=True),
+        PromptArgument(
+            name="drug_list", description="Comma-separated list of drugs", required=True
+        ),
         PromptArgument(name="patient_age", description="Patient age", required=False),
-        PromptArgument(name="patient_conditions", description="Comma-separated list of conditions", required=False),
+        PromptArgument(
+            name="patient_conditions",
+            description="Comma-separated list of conditions",
+            required=False,
+        ),
     ],
 )
-async def generate_interaction_check(drug_list: str, patient_age: str = "Unknown", patient_conditions: str = "None") -> str:
+async def generate_interaction_check(
+    drug_list: str, patient_age: str = "Unknown", patient_conditions: str = "None"
+) -> str:
     return f"""URGENT PHARMACIST ALERT: Drug Interaction Check
 
 Medications: {drug_list}

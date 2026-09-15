@@ -5,6 +5,7 @@ The saver owns an AsyncConnectionPool for the lifetime of the application.
 This avoids handing a closed context-managed AsyncPostgresSaver to a compiled
 LangGraph graph.
 """
+
 from __future__ import annotations
 
 from typing import Any

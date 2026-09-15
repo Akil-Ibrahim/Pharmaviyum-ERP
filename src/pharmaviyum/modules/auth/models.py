@@ -10,19 +10,22 @@ Security features:
 - is_active flag for soft-deletion
 - is_superuser flag for admin privileges
 """
+
 import uuid
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import String, Boolean, DateTime
+
+from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
+
 from ...shared.core.database import Base
 
 
 class User(Base):
     """
     User entity for authentication and authorization.
-    
+
     Fields:
         id: UUID primary key (non-sequential to prevent enumeration)
         email: Unique email address (used as username)
@@ -32,8 +35,9 @@ class User(Base):
         is_superuser: True = has all permissions
         created_at: Account creation timestamp
     """
+
     __tablename__ = "users"
-    
+
     id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True,
         default=uuid.uuid4,
@@ -54,6 +58,6 @@ class User(Base):
         server_default=func.now(),
         nullable=False,
     )
-    
+
     def __repr__(self) -> str:
         return f"<User id={self.id} email={self.email}>"

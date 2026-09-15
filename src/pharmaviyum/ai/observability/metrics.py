@@ -6,8 +6,10 @@ Best practice 2026:
 - Tracking latency, tool success rates, token usage, and estimated costs
 - Integration with FastAPI /metrics endpoint
 """
+
 from __future__ import annotations
-from prometheus_client import Counter, Histogram, Gauge, CollectorRegistry
+
+from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
 
 # Custom registry to avoid conflicts with default Prometheus metrics
 ai_registry = CollectorRegistry()
@@ -94,14 +96,22 @@ def record_tool_call(tool_name: str, success: bool, latency_ms: float):
     TOOL_CALL_DURATION.labels(tool_name=tool_name).observe(latency_ms / 1000.0)
 
 
-def record_llm_usage(model_name: str, input_tokens: int, output_tokens: int, cost_usd: float):
+def record_llm_usage(
+    model_name: str, input_tokens: int, output_tokens: int, cost_usd: float
+):
     """Helper to record LLM token usage and estimated cost."""
-    LLM_TOKENS_USED_TOTAL.labels(model_name=model_name, token_type="input").inc(input_tokens)
-    LLM_TOKENS_USED_TOTAL.labels(model_name=model_name, token_type="output").inc(output_tokens)
+    LLM_TOKENS_USED_TOTAL.labels(model_name=model_name, token_type="input").inc(
+        input_tokens
+    )
+    LLM_TOKENS_USED_TOTAL.labels(model_name=model_name, token_type="output").inc(
+        output_tokens
+    )
     LLM_COST_ESTIMATE_USD_TOTAL.labels(model_name=model_name).inc(cost_usd)
 
 
-def record_evaluation_scores(accuracy: float, safety: float, completeness: float, compliance: float):
+def record_evaluation_scores(
+    accuracy: float, safety: float, completeness: float, compliance: float
+):
     """Helper to record latest evaluation scores."""
     EVALUATION_SCORES.labels(metric_type="accuracy").set(accuracy)
     EVALUATION_SCORES.labels(metric_type="safety").set(safety)

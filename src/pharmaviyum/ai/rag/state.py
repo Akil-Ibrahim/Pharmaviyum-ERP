@@ -6,10 +6,11 @@ Best practice 2026:
 - Annotated reducers where list fields need append semantics
 - Keep intermediate retrieval artifacts explicit for debugging and streaming
 """
+
 from __future__ import annotations
 
-from typing import Annotated, Any, Literal, TypedDict
 from operator import add
+from typing import Annotated, Literal, TypedDict
 
 from .schemas import QueryContext, RetrievalResult
 

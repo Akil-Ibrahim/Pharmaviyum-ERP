@@ -1,7 +1,9 @@
 """
 API v1 Router Aggregation.
 """
+
 from fastapi import APIRouter
+
 from .ai import router as ai_router
 from .ingestion import router as ingestion_router
 from .monitoring import router as monitoring_router

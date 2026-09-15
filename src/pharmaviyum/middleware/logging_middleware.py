@@ -5,11 +5,12 @@ application logger. Keep logs structured and minimal for production.
 """
 
 import time
-from starlette.types import ASGIApp
-from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi import Request
-from src.pharmaviyum.core.logging import get_app_logger
 
+from fastapi import Request
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp
+
+from src.pharmaviyum.core.logging import get_app_logger
 
 logger = get_app_logger("pharmaviyum.middleware")
 

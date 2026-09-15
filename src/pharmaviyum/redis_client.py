@@ -2,9 +2,11 @@
 Redis client configuration and connection management.
 Best Practice: Use connection pooling and proper error handling.
 """
+
 import structlog
-from redis.asyncio import Redis, ConnectionPool
+from redis.asyncio import ConnectionPool, Redis
 from redis.exceptions import ConnectionError, TimeoutError
+
 from src.pharmaviyum.config import settings
 
 logger = structlog.get_logger()
@@ -65,6 +67,7 @@ async def close_redis():
 # Best Practice: Provide common Redis operations
 # ============================================
 
+
 async def cache_get(key: str) -> str | None:
     """Get value from cache."""
     redis = await get_redis()
@@ -74,7 +77,7 @@ async def cache_get(key: str) -> str | None:
 async def cache_set(key: str, value: str, expire: int = 3600) -> bool:
     """
     Set value in cache with expiration.
-    
+
     Args:
         key: Cache key
         value: Value to cache

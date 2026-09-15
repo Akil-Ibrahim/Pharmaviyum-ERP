@@ -2,19 +2,11 @@
 Prometheus metrics for observability
 Best practice 2026: Comprehensive metrics for monitoring and alerting
 """
-from prometheus_client import (
-    Counter,
-    Histogram,
-    Gauge,
-    Summary,
-    Info,
-    Enum,
-    generate_latest,
-    CONTENT_TYPE_LATEST,
-    CollectorRegistry,
-)
-from src.pharmaviyum.core.config import settings
 
+from prometheus_client import (CONTENT_TYPE_LATEST, Counter, Enum, Gauge,
+                               Histogram, Info, generate_latest)
+
+from src.pharmaviyum.core.config import settings
 
 # ============================================================================
 # HTTP METRICS
@@ -273,11 +265,13 @@ APP_INFO = Info(
     "Application information",
 )
 
-APP_INFO.info({
-    "name": settings.APP_NAME,
-    "version": settings.APP_VERSION,
-    "environment": settings.ENVIRONMENT.value,
-})
+APP_INFO.info(
+    {
+        "name": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "environment": settings.ENVIRONMENT.value,
+    }
+)
 
 APP_UPTIME_SECONDS = Gauge(
     "app_uptime_seconds",
@@ -295,10 +289,11 @@ APP_HEALTH_STATUS = Enum(
 # HELPER FUNCTIONS
 # ============================================================================
 
+
 def get_metrics() -> tuple[bytes, str]:
     """
     Get Prometheus metrics in text format
-    
+
     Returns:
         Tuple of (metrics_bytes, content_type)
     """
@@ -315,25 +310,27 @@ def record_http_request(
 ) -> None:
     """Record HTTP request metrics"""
     status_str = str(status)
-    
+
     HTTP_REQUESTS_TOTAL.labels(
         method=method,
         endpoint=endpoint,
         status=status_str,
         service=settings.APP_NAME,
     ).inc()
-    
+
     HTTP_REQUEST_DURATION.labels(
         method=method,
         endpoint=endpoint,
         status=status_str,
     ).observe(duration)
-    
+
     if request_size > 0:
         HTTP_REQUEST_SIZE.labels(method=method, endpoint=endpoint).observe(request_size)
-    
+
     if response_size > 0:
-        HTTP_RESPONSE_SIZE.labels(method=method, endpoint=endpoint).observe(response_size)
+        HTTP_RESPONSE_SIZE.labels(method=method, endpoint=endpoint).observe(
+            response_size
+        )
 
 
 def record_cache_hit(cache_type: str, hit: bool) -> None:
@@ -359,17 +356,17 @@ def record_ai_request(
         model=model,
         status=status,
     ).inc()
-    
+
     AI_REQUEST_DURATION.labels(
         task_type=task_type,
         model=model,
     ).observe(duration)
-    
+
     if tokens_input > 0:
         AI_TOKENS_USED.labels(model=model, type="input").inc(tokens_input)
-    
+
     if tokens_output > 0:
         AI_TOKENS_USED.labels(model=model, type="output").inc(tokens_output)
-    
+
     if confidence > 0:
         AI_CONFIDENCE_SCORE.labels(task_type=task_type).observe(confidence)

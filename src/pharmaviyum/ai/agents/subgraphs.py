@@ -6,16 +6,21 @@ Best practice 2026:
 - Subgraphs have their own state schema (subset of main state)
 - Enables independent testing and versioning of specific workflows
 """
+
 from __future__ import annotations
-from typing import TypedDict, Annotated
-from langgraph.graph import StateGraph, END
+
+from typing import Annotated, TypedDict
+
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
-from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage
+
 from src.pharmaviyum.core.logging import logger
 
 
 class SafetyCheckState(TypedDict):
     """State specific to the safety check subgraph."""
+
     messages: Annotated[list[BaseMessage], add_messages]
     draft_response: str
     safety_approved: bool
@@ -25,15 +30,15 @@ class SafetyCheckState(TypedDict):
 def create_safety_check_subgraph(llm, guardrails) -> StateGraph:
     """
     Creates a reusable subgraph for medical safety validation.
-    
+
     This subgraph can be called as a node from the main PharmacistAgent graph.
     """
     workflow = StateGraph(SafetyCheckState)
-    
+
     async def analyze_safety_node(state: SafetyCheckState) -> dict:
         """LLM-based safety analysis of the draft response."""
         draft = state.get("draft_response", "")
-        
+
         prompt = f"""You are a strict medical safety auditor.
 Review this draft pharmaceutical response for dangerous advice.
 
@@ -46,16 +51,24 @@ Check for:
 3. Missing mandatory medical disclaimers.
 
 Return JSON: {{"approved": bool, "warnings": ["string"]}}"""
-        
+
         try:
-            response = await llm.ainvoke([
-                SystemMessage(content="Respond ONLY in valid JSON."),
-                HumanMessage(content=prompt)
-            ])
-            import json, re
-            json_match = re.search(r'\{.*\}', response.content, re.DOTALL)
-            result = json.loads(json_match.group()) if json_match else {"approved": False, "warnings": ["Parsing failed"]}
-            
+            response = await llm.ainvoke(
+                [
+                    SystemMessage(content="Respond ONLY in valid JSON."),
+                    HumanMessage(content=prompt),
+                ]
+            )
+            import json
+            import re
+
+            json_match = re.search(r"\{.*\}", response.content, re.DOTALL)
+            result = (
+                json.loads(json_match.group())
+                if json_match
+                else {"approved": False, "warnings": ["Parsing failed"]}
+            )
+
             return {
                 "safety_approved": result.get("approved", False),
                 "safety_warnings": result.get("warnings", []),
@@ -63,9 +76,9 @@ Return JSON: {{"approved": bool, "warnings": ["string"]}}"""
         except Exception as e:
             logger.error(f"Safety check subgraph failed: {e}")
             return {"safety_approved": False, "safety_warnings": ["Safety check error"]}
-    
+
     workflow.add_node("analyze", analyze_safety_node)
     workflow.set_entry_point("analyze")
     workflow.add_edge("analyze", END)
-    
+
     return workflow.compile()

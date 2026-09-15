@@ -6,16 +6,19 @@ Best practice 2026:
 - Circuit breaker integration at the harness level
 - Clear user communication during degradation
 """
+
 from __future__ import annotations
-from .structured_output import AgentResponse, Warning
+
 from src.pharmaviyum.core.logging import logger
+
+from .structured_output import AgentResponse, Warning
 
 
 class GracefulDegradation:
     """
     Provides safe fallback responses when the AI system experiences failures.
     """
-    
+
     @staticmethod
     def get_fallback_response(
         session_id: str,
@@ -25,7 +28,7 @@ class GracefulDegradation:
     ) -> AgentResponse:
         """
         Generate a safe, structured fallback response.
-        
+
         Args:
             session_id: Current conversation session
             query: Original user query
@@ -34,9 +37,9 @@ class GracefulDegradation:
         """
         logger.warning(
             f"Triggering graceful degradation: {error_type}",
-            extra={"session_id": session_id, "trace_id": trace_id}
+            extra={"session_id": session_id, "trace_id": trace_id},
         )
-        
+
         if error_type == "llm_unavailable":
             answer = (
                 "⚠️ Our AI assistant is currently experiencing high load or technical difficulties. "
@@ -45,7 +48,7 @@ class GracefulDegradation:
             )
             warning_code = "ai_service_degraded"
             warning_msg = "AI service temporarily unavailable"
-            
+
         elif error_type == "tool_failure":
             answer = (
                 "⚠️ I was unable to retrieve the necessary medical database information to answer your question safely. "
@@ -53,7 +56,7 @@ class GracefulDegradation:
             )
             warning_code = "tool_dependency_failed"
             warning_msg = "Critical tool dependency failed"
-            
+
         else:
             answer = (
                 "⚠️ An unexpected error occurred while processing your request. "
@@ -61,7 +64,7 @@ class GracefulDegradation:
             )
             warning_code = "unknown_error"
             warning_msg = "Unexpected processing error"
-        
+
         return AgentResponse(
             session_id=session_id,
             query=query,

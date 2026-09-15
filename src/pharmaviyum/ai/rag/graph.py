@@ -12,6 +12,7 @@ If retrieval never produces a relevant document, the graph fails closed via
 
 Ingestion (chunk -> embed -> upsert) stays outside the graph as a batch job.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -21,13 +22,14 @@ from uuid import uuid4
 
 from langgraph.graph import END, StateGraph
 
+from src.pharmaviyum.core.logging import logger
+
 from .contextual_compression import ContextualCompressor
 from .embeddings import EmbeddingsProvider
 from .query_transformer import QueryTransformer
 from .schemas import QueryContext, RAGResponse, RetrievalResult
 from .state import RAGState
 from .vector_store import PgVectorStore
-from src.pharmaviyum.core.logging import logger
 
 
 class LangGraphRAG:
@@ -239,7 +241,9 @@ class LangGraphRAG:
     async def generate_node(self, state: RAGState) -> dict[str, Any]:
         ctx = state["context"]
         sources = state["graded"]
-        context_text = state.get("compressed_context") or self._fallback_context(sources)
+        context_text = state.get("compressed_context") or self._fallback_context(
+            sources
+        )
         model_name = getattr(self.llm, "model_name", None) or getattr(
             self.llm, "model", "unknown"
         )
@@ -248,7 +252,9 @@ class LangGraphRAG:
         )
         answer = resp.content if hasattr(resp, "content") else str(resp)
         usage = getattr(resp, "usage_metadata", None)
-        tokens = int(usage.get("total_tokens", 0) or 0) if isinstance(usage, dict) else 0
+        tokens = (
+            int(usage.get("total_tokens", 0) or 0) if isinstance(usage, dict) else 0
+        )
         confidence = min(0.95, 0.4 + 0.1 * len(sources))
         return {
             "answer": answer,

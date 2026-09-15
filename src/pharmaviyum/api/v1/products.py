@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.product import Product
-from src.pharmaviyum.schemas.product_schema import (
-    ProductCreate, ProductUpdate, ProductResponse,
-)
-from sqlalchemy import select
+from src.pharmaviyum.schemas.product_schema import (ProductCreate,
+                                                    ProductResponse,
+                                                    ProductUpdate)
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
@@ -30,13 +32,21 @@ async def get_product(product_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/", response_model=List[ProductResponse])
-async def list_products(skip: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=200), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Product).where(Product.is_active == True).offset(skip).limit(limit))
+async def list_products(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Product).where(Product.is_active).offset(skip).limit(limit)
+    )
     return result.scalars().all()
 
 
 @router.put("/{product_id}", response_model=ProductResponse)
-async def update_product(product_id: int, data: ProductUpdate, db: AsyncSession = Depends(get_db)):
+async def update_product(
+    product_id: int, data: ProductUpdate, db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()
     if not product:

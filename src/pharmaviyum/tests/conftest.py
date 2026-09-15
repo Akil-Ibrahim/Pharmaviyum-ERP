@@ -6,21 +6,21 @@ Provides:
 - Transaction-based test isolation
 - Factory functions for test data
 """
+
 import random
+from typing import AsyncGenerator
+
 import pytest
 import pytest_asyncio
-from typing import AsyncGenerator
-from sqlalchemy.ext.asyncio import (
-    create_async_engine,
-    AsyncSession,
-    async_sessionmaker,
-)
+from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
+                                    create_async_engine)
 
 
 @pytest.fixture(scope="session")
 def event_loop():
     """Create single event loop for all async tests in session."""
     import asyncio
+
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
@@ -29,15 +29,17 @@ def event_loop():
 @pytest_asyncio.fixture(scope="session")
 async def test_engine():
     """Create test database engine with all tables."""
-    test_db_url = "postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test"
-    
+    test_db_url = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test"
+    )
+
     engine = create_async_engine(test_db_url, echo=False, pool_pre_ping=True)
-    
+
     # Create all tables here when Base is ready:
     # from app.shared.core.database import Base
     # async with engine.begin() as conn:
     #     await conn.run_sync(Base.metadata.create_all)
-    
+
     yield engine
     await engine.dispose()
 
@@ -50,7 +52,7 @@ async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
         class_=AsyncSession,
         expire_on_commit=False,
     )
-    
+
     async with session_factory() as session:
         await session.begin()
         try:
@@ -62,6 +64,7 @@ async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
 @pytest.fixture
 def patient_factory(db_session: AsyncSession):
     """Factory for creating test patients."""
+
     async def create_patient(**kwargs):
         defaults = {
             "first_name": "Test",
@@ -73,5 +76,5 @@ def patient_factory(db_session: AsyncSession):
         }
         defaults.update(kwargs)
         return defaults
-    
+
     return create_patient

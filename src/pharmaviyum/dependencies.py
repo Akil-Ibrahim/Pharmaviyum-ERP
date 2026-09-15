@@ -1,7 +1,9 @@
 """FastAPI dependency injection"""
 
 from typing import Generator
+
 from sqlalchemy.orm import Session
+
 from src.pharmaviyum.db.session import SessionLocal
 
 

@@ -2,10 +2,12 @@
 Database configuration and session management
 Uses SQLAlchemy 2.0 async with PostgreSQL + pgvector
 """
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase
-from src.pharmaviyum.core.config import settings
 
+from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
+                                    create_async_engine)
+from sqlalchemy.orm import DeclarativeBase
+
+from src.pharmaviyum.core.config import settings
 
 # Create async engine with pgvector support
 engine = create_async_engine(
@@ -28,6 +30,7 @@ async_session = async_sessionmaker(
 
 class Base(DeclarativeBase):
     """Base class for all SQLAlchemy models"""
+
     pass
 
 

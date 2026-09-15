@@ -5,6 +5,7 @@ Actions:
 - Update statistics
 - Log migration
 """
+
 from sqlalchemy import text
 
 
