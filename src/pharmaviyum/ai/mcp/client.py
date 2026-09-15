@@ -24,6 +24,14 @@ from .context import require_mcp_context
 from .registry import UserRole, registry
 
 
+def get_authorization_context():
+    """Backward-compatible accessor for trusted request-scoped MCP context."""
+    try:
+        return require_mcp_context()
+    except PermissionError:
+        return None
+
+
 @dataclass
 class ToolExecutionResult:
     """Result of tool execution with metadata."""
@@ -62,22 +70,16 @@ class MCPClient:
         user_id: UUID | None = None,
         pharmacy_id: int | None = None,
     ) -> ToolExecutionResult:
-        """Call an MCP tool with retry while enforcing RBAC and tenant scope.
-
-        Explicit authorization arguments are accepted for trusted internal
-        callers. When omitted, the authenticated request context is required.
-        Model-controlled tool arguments are never used as authorization data.
-        """
+        """Call an MCP tool with retry while enforcing RBAC and tenant scope."""
         start = time.perf_counter()
 
         if user_role is None or user_id is None or pharmacy_id is None:
-            try:
-                context = require_mcp_context()
-            except PermissionError as exc:
+            context = get_authorization_context()
+            if context is None:
                 return ToolExecutionResult(
                     tool_name=tool_name,
                     success=False,
-                    error=str(exc),
+                    error="MCP authorization and tenant context are required",
                     latency_ms=(time.perf_counter() - start) * 1000,
                 )
             user_role = context.user_role
@@ -201,6 +203,9 @@ class MCPClient:
     def list_tools(self, user_role: UserRole | None = None) -> list[Any]:
         """Return only tools authorized for the supplied role."""
         if user_role is None:
+            context = get_authorization_context()
+            user_role = context.user_role if context else None
+        if user_role is None:
             return []
         return registry.list_tools_for_role(user_role)
 
@@ -211,10 +216,10 @@ class MCPClient:
     def to_openai_tools(self, user_role: UserRole | None = None) -> list[dict[str, Any]]:
         """Expose only tools the caller is authorized to invoke."""
         if user_role is None:
-            try:
-                user_role = require_mcp_context().user_role
-            except PermissionError:
-                return []
+            context = get_authorization_context()
+            user_role = context.user_role if context else None
+        if user_role is None:
+            return []
         return registry.to_openai_tools(user_role=user_role)
 
     def get_tools_by_category(self, category: str, user_role: UserRole | None = None) -> list[Any]:
