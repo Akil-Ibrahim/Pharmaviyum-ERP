@@ -5,28 +5,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.order import Order
 from src.pharmaviyum.models.patients import Patient
-from src.pharmaviyum.models.user import User
-from src.pharmaviyum.modules.auth.deps import get_current_user
+from src.pharmaviyum.modules.auth.deps import get_current_active_user, get_current_active_superuser
+from src.pharmaviyum.modules.auth.models import User
 from src.pharmaviyum.schemas.order_schema import OrderCreate, OrderResponse
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
-
-
-def require_superuser(current_user: User) -> None:
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Administrator privileges required",
-        )
 
 
 @router.post("/", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
 async def create_order(
     data: OrderCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_superuser),
 ):
-    require_superuser(current_user)
+    del current_user
 
     result = await db.execute(select(Patient).where(Patient.id == data.patient_id))
     patient = result.scalar_one_or_none()
@@ -48,8 +40,10 @@ async def create_order(
 async def get_order(
     order_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
+    del current_user
+
     result = await db.execute(select(Order).where(Order.id == order_id))
     order = result.scalar_one_or_none()
     if not order:
