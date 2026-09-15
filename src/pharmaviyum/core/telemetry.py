@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.pharmaviyum.core.config import settings
+
 try:
     from opentelemetry import trace
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -28,8 +30,6 @@ except Exception:  # pragma: no cover - compatibility fallback for Python 3.14
     SQLAlchemyInstrumentor = None
     RedisInstrumentor = None
     HTTPXClientInstrumentor = None
-
-from src.pharmaviyum.core.config import settings
 
 
 def _otlp_exporter_available() -> bool:
