@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 
 from src.pharmaviyum.db.base import Base
 
@@ -25,7 +25,12 @@ class ERPSyncEvent(Base):
     __tablename__ = "erp_sync_events"
 
     id = Column(Integer, primary_key=True, index=True)
-    integration_id = Column(Integer, nullable=False, index=True)
+    integration_id = Column(
+        Integer,
+        ForeignKey("erp_integrations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     event_id = Column(String(128), unique=True, nullable=False, index=True)
     entity_type = Column(String(64), nullable=False, index=True)
     entity_id = Column(String(128), nullable=True)
