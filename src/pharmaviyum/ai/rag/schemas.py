@@ -73,8 +73,12 @@ class RAGResponse(BaseModel):
 
 
 class QueryContext(BaseModel):
-    """Context for a RAG query."""
+    """Tenant-scoped context for a RAG query."""
 
+    model_config = ConfigDict(frozen=True)
+
+    # Required tenant boundary. AI/RAG must never retrieve across pharmacies.
+    pharmacy_id: int
     patient_id: int | None = None
     prescription_id: int | None = None
     country: str = "VN"
@@ -82,5 +86,5 @@ class QueryContext(BaseModel):
     category: str | None = None
     halal_filter: bool = False
     force_fresh: bool = False
-    max_tokens: int = 1024
+    max_tokens: int = Field(default=1024, gt=0, le=8192)
     temperature: float = Field(default=0.1, ge=0.0, le=2.0)
