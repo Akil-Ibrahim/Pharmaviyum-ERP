@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class Document(BaseModel):
@@ -41,8 +41,6 @@ class RetrievalResult(BaseModel):
 
 
 class SourceCitation(BaseModel):
-    """Stable, auditable citation identity for generated answers."""
-
     model_config = ConfigDict(frozen=True)
     citation_id: str
     document_id: UUID
@@ -63,6 +61,24 @@ class RAGResponse(BaseModel):
     model_used: str
     latency_ms: float
     tokens_used: int = 0
+
+    @model_validator(mode="after")
+    def bind_source_citations(self) -> "RAGResponse":
+        if self.citations or not self.sources:
+            return self
+        citations = [
+            SourceCitation(
+                citation_id=f"src-{source.chunk.id}",
+                document_id=source.chunk.document_id,
+                chunk_id=source.chunk.id,
+                source=str(source.chunk.metadata.get("source", source.chunk.metadata.get("source_uri", "knowledge_base"))),
+                version=(str(source.chunk.metadata["version"]) if source.chunk.metadata.get("version") is not None else None),
+                retrieval_score=source.rerank_score if source.rerank_score is not None else source.score,
+                metadata=dict(source.chunk.metadata),
+            )
+            for source in self.sources
+        ]
+        return self.model_copy(update={"citations": citations})
 
 
 class QueryContext(BaseModel):
