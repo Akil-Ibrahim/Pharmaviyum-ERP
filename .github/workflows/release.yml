@@ -23,6 +23,8 @@ jobs:
   validate:
     name: Validate immutable release
     runs-on: ubuntu-latest
+    outputs:
+      image_digest: ${{ steps.resolve.outputs.image_digest }}
     steps:
       - name: Validate image SHA
         env:
@@ -40,10 +42,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify immutable image exists
+      - name: Resolve release image digest
+        id: resolve
         env:
           IMAGE_SHA: ${{ inputs.image_sha }}
-        run: docker manifest inspect "$IMAGE_REPOSITORY:$IMAGE_SHA" >/dev/null
+        run: |
+          set -Eeuo pipefail
+          digest="$(docker buildx imagetools inspect "$IMAGE_REPOSITORY:$IMAGE_SHA" --format '{{.Manifest.Digest}}')"
+          if [[ ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "Could not resolve a valid OCI image digest"
+            exit 1
+          fi
+          echo "image_digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "Resolved release image to $IMAGE_REPOSITORY@$digest"
 
   deploy-staging:
     name: Deploy staging
@@ -112,7 +123,7 @@ jobs:
         env:
           SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
           SSH_USER: ${{ secrets.STAGING_SSH_USER }}
-          IMAGE_SHA: ${{ inputs.image_sha }}
+          IMAGE_DIGEST: ${{ needs.validate.outputs.image_digest }}
           DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
           PGVECTOR_DATABASE_URL: ${{ secrets.STAGING_PGVECTOR_DATABASE_URL }}
           REDIS_URL: ${{ secrets.STAGING_REDIS_URL }}
@@ -132,7 +143,8 @@ jobs:
           }
 
           : > "$release_env"
-          write_env APP_IMAGE "$IMAGE_REPOSITORY:$IMAGE_SHA"
+          write_env APP_IMAGE "$IMAGE_REPOSITORY@$IMAGE_DIGEST"
+          write_env IMAGE_SHA "${{ inputs.image_sha }}"
           write_env DATABASE_URL "$DATABASE_URL"
           write_env PGVECTOR_DATABASE_URL "$PGVECTOR_DATABASE_URL"
           write_env REDIS_URL "$REDIS_URL"
