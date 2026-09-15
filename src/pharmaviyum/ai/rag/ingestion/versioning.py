@@ -152,8 +152,12 @@ class DocumentVersionManager:
                     "version": row.version,
                     "status": row.status,
                     "chunk_count": row.chunk_count,
-                    "first_seen": row.first_seen.isoformat() if row.first_seen else None,
-                    "last_updated": row.last_updated.isoformat() if row.last_updated else None,
+                    "first_seen": (
+                        row.first_seen.isoformat() if row.first_seen else None
+                    ),
+                    "last_updated": (
+                        row.last_updated.isoformat() if row.last_updated else None
+                    ),
                 }
                 for row in result
             ]
