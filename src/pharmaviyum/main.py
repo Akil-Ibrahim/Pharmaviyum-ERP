@@ -21,13 +21,15 @@ from src.pharmaviyum.api.exceptions import (
 from src.pharmaviyum.api.middleware import LoggingMiddleware, RequestIDMiddleware
 from src.pharmaviyum.api.v1 import api_v1_router
 from src.pharmaviyum.core.logging import logger
+from src.pharmaviyum.database import AsyncSessionLocal
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize critical infrastructure and fail fast in production."""
+    """Initialize shared infrastructure once for the application lifetime."""
     logger.info("Starting Pharmaviyum AI Application")
     redis_client = None
+
     try:
         redis_client = aioredis.from_url(
             settings.redis.url,
@@ -35,8 +37,14 @@ async def lifespan(app: FastAPI):
             health_check_interval=30,
         )
         await redis_client.ping()
-        await ai_container.initialize(redis=redis_client, db_session_factory=None)
+
         app.state.redis_client = redis_client
+        app.state.db_session_factory = AsyncSessionLocal
+
+        await ai_container.initialize(
+            redis=redis_client,
+            db_session_factory=AsyncSessionLocal,
+        )
         logger.info("Application dependencies initialized")
     except Exception:
         logger.exception("Failed to initialize critical application dependencies")
@@ -106,7 +114,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "src.pharmaviyum.main:app",
-        host="0.0.0.0",  # nosec B104: container must listen on all interfaces  # nosec B104: container must listen on all interfaces  # nosec B104: container must listen on all interfaces  # nosec B104: container must listen on all interfaces
+        host="0.0.0.0",  # nosec B104: container must listen on all interfaces
         port=8000,
         reload=settings.environment == "development",
         log_level=settings.log_level.lower(),
