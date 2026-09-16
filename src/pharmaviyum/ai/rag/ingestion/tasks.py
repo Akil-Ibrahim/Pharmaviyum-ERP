@@ -20,7 +20,6 @@ from src.pharmaviyum.ai.rag.embeddings import EmbeddingsFactory
 from src.pharmaviyum.ai.rag.loaders import DOCXLoader, HTMLLoader, LoaderConfig, PDFLoader
 from src.pharmaviyum.ai.rag.preprocessing import DocumentPreprocessor
 from src.pharmaviyum.ai.rag.vector_store import PgVectorStore
-from src.pharmaviyum.core.config import settings
 from src.pharmaviyum.core.database import async_session_factory
 from src.pharmaviyum.redis_client import get_redis
 
@@ -218,50 +217,49 @@ def ingest_batch(
     """Queue multiple tenant-scoped ingestion tasks."""
     config = config or {}
     _require_pharmacy_id(config)
-    import redis
+    redis_client = None
+    try:
+        loop = get_event_loop()
+        redis_client = loop.run_until_complete(get_redis())
+        tracker = IngestionProgressTracker(redis_client)
+        loop.run_until_complete(
+            tracker.create_job(job_id, f"batch_{len(sources)}", len(sources), config)
+        )
 
-    redis_client = redis.from_url(settings.REDIS_URL)
-    tracker = IngestionProgressTracker(redis_client)
-    loop = get_event_loop()
-    loop.run_until_complete(
-        tracker.create_job(job_id, f"batch_{len(sources)}", len(sources), config)
-    )
+        results = []
+        failed = 0
+        for index, source_info in enumerate(sources):
+            source = source_info["source"]
+            source_type = source_info["source_type"]
+            try:
+                task = ingest_document.delay(
+                    source, source_type, f"{job_id}_doc_{index}", config
+                )
+                results.append({"source": source, "task_id": task.id, "status": "queued"})
+            except Exception as exc:
+                failed += 1
+                results.append({"source": source, "status": "failed", "error": str(exc)})
 
-    results = []
-    failed = 0
-    for index, source_info in enumerate(sources):
-        source = source_info["source"]
-        source_type = source_info["source_type"]
-        try:
-            task = ingest_document.delay(
-                source, source_type, f"{job_id}_doc_{index}", config
-            )
-            results.append({"source": source, "task_id": task.id, "status": "queued"})
-        except Exception as exc:
-            failed += 1
-            results.append({"source": source, "status": "failed", "error": str(exc)})
-
-    loop.run_until_complete(
-        tracker.update_status(job_id, "completed", processed=len(sources) - failed, failed=failed)
-    )
-    redis_client.close()
-    return {
-        "success": True,
-        "total_documents": len(sources),
-        "queued": len(sources) - failed,
-        "failed_to_queue": failed,
-        "results": results,
-    }
+        loop.run_until_complete(
+            tracker.update_status(job_id, "completed", processed=len(sources) - failed, failed=failed)
+        )
+        return {
+            "success": True,
+            "total_documents": len(sources),
+            "queued": len(sources) - failed,
+            "failed_to_queue": failed,
+            "results": results,
+        }
+    finally:
+        # The shared client is process-owned and must not be closed per task.
+        pass
 
 
 @celery_app.task(name="src.pharmaviyum.ai.rag.ingestion.tasks.cleanup_old_jobs")
 def cleanup_old_jobs() -> dict[str, Any]:
     """Periodic task: clean old ingestion jobs from Redis."""
-    import redis
-
-    redis_client = redis.from_url(settings.REDIS_URL)
-    tracker = IngestionProgressTracker(redis_client)
     loop = get_event_loop()
+    redis_client = loop.run_until_complete(get_redis())
+    tracker = IngestionProgressTracker(redis_client)
     removed = loop.run_until_complete(tracker.cleanup_old_jobs(days_old=7))
-    redis_client.close()
     return {"removed_jobs": removed}
