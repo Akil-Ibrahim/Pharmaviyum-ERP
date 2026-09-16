@@ -43,6 +43,7 @@ jobs:
       - name: Temporary Black formatting artifact
         run: |
           black src/ tests/
+          isort --profile black src/ tests/
           tar -czf black-formatted.tar.gz src tests
       - name: Upload temporary Black formatting artifact
         uses: actions/upload-artifact@v4
@@ -50,13 +51,13 @@ jobs:
           name: black-formatted-${{ github.sha }}
           path: black-formatted.tar.gz
           retention-days: 1
-      - name: Temporary commit of Black formatting
+      - name: Temporary commit of formatter remediation
         run: |
           if ! git diff --quiet -- src/ tests/; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add src/ tests/
-            git commit -m "style: apply Black formatting"
+            git commit -m "style: apply Black and isort formatting"
             git push
           fi
       - name: Black diagnostics
