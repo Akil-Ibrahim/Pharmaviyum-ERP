@@ -29,7 +29,9 @@ class PatientService:
         self.repository = repository
         self.cache_ttl = 3600
 
-    async def create_patient(self, data: PatientCreate, created_by: Optional[str] = None) -> Patient:
+    async def create_patient(
+        self, data: PatientCreate, created_by: Optional[str] = None
+    ) -> Patient:
         existing = await self.repository.get_by_phone(data.phone)
         if existing:
             raise ValueError(f"Patient with phone {data.phone} already exists")
@@ -38,20 +40,33 @@ class PatientService:
             if existing:
                 raise ValueError(f"Patient with email {data.email} already exists")
 
-        patient = Patient(**data.model_dump(), full_name=f"{data.first_name} {data.last_name}")
+        patient = Patient(
+            **data.model_dump(), full_name=f"{data.first_name} {data.last_name}"
+        )
         patient = await self.repository.create(patient)
         PATIENTS_CREATED_TOTAL.labels(country=patient.country).inc()
-        await event_bus.emit(Event(event_type="patient.created", data={
-            "patient_id": patient.id,
-            "full_name": patient.full_name,
-            "phone": patient.phone,
-            "country": patient.country,
-            "created_by": created_by,
-        }))
-        logger.info("Created patient %s", patient.id, extra={"patient_id": patient.id, "created_by": created_by})
+        await event_bus.emit(
+            Event(
+                event_type="patient.created",
+                data={
+                    "patient_id": patient.id,
+                    "full_name": patient.full_name,
+                    "phone": patient.phone,
+                    "country": patient.country,
+                    "created_by": created_by,
+                },
+            )
+        )
+        logger.info(
+            "Created patient %s",
+            patient.id,
+            extra={"patient_id": patient.id, "created_by": created_by},
+        )
         return patient
 
-    async def get_patient(self, id: int, use_cache: bool = True) -> Optional[Patient]:
+    async def get_patient(
+        self, id: int, use_cache: bool = True
+    ) -> Optional[Patient]:
         cache_key = f"patient:{id}"
         if use_cache:
             cached = await cache_service.get(cache_key)
@@ -76,15 +91,33 @@ class PatientService:
             await cache_service.set(cache_key, patient, ttl=self.cache_ttl)
         return patient
 
-    async def list_patients(self, query_text: Optional[str] = None, city: Optional[str] = None,
-                            country: Optional[str] = None, loyalty_tier: Optional[str] = None,
-                            is_active: Optional[bool] = None, page: int = 1, page_size: int = 50) -> tuple[list[Patient], int]:
+    async def list_patients(
+        self,
+        query_text: Optional[str] = None,
+        city: Optional[str] = None,
+        country: Optional[str] = None,
+        loyalty_tier: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> tuple[list[Patient], int]:
         skip = (page - 1) * page_size
-        return await self.repository.search(query_text=query_text, city=city, country=country,
-                                            loyalty_tier=loyalty_tier, is_active=is_active,
-                                            skip=skip, limit=page_size)
+        return await self.repository.search(
+            query_text=query_text,
+            city=city,
+            country=country,
+            loyalty_tier=loyalty_tier,
+            is_active=is_active,
+            skip=skip,
+            limit=page_size,
+        )
 
-    async def update_patient(self, id: int, data: PatientUpdate, updated_by: Optional[str] = None) -> Optional[Patient]:
+    async def update_patient(
+        self,
+        id: int,
+        data: PatientUpdate,
+        updated_by: Optional[str] = None,
+    ) -> Optional[Patient]:
         patient = await self.get_patient(id, use_cache=False)
         if not patient:
             return None
@@ -93,7 +126,11 @@ class PatientService:
             existing = await self.repository.get_by_phone(update_data["phone"])
             if existing and existing.id != id:
                 raise ValueError(f"Phone {update_data['phone']} already in use")
-        if "email" in update_data and update_data["email"] != patient.email and update_data["email"]:
+        if (
+            "email" in update_data
+            and update_data["email"] != patient.email
+            and update_data["email"]
+        ):
             existing = await self.repository.get_by_email(update_data["email"])
             if existing and existing.id != id:
                 raise ValueError(f"Email {update_data['email']} already in use")
@@ -103,22 +140,43 @@ class PatientService:
             patient.full_name = f"{patient.first_name} {patient.last_name}"
         patient = await self.repository.update(patient)
         await self._invalidate_patient_cache(id, patient.phone)
-        await event_bus.emit(Event(event_type="patient.updated", data={
-            "patient_id": patient.id,
-            "updated_fields": list(update_data.keys()),
-            "updated_by": updated_by,
-        }))
+        await event_bus.emit(
+            Event(
+                event_type="patient.updated",
+                data={
+                    "patient_id": patient.id,
+                    "updated_fields": list(update_data.keys()),
+                    "updated_by": updated_by,
+                },
+            )
+        )
         return patient
 
-    async def delete_patient(self, id: int, deleted_by: Optional[str] = None, hard_delete: bool = False) -> bool:
+    async def delete_patient(
+        self,
+        id: int,
+        deleted_by: Optional[str] = None,
+        hard_delete: bool = False,
+    ) -> bool:
         if hard_delete and not await is_feature_enabled("patient_hard_delete"):
             hard_delete = False
-        result = await self.repository.delete(id) if hard_delete else await self.repository.soft_delete(id)
+        result = (
+            await self.repository.delete(id)
+            if hard_delete
+            else await self.repository.soft_delete(id)
+        )
         if result:
             await self._invalidate_patient_cache(id)
-            await event_bus.emit(Event(event_type="patient.deleted", data={
-                "patient_id": id, "hard_delete": hard_delete, "deleted_by": deleted_by,
-            }))
+            await event_bus.emit(
+                Event(
+                    event_type="patient.deleted",
+                    data={
+                        "patient_id": id,
+                        "hard_delete": hard_delete,
+                        "deleted_by": deleted_by,
+                    },
+                )
+            )
         return result
 
     async def get_ai_profile(self, id: int) -> Optional[dict]:
@@ -146,16 +204,23 @@ class PatientService:
             "by_country": await self.repository.get_country_stats(),
         }
 
-    async def record_visit(self, id: int, purchase_amount: int = 0) -> Optional[Patient]:
+    async def record_visit(
+        self, id: int, purchase_amount: int = 0
+    ) -> Optional[Patient]:
         patient = await self.repository.record_visit(id, purchase_amount)
         if patient:
             await self._invalidate_patient_cache(id, patient.phone)
-            await event_bus.emit(Event(event_type="patient.visit_recorded", data={
-                "patient_id": id, "purchase_amount": purchase_amount,
-            }))
+            await event_bus.emit(
+                Event(
+                    event_type="patient.visit_recorded",
+                    data={"patient_id": id, "purchase_amount": purchase_amount},
+                )
+            )
         return patient
 
-    async def _invalidate_patient_cache(self, patient_id: int, phone: Optional[str] = None) -> None:
+    async def _invalidate_patient_cache(
+        self, patient_id: int, phone: Optional[str] = None
+    ) -> None:
         await cache_service.delete(f"patient:{patient_id}")
         await cache_service.delete(f"patient:ai_profile:{patient_id}")
         if phone:
