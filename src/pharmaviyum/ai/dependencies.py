@@ -76,9 +76,7 @@ def _build_llm(model: str) -> BaseChatModel:
 
     api_key = settings.groq.api_key
     if api_key is None:
-        raise RuntimeError(
-            "USE_CLOUD_LLM=true requires GROQ_API_KEY to be configured"
-        )
+        raise RuntimeError("USE_CLOUD_LLM=true requires GROQ_API_KEY to be configured")
     return ChatGroq(
         model=model,
         api_key=api_key,
@@ -105,9 +103,7 @@ def get_llm_fast() -> BaseChatModel:
 @lru_cache(maxsize=1)
 def get_llm_main() -> BaseChatModel:
     model = (
-        settings.groq.model
-        if settings.use_cloud_llm
-        else settings.ollama.main_model
+        settings.groq.model if settings.use_cloud_llm else settings.ollama.main_model
     )
     return _build_llm(model)
 
@@ -115,9 +111,7 @@ def get_llm_main() -> BaseChatModel:
 @lru_cache(maxsize=1)
 def get_llm_complex() -> BaseChatModel:
     model = (
-        settings.groq.model
-        if settings.use_cloud_llm
-        else settings.ollama.complex_model
+        settings.groq.model if settings.use_cloud_llm else settings.ollama.complex_model
     )
     return _build_llm(model)
 
