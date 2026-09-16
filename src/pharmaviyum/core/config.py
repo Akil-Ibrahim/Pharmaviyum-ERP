@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     MORTARIUM_CONTEXT_LENGTH: int = 8192
     MORTARIUM_CACHE_TTL: int = 3600
     MORTARIUM_MAX_CONCURRENT: int = 5
+    MORTARIUM_AI_URL: str = "http://mortarium-ai:8001"
+    MORTARIUM_AI_TIMEOUT: int = 30
+    MORTARIUM_AI_ENABLED: bool = False
+    AI_SERVICE_URL: str = "http://mortarium-ai:8001"
+    EMAILS_ENABLED: bool = False
     OTEL_ENABLED: bool = False
     OTEL_SERVICE_NAME: str = "pharmaviyum-crm"
     OTEL_EXPORTER_ENDPOINT: Optional[str] = None
