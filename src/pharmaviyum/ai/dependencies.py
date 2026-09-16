@@ -21,6 +21,7 @@ from redis.asyncio import Redis
 
 from src.pharmaviyum.ai.agents.evaluator import AgentEvaluator
 from src.pharmaviyum.ai.agents.pharmacist_agent import PharmacistAgent
+from src.pharmaviyum.ai.cache.prompt_cache import PromptCache
 from src.pharmaviyum.ai.config import settings
 from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
 from src.pharmaviyum.ai.harness.model_router import ModelRouter
@@ -33,7 +34,7 @@ from src.pharmaviyum.ai.rag.ingestion.orchestrator import IngestionOrchestrator
 from src.pharmaviyum.ai.rag.vector_store import PgVectorStore
 from src.pharmaviyum.ai.safety.guardrails import MedicalGuardrails
 from src.pharmaviyum.ai.state.checkpointer import AgentCheckpointer
-from src.pharmaviyum.ai.cache.prompt_cache import PromptCache
+from src.pharmaviyum.core.logging import logger
 
 mcp_client = MCPClient()
 
