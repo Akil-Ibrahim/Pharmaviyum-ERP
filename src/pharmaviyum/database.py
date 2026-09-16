@@ -12,6 +12,7 @@ from sqlalchemy.orm import DeclarativeBase
 from src.pharmaviyum.ai.observability.metrics import (
     DB_CONNECTION_HOLD_DURATION,
     DB_POOL_CHECKED_OUT,
+    DB_POOL_MAX_OVERFLOW,
     DB_POOL_OVERFLOW,
     DB_POOL_SIZE,
     DB_POOL_TIMEOUTS_TOTAL,
@@ -43,6 +44,7 @@ def _pool_metrics() -> None:
     pool = engine.sync_engine.pool
     try:
         DB_POOL_SIZE.set(pool.size())
+        DB_POOL_MAX_OVERFLOW.set(getattr(pool, "_max_overflow", settings.DB_MAX_OVERFLOW))
         DB_POOL_CHECKED_OUT.set(pool.checkedout())
         DB_POOL_OVERFLOW.set(pool.overflow())
     except Exception:
@@ -100,6 +102,7 @@ def _handle_db_error(exception_context) -> None:
 
 
 DB_POOL_SIZE.set(settings.DB_POOL_SIZE)
+DB_POOL_MAX_OVERFLOW.set(settings.DB_MAX_OVERFLOW)
 
 AsyncSessionLocal = async_sessionmaker(
     engine,
