@@ -7,7 +7,6 @@ from typing import Any, Optional
 
 from redis.asyncio import Redis
 
-from src.pharmaviyum.ai.config import settings as ai_settings
 from src.pharmaviyum.core.logging import get_logger
 from src.pharmaviyum.redis_client import get_redis
 
@@ -32,7 +31,7 @@ class CacheService:
                 return json.loads(value)
             return None
         except Exception as exc:
-            logger.error("Cache get error", extra={"key": key, "error": type(exc).__name__})
+            logger.error("Cache get error", extra={"error": type(exc).__name__})
             return None
 
     async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
@@ -45,7 +44,7 @@ class CacheService:
                 await redis.set(key, serialized)
             return True
         except Exception as exc:
-            logger.error("Cache set error", extra={"key": key, "error": type(exc).__name__})
+            logger.error("Cache set error", extra={"error": type(exc).__name__})
             return False
 
     async def delete(self, key: str) -> bool:
@@ -53,14 +52,14 @@ class CacheService:
             await (await self._client()).delete(key)
             return True
         except Exception as exc:
-            logger.error("Cache delete error", extra={"key": key, "error": type(exc).__name__})
+            logger.error("Cache delete error", extra={"error": type(exc).__name__})
             return False
 
     async def exists(self, key: str) -> bool:
         try:
             return await (await self._client()).exists(key) > 0
         except Exception as exc:
-            logger.error("Cache exists error", extra={"key": key, "error": type(exc).__name__})
+            logger.error("Cache exists error", extra={"error": type(exc).__name__})
             return False
 
     async def invalidate_pattern(self, pattern: str) -> int:
