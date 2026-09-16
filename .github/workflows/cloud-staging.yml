@@ -27,10 +27,12 @@ jobs:
           bun-version: latest
 
       - name: Build frontend
-        working-directory: frontend
+        working-directory: frontend/shadcn-admin
         run: |
           bun install
           bun run build
+          rm -rf ../dist
+          cp -R dist ../dist
 
       - name: Verify frontend artifact
         run: test -f frontend/dist/index.html
