@@ -22,6 +22,18 @@ DB_QUERY_TOTAL = Counter("db_query_total", "PostgreSQL statement executions", ["
 DB_QUERY_DURATION = Histogram("db_query_duration_seconds", "PostgreSQL statement duration in seconds", ["operation"], buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0], registry=ai_registry)
 DB_QUERY_ERRORS_TOTAL = Counter("db_query_errors_total", "PostgreSQL statement failures", ["operation"], registry=ai_registry)
 
+REDIS_COMMANDS_TOTAL = Counter("redis_commands_total", "Redis command executions", ["operation", "status"], registry=ai_registry)
+REDIS_COMMAND_DURATION = Histogram(
+    "redis_command_duration_seconds", "Redis command duration in seconds", ["operation"],
+    buckets=[0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
+    registry=ai_registry,
+)
+REDIS_COMMAND_ERRORS_TOTAL = Counter("redis_command_errors_total", "Redis command failures", ["operation"], registry=ai_registry)
+REDIS_CONNECTIONS = Gauge("redis_connections", "Redis connections currently created", registry=ai_registry)
+REDIS_CONNECTIONS_AVAILABLE = Gauge("redis_connections_available", "Redis connections currently available in the pool", registry=ai_registry)
+REDIS_CONNECTIONS_IN_USE = Gauge("redis_connections_in_use", "Redis connections currently in use", registry=ai_registry)
+REDIS_CONNECTION_LIMIT = Gauge("redis_connection_limit", "Configured Redis connection pool limit", registry=ai_registry)
+
 AI_AGENT_EXECUTION_DURATION = Histogram("ai_agent_execution_duration_seconds", "Time spent executing the full agent harness pipeline", ["country", "language"], buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0], registry=ai_registry)
 RAG_RETRIEVAL_DURATION = Histogram("ai_rag_retrieval_duration_seconds", "Time spent in RAG vector search and reranking", ["query_type"], buckets=[0.05, 0.1, 0.25, 0.5, 1.0], registry=ai_registry)
 RAG_RETRIEVAL_TOTAL = Counter("ai_rag_retrieval_total", "Total RAG retrieval attempts", ["query_type", "status"], registry=ai_registry)
