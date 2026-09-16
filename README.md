@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/pharmaviyum.png" alt="Pharmaviyum CRM Banner" width="100%">
+</p>
+
 # Pharmaviyum CRM
 
 ![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.13%2B-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.139.0-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
@@ -57,7 +61,7 @@ This project and its contents are protected by applicable confidentiality and ND
                            Celery worker
 ```
 
-The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is integrated into the backend, while `mortarium-ai` is retained as a separate service in the deployment stack. fileciteturn6file0L2-L2
+The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is integrated into the backend, while `mortarium-ai` is retained as a separate service in the deployment stack.
 
 ## Core Capabilities
 
@@ -113,7 +117,7 @@ The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is inte
 - Vitest
 - Playwright
 
-The backend dependency versions are defined in `pyproject.toml`; the frontend scripts and dependencies are defined in `frontend/package.json`. fileciteturn2file0L2-L2 fileciteturn5file0L2-L2
+The backend dependency versions are defined in `pyproject.toml`; the frontend scripts and dependencies are defined in `frontend/package.json`.
 
 ## AI / RAG
 
@@ -140,7 +144,7 @@ Key design properties include:
 - explicit checkpoint/thread scope derived from authenticated context;
 - low-cardinality observability labels.
 
-The repository's detailed AI architecture is documented in [`docs/ai_architecture.md`](docs/ai_architecture.md). fileciteturn6file0L2-L2
+The repository's detailed AI architecture is documented in [`docs/ai_architecture.md`](docs/ai_architecture.md).
 
 ## Project Structure
 
@@ -202,7 +206,7 @@ bun install
 bun run dev
 ```
 
-Frontend scripts include build, unit tests, E2E tests, linting, and OpenAPI client generation. fileciteturn5file0L2-L2
+Frontend scripts include build, unit tests, E2E tests, linting, and OpenAPI client generation.
 
 ## Quality & CI
 
@@ -247,7 +251,7 @@ Start the main stack with:
 docker compose up --build
 ```
 
-The repository also contains Docker Compose profiles and dedicated operational guides under `docs/`. fileciteturn3file0L8-L12 fileciteturn3file4L62-L68
+The repository also contains Docker Compose profiles and dedicated operational guides under `docs/`.
 
 ## Security & Data Handling
 
