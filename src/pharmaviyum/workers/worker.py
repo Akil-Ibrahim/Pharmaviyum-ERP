@@ -141,6 +141,7 @@ class Worker:
                 payload_json = await self.redis.get(f"task:{task_id}")
                 if not payload_json:
                     logger.warning(f"Task payload not found: {task_id}")
+                    WORKER_TASKS_TOTAL.labels(task="unknown", queue=queue, status="failure").inc()
                     continue
 
                 payload = json.loads(payload_json)
@@ -179,8 +180,11 @@ class Worker:
                         time.perf_counter() - started
                     )
                     WORKER_TASKS_IN_FLIGHT.labels(queue=queue).dec()
-            except Exception as e:
-                logger.error(f"Queue processor error: {e}", exc_info=True)
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                WORKER_QUEUE_POLL_ERRORS_TOTAL.labels(queue=queue).inc()
+                logger.error(f"Queue processor error: {exc}", exc_info=True)
                 await asyncio.sleep(1.0)
 
     async def _mark_completed(self, task_id: str, result):
