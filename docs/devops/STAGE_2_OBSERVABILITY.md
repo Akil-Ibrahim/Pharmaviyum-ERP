@@ -79,6 +79,18 @@ The shared Redis client/pool exports:
 
 The operation label is a bounded Redis command name (`ping`, `get`, `setex`, `delete`, `exists`). Redis keys, values, prompts, IDs and exception text are never metric labels. Pool state is sampled from the shared `redis-py` connection pool and is exposed only as aggregate counts.
 
+## Celery metrics
+
+Celery task execution now exports:
+
+- `celery_tasks_total{task,queue,status}`
+- `celery_task_duration_seconds{task,queue}`
+- `celery_tasks_in_flight{queue}`
+
+Task and queue labels are bounded by the configured application routes (`ingest_document`, `ingest_batch`, `reindex_collection`, `cleanup_old_jobs` and their `ingestion`/`maintenance`/`default` queues). Task arguments, tenant IDs, document IDs, exception messages and request IDs are never metric labels.
+
+Queue depth and worker availability are intentionally not inferred from task counters. They require broker/worker-level telemetry and will be added before capacity conclusions are drawn from the load tests.
+
 ## Existing telemetry
 
 OpenTelemetry application tracing is initialized from `src/pharmaviyum/core/telemetry.py` and instruments FastAPI, SQLAlchemy, Redis and HTTPX when enabled. AI tracing is implemented separately in `src/pharmaviyum/ai/observability/tracer.py` with sensitive AI content redacted unless explicitly opted in.
@@ -88,7 +100,7 @@ Do not create a second tracing implementation. Extend the existing telemetry bou
 ## Next implementation slices
 
 1. Complete Redis instrumentation coverage for application-created Redis clients so all production Redis traffic uses the shared instrumentation boundary.
-2. Add Celery queue depth, active workers, task duration and failure counters.
+2. Add Celery broker queue depth and worker availability telemetry.
 3. Complete AI/RAG request and generation latency metrics without high-cardinality labels.
 4. Deploy an OpenTelemetry Collector for traces and a Prometheus scrape configuration.
 5. Add Grafana dashboards for API, database, Redis, Celery, AI/RAG and overall capacity.
