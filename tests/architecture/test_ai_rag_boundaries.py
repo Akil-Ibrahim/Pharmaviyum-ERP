@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-
 RAG_GRAPH = Path("src/pharmaviyum/ai/rag/graph.py")
 
 

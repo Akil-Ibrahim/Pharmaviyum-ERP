@@ -6,6 +6,7 @@ from src.pharmaviyum.ai.rag.vector_store import PgVectorStore
 
 def test_canonical_metadata_rejects_invalid_effective_window() -> None:
     import pytest
+
     from src.pharmaviyum.ai.rag.schemas import CanonicalMetadata
 
     with pytest.raises(ValueError, match="effective_to"):
