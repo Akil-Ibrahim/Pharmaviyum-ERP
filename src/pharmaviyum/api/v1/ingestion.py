@@ -1,9 +1,8 @@
 """
-Ingestion API Endpoints — Document Upload and Job Tracking.
+Ingestion API endpoints — document upload and job tracking.
 
-All ingestion operations require an authenticated administrator. URL/path
-ingestion is especially privileged because the worker may access resources
-outside the request process.
+Ingestion is administrator-only and every job is bound to an authenticated
+pharmacy membership before the tenant id reaches the worker.
 """
 
 from __future__ import annotations
@@ -19,7 +18,8 @@ from redis.asyncio import Redis
 from src.pharmaviyum.ai.dependencies import get_redis_client
 from src.pharmaviyum.ai.rag.ingestion import ingest_document
 from src.pharmaviyum.core.logging import logger
-from src.pharmaviyum.modules.auth.deps import CurrentSuperuser
+from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
+from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
 
 router = APIRouter(prefix="/api/v1/ingest", tags=["Ingestion"])
 
@@ -27,13 +27,27 @@ router = APIRouter(prefix="/api/v1/ingest", tags=["Ingestion"])
 class IngestURLRequest(BaseModel):
     source: str = Field(..., description="File path or URL")
     source_type: str = Field(..., description="pdf, html, or docx")
+    pharmacy_id: int = Field(..., gt=0)
     country: str = Field(default="VN")
     language: str = Field(default="vi")
 
 
+async def _authorize_ingestion_tenant(
+    pharmacy_id: int,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> int:
+    """Return a pharmacy id only after membership authorization."""
+    tenant = await require_pharmacy_tenant(pharmacy_id, current_user, session)
+    return tenant.pharmacy_id
+
+
 @router.post("/documents/upload", response_model=dict)
 async def upload_and_ingest_document(
-    _current_user: CurrentSuperuser,
+    _current_superuser: CurrentSuperuser,
+    current_user: CurrentUser,
+    session: SessionDep,
+    pharmacy_id: int = Form(..., gt=0),
     file: UploadFile = File(..., description="PDF, DOCX, or HTML file"),
     country: str = Form(default="VN"),
     language: str = Form(default="vi"),
@@ -41,10 +55,12 @@ async def upload_and_ingest_document(
     ocr_enabled: bool = Form(default=True),
     redis: Redis = Depends(get_redis_client),
 ):
-    """Upload a document and trigger asynchronous ingestion."""
+    """Upload a document after proving the admin belongs to its pharmacy."""
+    authorized_pharmacy_id = await _authorize_ingestion_tenant(
+        pharmacy_id, current_user, session
+    )
     allowed_extensions = {".pdf", ".docx", ".html", ".htm"}
     file_ext = Path(file.filename).suffix.lower() if file.filename else ""
-
     if file_ext not in allowed_extensions:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -68,6 +84,7 @@ async def upload_and_ingest_document(
         "pdf" if file_ext == ".pdf" else "docx" if file_ext == ".docx" else "html"
     )
     config = {
+        "pharmacy_id": authorized_pharmacy_id,
         "country": country,
         "language": language,
         "extract_tables": extract_tables,
@@ -79,20 +96,13 @@ async def upload_and_ingest_document(
 
     tracker = IngestionProgressTracker(redis)
     await tracker.create_job(job_id, temp_path, total_documents=1, metadata=config)
-
     task = ingest_document.delay(
         source=temp_path,
         source_type=source_type,
         job_id=job_id,
         config=config,
     )
-    logger.info(
-        "Dispatched ingestion task %s for uploaded file %s (job %s)",
-        task.id,
-        file.filename,
-        job_id,
-    )
-
+    logger.info("Dispatched ingestion task %s for job %s", task.id, job_id)
     return {
         "job_id": job_id,
         "status": "queued",
@@ -104,22 +114,26 @@ async def upload_and_ingest_document(
 @router.post("/documents/url", response_model=dict)
 async def ingest_from_url(
     request: IngestURLRequest,
-    _current_user: CurrentSuperuser,
+    _current_superuser: CurrentSuperuser,
+    current_user: CurrentUser,
+    session: SessionDep,
     redis: Redis = Depends(get_redis_client),
 ):
-    """Trigger ingestion from a URL or local path for administrators only.
-
-    The worker-side source must still enforce an outbound network policy and
-    reject private/link-local destinations before fetching arbitrary URLs.
-    """
+    """Trigger URL/path ingestion after pharmacy membership authorization."""
+    authorized_pharmacy_id = await _authorize_ingestion_tenant(
+        request.pharmacy_id, current_user, session
+    )
     job_id = str(uuid.uuid4())
-    config = {"country": request.country, "language": request.language}
+    config = {
+        "pharmacy_id": authorized_pharmacy_id,
+        "country": request.country,
+        "language": request.language,
+    }
 
     from src.pharmaviyum.ai.rag.ingestion import IngestionProgressTracker
 
     tracker = IngestionProgressTracker(redis)
     await tracker.create_job(job_id, request.source, total_documents=1, metadata=config)
-
     task = ingest_document.delay(
         source=request.source,
         source_type=request.source_type,
