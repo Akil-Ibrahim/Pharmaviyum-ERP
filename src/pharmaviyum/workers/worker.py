@@ -159,9 +159,12 @@ class Worker:
                 WORKER_TASKS_IN_FLIGHT.labels(queue=queue).inc()
                 try:
                     result = await task_instance.run_with_retry(**task_args)
-                except Exception:
-                    WORKER_TASKS_TOTAL.labels(task=task_name, queue=queue, status="failure").inc()
+                except asyncio.CancelledError:
                     raise
+                except Exception as exc:
+                    WORKER_TASKS_TOTAL.labels(task=task_name, queue=queue, status="failure").inc()
+                    self._stats["failed"] += 1
+                    logger.error(f"Task execution failed: {exc}", exc_info=True)
                 else:
                     status = "success" if result.success else "failure"
                     WORKER_TASKS_TOTAL.labels(task=task_name, queue=queue, status=status).inc()
