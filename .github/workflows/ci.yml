@@ -40,6 +40,16 @@ jobs:
           pip install 'ruff==0.12.10' 'black==25.1.0' 'isort==6.0.1' 'mypy==1.17.1'
       - name: Ruff diagnostics
         run: ruff check src/ tests/
+      - name: Temporary Black formatting artifact
+        run: |
+          black src/ tests/
+          tar -czf black-formatted.tar.gz src tests
+      - name: Upload temporary Black formatting artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: black-formatted-${{ github.sha }}
+          path: black-formatted.tar.gz
+          retention-days: 1
       - name: Black diagnostics
         run: black --check src/ tests/
       - name: isort diagnostics
