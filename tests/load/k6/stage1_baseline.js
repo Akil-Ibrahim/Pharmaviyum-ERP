@@ -10,6 +10,7 @@ const productId = Number(__ENV.PRODUCT_ID || 1);
 const orderId = Number(__ENV.ORDER_ID || 1);
 
 const aiLatency = new Trend('ai_query_latency', true);
+const writesEnabled = __ENV.ENABLE_WRITES === 'true';
 
 // Business model for the Stage 1 capacity baseline:
 // - 100 pharmacies
@@ -19,30 +20,47 @@ const aiLatency = new Trend('ai_query_latency', true);
 // - 200 active CRM users is the default peak; 400 is the upper-bound scenario
 const peakVus = Number(__ENV.PEAK_VUS || 200);
 
-export const options = {
-  scenarios: {
-    pharmacy_workload: {
-      executor: 'ramping-vus',
-      exec: 'pharmacyWorkload',
-      startVUs: 5,
-      stages: [
-        { duration: '1m', target: Math.ceil(peakVus * 0.25) },
-        { duration: '2m', target: Math.ceil(peakVus * 0.5) },
-        { duration: '3m', target: peakVus },
-        { duration: '2m', target: Math.ceil(peakVus * 0.5) },
-        { duration: '1m', target: 0 },
-      ],
-      gracefulRampDown: '30s',
-    },
-    ai_query: {
-      executor: 'constant-vus',
-      exec: 'aiQuery',
-      vus: Number(__ENV.AI_VUS || 10),
-      duration: __ENV.AI_DURATION || '7m',
-      startTime: '2m',
-      gracefulStop: '30s',
-    },
+const scenarios = {
+  pharmacy_workload: {
+    executor: 'ramping-vus',
+    exec: 'pharmacyWorkload',
+    startVUs: 5,
+    stages: [
+      { duration: '1m', target: Math.ceil(peakVus * 0.25) },
+      { duration: '2m', target: Math.ceil(peakVus * 0.5) },
+      { duration: '3m', target: peakVus },
+      { duration: '2m', target: Math.ceil(peakVus * 0.5) },
+      { duration: '1m', target: 0 },
+    ],
+    gracefulRampDown: '30s',
   },
+  ai_query: {
+    executor: 'constant-vus',
+    exec: 'aiQuery',
+    vus: Number(__ENV.AI_VUS || 10),
+    duration: __ENV.AI_DURATION || '7m',
+    startTime: '2m',
+    gracefulStop: '30s',
+  },
+};
+
+// Writes are opt-in because they intentionally change database state.
+// Run them only against a disposable synthetic dataset or isolated staging DB.
+if (writesEnabled) {
+  scenarios.synthetic_writes = {
+    executor: 'constant-arrival-rate',
+    exec: 'syntheticWrites',
+    rate: Number(__ENV.WRITE_RATE || 1),
+    timeUnit: '1s',
+    duration: __ENV.WRITE_DURATION || '2m',
+    preAllocatedVUs: Number(__ENV.WRITE_PREALLOCATED_VUS || 5),
+    maxVUs: Number(__ENV.WRITE_MAX_VUS || 10),
+    startTime: __ENV.WRITE_START_TIME || '2m',
+  };
+}
+
+export const options = {
+  scenarios,
   thresholds: {
     http_req_failed: ['rate<0.01'],
     http_req_duration: ['p(95)<1000', 'p(99)<2000'],
@@ -62,6 +80,17 @@ function get(path, endpoint) {
     tags: { endpoint },
   });
   check(response, { [`${endpoint} is successful`]: (r) => r.status === 200 });
+  return response;
+}
+
+function post(path, payload, endpoint, expectedStatus = 201) {
+  const response = http.post(`${baseUrl}${path}`, JSON.stringify(payload), {
+    headers: headers(),
+    tags: { endpoint },
+  });
+  check(response, {
+    [`${endpoint} is successful`]: (r) => r.status === expectedStatus,
+  });
   return response;
 }
 
@@ -153,4 +182,78 @@ export function aiQuery() {
     'ai response is successful': (r) => r.status === 200,
   });
   sleep(5 + Math.random() * 5);
+}
+
+export function syntheticWrites() {
+  const runId = `${Date.now()}-${__VU}-${__ITER}`;
+  const unique = String(runId).replace(/\D/g, '').slice(-12);
+  const patientPayload = {
+    first_name: 'LoadTest',
+    last_name: `Patient${unique}`,
+    phone: `+849${unique.slice(-8).padStart(8, '0')}`,
+    email: `load-test-${unique}@example.invalid`,
+    city: 'Synthetic City',
+    country: __ENV.COUNTRY || 'VN',
+    loyalty_tier: 'Bronze',
+  };
+
+  const patientResponse = post(
+    '/api/v1/patients/',
+    patientPayload,
+    'write_patient_create',
+  );
+  if (patientResponse.status !== 201) return;
+
+  const patient = patientResponse.json();
+  const createdPatientId = Number(patient.id);
+  if (!createdPatientId) return;
+
+  post(
+    '/api/v1/orders/',
+    { patient_id: createdPatientId, total_amount: 250000 },
+    'write_order_create',
+  );
+
+  const productResponse = post(
+    '/api/v1/products/',
+    {
+      name: `Load Test Product ${unique}`,
+      sku: `LOAD-${unique}`,
+      description: 'Synthetic load-test product; deactivate after the run.',
+      price: 100000,
+      stock: 100,
+    },
+    'write_product_create',
+  );
+  if (productResponse.status !== 201) return;
+
+  const product = productResponse.json();
+  const createdProductId = Number(product.id);
+  if (!createdProductId) return;
+
+  post(
+    '/api/v1/inventory',
+    {
+      product_id: createdProductId,
+      pharmacy_id: pharmacyId,
+      quantity: 100,
+      reserved_quantity: 0,
+      reorder_level: 20,
+      lot_number: `LOAD-${unique}`,
+    },
+    'write_inventory_create',
+  );
+
+  post(
+    '/api/v1/prescriptions',
+    {
+      patient_id: createdPatientId,
+      product_id: createdProductId,
+      prescription_number: `LOAD-RX-${unique}`,
+      dosage: '1 unit',
+      instructions: 'Synthetic load-test prescription.',
+      status: 'active',
+    },
+    'write_prescription_create',
+  );
 }
