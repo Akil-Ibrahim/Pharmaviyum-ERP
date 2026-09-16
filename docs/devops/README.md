@@ -15,12 +15,13 @@ GitHub Actions
     -> tests / lint / type checks / security / RAG evaluation
     -> immutable Docker image
     -> GHCR
-    -> Ansible
+    -> staging Docker Compose host
     -> deploy/docker-compose.release.yml
-    -> Nginx / API / PostgreSQL / Redis / AI services
 ```
 
-CI already builds images tagged by commit SHA and publishes SBOM and provenance metadata. Production Compose uses immutable application images, health checks, container hardening and a separate migration profile.
+The current repository also contains an opt-in monitoring Compose stack for controlled deployments. Nginx/edge infrastructure, OpenTelemetry Collector, managed data services and multi-node orchestration are target capabilities, not assumptions about the current base deployment.
+
+CI builds images tagged by commit SHA and publishes SBOM and provenance metadata. The release workflow deploys an immutable image to the staging Compose host and runs the migration container once before starting the API.
 
 ## Target production principles
 
@@ -333,6 +334,7 @@ The exact topology remains subject to capacity measurements and deployment const
 - `docs/ai_architecture.md` — AI, RAG, memory, guardrails and MCP architecture.
 - `docs/guides/ENVIRONMENT_SETUP.md` — environment configuration and deployment prerequisites.
 - `docs/guides/TESTING.md` — test and CI strategy.
-- `deploy/docker-compose.release.yml` — production container topology.
+- `deploy/docker-compose.release.yml` — staging/release container topology.
+- `docker-compose.monitoring.yml` — opt-in Prometheus/Grafana monitoring stack.
 - `.github/workflows/ci.yml` — CI quality, security, evaluation and image build gates.
-- `.github/workflows/release.yml` — deployment workflow.
+- `.github/workflows/release.yml` — staging deployment workflow.
