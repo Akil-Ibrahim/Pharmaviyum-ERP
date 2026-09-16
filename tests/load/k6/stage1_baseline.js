@@ -12,6 +12,7 @@ export const options = {
   scenarios: {
     crm_read: {
       executor: 'ramping-vus',
+      exec: 'crmRead',
       startVUs: 1,
       stages: [
         { duration: '30s', target: 10 },
@@ -23,6 +24,7 @@ export const options = {
     },
     ai_query: {
       executor: 'constant-vus',
+      exec: 'aiQuery',
       vus: Number(__ENV.AI_VUS || 2),
       duration: __ENV.AI_DURATION || '2m',
       startTime: '30s',
@@ -42,15 +44,19 @@ function headers() {
     : { 'Content-Type': 'application/json' };
 }
 
-export default function () {
-  const response = http.get(`${baseUrl}/health`);
+export function crmRead() {
+  const response = http.get(`${baseUrl}/health`, {
+    tags: { endpoint: 'health' },
+  });
   check(response, { 'health is 200': (r) => r.status === 200 });
   sleep(1);
 }
 
-export function ai_query() {
+export function aiQuery() {
   const payload = JSON.stringify({
-    query: __ENV.AI_QUERY || 'What are the main safety considerations for common pharmacy medicines?',
+    query:
+      __ENV.AI_QUERY ||
+      'What are the main safety considerations for common pharmacy medicines?',
     pharmacy_id: pharmacyId,
     country: __ENV.COUNTRY || 'VN',
     language: __ENV.LANGUAGE || 'vi',
