@@ -9,6 +9,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.pharmaviyum.redis_client import get_redis
+
 from ...core.config import settings
 from ...core.security import (
     create_access_token,
@@ -26,7 +28,6 @@ from ..utils import (
     generate_reset_password_email,
     send_email,
 )
-from src.pharmaviyum.redis_client import get_redis
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
