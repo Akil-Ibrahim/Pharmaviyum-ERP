@@ -58,6 +58,15 @@ _ALLOWED_STAGES = {
 }
 _ALLOWED_QUERY_TYPES = {"hybrid_multi_query", "other"}
 _ALLOWED_MODELS = {"qwen2.5:7b", "other"}
+# Only registered production MCP tools are exposed as Prometheus labels.
+# Test/dynamic tool names intentionally collapse to `other`.
+_ALLOWED_TOOLS = {
+    "get_patient_history",
+    "check_halal_compliance",
+    "check_drug_interactions",
+    "verify_prescription",
+    "other",
+}
 
 
 def _bounded(value: str, allowed: set[str], fallback: str = "other") -> str:
@@ -76,8 +85,7 @@ def record_ai_request(success: bool) -> None:
 
 
 def record_tool_call(tool_name: str, success: bool, latency_ms: float) -> None:
-    if not tool_name or len(tool_name) > 128:
-        tool_name = "other"
+    tool_name = _bounded(tool_name, _ALLOWED_TOOLS)
     status = "success" if success else "failure"
     TOOL_CALLS_TOTAL.labels(tool_name=tool_name, status=status).inc()
     TOOL_CALL_DURATION.labels(tool_name=tool_name).observe(latency_ms / 1000.0)
