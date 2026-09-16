@@ -105,7 +105,9 @@ def get_llm_fast() -> BaseChatModel:
 @lru_cache(maxsize=1)
 def get_llm_main() -> BaseChatModel:
     model = (
-        settings.groq.model if settings.use_cloud_llm else settings.ollama.main_model
+        settings.groq.model
+        if settings.use_cloud_llm
+        else settings.ollama.main_model
     )
     return _build_llm(model)
 
