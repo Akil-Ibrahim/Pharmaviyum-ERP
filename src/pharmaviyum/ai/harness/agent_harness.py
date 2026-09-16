@@ -41,6 +41,12 @@ class AgentHarness:
         self.cache = cache
         self.model_router = model_router
 
+        # Memory summarization must use the same managed model lifecycle as the
+        # agent.  This keeps summarization injectable/testable while avoiding a
+        # second LLM client or a hidden global dependency.
+        if self.memory.summarizer is None:
+            self.memory.summarizer = getattr(agent, "main_llm", None)
+
     @staticmethod
     def _cache_context(context: dict[str, Any]) -> dict[str, Any]:
         return {
