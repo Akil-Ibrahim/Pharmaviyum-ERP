@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -101,6 +102,14 @@ async def root() -> dict[str, str]:
         "health": "/health",
         "metrics": "/metrics",
     }
+
+
+# FastAPI Cloud can serve the built React SPA from the same deployment. The
+# path is resolved from this module instead of relying on the process CWD,
+# while check_dir="auto" keeps local API-only development working before a
+# frontend build has been produced.
+frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+app.frontend("/", directory=frontend_dist, check_dir="auto")
 
 
 if __name__ == "__main__":
