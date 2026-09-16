@@ -23,7 +23,7 @@ REDIS_COMMANDS_TOTAL = Counter("redis_commands_total", "Redis command executions
 REDIS_COMMAND_DURATION = Histogram("redis_command_duration_seconds", "Redis command duration in seconds", ["operation"], buckets=[0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0], registry=ai_registry)
 REDIS_COMMAND_ERRORS_TOTAL = Counter("redis_command_errors_total", "Redis command failures", ["operation"], registry=ai_registry)
 REDIS_CONNECTIONS = Gauge("redis_connections", "Redis connections currently created", registry=ai_registry)
-REDIS_CONNECTIONS_AVAILABLE = Gauge("redis_connections_available", "Redis connections currently available in the pool", registry=ai_registry)
+REDIS_CONNECTIONS_AVAILABLE = Gauge("redis_connections_available", "Redis connections currently available in the Redis pool", registry=ai_registry)
 REDIS_CONNECTIONS_IN_USE = Gauge("redis_connections_in_use", "Redis connections currently in use", registry=ai_registry)
 REDIS_CONNECTION_LIMIT = Gauge("redis_connection_limit", "Configured Redis connection pool limit", registry=ai_registry)
 
@@ -38,7 +38,8 @@ WORKER_QUEUE_DEPTH = Gauge("worker_queue_depth", "Number of queued custom worker
 WORKER_QUEUE_POLL_ERRORS_TOTAL = Counter("worker_queue_poll_errors_total", "Custom worker queue polling failures", ["queue"], registry=ai_registry)
 WORKER_UP = Gauge("worker_up", "Custom worker process health", registry=ai_registry)
 
-AI_AGENT_EXECUTION_DURATION = Histogram("ai_agent_execution_duration_seconds", "Time spent executing the full agent harness pipeline", ["country", "language"], buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0], registry=ai_registry)
+# Keep AI labels strictly bounded. Locale/request attributes are intentionally not labels.
+AI_AGENT_EXECUTION_DURATION = Histogram("ai_agent_execution_duration_seconds", "Time spent executing the full agent harness pipeline", buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0], registry=ai_registry)
 AI_STAGE_DURATION = Histogram("ai_stage_duration_seconds", "AI pipeline stage duration in seconds", ["stage"], buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0, 300.0], registry=ai_registry)
 AI_STAGE_ERRORS_TOTAL = Counter("ai_stage_errors_total", "AI pipeline stage failures", ["stage"], registry=ai_registry)
 AI_REQUESTS_TOTAL = Counter("ai_requests_total", "AI pipeline requests", ["status"], registry=ai_registry)
@@ -51,32 +52,44 @@ LLM_COST_ESTIMATE_USD_TOTAL = Counter("ai_llm_cost_estimate_usd_total", "Estimat
 EVALUATION_SCORES = Gauge("ai_evaluation_score", "Latest LLM-as-a-judge evaluation scores", ["metric_type"], registry=ai_registry)
 EVALUATION_PASS_RATE = Gauge("ai_evaluation_pass_rate_percent", "Percentage of evaluations passing the safety/quality threshold", registry=ai_registry)
 
+_ALLOWED_STAGES = {"retrieve", "generate", "validate", "rag_pipeline"}
+_ALLOWED_QUERY_TYPES = {"hybrid_multi_query", "other"}
+_ALLOWED_MODELS = {"qwen2.5:7b", "other"}
+
+
+def _bounded(value: str, allowed: set[str], fallback: str = "other") -> str:
+    return value if value in allowed else fallback
+
 
 def record_ai_stage(stage: str, latency_ms: float, success: bool = True) -> None:
-    """Record a bounded AI pipeline stage without request/user content."""
+    stage = _bounded(stage, _ALLOWED_STAGES)
     AI_STAGE_DURATION.labels(stage=stage).observe(latency_ms / 1000.0)
     if not success:
         AI_STAGE_ERRORS_TOTAL.labels(stage=stage).inc()
 
 
 def record_ai_request(success: bool) -> None:
-    """Record an AI request outcome without user or tenant identifiers."""
     AI_REQUESTS_TOTAL.labels(status="success" if success else "failure").inc()
 
 
 def record_tool_call(tool_name: str, success: bool, latency_ms: float) -> None:
+    # Tool names originate from the static MCP registry; cap unexpected values defensively.
+    if not tool_name or len(tool_name) > 128:
+        tool_name = "other"
     status = "success" if success else "failure"
     TOOL_CALLS_TOTAL.labels(tool_name=tool_name, status=status).inc()
     TOOL_CALL_DURATION.labels(tool_name=tool_name).observe(latency_ms / 1000.0)
 
 
 def record_rag_retrieval(query_type: str, latency_ms: float, success: bool = True) -> None:
+    query_type = _bounded(query_type, _ALLOWED_QUERY_TYPES)
     status = "success" if success else "failure"
     RAG_RETRIEVAL_TOTAL.labels(query_type=query_type, status=status).inc()
     RAG_RETRIEVAL_DURATION.labels(query_type=query_type).observe(latency_ms / 1000.0)
 
 
 def record_llm_usage(model_name: str, input_tokens: int, output_tokens: int, cost_usd: float) -> None:
+    model_name = _bounded(model_name, _ALLOWED_MODELS)
     LLM_TOKENS_USED_TOTAL.labels(model_name=model_name, token_type="input").inc(input_tokens)
     LLM_TOKENS_USED_TOTAL.labels(model_name=model_name, token_type="output").inc(output_tokens)
     LLM_COST_ESTIMATE_USD_TOTAL.labels(model_name=model_name).inc(cost_usd)
