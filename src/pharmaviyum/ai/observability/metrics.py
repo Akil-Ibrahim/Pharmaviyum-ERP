@@ -42,6 +42,17 @@ CELERY_TASK_DURATION = Histogram(
 )
 CELERY_TASKS_IN_FLIGHT = Gauge("celery_tasks_in_flight", "Celery tasks currently executing", ["queue"], registry=ai_registry)
 
+WORKER_TASKS_TOTAL = Counter("worker_tasks_total", "Custom worker task executions", ["task", "queue", "status"], registry=ai_registry)
+WORKER_TASK_DURATION = Histogram(
+    "worker_task_duration_seconds", "Custom worker task execution duration in seconds", ["task", "queue"],
+    buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0, 300.0, 900.0],
+    registry=ai_registry,
+)
+WORKER_TASKS_IN_FLIGHT = Gauge("worker_tasks_in_flight", "Custom worker tasks currently executing", ["queue"], registry=ai_registry)
+WORKER_QUEUE_DEPTH = Gauge("worker_queue_depth", "Number of queued custom worker tasks", ["queue"], registry=ai_registry)
+WORKER_QUEUE_POLL_ERRORS_TOTAL = Counter("worker_queue_poll_errors_total", "Custom worker queue polling failures", ["queue"], registry=ai_registry)
+WORKER_UP = Gauge("worker_up", "Custom worker process health", registry=ai_registry)
+
 AI_AGENT_EXECUTION_DURATION = Histogram("ai_agent_execution_duration_seconds", "Time spent executing the full agent harness pipeline", ["country", "language"], buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0], registry=ai_registry)
 RAG_RETRIEVAL_DURATION = Histogram("ai_rag_retrieval_duration_seconds", "Time spent in RAG vector search and reranking", ["query_type"], buckets=[0.05, 0.1, 0.25, 0.5, 1.0], registry=ai_registry)
 RAG_RETRIEVAL_TOTAL = Counter("ai_rag_retrieval_total", "Total RAG retrieval attempts", ["query_type", "status"], registry=ai_registry)
