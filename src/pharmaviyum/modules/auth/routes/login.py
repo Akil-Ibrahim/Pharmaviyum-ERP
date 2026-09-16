@@ -6,12 +6,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from redis import asyncio as aioredis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.config import settings
-from ...core.redis_client import get_redis
 from ...core.security import (
     create_access_token,
     create_refresh_token,
@@ -28,6 +26,7 @@ from ..utils import (
     generate_reset_password_email,
     send_email,
 )
+from src.pharmaviyum.redis_client import get_redis
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
@@ -69,7 +68,6 @@ async def refresh_access_token(body: RefreshTokenRequest, session: SessionDep) -
     payload = decode_refresh_token(body.refresh_token)
     if not payload or not payload.get("sub") or not payload.get("jti"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
-
     redis = await get_redis()
     claimed = await redis.set(_token_key("refresh-used", payload["jti"]), "1", ex=_ttl(int(payload["exp"])), nx=True)
     if not claimed:
@@ -106,19 +104,16 @@ async def reset_password(body: NewPassword, session: SessionDep) -> Message:
     payload = decode_password_reset_token(body.token)
     if not payload or not payload.get("sub") or not payload.get("jti"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired reset token")
-
     redis = await get_redis()
     used_key = _token_key("password-reset-used", payload["jti"])
     claimed = await redis.set(used_key, "1", ex=_ttl(int(payload["exp"])), nx=True)
     if not claimed:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Reset token has already been used")
-
     result = await session.execute(select(User).where(User.email == payload["sub"]))
     user = result.scalar_one_or_none()
     if user is None or not user.is_active:
         await redis.delete(used_key)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token")
-
     try:
         user.hashed_password = get_password_hash(body.new_password)
         session.add(user)
