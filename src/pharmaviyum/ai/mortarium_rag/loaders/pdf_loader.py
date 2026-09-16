@@ -14,7 +14,7 @@ import io
 from pathlib import Path
 from typing import Any, AsyncIterator
 
-from src.pharmaviyum.ai.rag.schemas import Document
+from src.pharmaviyum.ai.mortarium_rag.schemas import Document
 from src.pharmaviyum.core.logging import logger
 
 from .base import LoaderConfig
@@ -29,8 +29,7 @@ class PDFLoader:
     def _get_fitz(self):
         if self._fitz is None:
             try:
-                import fitz  # PyMuPDF
-
+                import fitz
                 self._fitz = fitz
             except ImportError:
                 raise ImportError("Install PyMuPDF: pip install pymupdf")
@@ -48,7 +47,6 @@ class PDFLoader:
         logger.info(f"Loading PDF: {path.name} ({len(doc)} pages)")
 
         try:
-            # Extract document-level metadata
             meta = doc.metadata or {}
             base_metadata = {
                 "source": str(path),
@@ -61,23 +59,19 @@ class PDFLoader:
                 "modified": meta.get("modDate", ""),
             }
 
-            # Process each page
             for page_num, page in enumerate(doc, 1):
                 text = page.get_text("text").strip()
 
-                # OCR fallback if text is empty (scanned PDF)
                 if not text and config.ocr_enabled:
                     text = await self._ocr_page(page, config.languages)
 
                 if not text:
                     continue
 
-                # Extract tables if enabled
                 tables = []
                 if config.extract_tables:
                     tables = await self._extract_tables(page)
 
-                # Build page content
                 content = text
                 if tables:
                     content += "\n\n[TABLES]\n" + "\n---\n".join(tables)
@@ -94,7 +88,7 @@ class PDFLoader:
                 yield Document(
                     content=content,
                     source=str(path),
-                    doc_type="drug_info",  # Can be overridden
+                    doc_type="drug_info",
                     metadata=page_metadata,
                     country=config.metadata_filters.get("country", "VN"),
                     language=self._detect_language(text, config.languages),
@@ -108,12 +102,10 @@ class PDFLoader:
             import pytesseract
             from PIL import Image
 
-            # Convert page to image
             pix = page.get_pixmap(dpi=300)
             img_data = pix.tobytes("png")
             img = Image.open(io.BytesIO(img_data))
 
-            # Map our language codes to Tesseract
             lang_map = {
                 "vi": "vie",
                 "en": "eng",
@@ -137,7 +129,6 @@ class PDFLoader:
             tab_finder = page.find_tables()
             for table in tab_finder.tables:
                 df = table.to_pandas()
-                # Convert DataFrame to readable text
                 table_text = df.to_markdown(index=False)
                 tables.append(table_text)
         except Exception as e:
