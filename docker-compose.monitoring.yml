@@ -1,0 +1,58 @@
+# Opt-in monitoring stack for local/staging/controlled deployments.
+# Start the application stack first so the external network exists:
+#   docker compose up -d
+# Then start monitoring:
+#   docker compose -f docker-compose.monitoring.yml up -d
+#
+# Prometheus and Grafana bind to loopback by default. Override
+# PROMETHEUS_BIND / GRAFANA_BIND only when access is intentionally secured.
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.8.1
+    container_name: pharmaviyum-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}
+    ports:
+      - "${PROMETHEUS_BIND:-127.0.0.1}:9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+    networks:
+      - pharmaviyum-network
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    container_name: pharmaviyum-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD before starting Grafana}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SERVER_HTTP_PORT: "3000"
+    ports:
+      - "${GRAFANA_BIND:-127.0.0.1}:3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - pharmaviyum-network
+
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  pharmaviyum-network:
+    external: true
+    name: pharmaviyum-network
