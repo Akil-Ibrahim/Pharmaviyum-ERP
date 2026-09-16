@@ -7,6 +7,7 @@ Tests cover:
 - Ingestion endpoints
 - Monitoring endpoints
 - Error handling
+- Observability headers and HTTP metrics
 """
 
 import pytest
@@ -42,7 +43,10 @@ class TestHealthEndpoints:
 
         assert response.status_code == 200
         assert response.headers["content-type"].startswith("text/plain")
-        assert "python_info" in response.text  # Prometheus default metric
+        assert "python_info" in response.text
+        assert "http_requests_total" in response.text
+        assert "http_request_duration_seconds" in response.text
+        assert "http_requests_in_flight" in response.text
 
 
 @pytest.mark.unit
@@ -72,8 +76,6 @@ class TestAIQueryEndpoint:
 
     def test_query_endpoint_success(self, test_client: TestClient):
         """Test successful query execution."""
-        # This test requires mocked AI components
-        # For now, we test that the endpoint exists and accepts valid input
         response = test_client.post(
             "/api/v1/ai/query",
             json={
@@ -85,7 +87,6 @@ class TestAIQueryEndpoint:
             },
         )
 
-        # Should return 200 or 500 (if AI components not initialized)
         assert response.status_code in [200, 500]
 
 
