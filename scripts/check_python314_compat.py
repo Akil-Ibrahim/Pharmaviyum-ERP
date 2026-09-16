@@ -6,17 +6,20 @@ Run this before building Docker image to catch issues early:
 """
 import sys
 
+
 def check():
     print(f"Python version: {sys.version}")
-    
+
     if sys.version_info < (3, 14):
-        print(f"⚠️  Warning: Expected Python 3.14, got {sys.version_info.major}.{sys.version_info.minor}")
+        print(
+            f"⚠️  Warning: Expected Python 3.14, got "
+            f"{sys.version_info.major}.{sys.version_info.minor}"
+        )
         print("   Some features may not work as expected.")
         return False
-    
+
     print("✅ Python 3.14 detected")
-    
-    # Check critical imports
+
     critical_packages = [
         "fastapi",
         "pydantic",
@@ -25,7 +28,7 @@ def check():
         "celery",
         "langchain_core",
     ]
-    
+
     missing = []
     for pkg in critical_packages:
         try:
@@ -34,12 +37,12 @@ def check():
         except ImportError:
             missing.append(pkg)
             print(f"❌ {pkg} NOT available")
-    
+
     if missing:
         print(f"\n⚠️  Missing packages: {', '.join(missing)}")
-        print("   Run: pip install -r requirements-ai.txt")
+        print("   Run: pip install -r requirements.txt")
         return False
-    
+
     print("\n✅ All critical packages available for Python 3.14")
     return True
 
