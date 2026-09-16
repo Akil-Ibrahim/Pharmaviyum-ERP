@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase
 
 from src.pharmaviyum.ai.observability.metrics import (
-    DB_CONNECTION_CHECKOUT_DURATION,
+    DB_CONNECTION_HOLD_DURATION,
     DB_POOL_CHECKED_OUT,
     DB_POOL_OVERFLOW,
     DB_POOL_SIZE,
@@ -70,7 +70,7 @@ def _on_checkout(dbapi_connection, connection_record, connection_proxy) -> None:
 def _on_checkin(dbapi_connection, connection_record) -> None:
     started = connection_record.info.pop("checkout_started_at", None)
     if started is not None:
-        DB_CONNECTION_CHECKOUT_DURATION.observe(time.perf_counter() - started)
+        DB_CONNECTION_HOLD_DURATION.observe(time.perf_counter() - started)
     _pool_metrics()
 
 
@@ -94,9 +94,6 @@ def _handle_db_error(exception_context) -> None:
     operation = _classify_operation(exception_context.statement or "")
     DB_QUERY_TOTAL.labels(operation=operation, status="error").inc()
     DB_QUERY_ERRORS_TOTAL.labels(operation=operation).inc()
-
-    # Pool timeout is an important capacity signal. Avoid relying on exception
-    # text as a metric label because exception text is unbounded.
     if exception_context.original_exception.__class__.__name__ == "TimeoutError":
         DB_POOL_TIMEOUTS_TOTAL.inc()
     _pool_metrics()
