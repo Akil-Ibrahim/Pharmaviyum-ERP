@@ -1,10 +1,4 @@
-"""
-Prometheus metrics for application and AI/LLM observability.
-
-Metrics intentionally avoid tenant IDs, user IDs, session IDs, patient IDs,
-or other unbounded identifiers as labels. Those belong in traces/logs, not
-Prometheus label cardinality.
-"""
+"""Prometheus metrics for application and AI/LLM observability."""
 
 from __future__ import annotations
 
@@ -12,48 +6,25 @@ from prometheus_client import Counter, Gauge, Histogram, REGISTRY
 
 ai_registry = REGISTRY
 
-HTTP_REQUESTS_TOTAL = Counter(
-    "http_requests_total", "Total HTTP requests", ["method", "route", "status_class"], registry=ai_registry
-)
-HTTP_REQUEST_DURATION = Histogram(
-    "http_request_duration_seconds", "HTTP request duration in seconds",
-    ["method", "route", "status_class"],
-    buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0], registry=ai_registry
-)
-HTTP_REQUESTS_IN_FLIGHT = Gauge(
-    "http_requests_in_flight", "Number of HTTP requests currently being processed", registry=ai_registry
-)
+HTTP_REQUESTS_TOTAL = Counter("http_requests_total", "Total HTTP requests", ["method", "route", "status_class"], registry=ai_registry)
+HTTP_REQUEST_DURATION = Histogram("http_request_duration_seconds", "HTTP request duration in seconds", ["method", "route", "status_class"], buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0], registry=ai_registry)
+HTTP_REQUESTS_IN_FLIGHT = Gauge("http_requests_in_flight", "Number of HTTP requests currently being processed", registry=ai_registry)
 
 DB_POOL_SIZE = Gauge("db_pool_size", "Configured PostgreSQL connection pool size", registry=ai_registry)
 DB_POOL_CHECKED_OUT = Gauge("db_pool_checked_out", "PostgreSQL connections currently checked out", registry=ai_registry)
 DB_POOL_OVERFLOW = Gauge("db_pool_overflow", "Current PostgreSQL pool overflow connections", registry=ai_registry)
 DB_POOL_TIMEOUTS_TOTAL = Counter("db_pool_timeouts_total", "PostgreSQL pool checkout timeouts", registry=ai_registry)
-DB_CONNECTION_CHECKOUT_DURATION = Histogram(
-    "db_connection_checkout_duration_seconds", "Time waiting to acquire a PostgreSQL connection",
-    buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0], registry=ai_registry
+DB_CONNECTION_HOLD_DURATION = Histogram(
+    "db_connection_hold_duration_seconds", "Time a PostgreSQL connection remains checked out",
+    buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0], registry=ai_registry
 )
-DB_QUERY_TOTAL = Counter(
-    "db_query_total", "PostgreSQL statement executions", ["operation", "status"], registry=ai_registry
-)
-DB_QUERY_DURATION = Histogram(
-    "db_query_duration_seconds", "PostgreSQL statement duration in seconds", ["operation"],
-    buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0], registry=ai_registry
-)
-DB_QUERY_ERRORS_TOTAL = Counter(
-    "db_query_errors_total", "PostgreSQL statement failures", ["operation"], registry=ai_registry
-)
+DB_QUERY_TOTAL = Counter("db_query_total", "PostgreSQL statement executions", ["operation", "status"], registry=ai_registry)
+DB_QUERY_DURATION = Histogram("db_query_duration_seconds", "PostgreSQL statement duration in seconds", ["operation"], buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0], registry=ai_registry)
+DB_QUERY_ERRORS_TOTAL = Counter("db_query_errors_total", "PostgreSQL statement failures", ["operation"], registry=ai_registry)
 
-AI_AGENT_EXECUTION_DURATION = Histogram(
-    "ai_agent_execution_duration_seconds", "Time spent executing the full agent harness pipeline",
-    ["country", "language"], buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0], registry=ai_registry
-)
-RAG_RETRIEVAL_DURATION = Histogram(
-    "ai_rag_retrieval_duration_seconds", "Time spent in RAG vector search and reranking", ["query_type"],
-    buckets=[0.05, 0.1, 0.25, 0.5, 1.0], registry=ai_registry
-)
-RAG_RETRIEVAL_TOTAL = Counter(
-    "ai_rag_retrieval_total", "Total RAG retrieval attempts", ["query_type", "status"], registry=ai_registry
-)
+AI_AGENT_EXECUTION_DURATION = Histogram("ai_agent_execution_duration_seconds", "Time spent executing the full agent harness pipeline", ["country", "language"], buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0], registry=ai_registry)
+RAG_RETRIEVAL_DURATION = Histogram("ai_rag_retrieval_duration_seconds", "Time spent in RAG vector search and reranking", ["query_type"], buckets=[0.05, 0.1, 0.25, 0.5, 1.0], registry=ai_registry)
+RAG_RETRIEVAL_TOTAL = Counter("ai_rag_retrieval_total", "Total RAG retrieval attempts", ["query_type", "status"], registry=ai_registry)
 TOOL_CALLS_TOTAL = Counter("ai_tool_calls_total", "Total number of MCP tool calls", ["tool_name", "status"], registry=ai_registry)
 TOOL_CALL_DURATION = Histogram("ai_tool_call_duration_seconds", "Time spent executing individual MCP tools", ["tool_name"], buckets=[0.01, 0.05, 0.1, 0.5, 1.0, 2.0], registry=ai_registry)
 LLM_TOKENS_USED_TOTAL = Counter("ai_llm_tokens_used_total", "Total number of LLM tokens consumed", ["model_name", "token_type"], registry=ai_registry)
