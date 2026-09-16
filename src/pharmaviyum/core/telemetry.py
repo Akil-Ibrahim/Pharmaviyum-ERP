@@ -35,7 +35,9 @@ except Exception:  # pragma: no cover - compatibility fallback for Python 3.14
 def _otlp_exporter_available() -> bool:
     """Return whether the OTLP exporter is importable in this runtime."""
     try:
-        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter  # type: ignore
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+            OTLPSpanExporter,
+        )  # type: ignore
 
         return OTLPSpanExporter is not None
     except Exception:
@@ -65,7 +67,9 @@ def setup_telemetry(app=None, engine=None) -> None:
         provider = TracerProvider(resource=resource)
 
         if settings.OTEL_EXPORTER_ENDPOINT and _otlp_exporter_available():
-            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter  # type: ignore
+            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+                OTLPSpanExporter,
+            )  # type: ignore
 
             exporter = OTLPSpanExporter(endpoint=settings.OTEL_EXPORTER_ENDPOINT)
         else:
