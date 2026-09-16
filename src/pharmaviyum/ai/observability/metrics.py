@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from prometheus_client import Counter, Gauge, Histogram, REGISTRY
+from prometheus_client import REGISTRY, Counter, Gauge, Histogram
 
 ai_registry = REGISTRY
 
