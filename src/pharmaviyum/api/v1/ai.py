@@ -13,7 +13,11 @@ from pydantic import BaseModel, Field
 from src.pharmaviyum.ai.dependencies import get_agent_harness
 from src.pharmaviyum.ai.harness import AgentResponse
 from src.pharmaviyum.ai.mcp import tool_registry
-from src.pharmaviyum.ai.mcp.context import MCPAuthorizationContext, reset_mcp_context, set_mcp_context
+from src.pharmaviyum.ai.mcp.context import (
+    MCPAuthorizationContext,
+    reset_mcp_context,
+    set_mcp_context,
+)
 from src.pharmaviyum.ai.mcp.registry import UserRole
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
@@ -23,17 +27,27 @@ router = APIRouter(prefix="/api/v1/ai", tags=["AI"])
 
 
 class QueryRequest(BaseModel):
-    query: str = Field(..., min_length=1, max_length=2000, description="User's question")
-    session_id: str | None = Field(default=None, description="Conversation session ID")
-    patient_id: int | None = Field(default=None, description="Patient ID for history lookup")
+    query: str = Field(
+        ..., min_length=1, max_length=2000, description="User's question"
+    )
+    session_id: str | None = Field(
+        default=None, description="Conversation session ID"
+    )
+    patient_id: int | None = Field(
+        default=None, description="Patient ID for history lookup"
+    )
     pharmacy_id: int = Field(..., gt=0, description="Authorized pharmacy tenant")
     country: str = Field(default="VN", description="Country code")
     language: str = Field(default="vi", description="Language code")
-    halal_filter: bool = Field(default=False, description="Enable strict halal compliance check")
+    halal_filter: bool = Field(
+        default=False, description="Enable strict halal compliance check"
+    )
     force_fresh: bool = Field(default=False, description="Bypass prompt cache")
 
 
-async def _tenant_context(pharmacy_id: int, current_user: CurrentUser, session: SessionDep):
+async def _tenant_context(
+    pharmacy_id: int, current_user: CurrentUser, session: SessionDep
+):
     return await require_pharmacy_tenant(pharmacy_id, current_user, session)
 
 
@@ -75,7 +89,9 @@ async def query_agent(
     token = _set_mcp_context(tenant, current_user)
     try:
         try:
-            result = await harness.run(session_id=session_id, query=request.query, context=context)
+            result = await harness.run(
+                session_id=session_id, query=request.query, context=context
+            )
             if not result.get("success"):
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -89,7 +105,8 @@ async def query_agent(
                 sources=[],
                 tool_calls=[],
                 confidence=0.9 if not result.get("warnings") else 0.7,
-                requires_human_review="human_review_required" in result.get("warnings", []),
+                requires_human_review="human_review_required"
+                in result.get("warnings", []),
                 safety_score=0.95 if not result.get("warnings") else 0.8,
                 warnings=[
                     {"code": w, "severity": "warning", "message": w}
@@ -143,7 +160,10 @@ async def query_agent_stream(
             yield "data: [DONE]\n\n"
         except Exception as e:
             logger.error("Stream endpoint failed: %s", e, exc_info=True)
-            yield f"data: {json.dumps({'event': 'error', 'message': 'AI processing failed'})}\n\n"
+            yield (
+                "data: "
+                f"{json.dumps({'event': 'error', 'message': 'AI processing failed'})}\n\n"
+            )
         finally:
             reset_mcp_context(token)
 
