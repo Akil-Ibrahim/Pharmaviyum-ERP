@@ -8,14 +8,15 @@ const pharmacyId = Number(__ENV.PHARMACY_ID || 1);
 const patientId = Number(__ENV.PATIENT_ID || 1);
 const productId = Number(__ENV.PRODUCT_ID || 1);
 const orderId = Number(__ENV.ORDER_ID || 1);
-const inventoryId = Number(__ENV.INVENTORY_ID || 1);
 
 const aiLatency = new Trend('ai_query_latency', true);
 
-// Stage 1 business model:
-// 100 pharmacies, ~120 customer visits/day/pharmacy, with ~2-4 staff active
-// per pharmacy during busy periods. The default peak is 200 active CRM users;
-// increase PEAK_VUS to 400 for the upper-bound scenario.
+// Business model for the Stage 1 capacity baseline:
+// - 100 pharmacies
+// - ~120 customer visits/day/pharmacy on average
+// - 1 manager + 4-6 pharmacists per pharmacy
+// - ~2-4 staff actively using the system at a busy time
+// - 200 active CRM users is the default peak; 400 is the upper-bound scenario
 const peakVus = Number(__ENV.PEAK_VUS || 200);
 
 export const options = {
@@ -64,29 +65,71 @@ function get(path, endpoint) {
   return response;
 }
 
-export function pharmacyWorkload() {
-  // Weighted approximation of real pharmacy staff activity.
-  // Writes are intentionally excluded from the baseline: the test must not
-  // create unbounded patients/orders/ERP events in the target database.
+function pharmacistJourney() {
+  // Customer needs represented in the workload:
+  // OTC symptoms, prescription refills, chronic therapy, medical goods,
+  // vitamins/supplements and personal-care products.
   const roll = Math.random() * 100;
 
-  if (roll < 30) {
-    get('/api/v1/products/?limit=50', 'products_list');
-  } else if (roll < 55) {
-    get('/api/v1/patients/?page=1&page_size=50', 'patients_list');
-  } else if (roll < 70) {
-    get(`/api/v1/products/${productId}`, 'product_detail');
-  } else if (roll < 82) {
-    get(`/api/v1/patients/${patientId}`, 'patient_detail');
+  if (roll < 35) {
+    get('/api/v1/products/?limit=50', 'pharmacist_product_search');
+  } else if (roll < 60) {
+    get('/api/v1/patients/?page=1&page_size=50', 'pharmacist_patient_search');
+  } else if (roll < 75) {
+    get(`/api/v1/products/${productId}`, 'pharmacist_product_detail');
   } else if (roll < 90) {
-    get(`/api/v1/inventory?pharmacy_id=${pharmacyId}`, 'inventory_list');
-  } else if (roll < 95) {
-    get(`/api/v1/orders/${orderId}`, 'order_detail');
+    get(`/api/v1/patients/${patientId}`, 'pharmacist_patient_profile');
   } else {
-    get('/api/v1/pharmacies', 'pharmacies_list');
+    get(`/api/v1/orders/${orderId}`, 'pharmacist_order_history');
+  }
+}
+
+function managerJourney() {
+  // Managers monitor stock, pharmacies and customer activity.
+  const roll = Math.random() * 100;
+
+  if (roll < 45) {
+    get(`/api/v1/inventory?pharmacy_id=${pharmacyId}`, 'manager_inventory');
+  } else if (roll < 70) {
+    get('/api/v1/pharmacies', 'manager_pharmacies');
+  } else if (roll < 85) {
+    get('/api/v1/products/?limit=50', 'manager_product_catalog');
+  } else {
+    get('/api/v1/patients/?page=1&page_size=50', 'manager_customer_list');
+  }
+}
+
+function prescriptionJourney() {
+  // Prescription support is represented by the current read endpoint.
+  // Detailed prescription workflows will be enabled once the production
+  // prescription contract is implemented instead of using placeholder data.
+  get('/api/v1/prescriptions/', 'prescription_list');
+}
+
+function erpJourney() {
+  // The current ERP adapter exposes a lightweight connectivity/status check.
+  // Inventory and order reads above represent the CRM-facing ERP data path.
+  get('/api/v1/erp/status', 'erp_status');
+}
+
+function pharmacyWorkload() {
+  // Role mix for a typical pharmacy peak:
+  // ~75% pharmacists, ~15% managers, ~5% prescription-related work,
+  // ~5% ERP/integration activity. This is a starting assumption and should
+  // be recalibrated against measured production telemetry.
+  const roleRoll = Math.random() * 100;
+
+  if (roleRoll < 75) {
+    pharmacistJourney();
+  } else if (roleRoll < 90) {
+    managerJourney();
+  } else if (roleRoll < 95) {
+    prescriptionJourney();
+  } else {
+    erpJourney();
   }
 
-  // Human think time: the CRM is not hammered continuously by every user.
+  // Human think time: users do not issue requests continuously.
   sleep(1 + Math.random() * 3);
 }
 
@@ -94,7 +137,7 @@ export function aiQuery() {
   const payload = JSON.stringify({
     query:
       __ENV.AI_QUERY ||
-      'What are the main safety considerations for common pharmacy medicines?',
+      'Help a pharmacist compare common OTC options for a customer with mild cold symptoms, including key safety considerations.',
     pharmacy_id: pharmacyId,
     country: __ENV.COUNTRY || 'VN',
     language: __ENV.LANGUAGE || 'vi',
