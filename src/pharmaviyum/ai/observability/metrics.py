@@ -1,5 +1,5 @@
 """
-Prometheus metrics exporter for the AI/LLM layer.
+Prometheus metrics for application and AI/LLM observability.
 
 Metrics intentionally avoid tenant IDs, user IDs, session IDs, patient IDs,
 or other unbounded identifiers as labels. Those belong in traces/logs, not
@@ -8,11 +8,34 @@ Prometheus label cardinality.
 
 from __future__ import annotations
 
-from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
+from prometheus_client import Counter, Gauge, Histogram, REGISTRY
 
-ai_registry = CollectorRegistry()
+# Keep one registry so /metrics exposes both standard process/runtime metrics
+# and application/AI metrics. Existing imports of ai_registry remain compatible.
+ai_registry = REGISTRY
 
-AGENT_EXECUTION_DURATION = Histogram(
+HTTP_REQUESTS_TOTAL = Counter(
+    "http_requests_total",
+    "Total HTTP requests",
+    ["method", "route", "status_class"],
+    registry=ai_registry,
+)
+
+HTTP_REQUEST_DURATION = Histogram(
+    "http_request_duration_seconds",
+    "HTTP request duration in seconds",
+    ["method", "route", "status_class"],
+    buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0],
+    registry=ai_registry,
+)
+
+HTTP_REQUESTS_IN_FLIGHT = Gauge(
+    "http_requests_in_flight",
+    "Number of HTTP requests currently being processed",
+    registry=ai_registry,
+)
+
+AI_AGENT_EXECUTION_DURATION = Histogram(
     "ai_agent_execution_duration_seconds",
     "Time spent executing the full agent harness pipeline",
     ["country", "language"],
