@@ -25,11 +25,6 @@ from src.pharmaviyum.redis_client import close_redis, get_redis
 from src.pharmaviyum.workers.dead_letter import dead_letter_queue
 from src.pharmaviyum.workers.dispatcher import task_dispatcher
 from src.pharmaviyum.workers.queues import TaskQueue
-from src.pharmaviyum.workers.tasks.ai_tasks import (
-    CheckDrugInteractionTask,
-    GenerateRecommendationTask,
-    ReviewPrescriptionTask,
-)
 from src.pharmaviyum.workers.tasks.notifications import (
     ProcessAcknowledgmentTask,
     SendMedicationReminderTask,
@@ -59,9 +54,6 @@ TASK_REGISTRY = {
     "sync_inventory": SyncInventoryTask,
     "sync_customers": SyncCustomersTask,
     "sync_sales": SyncSalesTask,
-    "review_prescription": ReviewPrescriptionTask,
-    "check_drug_interaction": CheckDrugInteractionTask,
-    "generate_recommendation": GenerateRecommendationTask,
     "process_due_reminders": ProcessDueRemindersTask,
     "cleanup_expired_data": CleanupExpiredDataTask,
     "generate_daily_report": GenerateDailyReportTask,
