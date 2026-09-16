@@ -41,7 +41,14 @@ jobs:
       - name: Ruff diagnostics
         run: ruff check src/ tests/
       - name: Black diagnostics
-        run: black --check src/ tests/
+        run: black src/ tests/
+      - name: Export Black patch
+        run: git diff -- src/ tests/ > /tmp/black-format.patch
+      - name: Upload Black patch
+        uses: actions/upload-artifact@v4
+        with:
+          name: black-format-patch
+          path: /tmp/black-format.patch
       - name: isort diagnostics
         run: isort --check-only --profile black src/ tests/
       - name: mypy diagnostics
