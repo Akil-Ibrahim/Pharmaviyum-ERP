@@ -2,7 +2,7 @@
 
 ## 1. Local development
 
-The canonical local stack is Docker Compose.
+The canonical local stack is Docker Compose:
 
 ```bash
 cp .env.example .env
@@ -27,11 +27,11 @@ The development Compose stack provides PostgreSQL/pgvector, Redis, Ollama, the F
 | `.env` | Local developer configuration; never commit |
 | `.env.prod` | Production host configuration; never commit |
 
-Do not recreate `.env.development` or `.env.production`. Those names are not part of the current configuration contract.
+Do not recreate `.env.development` or `.env.production`; those names are not part of the current configuration contract.
 
 ## 3. Required configuration
 
-Copy the appropriate example and set real values for your environment. In particular, production must use unique strong secrets and real database/Redis/LLM endpoints.
+Copy the appropriate example and set real values for your environment. Production must use unique strong secrets and real database, Redis, and LLM endpoints.
 
 Never place production credentials, API keys, passwords, or tokens in Git.
 
@@ -44,13 +44,7 @@ alembic/
 alembic.ini
 ```
 
-Run migrations locally with:
-
-```bash
-alembic upgrade head
-```
-
-Or through the development container:
+The API container runs `alembic upgrade head` during startup. To run it manually:
 
 ```bash
 docker compose exec api alembic upgrade head
@@ -58,7 +52,7 @@ docker compose exec api alembic upgrade head
 
 ## 5. Production deployment
 
-Production is not started from the old `docker-compose.prod.yml` path.
+Production is not started from an old `docker-compose.prod.yml` path.
 
 The canonical release chain is:
 
@@ -86,7 +80,7 @@ curl http://localhost:8000/health
 curl http://localhost:8000/ready
 ```
 
-Use the health/readiness endpoints for deployment checks rather than assuming that a running container means the application is ready.
+Use health/readiness endpoints for deployment checks rather than assuming that a running container means the application is ready.
 
 ## 7. Useful commands
 
@@ -113,7 +107,7 @@ docker compose logs -f celery-worker
 
 # Lint / type-check
 ruff check src/
-mypy src/
+mypy --explicit-package-bases src
 ```
 
 ## 8. Security rules
