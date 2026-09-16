@@ -1,5 +1,8 @@
-"""Event handlers package"""
+"""Event handlers package.
 
-from . import patient_handlers
+Handlers are registered by their owning service modules. Keep this package
+free of imports for optional/removed handlers so importing the package does
+not fail during application startup or static analysis.
+"""
 
-__all__ = ["patient_handlers"]
+__all__: list[str] = []
