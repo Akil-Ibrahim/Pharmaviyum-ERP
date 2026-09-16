@@ -16,7 +16,7 @@ env:
   IMAGE_REPOSITORY: ghcr.io/akil-ibrahim/pharmaviyum-crm
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: pharmaviyum-${{ github.workflow }}-${{ github.ref }}
@@ -50,6 +50,15 @@ jobs:
           name: black-formatted-${{ github.sha }}
           path: black-formatted.tar.gz
           retention-days: 1
+      - name: Temporary commit of Black formatting
+        run: |
+          if ! git diff --quiet -- src/ tests/; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/ tests/
+            git commit -m "style: apply Black formatting"
+            git push
+          fi
       - name: Black diagnostics
         run: black --check src/ tests/
       - name: isort diagnostics
