@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [dev]
+    branches: [dev, feat/stage2-observability]
   pull_request:
     branches: [dev]
   workflow_dispatch:
