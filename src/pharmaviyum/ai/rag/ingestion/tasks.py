@@ -22,6 +22,7 @@ from src.pharmaviyum.ai.rag.preprocessing import DocumentPreprocessor
 from src.pharmaviyum.ai.rag.vector_store import PgVectorStore
 from src.pharmaviyum.core.config import settings
 from src.pharmaviyum.core.database import async_session_factory
+from src.pharmaviyum.redis_client import get_redis
 
 from .celery_app import celery_app
 from .progress import IngestionProgressTracker
@@ -99,9 +100,7 @@ async def _ingest_document_async(
     """Async implementation of tenant-scoped document ingestion."""
     _require_pharmacy_id(config)
 
-    import redis.asyncio as aioredis
-
-    redis_client = aioredis.from_url(settings.REDIS_URL)
+    redis_client = await get_redis()
     tracker = IngestionProgressTracker(redis_client)
 
     try:
@@ -169,7 +168,6 @@ async def _ingest_document_async(
             await vector_store.upsert(all_chunks, embeddings)
 
         await tracker.update_status(job_id, "completed", processed=len(all_chunks))
-        await redis_client.close()
         return {
             "success": True,
             "documents_loaded": len(documents),
@@ -179,7 +177,6 @@ async def _ingest_document_async(
     except Exception as exc:
         logger.error("Ingestion failed for %s: %s", source, exc, exc_info=True)
         await tracker.update_status(job_id, "failed", error=str(exc))
-        await redis_client.close()
         return {"success": False, "error": str(exc), "source": source}
 
 
