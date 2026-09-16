@@ -17,10 +17,18 @@ def test_vector_store_accepts_tenant_scoped_filter() -> None:
     PgVectorStore._require_tenant_filter({"pharmacy_id": 42})
 
 
-def test_vector_store_rejects_unscoped_chunk_metadata() -> None:
-    with pytest.raises(ValueError, match="ingestion requires"):
-        PgVectorStore._require_tenant_metadata({})
+def test_vector_store_rejects_non_canonical_chunk_metadata() -> None:
+    with pytest.raises(ValueError, match="source"):
+        PgVectorStore._require_tenant_metadata({"pharmacy_id": 42})
 
 
-def test_vector_store_accepts_tenant_scoped_chunk_metadata() -> None:
-    PgVectorStore._require_tenant_metadata({"pharmacy_id": 42})
+def test_vector_store_accepts_canonical_chunk_metadata() -> None:
+    PgVectorStore._require_tenant_metadata(
+        {
+            "pharmacy_id": 42,
+            "source": "guideline.pdf",
+            "country": "VN",
+            "language": "vi",
+            "access_level": "pharmacy",
+        }
+    )
