@@ -107,12 +107,20 @@ class RAGPipeline:
             yield "I couldn't find relevant information for your question."
             return
         prompt = self._build_prompt(question, retrieved, context)
+        chunks: list[str] = []
         async for token in self.llm.generate_stream(
             prompt=prompt,
             temperature=context.temperature,
             max_tokens=context.max_tokens,
         ):
-            yield token
+            chunks.append(token)
+        answer = "".join(chunks)
+        if self.guardrails:
+            validated = await self.guardrails.validate(
+                answer=answer, question=question, sources=retrieved
+            )
+            answer = validated.answer
+        yield answer
 
     @staticmethod
     def _build_filters(context: QueryContext) -> dict[str, object]:
