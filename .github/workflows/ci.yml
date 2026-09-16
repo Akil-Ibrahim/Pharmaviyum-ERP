@@ -206,4 +206,4 @@ jobs:
           cache-to: type=gha,mode=max
 
 # Deployment is intentionally implemented in .github/workflows/release.yml.
-# CI trigger checkpoint: this commit is intentionally authored through the repository API.
+# Temporary formatter checkpoint for Stage 2 remediation.
