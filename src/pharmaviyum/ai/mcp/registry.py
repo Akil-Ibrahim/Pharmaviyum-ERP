@@ -135,11 +135,13 @@ class MCPToolRegistry:
         try:
             validated_input = metadata.input_schema(**input_data)
         except Exception as exc:
-            raise ValueError(f"Invalid input for tool {resolved_name}: {exc}") from exc
+            raise ValueError(
+                f"Invalid input for tool {resolved_name}: {exc}"
+            ) from exc
 
         start = time.perf_counter()
         try:
-            from .context import MCPAuthorizationContext, set_mcp_context, reset_mcp_context
+            from .context import MCPAuthorizationContext, reset_mcp_context, set_mcp_context
 
             token = set_mcp_context(
                 MCPAuthorizationContext(
