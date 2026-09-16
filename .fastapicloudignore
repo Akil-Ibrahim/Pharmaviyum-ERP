@@ -1,0 +1,4 @@
+# FastAPI Cloud normally respects .gitignore. The React build is generated
+# in CI and must be uploaded with the FastAPI application.
+!frontend/dist/
+!frontend/dist/**
