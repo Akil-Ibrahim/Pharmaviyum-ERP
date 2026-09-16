@@ -23,6 +23,7 @@ Allowed labels must describe bounded dimensions such as:
 - `status_class`
 - stable `operation`
 - stable task/tool/model names where explicitly bounded
+- configured worker queue names
 
 Never use these as Prometheus labels:
 
@@ -81,7 +82,7 @@ The operation label is a bounded Redis command name (`ping`, `get`, `setex`, `de
 
 ## Celery metrics
 
-Celery task execution now exports:
+Celery task execution exports:
 
 - `celery_tasks_total{task,queue,status}`
 - `celery_task_duration_seconds{task,queue}`
@@ -89,7 +90,20 @@ Celery task execution now exports:
 
 Task and queue labels are bounded by the configured application routes (`ingest_document`, `ingest_batch`, `reindex_collection`, `cleanup_old_jobs` and their `ingestion`/`maintenance`/`default` queues). Task arguments, tenant IDs, document IDs, exception messages and request IDs are never metric labels.
 
-Queue depth and worker availability are intentionally not inferred from task counters. They require broker/worker-level telemetry and will be added before capacity conclusions are drawn from the load tests.
+## Custom worker metrics
+
+The Redis-backed application worker exports:
+
+- `worker_tasks_total{task,queue,status}`
+- `worker_task_duration_seconds{task,queue}`
+- `worker_tasks_in_flight{queue}`
+- `worker_queue_depth{queue}`
+- `worker_queue_poll_errors_total{queue}`
+- `worker_up`
+
+Queue depth is sampled every five seconds from the configured Redis sorted-set queues. Queue names are allow-listed from `TaskQueue`; arbitrary queue input is not emitted as a metric label. Worker task execution duration is recorded for both successful and failed executions. `worker_up` is set while the worker process is serving and cleared during graceful shutdown.
+
+These metrics complement, rather than replace, Celery telemetry because the repository contains both a Celery ingestion worker and a separate Redis-backed custom worker.
 
 ## Existing telemetry
 
@@ -100,7 +114,7 @@ Do not create a second tracing implementation. Extend the existing telemetry bou
 ## Next implementation slices
 
 1. Complete Redis instrumentation coverage for application-created Redis clients so all production Redis traffic uses the shared instrumentation boundary.
-2. Add Celery broker queue depth and worker availability telemetry.
+2. Complete Celery broker queue depth and worker availability telemetry.
 3. Complete AI/RAG request and generation latency metrics without high-cardinality labels.
 4. Deploy an OpenTelemetry Collector for traces and a Prometheus scrape configuration.
 5. Add Grafana dashboards for API, database, Redis, Celery, AI/RAG and overall capacity.
