@@ -18,6 +18,14 @@ class RetrieverPort(Protocol):
     ) -> list[RetrievalResult]: ...
 
 
+class RerankerPort(Protocol):
+    """Dedicated reranker contract; implementation is injectable infrastructure."""
+
+    async def rerank(
+        self, *, query: str, results: list[RetrievalResult], top_k: int
+    ) -> list[RetrievalResult]: ...
+
+
 class EmbeddingsPort(Protocol):
     async def embed(self, text: str) -> list[float]: ...
 
@@ -46,5 +54,6 @@ __all__ = [
     "EmbeddingsPort",
     "GuardrailsPort",
     "LLMPort",
+    "RerankerPort",
     "RetrieverPort",
 ]
