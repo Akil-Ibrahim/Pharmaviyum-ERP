@@ -18,40 +18,37 @@ from langchain_core.language_models import BaseChatModel
 from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
 from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.pharmaviyum.ai.agents import AgentCheckpointer, PharmacistAgent
+from src.pharmaviyum.ai.agents.evaluator import AgentEvaluator
+from src.pharmaviyum.ai.agents.pharmacist_agent import PharmacistAgent
 from src.pharmaviyum.ai.config import settings
-from src.pharmaviyum.ai.evaluation import AgentEvaluator
-from src.pharmaviyum.ai.harness import (
-    AgentHarness,
-    DialogueMemory,
-    MedicalGuardrails,
-    ModelRouter,
-    PromptCache,
-)
-from src.pharmaviyum.ai.mcp import MCPClient, mcp_client
-from src.pharmaviyum.ai.observability import ObservabilityTracer, tracer
-from src.pharmaviyum.ai.rag import (
-    EmbeddingsFactory,
-    IngestionOrchestrator,
-    LangGraphRAG,
-    PgVectorStore,
-)
-from src.pharmaviyum.core.logging import logger
+from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+from src.pharmaviyum.ai.harness.model_router import ModelRouter
+from src.pharmaviyum.ai.memory.dialogue_memory import DialogueMemory
+from src.pharmaviyum.ai.mcp.client import MCPClient
+from src.pharmaviyum.ai.observability.tracer import ObservabilityTracer, tracer
+from src.pharmaviyum.ai.rag.embeddings import EmbeddingsFactory
+from src.pharmaviyum.ai.rag.graph import LangGraphRAG
+from src.pharmaviyum.ai.rag.ingestion.orchestrator import IngestionOrchestrator
+from src.pharmaviyum.ai.rag.vector_store import PgVectorStore
+from src.pharmaviyum.ai.safety.guardrails import MedicalGuardrails
+from src.pharmaviyum.ai.state.checkpointer import AgentCheckpointer
+from src.pharmaviyum.ai.cache.prompt_cache import PromptCache
+
+mcp_client = MCPClient()
 
 
-async def get_redis_client(request: Request) -> AsyncGenerator[Redis, None]:
+def get_redis(request: Request) -> Redis:
     redis = getattr(request.app.state, "redis_client", None)
     if redis is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Redis service unavailable",
         )
-    yield redis
+    return redis
 
 
-async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
+async def get_db_session(request: Request) -> AsyncGenerator[Any, None]:
     factory = getattr(request.app.state, "db_session_factory", None)
     if factory is None:
         raise HTTPException(
@@ -96,7 +93,9 @@ def _build_embeddings_provider() -> str:
 
 @lru_cache(maxsize=1)
 def get_llm_fast() -> BaseChatModel:
-    model = settings.groq.fast_model if settings.use_cloud_llm else settings.ollama.fast_model
+    model = (
+        settings.groq.fast_model if settings.use_cloud_llm else settings.ollama.fast_model
+    )
     return _build_llm(model)
 
 
@@ -108,7 +107,9 @@ def get_llm_main() -> BaseChatModel:
 
 @lru_cache(maxsize=1)
 def get_llm_complex() -> BaseChatModel:
-    model = settings.groq.model if settings.use_cloud_llm else settings.ollama.complex_model
+    model = (
+        settings.groq.model if settings.use_cloud_llm else settings.ollama.complex_model
+    )
     return _build_llm(model)
 
 
@@ -148,20 +149,26 @@ class AIComponents:
                 if settings.use_cloud_llm and settings.openai.api_key
                 else None
             )
+            embedding_model = (
+                settings.openai.embedding_model if settings.use_cloud_llm else None
+            )
+            embedding_dimensions = settings.pgvector.vector_dimensions
+
             embeddings = EmbeddingsFactory.create(
                 provider=embeddings_provider,
                 use_cache=True,
                 redis_client=redis,
                 api_key=openai_api_key,
-                model=(
-                    settings.openai.embedding_model if settings.use_cloud_llm else None
-                ),
-                dimensions=settings.pgvector.vector_dimensions,
+                model=embedding_model,
+                dimensions=embedding_dimensions,
             )
             self.ingestion_orchestrator = IngestionOrchestrator(
                 session_factory=db_session_factory,
                 redis_client=redis,
                 embeddings_provider=embeddings_provider,
+                embeddings_api_key=openai_api_key,
+                embeddings_model=embedding_model,
+                embeddings_dimensions=embedding_dimensions,
             )
             memory = DialogueMemory(
                 redis_client=redis,
@@ -220,60 +227,6 @@ class AIComponents:
                 ),
             )
             self._initialized = True
-            logger.info("AI components initialized successfully")
 
 
-ai_container = AIComponents()
-
-
-async def get_ai_container(
-    redis: Redis = Depends(get_redis_client), request: Request = None
-) -> AIComponents:
-    db_factory = (
-        getattr(request.app.state, "db_session_factory", None) if request else None
-    )
-    if db_factory is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database service unavailable",
-        )
-    await ai_container.initialize(redis=redis, db_session_factory=db_factory)
-    return ai_container
-
-
-async def get_rag_pipeline(
-    container: AIComponents = Depends(get_ai_container),
-) -> LangGraphRAG:
-    if not container.rag_pipeline:
-        raise HTTPException(status_code=500, detail="LangGraph RAG not initialized")
-    return container.rag_pipeline
-
-
-async def get_ingestion_orchestrator(
-    container: AIComponents = Depends(get_ai_container),
-) -> IngestionOrchestrator:
-    if not container.ingestion_orchestrator:
-        raise HTTPException(
-            status_code=500, detail="Ingestion Orchestrator not initialized"
-        )
-    return container.ingestion_orchestrator
-
-
-async def get_agent_harness(
-    container: AIComponents = Depends(get_ai_container),
-) -> AgentHarness:
-    if not container.agent_harness:
-        raise HTTPException(status_code=500, detail="Agent Harness not initialized")
-    return container.agent_harness
-
-
-async def get_evaluator(
-    container: AIComponents = Depends(get_ai_container),
-) -> AgentEvaluator:
-    if not container.evaluator:
-        raise HTTPException(status_code=500, detail="Evaluator not initialized")
-    return container.evaluator
-
-
-async def get_tracer() -> ObservabilityTracer:
-    return ai_container.tracer
+ai_components = AIComponents()
