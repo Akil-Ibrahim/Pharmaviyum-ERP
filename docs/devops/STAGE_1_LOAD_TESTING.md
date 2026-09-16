@@ -20,6 +20,18 @@ The customer mix is represented conceptually as prescription medicines, OTC medi
 
 These are **synthetic engineering assumptions**, not measured production statistics. They are deliberately explicit so they can be changed when real customer data is available.
 
+## Role-based workload
+
+The current k6 model represents these roles:
+
+- **Pharmacist — 75% of active CRM activity:** product lookup, patient lookup, patient profile, order history and customer consultation-related reads.
+- **Pharmacy manager — 15%:** inventory monitoring, pharmacy/catalog views and customer lists.
+- **Prescription-related activity — 5%:** current prescription read path only; detailed prescription workflows are not yet modeled because the current route is still a placeholder.
+- **ERP/integration activity — 5%:** current ERP connectivity/status path plus CRM-facing inventory/order reads.
+- **AI — separate concurrent workload:** pharmacist-oriented knowledge and safety questions with configurable concurrency.
+
+The model intentionally uses human think time. Users do not continuously issue HTTP requests, and the same pharmacy should produce bursty rather than perfectly uniform traffic.
+
 ## Current scenarios
 
 `tests/load/k6/stage1_baseline.js` contains two concurrent scenarios:
@@ -27,7 +39,7 @@ These are **synthetic engineering assumptions**, not measured production statist
 - **Pharmacy workload:** ramps to 200 active CRM users by default. This represents roughly 2 active staff per pharmacy across 100 pharmacies. Use `PEAK_VUS=400` for an upper-bound scenario representing roughly 4 active staff per pharmacy.
 - **AI workload:** configurable concurrent users calling `POST /api/v1/ai/query`.
 
-The CRM workload currently exercises authenticated read paths that exist in the current API: products, patients, inventory, orders, pharmacies. Writes are intentionally excluded from this baseline so repeated runs do not create unbounded database state.
+The CRM workload currently exercises authenticated read paths that exist in the current API: products, patients, inventory, orders, pharmacies and ERP status. Writes are intentionally excluded from this baseline so repeated runs do not create unbounded database state.
 
 The AI request uses the current request contract: `query`, `pharmacy_id`, `country`, `language`, and `session_id`.
 
@@ -55,7 +67,7 @@ Optional variables:
 - `BASE_URL` — target API URL; defaults to `http://localhost:8000`.
 - `AUTH_TOKEN` — JWT for an authorized test user.
 - `PHARMACY_ID` — authorized pharmacy tenant; defaults to `1`.
-- `PATIENT_ID` / `PRODUCT_ID` / `ORDER_ID` / `INVENTORY_ID` — existing synthetic fixture IDs used for detail reads.
+- `PATIENT_ID` / `PRODUCT_ID` / `ORDER_ID` — existing synthetic fixture IDs used for detail reads.
 - `PEAK_VUS` — peak CRM concurrency; defaults to `200`.
 - `AI_VUS` — concurrent AI virtual users; defaults to `10`.
 - `AI_DURATION` — AI scenario duration; defaults to `7m`.
