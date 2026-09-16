@@ -70,6 +70,17 @@ WRITE_DURATION=2m \
 k6 run tests/load/k6/stage1_baseline.js
 ```
 
+For repeatable runs, prefer the guarded runner:
+
+```bash
+BASE_URL=http://localhost:8000 \
+AUTH_TOKEN="$LOAD_TEST_SUPERUSER_TOKEN" \
+PHARMACY_ID=1 \
+./scripts/run_stage1_load_test.sh
+```
+
+The runner rejects production-like URLs, requires k6, writes a timestamped JSON result under `artifacts/load-tests/`, and refuses an enabled write workload without an authorization token.
+
 After the run, clean up the generated synthetic records using the staging database cleanup procedure. Product records can be deactivated through the product API; patient/order/inventory/prescription cleanup should use the disposable test database reset rather than ad-hoc production-like deletion scripts.
 
 For higher-volume testing, create a fresh database snapshot or disposable database per run instead of simply increasing write rate. This keeps test data bounded and makes runs comparable.
@@ -90,7 +101,7 @@ AUTH_TOKEN="$AUTH_TOKEN" \
 PHARMACY_ID=1 \
 PEAK_VUS=200 \
 AI_VUS=10 \
-k6 run tests/load/k6/stage1_baseline.js
+./scripts/run_stage1_load_test.sh
 ```
 
 Optional variables:
