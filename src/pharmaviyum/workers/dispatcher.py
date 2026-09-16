@@ -10,7 +10,6 @@ from typing import Any, Optional
 
 from redis import asyncio as aioredis
 
-from src.pharmaviyum.core.config import settings
 from src.pharmaviyum.core.logging import get_logger
 from src.pharmaviyum.redis_client import get_redis
 from src.pharmaviyum.workers.queues import TaskQueue
@@ -19,22 +18,10 @@ logger = get_logger(__name__)
 
 
 class TaskDispatcher:
-    """
-    Centralized task dispatcher
-
-    Features:
-    - Task queueing to Redis
-    - Priority-based routing
-    - Idempotency support
-    - Task tracking
-    """
+    """Centralized task dispatcher."""
 
     def __init__(self, redis_client: Optional[aioredis.Redis] = None):
-        """Initialize dispatcher.
-
-        A Redis client may be injected for tests/isolated consumers. Normal
-        application traffic uses the shared instrumented client.
-        """
+        """Initialize dispatcher; dependency injection remains available for tests."""
         self.redis = redis_client
 
     async def _client(self) -> aioredis.Redis:
