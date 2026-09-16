@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.models.erp_sync import ERPIntegration, ERPSyncEvent
 from src.pharmaviyum.models.inventory import Inventory
-from src.pharmaviyum.models.mortarium_ai import MortariumAISession
 from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.prescription import Prescription
 from src.pharmaviyum.models.product import Product
@@ -76,11 +75,6 @@ class ERPEventIn(BaseModel):
     entity_type: str = Field(min_length=1, max_length=64)
     entity_id: str | None = None
     direction: str = Field(default="inbound", max_length=16)
-
-
-class MortariumSessionIn(BaseModel):
-    session_key: str = Field(min_length=1, max_length=128)
-    patient_id: int | None = None
 
 
 class EntityOut(BaseModel):
@@ -311,32 +305,3 @@ async def list_erp_events(
         .limit(100)
     )
     return list(result.scalars().all())
-
-
-@router.get("/mortarium-ai/sessions")
-async def list_mortarium_sessions(
-    current_user: CurrentUser, session: SessionDep
-) -> list[MortariumAISession]:
-    """List only sessions owned by the authenticated user."""
-    result = await session.execute(
-        select(MortariumAISession)
-        .where(MortariumAISession.user_id == str(current_user.id))
-        .order_by(MortariumAISession.id.desc())
-    )
-    return list(result.scalars().all())
-
-
-@router.post("/mortarium-ai/sessions", status_code=status.HTTP_201_CREATED)
-async def create_mortarium_session(
-    data: MortariumSessionIn,
-    current_user: CurrentUser,
-    session: SessionDep,
-) -> MortariumAISession:
-    ai_session = MortariumAISession(
-        user_id=str(current_user.id),
-        **data.model_dump(),
-    )
-    session.add(ai_session)
-    await session.commit()
-    await session.refresh(ai_session)
-    return ai_session
