@@ -34,6 +34,8 @@ class OpenAISettings(BaseSettings):
     api_key: SecretStr | None = None
     model: str = "gpt-4o-mini"
     complex_model: str = "gpt-4o"
+    embedding_model: str = "text-embedding-3-small"
+    embedding_dimensions: int = 1024
     timeout_seconds: float = 30.0
     temperature: float = 0.1
 
