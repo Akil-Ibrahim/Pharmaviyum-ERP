@@ -30,9 +30,7 @@ class QueryRequest(BaseModel):
     query: str = Field(
         ..., min_length=1, max_length=2000, description="User's question"
     )
-    session_id: str | None = Field(
-        default=None, description="Conversation session ID"
-    )
+    session_id: str | None = Field(default=None, description="Conversation session ID")
     patient_id: int | None = Field(
         default=None, description="Patient ID for history lookup"
     )

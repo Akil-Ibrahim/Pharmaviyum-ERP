@@ -44,7 +44,9 @@ def _pool_metrics() -> None:
     pool = engine.sync_engine.pool
     try:
         DB_POOL_SIZE.set(pool.size())
-        DB_POOL_MAX_OVERFLOW.set(getattr(pool, "_max_overflow", settings.DB_MAX_OVERFLOW))
+        DB_POOL_MAX_OVERFLOW.set(
+            getattr(pool, "_max_overflow", settings.DB_MAX_OVERFLOW)
+        )
         DB_POOL_CHECKED_OUT.set(pool.checkedout())
         DB_POOL_OVERFLOW.set(pool.overflow())
     except Exception:
@@ -54,7 +56,11 @@ def _pool_metrics() -> None:
 def _classify_operation(statement: str) -> str:
     first = statement.lstrip().split(None, 1)
     operation = first[0].lower() if first else "other"
-    return operation if operation in {"select", "insert", "update", "delete", "merge", "call"} else "other"
+    return (
+        operation
+        if operation in {"select", "insert", "update", "delete", "merge", "call"}
+        else "other"
+    )
 
 
 @event.listens_for(engine.sync_engine, "connect")
@@ -77,12 +83,16 @@ def _on_checkin(dbapi_connection, connection_record) -> None:
 
 
 @event.listens_for(engine.sync_engine, "before_cursor_execute")
-def _before_cursor_execute(conn, cursor, statement, parameters, context, executemany) -> None:
+def _before_cursor_execute(
+    conn, cursor, statement, parameters, context, executemany
+) -> None:
     context._pharmaviyum_query_started_at = time.perf_counter()
 
 
 @event.listens_for(engine.sync_engine, "after_cursor_execute")
-def _after_cursor_execute(conn, cursor, statement, parameters, context, executemany) -> None:
+def _after_cursor_execute(
+    conn, cursor, statement, parameters, context, executemany
+) -> None:
     started = getattr(context, "_pharmaviyum_query_started_at", None)
     if started is None:
         return

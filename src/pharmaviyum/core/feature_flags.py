@@ -33,8 +33,12 @@ class FeatureFlag:
     segments: list[str] = field(default_factory=list)
     variants: dict[str, Any] = field(default_factory=dict)
     default_value: Any = False
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+    updated_at: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
     created_by: str = "system"
 
     def to_dict(self) -> dict:
@@ -74,7 +78,9 @@ class FeatureFlagService:
         if await self.get_flag(flag.key):
             raise ValueError(f"Feature flag '{flag.key}' already exists")
         redis = await self._client()
-        await redis.set(f"feature_flag:{flag.key}", json.dumps(flag.to_dict(), ensure_ascii=False))
+        await redis.set(
+            f"feature_flag:{flag.key}", json.dumps(flag.to_dict(), ensure_ascii=False)
+        )
         await redis.sadd("feature_flags_list", flag.key)
         self.cache[flag.key] = flag
         logger.info("Created feature flag", extra={"flag_key": flag.key})
@@ -89,7 +95,9 @@ class FeatureFlagService:
                 setattr(flag, field_name, value)
         flag.updated_at = datetime.now(timezone.utc).isoformat()
         redis = await self._client()
-        await redis.set(f"feature_flag:{key}", json.dumps(flag.to_dict(), ensure_ascii=False))
+        await redis.set(
+            f"feature_flag:{key}", json.dumps(flag.to_dict(), ensure_ascii=False)
+        )
         self.cache[key] = flag
         logger.info("Updated feature flag", extra={"flag_key": key})
         return flag
@@ -113,14 +121,21 @@ class FeatureFlagService:
                 flags.append(flag)
         return flags
 
-    async def is_enabled(self, key: str, user_id: Optional[str] = None, user_segment: Optional[str] = None) -> bool:
+    async def is_enabled(
+        self,
+        key: str,
+        user_id: Optional[str] = None,
+        user_segment: Optional[str] = None,
+    ) -> bool:
         flag = await self.get_flag(key)
         if not flag or not flag.enabled:
             return False
         if flag.flag_type == FlagType.BOOLEAN:
             return True
         if flag.flag_type == FlagType.PERCENTAGE:
-            return bool(user_id and self._check_percentage(flag.key, user_id, flag.percentage))
+            return bool(
+                user_id and self._check_percentage(flag.key, user_id, flag.percentage)
+            )
         if flag.flag_type == FlagType.SEGMENT:
             return bool(user_segment and user_segment in flag.segments)
         if flag.flag_type == FlagType.MULTIVARIATE:
@@ -129,10 +144,17 @@ class FeatureFlagService:
 
     async def get_variant(self, key: str, user_id: str) -> Any:
         flag = await self.get_flag(key)
-        if not flag or not flag.enabled or flag.flag_type != FlagType.MULTIVARIATE or not flag.variants:
+        if (
+            not flag
+            or not flag.enabled
+            or flag.flag_type != FlagType.MULTIVARIATE
+            or not flag.variants
+        ):
             return flag.default_value if flag else False
         variant_key = self._get_deterministic_key(flag.key, user_id)
-        hash_value = int(hashlib.md5(variant_key.encode(), usedforsecurity=False).hexdigest(), 16)
+        hash_value = int(
+            hashlib.md5(variant_key.encode(), usedforsecurity=False).hexdigest(), 16
+        )
         bucket = hash_value % 100
         variant_names = list(flag.variants.keys())
         selected_variant = variant_names[bucket % len(variant_names)]
@@ -140,7 +162,9 @@ class FeatureFlagService:
 
     def _check_percentage(self, key: str, user_id: str, percentage: int) -> bool:
         variant_key = self._get_deterministic_key(key, user_id)
-        hash_value = int(hashlib.md5(variant_key.encode(), usedforsecurity=False).hexdigest(), 16)
+        hash_value = int(
+            hashlib.md5(variant_key.encode(), usedforsecurity=False).hexdigest(), 16
+        )
         return (hash_value % 100) < percentage
 
     def _get_deterministic_key(self, flag_key: str, user_id: str) -> str:
@@ -176,7 +200,9 @@ class FeatureFlagService:
 feature_flag_service = FeatureFlagService()
 
 
-async def is_feature_enabled(key: str, user_id: Optional[str] = None, user_segment: Optional[str] = None) -> bool:
+async def is_feature_enabled(
+    key: str, user_id: Optional[str] = None, user_segment: Optional[str] = None
+) -> bool:
     return await feature_flag_service.is_enabled(key, user_id, user_segment)
 
 

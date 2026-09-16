@@ -149,9 +149,7 @@ class PharmacistAgent:
                 )
                 if result.success:
                     content = json.dumps(result.data, default=str)
-                    results.append(
-                        {"tool": name, "success": True, "data": result.data}
-                    )
+                    results.append({"tool": name, "success": True, "data": result.data})
                 else:
                     content = f"Tool execution failed: {result.error}"
                     results.append(

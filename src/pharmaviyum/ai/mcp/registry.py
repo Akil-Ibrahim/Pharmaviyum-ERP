@@ -135,9 +135,7 @@ class MCPToolRegistry:
         try:
             validated_input = metadata.input_schema(**input_data)
         except Exception as exc:
-            raise ValueError(
-                f"Invalid input for tool {resolved_name}: {exc}"
-            ) from exc
+            raise ValueError(f"Invalid input for tool {resolved_name}: {exc}") from exc
 
         start = time.perf_counter()
         try:
