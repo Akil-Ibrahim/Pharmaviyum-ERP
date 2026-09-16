@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.config import settings
+from ...core.redis_client import get_redis
 from ...core.security import (
     create_access_token,
     create_refresh_token,
@@ -33,24 +34,15 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 def _token_key(prefix: str, value: str) -> str:
-    """Build a non-sensitive Redis key from a SHA-256 digest."""
     digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
     return f"auth:{prefix}:{digest}"
 
 
-def _redis():
-    return aioredis.from_url(
-        settings.REDIS_URL, encoding="utf-8", decode_responses=True
-    )
-
-
 def _ttl(exp: int) -> int:
-    """Return remaining token lifetime in seconds, with a safe minimum."""
     return max(exp - int(time.time()), 1)
 
 
 async def _issue_token_pair(user_id: str) -> Token:
-    """Issue an access token and a refresh token."""
     return Token(
         access_token=create_access_token({"sub": user_id}),
         refresh_token=create_refresh_token(user_id),
@@ -63,75 +55,42 @@ async def login_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: SessionDep,
 ) -> Token:
-    """Authenticate a user and issue an access/refresh token pair."""
     result = await session.execute(select(User).where(User.email == form_data.username))
     user = result.scalar_one_or_none()
     if user is None or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password", headers={"WWW-Authenticate": "Bearer"})
     if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
     return await _issue_token_pair(str(user.id))
 
 
 @router.post("/refresh", response_model=Token)
 async def refresh_access_token(body: RefreshTokenRequest, session: SessionDep) -> Token:
-    """Rotate a refresh token exactly once using an atomic Redis claim."""
     payload = decode_refresh_token(body.refresh_token)
     if not payload or not payload.get("sub") or not payload.get("jti"):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
 
-    redis = _redis()
-    try:
-        claimed = await redis.set(
-            _token_key("refresh-used", payload["jti"]),
-            "1",
-            ex=_ttl(int(payload["exp"])),
-            nx=True,
-        )
-        if not claimed:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Refresh token has been revoked",
-            )
-        user = await session.get(User, payload["sub"])
-        if user is None or not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
-            )
-        return await _issue_token_pair(str(user.id))
-    finally:
-        await redis.aclose()
+    redis = await get_redis()
+    claimed = await redis.set(_token_key("refresh-used", payload["jti"]), "1", ex=_ttl(int(payload["exp"])), nx=True)
+    if not claimed:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token has been revoked")
+    user = await session.get(User, payload["sub"])
+    if user is None or not user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+    return await _issue_token_pair(str(user.id))
 
 
 @router.post("/logout", response_model=Message)
 async def logout(body: RefreshTokenRequest) -> Message:
-    """Revoke a refresh token so it cannot be used again."""
     payload = decode_refresh_token(body.refresh_token)
     if payload and payload.get("jti"):
-        redis = _redis()
-        try:
-            await redis.set(
-                _token_key("refresh-used", payload["jti"]),
-                "1",
-                ex=_ttl(int(payload["exp"])),
-                nx=True,
-            )
-        finally:
-            await redis.aclose()
+        redis = await get_redis()
+        await redis.set(_token_key("refresh-used", payload["jti"]), "1", ex=_ttl(int(payload["exp"])), nx=True)
     return Message(message="Logged out")
 
 
 @router.post("/password-recovery/{email}", response_model=Message)
 async def recover_password(email: str, session: SessionDep) -> Message:
-    """Issue a reset token without revealing whether an account exists."""
     result = await session.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
     if user and user.is_active:
@@ -139,48 +98,32 @@ async def recover_password(email: str, session: SessionDep) -> Message:
         email_data = generate_reset_password_email(email, user.email, token)
         if getattr(settings, "EMAILS_ENABLED", False):
             send_email(email, email_data.subject, email_data.html_content)
-    return Message(
-        message="If that email is registered, you will receive a recovery email"
-    )
+    return Message(message="If that email is registered, you will receive a recovery email")
 
 
 @router.post("/reset-password/", response_model=Message)
 async def reset_password(body: NewPassword, session: SessionDep) -> Message:
-    """Consume a password-reset token exactly once and update the password."""
     payload = decode_password_reset_token(body.token)
     if not payload or not payload.get("sub") or not payload.get("jti"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired reset token",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired reset token")
 
-    redis = _redis()
+    redis = await get_redis()
     used_key = _token_key("password-reset-used", payload["jti"])
+    claimed = await redis.set(used_key, "1", ex=_ttl(int(payload["exp"])), nx=True)
+    if not claimed:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Reset token has already been used")
+
+    result = await session.execute(select(User).where(User.email == payload["sub"]))
+    user = result.scalar_one_or_none()
+    if user is None or not user.is_active:
+        await redis.delete(used_key)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token")
+
     try:
-        claimed = await redis.set(used_key, "1", ex=_ttl(int(payload["exp"])), nx=True)
-        if not claimed:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Reset token has already been used",
-            )
-
-        result = await session.execute(select(User).where(User.email == payload["sub"]))
-        user = result.scalar_one_or_none()
-        if user is None or not user.is_active:
-            await redis.delete(used_key)
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token"
-            )
-
         user.hashed_password = get_password_hash(body.new_password)
         session.add(user)
         await session.flush()
-        return Message(message="Password updated successfully")
     except Exception:
-        if not await redis.exists(used_key):
-            raise
-        if "user" not in locals() or user is None:
-            await redis.delete(used_key)
+        await redis.delete(used_key)
         raise
-    finally:
-        await redis.aclose()
+    return Message(message="Password updated successfully")
