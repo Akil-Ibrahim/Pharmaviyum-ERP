@@ -14,6 +14,7 @@ from src.pharmaviyum.ai.dependencies import ai_container
 from src.pharmaviyum.ai.mcp import get_mcp_health_status
 from src.pharmaviyum.ai.observability import ai_registry
 from src.pharmaviyum.core.logging import logger
+from src.pharmaviyum.redis_client import get_redis
 
 router = APIRouter(tags=["Monitoring"])
 
@@ -36,14 +37,9 @@ async def _check_postgres() -> None:
 
 
 async def _check_redis() -> None:
-    """Verify Redis connectivity using the configured URL."""
-    import redis.asyncio as aioredis
-
-    client = aioredis.from_url(settings.redis.url)
-    try:
-        await asyncio.wait_for(client.ping(), timeout=3)
-    finally:
-        await client.aclose()
+    """Verify Redis connectivity through the shared instrumented client."""
+    client = await get_redis()
+    await asyncio.wait_for(client.ping(), timeout=3)
 
 
 @router.get("/ready")

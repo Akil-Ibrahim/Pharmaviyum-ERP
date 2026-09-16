@@ -23,6 +23,7 @@ Allowed labels must describe bounded dimensions such as:
 - `status_class`
 - stable `operation`
 - stable task/tool/model names where explicitly bounded
+- configured worker queue names
 
 Never use these as Prometheus labels:
 
@@ -81,7 +82,7 @@ The operation label is a bounded Redis command name (`ping`, `get`, `setex`, `de
 
 ## Celery metrics
 
-Celery task execution now exports:
+Celery task execution exports:
 
 - `celery_tasks_total{task,queue,status}`
 - `celery_task_duration_seconds{task,queue}`
@@ -89,7 +90,26 @@ Celery task execution now exports:
 
 Task and queue labels are bounded by the configured application routes (`ingest_document`, `ingest_batch`, `reindex_collection`, `cleanup_old_jobs` and their `ingestion`/`maintenance`/`default` queues). Task arguments, tenant IDs, document IDs, exception messages and request IDs are never metric labels.
 
-Queue depth and worker availability are intentionally not inferred from task counters. They require broker/worker-level telemetry and will be added before capacity conclusions are drawn from the load tests.
+## Custom worker metrics
+
+The Redis-backed application worker exports:
+
+- `worker_tasks_total{task,queue,status}`
+- `worker_task_duration_seconds{task,queue}`
+- `worker_tasks_in_flight{queue}`
+- `worker_queue_depth{queue}`
+- `worker_queue_poll_errors_total{queue}`
+- `worker_up`
+
+Queue depth is sampled every five seconds from the configured Redis sorted-set queues. Queue names are allow-listed from `TaskQueue`; arbitrary queue input is not emitted as a metric label. Worker task execution duration is recorded for both successful and failed executions. `worker_up` is set while the worker process is serving and cleared during graceful shutdown.
+
+These metrics complement, rather than replace, Celery telemetry because the repository contains both a Celery ingestion worker and a separate Redis-backed custom worker.
+
+## AI/RAG metrics
+
+The RAG graph records one duration sample per stage invocation and increments `ai_stage_errors_total` only when that stage actually fails. Retrieval also records a separate RAG retrieval metric. The full pipeline records one request outcome and one `rag_pipeline` duration sample per invocation.
+
+AI metrics must use bounded dimensions only. User-provided country/language values, prompts, tenant IDs, request IDs, document IDs and arbitrary tool/model names must not become Prometheus label values. If a future metric needs such dimensions, normalize them to an explicit allow-list or remove the label.
 
 ## Existing telemetry
 
@@ -97,15 +117,44 @@ OpenTelemetry application tracing is initialized from `src/pharmaviyum/core/tele
 
 Do not create a second tracing implementation. Extend the existing telemetry boundary.
 
-## Next implementation slices
+## Prometheus and Grafana deployment
 
-1. Complete Redis instrumentation coverage for application-created Redis clients so all production Redis traffic uses the shared instrumentation boundary.
-2. Add Celery broker queue depth and worker availability telemetry.
-3. Complete AI/RAG request and generation latency metrics without high-cardinality labels.
-4. Deploy an OpenTelemetry Collector for traces and a Prometheus scrape configuration.
-5. Add Grafana dashboards for API, database, Redis, Celery, AI/RAG and overall capacity.
-6. Add alerts for error rate, latency and saturation only after Stage 1 establishes representative thresholds.
-7. Validate the complete telemetry path during the 200 VU and 400 VU tests.
+The monitoring stack is intentionally **opt-in** and separate from the base application compose file. Start the application stack first so the `pharmaviyum-network` Docker network exists, then start `docker-compose.monitoring.yml`.
+
+Prometheus and Grafana bind to `127.0.0.1` by default. This avoids exposing monitoring endpoints publicly. Grafana anonymous access is disabled and `GRAFANA_ADMIN_PASSWORD` is required before startup.
+
+Example:
+
+```bash
+# application stack
+docker compose up -d
+
+# monitoring stack
+export GRAFANA_ADMIN_PASSWORD='use-a-secret-from-your-secret-manager'
+docker compose -f docker-compose.monitoring.yml up -d
+```
+
+Optional bind overrides:
+
+- `PROMETHEUS_BIND` — default `127.0.0.1`
+- `GRAFANA_BIND` — default `127.0.0.1`
+- `PROMETHEUS_RETENTION` — default `15d`
+
+Do not expose ports `9090` or `3000` directly to the Internet. If remote access is required, put Grafana behind the existing authenticated reverse proxy/VPN and keep Prometheus private.
+
+The provisioned Grafana dashboard is read-only and uses the provisioned Prometheus datasource. The current monitoring compose intentionally does not add PostgreSQL/Redis/node exporters because those services are not part of the repository's deployed monitoring stack; application-level pool/cache metrics remain the source of truth for Stage 2.
+
+## Alerts
+
+Prometheus alert rules cover API 5xx rate, API p95 latency, PostgreSQL pool saturation/query latency, Redis errors, custom worker backlog and AI stage failure rate. Thresholds are operational starting points, not final production SLOs; validate them against the Stage 1 200/400 VU baseline before treating them as paging thresholds.
+
+## Validation sequence
+
+1. Confirm application `/metrics` exposes HTTP, PostgreSQL, Redis, Celery, worker and AI metrics.
+2. Start the opt-in monitoring stack and confirm Prometheus can scrape `api:8000`.
+3. Confirm Grafana loads the provisioned dashboard and Prometheus datasource.
+4. Run Stage 1 at 200 VU and then 400 VU while observing API, database, Redis, worker and AI panels.
+5. Use the resulting saturation/error/latency data to define production SLI/SLO thresholds.
 
 ## SLO policy
 

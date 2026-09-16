@@ -27,6 +27,19 @@ from src.pharmaviyum.core.logging import logger
 _TASK_START_TIMES: dict[str, tuple[float, str, str]] = {}
 _TASK_START_LOCK = Lock()
 _ALLOWED_QUEUES = {"ingestion", "maintenance", "default"}
+_ALLOWED_TASKS = {
+    "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_document",
+    "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_batch",
+    "src.pharmaviyum.ai.rag.ingestion.tasks.reindex_collection",
+    "src.pharmaviyum.ai.rag.ingestion.tasks.cleanup_old_jobs",
+    "other",
+}
+
+
+def _task_name(task) -> str:
+    """Return an allow-listed task name for telemetry."""
+    name = getattr(task, "name", "other")
+    return name if name in _ALLOWED_TASKS else "other"
 
 
 def _task_queue(task) -> str:
@@ -39,10 +52,11 @@ def _task_queue(task) -> str:
 def _task_started(task_id: str, task) -> tuple[float, str, str]:
     queue = _task_queue(task)
     started = time.perf_counter()
+    task_name = _task_name(task)
     with _TASK_START_LOCK:
-        _TASK_START_TIMES[task_id] = (started, task.name, queue)
+        _TASK_START_TIMES[task_id] = (started, task_name, queue)
     CELERY_TASKS_IN_FLIGHT.labels(queue=queue).inc()
-    return started, task.name, queue
+    return started, task_name, queue
 
 
 def _task_finished(task_id: str, task, status: str) -> None:
@@ -74,6 +88,8 @@ def _task_postrun(task_id=None, task=None, state=None, **kwargs) -> None:
 
 @signals.task_failure.connect
 def _task_failure(task_id=None, task=None, **kwargs) -> None:
+    # task_failure fires before task_postrun; the start entry is consumed here,
+    # preventing a failed task from being counted twice.
     _task_finished(task_id, task, "failure")
 
 

@@ -1,0 +1,99 @@
+groups:
+  - name: pharmaviyum-stage2
+    interval: 30s
+    rules:
+      - alert: PharmaviyumAPIHigh5xxRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="pharmaviyum-api",status_class="5xx"}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total{job="pharmaviyum-api"}[5m])), 0.001)
+          ) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: API 5xx error rate is elevated
+          description: More than 5% of API requests have returned 5xx responses for 10 minutes.
+
+      - alert: PharmaviyumAPIHighP95Latency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(http_request_duration_seconds_bucket{job="pharmaviyum-api"}[5m]))
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: API p95 latency is elevated
+          description: API p95 request latency has exceeded 1 second for 10 minutes.
+
+      - alert: PharmaviyumDBPoolSaturation
+        expr: |
+          db_pool_checked_out
+          /
+          clamp_min(db_pool_size + db_pool_max_overflow, 1)
+          > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: PostgreSQL connection pool is saturated
+          description: More than 85% of configured connection capacity, including maximum overflow, is in use for 10 minutes.
+
+      - alert: PharmaviyumDBQueryLatency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(db_query_duration_seconds_bucket[5m]))
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: PostgreSQL query p95 latency is elevated
+          description: Database query p95 latency has exceeded 1 second for 10 minutes.
+
+      - alert: PharmaviyumRedisErrors
+        expr: |
+          sum(rate(redis_command_errors_total[5m]))
+          /
+          clamp_min(sum(rate(redis_commands_total[5m])), 0.001)
+          > 0.02
+        for: 10m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: Redis command error rate is elevated
+          description: More than 2% of Redis commands are failing for 10 minutes.
+
+      - alert: PharmaviyumWorkerQueueBacklog
+        expr: sum(worker_queue_depth) > 100
+        for: 10m
+        labels:
+          severity: warning
+          service: worker
+        annotations:
+          summary: Custom worker queue backlog is sustained
+          description: More than 100 custom worker tasks have remained queued for 10 minutes.
+
+      - alert: PharmaviyumAIHighFailureRate
+        expr: |
+          (
+            sum(rate(ai_requests_total{status="failure"}[5m]))
+            /
+            clamp_min(sum(rate(ai_requests_total[5m])), 0.001)
+          ) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          service: ai
+        annotations:
+          summary: AI request failure rate is elevated
+          description: More than 5% of AI requests are failing for 10 minutes.

@@ -1,0 +1,64 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "title": "API request rate",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [{"expr": "sum(rate(http_requests_total{job=\"pharmaviyum-api\"}[5m]))", "legendFormat": "req/s"}]
+    },
+    {
+      "title": "API p95 latency",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"pharmaviyum-api\"}[5m])))", "legendFormat": "p95 seconds"}]
+    },
+    {
+      "title": "API 5xx rate",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [{"expr": "100 * sum(rate(http_requests_total{job=\"pharmaviyum-api\",status_class=\"5xx\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"pharmaviyum-api\"}[5m])), 0.001)", "legendFormat": "5xx %"}]
+    },
+    {
+      "title": "PostgreSQL pool utilization",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [{"expr": "100 * db_pool_checked_out / clamp_min(db_pool_size + db_pool_overflow, 1)", "legendFormat": "pool %"}]
+    },
+    {
+      "title": "Redis command error rate",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "targets": [{"expr": "100 * sum(rate(redis_command_errors_total[5m])) / clamp_min(sum(rate(redis_commands_total[5m])), 0.001)", "legendFormat": "errors %"}]
+    },
+    {
+      "title": "Worker queue depth",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "targets": [{"expr": "sum(worker_queue_depth)", "legendFormat": "queued"}]
+    },
+    {
+      "title": "AI pipeline stage latency",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le, stage) (rate(ai_stage_duration_seconds_bucket[5m])))", "legendFormat": "{{stage}} p95"}]
+    },
+    {
+      "title": "AI request failures",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+      "targets": [{"expr": "100 * sum(rate(ai_requests_total{status=\"failure\"}[5m])) / clamp_min(sum(rate(ai_requests_total[5m])), 0.001)", "legendFormat": "failure %"}]
+    }
+  ],
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["pharmaviyum", "stage2", "observability"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Pharmaviyum Stage 2 Observability",
+  "uid": "pharmaviyum-stage2",
+  "version": 1
+}

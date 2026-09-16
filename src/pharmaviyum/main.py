@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-import redis.asyncio as aioredis
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,22 +21,16 @@ from src.pharmaviyum.api.middleware import LoggingMiddleware, RequestIDMiddlewar
 from src.pharmaviyum.api.v1 import api_v1_router
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.database import AsyncSessionLocal
+from src.pharmaviyum.redis_client import close_redis, get_redis
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize shared infrastructure once for the application lifetime."""
     logger.info("Starting Pharmaviyum AI Application")
-    redis_client = None
 
     try:
-        redis_client = aioredis.from_url(
-            settings.redis.url,
-            decode_responses=True,
-            health_check_interval=30,
-        )
-        await redis_client.ping()
-
+        redis_client = await get_redis()
         app.state.redis_client = redis_client
         app.state.db_session_factory = AsyncSessionLocal
 
@@ -48,16 +41,14 @@ async def lifespan(app: FastAPI):
         logger.info("Application dependencies initialized")
     except Exception:
         logger.exception("Failed to initialize critical application dependencies")
-        if redis_client:
-            await redis_client.aclose()
         if settings.environment == "production":
+            await close_redis()
             raise
 
     yield
 
     logger.info("Shutting down Pharmaviyum AI Application")
-    if redis_client:
-        await redis_client.aclose()
+    await close_redis()
 
 
 app = FastAPI(
@@ -69,8 +60,11 @@ app = FastAPI(
     redoc_url="/redoc" if settings.environment != "production" else None,
 )
 
-app.add_middleware(RequestIDMiddleware)
+# Starlette wraps middleware in reverse registration order. RequestID must be
+# registered last so it runs before LoggingMiddleware and the logger can always
+# include the correlation ID for the request lifecycle.
 app.add_middleware(LoggingMiddleware)
+app.add_middleware(RequestIDMiddleware)
 
 allowed_origins = settings.cors_origins
 if settings.environment != "production" and not allowed_origins:

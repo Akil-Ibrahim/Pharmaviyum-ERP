@@ -6,13 +6,22 @@ Best practice 2026: Graceful shutdown, health checks, metrics
 import asyncio
 import json
 import signal
+import time
 from datetime import datetime, timezone
 from typing import Optional
 
 from redis import asyncio as aioredis
 
+from src.pharmaviyum.ai.observability.metrics import (
+    WORKER_QUEUE_DEPTH,
+    WORKER_QUEUE_POLL_ERRORS_TOTAL,
+    WORKER_TASK_DURATION,
+    WORKER_TASKS_IN_FLIGHT,
+    WORKER_TASKS_TOTAL,
+    WORKER_UP,
+)
 from src.pharmaviyum.core.logging import get_logger, setup_logging
-from src.pharmaviyum.redis_client import get_redis, close_redis
+from src.pharmaviyum.redis_client import close_redis, get_redis
 from src.pharmaviyum.workers.dead_letter import dead_letter_queue
 from src.pharmaviyum.workers.dispatcher import task_dispatcher
 from src.pharmaviyum.workers.queues import TaskQueue
@@ -59,14 +68,17 @@ TASK_REGISTRY = {
     "sync_all_pos": SyncAllPosTask,
 }
 
+_ALLOWED_QUEUES = {queue.value for queue in TaskQueue if queue != TaskQueue.DEAD_LETTER}
+
 
 class Worker:
     """Background job worker with shared Redis instrumentation."""
 
     def __init__(self, queues: Optional[list[str]] = None):
-        self.queues = queues or [
-            q.value for q in TaskQueue if q != TaskQueue.DEAD_LETTER
-        ]
+        requested_queues = queues or list(_ALLOWED_QUEUES)
+        self.queues = [queue for queue in requested_queues if queue in _ALLOWED_QUEUES]
+        if not self.queues:
+            raise ValueError("At least one supported worker queue is required")
         self.redis: Optional[aioredis.Redis] = None
         self._shutdown_event = asyncio.Event()
         self._tasks: list[asyncio.Task] = []
@@ -81,6 +93,7 @@ class Worker:
         """Start worker."""
         logger.info("Starting worker", extra={"queues": self.queues})
         self.redis = await get_redis()
+        WORKER_UP.set(1)
         self._stats["started_at"] = datetime.now(timezone.utc).isoformat()
 
         loop = asyncio.get_running_loop()
@@ -91,6 +104,7 @@ class Worker:
             self._tasks.append(asyncio.create_task(self._process_queue(queue)))
 
         self._tasks.append(asyncio.create_task(self._run_scheduler()))
+        self._tasks.append(asyncio.create_task(self._publish_queue_depth()))
         await self._shutdown_event.wait()
         await self._cleanup()
 
@@ -98,6 +112,21 @@ class Worker:
         """Request graceful shutdown."""
         logger.info("Shutdown requested")
         self._shutdown_event.set()
+
+    async def _publish_queue_depth(self):
+        """Refresh queue depth gauges without exposing task IDs or payloads."""
+        while not self._shutdown_event.is_set():
+            for queue in self.queues:
+                try:
+                    depth = await self.redis.zcard(f"queue:{queue}")
+                    WORKER_QUEUE_DEPTH.labels(queue=queue).set(depth)
+                except Exception:
+                    WORKER_QUEUE_POLL_ERRORS_TOTAL.labels(queue=queue).inc()
+                    logger.warning("Failed to read queue depth", extra={"queue": queue})
+            try:
+                await asyncio.wait_for(self._shutdown_event.wait(), timeout=5.0)
+            except asyncio.TimeoutError:
+                continue
 
     async def _process_queue(self, queue: str):
         """Process tasks from a specific queue."""
@@ -112,6 +141,7 @@ class Worker:
                 payload_json = await self.redis.get(f"task:{task_id}")
                 if not payload_json:
                     logger.warning(f"Task payload not found: {task_id}")
+                    WORKER_TASKS_TOTAL.labels(task="unknown", queue=queue, status="failure").inc()
                     continue
 
                 payload = json.loads(payload_json)
@@ -120,23 +150,44 @@ class Worker:
                 task_class = TASK_REGISTRY.get(task_name)
                 if not task_class:
                     logger.error(f"Unknown task: {task_name}")
+                    WORKER_TASKS_TOTAL.labels(task="unknown", queue=queue, status="failure").inc()
                     await self._mark_failed(task_id, f"Unknown task: {task_name}")
                     continue
 
                 task_instance = task_class()
-                result = await task_instance.run_with_retry(**task_args)
-                self._stats["processed"] += 1
-                if not result.success:
+                started = time.perf_counter()
+                WORKER_TASKS_IN_FLIGHT.labels(queue=queue).inc()
+                try:
+                    result = await task_instance.run_with_retry(**task_args)
+                except asyncio.CancelledError:
+                    raise
+                except Exception as exc:
+                    WORKER_TASKS_TOTAL.labels(task=task_name, queue=queue, status="failure").inc()
                     self._stats["failed"] += 1
-                    await dead_letter_queue.add(
-                        task_name=task_name,
-                        task_args=task_args,
-                        result=result,
-                        original_queue=queue,
+                    logger.error(f"Task execution failed: {exc}", exc_info=True)
+                else:
+                    status = "success" if result.success else "failure"
+                    WORKER_TASKS_TOTAL.labels(task=task_name, queue=queue, status=status).inc()
+                    self._stats["processed"] += 1
+                    if not result.success:
+                        self._stats["failed"] += 1
+                        await dead_letter_queue.add(
+                            task_name=task_name,
+                            task_args=task_args,
+                            result=result,
+                            original_queue=queue,
+                        )
+                    await self._mark_completed(task_id, result)
+                finally:
+                    WORKER_TASK_DURATION.labels(task=task_name, queue=queue).observe(
+                        time.perf_counter() - started
                     )
-                await self._mark_completed(task_id, result)
-            except Exception as e:
-                logger.error(f"Queue processor error: {e}", exc_info=True)
+                    WORKER_TASKS_IN_FLIGHT.labels(queue=queue).dec()
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                WORKER_QUEUE_POLL_ERRORS_TOTAL.labels(queue=queue).inc()
+                logger.error(f"Queue processor error: {exc}", exc_info=True)
                 await asyncio.sleep(1.0)
 
     async def _mark_completed(self, task_id: str, result):
@@ -195,6 +246,7 @@ class Worker:
     async def _cleanup(self):
         """Cleanup on shutdown."""
         logger.info("Cleaning up worker")
+        WORKER_UP.set(0)
         for task in self._tasks:
             task.cancel()
         await asyncio.gather(*self._tasks, return_exceptions=True)
