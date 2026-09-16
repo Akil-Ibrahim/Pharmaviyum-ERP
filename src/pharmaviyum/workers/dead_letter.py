@@ -53,8 +53,12 @@ class DeadLetterQueue:
             "failed_at": datetime.now(timezone.utc).isoformat(),
             "status": "failed",
         }
-        await redis.hset(self.index_key, entry_id, json.dumps(entry, ensure_ascii=False))
-        await redis.zadd(self.queue_key, {entry_id: datetime.now(timezone.utc).timestamp()})
+        await redis.hset(
+            self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
+        )
+        await redis.zadd(
+            self.queue_key, {entry_id: datetime.now(timezone.utc).timestamp()}
+        )
         await redis.expire(self.queue_key, DEAD_LETTER_TTL)
         await redis.expire(self.index_key, DEAD_LETTER_TTL)
         logger.error(
@@ -97,7 +101,9 @@ class DeadLetterQueue:
         entry["status"] = "retried"
         entry["retried_at"] = datetime.now(timezone.utc).isoformat()
         redis = await self._client()
-        await redis.hset(self.index_key, entry_id, json.dumps(entry, ensure_ascii=False))
+        await redis.hset(
+            self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
+        )
         return True
 
     async def mark_discarded(self, entry_id: str) -> bool:
@@ -107,7 +113,9 @@ class DeadLetterQueue:
         entry["status"] = "discarded"
         entry["discarded_at"] = datetime.now(timezone.utc).isoformat()
         redis = await self._client()
-        await redis.hset(self.index_key, entry_id, json.dumps(entry, ensure_ascii=False))
+        await redis.hset(
+            self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
+        )
         return True
 
     async def delete_entry(self, entry_id: str) -> bool:
@@ -127,7 +135,9 @@ class DeadLetterQueue:
             return 0
         for entry_id in old_entries:
             await self.delete_entry(entry_id)
-        logger.info("Cleared old dead letter entries", extra={"deleted": len(old_entries)})
+        logger.info(
+            "Cleared old dead letter entries", extra={"deleted": len(old_entries)}
+        )
         return len(old_entries)
 
 

@@ -144,9 +144,7 @@ class MCPClient:
                     },
                 )
             except asyncio.TimeoutError:
-                last_error = (
-                    f"Tool {tool_name} timed out after {self.timeout_seconds}s"
-                )
+                last_error = f"Tool {tool_name} timed out after {self.timeout_seconds}s"
                 logger.warning(
                     last_error,
                     extra={"tool": tool_name, "attempt": attempt + 1},
@@ -197,7 +195,10 @@ class MCPClient:
         cb_state = self._circuit_breaker[tool_name]
         if cb_state["failures"] < self._circuit_breaker_threshold:
             return False
-        if time.time() - float(cb_state["last_failure"]) > self._circuit_breaker_timeout:
+        if (
+            time.time() - float(cb_state["last_failure"])
+            > self._circuit_breaker_timeout
+        ):
             del self._circuit_breaker[tool_name]
             return False
         return True
@@ -222,7 +223,9 @@ class MCPClient:
         tool_info = registry.get_tool(tool_name)
         return tool_info[0] if tool_info else None
 
-    def to_openai_tools(self, user_role: UserRole | None = None) -> list[dict[str, Any]]:
+    def to_openai_tools(
+        self, user_role: UserRole | None = None
+    ) -> list[dict[str, Any]]:
         """Expose only tools the caller is authorized to invoke."""
         if user_role is None:
             context = get_authorization_context()

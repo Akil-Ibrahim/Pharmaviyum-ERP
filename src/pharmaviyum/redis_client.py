@@ -47,7 +47,9 @@ def _update_pool_metrics(pool: ConnectionPool) -> None:
     REDIS_CONNECTION_LIMIT.set(settings.REDIS_MAX_CONNECTIONS)
 
 
-async def _execute_redis_command(operation: str, command: Callable[[], Awaitable[T]]) -> T:
+async def _execute_redis_command(
+    operation: str, command: Callable[[], Awaitable[T]]
+) -> T:
     """Execute a bounded Redis operation metric without recording keys or values."""
     started = time.perf_counter()
     try:
@@ -60,7 +62,9 @@ async def _execute_redis_command(operation: str, command: Callable[[], Awaitable
         REDIS_COMMANDS_TOTAL.labels(operation=operation, status="success").inc()
         return result
     finally:
-        REDIS_COMMAND_DURATION.labels(operation=operation).observe(time.perf_counter() - started)
+        REDIS_COMMAND_DURATION.labels(operation=operation).observe(
+            time.perf_counter() - started
+        )
         if _pool is not None:
             _update_pool_metrics(_pool)
 
@@ -118,7 +122,9 @@ async def cache_get(key: str) -> str | None:
 async def cache_set(key: str, value: str, expire: int = 3600) -> bool:
     """Set value in cache with expiration."""
     redis = await get_redis()
-    return await _execute_redis_command("setex", lambda: redis.setex(key, expire, value))
+    return await _execute_redis_command(
+        "setex", lambda: redis.setex(key, expire, value)
+    )
 
 
 async def cache_delete(key: str) -> int:

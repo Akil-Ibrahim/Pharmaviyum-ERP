@@ -44,7 +44,11 @@ def _task_name(task) -> str:
 
 def _task_queue(task) -> str:
     """Return a bounded queue name for task telemetry."""
-    route = celery_app.conf.task_routes.get(task.name, {}) if "celery_app" in globals() else {}
+    route = (
+        celery_app.conf.task_routes.get(task.name, {})
+        if "celery_app" in globals()
+        else {}
+    )
     queue = route.get("queue") if isinstance(route, dict) else None
     return queue if queue in _ALLOWED_QUEUES else "default"
 
@@ -117,10 +121,18 @@ def create_celery_app() -> Celery:
         result_expires=86400,
         result_extended=True,
         task_routes={
-            "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_document": {"queue": "ingestion"},
-            "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_batch": {"queue": "ingestion"},
-            "src.pharmaviyum.ai.rag.ingestion.tasks.reindex_collection": {"queue": "maintenance"},
-            "src.pharmaviyum.ai.rag.ingestion.tasks.cleanup_old_jobs": {"queue": "maintenance"},
+            "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_document": {
+                "queue": "ingestion"
+            },
+            "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_batch": {
+                "queue": "ingestion"
+            },
+            "src.pharmaviyum.ai.rag.ingestion.tasks.reindex_collection": {
+                "queue": "maintenance"
+            },
+            "src.pharmaviyum.ai.rag.ingestion.tasks.cleanup_old_jobs": {
+                "queue": "maintenance"
+            },
         },
         task_queue_max_priority=10,
         task_default_priority=5,

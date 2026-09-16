@@ -67,7 +67,9 @@ class DialogueMemory:
                 f"- {fact_type}: {fact_value}"
                 for fact_type, fact_value in sorted(episodic_facts.items())
             )
-            messages.append(SystemMessage(content=f"Known conversation facts:\n{facts_text}"))
+            messages.append(
+                SystemMessage(content=f"Known conversation facts:\n{facts_text}")
+            )
 
         short_term_key = f"{self._prefix}:{session_id}:messages"
         raw_messages = await self.redis.lrange(
@@ -207,8 +209,9 @@ class DialogueMemory:
         episodic_key = f"{self._prefix}:{session_id}:episodic"
         facts = await self.redis.hgetall(episodic_key)
         return {
-            k.decode("utf-8") if isinstance(k, bytes) else str(k):
-            v.decode("utf-8") if isinstance(v, bytes) else str(v)
+            k.decode("utf-8") if isinstance(k, bytes) else str(k): (
+                v.decode("utf-8") if isinstance(v, bytes) else str(v)
+            )
             for k, v in facts.items()
         }
 

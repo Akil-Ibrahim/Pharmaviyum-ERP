@@ -99,7 +99,9 @@ class ContextualCompressor:
     async def _score_sentences(
         self, query: str, sentences: list[str], language: str
     ) -> list[tuple[str, float]]:
-        sentences_text = "\n".join(f"[{i}] {sentence}" for i, sentence in enumerate(sentences))
+        sentences_text = "\n".join(
+            f"[{i}] {sentence}" for i, sentence in enumerate(sentences)
+        )
         lang_instruction = {
             "vi": "Trả lời bằng tiếng Việt.",
             "ar": "أجب باللغة العربية.",
@@ -154,7 +156,11 @@ JSON:"""
         import re
 
         pattern = r"(?<=[.!?។])\s+(?=[A-ZА-Я\u0400-\u04FF\u1000-\u109F\u0600-\u06FF])"
-        return [s.strip() for s in re.split(pattern, text) if s.strip() and len(s.strip()) > 10]
+        return [
+            s.strip()
+            for s in re.split(pattern, text)
+            if s.strip() and len(s.strip()) > 10
+        ]
 
     @staticmethod
     def _apply_lost_in_middle_ordering(

@@ -122,8 +122,7 @@ class TaskDispatcher:
     async def get_all_queue_lengths(self) -> dict[str, int]:
         """Get lengths of all queues."""
         return {
-            queue.value: await self.get_queue_length(queue.value)
-            for queue in TaskQueue
+            queue.value: await self.get_queue_length(queue.value) for queue in TaskQueue
         }
 
 

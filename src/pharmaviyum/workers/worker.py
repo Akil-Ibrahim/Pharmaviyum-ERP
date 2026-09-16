@@ -141,7 +141,9 @@ class Worker:
                 payload_json = await self.redis.get(f"task:{task_id}")
                 if not payload_json:
                     logger.warning(f"Task payload not found: {task_id}")
-                    WORKER_TASKS_TOTAL.labels(task="unknown", queue=queue, status="failure").inc()
+                    WORKER_TASKS_TOTAL.labels(
+                        task="unknown", queue=queue, status="failure"
+                    ).inc()
                     continue
 
                 payload = json.loads(payload_json)
@@ -150,7 +152,9 @@ class Worker:
                 task_class = TASK_REGISTRY.get(task_name)
                 if not task_class:
                     logger.error(f"Unknown task: {task_name}")
-                    WORKER_TASKS_TOTAL.labels(task="unknown", queue=queue, status="failure").inc()
+                    WORKER_TASKS_TOTAL.labels(
+                        task="unknown", queue=queue, status="failure"
+                    ).inc()
                     await self._mark_failed(task_id, f"Unknown task: {task_name}")
                     continue
 
@@ -162,12 +166,16 @@ class Worker:
                 except asyncio.CancelledError:
                     raise
                 except Exception as exc:
-                    WORKER_TASKS_TOTAL.labels(task=task_name, queue=queue, status="failure").inc()
+                    WORKER_TASKS_TOTAL.labels(
+                        task=task_name, queue=queue, status="failure"
+                    ).inc()
                     self._stats["failed"] += 1
                     logger.error(f"Task execution failed: {exc}", exc_info=True)
                 else:
                     status = "success" if result.success else "failure"
-                    WORKER_TASKS_TOTAL.labels(task=task_name, queue=queue, status=status).inc()
+                    WORKER_TASKS_TOTAL.labels(
+                        task=task_name, queue=queue, status=status
+                    ).inc()
                     self._stats["processed"] += 1
                     if not result.success:
                         self._stats["failed"] += 1
