@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from langgraph.graph import END, StateGraph
 
+from src.pharmaviyum.ai.observability.metrics import record_rag_retrieval
 from src.pharmaviyum.core.logging import logger
 
 from .contextual_compression import ContextualCompressor
@@ -149,6 +150,7 @@ class LangGraphRAG:
         )
 
     async def retrieve_node(self, state: RAGState) -> dict[str, Any]:
+        started = time.perf_counter()
         filters = self._build_filters(state["context"])
         queries = state["transformed_queries"] or [state["question"]]
         results = await asyncio.gather(
@@ -171,6 +173,11 @@ class LangGraphRAG:
         ranked = sorted(best.values(), key=lambda hit: hit.score, reverse=True)[
             : self.MAX_CONTEXT_DOCS
         ]
+        record_rag_retrieval(
+            query_type="hybrid_multi_query",
+            latency_ms=(time.perf_counter() - started) * 1000,
+            success=failed == 0,
+        )
         return {
             "retrieved": ranked,
             "warnings": ["partial_retrieval_failure"] if failed else [],
