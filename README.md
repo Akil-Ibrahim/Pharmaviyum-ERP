@@ -61,7 +61,7 @@ This project and its contents are protected by applicable confidentiality and ND
                            Celery worker
 ```
 
-The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is integrated into the backend, while `mortarium-ai` is retained as a separate service in the deployment stack.
+The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is integrated into the backend and the development Docker Compose stack runs the API, PostgreSQL/pgvector, Redis, Ollama, and Celery ingestion worker.
 
 ## Core Capabilities
 
@@ -96,7 +96,7 @@ The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is inte
 - pgvector
 - Redis 7
 - Docker / Docker Compose
-- Nginx
+- Ollama for local LLM execution
 
 ### AI / RAG
 
@@ -164,14 +164,11 @@ The repository's detailed AI architecture is documented in [`docs/ai_architectur
 │   ├── domain/            # Domain models and business concepts
 │   └── ...
 ├── frontend/              # React / TypeScript frontend
-├── mortarium-ai/          # Separate AI service used by deployment stack
 ├── alembic/               # Database migrations
-├── docker/                # Monitoring and Docker-related configuration
-├── nginx/                 # Reverse proxy configuration
 ├── scripts/               # Development and operational scripts
-├── docs/                  # Architecture, ADRs and development guides
+├── docs/                  # Architecture, ADRs and engineering guides
 ├── tests/                 # Automated tests
-├── docker-compose.yml     # Main local Docker Compose stack
+├── docker-compose.yml     # Main local backend/infrastructure stack
 ├── pyproject.toml         # Python project and tooling configuration
 └── README.md              # Project overview
 ```
@@ -260,15 +257,23 @@ bun run build
 
 ## Docker
 
-The primary local stack is provided by Docker Compose and includes the application services required for development, including PostgreSQL/pgvector, Redis, FastAPI, frontend, AI components, and supporting services.
+The primary local Docker Compose stack provides the backend and infrastructure services required for development:
 
-Start the main stack with:
+- PostgreSQL 16 with pgvector
+- Redis 7
+- Ollama
+- FastAPI API
+- Celery ingestion worker
+
+The React frontend is developed separately from this Compose stack.
+
+Start the backend/infrastructure stack with:
 
 ```bash
 docker compose up --build
 ```
 
-The repository also contains Docker Compose profiles and dedicated operational guides under `docs/`.
+For the frontend, use the development commands in the [Frontend](#frontend) section.
 
 ## Security & Data Handling
 
@@ -293,11 +298,14 @@ The repository contains both application code and deployment infrastructure; doc
 
 Additional technical documentation is available under `docs/`, including:
 
-- AI/RAG architecture
-- Docker and local development guides
-- Docker Compose profiles
+- [`docs/README.md`](docs/README.md) — documentation index and ownership rules
+- AI/RAG architecture and retrieval audit
 - Architecture Decision Records (ADRs)
-- Frontend/backend integration guidance
+- Development, testing, and Codespaces guides
+- Operations and release runbooks
+- DevOps roadmap and engineering stages
+- WebSocket protocol documentation
+- Senior Python / AI / LLM interview and system-design material
 
 ## License / NDA / Contact
 
