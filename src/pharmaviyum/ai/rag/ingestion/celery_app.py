@@ -6,14 +6,52 @@ Best practice 2026:
 - Task routing for different ingestion workloads
 - Retry policies with exponential backoff
 - Task priority queues for urgent documents
+- Low-cardinality Prometheus task telemetry
 """
 
 from __future__ import annotations
 
-from celery import Celery
+import time
 
+from celery import Celery, signals
+
+from src.pharmaviyum.ai.observability.metrics import (
+    CELERY_TASK_DURATION,
+    CELERY_TASKS_IN_FLIGHT,
+    CELERY_TASKS_TOTAL,
+)
 from src.pharmaviyum.core.config import settings
 from src.pharmaviyum.core.logging import logger
+
+_TASK_START_TIMES: dict[str, float] = {}
+
+
+def _task_queue(task) -> str:
+    """Return a bounded queue name for task telemetry."""
+    route = celery_app.conf.task_routes.get(task.name, {}) if "celery_app" in globals() else {}
+    return str(route.get("queue", "default"))
+
+
+@signals.task_prerun.connect
+def _task_prerun(task_id=None, task=None, **kwargs) -> None:
+    if task is None or task_id is None:
+        return
+    queue = _task_queue(task)
+    _TASK_START_TIMES[task_id] = time.perf_counter()
+    CELERY_TASKS_IN_FLIGHT.labels(queue=queue).inc()
+
+
+@signals.task_postrun.connect
+def _task_postrun(task_id=None, task=None, state=None, **kwargs) -> None:
+    if task is None or task_id is None:
+        return
+    started = _TASK_START_TIMES.pop(task_id, None)
+    if started is None:
+        return
+    queue = _task_queue(task)
+    CELERY_TASK_DURATION.labels(task=task.name, queue=queue).observe(time.perf_counter() - started)
+    CELERY_TASKS_IN_FLIGHT.labels(queue=queue).dec()
+    CELERY_TASKS_TOTAL.labels(task=task.name, queue=queue, status=str(state or "unknown").lower()).inc()
 
 
 def create_celery_app() -> Celery:
@@ -28,48 +66,32 @@ def create_celery_app() -> Celery:
         ],
     )
 
-    # Celery configuration
     app.conf.update(
-        # Serialization
         task_serializer="json",
         accept_content=["json"],
         result_serializer="json",
-        # Timezone
         timezone="UTC",
         enable_utc=True,
-        # Task execution
         task_track_started=True,
-        task_time_limit=3600,  # 1 hour max per task
-        task_soft_time_limit=3000,  # 50 min soft limit
-        worker_max_tasks_per_child=100,  # Restart worker after 100 tasks (memory management)
-        # Retry policies
-        task_acks_late=True,  # Acknowledge after completion (not before)
+        task_time_limit=3600,
+        task_soft_time_limit=3000,
+        worker_max_tasks_per_child=100,
+        task_acks_late=True,
         task_reject_on_worker_lost=True,
-        # Result backend
-        result_expires=86400,  # Keep results for 24 hours
+        result_expires=86400,
         result_extended=True,
-        # Task routing
         task_routes={
-            "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_document": {
-                "queue": "ingestion"
-            },
-            "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_batch": {
-                "queue": "ingestion"
-            },
-            "src.pharmaviyum.ai.rag.ingestion.tasks.reindex_collection": {
-                "queue": "maintenance"
-            },
+            "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_document": {"queue": "ingestion"},
+            "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_batch": {"queue": "ingestion"},
+            "src.pharmaviyum.ai.rag.ingestion.tasks.reindex_collection": {"queue": "maintenance"},
         },
-        # Priority queues
         task_queue_max_priority=10,
         task_default_priority=5,
-        # Worker prefetch
-        worker_prefetch_multiplier=1,  # Process one task at a time per worker
-        # Beat scheduler (for periodic tasks)
+        worker_prefetch_multiplier=1,
         beat_schedule={
             "cleanup-old-ingestion-jobs": {
                 "task": "src.pharmaviyum.ai.rag.ingestion.tasks.cleanup_old_jobs",
-                "schedule": 86400.0,  # Daily
+                "schedule": 86400.0,
             },
         },
     )
@@ -78,5 +100,4 @@ def create_celery_app() -> Celery:
     return app
 
 
-# Global Celery app instance
 celery_app = create_celery_app()
