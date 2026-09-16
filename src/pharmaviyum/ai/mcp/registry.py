@@ -141,7 +141,11 @@ class MCPToolRegistry:
 
         start = time.perf_counter()
         try:
-            from .context import MCPAuthorizationContext, reset_mcp_context, set_mcp_context
+            from .context import (
+                MCPAuthorizationContext,
+                reset_mcp_context,
+                set_mcp_context,
+            )
 
             token = set_mcp_context(
                 MCPAuthorizationContext(
