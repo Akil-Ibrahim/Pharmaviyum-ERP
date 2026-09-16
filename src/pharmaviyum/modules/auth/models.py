@@ -25,13 +25,19 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4, index=True)
-    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        primary_key=True, default=uuid.uuid4, index=True
+    )
+    email: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    role: Mapped[str] = mapped_column(String(20), nullable=False, default="pharmacist")
+    role: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="pharmacist"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -45,7 +51,11 @@ class PharmacyMembership(Base):
 
     __tablename__ = "pharmacy_memberships"
     __table_args__ = (
-        UniqueConstraint("user_id", "pharmacy_id", name="uq_pharmacy_membership_user_pharmacy"),
+        UniqueConstraint(
+            "user_id",
+            "pharmacy_id",
+            name="uq_pharmacy_membership_user_pharmacy",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
