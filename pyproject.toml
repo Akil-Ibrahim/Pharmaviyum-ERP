@@ -72,6 +72,9 @@ target-version = "py313"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 
+[tool.fastapi]
+entrypoint = "src.pharmaviyum.main:app"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
