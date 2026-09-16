@@ -25,8 +25,8 @@ from src.pharmaviyum.ai.cache.prompt_cache import PromptCache
 from src.pharmaviyum.ai.config import settings
 from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
 from src.pharmaviyum.ai.harness.model_router import ModelRouter
-from src.pharmaviyum.ai.memory.dialogue_memory import DialogueMemory
 from src.pharmaviyum.ai.mcp.client import MCPClient
+from src.pharmaviyum.ai.memory.dialogue_memory import DialogueMemory
 from src.pharmaviyum.ai.observability.tracer import ObservabilityTracer, tracer
 from src.pharmaviyum.ai.rag.embeddings import EmbeddingsFactory
 from src.pharmaviyum.ai.rag.graph import LangGraphRAG

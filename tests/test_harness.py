@@ -9,8 +9,9 @@ Tests cover:
 - Structured outputs
 """
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 
 TENANT_CONTEXT = {

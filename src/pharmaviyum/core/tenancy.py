@@ -13,7 +13,6 @@ from typing import Iterator
 
 from fastapi import Request
 
-
 _tenant_id: ContextVar[str | None] = ContextVar("pharmaviyum_tenant_id", default=None)
 
 
