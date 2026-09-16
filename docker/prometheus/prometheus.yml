@@ -10,7 +10,8 @@ rule_files:
   - /etc/prometheus/alerts.yml
 
 scrape_configs:
-  # FastAPI application metrics.
+  # FastAPI application metrics. The monitoring compose joins the application
+  # network so the service name resolves without exposing Prometheus publicly.
   - job_name: 'pharmaviyum-api'
     static_configs:
       - targets: ['api:8000']
@@ -19,27 +20,3 @@ scrape_configs:
           environment: 'production'
     metrics_path: '/metrics'
     scrape_interval: 10s
-
-  # PostgreSQL exporter, when deployed.
-  - job_name: 'postgres'
-    static_configs:
-      - targets: ['postgres-exporter:9187']
-        labels:
-          service: 'database'
-          environment: 'production'
-
-  # Redis exporter, when deployed.
-  - job_name: 'redis'
-    static_configs:
-      - targets: ['redis-exporter:9121']
-        labels:
-          service: 'cache'
-          environment: 'production'
-
-  # Node exporter, when deployed.
-  - job_name: 'node'
-    static_configs:
-      - targets: ['node-exporter:9100']
-        labels:
-          service: 'system'
-          environment: 'production'
