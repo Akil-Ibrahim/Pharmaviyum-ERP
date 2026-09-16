@@ -56,15 +56,6 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
     RATE_LIMIT_PER_MINUTE: int = 100
     RATE_LIMIT_BURST: int = 20
-    MORTARIUM_MODEL_PATH: str = "./models/qwen2.5-7b-instruct-q4_k_m.gguf"
-    MORTARIUM_EMBEDDING_MODEL: str = "BAAI/bge-m3"
-    MORTARIUM_CONTEXT_LENGTH: int = 8192
-    MORTARIUM_CACHE_TTL: int = 3600
-    MORTARIUM_MAX_CONCURRENT: int = 5
-    MORTARIUM_AI_URL: str = "http://mortarium-ai:8001"
-    MORTARIUM_AI_TIMEOUT: int = 30
-    MORTARIUM_AI_ENABLED: bool = False
-    AI_SERVICE_URL: str = "http://mortarium-ai:8001"
     EMAILS_ENABLED: bool = False
     OTEL_ENABLED: bool = False
     OTEL_SERVICE_NAME: str = "pharmaviyum-crm"
