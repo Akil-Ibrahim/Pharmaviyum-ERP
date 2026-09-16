@@ -38,15 +38,20 @@ CI already builds images tagged by commit SHA and publishes SBOM and provenance 
 
 Establish a measurable baseline before changing infrastructure.
 
-- Define representative workloads for 100 pharmacies.
-- Add k6 load-test scenarios for authentication, CRM reads/writes, search, RAG and AI requests.
+- Use `tests/load/k6/stage1_baseline.js` as the reproducible load-test entry point.
+- Start with the current `/health` path and authenticated `/api/v1/ai/query` workload; do not load-test stale API endpoints.
+- Progressively add verified CRM reads/writes, search and RAG scenarios using synthetic tenant data.
 - Measure RPS, concurrent users, p50/p95/p99 latency, error rate and saturation.
 - Measure PostgreSQL connections, query latency and pgvector performance.
 - Measure Redis latency and Celery queue depth.
-- Measure AI concurrency, model latency, timeouts and token usage.
+- Measure AI concurrency, model latency and timeouts.
 - Record a baseline and repeat tests after every major infrastructure change.
 
+The current k6 thresholds are initial engineering gates, not final SLOs. Recalibrate them after representative measurements.
+
 **Exit criteria:** a reproducible load-test suite and documented capacity baseline.
+
+See `docs/devops/STAGE_1_LOAD_TESTING.md` for execution, variables, measurement requirements and exit criteria.
 
 ### Stage 2 — Observability
 
@@ -324,6 +329,7 @@ The exact topology remains subject to capacity measurements and deployment const
 
 ## Related documentation
 
+- `docs/devops/STAGE_1_LOAD_TESTING.md` — Stage 1 load-test procedure.
 - `docs/ai_architecture.md` — AI, RAG, memory, guardrails and MCP architecture.
 - `docs/guides/ENVIRONMENT_SETUP.md` — environment configuration and deployment prerequisites.
 - `docs/guides/TESTING.md` — test and CI strategy.
