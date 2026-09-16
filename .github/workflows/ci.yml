@@ -45,7 +45,7 @@ jobs:
       - name: isort diagnostics
         run: isort --check-only --profile black src/ tests/
       - name: mypy diagnostics
-        run: mypy src/pharmaviyum/
+        run: mypy --explicit-package-bases src/pharmaviyum/
 
   test-unit:
     name: Unit Tests
