@@ -89,3 +89,6 @@ class Settings(BaseSettings):
     ARQ_REDIS_URL: str = "redis://localhost:6379/1"
     DEFAULT_PAGE_SIZE: int = 50
     MAX_PAGE_SIZE: int = 100
+
+
+settings = Settings()
