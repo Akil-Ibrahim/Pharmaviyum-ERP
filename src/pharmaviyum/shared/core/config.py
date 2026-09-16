@@ -70,11 +70,6 @@ class Settings(BaseSettings):
     # Rate limiting
     RATE_LIMIT_PER_MINUTE: int = 100
 
-    # Mortarium AI
-    MORTARIUM_MODEL: str = "qwen2.5:7b"
-    MORTARIUM_ENDPOINT: str = "http://localhost:11434"
-    MORTARIUM_CONTEXT_LENGTH: int = 8192
-
     # Feature flags
     FEATURE_AI_RECOMMENDATIONS: bool = True
     FEATURE_HALAL_FILTER: bool = True
