@@ -60,8 +60,11 @@ app = FastAPI(
     redoc_url="/redoc" if settings.environment != "production" else None,
 )
 
-app.add_middleware(RequestIDMiddleware)
+# Starlette wraps middleware in reverse registration order. RequestID must be
+# registered last so it runs before LoggingMiddleware and the logger can always
+# include the correlation ID for the request lifecycle.
 app.add_middleware(LoggingMiddleware)
+app.add_middleware(RequestIDMiddleware)
 
 allowed_origins = settings.cors_origins
 if settings.environment != "production" and not allowed_origins:
