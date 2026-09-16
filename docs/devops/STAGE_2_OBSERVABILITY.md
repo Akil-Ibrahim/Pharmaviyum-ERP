@@ -37,7 +37,7 @@ Never use these as Prometheus labels:
 - exception message
 - arbitrary URL path parameters
 
-### HTTP metrics
+## HTTP metrics
 
 The API exposes:
 
@@ -47,7 +47,22 @@ The API exposes:
 
 HTTP duration uses explicit latency buckets suitable for p50/p95/p99 calculations in Prometheus/Grafana.
 
-The `/metrics` endpoint exposes the standard Python/process runtime metrics together with application and AI metrics through the shared Prometheus registry.
+## PostgreSQL metrics
+
+The SQLAlchemy engine now exposes pool and statement metrics:
+
+- `db_pool_size`
+- `db_pool_checked_out`
+- `db_pool_overflow`
+- `db_pool_timeouts_total`
+- `db_connection_hold_duration_seconds`
+- `db_query_total`
+- `db_query_duration_seconds`
+- `db_query_errors_total`
+
+Query metrics use only a bounded operation classification (`select`, `insert`, `update`, `delete`, `merge`, `call`, `other`). SQL text, parameters, IDs and exception text are never metric labels.
+
+`db_connection_hold_duration_seconds` measures how long checked-out connections remain in use. It is deliberately not called pool-wait time: the current SQLAlchemy pool event boundary does not provide a reliable pre-checkout wait timestamp. Pool saturation should therefore be inferred from `db_pool_checked_out`, `db_pool_overflow`, and `db_pool_timeouts_total` until a dedicated checkout timing hook is introduced.
 
 ## Existing telemetry
 
@@ -57,14 +72,13 @@ Do not create a second tracing implementation. Extend the existing telemetry bou
 
 ## Next implementation slices
 
-1. Add PostgreSQL pool/query metrics at the database abstraction boundary.
-2. Add Redis command/connection metrics where the shared client/pool is created.
-3. Add Celery queue depth, active workers, task duration and failure counters.
-4. Complete AI/RAG request and generation latency metrics without high-cardinality labels.
-5. Deploy an OpenTelemetry Collector for traces and a Prometheus scrape configuration.
-6. Add Grafana dashboards for API, database, Redis, Celery, AI/RAG and overall capacity.
-7. Add alerts for error rate, latency and saturation only after Stage 1 establishes representative thresholds.
-8. Validate the complete telemetry path during the 200 VU and 400 VU tests.
+1. Add Redis command/connection metrics where the shared client/pool is created.
+2. Add Celery queue depth, active workers, task duration and failure counters.
+3. Complete AI/RAG request and generation latency metrics without high-cardinality labels.
+4. Deploy an OpenTelemetry Collector for traces and a Prometheus scrape configuration.
+5. Add Grafana dashboards for API, database, Redis, Celery, AI/RAG and overall capacity.
+6. Add alerts for error rate, latency and saturation only after Stage 1 establishes representative thresholds.
+7. Validate the complete telemetry path during the 200 VU and 400 VU tests.
 
 ## SLO policy
 
