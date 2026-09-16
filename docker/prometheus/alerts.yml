@@ -35,7 +35,7 @@ groups:
         expr: |
           db_pool_checked_out
           /
-          clamp_min(db_pool_size + db_pool_overflow, 1)
+          clamp_min(db_pool_size + db_pool_max_overflow, 1)
           > 0.85
         for: 10m
         labels:
@@ -43,7 +43,7 @@ groups:
           service: database
         annotations:
           summary: PostgreSQL connection pool is saturated
-          description: More than 85% of configured and overflow connection capacity is in use for 10 minutes.
+          description: More than 85% of configured connection capacity, including maximum overflow, is in use for 10 minutes.
 
       - alert: PharmaviyumDBQueryLatency
         expr: |
@@ -86,7 +86,7 @@ groups:
       - alert: PharmaviyumAIHighFailureRate
         expr: |
           (
-            sum(rate(ai_stage_errors_total[5m]))
+            sum(rate(ai_requests_total{status="failure"}[5m]))
             /
             clamp_min(sum(rate(ai_requests_total[5m])), 0.001)
           ) > 0.05
@@ -95,5 +95,5 @@ groups:
           severity: warning
           service: ai
         annotations:
-          summary: AI pipeline failure rate is elevated
-          description: AI stage failures exceed 5% of AI requests for 10 minutes.
+          summary: AI request failure rate is elevated
+          description: More than 5% of AI requests are failing for 10 minutes.
