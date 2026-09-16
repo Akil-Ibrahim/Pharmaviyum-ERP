@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [dev, feat/stage2-observability]
+    branches: [dev]
   pull_request:
     branches: [dev]
   workflow_dispatch:
@@ -16,7 +16,7 @@ env:
   IMAGE_REPOSITORY: ghcr.io/akil-ibrahim/pharmaviyum-crm
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: pharmaviyum-${{ github.workflow }}-${{ github.ref }}
@@ -40,27 +40,6 @@ jobs:
           pip install 'ruff==0.12.10' 'black==25.1.0' 'isort==6.0.1' 'mypy==1.17.1'
       - name: Ruff diagnostics
         run: ruff check src/ tests/
-      - name: Temporary formatter remediation
-        run: |
-          black src/ tests/
-          isort --profile black src/ tests/
-          sed -i 's/# type: input\/output/# token type: input\/output/' src/pharmaviyum/core/metrics.py
-          tar -czf black-formatted.tar.gz src tests
-      - name: Upload temporary formatter artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: black-formatted-${{ github.sha }}
-          path: black-formatted.tar.gz
-          retention-days: 1
-      - name: Temporary commit of formatter remediation
-        run: |
-          if ! git diff --quiet -- src/ tests/; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/ tests/
-            git commit -m "style: apply formatter remediation"
-            git push
-          fi
       - name: Black diagnostics
         run: black --check src/ tests/
       - name: isort diagnostics
@@ -217,4 +196,3 @@ jobs:
           cache-to: type=gha,mode=max
 
 # Deployment is intentionally implemented in .github/workflows/release.yml.
-# Temporary formatter checkpoint for Stage 2 remediation.
