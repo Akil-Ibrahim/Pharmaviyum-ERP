@@ -1,4 +1,4 @@
-"""Embeddings generation with Redis cache and Ollama."""
+"""Embeddings generation with Redis cache and local/cloud providers."""
 
 from __future__ import annotations
 
@@ -7,13 +7,16 @@ import hashlib
 from typing import Protocol
 
 import numpy as np
+from langchain_openai import OpenAIEmbeddings
 
 
 class EmbeddingsProvider(Protocol):
     async def embed(self, text: str) -> list[float]: ...
+
     async def embed_batch(
         self, texts: list[str], batch_size: int = 32
     ) -> list[list[float]]: ...
+
     @property
     def dimensions(self) -> int: ...
 
@@ -62,16 +65,56 @@ class OllamaEmbeddings:
         return self._dimensions
 
 
+class OpenAIEmbeddingsProvider:
+    """Cloud embeddings via OpenAI text-embedding-3-small at 1024 dimensions."""
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "text-embedding-3-small",
+        dimensions: int = 1024,
+        batch_size: int = 32,
+    ):
+        self.model = model
+        self._dimensions = dimensions
+        self._batch_size = batch_size
+        self._client = OpenAIEmbeddings(
+            model=model,
+            dimensions=dimensions,
+            api_key=api_key,
+        )
+
+    async def embed(self, text: str) -> list[float]:
+        return await self._client.aembed_query(text)
+
+    async def embed_batch(
+        self, texts: list[str], batch_size: int = 32
+    ) -> list[list[float]]:
+        size = max(1, min(batch_size, self._batch_size))
+        results: list[list[float]] = []
+        for i in range(0, len(texts), size):
+            results.extend(await self._client.aembed_documents(texts[i : i + size]))
+        return results
+
+    @property
+    def dimensions(self) -> int:
+        return self._dimensions
+
+
 class CachedEmbeddings:
     """Embeddings with Redis cache (SHA256 key, 30-day TTL)."""
 
     def __init__(
-        self, provider: EmbeddingsProvider, redis_client, ttl: int = 86400 * 30
+        self,
+        provider: EmbeddingsProvider,
+        redis_client,
+        ttl: int = 86400 * 30,
+        cache_namespace: str = "v2",
     ):
         self.provider = provider
         self.redis = redis_client
         self.ttl = ttl
-        self._prefix = "embeddings:v1"
+        self._prefix = f"embeddings:{cache_namespace}:{provider.__class__.__name__}"
 
     async def embed(self, text: str) -> list[float]:
         cache_key = self._cache_key(text)
@@ -130,12 +173,28 @@ class CachedEmbeddings:
 class EmbeddingsFactory:
     @staticmethod
     def create(
-        provider: str = "ollama", use_cache: bool = True, redis_client=None
+        provider: str = "ollama",
+        use_cache: bool = True,
+        redis_client=None,
+        api_key: str | None = None,
+        model: str | None = None,
+        dimensions: int = 1024,
     ) -> EmbeddingsProvider:
         if provider == "ollama":
-            base = OllamaEmbeddings()
+            base = OllamaEmbeddings(dimensions=dimensions)
+        elif provider == "openai":
+            if not api_key:
+                raise RuntimeError(
+                    "OpenAI embeddings require OPENAI_API_KEY to be configured"
+                )
+            base = OpenAIEmbeddingsProvider(
+                api_key=api_key,
+                model=model or "text-embedding-3-small",
+                dimensions=dimensions,
+            )
         else:
-            raise ValueError(f"Unknown provider: {provider}")
+            raise ValueError(f"Unknown embeddings provider: {provider}")
+
         return (
             CachedEmbeddings(base, redis_client) if use_cache and redis_client else base
         )
