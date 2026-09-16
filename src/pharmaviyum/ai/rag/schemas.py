@@ -1,12 +1,39 @@
-"""RAG Pipeline Schemas (Pydantic v2, frozen models)."""
+"""RAG pipeline schemas and explicit retrieval contracts."""
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
+class CanonicalMetadata(BaseModel):
+    """Canonical metadata persisted with every searchable chunk."""
+
+    model_config = ConfigDict(extra="allow", frozen=True)
+
+    pharmacy_id: int = Field(..., gt=0)
+    source: str = Field(..., min_length=1)
+    version: str | None = None
+    effective_from: datetime | None = None
+    effective_to: datetime | None = None
+    access_level: Literal["public", "pharmacy", "patient"] = "pharmacy"
+    country: str = Field(default="VN", min_length=2, max_length=8)
+    language: str = Field(default="vi", min_length=2, max_length=8)
+    category: str | None = None
+    doc_type: str | None = None
+
+    @model_validator(mode="after")
+    def validate_effective_window(self) -> "CanonicalMetadata":
+        if (
+            self.effective_from is not None
+            and self.effective_to is not None
+            and self.effective_to < self.effective_from
+        ):
+            raise ValueError("effective_to cannot be earlier than effective_from")
+        return self
 
 
 class Document(BaseModel):
@@ -25,7 +52,7 @@ class Document(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
     country: str = "VN"
     language: str = "vi"
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class Chunk(BaseModel):
@@ -49,7 +76,7 @@ class Chunk(BaseModel):
 class RetrievalResult(BaseModel):
     model_config = ConfigDict(frozen=True)
     chunk: Chunk
-    score: float = Field(..., ge=0.0, le=1.0)
+    score: float = Field(..., ge=0.0)
     retrieval_method: Literal["vector", "bm25", "hybrid", "reranked"]
     rerank_score: float | None = None
 
@@ -85,11 +112,7 @@ class RAGResponse(BaseModel):
                 citation_id=f"src-{source.chunk.id}",
                 document_id=source.chunk.document_id,
                 chunk_id=source.chunk.id,
-                source=str(
-                    source.chunk.metadata.get(
-                        "source", source.chunk.metadata.get("source_uri", "knowledge_base")
-                    )
-                ),
+                source=str(source.chunk.metadata.get("source", "knowledge_base")),
                 version=(
                     str(source.chunk.metadata["version"])
                     if source.chunk.metadata.get("version") is not None
