@@ -34,6 +34,14 @@ REDIS_CONNECTIONS_AVAILABLE = Gauge("redis_connections_available", "Redis connec
 REDIS_CONNECTIONS_IN_USE = Gauge("redis_connections_in_use", "Redis connections currently in use", registry=ai_registry)
 REDIS_CONNECTION_LIMIT = Gauge("redis_connection_limit", "Configured Redis connection pool limit", registry=ai_registry)
 
+CELERY_TASKS_TOTAL = Counter("celery_tasks_total", "Celery task executions", ["task", "queue", "status"], registry=ai_registry)
+CELERY_TASK_DURATION = Histogram(
+    "celery_task_duration_seconds", "Celery task execution duration in seconds", ["task", "queue"],
+    buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0, 300.0, 900.0, 1800.0, 3600.0],
+    registry=ai_registry,
+)
+CELERY_TASKS_IN_FLIGHT = Gauge("celery_tasks_in_flight", "Celery tasks currently executing", ["queue"], registry=ai_registry)
+
 AI_AGENT_EXECUTION_DURATION = Histogram("ai_agent_execution_duration_seconds", "Time spent executing the full agent harness pipeline", ["country", "language"], buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0], registry=ai_registry)
 RAG_RETRIEVAL_DURATION = Histogram("ai_rag_retrieval_duration_seconds", "Time spent in RAG vector search and reranking", ["query_type"], buckets=[0.05, 0.1, 0.25, 0.5, 1.0], registry=ai_registry)
 RAG_RETRIEVAL_TOTAL = Counter("ai_rag_retrieval_total", "Total RAG retrieval attempts", ["query_type", "status"], registry=ai_registry)
