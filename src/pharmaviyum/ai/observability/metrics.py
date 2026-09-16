@@ -1,27 +1,21 @@
 """
-Prometheus Metrics Exporter for AI/LLM Layer.
+Prometheus metrics exporter for the AI/LLM layer.
 
-Best practice 2026:
-- Standardized Prometheus metrics for AI workloads
-- Tracking latency, tool success rates, token usage, and estimated costs
-- Integration with FastAPI /metrics endpoint
+Metrics intentionally avoid tenant IDs, user IDs, session IDs, patient IDs,
+or other unbounded identifiers as labels. Those belong in traces/logs, not
+Prometheus label cardinality.
 """
 
 from __future__ import annotations
 
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
 
-# Custom registry to avoid conflicts with default Prometheus metrics
 ai_registry = CollectorRegistry()
-
-# ============================================================================
-# LATENCY & PERFORMANCE METRICS
-# ============================================================================
 
 AGENT_EXECUTION_DURATION = Histogram(
     "ai_agent_execution_duration_seconds",
     "Time spent executing the full agent harness pipeline",
-    ["session_id", "country", "language"],
+    ["country", "language"],
     buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0],
     registry=ai_registry,
 )
@@ -34,14 +28,17 @@ RAG_RETRIEVAL_DURATION = Histogram(
     registry=ai_registry,
 )
 
-# ============================================================================
-# TOOL CALL METRICS
-# ============================================================================
+RAG_RETRIEVAL_TOTAL = Counter(
+    "ai_rag_retrieval_total",
+    "Total RAG retrieval attempts",
+    ["query_type", "status"],
+    registry=ai_registry,
+)
 
 TOOL_CALLS_TOTAL = Counter(
     "ai_tool_calls_total",
     "Total number of MCP tool calls",
-    ["tool_name", "status"],  # status: success, failure, timeout
+    ["tool_name", "status"],
     registry=ai_registry,
 )
 
@@ -53,14 +50,10 @@ TOOL_CALL_DURATION = Histogram(
     registry=ai_registry,
 )
 
-# ============================================================================
-# LLM USAGE & COST METRICS
-# ============================================================================
-
 LLM_TOKENS_USED_TOTAL = Counter(
     "ai_llm_tokens_used_total",
     "Total number of LLM tokens consumed",
-    ["model_name", "token_type"],  # token_type: input, output
+    ["model_name", "token_type"],
     registry=ai_registry,
 )
 
@@ -71,14 +64,10 @@ LLM_COST_ESTIMATE_USD_TOTAL = Counter(
     registry=ai_registry,
 )
 
-# ============================================================================
-# EVALUATION METRICS
-# ============================================================================
-
 EVALUATION_SCORES = Gauge(
     "ai_evaluation_score",
     "Latest LLM-as-a-judge evaluation scores",
-    ["metric_type"],  # accuracy, safety, completeness, compliance
+    ["metric_type"],
     registry=ai_registry,
 )
 
@@ -89,17 +78,24 @@ EVALUATION_PASS_RATE = Gauge(
 )
 
 
-def record_tool_call(tool_name: str, success: bool, latency_ms: float):
-    """Helper to record tool call metrics."""
+def record_tool_call(tool_name: str, success: bool, latency_ms: float) -> None:
     status = "success" if success else "failure"
     TOOL_CALLS_TOTAL.labels(tool_name=tool_name, status=status).inc()
     TOOL_CALL_DURATION.labels(tool_name=tool_name).observe(latency_ms / 1000.0)
 
 
+def record_rag_retrieval(
+    query_type: str, latency_ms: float, success: bool = True
+) -> None:
+    """Record RAG retrieval latency without exposing tenant/session identifiers."""
+    status = "success" if success else "failure"
+    RAG_RETRIEVAL_TOTAL.labels(query_type=query_type, status=status).inc()
+    RAG_RETRIEVAL_DURATION.labels(query_type=query_type).observe(latency_ms / 1000.0)
+
+
 def record_llm_usage(
     model_name: str, input_tokens: int, output_tokens: int, cost_usd: float
-):
-    """Helper to record LLM token usage and estimated cost."""
+) -> None:
     LLM_TOKENS_USED_TOTAL.labels(model_name=model_name, token_type="input").inc(
         input_tokens
     )
@@ -111,8 +107,7 @@ def record_llm_usage(
 
 def record_evaluation_scores(
     accuracy: float, safety: float, completeness: float, compliance: float
-):
-    """Helper to record latest evaluation scores."""
+) -> None:
     EVALUATION_SCORES.labels(metric_type="accuracy").set(accuracy)
     EVALUATION_SCORES.labels(metric_type="safety").set(safety)
     EVALUATION_SCORES.labels(metric_type="completeness").set(completeness)
