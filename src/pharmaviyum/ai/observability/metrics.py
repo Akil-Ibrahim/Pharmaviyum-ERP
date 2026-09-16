@@ -11,6 +11,7 @@ HTTP_REQUEST_DURATION = Histogram("http_request_duration_seconds", "HTTP request
 HTTP_REQUESTS_IN_FLIGHT = Gauge("http_requests_in_flight", "Number of HTTP requests currently being processed", registry=ai_registry)
 
 DB_POOL_SIZE = Gauge("db_pool_size", "Configured PostgreSQL connection pool size", registry=ai_registry)
+DB_POOL_MAX_OVERFLOW = Gauge("db_pool_max_overflow", "Configured PostgreSQL maximum overflow connection capacity", registry=ai_registry)
 DB_POOL_CHECKED_OUT = Gauge("db_pool_checked_out", "PostgreSQL connections currently checked out", registry=ai_registry)
 DB_POOL_OVERFLOW = Gauge("db_pool_overflow", "Current PostgreSQL pool overflow connections", registry=ai_registry)
 DB_POOL_TIMEOUTS_TOTAL = Counter("db_pool_timeouts_total", "PostgreSQL pool checkout timeouts", registry=ai_registry)
