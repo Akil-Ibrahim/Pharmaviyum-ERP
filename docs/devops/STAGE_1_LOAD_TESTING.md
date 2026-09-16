@@ -34,16 +34,47 @@ The model intentionally uses human think time. Users do not continuously issue H
 
 ## Current scenarios
 
-`tests/load/k6/stage1_baseline.js` contains two concurrent scenarios:
+`tests/load/k6/stage1_baseline.js` contains two default concurrent scenarios and one opt-in write scenario:
 
 - **Pharmacy workload:** ramps to 200 active CRM users by default. This represents roughly 2 active staff per pharmacy across 100 pharmacies. Use `PEAK_VUS=400` for an upper-bound scenario representing roughly 4 active staff per pharmacy.
 - **AI workload:** configurable concurrent users calling `POST /api/v1/ai/query`.
+- **Synthetic writes:** disabled by default. When enabled, a bounded constant-arrival-rate scenario creates a synthetic patient, order, product, inventory lot and prescription per iteration.
 
-The CRM workload currently exercises authenticated read paths that exist in the current API: products, patients, inventory, orders, pharmacies and ERP status. Writes are intentionally excluded from this baseline so repeated runs do not create unbounded database state.
+The CRM read workload exercises authenticated paths that exist in the current API: products, patients, inventory, orders, pharmacies and ERP status. Writes are opt-in so the normal baseline remains reproducible without changing database state.
 
-The AI request uses the current request contract: `query`, `pharmacy_id`, `country`, `language`, and `session_id`.
+## Synthetic write workload
 
-## Running locally
+Writes must run only against an isolated staging/load-test database with synthetic credentials and data. Never enable this scenario against production.
+
+The write scenario is intentionally bounded:
+
+- disabled unless `ENABLE_WRITES=true`;
+- default rate: 1 iteration/second;
+- default duration: 2 minutes;
+- default maximum: 120 iterations, producing at most roughly 120 patients, 120 orders, 120 products, 120 inventory lots and 120 prescriptions if every iteration succeeds;
+- concurrency is controlled by k6 `constant-arrival-rate` with a small VU pool;
+- identifiers are deterministic per iteration/run and use the reserved `example.invalid` email domain;
+- no real patient data is accepted by the scenario.
+
+The current API contracts were inspected before adding the payloads. Patient and product creation, order creation, inventory creation and prescription creation require the active-superuser authorization path. The test therefore requires an authorized synthetic superuser token.
+
+Example:
+
+```bash
+BASE_URL=http://localhost:8000 \
+AUTH_TOKEN="$LOAD_TEST_SUPERUSER_TOKEN" \
+PHARMACY_ID=1 \
+ENABLE_WRITES=true \
+WRITE_RATE=1 \
+WRITE_DURATION=2m \
+k6 run tests/load/k6/stage1_baseline.js
+```
+
+After the run, clean up the generated synthetic records using the staging database cleanup procedure. Product records can be deactivated through the product API; patient/order/inventory/prescription cleanup should use the disposable test database reset rather than ad-hoc production-like deletion scripts.
+
+For higher-volume testing, create a fresh database snapshot or disposable database per run instead of simply increasing write rate. This keeps test data bounded and makes runs comparable.
+
+## Running the read/AI baseline locally
 
 Install k6 using the official package for your operating system, then run:
 
@@ -100,7 +131,7 @@ Run tests in this order:
 2. Authenticated CRM read workload at one pharmacy.
 3. Scale the same workload toward 100 pharmacies / 200 active staff users.
 4. Run the upper-bound 400-user scenario.
-5. Add safe synthetic write scenarios in an isolated dataset.
+5. Run the bounded synthetic write scenario against a disposable staging database.
 6. Add RAG retrieval workload.
 7. Run combined CRM + RAG + AI workload.
 8. Run a sustained test to identify resource leaks or queue growth.
@@ -116,7 +147,8 @@ Stage 1 is complete when:
 - baseline latency and error measurements are recorded;
 - the first saturation bottleneck is identified;
 - PostgreSQL, Redis, Celery and AI bottlenecks are distinguishable;
-- capacity targets for Stage 2+ are based on measurements rather than assumptions.
+- capacity targets for Stage 2+ are based on measurements rather than assumptions;
+- write tests have a documented cleanup/reset path.
 
 ## Known API coverage gap
 
