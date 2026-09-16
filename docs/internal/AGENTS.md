@@ -16,7 +16,7 @@ This document provides repository-specific guidance for AI coding agents. Keep i
 
 The current development Compose stack provides PostgreSQL + pgvector, Redis, Ollama, the FastAPI API, and the Celery ingestion worker.
 
-Do not assume a separate `mortarium-ai` deployment, legacy `backend/` package, Next.js frontend, or Docker Compose profiles unless the repository contains and actively uses them.
+The active AI implementation is part of the main backend; do not assume a separate legacy AI deployment, package, frontend, or Docker Compose profile unless the repository contains and actively uses it.
 
 ## AI/RAG guidance
 
