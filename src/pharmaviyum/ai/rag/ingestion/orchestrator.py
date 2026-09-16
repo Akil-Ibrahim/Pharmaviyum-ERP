@@ -44,6 +44,9 @@ class IngestionOrchestrator:
         session_factory,
         redis_client,
         embeddings_provider: str = "ollama",
+        embeddings_api_key: str | None = None,
+        embeddings_model: str | None = None,
+        embeddings_dimensions: int = 1024,
         dedup_strategy: DedupStrategy = "strict",
         enable_versioning: bool = True,
         enable_pii_redaction: bool = True,
@@ -51,10 +54,12 @@ class IngestionOrchestrator:
         self.session_factory = session_factory
         self.redis_client = redis_client
         self.embeddings_provider = embeddings_provider
+        self.embeddings_api_key = embeddings_api_key
+        self.embeddings_model = embeddings_model
+        self.embeddings_dimensions = embeddings_dimensions
         self.dedup_strategy = dedup_strategy
         self.enable_versioning = enable_versioning
 
-        # Initialize components
         self.preprocessor = DocumentPreprocessor(
             enable_pii_redaction=enable_pii_redaction
         )
@@ -70,21 +75,7 @@ class IngestionOrchestrator:
         source_type: str | None = None,
         config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """
-        Ingest a single file through the full RAG pipeline.
-
-        Pipeline:
-        1. Load document (PDF/HTML/DOCX)
-        2. Preprocess (normalize, PII redaction, metadata extraction)
-        3. Deduplicate (check content hash)
-        4. Version (archive old versions if updating)
-        5. Chunk (medical-aware chunking)
-        6. Embed (batch embedding generation)
-        7. Store (upsert to pgvector)
-
-        Returns:
-            Detailed result with statistics
-        """
+        """Ingest a single file through the full RAG pipeline."""
         start_time = time.perf_counter()
         config = config or {}
         job_id = str(uuid.uuid4())
@@ -103,7 +94,6 @@ class IngestionOrchestrator:
         }
 
         try:
-            # Step 1: Load
             loader = self._get_loader(source, source_type)
             loader_config = LoaderConfig(
                 source_type=source_type or self._detect_source_type(source),
@@ -124,7 +114,6 @@ class IngestionOrchestrator:
             if not documents:
                 raise ValueError(f"No documents loaded from {source}")
 
-            # Step 2: Preprocess
             processed_docs = []
             for doc in documents:
                 try:
@@ -136,7 +125,6 @@ class IngestionOrchestrator:
 
             stats["documents_preprocessed"] = len(processed_docs)
 
-            # Step 3: Deduplicate
             content_hashes = [
                 doc.metadata.get("content_hash", "") for doc in processed_docs
             ]
@@ -148,7 +136,6 @@ class IngestionOrchestrator:
 
             stats["duplicates_skipped"] = len(processed_docs) - len(new_doc_ids)
 
-            # Filter out duplicates
             if stats["duplicates_skipped"] > 0:
                 new_doc_id_set = set(new_doc_ids)
                 processed_docs = [
@@ -164,17 +151,13 @@ class IngestionOrchestrator:
                     "message": "All documents were duplicates",
                 }
 
-            # Step 4: Version
             if self.enable_versioning:
                 new_version = await self.version_manager.get_next_version(source)
                 await self.version_manager.archive_old_versions(source, new_version)
-
-                # Add version metadata to documents
                 for doc in processed_docs:
                     doc.metadata["version_number"] = new_version
                     doc.metadata["version_status"] = "active"
 
-            # Step 5: Chunk
             chunker = MedicalChunker(
                 max_tokens=config.get("max_chunk_tokens", 512),
                 overlap=config.get("chunk_overlap", 50),
@@ -190,11 +173,13 @@ class IngestionOrchestrator:
             stats["chunks_created"] = len(all_chunks)
             logger.info(f"Created {len(all_chunks)} chunks")
 
-            # Step 6: Embed
             embeddings_provider = EmbeddingsFactory.create(
                 provider=self.embeddings_provider,
                 use_cache=True,
                 redis_client=self.redis_client,
+                api_key=self.embeddings_api_key,
+                model=self.embeddings_model,
+                dimensions=self.embeddings_dimensions,
             )
 
             chunk_texts = [chunk.content for chunk in all_chunks]
@@ -203,7 +188,6 @@ class IngestionOrchestrator:
                 batch_size=config.get("embedding_batch_size", 32),
             )
 
-            # Step 7: Store
             async with self.session_factory() as session:
                 vector_store = PgVectorStore(
                     session_factory=lambda: session,
@@ -213,7 +197,6 @@ class IngestionOrchestrator:
                 stored_count = await vector_store.upsert(all_chunks, embeddings)
 
             stats["chunks_stored"] = stored_count
-
             latency_ms = (time.perf_counter() - start_time) * 1000
             stats["latency_ms"] = latency_ms
 
@@ -239,13 +222,7 @@ class IngestionOrchestrator:
         sources: list[dict[str, str]],
         config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """
-        Ingest multiple files in batch.
-
-        Args:
-            sources: List of {"source": str, "source_type": str}
-            config: Shared configuration
-        """
+        """Ingest multiple files in batch."""
         results = []
         total_chunks = 0
         total_errors = 0
@@ -278,12 +255,11 @@ class IngestionOrchestrator:
 
         if detected_type == "pdf":
             return PDFLoader()
-        elif detected_type == "html":
+        if detected_type == "html":
             return HTMLLoader()
-        elif detected_type == "docx":
+        if detected_type == "docx":
             return DOCXLoader()
-        else:
-            raise ValueError(f"Unsupported source type: {detected_type}")
+        raise ValueError(f"Unsupported source type: {detected_type}")
 
     def _detect_source_type(self, source: str) -> str:
         """Detect source type from file extension or URL."""
@@ -298,4 +274,4 @@ class IngestionOrchestrator:
             ".docx": "docx",
         }
 
-        return type_map.get(ext, "pdf")  # Default to PDF
+        return type_map.get(ext, "pdf")
