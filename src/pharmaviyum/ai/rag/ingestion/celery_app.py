@@ -12,6 +12,8 @@ Best practice 2026:
 from __future__ import annotations
 
 import time
+from collections.abc import MutableMapping
+from threading import Lock
 
 from celery import Celery, signals
 
@@ -23,47 +25,73 @@ from src.pharmaviyum.ai.observability.metrics import (
 from src.pharmaviyum.core.config import settings
 from src.pharmaviyum.core.logging import logger
 
-_TASK_START_TIMES: dict[str, float] = {}
+_TASK_START_TIMES: dict[str, tuple[float, str, str]] = {}
+_TASK_START_LOCK = Lock()
+
+
+# Queue names are intentionally allow-listed. Never derive metric labels from
+# arbitrary broker routing input or task arguments.
+_TASK_QUEUES = {
+    "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_document": "ingestion",
+    "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_batch": "ingestion",
+    "src.pharmaviyum.ai.rag.ingestion.tasks.reindex_collection": "maintenance",
+    "src.pharmaviyum.ai.rag.ingestion.tasks.cleanup_old_jobs": "maintenance",
+}
 
 
 def _task_queue(task) -> str:
     """Return a bounded queue name for task telemetry."""
     route = celery_app.conf.task_routes.get(task.name, {}) if "celery_app" in globals() else {}
-    return str(route.get("queue", "default"))
+    queue = route.get("queue") if isinstance(route, MutableMapping) else None
+    return queue if queue in {"ingestion", "maintenance"} else "default"
+
+
+def _record_start(task_id: str, task) -> None:
+    queue = _task_queue(task)
+    with _TASK_START_LOCK:
+        _TASK_START_TIMES[task_id] = (time.perf_counter(), task.name, queue)
+    CELERY_TASKS_IN_FLIGHT.labels(queue=queue).inc()
 
 
 @signals.task_prerun.connect
 def _task_prerun(task_id=None, task=None, **kwargs) -> None:
-    if task is None or task_id is None:
-        return
-    queue = _task_queue(task)
-    _TASK_START_TIMES[task_id] = time.perf_counter()
-    CELERY_TASKS_IN_FLIGHT.labels(queue=queue).inc()
+    if task is not None and task_id is not None:
+        _record_start(task_id, task)
 
 
 @signals.task_postrun.connect
-def _task_postrun(task_id=None, task=None, state=None, **kwargs) -> None:
+@signals.task_failure.connect
+def _task_finished(task_id=None, task=None, **kwargs) -> None:
     if task is None or task_id is None:
         return
-    started = _TASK_START_TIMES.pop(task_id, None)
+
+    with _TASK_START_LOCK:
+        started = _TASK_START_TIMES.pop(task_id, None)
+
     if started is None:
         return
-    queue = _task_queue(task)
-    CELERY_TASK_DURATION.labels(task=task.name, queue=queue).observe(time.perf_counter() - started)
+
+    started_at, task_name, queue = started
+    duration = time.perf_counter() - started_at
+    CELERY_TASK_DURATION.labels(task=task_name, queue=queue).observe(duration)
     CELERY_TASKS_IN_FLIGHT.labels(queue=queue).dec()
-    CELERY_TASKS_TOTAL.labels(task=task.name, queue=queue, status=str(state or "unknown").lower()).inc()
+
+    # task_failure does not provide a Celery task state argument consistently;
+    # use the signal name so failure accounting cannot silently become success.
+    signal_name = kwargs.get("state") or "failure" if "exception" in kwargs else kwargs.get("state", "unknown")
+    status = str(signal_name).lower()
+    if status not in {"success", "failure", "retry", "revoked", "started", "unknown"}:
+        status = "unknown"
+    CELERY_TASKS_TOTAL.labels(task=task_name, queue=queue, status=status).inc()
 
 
 def create_celery_app() -> Celery:
     """Create and configure Celery application."""
-
     app = Celery(
         "pharmaviyum.ai.ingestion",
         broker=settings.REDIS_URL,
         backend=settings.REDIS_URL,
-        include=[
-            "src.pharmaviyum.ai.rag.ingestion.tasks",
-        ],
+        include=["src.pharmaviyum.ai.rag.ingestion.tasks"],
     )
 
     app.conf.update(
@@ -84,6 +112,7 @@ def create_celery_app() -> Celery:
             "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_document": {"queue": "ingestion"},
             "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_batch": {"queue": "ingestion"},
             "src.pharmaviyum.ai.rag.ingestion.tasks.reindex_collection": {"queue": "maintenance"},
+            "src.pharmaviyum.ai.rag.ingestion.tasks.cleanup_old_jobs": {"queue": "maintenance"},
         },
         task_queue_max_priority=10,
         task_default_priority=5,
