@@ -25,9 +25,6 @@ class TaskQueue(str, Enum):
     ORDERS = "orders"  # Order processing
     PRESCRIPTIONS = "prescriptions"  # Prescription processing
 
-    # AI queues (long-running)
-    AI_TASKS = "ai_tasks"  # Mortarium AI requests
-
     # Low priority
     ANALYTICS = "analytics"  # Report generation
     CLEANUP = "cleanup"  # Data cleanup, cache invalidation
@@ -43,7 +40,6 @@ QUEUE_PRIORITIES = {
     TaskQueue.POS_SYNC: 3,
     TaskQueue.ORDERS: 4,
     TaskQueue.PRESCRIPTIONS: 5,
-    TaskQueue.AI_TASKS: 6,
     TaskQueue.ANALYTICS: 7,
     TaskQueue.CLEANUP: 8,
     TaskQueue.DEAD_LETTER: 9,
@@ -66,11 +62,6 @@ QUEUE_CONFIGS = {
         "max_concurrent": 5,
         "timeout_seconds": 300,
         "max_retries": 3,
-    },
-    TaskQueue.AI_TASKS: {
-        "max_concurrent": 3,  # Limited by GPU
-        "timeout_seconds": 120,
-        "max_retries": 2,
     },
     TaskQueue.ANALYTICS: {
         "max_concurrent": 2,

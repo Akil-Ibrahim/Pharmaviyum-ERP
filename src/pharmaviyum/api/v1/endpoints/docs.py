@@ -21,12 +21,7 @@ router = APIRouter(tags=["Documentation"])
 
 
 def custom_openapi():
-    """
-    Generate custom OpenAPI schema with enhanced documentation
-
-    Returns:
-        dict: OpenAPI schema with custom metadata and examples
-    """
+    """Generate custom OpenAPI schema with enhanced documentation."""
     if app.openapi_schema:
         return app.openapi_schema
 
@@ -43,7 +38,7 @@ PharmaViyum CRM is a comprehensive pharmacy management system with AI-powered an
 - **Client Management**: Track customer information and purchase history
 - **Product Management**: Manage inventory and product catalog
 - **Sales Tracking**: Record and analyze sales transactions
-- **AI Assistant (Mortarium)**: Natural language queries for business insights
+- **AI Assistant**: Natural language queries for business insights
 
 ## Authentication
 All API endpoints (except `/health` and `/docs`) require JWT authentication.
@@ -96,13 +91,12 @@ For API support, contact: support@pharmaviyum.com
             },
             {
                 "name": "AI Assistant",
-                "description": "Mortarium AI-powered business intelligence queries",
+                "description": "AI-powered business intelligence queries",
             },
             {"name": "Health", "description": "System health checks and monitoring"},
         ],
     )
 
-    # Add security scheme
     openapi_schema["components"]["securitySchemes"] = {
         "BearerAuth": {
             "type": "http",
@@ -112,31 +106,23 @@ For API support, contact: support@pharmaviyum.com
         }
     }
 
-    # Apply security to all endpoints except health and docs
     for path in openapi_schema["paths"].values():
         for method in path.values():
-            if "tags" in method:
-                if not any(
-                    tag in ["Health", "Documentation"] for tag in method["tags"]
-                ):
-                    method["security"] = [{"BearerAuth": []}]
+            if "tags" in method and not any(
+                tag in ["Health", "Documentation"] for tag in method["tags"]
+            ):
+                method["security"] = [{"BearerAuth": []}]
 
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
 
-# Override default OpenAPI
 app.openapi = custom_openapi
 
 
 @router.get("/api-docs", include_in_schema=False)
 async def api_documentation():
-    """
-    Redirect to Swagger UI documentation
-
-    Returns:
-        Redirect to /docs endpoint
-    """
+    """Redirect to Swagger UI documentation."""
     from fastapi.responses import RedirectResponse
 
     return RedirectResponse(url="/docs")

@@ -2,7 +2,6 @@
 
 from src.pharmaviyum.models.erp_sync import ERPIntegration, ERPSyncEvent
 from src.pharmaviyum.models.inventory import Inventory
-from src.pharmaviyum.models.mortarium_ai import MortariumAISession
 from src.pharmaviyum.models.patients.consultation import Consultation
 from src.pharmaviyum.models.patients.patient import Patient
 from src.pharmaviyum.models.patients.patient_allergy import PatientAllergy
@@ -24,5 +23,4 @@ __all__ = [
     "Supplier",
     "ERPIntegration",
     "ERPSyncEvent",
-    "MortariumAISession",
 ]

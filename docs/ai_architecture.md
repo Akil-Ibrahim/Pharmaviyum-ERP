@@ -4,7 +4,7 @@
 
 This document describes the AI architecture that is currently implemented in `src/pharmaviyum/ai` and exposed through the FastAPI application.
 
-The AI layer is part of the main backend. The repository also contains the separate `mortarium-ai` service used by the deployment stack.
+The AI layer is part of the main backend and is deployed with the application stack.
 
 ## Runtime architecture
 

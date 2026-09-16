@@ -62,11 +62,6 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://redis:6379/0"
     REDIS_MAX_CONNECTIONS: int = 10
 
-    # AI Service
-    MORTARIUM_AI_URL: str = "http://mortarium-ai:8001"
-    MORTARIUM_AI_TIMEOUT: int = 30
-    MORTARIUM_AI_ENABLED: bool = False
-
     # Observability
     SENTRY_DSN: Optional[str] = None
     PROMETHEUS_ENABLED: bool = False

@@ -14,14 +14,6 @@
     mode: "0755"
     force: true
 
-- name: Copy mortarium-ai directory
-  ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../../mortarium-ai"
-    dest: "{{ app_directory }}/mortarium-ai"
-    owner: "{{ deploy_user }}"
-    mode: "0755"
-    force: true
-
 - name: Copy nginx directory
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/../../nginx"
