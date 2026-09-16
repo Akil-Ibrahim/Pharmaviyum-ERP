@@ -1,97 +1,163 @@
-# 🏗️ Pharmaviyum AI Layer Architecture
+# Pharmaviyum CRM — AI Architecture
 
-## Overview
-This document describes the enterprise-grade AI/LLM layer built for the Pharmaviyum pharmaceutical CRM. It provides end-to-end RAG, agentic tool orchestration, and strict medical safety guardrails.
+## Purpose
 
-## High-Level Diagram
+This document describes the AI architecture that is currently implemented in `src/pharmaviyum/ai` and exposed through the FastAPI application.
+
+The AI layer is part of the main backend. The repository also contains the separate `mortarium-ai` service used by the deployment stack.
+
+## Runtime architecture
 
 ```text
-┌─────────────────────────────────────────────────────────────────────┐
-│                         FastAPI Application                         │
-│  Endpoints: /api/v1/ai/query, /stream, /ingest, /health, /metrics   │
-└───────────────────────────────┬─────────────────────────────────────┘
-                                │
-┌───────────────────────────────▼─────────────────────────────────────┐
-│                    Dependency Injection Layer                       │
-│  (Lazy initialization, Singleton LLM clients, Redis/DB sessions)    │
-└──────┬────────────────────┬─────────────────────┬──────────────────┘
-       │                    │                     │
-┌──────▼──────┐      ┌──────▼──────┐      ┌──────▼──────┐
-│  RAG Pipeline│      │ LangGraph   │      │ MCP Server  │
-│  (Hybrid Search)│   │ Agent       │      │ (JSON-RPC)  │
-└──────┬──────┘      └──────┬──────┘      └──────┬──────┘
-       │                    │                     │
-┌──────▼────────────────────▼─────────────────────▼──────┐
-│              Agent Harness (Orchestrator)              │
-│  Memory │ Guardrails │ Cache │ Model Router │ HITL    │
-└────────────────────────┬───────────────────────────────┘
-                         │
-         ┌───────────────┼───────────────┐
-         ▼               ▼               ▼
-    ┌─────────┐    ┌──────────┐    ┌──────────┐
-    │PostgreSQL│    │  Redis   │    │  Ollama  │
-    │+ pgvector│    │(Cache+MQ)│    │  (LLM)   │
-    └─────────┘    └──────────┘    └──────────┘
+Client / Frontend
+       |
+       v
+FastAPI API (`src/pharmaviyum`)
+       |
+       +--> Auth + tenant context
+       |
+       +--> AI API (`/api/v1/ai/...`)
+               |
+               +--> Agent Harness
+               |      +--> model routing / LLM
+               |      +--> dialogue memory
+               |      +--> guardrails
+               |      +--> cache
+               |
+               +--> RAG graph
+               |      +--> query transformation
+               |      +--> tenant-safe retrieval
+               |      +--> document grading
+               |      +--> contextual compression
+               |      +--> generation with source citations
+               |
+               +--> MCP tool layer
+               |
+               +--> observability / metrics
+               |
+               +--> PostgreSQL + pgvector
+               +--> Redis
+               +--> Ollama / configured LLM provider
 ```
 
-## Key Components
+## RAG
 
-### 1. RAG Pipeline
-- **Ingestion**: Async Celery workers process PDF/HTML/DOCX with OCR and table extraction.
-- **Preprocessing**: PII redaction, text normalization, and content hashing for deduplication.
-- **Retrieval**: Hybrid search (Vector + BM25) with Reciprocal Rank Fusion (RRF) and cross-encoder reranking.
-- **Optimizations**: HyDE (Hypothetical Document Embeddings), multi-query retrieval, and contextual compression.
+The current RAG pipeline is implemented in `src/pharmaviyum/ai/rag`.
 
-### 2. MCP (Model Context Protocol) Server
-- **Protocol**: JSON-RPC 2.0 compliant (`tools/list`, `tools/call`, `resources/read`, `prompts/get`).
-- **Clinical Tools**: Drug interaction checker, patient history retrieval.
-- **Regulatory Tools**: Global Halal Compliance Engine (Sunni + Shia fiqh, Istihalah, Darurah), Prescription verification (SEA limits).
-- **Management**: RBAC, usage analytics, health checks, and semantic versioning.
+### Retrieval guarantees
 
-### 3. LangGraph Agent
-- **Architecture**: 4-node state machine (Router → Planner → Executor → Reviewer).
-- **Resilience**: PostgreSQL checkpointer for state persistence, `@node_retry` decorators, and circuit breakers.
-- **Safety**: Interrupt nodes for Human-in-the-Loop (HITL) pharmacist approval on critical decisions.
+- Retrieval is scoped by authenticated pharmacy/tenant context.
+- Country and language are carried through the query context.
+- Retrieved documents are treated as untrusted input before generation.
+- Stable source identifiers use the `src-{chunk_uuid}` format.
+- `RAGResponse` materializes citations from returned sources when appropriate.
+- Retrieval metrics do not include high-cardinality tenant, user, or session identifiers.
 
-### 4. Observability & Evaluation
-- **Tracing**: OpenTelemetry (OTLP) + LangSmith for end-to-end request tracing.
-- **Metrics**: Prometheus metrics for latency, tool success rates, and LLM token costs.
-- **Evaluation**: LLM-as-a-judge benchmark runner with Golden Dataset (Recall@k, MRR, NDCG, safety scoring).
+### Pipeline
 
-## Unique Differentiators
-1. **Global Halal AI Engine**: The only CRM with native support for both Sunni (4 madhhabs) and Shia (Sistani, Khamenei) jurisprudence, including Istihalah (chemical transformation) logic.
-2. **SEA/MENA Regulatory Awareness**: Built-in country-specific limits for controlled substances (Vietnam, Indonesia, Thailand, Saudi Arabia, Iran, Iraq).
-3. **Production-Ready**: Full Kubernetes support with liveness/readiness probes, graceful degradation, and structured error handling.
+```text
+Query
+  -> transform_query
+  -> retrieve
+  -> grade_documents
+  -> compress
+  -> generate
+  -> guardrails
+```
 
-## Getting Started
+The graph requires an explicit checkpointer and derives the checkpoint/thread scope from the authenticated pharmacy and user context.
 
-1. **Install Dependencies**:
+### Ingestion
+
+Document ingestion is implemented under `src/pharmaviyum/ai/rag/ingestion` and is integrated with the project's Celery worker in the development Docker Compose stack.
+
+Do not document a separate Kubernetes ingestion deployment; the repository no longer maintains a Kubernetes manifest tree.
+
+## Agent Harness and memory
+
+The Agent Harness provides the application-level orchestration around LLM calls.
+
+Current responsibilities include:
+
+- model routing;
+- dialogue memory;
+- guardrails;
+- caching;
+- tool access;
+- observability.
+
+Dialogue memory supports summary/fact compression and recent-message retention. The harness injects the agent's configured main LLM into memory summarization instead of creating a hidden second LLM client.
+
+Memory is scoped to the authenticated API session and supports TTL/trim/clear operations.
+
+## MCP tools
+
+The project contains an MCP implementation under `src/pharmaviyum/ai/mcp`.
+
+It provides a JSON-RPC 2.0 server and a registry for tools/resources. MCP authorization is integrated with application roles and pharmacy membership.
+
+MCP is an internal application component; it is not a separate top-level deployment service.
+
+## API surface
+
+AI endpoints are implemented under `src/pharmaviyum/api/v1/ai.py`.
+
+The API currently provides query/streaming, ingestion-related operations, and AI health/metrics integration. Exact request and response schemas should be taken from the FastAPI OpenAPI schema rather than copied into this document.
+
+Local API documentation:
+
+- Swagger UI: `http://localhost:8000/docs`
+- OpenAPI JSON: `http://localhost:8000/openapi.json`
+- Metrics: `http://localhost:8000/metrics`
+
+## Observability
+
+The AI/RAG layer uses application metrics and optional tracing integrations.
+
+Important RAG metrics include retrieval totals and retrieval latency. Metric labels are deliberately kept low-cardinality; do not add `session_id`, user IDs, pharmacy IDs, or similar identifiers to Prometheus labels.
+
+The repository also contains Prometheus/Grafana configuration under `docker/`.
+
+## Data and infrastructure
+
+Development Docker Compose currently provides:
+
+- PostgreSQL 16 with pgvector;
+- Redis 7;
+- Ollama;
+- FastAPI API;
+- Celery ingestion worker.
+
+Production release deployment is handled through GitHub Actions, GHCR, Ansible, and `deploy/docker-compose.release.yml`.
+
+The repository does **not** use the removed `gateway/`, `infra/`, or `monitoring/` scaffolding as active deployment paths.
+
+## Configuration
+
+Use `.env.example` for local configuration and `.env.prod.example` as the production configuration reference.
+
+The project currently installs runtime dependencies from `requirements.txt`. `pyproject.toml` and `uv.lock` are also maintained and are the planned long-term dependency source of truth; do not introduce a new `requirements-ai.txt` file.
+
+## Local startup
+
 ```bash
-   pip install -r requirements-ai.txt
+cp .env.example .env
+
+docker compose up --build
 ```
 
-2. **Configure Environment**:
+Or start the API directly after installing dependencies:
+
 ```bash
-   cp .env.example .env
-   # Edit .env with your Redis, PostgreSQL, and Ollama URLs
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn src.pharmaviyum.main:app --reload --port 8000
 ```
 
-3. **Run Ollama Models**:
-```bash
-   ollama pull qwen2.5:7b
-   ollama pull mxbai-embed-large
-```
+## Design principles
 
-4. **Start the Application**:
-```bash
-   uvicorn src.pharmaviyum.main:app --reload --port 8000
-```
-
-5. **Run Examples**:
-```bash
-   python docs/ai_examples.py
-```
-
-6. **View Documentation**:
-   - Swagger UI: http://localhost:8000/docs
-   - Metrics: http://localhost:8000/metrics
+1. Tenant isolation is enforced before retrieval and generation.
+2. LLM output is not trusted as a source of truth; retrieved sources and guardrails remain authoritative.
+3. Source citations use stable chunk identifiers.
+4. Production deployment has one canonical release path.
+5. Documentation describes implemented behavior, not planned infrastructure.
