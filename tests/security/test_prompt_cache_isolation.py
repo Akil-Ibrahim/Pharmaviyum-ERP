@@ -22,8 +22,14 @@ async def test_prompt_cache_requires_user_and_pharmacy_scope() -> None:
 
 def test_prompt_cache_key_changes_with_tenant_and_user() -> None:
     cache = PromptCache(DummyRedis())
-    first = cache._build_cache_key("question", {"user_id": "u1", "pharmacy_id": 1})
-    other_user = cache._build_cache_key("question", {"user_id": "u2", "pharmacy_id": 1})
-    other_pharmacy = cache._build_cache_key("question", {"user_id": "u1", "pharmacy_id": 2})
+    first = cache._build_cache_key(
+        "question", {"user_id": "u1", "pharmacy_id": 1}
+    )
+    other_user = cache._build_cache_key(
+        "question", {"user_id": "u2", "pharmacy_id": 1}
+    )
+    other_pharmacy = cache._build_cache_key(
+        "question", {"user_id": "u1", "pharmacy_id": 2}
+    )
     assert first != other_user
     assert first != other_pharmacy
