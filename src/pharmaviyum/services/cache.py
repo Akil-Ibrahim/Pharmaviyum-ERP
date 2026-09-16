@@ -1,143 +1,89 @@
-"""
-Redis caching service
-Best practice 2026: Distributed caching for performance
-"""
+"""Redis caching service using the shared instrumented client."""
+
+from __future__ import annotations
 
 import json
 from typing import Any, Optional
 
-from redis import asyncio as aioredis
+from redis.asyncio import Redis
 
-from src.pharmaviyum.core.config import settings
+from src.pharmaviyum.ai.config import settings as ai_settings
 from src.pharmaviyum.core.logging import get_logger
+from src.pharmaviyum.redis_client import get_redis
 
 logger = get_logger(__name__)
 
 
 class CacheService:
-    """
-    Redis-based caching service
+    """Redis-based caching service with centralized connection management."""
 
-    Provides async cache operations with automatic serialization.
-    Used for:
-    - AI response caching
-    - Patient profile caching
-    - Product catalog caching
-    - Session storage
-    """
+    def __init__(self, redis: Redis | None = None):
+        self._redis = redis
 
-    def __init__(self):
-        """Initialize Redis connection"""
-        self.redis = aioredis.from_url(
-            settings.REDIS_URL,
-            encoding="utf-8",
-            decode_responses=True,
-        )
+    async def _client(self) -> Redis:
+        if self._redis is None:
+            self._redis = await get_redis()
+        return self._redis
 
     async def get(self, key: str) -> Optional[Any]:
-        """
-        Get value from cache
-
-        Args:
-            key: Cache key
-
-        Returns:
-            Cached value or None
-        """
         try:
-            value = await self.redis.get(key)
+            value = await (await self._client()).get(key)
             if value:
                 return json.loads(value)
             return None
-        except Exception as e:
-            logger.error(f"Cache get error: {e}", extra={"key": key})
+        except Exception as exc:
+            logger.error("Cache get error", extra={"key": key, "error": type(exc).__name__})
             return None
 
-    async def set(
-        self,
-        key: str,
-        value: Any,
-        ttl: Optional[int] = None,
-    ) -> bool:
-        """
-        Set value in cache
-
-        Args:
-            key: Cache key
-            value: Value to cache (must be JSON serializable)
-            ttl: Time to live in seconds (None = no expiration)
-
-        Returns:
-            True if successful
-        """
+    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
         try:
+            redis = await self._client()
             serialized = json.dumps(value, ensure_ascii=False)
             if ttl:
-                await self.redis.setex(key, ttl, serialized)
+                await redis.setex(key, ttl, serialized)
             else:
-                await self.redis.set(key, serialized)
+                await redis.set(key, serialized)
             return True
-        except Exception as e:
-            logger.error(f"Cache set error: {e}", extra={"key": key})
+        except Exception as exc:
+            logger.error("Cache set error", extra={"key": key, "error": type(exc).__name__})
             return False
 
     async def delete(self, key: str) -> bool:
-        """
-        Delete value from cache
-
-        Args:
-            key: Cache key
-
-        Returns:
-            True if deleted
-        """
         try:
-            await self.redis.delete(key)
+            await (await self._client()).delete(key)
             return True
-        except Exception as e:
-            logger.error(f"Cache delete error: {e}", extra={"key": key})
+        except Exception as exc:
+            logger.error("Cache delete error", extra={"key": key, "error": type(exc).__name__})
             return False
 
     async def exists(self, key: str) -> bool:
-        """Check if key exists in cache"""
         try:
-            return await self.redis.exists(key) > 0
-        except Exception as e:
-            logger.error(f"Cache exists error: {e}", extra={"key": key})
+            return await (await self._client()).exists(key) > 0
+        except Exception as exc:
+            logger.error("Cache exists error", extra={"key": key, "error": type(exc).__name__})
             return False
 
     async def invalidate_pattern(self, pattern: str) -> int:
-        """
-        Invalidate all keys matching pattern
-
-        Args:
-            pattern: Redis pattern (e.g., "patient:*")
-
-        Returns:
-            Number of keys deleted
-        """
         try:
+            redis = await self._client()
             cursor = 0
             deleted = 0
-
             while True:
-                cursor, keys = await self.redis.scan(cursor, match=pattern, count=100)
+                cursor, keys = await redis.scan(cursor, match=pattern, count=100)
                 if keys:
-                    await self.redis.delete(*keys)
+                    await redis.delete(*keys)
                     deleted += len(keys)
                 if cursor == 0:
                     break
-
-            logger.info(f"Invalidated {deleted} keys matching '{pattern}'")
+            logger.info("Invalidated cache keys", extra={"deleted": deleted})
             return deleted
-        except Exception as e:
-            logger.error(f"Cache invalidate error: {e}", extra={"pattern": pattern})
+        except Exception as exc:
+            logger.error("Cache invalidate error", extra={"error": type(exc).__name__})
             return 0
 
-    async def close(self):
-        """Close Redis connection"""
-        await self.redis.close()
+    async def close(self) -> None:
+        """Shared Redis lifecycle is owned by the application, so nothing is closed here."""
+        return None
 
 
-# Singleton instance
 cache_service = CacheService()
