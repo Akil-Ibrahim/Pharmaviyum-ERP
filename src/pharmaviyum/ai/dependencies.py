@@ -89,6 +89,11 @@ def _build_llm(model: str) -> BaseChatModel:
     )
 
 
+def _build_embeddings_provider() -> str:
+    """Keep local Ollama and cloud OpenAI embeddings explicitly separated."""
+    return "openai" if settings.use_cloud_llm else "ollama"
+
+
 @lru_cache(maxsize=1)
 def get_llm_fast() -> BaseChatModel:
     model = settings.groq.fast_model if settings.use_cloud_llm else settings.ollama.fast_model
@@ -137,9 +142,21 @@ class AIComponents:
             except Exception as exc:
                 logger.warning("PgVectorStore initialize deferred: %s", exc)
 
-            embeddings_provider = "ollama"
+            embeddings_provider = _build_embeddings_provider()
+            openai_api_key = (
+                settings.openai.api_key.get_secret_value()
+                if settings.use_cloud_llm and settings.openai.api_key
+                else None
+            )
             embeddings = EmbeddingsFactory.create(
-                provider=embeddings_provider, use_cache=True, redis_client=redis
+                provider=embeddings_provider,
+                use_cache=True,
+                redis_client=redis,
+                api_key=openai_api_key,
+                model=(
+                    settings.openai.embedding_model if settings.use_cloud_llm else None
+                ),
+                dimensions=settings.pgvector.vector_dimensions,
             )
             self.ingestion_orchestrator = IngestionOrchestrator(
                 session_factory=db_session_factory,
@@ -203,10 +220,7 @@ class AIComponents:
                 ),
             )
             self._initialized = True
-            logger.info(
-                "AI components initialized successfully (llm_backend=%s)",
-                "groq" if settings.use_cloud_llm else "ollama",
-            )
+            logger.info("AI components initialized successfully")
 
 
 ai_container = AIComponents()
