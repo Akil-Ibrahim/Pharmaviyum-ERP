@@ -144,8 +144,13 @@ class MCPClient:
                     },
                 )
             except asyncio.TimeoutError:
-                last_error = f"Tool {tool_name} timed out after {self.timeout_seconds}s"
-                logger.warning(last_error, extra={"tool": tool_name, "attempt": attempt + 1})
+                last_error = (
+                    f"Tool {tool_name} timed out after {self.timeout_seconds}s"
+                )
+                logger.warning(
+                    last_error,
+                    extra={"tool": tool_name, "attempt": attempt + 1},
+                )
             except PermissionError as exc:
                 last_error = str(exc)
                 logger.warning(
@@ -166,7 +171,11 @@ class MCPClient:
                 await asyncio.sleep(min(2**attempt, 10.0))
 
         latency_ms = (time.perf_counter() - start) * 1000
-        if self.enable_circuit_breaker and last_error and "not authorized" not in last_error:
+        if (
+            self.enable_circuit_breaker
+            and last_error
+            and "not authorized" not in last_error
+        ):
             self._record_failure(tool_name)
 
         return ToolExecutionResult(
@@ -222,8 +231,12 @@ class MCPClient:
             return []
         return registry.to_openai_tools(user_role=user_role)
 
-    def get_tools_by_category(self, category: str, user_role: UserRole | None = None) -> list[Any]:
-        return [tool for tool in self.list_tools(user_role) if tool.category == category]
+    def get_tools_by_category(
+        self, category: str, user_role: UserRole | None = None
+    ) -> list[Any]:
+        return [
+            tool for tool in self.list_tools(user_role) if tool.category == category
+        ]
 
     def get_tools_by_tags(
         self, tags: list[str], user_role: UserRole | None = None
