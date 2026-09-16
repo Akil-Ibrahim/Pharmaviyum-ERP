@@ -124,7 +124,7 @@ AI_REQUEST_DURATION = Histogram(
 AI_TOKENS_USED = Counter(
     "ai_tokens_used_total",
     "Total number of tokens used by AI",
-    ["model", "type"],  # type: input/output
+    ["model", "type"],  # token type: input/output
 )
 
 AI_CONFIDENCE_SCORE = Histogram(
