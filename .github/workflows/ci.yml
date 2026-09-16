@@ -43,7 +43,7 @@ jobs:
       - name: Black diagnostics
         run: black --check --diff src/ tests/
       - name: isort diagnostics
-        run: isort --check-only --profile black src/ tests/
+        run: isort --check-only --diff --profile black src/ tests/
       - name: mypy diagnostics
         run: mypy --explicit-package-bases src/pharmaviyum/
 
