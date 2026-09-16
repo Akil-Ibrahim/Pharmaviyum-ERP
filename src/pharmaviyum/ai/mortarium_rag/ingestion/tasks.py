@@ -15,16 +15,16 @@ from typing import Any
 
 from celery.utils.log import get_task_logger
 
-from src.pharmaviyum.ai.rag.chunking import MedicalChunker
-from src.pharmaviyum.ai.rag.embeddings import EmbeddingsFactory
-from src.pharmaviyum.ai.rag.loaders import (
+from src.pharmaviyum.ai.mortarium_rag.chunking import MedicalChunker
+from src.pharmaviyum.ai.mortarium_rag.embeddings import EmbeddingsFactory
+from src.pharmaviyum.ai.mortarium_rag.loaders import (
     DOCXLoader,
     HTMLLoader,
     LoaderConfig,
     PDFLoader,
 )
-from src.pharmaviyum.ai.rag.preprocessing import DocumentPreprocessor
-from src.pharmaviyum.ai.rag.vector_store import PgVectorStore
+from src.pharmaviyum.ai.mortarium_rag.preprocessing import DocumentPreprocessor
+from src.pharmaviyum.ai.mortarium_rag.vector_store import PgVectorStore
 from src.pharmaviyum.core.database import async_session_factory
 from src.pharmaviyum.redis_client import get_redis
 
@@ -190,7 +190,7 @@ async def _ingest_document_async(
     bind=True,
     max_retries=3,
     default_retry_delay=60,
-    name="src.pharmaviyum.ai.rag.ingestion.tasks.ingest_document",
+    name="src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.ingest_document",
 )
 def ingest_document(
     self,
@@ -214,7 +214,7 @@ def ingest_document(
         return {"success": False, "error": str(exc), "source": source}
 
 
-@celery_app.task(bind=True, name="src.pharmaviyum.ai.rag.ingestion.tasks.ingest_batch")
+@celery_app.task(bind=True, name="src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.ingest_batch")
 def ingest_batch(
     self,
     sources: list[dict[str, str]],
@@ -268,7 +268,7 @@ def ingest_batch(
         pass
 
 
-@celery_app.task(name="src.pharmaviyum.ai.rag.ingestion.tasks.cleanup_old_jobs")
+@celery_app.task(name="src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.cleanup_old_jobs")
 def cleanup_old_jobs() -> dict[str, Any]:
     """Periodic task: clean old ingestion jobs from Redis."""
     loop = get_event_loop()
