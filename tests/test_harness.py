@@ -13,7 +13,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-
 TENANT_CONTEXT = {
     "user_id": "user-1",
     "pharmacy_id": 1,
