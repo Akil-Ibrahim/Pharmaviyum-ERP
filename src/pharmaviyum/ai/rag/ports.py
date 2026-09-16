@@ -8,7 +8,14 @@ from .schemas import RetrievalResult
 
 
 class RetrieverPort(Protocol):
-    async def hybrid_search(self, *, query: str, query_embedding: Sequence[float], top_k: int, filters: dict[str, Any]) -> list[RetrievalResult]: ...
+    async def hybrid_search(
+        self,
+        *,
+        query: str,
+        query_embedding: Sequence[float],
+        top_k: int,
+        filters: dict[str, Any],
+    ) -> list[RetrievalResult]: ...
 
 
 class EmbeddingsPort(Protocol):
@@ -21,11 +28,23 @@ class LLMPort(Protocol):
 
 class GuardrailsPort(Protocol):
     async def pre_process(self, user_input: str) -> Any: ...
-    async def post_process(self, answer: str, question: str, sources: list[RetrievalResult] | None = None) -> Any: ...
+
+    async def post_process(
+        self,
+        answer: str,
+        question: str,
+        sources: list[RetrievalResult] | None = None,
+    ) -> Any: ...
 
 
 class CheckpointerPort(Protocol):
     """LangGraph checkpoint persistence contract."""
 
 
-__all__ = ["CheckpointerPort", "EmbeddingsPort", "GuardrailsPort", "LLMPort", "RetrieverPort"]
+__all__ = [
+    "CheckpointerPort",
+    "EmbeddingsPort",
+    "GuardrailsPort",
+    "LLMPort",
+    "RetrieverPort",
+]
