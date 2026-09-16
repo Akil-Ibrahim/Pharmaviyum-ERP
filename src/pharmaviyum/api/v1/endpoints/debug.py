@@ -64,7 +64,13 @@ async def system_info():
 
 @router.get("/config")
 async def config_info():
-    sensitive_keys = {"SECRET_KEY", "DATABASE_URL", "REDIS_URL", "KIOVIET_API_KEY", "SAPO_API_KEY"}
+    sensitive_keys = {
+        "SECRET_KEY",
+        "DATABASE_URL",
+        "REDIS_URL",
+        "KIOVIET_API_KEY",
+        "SAPO_API_KEY",
+    }
     config_dict = {}
     for key in dir(settings):
         if key.isupper() and not key.startswith("_"):
@@ -102,7 +108,9 @@ async def invalidate_health_cache():
 
 @router.get("/dead-letter")
 async def list_dead_letter(skip: int = 0, limit: int = 50, task_name: str = None):
-    entries = await dead_letter_queue.list_entries(skip=skip, limit=limit, task_name=task_name)
+    entries = await dead_letter_queue.list_entries(
+        skip=skip, limit=limit, task_name=task_name
+    )
     total = await dead_letter_queue.count()
     return {"entries": entries, "total": total, "skip": skip, "limit": limit}
 
@@ -111,9 +119,13 @@ async def list_dead_letter(skip: int = 0, limit: int = 50, task_name: str = None
 async def retry_dead_letter_entry(entry_id: str):
     entry = await dead_letter_queue.get_entry(entry_id)
     if not entry:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dead letter entry not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Dead letter entry not found"
+        )
     await task_dispatcher.dispatch(
-        task_name=entry["task_name"], task_args=entry["task_args"], queue=entry["original_queue"]
+        task_name=entry["task_name"],
+        task_args=entry["task_args"],
+        queue=entry["original_queue"],
     )
     await dead_letter_queue.mark_retried(entry_id)
     return {"status": "retried", "entry_id": entry_id, "task_name": entry["task_name"]}
@@ -123,7 +135,9 @@ async def retry_dead_letter_entry(entry_id: str):
 async def discard_dead_letter_entry(entry_id: str):
     success = await dead_letter_queue.mark_discarded(entry_id)
     if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dead letter entry not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Dead letter entry not found"
+        )
     return {"status": "discarded", "entry_id": entry_id}
 
 

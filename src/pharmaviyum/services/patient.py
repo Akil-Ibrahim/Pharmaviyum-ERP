@@ -64,9 +64,7 @@ class PatientService:
         )
         return patient
 
-    async def get_patient(
-        self, id: int, use_cache: bool = True
-    ) -> Optional[Patient]:
+    async def get_patient(self, id: int, use_cache: bool = True) -> Optional[Patient]:
         cache_key = f"patient:{id}"
         if use_cache:
             cached = await cache_service.get(cache_key)

@@ -17,7 +17,12 @@ from celery.utils.log import get_task_logger
 
 from src.pharmaviyum.ai.rag.chunking import MedicalChunker
 from src.pharmaviyum.ai.rag.embeddings import EmbeddingsFactory
-from src.pharmaviyum.ai.rag.loaders import DOCXLoader, HTMLLoader, LoaderConfig, PDFLoader
+from src.pharmaviyum.ai.rag.loaders import (
+    DOCXLoader,
+    HTMLLoader,
+    LoaderConfig,
+    PDFLoader,
+)
 from src.pharmaviyum.ai.rag.preprocessing import DocumentPreprocessor
 from src.pharmaviyum.ai.rag.vector_store import PgVectorStore
 from src.pharmaviyum.core.database import async_session_factory
@@ -50,7 +55,9 @@ def _require_pharmacy_id(config: dict[str, Any]) -> int:
         or isinstance(pharmacy_id, bool)
         or pharmacy_id <= 0
     ):
-        raise ValueError("Ingestion requires an authorized positive integer pharmacy_id")
+        raise ValueError(
+            "Ingestion requires an authorized positive integer pharmacy_id"
+        )
     return pharmacy_id
 
 
@@ -235,13 +242,19 @@ def ingest_batch(
                 task = ingest_document.delay(
                     source, source_type, f"{job_id}_doc_{index}", config
                 )
-                results.append({"source": source, "task_id": task.id, "status": "queued"})
+                results.append(
+                    {"source": source, "task_id": task.id, "status": "queued"}
+                )
             except Exception as exc:
                 failed += 1
-                results.append({"source": source, "status": "failed", "error": str(exc)})
+                results.append(
+                    {"source": source, "status": "failed", "error": str(exc)}
+                )
 
         loop.run_until_complete(
-            tracker.update_status(job_id, "completed", processed=len(sources) - failed, failed=failed)
+            tracker.update_status(
+                job_id, "completed", processed=len(sources) - failed, failed=failed
+            )
         )
         return {
             "success": True,

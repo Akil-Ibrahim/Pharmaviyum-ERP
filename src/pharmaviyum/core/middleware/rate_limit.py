@@ -43,11 +43,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 content={
                     "success": False,
-                    "errors": [{
-                        "code": "RATE_LIMIT_EXCEEDED",
-                        "message": "Too many requests. Please try again later.",
-                        "retry_after": retry_after,
-                    }],
+                    "errors": [
+                        {
+                            "code": "RATE_LIMIT_EXCEEDED",
+                            "message": "Too many requests. Please try again later.",
+                            "retry_after": retry_after,
+                        }
+                    ],
                 },
                 headers={
                     "Retry-After": str(retry_after),
@@ -91,4 +93,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return allowed, limit, remaining, now + window_size
         except Exception as exc:
             logger.error("Rate limit check failed", extra={"error": type(exc).__name__})
-            return True, settings.RATE_LIMIT_PER_MINUTE, settings.RATE_LIMIT_PER_MINUTE, int(time.time()) + 60
+            return (
+                True,
+                settings.RATE_LIMIT_PER_MINUTE,
+                settings.RATE_LIMIT_PER_MINUTE,
+                int(time.time()) + 60,
+            )

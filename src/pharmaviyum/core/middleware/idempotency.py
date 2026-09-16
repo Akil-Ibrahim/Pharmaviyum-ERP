@@ -41,10 +41,12 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
                 status_code=400,
                 content={
                     "success": False,
-                    "errors": [{
-                        "code": "INVALID_IDEMPOTENCY_KEY",
-                        "message": "Idempotency key too long (max 255 characters)",
-                    }],
+                    "errors": [
+                        {
+                            "code": "INVALID_IDEMPOTENCY_KEY",
+                            "message": "Idempotency key too long (max 255 characters)",
+                        }
+                    ],
                 },
             )
 
