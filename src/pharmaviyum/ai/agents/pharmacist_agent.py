@@ -96,7 +96,9 @@ class PharmacistAgent:
     def _should_continue(self, state: AgentState) -> str:
         if state.get("iteration", 0) >= self.MAX_ITERATIONS:
             return "done"
-        return "continue" if getattr(state["messages"][-1], "tool_calls", []) else "done"
+        return (
+            "continue" if getattr(state["messages"][-1], "tool_calls", []) else "done"
+        )
 
     async def planner_node(self, state: AgentState) -> dict[str, Any]:
         context = state.get("context", {})
@@ -118,9 +120,7 @@ class PharmacistAgent:
         except Exception:
             logger.error("Agent planner failed", exc_info=True)
             return {
-                "messages": [
-                    AIMessage(content="Unable to safely plan the request.")
-                ],
+                "messages": [AIMessage(content="Unable to safely plan the request.")],
                 "iteration": self.MAX_ITERATIONS,
             }
 
@@ -149,7 +149,9 @@ class PharmacistAgent:
                 )
                 if result.success:
                     content = json.dumps(result.data, default=str)
-                    results.append({"tool": name, "success": True, "data": result.data})
+                    results.append(
+                        {"tool": name, "success": True, "data": result.data}
+                    )
                 else:
                     content = f"Tool execution failed: {result.error}"
                     results.append(
@@ -219,7 +221,9 @@ class PharmacistAgent:
     def _thread_id(thread_id: str | None, context: dict[str, Any]) -> str:
         pharmacy_id, user_id = context.get("pharmacy_id"), context.get("user_id")
         if pharmacy_id is None or user_id is None:
-            raise ValueError("Agent checkpoint namespace requires pharmacy_id and user_id")
+            raise ValueError(
+                "Agent checkpoint namespace requires pharmacy_id and user_id"
+            )
         return f"agent:{pharmacy_id}:{user_id}:{thread_id or 'default'}"
 
     async def run(
@@ -238,11 +242,7 @@ class PharmacistAgent:
             "warnings": [],
             "iteration": 0,
         }
-        config = {
-            "configurable": {
-                "thread_id": self._thread_id(thread_id, context)
-            }
-        }
+        config = {"configurable": {"thread_id": self._thread_id(thread_id, context)}}
         try:
             final_state = await self.graph.ainvoke(initial_state, config=config)
             return {
@@ -277,11 +277,7 @@ class PharmacistAgent:
             "warnings": [],
             "iteration": 0,
         }
-        config = {
-            "configurable": {
-                "thread_id": self._thread_id(thread_id, context)
-            }
-        }
+        config = {"configurable": {"thread_id": self._thread_id(thread_id, context)}}
         async for event in self.graph.astream(
             initial_state, config=config, stream_mode="updates"
         ):
