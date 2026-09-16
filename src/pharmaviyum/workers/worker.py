@@ -68,14 +68,17 @@ TASK_REGISTRY = {
     "sync_all_pos": SyncAllPosTask,
 }
 
+_ALLOWED_QUEUES = {queue.value for queue in TaskQueue if queue != TaskQueue.DEAD_LETTER}
+
 
 class Worker:
     """Background job worker with shared Redis instrumentation."""
 
     def __init__(self, queues: Optional[list[str]] = None):
-        self.queues = queues or [
-            q.value for q in TaskQueue if q != TaskQueue.DEAD_LETTER
-        ]
+        requested_queues = queues or list(_ALLOWED_QUEUES)
+        self.queues = [queue for queue in requested_queues if queue in _ALLOWED_QUEUES]
+        if not self.queues:
+            raise ValueError("At least one supported worker queue is required")
         self.redis: Optional[aioredis.Redis] = None
         self._shutdown_event = asyncio.Event()
         self._tasks: list[asyncio.Task] = []
@@ -161,9 +164,6 @@ class Worker:
                 else:
                     status = "success" if result.success else "failure"
                     WORKER_TASKS_TOTAL.labels(task=task_name, queue=queue, status=status).inc()
-                    WORKER_TASK_DURATION.labels(task=task_name, queue=queue).observe(
-                        time.perf_counter() - started
-                    )
                     self._stats["processed"] += 1
                     if not result.success:
                         self._stats["failed"] += 1
@@ -175,6 +175,9 @@ class Worker:
                         )
                     await self._mark_completed(task_id, result)
                 finally:
+                    WORKER_TASK_DURATION.labels(task=task_name, queue=queue).observe(
+                        time.perf_counter() - started
+                    )
                     WORKER_TASKS_IN_FLIGHT.labels(queue=queue).dec()
             except Exception as e:
                 logger.error(f"Queue processor error: {e}", exc_info=True)
