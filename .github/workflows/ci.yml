@@ -40,12 +40,13 @@ jobs:
           pip install 'ruff==0.12.10' 'black==25.1.0' 'isort==6.0.1' 'mypy==1.17.1'
       - name: Ruff diagnostics
         run: ruff check src/ tests/
-      - name: Temporary Black formatting artifact
+      - name: Temporary formatter remediation
         run: |
           black src/ tests/
           isort --profile black src/ tests/
+          sed -i 's/# type: input\/output/# token type: input\/output/' src/pharmaviyum/core/metrics.py
           tar -czf black-formatted.tar.gz src tests
-      - name: Upload temporary Black formatting artifact
+      - name: Upload temporary formatter artifact
         uses: actions/upload-artifact@v4
         with:
           name: black-formatted-${{ github.sha }}
@@ -57,7 +58,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add src/ tests/
-            git commit -m "style: apply Black and isort formatting"
+            git commit -m "style: apply formatter remediation"
             git push
           fi
       - name: Black diagnostics
