@@ -14,7 +14,14 @@ class Document(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     content: str = Field(..., min_length=1)
     source: str
-    doc_type: Literal["drug_info", "prescription", "guideline", "research_paper", "regulation", "patient_record"]
+    doc_type: Literal[
+        "drug_info",
+        "prescription",
+        "guideline",
+        "research_paper",
+        "regulation",
+        "patient_record",
+    ]
     metadata: dict[str, Any] = Field(default_factory=dict)
     country: str = "VN"
     language: str = "vi"
@@ -27,7 +34,14 @@ class Chunk(BaseModel):
     document_id: UUID
     content: str = Field(..., min_length=1)
     chunk_index: int = Field(..., ge=0)
-    chunk_type: Literal["indications", "dosage", "contraindications", "interactions", "side_effects", "general"] = "general"
+    chunk_type: Literal[
+        "indications",
+        "dosage",
+        "contraindications",
+        "interactions",
+        "side_effects",
+        "general",
+    ] = "general"
     metadata: dict[str, Any] = Field(default_factory=dict)
     token_count: int = Field(..., ge=0)
 
@@ -71,9 +85,21 @@ class RAGResponse(BaseModel):
                 citation_id=f"src-{source.chunk.id}",
                 document_id=source.chunk.document_id,
                 chunk_id=source.chunk.id,
-                source=str(source.chunk.metadata.get("source", source.chunk.metadata.get("source_uri", "knowledge_base"))),
-                version=(str(source.chunk.metadata["version"]) if source.chunk.metadata.get("version") is not None else None),
-                retrieval_score=source.rerank_score if source.rerank_score is not None else source.score,
+                source=str(
+                    source.chunk.metadata.get(
+                        "source", source.chunk.metadata.get("source_uri", "knowledge_base")
+                    )
+                ),
+                version=(
+                    str(source.chunk.metadata["version"])
+                    if source.chunk.metadata.get("version") is not None
+                    else None
+                ),
+                retrieval_score=(
+                    source.rerank_score
+                    if source.rerank_score is not None
+                    else source.score
+                ),
                 metadata=dict(source.chunk.metadata),
             )
             for source in self.sources
