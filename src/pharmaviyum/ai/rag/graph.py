@@ -122,8 +122,10 @@ class LangGraphRAG:
             if key not in best or hit.score > best[key].score:
                 best[key] = hit
         ranked = sorted(best.values(), key=lambda hit: hit.score, reverse=True)[: self.MAX_CONTEXT_DOCS]
-        record_rag_retrieval("hybrid_multi_query", (time.perf_counter() - started) * 1000, success=failed == 0)
-        record_ai_stage("retrieval", (time.perf_counter() - started) * 1000, success=failed == 0)
+        success = failed == 0
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        record_rag_retrieval("hybrid_multi_query", elapsed_ms, success=success)
+        record_ai_stage("retrieval", elapsed_ms, success=success)
         return {"retrieved": ranked, "warnings": ["partial_retrieval_failure"] if failed else []}
 
     async def _grade_one(self, question: str, hit: RetrievalResult) -> RetrievalResult | None:
