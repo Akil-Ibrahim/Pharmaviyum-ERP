@@ -4,7 +4,7 @@
 
 # Pharmaviyum CRM
 
-![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.13%2B-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.139.0-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
+![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.13%2B-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
 
 > AI-powered CRM platform for pharmacies, designed to complement existing ERP systems with client-oriented workflows, order handling, analytics, and AI-assisted knowledge retrieval.
 
@@ -82,7 +82,7 @@ The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is inte
 ### Backend
 
 - Python 3.13+
-- FastAPI
+- FastAPI 0.141.1
 - Uvicorn
 - Pydantic / Pydantic Settings
 - SQLAlchemy 2
