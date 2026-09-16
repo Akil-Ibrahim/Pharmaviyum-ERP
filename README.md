@@ -4,13 +4,13 @@
 
 # Pharmaviyum CRM
 
-![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.13%2B-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
+![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.13%2B-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue) ![React](https://img.shields.io/badge/React-19.3-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.x-646CFF)
 
 > AI-powered CRM platform for pharmacies, designed to complement existing ERP systems with client-oriented workflows, order handling, analytics, and AI-assisted knowledge retrieval.
 
 ## Overview
 
-Pharmaviyum CRM is a modular pharmacy CRM platform built around a FastAPI backend, a React frontend, PostgreSQL with pgvector, Redis, and an AI/RAG layer.
+Pharmaviyum CRM is a modular pharmacy CRM platform built around a FastAPI backend, a React 19 frontend, PostgreSQL with pgvector, Redis, and an AI/RAG layer.
 
 The system is designed to centralize pharmacy workflows and client interactions without replacing the pharmacy's core ERP. The AI layer provides application-level orchestration, retrieval-augmented generation (RAG), dialogue memory, guardrails, tool access, and observability.
 
@@ -33,8 +33,8 @@ This project and its contents are protected by applicable confidentiality and ND
 
 ```text
                          +----------------------+
-                         |   React Frontend     |
-                         |  TypeScript / Vite   |
+                         |   React 19 Frontend  |
+                         | TypeScript / Vite 8  |
                          +----------+-----------+
                                     |
                                     v
@@ -85,9 +85,10 @@ The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is inte
 - FastAPI 0.141.1
 - Uvicorn
 - Pydantic / Pydantic Settings
-- SQLAlchemy 2
+- SQLAlchemy 2.0
 - Alembic
 - asyncpg / psycopg
+- Ruff / Black / isort / mypy / pytest
 
 ### Data & Infrastructure
 
@@ -105,19 +106,25 @@ The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is inte
 - Ollama / configured LLM provider
 - PostgreSQL + pgvector for vector retrieval
 - MCP JSON-RPC tool layer
+- OpenTelemetry instrumentation
 
 ### Frontend
 
-- React 18
-- TypeScript
-- Vite
-- TanStack Query
-- TanStack Router
-- Axios
-- Vitest
-- Playwright
+- React 19.3
+- React DOM 19.3
+- TypeScript 6
+- Vite 8
+- TanStack Query 5
+- TanStack Router 1.x
+- Axios 1.x
+- Vitest 5
+- Playwright 1.x
 
-The backend dependency versions are defined in `pyproject.toml`; the frontend scripts and dependencies are defined in `frontend/package.json`.
+Dependency source of truth:
+
+- Python: `pyproject.toml` and generated `uv.lock`
+- Compatibility installation: `requirements.txt`
+- Frontend: `frontend/package.json` and Bun lockfile when present
 
 ## AI / RAG
 
@@ -156,7 +163,7 @@ The repository's detailed AI architecture is documented in [`docs/ai_architectur
 │   ├── core/              # Core application infrastructure
 │   ├── domain/            # Domain models and business concepts
 │   └── ...
-├── frontend/              # Frontend application
+├── frontend/              # React / TypeScript frontend
 ├── mortarium-ai/          # Separate AI service used by deployment stack
 ├── alembic/               # Database migrations
 ├── docker/                # Monitoring and Docker-related configuration
@@ -175,20 +182,24 @@ The repository's detailed AI architecture is documented in [`docs/ai_architectur
 
 - Python 3.13+
 - Docker and Docker Compose
-- Bun for frontend development
+- Bun
+- Node.js 20.19+ or 22.12+ for the Vite 8 toolchain
 
 ### Backend
 
-Install the Python dependencies and apply migrations:
+Preferred development workflow uses `uv`:
+
+```bash
+uv sync
+uv run alembic upgrade head
+uv run uvicorn src.pharmaviyum.main:app --reload --port 8000
+```
+
+For compatibility environments that use pip:
 
 ```bash
 pip install -r requirements.txt
 alembic upgrade head
-```
-
-Run the API locally:
-
-```bash
 uvicorn src.pharmaviyum.main:app --reload --port 8000
 ```
 
@@ -212,25 +223,24 @@ Frontend scripts include build, unit tests, E2E tests, linting, and OpenAPI clie
 
 The project uses automated quality gates for formatting, linting, type checking, security checks, and tests.
 
-Current Python tooling includes:
+Python quality tooling includes:
 
 ```bash
-ruff
-black
-isort
-mypy
+ruff check .
+black --check .
+isort --check-only .
+mypy --explicit-package-bases src
 pytest
-pre-commit
 ```
 
-The repository's CI is treated as a required engineering gate: changes should be kept small and focused, and documentation changes should not be mixed with unrelated implementation fixes.
+The repository's CI is treated as a required engineering gate. Changes should be kept small and focused, dependency upgrades should be validated incrementally, and documentation changes should not be mixed with unrelated implementation fixes.
 
 ## Testing
 
 Backend tests use `pytest` with automatic asyncio support:
 
 ```bash
-pytest
+uv run pytest
 ```
 
 Frontend tests:
@@ -239,6 +249,13 @@ Frontend tests:
 cd frontend
 bun run test
 bun run test:e2e
+```
+
+Production-oriented frontend build:
+
+```bash
+cd frontend
+bun run build
 ```
 
 ## Docker
