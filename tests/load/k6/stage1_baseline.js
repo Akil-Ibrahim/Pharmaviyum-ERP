@@ -5,19 +5,30 @@ import { Trend } from 'k6/metrics';
 const baseUrl = __ENV.BASE_URL || 'http://localhost:8000';
 const token = __ENV.AUTH_TOKEN || '';
 const pharmacyId = Number(__ENV.PHARMACY_ID || 1);
+const patientId = Number(__ENV.PATIENT_ID || 1);
+const productId = Number(__ENV.PRODUCT_ID || 1);
+const orderId = Number(__ENV.ORDER_ID || 1);
+const inventoryId = Number(__ENV.INVENTORY_ID || 1);
 
 const aiLatency = new Trend('ai_query_latency', true);
 
+// Stage 1 business model:
+// 100 pharmacies, ~120 customer visits/day/pharmacy, with ~2-4 staff active
+// per pharmacy during busy periods. The default peak is 200 active CRM users;
+// increase PEAK_VUS to 400 for the upper-bound scenario.
+const peakVus = Number(__ENV.PEAK_VUS || 200);
+
 export const options = {
   scenarios: {
-    crm_read: {
+    pharmacy_workload: {
       executor: 'ramping-vus',
-      exec: 'crmRead',
-      startVUs: 1,
+      exec: 'pharmacyWorkload',
+      startVUs: 5,
       stages: [
-        { duration: '30s', target: 10 },
-        { duration: '1m', target: 25 },
-        { duration: '2m', target: 50 },
+        { duration: '1m', target: Math.ceil(peakVus * 0.25) },
+        { duration: '2m', target: Math.ceil(peakVus * 0.5) },
+        { duration: '3m', target: peakVus },
+        { duration: '2m', target: Math.ceil(peakVus * 0.5) },
         { duration: '1m', target: 0 },
       ],
       gracefulRampDown: '30s',
@@ -25,9 +36,9 @@ export const options = {
     ai_query: {
       executor: 'constant-vus',
       exec: 'aiQuery',
-      vus: Number(__ENV.AI_VUS || 2),
-      duration: __ENV.AI_DURATION || '2m',
-      startTime: '30s',
+      vus: Number(__ENV.AI_VUS || 10),
+      duration: __ENV.AI_DURATION || '7m',
+      startTime: '2m',
       gracefulStop: '30s',
     },
   },
@@ -44,12 +55,39 @@ function headers() {
     : { 'Content-Type': 'application/json' };
 }
 
-export function crmRead() {
-  const response = http.get(`${baseUrl}/health`, {
-    tags: { endpoint: 'health' },
+function get(path, endpoint) {
+  const response = http.get(`${baseUrl}${path}`, {
+    headers: headers(),
+    tags: { endpoint },
   });
-  check(response, { 'health is 200': (r) => r.status === 200 });
-  sleep(1);
+  check(response, { [`${endpoint} is successful`]: (r) => r.status === 200 });
+  return response;
+}
+
+export function pharmacyWorkload() {
+  // Weighted approximation of real pharmacy staff activity.
+  // Writes are intentionally excluded from the baseline: the test must not
+  // create unbounded patients/orders/ERP events in the target database.
+  const roll = Math.random() * 100;
+
+  if (roll < 30) {
+    get('/api/v1/products/?limit=50', 'products_list');
+  } else if (roll < 55) {
+    get('/api/v1/patients/?page=1&page_size=50', 'patients_list');
+  } else if (roll < 70) {
+    get(`/api/v1/products/${productId}`, 'product_detail');
+  } else if (roll < 82) {
+    get(`/api/v1/patients/${patientId}`, 'patient_detail');
+  } else if (roll < 90) {
+    get(`/api/v1/inventory?pharmacy_id=${pharmacyId}`, 'inventory_list');
+  } else if (roll < 95) {
+    get(`/api/v1/orders/${orderId}`, 'order_detail');
+  } else {
+    get('/api/v1/pharmacies', 'pharmacies_list');
+  }
+
+  // Human think time: the CRM is not hammered continuously by every user.
+  sleep(1 + Math.random() * 3);
 }
 
 export function aiQuery() {
@@ -71,5 +109,5 @@ export function aiQuery() {
   check(response, {
     'ai response is successful': (r) => r.status === 200,
   });
-  sleep(3);
+  sleep(5 + Math.random() * 5);
 }
