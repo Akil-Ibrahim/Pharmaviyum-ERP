@@ -18,7 +18,12 @@ from src.pharmaviyum.core.logging import logger
 
 
 class ObservabilityTracer:
-    """Production tracer combining OpenTelemetry and LangSmith."""
+    """Production tracer combining OpenTelemetry and LangSmith.
+
+    AI prompts, answers and tool payloads are never exported by default because
+    they may contain patient or other sensitive data. Content export requires
+    explicit opt-in through ``AI_TELEMETRY_INCLUDE_CONTENT=true``.
+    """
 
     def __init__(
         self,
@@ -28,6 +33,9 @@ class ObservabilityTracer:
         langsmith_project: str = "pharmaviyum-pharmacist-agent",
     ):
         self.service_name = service_name
+        self.include_content = (
+            os.getenv("AI_TELEMETRY_INCLUDE_CONTENT", "false").lower() == "true"
+        )
         self._init_otel(otel_endpoint)
         self._init_langsmith(langsmith_api_key, langsmith_project)
         self.tracer = trace.get_tracer(service_name)
@@ -44,19 +52,18 @@ class ObservabilityTracer:
         try:
             trace.set_tracer_provider(provider)
         except Exception:
-            # Another library may already have installed the global provider.
             pass
 
         otlp_endpoint = endpoint or os.getenv(
             "OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317"
         )
-        if not os.getenv("OTEL_ENABLED", "false").lower() == "true":
+        if os.getenv("OTEL_ENABLED", "false").lower() != "true":
             logger.info("OpenTelemetry exporter disabled")
             return
         try:
             exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
             provider.add_span_processor(BatchSpanProcessor(exporter))
-            logger.info("OpenTelemetry initialized, exporting to %s", otlp_endpoint)
+            logger.info("OpenTelemetry initialized")
         except Exception as exc:
             logger.warning("Failed to initialize OpenTelemetry exporter: %s", exc)
 
@@ -76,7 +83,7 @@ class ObservabilityTracer:
             os.environ["LANGCHAIN_ENDPOINT"] = endpoint
         try:
             self.langsmith_client = LangSmithClient()
-            logger.info("LangSmith initialized for project: %s", project)
+            logger.info("LangSmith initialized")
         except Exception as exc:
             self.langsmith_client = None
             logger.warning("Failed to initialize LangSmith client: %s", exc)
@@ -98,6 +105,13 @@ class ObservabilityTracer:
                 span.record_exception(exc)
                 raise
 
+    def _payload(self, payload: dict[str, Any] | None) -> dict[str, Any]:
+        """Return telemetry-safe payload metadata unless content export is opted in."""
+        if self.include_content:
+            return payload or {}
+        payload = payload or {}
+        return {"content_redacted": True, "field_count": len(payload)}
+
     def log_to_langsmith(
         self,
         run_name: str,
@@ -108,15 +122,15 @@ class ObservabilityTracer:
         tags: list[str] | None = None,
         session_id: str | None = None,
     ) -> str | None:
-        """Log an execution to LangSmith when configured."""
+        """Log execution metadata without exporting sensitive content by default."""
         if not self.langsmith_client:
             return None
         try:
             run = self.langsmith_client.create_run(
                 name=run_name,
                 run_type=run_type,
-                inputs=inputs,
-                outputs=outputs,
+                inputs=self._payload(inputs),
+                outputs=self._payload(outputs),
                 metadata=metadata or {},
                 tags=tags or [],
                 session_id=session_id,
@@ -135,12 +149,13 @@ class ObservabilityTracer:
         success: bool,
         session_id: str | None = None,
     ) -> str | None:
-        """Log an MCP tool execution to LangSmith."""
+        """Log an MCP tool execution without exporting tool payloads by default."""
+        output_payload = outputs if isinstance(outputs, dict) else {"result": outputs}
         return self.log_to_langsmith(
             run_name=f"tool_{tool_name}",
             run_type="tool",
             inputs=inputs,
-            outputs={"result": outputs, "success": success},
+            outputs={"result": output_payload, "success": success},
             metadata={"latency_ms": latency_ms},
             tags=["mcp_tool", tool_name],
             session_id=session_id,
@@ -153,15 +168,15 @@ class ObservabilityTracer:
         evaluation_result: dict[str, Any],
         session_id: str | None = None,
     ) -> None:
-        """Log an evaluation result to LangSmith."""
+        """Log evaluation metadata without exporting query/answer by default."""
         if not self.langsmith_client:
             return
         try:
             self.langsmith_client.create_run(
                 name="agent_evaluation",
                 run_type="evaluator",
-                inputs={"query": query, "answer": answer},
-                outputs=evaluation_result,
+                inputs=self._payload({"query": query}),
+                outputs=self._payload({"answer": answer, **evaluation_result}),
                 tags=["evaluation", "llm_as_judge"],
                 session_id=session_id,
             )
