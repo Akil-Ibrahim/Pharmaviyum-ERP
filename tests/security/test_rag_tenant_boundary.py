@@ -1,6 +1,6 @@
 import pytest
 
-from src.pharmaviyum.ai.rag.vector_store import PgVectorStore
+from src.pharmaviyum.ai.mortarium_rag.vector_store import PgVectorStore
 
 
 def test_vector_store_rejects_unscoped_retrieval() -> None:
