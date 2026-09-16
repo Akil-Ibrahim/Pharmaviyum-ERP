@@ -29,7 +29,7 @@
   become: true
   gather_facts: true
   max_fail_percentage: 0  # Fail on any error
-  
+
   pre_tasks:
     - name: Display deployment info
       debug:
@@ -53,7 +53,6 @@
 
     - role: postgresql
       tags: [database, postgresql]
-      when: "'mortarium_ai_servers' not in group_names"
       vars:
         postgres_retry_count: 5
         postgres_retry_delay: 10
@@ -70,12 +69,12 @@
         msg: "{{ docker_version.stdout }}"
 
 # Stage 2: Application Deployment
-- name: Deploy Pharmaviyum-CRM backend and Mortarium AI
+- name: Deploy Pharmaviyum-CRM backend
   hosts: pharmacy_servers
   become: true
   gather_facts: false
   strategy: linear
-  
+
   pre_tasks:
     - name: Load deployment variables
       include_vars:
@@ -99,13 +98,6 @@
       vars:
         deploy_retry_count: 3
         deploy_retry_delay: 10
-
-    - role: mortarium-ai
-      tags: [rag, ai, mortarium]
-      when: inventory_hostname in groups.get('mortarium_ai_servers', [])
-      vars:
-        ai_retry_count: 3
-        ai_retry_delay: 15
 
     - role: nginx
       tags: [proxy, nginx]
@@ -136,7 +128,7 @@
   hosts: pharmacy_servers
   become: false
   gather_facts: false
-  
+
   tasks:
     - name: Wait for backend service
       ansible.builtin.uri:
@@ -154,25 +146,6 @@
         that:
           - backend_health.status == 200
         fail_msg: "Backend service failed health check"
-
-    - name: Wait for Mortarium AI service
-      ansible.builtin.uri:
-        url: "http://localhost:{{ mortarium_port | default(8001) }}/health"
-        status_code: 200
-        timeout: 10
-      register: mortarium_health
-      retries: 20
-      delay: 5
-      until: mortarium_health.status == 200
-      when: inventory_hostname in groups.get('mortarium_ai_servers', [])
-      failed_when: false
-
-    - name: Verify Mortarium AI health
-      assert:
-        that:
-          - mortarium_health.status == 200
-        fail_msg: "Mortarium AI service failed health check"
-      when: inventory_hostname in groups.get('mortarium_ai_servers', [])
 
     - name: Check database connectivity
       community.postgresql.postgresql_query:
@@ -208,17 +181,14 @@
       debug:
         msg: |
           ✅ Deployment successful on {{ inventory_hostname }}
-          
+
           Services deployed:
           {% for service in running_services.stdout_lines %}
             - {{ service }}
           {% endfor %}
-          
+
           Backend Health: {{ backend_health.status | default('Unknown') }}
-          {% if inventory_hostname in groups.get('mortarium_ai_servers', []) %}
-          Mortarium AI Health: {{ mortarium_health.status | default('Unknown') }}
-          {% endif %}
-          
+
           Timestamp: {{ ansible_date_time.iso8601 }}
 
 # Cleanup on failure
@@ -241,7 +211,7 @@
               ========================
               Hostname: {{ inventory_hostname }}
               Timestamp: {{ ansible_date_time.iso8601 }}
-              
+
               Error Logs:
               {{ error_logs.stdout }}
             dest: "{{ app_directory }}/deployment_failure_{{ ansible_date_time.iso8601 }}.log"
