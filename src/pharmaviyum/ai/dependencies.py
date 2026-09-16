@@ -14,6 +14,8 @@ from functools import lru_cache
 from typing import Any, AsyncGenerator
 
 from fastapi import Depends, HTTPException, Request, status
+from langchain_core.language_models import BaseChatModel
+from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -65,31 +67,44 @@ async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]
             raise
 
 
-@lru_cache(maxsize=1)
-def get_llm_fast():
-    return ChatOllama(
-        model=settings.ollama.fast_model,
-        base_url=settings.ollama.base_url,
-        temperature=settings.ollama.temperature,
+def _build_llm(model: str) -> BaseChatModel:
+    """Build the configured LLM backend without changing the local default."""
+    if not settings.use_cloud_llm:
+        return ChatOllama(
+            model=model,
+            base_url=settings.ollama.base_url,
+            temperature=settings.ollama.temperature,
+        )
+
+    api_key = settings.groq.api_key
+    if api_key is None:
+        raise RuntimeError(
+            "USE_CLOUD_LLM=true requires GROQ_API_KEY to be configured"
+        )
+    return ChatGroq(
+        model=model,
+        api_key=api_key,
+        temperature=settings.groq.temperature,
+        timeout=settings.groq.timeout_seconds,
     )
 
 
 @lru_cache(maxsize=1)
-def get_llm_main():
-    return ChatOllama(
-        model=settings.ollama.main_model,
-        base_url=settings.ollama.base_url,
-        temperature=settings.ollama.temperature,
-    )
+def get_llm_fast() -> BaseChatModel:
+    model = settings.groq.fast_model if settings.use_cloud_llm else settings.ollama.fast_model
+    return _build_llm(model)
 
 
 @lru_cache(maxsize=1)
-def get_llm_complex():
-    return ChatOllama(
-        model=settings.ollama.complex_model,
-        base_url=settings.ollama.base_url,
-        temperature=settings.ollama.temperature,
-    )
+def get_llm_main() -> BaseChatModel:
+    model = settings.groq.model if settings.use_cloud_llm else settings.ollama.main_model
+    return _build_llm(model)
+
+
+@lru_cache(maxsize=1)
+def get_llm_complex() -> BaseChatModel:
+    model = settings.groq.model if settings.use_cloud_llm else settings.ollama.complex_model
+    return _build_llm(model)
 
 
 class AIComponents:
@@ -122,13 +137,14 @@ class AIComponents:
             except Exception as exc:
                 logger.warning("PgVectorStore initialize deferred: %s", exc)
 
+            embeddings_provider = "ollama"
             embeddings = EmbeddingsFactory.create(
-                provider="ollama", use_cache=True, redis_client=redis
+                provider=embeddings_provider, use_cache=True, redis_client=redis
             )
             self.ingestion_orchestrator = IngestionOrchestrator(
                 session_factory=db_session_factory,
                 redis_client=redis,
-                embeddings_provider="ollama",
+                embeddings_provider=embeddings_provider,
             )
             memory = DialogueMemory(
                 redis_client=redis,
@@ -180,10 +196,17 @@ class AIComponents:
             )
             self.evaluator = AgentEvaluator(
                 eval_llm=get_llm_complex(),
-                evaluator_model_name=settings.ollama.complex_model,
+                evaluator_model_name=(
+                    settings.groq.model
+                    if settings.use_cloud_llm
+                    else settings.ollama.complex_model
+                ),
             )
             self._initialized = True
-            logger.info("AI components initialized successfully")
+            logger.info(
+                "AI components initialized successfully (llm_backend=%s)",
+                "groq" if settings.use_cloud_llm else "ollama",
+            )
 
 
 ai_container = AIComponents()
