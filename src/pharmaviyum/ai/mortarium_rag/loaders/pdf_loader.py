@@ -30,6 +30,7 @@ class PDFLoader:
         if self._fitz is None:
             try:
                 import fitz
+
                 self._fitz = fitz
             except ImportError:
                 raise ImportError("Install PyMuPDF: pip install pymupdf")
