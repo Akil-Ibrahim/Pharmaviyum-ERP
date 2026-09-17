@@ -66,17 +66,6 @@ from .mcp import (
     tool_registry,
 )
 
-# Observability
-from .observability import (
-    ObservabilityTracer,
-    ai_registry,
-    calculate_llm_cost,
-    record_evaluation_scores,
-    record_llm_usage,
-    record_tool_call,
-    tracer,
-)
-
 # RAG Pipeline
 from .mortarium_rag import (
     Chunk,
@@ -92,6 +81,17 @@ from .mortarium_rag import (
     RAGPipeline,
     RAGResponse,
     RetrievalResult,
+)
+
+# Observability
+from .observability import (
+    ObservabilityTracer,
+    ai_registry,
+    calculate_llm_cost,
+    record_evaluation_scores,
+    record_llm_usage,
+    record_tool_call,
+    tracer,
 )
 
 __version__ = "1.0.0"
