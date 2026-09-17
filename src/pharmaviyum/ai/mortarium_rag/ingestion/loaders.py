@@ -65,12 +65,7 @@ class DocumentLoader:
         if not directory.is_dir():
             raise NotADirectoryError(f"Directory not found: {directory}")
         supported_extensions = extensions or [
-            ".pdf",
-            ".docx",
-            ".html",
-            ".htm",
-            ".txt",
-            ".md",
+            ".pdf", ".docx", ".html", ".htm", ".txt", ".md"
         ]
         for file_path in sorted(directory.iterdir()):
             if file_path.is_file() and file_path.suffix.lower() in supported_extensions:
