@@ -173,7 +173,7 @@ AI_QUERY_RESPONSE_EXAMPLE = {
     "answer": "Based on the sales data for this month, the top 5 selling products are:\n\n1. **Paracetamol 500mg** - 342 units sold ($2,048.58 revenue)\n2. **Vitamin C 1000mg** - 287 units sold ($3,587.50 revenue)\n3. **Ibuprofen 400mg** - 198 units sold ($1,584.00 revenue)\n4. **Amoxicillin 500mg** - 156 units sold ($2,340.00 revenue)\n5. **Omeprazole 20mg** - 143 units sold ($2,145.00 revenue)\n\nTotal revenue from top 5 products: $11,705.08\n\nWould you like more detailed analytics on any specific product?",
     "sources": [{"source": "sales_data", "relevance": 0.95, "data_points": 1250}],
     "processing_time_ms": 2340,
-    "model": "mortarium-ai-v1",
+    "model": "mortarium-rag",
     "timestamp": "2024-01-15T14:30:00Z",
 }
 
