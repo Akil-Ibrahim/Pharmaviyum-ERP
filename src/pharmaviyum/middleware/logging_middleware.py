@@ -1,43 +1,44 @@
 """Request logging middleware.
 
-Logs basic request information (method, path, duration, status) using the
-application logger. Keep logs structured and minimal for production.
+Logs basic request information (method, path, duration, and status) using the
+application's standard logger.
 """
 
+from __future__ import annotations
+
 import time
+from typing import Any
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from src.pharmaviyum.core.logging import get_app_logger
+from src.pharmaviyum.core.logging import get_logger
 
-logger = get_app_logger("pharmaviyum.middleware")
+logger = get_logger("pharmaviyum.middleware")
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
-    """Simple timing/logging middleware for incoming HTTP requests."""
+    """Simple timing and request logging middleware."""
 
-    def __init__(self, app: ASGIApp):
-        super().__init__(app)
-
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Any) -> Any:
         start = time.monotonic()
-        try:
-            response = await call_next(request)
-            return response
-        finally:
-            duration = (time.monotonic() - start) * 1000
-            logger.info(
-                "http_request",
-                method=request.method,
-                path=request.url.path,
-                status=getattr(request, "state", {}).get("status_code", None),
-                duration_ms=round(duration, 2),
-            )
+        response = await call_next(request)
+        duration = (time.monotonic() - start) * 1000
+        logger.info(
+            "http_request",
+            extra={
+                "method": request.method,
+                "path": request.url.path,
+                "status": response.status_code,
+                "duration_ms": round(duration, 2),
+            },
+        )
+        return response
 
 
 def add_logging_middleware(app: ASGIApp) -> None:
+    """Register request logging middleware on the application."""
     app.add_middleware(LoggingMiddleware)
 
 
