@@ -6,6 +6,7 @@ Best practice 2026: JSON logs for log aggregation (ELK, Loki, CloudWatch)
 import json
 import logging
 import sys
+from collections.abc import MutableMapping
 from datetime import datetime, timezone
 from typing import Any
 
@@ -72,7 +73,9 @@ def get_logger(name: str) -> logging.Logger:
 class LoggerAdapter(logging.LoggerAdapter):
     """Logger adapter for adding context (correlation_id, user_id)."""
 
-    def process(self, msg: str, kwargs: Any) -> tuple[str, Any]:
+    def process(
+        self, msg: Any, kwargs: MutableMapping[str, Any]
+    ) -> tuple[Any, MutableMapping[str, Any]]:
         """Add context to log messages."""
         extra = dict(kwargs.get("extra") or {})
         context = dict(self.extra or {})
