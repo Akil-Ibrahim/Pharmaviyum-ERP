@@ -137,11 +137,11 @@ jobs:
       - name: Bandit diagnostics
         run: |
           bandit -r src/pharmaviyum/ -ll \
-            --exclude src/pharmaviyum/ai/rag/ingestion/deduplication.py,src/pharmaviyum/ai/rag/ingestion/versioning.py,src/pharmaviyum/ai/rag/vector_store.py
+            --exclude src/pharmaviyum/ai/mortarium_rag/ingestion/deduplication.py,src/pharmaviyum/ai/mortarium_rag/ingestion/versioning.py,src/pharmaviyum/ai/mortarium_rag/vector_store.py
           bandit -r \
-            src/pharmaviyum/ai/rag/ingestion/deduplication.py,\
-            src/pharmaviyum/ai/rag/ingestion/versioning.py,\
-            src/pharmaviyum/ai/rag/vector_store.py \
+            src/pharmaviyum/ai/mortarium_rag/ingestion/deduplication.py,\
+            src/pharmaviyum/ai/mortarium_rag/ingestion/versioning.py,\
+            src/pharmaviyum/ai/mortarium_rag/vector_store.py \
             -ll -s B608
 
   rag-evaluation:
