@@ -55,7 +55,9 @@ def _require_pharmacy_id(config: dict[str, Any]) -> int:
         or isinstance(pharmacy_id, bool)
         or pharmacy_id <= 0
     ):
-        raise ValueError("Ingestion requires an authorized positive integer pharmacy_id")
+        raise ValueError(
+            "Ingestion requires an authorized positive integer pharmacy_id"
+        )
     return pharmacy_id
 
 
