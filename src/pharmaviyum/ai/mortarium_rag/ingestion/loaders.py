@@ -36,7 +36,6 @@ class DocumentLoader:
     ) -> LoadedDocument:
         """Load a single file and extract content + metadata."""
         file_path = Path(file_path)
-
         if not file_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
 
@@ -64,11 +63,17 @@ class DocumentLoader:
     ) -> AsyncIterator[LoadedDocument]:
         """Load all supported files from a directory."""
         directory = Path(directory)
-
         if not directory.is_dir():
             raise NotADirectoryError(f"Directory not found: {directory}")
 
-        supported_extensions = extensions or [".pdf", ".docx", ".html", ".htm", ".txt", ".md"]
+        supported_extensions = extensions or [
+            ".pdf",
+            ".docx",
+            ".html",
+            ".htm",
+            ".txt",
+            ".md",
+        ]
         for file_path in sorted(directory.iterdir()):
             if file_path.is_file() and file_path.suffix.lower() in supported_extensions:
                 yield await self.load_file(file_path, doc_type, language)
@@ -96,7 +101,6 @@ class DocumentLoader:
                 "page_count": len(pdf_reader.pages),
                 "pdf_info": pdf_reader.metadata,
             }
-
             logger.info(
                 f"Loaded PDF: {file_path.name} ({len(content)} chars, "
                 f"{metadata['page_count']} pages)"
@@ -133,7 +137,6 @@ class DocumentLoader:
                 "file_size_bytes": file_path.stat().st_size,
                 "paragraph_count": len(doc.paragraphs),
             }
-
             logger.info(f"Loaded DOCX: {file_path.name} ({len(content)} chars)")
             return LoadedDocument(
                 id=str(uuid4()),
@@ -167,7 +170,6 @@ class DocumentLoader:
                 "file_size_bytes": file_path.stat().st_size,
                 "title": title,
             }
-
             logger.info(f"Loaded HTML: {file_path.name} ({len(content)} chars)")
             return LoadedDocument(
                 id=str(uuid4()),
@@ -193,7 +195,6 @@ class DocumentLoader:
             "file_name": file_path.name,
             "file_size_bytes": file_path.stat().st_size,
         }
-
         logger.info(f"Loaded text: {file_path.name} ({len(content)} chars)")
         return LoadedDocument(
             id=str(uuid4()),
