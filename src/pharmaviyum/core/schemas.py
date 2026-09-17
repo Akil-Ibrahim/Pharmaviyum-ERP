@@ -35,28 +35,28 @@ class ResponseEnvelope(BaseModel, Generic[T]):
 
     @classmethod
     def success_response(
-        cls, data: T, meta: Optional[dict] = None
+        cls, data: T, meta: Optional[dict[str, Any]] = None
     ) -> "ResponseEnvelope[T]":
-        """Create success response"""
-        return cls(success=True, data=data, meta=meta)
+        """Create success response."""
+        return cls(success=True, data=data, meta=meta, errors=None)
 
     @classmethod
     def error_response(
         cls,
         message: str,
         code: str = "ERROR",
-        details: Optional[dict] = None,
-    ) -> "ResponseEnvelope[None]":
-        """Create error response"""
-        error = {"code": code, "message": message}
-        if details:
+        details: Optional[dict[str, Any]] = None,
+    ) -> "ResponseEnvelope[Any]":
+        """Create error response."""
+        error: dict[str, Any] = {"code": code, "message": message}
+        if details is not None:
             error["details"] = details
 
-        return cls(success=False, data=None, errors=[error])
+        return cls(success=False, data=None, meta=None, errors=[error])
 
 
 class PaginationMeta(BaseModel):
-    """Pagination metadata"""
+    """Pagination metadata."""
 
     page: int = Field(..., ge=1, description="Current page number")
     page_size: int = Field(..., ge=1, description="Items per page")
@@ -67,7 +67,7 @@ class PaginationMeta(BaseModel):
 
     @classmethod
     def create(cls, page: int, page_size: int, total_items: int) -> "PaginationMeta":
-        """Create pagination metadata"""
+        """Create pagination metadata."""
         total_pages = (
             (total_items + page_size - 1) // page_size if total_items > 0 else 0
         )
@@ -101,7 +101,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
         page_size: int,
         total_items: int,
     ) -> "PaginatedResponse[T]":
-        """Create paginated response"""
+        """Create paginated response."""
         return cls(
             items=items,
             pagination=PaginationMeta.create(page, page_size, total_items),
@@ -109,7 +109,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
 
 class ErrorResponse(BaseModel):
-    """Error response model"""
+    """Error response model."""
 
     code: str = Field(..., description="Error code")
     message: str = Field(..., description="Error message")
