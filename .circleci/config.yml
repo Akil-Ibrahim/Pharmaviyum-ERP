@@ -1,0 +1,85 @@
+version: 2.1
+
+jobs:
+  lint:
+    docker:
+      - image: cimg/python:3.13
+    working_directory: ~/project
+    steps:
+      - checkout
+      - run:
+          name: Install quality tools
+          command: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install ruff==0.12.10 black==25.1.0 isort==6.0.1 mypy==1.17.1
+      - run:
+          name: Ruff
+          command: ruff check src tests
+      - run:
+          name: Black
+          command: black --check src tests
+      - run:
+          name: isort
+          command: isort --check-only src tests
+      - run:
+          name: mypy
+          command: mypy --explicit-package-bases src
+
+  unit-tests:
+    docker:
+      - image: cimg/python:3.13
+      - image: cimg/postgres:16.10
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pharmaviyum_test
+      - image: cimg/redis:7.4
+    working_directory: ~/project
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pharmaviyum_test
+      POSTGRES_HOST: localhost
+      REDIS_HOST: localhost
+      REDIS_PORT: "6379"
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+      - run:
+          name: Unit tests
+          command: pytest -q tests/unit
+
+  security:
+    docker:
+      - image: cimg/python:3.13
+    working_directory: ~/project
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install pip-audit==2.9.0 bandit==1.8.6
+      - run:
+          name: Dependency audit
+          command: pip-audit -r requirements.txt
+      - run:
+          name: Bandit
+          command: bandit -r src -ll
+
+workflows:
+  pharmaviyum-ci:
+    jobs:
+      - lint
+      - unit-tests:
+          requires:
+            - lint
+      - security:
+          requires:
+            - lint
