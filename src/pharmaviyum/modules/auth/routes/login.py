@@ -9,10 +9,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.pharmaviyum.redis_client import get_redis
-
-from ...core.config import settings
-from ...core.security import (
+from src.pharmaviyum.core.config import settings
+from src.pharmaviyum.core.security import (
     create_access_token,
     create_refresh_token,
     decode_password_reset_token,
@@ -20,7 +18,9 @@ from ...core.security import (
     get_password_hash,
     verify_password,
 )
-from ...shared.core.database import get_session
+from src.pharmaviyum.redis_client import get_redis
+from src.pharmaviyum.shared.core.database import get_session
+
 from ..models import User
 from ..schemas import Message, NewPassword, RefreshTokenRequest, Token
 from ..utils import (
