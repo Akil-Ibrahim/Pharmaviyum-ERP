@@ -148,6 +148,16 @@ class HalalCertification(BaseModel):
 # ============================================================================
 
 
+PrescriptionCheckType = Literal[
+    "expiry",
+    "prescriber_license",
+    "quantity_limits",
+    "duplicate_dispensing",
+    "drug_availability",
+    "interactions",
+]
+
+
 class PrescriptionVerifyRequest(BaseModel):
     """Input for prescription verification."""
 
@@ -155,16 +165,7 @@ class PrescriptionVerifyRequest(BaseModel):
 
     prescription_number: str
     pharmacist_id: int
-    checks: list[
-        Literal[
-            "expiry",
-            "prescriber_license",
-            "quantity_limits",
-            "duplicate_dispensing",
-            "drug_availability",
-            "interactions",
-        ]
-    ] = Field(
+    checks: list[PrescriptionCheckType] = Field(
         default_factory=lambda: [
             "expiry",
             "prescriber_license",
