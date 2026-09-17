@@ -1,4 +1,7 @@
-from typing import Generic, List, Optional, Type, TypeVar
+"""Async repository primitives for SQLAlchemy models."""
+
+from collections.abc import Sequence
+from typing import Any, Generic, TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,21 +10,24 @@ T = TypeVar("T")
 
 
 class AsyncRepository(Generic[T]):
-    def __init__(self, model: Type[T], session: AsyncSession):
+    """Generic async CRUD repository."""
+
+    def __init__(self, model: type[Any], session: AsyncSession):
         self.model = model
         self.session = session
 
-    async def get(self, id: int) -> Optional[T]:
+    async def get(self, id: int) -> T | None:
         result = await self.session.execute(
             select(self.model).where(self.model.id == id)
         )
         return result.scalar_one_or_none()
 
-    async def list(self, skip: int = 0, limit: int = 100) -> List[T]:
+    async def list(self, skip: int = 0, limit: int = 100) -> list[T]:
         result = await self.session.execute(
             select(self.model).offset(skip).limit(limit)
         )
-        return result.scalars().all()
+        values: Sequence[T] = result.scalars().all()
+        return list(values)
 
     async def add(self, obj: T) -> T:
         self.session.add(obj)
