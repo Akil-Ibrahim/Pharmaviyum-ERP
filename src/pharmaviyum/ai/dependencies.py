@@ -112,7 +112,11 @@ def get_llm_main() -> BaseChatModel:
 
 @lru_cache(maxsize=1)
 def get_llm_complex() -> BaseChatModel:
-    model = settings.groq.model if settings.use_cloud_llm else settings.ollama.complex_model
+    model = (
+        settings.groq.model
+        if settings.use_cloud_llm
+        else settings.ollama.complex_model
+    )
     return _build_llm(model)
 
 
