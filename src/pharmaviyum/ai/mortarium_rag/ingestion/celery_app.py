@@ -28,10 +28,10 @@ _TASK_START_TIMES: dict[str, tuple[float, str, str]] = {}
 _TASK_START_LOCK = Lock()
 _ALLOWED_QUEUES = {"ingestion", "maintenance", "default"}
 _ALLOWED_TASKS = {
-    "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_document",
-    "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_batch",
-    "src.pharmaviyum.ai.rag.ingestion.tasks.reindex_collection",
-    "src.pharmaviyum.ai.rag.ingestion.tasks.cleanup_old_jobs",
+    "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.ingest_document",
+    "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.ingest_batch",
+    "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.reindex_collection",
+    "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.cleanup_old_jobs",
     "other",
 }
 
@@ -103,7 +103,7 @@ def create_celery_app() -> Celery:
         "pharmaviyum.ai.ingestion",
         broker=settings.REDIS_URL,
         backend=settings.REDIS_URL,
-        include=["src.pharmaviyum.ai.rag.ingestion.tasks"],
+        include=["src.pharmaviyum.ai.mortarium_rag.ingestion.tasks"],
     )
 
     app.conf.update(
@@ -121,16 +121,16 @@ def create_celery_app() -> Celery:
         result_expires=86400,
         result_extended=True,
         task_routes={
-            "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_document": {
+            "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.ingest_document": {
                 "queue": "ingestion"
             },
-            "src.pharmaviyum.ai.rag.ingestion.tasks.ingest_batch": {
+            "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.ingest_batch": {
                 "queue": "ingestion"
             },
-            "src.pharmaviyum.ai.rag.ingestion.tasks.reindex_collection": {
+            "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.reindex_collection": {
                 "queue": "maintenance"
             },
-            "src.pharmaviyum.ai.rag.ingestion.tasks.cleanup_old_jobs": {
+            "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.cleanup_old_jobs": {
                 "queue": "maintenance"
             },
         },
@@ -139,7 +139,7 @@ def create_celery_app() -> Celery:
         worker_prefetch_multiplier=1,
         beat_schedule={
             "cleanup-old-ingestion-jobs": {
-                "task": "src.pharmaviyum.ai.rag.ingestion.tasks.cleanup_old_jobs",
+                "task": "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.cleanup_old_jobs",
                 "schedule": 86400.0,
             },
         },

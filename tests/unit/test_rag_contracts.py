@@ -1,13 +1,13 @@
 from uuid import uuid4
 
-from src.pharmaviyum.ai.rag.schemas import Chunk, RAGResponse, RetrievalResult
-from src.pharmaviyum.ai.rag.vector_store import PgVectorStore
+from src.pharmaviyum.ai.mortarium_rag.schemas import Chunk, RAGResponse, RetrievalResult
+from src.pharmaviyum.ai.mortarium_rag.vector_store import PgVectorStore
 
 
 def test_canonical_metadata_rejects_invalid_effective_window() -> None:
     import pytest
 
-    from src.pharmaviyum.ai.rag.schemas import CanonicalMetadata
+    from src.pharmaviyum.ai.mortarium_rag.schemas import CanonicalMetadata
 
     with pytest.raises(ValueError, match="effective_to"):
         CanonicalMetadata(

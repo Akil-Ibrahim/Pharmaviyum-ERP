@@ -20,7 +20,7 @@ class TestDocumentPreprocessing:
 
     def test_text_normalization(self):
         """Test text normalization removes extra whitespace."""
-        from src.pharmaviyum.ai.rag.preprocessing import TextNormalizer
+        from src.pharmaviyum.ai.mortarium_rag.preprocessing import TextNormalizer
 
         text = "This   has   extra   spaces\n\n\nand newlines"
         normalized = TextNormalizer.normalize(text)
@@ -31,7 +31,7 @@ class TestDocumentPreprocessing:
 
     def test_pii_redaction_email(self):
         """Test PII redaction removes email addresses."""
-        from src.pharmaviyum.ai.rag.preprocessing import PIIRedactor
+        from src.pharmaviyum.ai.mortarium_rag.preprocessing import PIIRedactor
 
         text = "Contact us at test@example.com for more info"
         redacted, types = PIIRedactor.redact(text)
@@ -42,7 +42,7 @@ class TestDocumentPreprocessing:
 
     def test_pii_redaction_phone(self):
         """Test PII redaction removes phone numbers."""
-        from src.pharmaviyum.ai.rag.preprocessing import PIIRedactor
+        from src.pharmaviyum.ai.mortarium_rag.preprocessing import PIIRedactor
 
         text = "Call +84-123-456-789 for assistance"
         redacted, types = PIIRedactor.redact(text)
@@ -52,9 +52,8 @@ class TestDocumentPreprocessing:
 
     def test_metadata_extraction_language(self):
         """Test metadata extraction detects language."""
-        from src.pharmaviyum.ai.rag.preprocessing import MetadataExtractor
+        from src.pharmaviyum.ai.mortarium_rag.preprocessing import MetadataExtractor
 
-        # Vietnamese text
         text = "Thuốc paracetamol được sử dụng để giảm đau và hạ sốt"
         metadata = MetadataExtractor.extract(text, {})
 
@@ -62,8 +61,8 @@ class TestDocumentPreprocessing:
 
     def test_content_hash_generation(self):
         """Test content hash is generated for deduplication."""
-        from src.pharmaviyum.ai.rag.preprocessing import DocumentPreprocessor
-        from src.pharmaviyum.ai.rag.schemas import Document
+        from src.pharmaviyum.ai.mortarium_rag.preprocessing import DocumentPreprocessor
+        from src.pharmaviyum.ai.mortarium_rag.schemas import Document
 
         preprocessor = DocumentPreprocessor(enable_pii_redaction=False)
         doc = Document(
@@ -78,7 +77,7 @@ class TestDocumentPreprocessing:
 
         processed = preprocessor.process(doc)
         assert "content_hash" in processed.metadata
-        assert len(processed.metadata["content_hash"]) == 64  # SHA-256 hex
+        assert len(processed.metadata["content_hash"]) == 64
 
 
 @pytest.mark.unit
@@ -87,12 +86,11 @@ class TestMedicalChunker:
 
     def test_basic_chunking(self):
         """Test basic text chunking respects token limits."""
-        from src.pharmaviyum.ai.rag.chunking import MedicalChunker
-        from src.pharmaviyum.ai.rag.schemas import Document
+        from src.pharmaviyum.ai.mortarium_rag.chunking import MedicalChunker
+        from src.pharmaviyum.ai.mortarium_rag.schemas import Document
 
         chunker = MedicalChunker(max_tokens=100, overlap=20)
 
-        # Create document with long content
         long_text = "This is a test sentence. " * 50
         doc = Document(
             id="test-1",
@@ -111,8 +109,8 @@ class TestMedicalChunker:
 
     def test_medical_section_detection(self):
         """Test chunking detects medical sections."""
-        from src.pharmaviyum.ai.rag.chunking import MedicalChunker
-        from src.pharmaviyum.ai.rag.schemas import Document
+        from src.pharmaviyum.ai.mortarium_rag.chunking import MedicalChunker
+        from src.pharmaviyum.ai.mortarium_rag.schemas import Document
 
         chunker = MedicalChunker(max_tokens=200, overlap=50)
 
@@ -138,8 +136,6 @@ class TestMedicalChunker:
         )
 
         chunks = chunker.chunk(doc, strategy="medical")
-
-        # Should detect sections and create appropriate chunks
         assert len(chunks) > 0
 
 
@@ -150,9 +146,8 @@ class TestEmbeddings:
     @pytest.mark.asyncio
     async def test_ollama_embeddings(self, mock_redis):
         """Test Ollama embedding generation."""
-        from src.pharmaviyum.ai.rag.embeddings import OllamaEmbeddings
+        from src.pharmaviyum.ai.mortarium_rag.embeddings import OllamaEmbeddings
 
-        # Mock Ollama client
         embeddings = OllamaEmbeddings(
             model="mxbai-embed-large",
             base_url="http://localhost:11434",
@@ -160,7 +155,6 @@ class TestEmbeddings:
             redis_client=mock_redis,
         )
 
-        # Mock the actual API call
         embeddings.client = AsyncMock()
         embeddings.client.embed = AsyncMock(return_value=[[0.1] * 1024])
 
@@ -172,9 +166,8 @@ class TestEmbeddings:
     @pytest.mark.asyncio
     async def test_embedding_cache(self, mock_redis):
         """Test embedding cache prevents redundant API calls."""
-        from src.pharmaviyum.ai.rag.embeddings import CachedEmbeddings
+        from src.pharmaviyum.ai.mortarium_rag.embeddings import CachedEmbeddings
 
-        # Mock base provider
         base_provider = AsyncMock()
         base_provider.embed = AsyncMock(return_value=[0.1] * 1024)
         base_provider.dimensions = 1024
@@ -185,20 +178,15 @@ class TestEmbeddings:
             ttl_seconds=3600,
         )
 
-        # First call - should call base provider
         result1 = await cached.embed("Test text")
         assert len(result1) == 1024
 
-        # Mock Redis to return cached value
         import json
 
         mock_redis.get.return_value = json.dumps([0.1] * 1024)
 
-        # Second call - should use cache
         result2 = await cached.embed("Test text")
         assert len(result2) == 1024
-
-        # Base provider should only be called once
         assert base_provider.embed.call_count == 1
 
 
@@ -209,7 +197,7 @@ class TestQueryTransformer:
     @pytest.mark.asyncio
     async def test_hyde_transformation(self, mock_ollama_llm):
         """Test HyDE generates hypothetical document."""
-        from src.pharmaviyum.ai.rag.query_transformer import QueryTransformer
+        from src.pharmaviyum.ai.mortarium_rag.query_transformer import QueryTransformer
 
         transformer = QueryTransformer(llm=mock_ollama_llm)
 
@@ -223,7 +211,7 @@ class TestQueryTransformer:
     @pytest.mark.asyncio
     async def test_multi_query_generation(self, mock_ollama_llm):
         """Test multi-query generates variations."""
-        from src.pharmaviyum.ai.rag.query_transformer import QueryTransformer
+        from src.pharmaviyum.ai.mortarium_rag.query_transformer import QueryTransformer
 
         transformer = QueryTransformer(llm=mock_ollama_llm)
 

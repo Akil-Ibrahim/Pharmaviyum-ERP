@@ -1,5 +1,6 @@
 import {
   Bell,
+  Bot,
   Boxes,
   ClipboardList,
   FileText,
@@ -43,6 +44,7 @@ export const sidebarData: SidebarData = {
         { title: 'Products', url: '/products', icon: Package },
         { title: 'Inventory', url: '/inventory', icon: Boxes },
         { title: 'Prescriptions', url: '/prescriptions', icon: FileText },
+        { title: 'Mortarium-AI', url: '/chats', icon: Bot },
       ],
     },
     {

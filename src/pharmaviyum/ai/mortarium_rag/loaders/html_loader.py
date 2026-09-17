@@ -13,7 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, AsyncIterator
 
-from src.pharmaviyum.ai.rag.schemas import Document
+from src.pharmaviyum.ai.mortarium_rag.schemas import Document
 from src.pharmaviyum.core.logging import logger
 
 from .base import LoaderConfig
@@ -53,15 +53,11 @@ class HTMLLoader:
                         return "", {}
                     html = await resp.text()
 
-            # Extract main content using readability
             readability_doc = ReadabilityDoc(html)
             title = readability_doc.title()
             content_html = readability_doc.summary()
 
-            # Parse with BeautifulSoup
             soup = BeautifulSoup(content_html, "html.parser")
-
-            # Remove script/style tags
             for tag in soup(["script", "style", "nav", "footer", "header"]):
                 tag.decompose()
 
@@ -89,10 +85,8 @@ class HTMLLoader:
             html = file_path.read_text(encoding="utf-8")
             soup = BeautifulSoup(html, "html.parser")
 
-            # Extract title
             title = soup.title.string if soup.title else file_path.stem
 
-            # Remove unwanted tags
             for tag in soup(["script", "style"]):
                 tag.decompose()
 

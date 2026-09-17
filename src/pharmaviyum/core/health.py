@@ -32,7 +32,9 @@ class HealthCheckResult:
     latency_ms: float = 0.0
     message: Optional[str] = None
     details: dict[str, Any] = field(default_factory=dict)
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
 
 
 @dataclass
@@ -41,7 +43,9 @@ class AggregatedHealth:
 
     status: HealthStatus
     checks: list[HealthCheckResult]
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
     version: str = ""
     environment: str = ""
     uptime_seconds: float = 0.0
@@ -385,7 +389,9 @@ async def check_memory() -> HealthCheckResult:
 
 def register_all_health_checks() -> None:
     """Register all health checks with the health checker."""
-    health_checker.register("database", check_database, critical=True, timeout_seconds=5.0)
+    health_checker.register(
+        "database", check_database, critical=True, timeout_seconds=5.0
+    )
     health_checker.register("redis", check_redis, critical=True, timeout_seconds=3.0)
     health_checker.register(
         "worker_queues", check_worker_queues, critical=False, timeout_seconds=5.0

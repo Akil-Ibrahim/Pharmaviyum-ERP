@@ -132,7 +132,7 @@ services:
     command: >
       sh -c "
         echo '🔄 Starting Celery worker...' &&
-        celery -A src.pharmaviyum.ai.rag.ingestion.celery_app worker 
+        celery -A src.pharmaviyum.ai.mortarium_rag.ingestion.celery_app worker 
           --loglevel=info 
           --concurrency=2 
           --queues=ingestion,maintenance

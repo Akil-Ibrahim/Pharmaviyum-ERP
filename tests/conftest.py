@@ -25,7 +25,7 @@ def mock_mcp_client():
 @pytest.fixture
 def sample_document():
     """Create a sample Document for testing."""
-    from src.pharmaviyum.ai.rag.schemas import Document
+    from src.pharmaviyum.ai.mortarium_rag.schemas import Document
 
     return Document(
         id="test-doc-123",
@@ -41,7 +41,7 @@ def sample_document():
 @pytest.fixture
 def sample_chunk():
     """Create a sample Chunk for testing."""
-    from src.pharmaviyum.ai.rag.schemas import Chunk
+    from src.pharmaviyum.ai.mortarium_rag.schemas import Chunk
 
     return Chunk(
         id="test-chunk-456",
@@ -56,7 +56,7 @@ def sample_chunk():
 @pytest.fixture
 def sample_query_context():
     """Create a tenant-scoped QueryContext for testing."""
-    from src.pharmaviyum.ai.rag.schemas import QueryContext
+    from src.pharmaviyum.ai.mortarium_rag.schemas import QueryContext
 
     return QueryContext(
         pharmacy_id=1,

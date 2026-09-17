@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, AsyncIterator, Literal, Protocol
 
-from src.pharmaviyum.ai.rag.schemas import Document
+from src.pharmaviyum.ai.mortarium_rag.schemas import Document
 
 
 @dataclass

@@ -55,14 +55,20 @@ class PatientRepository(BaseRepository[Patient]):
         return result.scalar_one_or_none()
 
     async def get_by_phone(self, phone: str) -> Optional[Patient]:
-        result = await self.session.execute(select(Patient).where(Patient.phone == phone))
+        result = await self.session.execute(
+            select(Patient).where(Patient.phone == phone)
+        )
         return result.scalar_one_or_none()
 
     async def get_by_email(self, email: str) -> Optional[Patient]:
-        result = await self.session.execute(select(Patient).where(Patient.email == email))
+        result = await self.session.execute(
+            select(Patient).where(Patient.email == email)
+        )
         return result.scalar_one_or_none()
 
-    async def get_by_external_id(self, external_id: str, pos_system: str) -> Optional[Patient]:
+    async def get_by_external_id(
+        self, external_id: str, pos_system: str
+    ) -> Optional[Patient]:
         result = await self.session.execute(
             select(Patient).where(
                 Patient.external_id == external_id,
@@ -134,13 +140,19 @@ class PatientRepository(BaseRepository[Patient]):
 
     async def get_recent_patients(self, limit: int = 10) -> list[Patient]:
         result = await self.session.execute(
-            select(Patient).where(Patient.is_active).order_by(Patient.created_at.desc()).limit(limit)
+            select(Patient)
+            .where(Patient.is_active)
+            .order_by(Patient.created_at.desc())
+            .limit(limit)
         )
         return list(result.scalars().all())
 
     async def get_top_customers(self, limit: int = 10) -> list[Patient]:
         result = await self.session.execute(
-            select(Patient).where(Patient.is_active).order_by(Patient.total_purchases.desc()).limit(limit)
+            select(Patient)
+            .where(Patient.is_active)
+            .order_by(Patient.total_purchases.desc())
+            .limit(limit)
         )
         return list(result.scalars().all())
 
@@ -175,7 +187,9 @@ class PatientRepository(BaseRepository[Patient]):
         await self.session.refresh(patient)
         return patient
 
-    async def record_visit(self, id: int, purchase_amount: int = 0) -> Optional[Patient]:
+    async def record_visit(
+        self, id: int, purchase_amount: int = 0
+    ) -> Optional[Patient]:
         patient = await self.get_by_id(id)
         if not patient:
             return None
@@ -240,9 +254,13 @@ class PatientRepository(BaseRepository[Patient]):
             from datetime import date
 
             today = date.today()
-            age = today.year - patient.date_of_birth.year - (
-                (today.month, today.day)
-                < (patient.date_of_birth.month, patient.date_of_birth.day)
+            age = (
+                today.year
+                - patient.date_of_birth.year
+                - (
+                    (today.month, today.day)
+                    < (patient.date_of_birth.month, patient.date_of_birth.day)
+                )
             )
         return {
             "id": patient.id,

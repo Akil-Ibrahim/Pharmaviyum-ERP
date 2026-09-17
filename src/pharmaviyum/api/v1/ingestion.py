@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
 from src.pharmaviyum.ai.dependencies import get_redis_client
-from src.pharmaviyum.ai.rag.ingestion import ingest_document
+from src.pharmaviyum.ai.mortarium_rag.ingestion import ingest_document
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
@@ -92,7 +92,7 @@ async def upload_and_ingest_document(
         "original_filename": file.filename,
     }
 
-    from src.pharmaviyum.ai.rag.ingestion import IngestionProgressTracker
+    from src.pharmaviyum.ai.mortarium_rag.ingestion import IngestionProgressTracker
 
     tracker = IngestionProgressTracker(redis)
     await tracker.create_job(job_id, temp_path, total_documents=1, metadata=config)
@@ -130,7 +130,7 @@ async def ingest_from_url(
         "language": request.language,
     }
 
-    from src.pharmaviyum.ai.rag.ingestion import IngestionProgressTracker
+    from src.pharmaviyum.ai.mortarium_rag.ingestion import IngestionProgressTracker
 
     tracker = IngestionProgressTracker(redis)
     await tracker.create_job(job_id, request.source, total_documents=1, metadata=config)
@@ -150,7 +150,7 @@ async def get_job_status(
     redis: Redis = Depends(get_redis_client),
 ):
     """Get ingestion status for an administrator."""
-    from src.pharmaviyum.ai.rag.ingestion import IngestionProgressTracker
+    from src.pharmaviyum.ai.mortarium_rag.ingestion import IngestionProgressTracker
 
     tracker = IngestionProgressTracker(redis)
     job_data = await tracker.get_job(job_id)
@@ -167,7 +167,7 @@ async def list_jobs(
     redis: Redis = Depends(get_redis_client),
 ):
     """List ingestion jobs for an administrator."""
-    from src.pharmaviyum.ai.rag.ingestion import IngestionProgressTracker
+    from src.pharmaviyum.ai.mortarium_rag.ingestion import IngestionProgressTracker
 
     limit = min(max(limit, 1), 100)
     tracker = IngestionProgressTracker(redis)

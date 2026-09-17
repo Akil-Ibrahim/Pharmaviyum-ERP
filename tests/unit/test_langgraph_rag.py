@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.pharmaviyum.ai.rag.graph import LangGraphRAG
+from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
 
 
 @pytest.fixture

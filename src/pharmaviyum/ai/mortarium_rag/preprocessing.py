@@ -15,7 +15,7 @@ import re
 import unicodedata
 from typing import Any
 
-from src.pharmaviyum.ai.rag.schemas import Document
+from src.pharmaviyum.ai.mortarium_rag.schemas import Document
 from src.pharmaviyum.core.logging import logger
 
 
