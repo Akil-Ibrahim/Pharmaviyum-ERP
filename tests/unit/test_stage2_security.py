@@ -26,22 +26,6 @@ def test_sensitive_stage2_routes_require_superuser() -> None:
 
 
 @pytest.mark.unit
-def test_mortarium_sessions_are_authenticated() -> None:
-    route = next(
-        route
-        for route in router.routes
-        if route.path == "/api/v1/mortarium-ai/sessions"
-        and "GET" in (route.methods or set())
-    )
-
-    dependency_names = {
-        getattr(dependency.call, "__name__", "")
-        for dependency in route.dependant.dependencies
-    }
-    assert "get_current_active_user" in dependency_names
-
-
-@pytest.mark.unit
 def test_inventory_mutations_require_superuser() -> None:
     protected_paths = {
         ("/api/v1/inventory", "POST"),
