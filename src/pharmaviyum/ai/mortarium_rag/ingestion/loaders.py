@@ -1,15 +1,3 @@
-"""
-Document Loaders for RAG Ingestion Pipeline.
-
-Best practice 2026:
-- Multi-format support (PDF, DOCX, HTML, plain text)
-- Metadata extraction (source, author, date, language)
-- Async loading for non-blocking I/O
-- Error handling with graceful degradation
-"""
-
-from __future__ import annotations
-
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -17,14 +5,13 @@ from typing import Any, AsyncIterator
 from uuid import uuid4
 
 import aiofiles
+from bs4 import BeautifulSoup
 
 from src.pharmaviyum.core.logging import logger
 
 
 @dataclass
 class LoadedDocument:
-    """Document loaded from a source with metadata."""
-
     id: str
     content: str
     source: str
@@ -54,7 +41,6 @@ class DocumentLoader:
             raise FileNotFoundError(f"File not found: {file_path}")
 
         extension = file_path.suffix.lower()
-
         try:
             if extension == ".pdf":
                 return await self._load_pdf(file_path, doc_type, language)
@@ -80,19 +66,12 @@ class DocumentLoader:
         directory = Path(directory)
 
         if not directory.is_dir():
-            raise NotADirectoryError(f"Not a directory: {directory}")
+            raise NotADirectoryError(f"Directory not found: {directory}")
 
-        if extensions is None:
-            extensions = [".pdf", ".docx", ".html", ".htm", ".txt", ".md"]
-
-        for file_path in directory.rglob("*"):
-            if file_path.suffix.lower() in extensions:
-                try:
-                    doc = await self.load_file(file_path, doc_type, language)
-                    yield doc
-                except Exception as e:
-                    logger.warning(f"Skipping file {file_path}: {e}")
-                    continue
+        supported_extensions = extensions or [".pdf", ".docx", ".html", ".htm", ".txt", ".md"]
+        for file_path in sorted(directory.iterdir()):
+            if file_path.is_file() and file_path.suffix.lower() in supported_extensions:
+                yield await self.load_file(file_path, doc_type, language)
 
     async def _load_pdf(
         self,
@@ -100,13 +79,11 @@ class DocumentLoader:
         doc_type: str,
         language: str,
     ) -> LoadedDocument:
-        """Load PDF with text extraction."""
         try:
             import pypdf
 
             pdf_reader = pypdf.PdfReader(file_path)
             text_parts: list[str] = []
-
             for page in pdf_reader.pages:
                 page_text = page.extract_text()
                 if page_text:
@@ -124,7 +101,6 @@ class DocumentLoader:
                 f"Loaded PDF: {file_path.name} ({len(content)} chars, "
                 f"{metadata['page_count']} pages)"
             )
-
             return LoadedDocument(
                 id=str(uuid4()),
                 content=content,
@@ -142,7 +118,6 @@ class DocumentLoader:
         doc_type: str,
         language: str,
     ) -> LoadedDocument:
-        """Load DOCX with text extraction."""
         try:
             from docx import Document as DocxDocument
 
@@ -157,15 +132,6 @@ class DocumentLoader:
                 "file_name": file_path.name,
                 "file_size_bytes": file_path.stat().st_size,
                 "paragraph_count": len(doc.paragraphs),
-                "core_properties": {
-                    "author": doc.core_properties.author,
-                    "title": doc.core_properties.title,
-                    "created": (
-                        doc.core_properties.created.isoformat()
-                        if doc.core_properties.created
-                        else None
-                    ),
-                },
             }
 
             logger.info(f"Loaded DOCX: {file_path.name} ({len(content)} chars)")
@@ -186,10 +152,7 @@ class DocumentLoader:
         doc_type: str,
         language: str,
     ) -> LoadedDocument:
-        """Load HTML with tag stripping."""
         try:
-            from bs4 import BeautifulSoup
-
             async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
                 html_content = await f.read()
 
@@ -223,7 +186,6 @@ class DocumentLoader:
         doc_type: str,
         language: str,
     ) -> LoadedDocument:
-        """Load plain text or markdown file."""
         async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
             content = await f.read()
 
