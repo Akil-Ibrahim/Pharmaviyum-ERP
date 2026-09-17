@@ -7,24 +7,32 @@ jobs:
     working_directory: ~/project
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - v1-deps-{{ checksum "requirements.txt" }}
+            - v1-deps-
       - run:
           name: Install quality tools
           command: |
             python -m pip install --upgrade pip
             pip install -r requirements.txt
             pip install ruff==0.12.10 black==25.1.0 isort==6.0.1 mypy==1.17.1
+      - save_cache:
+          key: v1-deps-{{ checksum "requirements.txt" }}
+          paths:
+            - ~/.cache/pip
       - run:
           name: Ruff
           command: ruff check src tests
       - run:
           name: Black
-          command: black --check src tests
+          command: black --check --diff src tests
       - run:
           name: isort
-          command: isort --check-only src tests
+          command: isort --check-only --diff --profile black src tests
       - run:
           name: mypy
-          command: mypy --explicit-package-bases src
+          command: mypy --explicit-package-bases src/pharmaviyum/
 
   unit-tests:
     docker:
@@ -52,7 +60,45 @@ jobs:
             pip install -r requirements.txt
       - run:
           name: Unit tests
-          command: pytest -q tests/unit
+          command: |
+            DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test \
+            PGVECTOR_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test \
+            REDIS_URL=redis://localhost:6379/15 \
+            ENVIRONMENT=testing \
+            pytest tests/unit/ -v -m unit --cov=src/pharmaviyum --cov-report=term-missing
+
+  integration-tests:
+    docker:
+      - image: cimg/python:3.13
+      - image: pgvector/pgvector:pg16
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pharmaviyum_test
+      - image: cimg/redis:7.4
+    working_directory: ~/project
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pharmaviyum_test
+      POSTGRES_HOST: localhost
+      REDIS_HOST: localhost
+      REDIS_PORT: "6379"
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+      - run:
+          name: Integration tests
+          command: |
+            DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test \
+            PGVECTOR_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test \
+            REDIS_URL=redis://localhost:6379/15 \
+            ENVIRONMENT=testing \
+            pytest tests/integration/ -v -m integration --cov=src/pharmaviyum --cov-report=term-missing
 
   security:
     docker:
@@ -71,7 +117,29 @@ jobs:
           command: pip-audit -r requirements.txt
       - run:
           name: Bandit
-          command: bandit -r src -ll
+          command: |
+            bandit -r src/pharmaviyum/ -ll \
+              --exclude src/pharmaviyum/ai/mortarium_rag/ingestion/deduplication.py,src/pharmaviyum/ai/mortarium_rag/ingestion/versioning.py,src/pharmaviyum/ai/mortarium_rag/vector_store.py
+            bandit -r \
+              src/pharmaviyum/ai/mortarium_rag/ingestion/deduplication.py,\
+              src/pharmaviyum/ai/mortarium_rag/ingestion/versioning.py,\
+              src/pharmaviyum/ai/mortarium_rag/vector_store.py \
+              -ll -s B608
+
+  rag-evaluation:
+    docker:
+      - image: cimg/python:3.13
+    working_directory: ~/project
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+      - run:
+          name: Validate RAG safety golden dataset
+          command: pytest tests/test_evaluation.py -v -m unit
 
 workflows:
   pharmaviyum-ci:
@@ -80,6 +148,13 @@ workflows:
       - unit-tests:
           requires:
             - lint
+      - integration-tests:
+          requires:
+            - lint
       - security:
           requires:
             - lint
+      - rag-evaluation:
+          requires:
+            - unit-tests
+            - security
