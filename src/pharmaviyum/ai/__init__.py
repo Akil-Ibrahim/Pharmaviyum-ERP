@@ -78,7 +78,7 @@ from .observability import (
 )
 
 # RAG Pipeline
-from .rag import (
+from .mortarium_rag import (
     Chunk,
     Document,
     DocumentPreprocessor,
