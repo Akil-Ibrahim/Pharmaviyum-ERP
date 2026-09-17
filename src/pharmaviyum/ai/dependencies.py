@@ -19,14 +19,16 @@ from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
 from redis.asyncio import Redis
 
-from src.pharmaviyum.ai.agents.evaluator import AgentEvaluator
+from src.pharmaviyum.ai.agents.checkpointer import AgentCheckpointer
 from src.pharmaviyum.ai.agents.pharmacist_agent import PharmacistAgent
-from src.pharmaviyum.ai.cache.prompt_cache import PromptCache
 from src.pharmaviyum.ai.config import settings
+from src.pharmaviyum.ai.evaluation.evaluator import AgentEvaluator
 from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+from src.pharmaviyum.ai.harness.cache import PromptCache
+from src.pharmaviyum.ai.harness.guardrails import MedicalGuardrails
+from src.pharmaviyum.ai.harness.memory import DialogueMemory
 from src.pharmaviyum.ai.harness.model_router import ModelRouter
 from src.pharmaviyum.ai.mcp.client import MCPClient
-from src.pharmaviyum.ai.memory.dialogue_memory import DialogueMemory
 from src.pharmaviyum.ai.mortarium_rag.embeddings import EmbeddingsFactory
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
 from src.pharmaviyum.ai.mortarium_rag.ingestion.orchestrator import (
@@ -34,8 +36,6 @@ from src.pharmaviyum.ai.mortarium_rag.ingestion.orchestrator import (
 )
 from src.pharmaviyum.ai.mortarium_rag.vector_store import PgVectorStore
 from src.pharmaviyum.ai.observability.tracer import ObservabilityTracer, tracer
-from src.pharmaviyum.ai.safety.guardrails import MedicalGuardrails
-from src.pharmaviyum.ai.state.checkpointer import AgentCheckpointer
 from src.pharmaviyum.core.logging import logger
 
 mcp_client = MCPClient()
@@ -235,3 +235,19 @@ class AIComponents:
 
 
 ai_components = AIComponents()
+
+# Backwards-compatible dependency names used by the application layer.
+ai_container = ai_components
+
+
+def get_agent_harness() -> AgentHarness:
+    if ai_components.agent_harness is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI components are not initialized",
+        )
+    return ai_components.agent_harness
+
+
+def get_redis_client(request: Request) -> Redis:
+    return get_redis(request)
