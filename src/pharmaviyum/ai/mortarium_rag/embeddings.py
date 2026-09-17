@@ -195,4 +195,6 @@ class EmbeddingsFactory:
         else:
             raise ValueError(f"Unknown embeddings provider: {provider}")
 
-        return CachedEmbeddings(base, redis_client) if use_cache and redis_client else base
+        return (
+            CachedEmbeddings(base, redis_client) if use_cache and redis_client else base
+        )
