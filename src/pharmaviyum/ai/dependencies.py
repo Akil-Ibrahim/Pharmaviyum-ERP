@@ -31,9 +31,7 @@ from src.pharmaviyum.ai.harness.model_router import ModelRouter
 from src.pharmaviyum.ai.mcp.client import MCPClient
 from src.pharmaviyum.ai.mortarium_rag.embeddings import EmbeddingsFactory
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
-from src.pharmaviyum.ai.mortarium_rag.ingestion.orchestrator import (
-    IngestionOrchestrator,
-)
+from src.pharmaviyum.ai.mortarium_rag.ingestion.orchestrator import IngestionOrchestrator
 from src.pharmaviyum.ai.mortarium_rag.vector_store import PgVectorStore
 from src.pharmaviyum.ai.observability.tracer import ObservabilityTracer, tracer
 from src.pharmaviyum.core.logging import logger
@@ -94,27 +92,19 @@ def _build_embeddings_provider() -> str:
 
 @lru_cache(maxsize=1)
 def get_llm_fast() -> BaseChatModel:
-    model = (
-        settings.groq.fast_model
-        if settings.use_cloud_llm
-        else settings.ollama.fast_model
-    )
+    model = settings.groq.fast_model if settings.use_cloud_llm else settings.ollama.fast_model
     return _build_llm(model)
 
 
 @lru_cache(maxsize=1)
 def get_llm_main() -> BaseChatModel:
-    model = (
-        settings.groq.model if settings.use_cloud_llm else settings.ollama.main_model
-    )
+    model = settings.groq.model if settings.use_cloud_llm else settings.ollama.main_model
     return _build_llm(model)
 
 
 @lru_cache(maxsize=1)
 def get_llm_complex() -> BaseChatModel:
-    model = (
-        settings.groq.model if settings.use_cloud_llm else settings.ollama.complex_model
-    )
+    model = settings.groq.model if settings.use_cloud_llm else settings.ollama.complex_model
     return _build_llm(model)
 
 
@@ -154,9 +144,7 @@ class AIComponents:
                 if settings.use_cloud_llm and settings.openai.api_key
                 else None
             )
-            embedding_model = (
-                settings.openai.embedding_model if settings.use_cloud_llm else None
-            )
+            embedding_model = settings.openai.embedding_model if settings.use_cloud_llm else None
             embedding_dimensions = settings.pgvector.vector_dimensions
 
             embeddings = EmbeddingsFactory.create(
