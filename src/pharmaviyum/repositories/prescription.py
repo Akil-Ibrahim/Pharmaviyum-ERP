@@ -355,7 +355,7 @@ class PrescriptionRepository(BaseRepository[Prescription]):
 
     async def get_ai_context(self, prescription_id: int) -> Optional[dict]:
         """
-        Get prescription context optimized for Mortarium AI
+        Get prescription context optimized for the current AI/RAG layer.
 
         Args:
             prescription_id: Prescription ID
