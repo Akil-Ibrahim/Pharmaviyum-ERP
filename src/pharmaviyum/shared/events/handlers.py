@@ -1,42 +1,18 @@
-"""
-Global event handler registration.
+"""Cross-module event handler registration.
 
-This module imports all module-specific event handlers to register them
-with the event bus. This is the single place where cross-module
-event subscriptions are wired up.
+The current modular event bus does not expose legacy per-domain handler
+modules under ``pharmaviyum.modules``. Keep registration explicit and
+side-effect free until concrete handlers are introduced.
 """
 
 from ..core.logging import logger
 
 
 def register_all_handlers() -> None:
-    """Register all event handlers from all modules."""
-    # Import module handlers to trigger registration
-    # Each module registers its handlers at import time
-    try:
-        from ...modules.patients import events as patient_events  # noqa: F401
+    """Register currently available domain event handlers.
 
-        logger.info("Patient event handlers registered")
-    except ImportError:
-        logger.warning("Patient module not available")
-
-    try:
-        from ...modules.prescriptions import events as prescription_events  # noqa: F401
-
-        logger.info("Prescription event handlers registered")
-    except ImportError:
-        logger.warning("Prescription module not available")
-
-    try:
-        from ...modules.orders import events as order_events  # noqa: F401
-
-        logger.info("Order event handlers registered")
-    except ImportError:
-        logger.warning("Order module not available")
-
-    try:
-        from ...modules.notifications import events as notification_events  # noqa: F401
-
-        logger.info("Notification event handlers registered")
-    except ImportError:
-        logger.warning("Notification module not available")
+    Domain handlers are intentionally registered by their owning service.
+    This function remains as the application-level hook for future handlers
+    without importing modules that are not part of the current architecture.
+    """
+    logger.debug("No application-level event handlers require registration")
