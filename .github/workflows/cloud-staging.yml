@@ -57,3 +57,5 @@ jobs:
           FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
           FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
         run: uv run fastapi deploy
+
+      # Force a fresh hosted-runner allocation after infrastructure-level failures.
