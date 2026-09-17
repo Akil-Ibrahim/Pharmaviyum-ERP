@@ -55,9 +55,7 @@ def _require_pharmacy_id(config: dict[str, Any]) -> int:
         or isinstance(pharmacy_id, bool)
         or pharmacy_id <= 0
     ):
-        raise ValueError(
-            "Ingestion requires an authorized positive integer pharmacy_id"
-        )
+        raise ValueError("Ingestion requires an authorized positive integer pharmacy_id")
     return pharmacy_id
 
 
@@ -214,7 +212,10 @@ def ingest_document(
         return {"success": False, "error": str(exc), "source": source}
 
 
-@celery_app.task(bind=True, name="src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.ingest_batch")
+@celery_app.task(
+    bind=True,
+    name="src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.ingest_batch",
+)
 def ingest_batch(
     self,
     sources: list[dict[str, str]],
@@ -268,7 +269,9 @@ def ingest_batch(
         pass
 
 
-@celery_app.task(name="src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.cleanup_old_jobs")
+@celery_app.task(
+    name="src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.cleanup_old_jobs"
+)
 def cleanup_old_jobs() -> dict[str, Any]:
     """Periodic task: clean old ingestion jobs from Redis."""
     loop = get_event_loop()
