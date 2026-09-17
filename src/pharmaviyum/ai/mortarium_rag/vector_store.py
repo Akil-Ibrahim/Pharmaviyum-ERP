@@ -221,7 +221,9 @@ class PgVectorStore:
                 scores[chunk_id] = scores.get(chunk_id, 0.0) + 1.0 / (k + rank + 1)
                 chunk_map[chunk_id] = result
 
-        ordered_ids = sorted(scores, key=lambda chunk_id: scores[chunk_id], reverse=True)
+        ordered_ids = sorted(
+            scores, key=lambda chunk_id: scores[chunk_id], reverse=True
+        )
         return [
             RetrievalResult(
                 chunk=chunk_map[cid].chunk,
