@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-from typing import Protocol
+from typing import Any, Protocol, cast
 
 import numpy as np
 from langchain_openai import OpenAIEmbeddings
@@ -29,26 +29,26 @@ class OllamaEmbeddings:
         model: str = "mxbai-embed-large",
         endpoint: str = "http://localhost:11434",
         dimensions: int = 1024,
-    ):
+    ) -> None:
         self.model = model
         self.endpoint = endpoint
         self._dimensions = dimensions
-        self._client = None
+        self._client: Any = None
 
-    async def _get_client(self):
+    async def _get_client(self) -> Any:
         if self._client is None:
             try:
                 import ollama
 
                 self._client = ollama.AsyncClient(host=self.endpoint)
-            except ImportError:
-                raise ImportError("Install ollama: pip install ollama")
+            except ImportError as exc:
+                raise ImportError("Install ollama: pip install ollama") from exc
         return self._client
 
     async def embed(self, text: str) -> list[float]:
         client = await self._get_client()
-        response = await client.embeddings(model=self.model, prompt=text)
-        return response["embedding"]
+        response: Any = await client.embeddings(model=self.model, prompt=text)
+        return cast(list[float], response["embedding"])
 
     async def embed_batch(
         self, texts: list[str], batch_size: int = 32
@@ -74,7 +74,7 @@ class OpenAIEmbeddingsProvider:
         model: str = "text-embedding-3-small",
         dimensions: int = 1024,
         batch_size: int = 32,
-    ):
+    ) -> None:
         self.model = model
         self._dimensions = dimensions
         self._batch_size = batch_size
@@ -107,10 +107,10 @@ class CachedEmbeddings:
     def __init__(
         self,
         provider: EmbeddingsProvider,
-        redis_client,
+        redis_client: Any,
         ttl: int = 86400 * 30,
         cache_namespace: str = "v2",
-    ):
+    ) -> None:
         self.provider = provider
         self.redis = redis_client
         self.ttl = ttl
@@ -175,13 +175,13 @@ class EmbeddingsFactory:
     def create(
         provider: str = "ollama",
         use_cache: bool = True,
-        redis_client=None,
+        redis_client: Any = None,
         api_key: str | None = None,
         model: str | None = None,
         dimensions: int = 1024,
     ) -> EmbeddingsProvider:
         if provider == "ollama":
-            base = OllamaEmbeddings(dimensions=dimensions)
+            base: EmbeddingsProvider = OllamaEmbeddings(dimensions=dimensions)
         elif provider == "openai":
             if not api_key:
                 raise RuntimeError(
@@ -195,6 +195,4 @@ class EmbeddingsFactory:
         else:
             raise ValueError(f"Unknown embeddings provider: {provider}")
 
-        return (
-            CachedEmbeddings(base, redis_client) if use_cache and redis_client else base
-        )
+        return CachedEmbeddings(base, redis_client) if use_cache and redis_client else base
