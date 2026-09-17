@@ -9,6 +9,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import text
+from sqlalchemy.engine import Row
 
 from src.pharmaviyum.core.logging import logger
 
@@ -23,11 +24,11 @@ class PgVectorStore:
 
     def __init__(
         self,
-        session_factory,
+        session_factory: Any,
         table_name: str = "document_chunks",
         dimensions: int = 1024,
         reranker: RerankerPort | None = None,
-    ):
+    ) -> None:
         if not self._IDENTIFIER_RE.fullmatch(table_name):
             raise ValueError("table_name must be a simple SQL identifier")
         if dimensions <= 0:
@@ -219,13 +220,15 @@ class PgVectorStore:
                 chunk_id = str(result.chunk.id)
                 scores[chunk_id] = scores.get(chunk_id, 0.0) + 1.0 / (k + rank + 1)
                 chunk_map[chunk_id] = result
+
+        ordered_ids = sorted(scores, key=lambda chunk_id: scores[chunk_id], reverse=True)
         return [
             RetrievalResult(
                 chunk=chunk_map[cid].chunk,
                 score=min(1.0, scores[cid]),
                 retrieval_method="hybrid",
             )
-            for cid in sorted(scores, key=scores.get, reverse=True)
+            for cid in ordered_ids
         ]
 
     def _build_filter_clause(
@@ -267,19 +270,19 @@ class PgVectorStore:
         """Fail closed if an ingested chunk has no canonical tenant metadata."""
         CanonicalMetadata.model_validate(metadata)
 
-    def _row_to_chunk(self, row) -> Chunk:
+    def _row_to_chunk(self, row: Row[Any]) -> Chunk:
         return Chunk(
-            id=UUID(row.id),
-            document_id=UUID(row.document_id),
-            content=row.content,
-            chunk_index=row.chunk_index,
+            id=UUID(str(row.id)),
+            document_id=UUID(str(row.document_id)),
+            content=str(row.content),
+            chunk_index=int(row.chunk_index),
             chunk_type=row.chunk_type,
             metadata=(
                 json.loads(row.metadata)
                 if isinstance(row.metadata, str)
-                else row.metadata
+                else dict(row.metadata)
             ),
-            token_count=row.token_count,
+            token_count=int(row.token_count),
         )
 
     def _serialize_embedding(self, embedding: list[float]) -> str:
