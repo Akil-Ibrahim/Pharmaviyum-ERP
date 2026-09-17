@@ -10,6 +10,7 @@ Best practice 2026:
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any, Callable
 
 from tenacity import (
@@ -49,7 +50,7 @@ def node_retry(
             retry=retry_if_exception_type(
                 (NodeExecutionError, asyncio.TimeoutError, ConnectionError)
             ),
-            before_sleep=before_sleep_log(logger, logger.WARNING),
+            before_sleep=before_sleep_log(logger, logging.WARNING),
             reraise=True,
         )(func)
 
