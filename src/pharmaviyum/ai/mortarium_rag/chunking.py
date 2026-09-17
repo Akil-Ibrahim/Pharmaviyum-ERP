@@ -226,7 +226,8 @@ class MedicalChunker:
         )
 
     def _get_overlap(self, sentences: list[str]) -> tuple[list[str], int]:
-        overlap_sentences, overlap_tokens = [], 0
+        overlap_sentences: list[str] = []
+        overlap_tokens = 0
         for s in reversed(sentences):
             t = self._count_tokens(s)
             if overlap_tokens + t > self.overlap:
