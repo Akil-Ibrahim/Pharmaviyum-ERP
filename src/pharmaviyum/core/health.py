@@ -195,6 +195,7 @@ health_checker = HealthChecker()
 async def check_database() -> HealthCheckResult:
     """Check PostgreSQL database connectivity."""
     from sqlalchemy import text
+
     from src.pharmaviyum.core.database import engine
 
     try:
@@ -228,6 +229,7 @@ async def check_database() -> HealthCheckResult:
 async def check_redis() -> HealthCheckResult:
     """Check Redis connectivity."""
     from redis import asyncio as aioredis
+
     from src.pharmaviyum.core.config import settings
 
     redis = None
