@@ -92,7 +92,9 @@ def _build_embeddings_provider() -> str:
 
 @lru_cache(maxsize=1)
 def get_llm_fast() -> BaseChatModel:
-    model = settings.groq.fast_model if settings.use_cloud_llm else settings.ollama.fast_model
+    model = (
+        settings.groq.fast_model if settings.use_cloud_llm else settings.ollama.fast_model
+    )
     return _build_llm(model)
 
 
@@ -104,7 +106,9 @@ def get_llm_main() -> BaseChatModel:
 
 @lru_cache(maxsize=1)
 def get_llm_complex() -> BaseChatModel:
-    model = settings.groq.model if settings.use_cloud_llm else settings.ollama.complex_model
+    model = (
+        settings.groq.model if settings.use_cloud_llm else settings.ollama.complex_model
+    )
     return _build_llm(model)
 
 
@@ -144,7 +148,9 @@ class AIComponents:
                 if settings.use_cloud_llm and settings.openai.api_key
                 else None
             )
-            embedding_model = settings.openai.embedding_model if settings.use_cloud_llm else None
+            embedding_model = (
+                settings.openai.embedding_model if settings.use_cloud_llm else None
+            )
             embedding_dimensions = settings.pgvector.vector_dimensions
 
             embeddings = EmbeddingsFactory.create(
