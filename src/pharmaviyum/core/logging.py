@@ -13,11 +13,11 @@ from src.pharmaviyum.core.config import settings
 
 
 class JSONFormatter(logging.Formatter):
-    """JSON formatter for structured logging"""
+    """JSON formatter for structured logging."""
 
     def format(self, record: logging.LogRecord) -> str:
-        """Format log record as JSON"""
-        log_data = {
+        """Format log record as JSON."""
+        log_data: dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "level": record.levelname,
             "logger": record.name,
@@ -27,27 +27,21 @@ class JSONFormatter(logging.Formatter):
             "line": record.lineno,
         }
 
-        # Add correlation ID if available
         if hasattr(record, "correlation_id"):
             log_data["correlation_id"] = record.correlation_id
-
-        # Add user ID if available
         if hasattr(record, "user_id"):
             log_data["user_id"] = record.user_id
-
-        # Add request ID if available
         if hasattr(record, "request_id"):
             log_data["request_id"] = record.request_id
-
-        # Add extra fields
         if hasattr(record, "extra_data") and record.extra_data:
             log_data["extra"] = record.extra_data
 
-        # Add exception info
         if record.exc_info:
+            exception_type = record.exc_info[0] or Exception
+            exception_value = record.exc_info[1]
             log_data["exception"] = {
-                "type": record.exc_info[0].__name__,
-                "message": str(record.exc_info[1]),
+                "type": exception_type.__name__,
+                "message": str(exception_value),
                 "traceback": self.formatException(record.exc_info),
             }
 
@@ -55,48 +49,40 @@ class JSONFormatter(logging.Formatter):
 
 
 def setup_logging() -> None:
-    """Setup structured logging for the application"""
-    # Remove existing handlers
+    """Setup structured logging for the application."""
     root_logger = logging.getLogger()
     root_logger.handlers.clear()
 
-    # Create console handler with JSON formatter
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(JSONFormatter())
 
-    # Configure root logger
     root_logger.setLevel(getattr(logging, settings.LOG_LEVEL))
     root_logger.addHandler(handler)
 
-    # Reduce noise from third-party loggers
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 def get_logger(name: str) -> logging.Logger:
-    """Get a logger with the given name"""
+    """Get a logger with the given name."""
     return logging.getLogger(name)
 
 
 class LoggerAdapter(logging.LoggerAdapter):
-    """Logger adapter for adding context (correlation_id, user_id)"""
+    """Logger adapter for adding context (correlation_id, user_id)."""
 
     def process(self, msg: str, kwargs: Any) -> tuple[str, Any]:
-        """Add context to log messages"""
-        extra = kwargs.get("extra", {})
+        """Add context to log messages."""
+        extra = dict(kwargs.get("extra") or {})
+        context = dict(self.extra or {})
 
-        # Add correlation ID from context
-        if "correlation_id" in self.extra:
-            extra["correlation_id"] = self.extra["correlation_id"]
-
-        # Add user ID from context
-        if "user_id" in self.extra:
-            extra["user_id"] = self.extra["user_id"]
+        for key in ("correlation_id", "user_id"):
+            if key in context:
+                extra[key] = context[key]
 
         kwargs["extra"] = extra
         return msg, kwargs
 
 
-# Initialize default logger
 logger = get_logger("pharmaviyum")
