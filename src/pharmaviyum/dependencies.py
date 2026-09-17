@@ -1,16 +1,18 @@
-"""FastAPI dependency injection"""
+"""FastAPI dependency injection helpers."""
 
-from typing import Generator
+from collections.abc import AsyncGenerator
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.pharmaviyum.db.session import SessionLocal
+from src.pharmaviyum.db.session import AsyncSessionLocal
 
 
-def get_db() -> Generator[Session, None, None]:
-    """Get database session"""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Provide an async SQLAlchemy session for a request."""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
