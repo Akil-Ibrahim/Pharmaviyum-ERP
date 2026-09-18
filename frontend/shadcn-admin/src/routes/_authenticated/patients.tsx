@@ -13,6 +13,13 @@ function PatientsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const metrics = {
+    total: patients.length,
+    active: patients.filter((patient) => patient.is_active).length,
+    revenue: patients.reduce((sum, patient) => sum + patient.total_purchases, 0),
+    loyalty: patients.filter((patient) => patient.loyalty_tier !== 'standard').length,
+  }
+
   useEffect(() => {
     apiFetch<Patient[]>('/api/v1/patients/?page=1&page_size=100').then(setPatients).catch((err: Error) => setError(err.message)).finally(() => setLoading(false))
   }, [])
@@ -27,11 +34,17 @@ function PatientsPage() {
   return (
     <div className='space-y-6 p-6'>
       <div><h1 className='text-2xl font-bold tracking-tight'>Patients</h1><p className='text-muted-foreground'>Pharmacy customer profiles, prescriptions, OTC purchases, cosmetics, vitamins, devices, and receipts.</p></div>
+      <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
+        <MetricCard label='Total patients' value={metrics.total.toString()} detail='Registered pharmacy customers' tone='blue' />
+        <MetricCard label='Active patients' value={metrics.active.toString()} detail='Currently active profiles' tone='green' />
+        <MetricCard label='Purchase value' value={formatCurrency(metrics.revenue)} detail='Synthetic demo portfolio' tone='yellow' />
+        <MetricCard label='Loyalty members' value={metrics.loyalty.toString()} detail='Non-standard loyalty tier' tone='red' />
+      </div>
       {error && <div className='rounded-lg border p-4 text-sm'>{error}</div>}
       <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
         {patients.map((patient) => (
-          <button key={patient.id} type='button' onClick={() => openPatient(patient.id)} className='rounded-xl border p-4 text-left transition hover:bg-muted/50'>
-            <div className='flex items-start justify-between gap-3'><div><h2 className='font-semibold'>{patient.full_name}</h2><p className='text-sm text-muted-foreground'>{patient.city}, {patient.country}</p></div><span className='rounded-full border px-2 py-1 text-xs'>{patient.customer_category}</span></div>
+          <button key={patient.id} type='button' onClick={() => openPatient(patient.id)} className='rounded-xl border border-border/70 bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md'>
+            <div className='flex items-start justify-between gap-3'><div><h2 className='font-semibold'>{patient.full_name}</h2><p className='text-sm text-muted-foreground'>{patient.city}, {patient.country}</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${categoryTone(patient.customer_category)}`}>{patient.customer_category}</span></div>
             <div className='mt-4 grid grid-cols-3 gap-2 text-sm'><div><p className='text-muted-foreground'>Visits</p><p>{patient.visit_count}</p></div><div><p className='text-muted-foreground'>Purchases</p><p>${patient.total_purchases.toFixed(2)}</p></div><div><p className='text-muted-foreground'>Tier</p><p>{patient.loyalty_tier}</p></div></div>
           </button>
         ))}
