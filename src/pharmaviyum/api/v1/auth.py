@@ -129,7 +129,30 @@ async def token(
                 detail="Invalid credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        subject = admin_user
+
+        # Bootstrap the configured admin into the canonical users table on
+        # first successful login. The password is never stored in plaintext.
+        admin_result = await db.execute(
+            select(User).where(User.username == admin_user)
+        )
+        admin = admin_result.scalar_one_or_none()
+        if admin is None:
+            admin_email = f"{admin_user}@pharmaviyum.local"
+            admin = User(
+                email=admin_email,
+                username=admin_user,
+                hashed_password=pwd_context.hash(admin_pass[:72]),
+                is_active=True,
+                is_superuser=True,
+            )
+            db.add(admin)
+            await db.commit()
+            await db.refresh(admin)
+        elif not admin.is_superuser:
+            admin.is_superuser = True
+            await db.commit()
+
+        subject = admin.username
 
     access_token = create_access_token(subject=subject)
     return {"access_token": access_token, "token_type": "bearer"}
