@@ -65,7 +65,7 @@ async def list_patients(
 @router.get("/statistics")
 async def get_patient_statistics(
     service: PatientService = Depends(get_patient_service),
-    _: object = Depends(get_current_active_superuser),
+    _: object = Depends(get_current_active_user),
 ):
     return await service.get_statistics()
 
