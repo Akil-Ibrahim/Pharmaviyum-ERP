@@ -25,10 +25,13 @@ FROM oven/bun:1 AS frontend-builder
 
 WORKDIR /frontend
 
-COPY frontend/package.json ./
+# The production frontend lives in the shadcn-admin workspace.
+# Build that application explicitly instead of the legacy frontend/package.json
+# at the repository root.
+COPY frontend/shadcn-admin/package.json ./
 RUN bun install
 
-COPY frontend/ ./
+COPY frontend/shadcn-admin/ ./
 RUN bun run build
 
 FROM python:3.13-slim AS production
@@ -55,7 +58,7 @@ COPY --from=python-builder /install /usr/local
 COPY src/ ./src/
 COPY alembic/ ./alembic/
 COPY alembic.ini .
-COPY --from=frontend-builder /frontend/dist ./frontend/dist
+COPY --from=frontend-builder /frontend/dist ./static
 
 RUN groupadd --system appgroup && \
     useradd --system --gid appgroup --uid 1000 --create-home appuser && \
