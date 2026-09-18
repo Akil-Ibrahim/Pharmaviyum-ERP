@@ -84,8 +84,7 @@ class Settings(BaseSettings):
     KIOVIET_API_KEY: Optional[str] = None
     SAPO_API_URL: Optional[str] = None
 
-    class Config:
-        env_file = ".env"
+    settings_config = None
 
 
 settings = Settings()
