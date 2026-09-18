@@ -21,13 +21,8 @@ import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 
 const formSchema = z.object({
-  email: z.email({
-    error: (iss) => (iss.input === '' ? 'Please enter your email.' : undefined),
-  }),
-  password: z
-    .string()
-    .min(1, 'Please enter your password.')
-    .min(7, 'Password must be at least 7 characters long.'),
+  username: z.string().min(1, 'Please enter your username or email.'),
+  password: z.string().min(1, 'Please enter your password.'),
 })
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLFormElement> {
@@ -46,7 +41,7 @@ export function UserAuthForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   })
@@ -64,7 +59,7 @@ export function UserAuthForm({
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: new URLSearchParams({
-            username: data.email.trim(),
+            username: data.username.trim(),
             password: data.password,
           }).toString(),
         }
@@ -82,7 +77,7 @@ export function UserAuthForm({
 
       const user = {
         accountNo: 'ADMIN-001',
-        email: data.email.trim(),
+        email: data.username.trim(),
         role: ['admin'],
         exp: Date.now() + 24 * 60 * 60 * 1000,
       }
@@ -92,7 +87,7 @@ export function UserAuthForm({
 
       const targetPath = redirectTo || '/'
       navigate({ to: targetPath, replace: true })
-      toast.success(`Welcome back, ${data.email}!`)
+      toast.success(`Welcome back, ${data.username}!`)
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : 'Unable to sign in. Please try again.'
@@ -111,12 +106,12 @@ export function UserAuthForm({
       >
         <FormField
           control={form.control}
-          name='email'
+          name='username'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Username or email</FormLabel>
               <FormControl>
-                <Input placeholder='name@example.com' {...field} />
+                <Input placeholder='admin' autoComplete='username' {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
