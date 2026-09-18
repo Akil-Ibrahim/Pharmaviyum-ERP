@@ -144,17 +144,42 @@ jobs:
 workflows:
   pharmaviyum-ci:
     jobs:
-      - lint
+      - lint:
+          filters:
+            branches:
+              only:
+                - dev
+                - main
       - unit-tests:
           requires:
             - lint
+          filters:
+            branches:
+              only:
+                - dev
+                - main
       - integration-tests:
           requires:
             - lint
+          filters:
+            branches:
+              only:
+                - dev
+                - main
       - security:
           requires:
             - lint
+          filters:
+            branches:
+              only:
+                - dev
+                - main
       - rag-evaluation:
           requires:
             - unit-tests
             - security
+          filters:
+            branches:
+              only:
+                - dev
+                - main
