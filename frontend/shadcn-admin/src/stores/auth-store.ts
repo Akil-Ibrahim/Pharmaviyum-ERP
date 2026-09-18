@@ -23,7 +23,15 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()((set) => {
   const cookieState = getCookie(ACCESS_TOKEN)
-  const initToken = cookieState ? JSON.parse(cookieState) : ''
+  let initToken = ''
+
+  if (cookieState) {
+    try {
+      initToken = JSON.parse(cookieState)
+    } catch {
+      removeCookie(ACCESS_TOKEN)
+    }
+  }
   return {
     auth: {
       user: null,
