@@ -81,27 +81,33 @@ PRODUCT_CATALOG = [
     dict(name="Facial Moisturizer 50 ml", sku="DEMO-COS-MOIST-50",
          dosage_strength=None, dosage_form="cream", units_per_pack=1,
          package_type="tube", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo skincare manufacturer", inn_name=None, price=19.90, rx=False),
+         manufacturer="Demo skincare manufacturer", inn_name=None,
+         price=19.90, rx=False),
     dict(name="Gentle Facial Cleanser 200 ml", sku="DEMO-COS-CLEAN-200",
          dosage_strength=None, dosage_form="cleanser", units_per_pack=1,
          package_type="bottle", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo skincare manufacturer", inn_name=None, price=13.50, rx=False),
+         manufacturer="Demo skincare manufacturer", inn_name=None,
+         price=13.50, rx=False),
     dict(name="Sunscreen SPF 50 50 ml", sku="DEMO-COS-SPF50-50",
          dosage_strength="SPF 50", dosage_form="cream", units_per_pack=1,
          package_type="tube", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo skincare manufacturer", inn_name=None, price=22.00, rx=False),
+         manufacturer="Demo skincare manufacturer", inn_name=None,
+         price=22.00, rx=False),
     dict(name="Blood Pressure Monitor", sku="DEMO-DEVICE-BP-1",
          dosage_strength=None, dosage_form="electronic device", units_per_pack=1,
          package_type="box", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo medical device manufacturer", inn_name=None, price=39.90, rx=False),
+         manufacturer="Demo medical device manufacturer", inn_name=None,
+         price=39.90, rx=False),
     dict(name="Digital Thermometer", sku="DEMO-DEVICE-TEMP-1",
          dosage_strength=None, dosage_form="electronic device", units_per_pack=1,
          package_type="box", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo medical device manufacturer", inn_name=None, price=12.00, rx=False),
+         manufacturer="Demo medical device manufacturer", inn_name=None,
+         price=12.00, rx=False),
     dict(name="Elastic Support Bandage", sku="DEMO-SUPPLY-BANDAGE-1",
          dosage_strength=None, dosage_form="medical supply", units_per_pack=1,
          package_type="roll", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo medical supply manufacturer", inn_name=None, price=6.50, rx=False),
+         manufacturer="Demo medical supply manufacturer", inn_name=None,
+         price=6.50, rx=False),
     dict(name="Amoxicillin 250 mg/5 ml Oral Suspension", sku="DEMO-AMOX-SUSP-100", dosage_strength="250 mg/5 ml", dosage_form="oral suspension", units_per_pack=1, package_type="bottle", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name="Amoxicillin", atc_code="J01CA04", price=9.50, rx=True),
     dict(name="Salbutamol 100 mcg/dose Inhaler", sku="DEMO-SALB-INH-200", dosage_strength="100 mcg/dose", dosage_form="pressurized inhalation", units_per_pack=1, package_type="inhaler", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name="Salbutamol", atc_code="R03AC02", price=14.90, rx=True),
     dict(name="Xylometazoline 0.1% Nasal Spray", sku="DEMO-XYLO-SPRAY-10", dosage_strength="0.1%", dosage_form="nasal spray", units_per_pack=1, package_type="spray bottle", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name="Xylometazoline", atc_code="R01AA07", price=7.20, rx=False),
@@ -126,6 +132,8 @@ PRODUCT_CATALOG = [
     dict(name="Antiseptic Wound Dressing", sku="DEMO-WOUND-DRESS-10", dosage_strength=None, dosage_form="wound dressing", units_per_pack=10, package_type="box", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo medical supply manufacturer", inn_name=None, price=8.90, rx=False),
     dict(name="Hydrocolloid Acne Patches", sku="DEMO-ACNE-PATCH-24", dosage_strength=None, dosage_form="medicated patch", units_per_pack=24, package_type="pouch", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo skincare manufacturer", inn_name=None, price=9.50, rx=False),
     dict(name="Zinc + Vitamin C Effervescent Tablets", sku="DEMO-ZNC-EFF-20", dosage_strength=None, dosage_form="effervescent tablet", units_per_pack=20, package_type="tube", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo supplement manufacturer", inn_name=None, price=10.50, rx=False),
+]
+
 
 
 def synthetic_barcode(index: int) -> str:
@@ -255,7 +263,10 @@ async def seed_patients() -> None:
                             category=(
                                 "Prescription Medicine" if spec["rx"]
                                 else "OTC / Consumer Health"
-                                if spec["dosage_form"] in {"tablet", "film-coated tablet"}
+                                if spec["dosage_form"] in {
+                                    "tablet",
+                                    "film-coated tablet",
+                                }
                                 else "Consumer / Medical"
                             ),
                             quantity=packs,
@@ -288,8 +299,12 @@ async def seed_patients() -> None:
                             patient_id=patient.id,
                             product_id=rx_product.id,
                             prescription_number=prescription_number,
-                            dosage=f"{rx_product.dosage_strength}; follow prescriber directions",
-                            instructions="Synthetic demonstration prescription. Do not use as clinical guidance.",
+                            dosage=(
+                                f"{rx_product.dosage_strength}; follow prescriber directions"
+                            ),
+                            instructions=(
+                                "Synthetic demonstration prescription. Do not use as clinical guidance."
+                            ),
                             status="active",
                             issued_at=datetime.utcnow() - timedelta(days=30),
                             expires_at=datetime.utcnow() + timedelta(days=60),
