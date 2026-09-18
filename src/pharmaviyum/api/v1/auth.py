@@ -2,21 +2,25 @@
 Authentication endpoints for user login, registration, and token generation.
 """
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.config import settings
-from src.pharmaviyum.core.oauth2 import create_access_token
+from src.pharmaviyum.core.oauth2 import create_access_token, decode_access_token
 from src.pharmaviyum.db.session import get_db
+from src.pharmaviyum.modules.auth.deps import CurrentUser
 from src.pharmaviyum.models.user import User
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 
 class RegistrationRequest(BaseModel):
@@ -92,14 +96,7 @@ async def token(
     db: AsyncSession = Depends(get_db),
 ):
     username_or_email = form_data.username.strip()
-    user = None
-
-    try:
-        user = await _get_user_by_username_or_email(db, username_or_email)
-    except Exception:
-        # Staging/demo fallback keeps the configured admin available if the DB
-        # is temporarily unavailable.
-        pass
+    user = await _get_user_by_username_or_email(db, username_or_email)
 
     if user:
         password_to_check = (
@@ -156,3 +153,24 @@ async def token(
 
     access_token = create_access_token(subject=subject)
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.get("/me")
+async def me(
+    current_user: CurrentUser,
+    token: Annotated[str, Depends(oauth2_scheme)],
+) -> dict[str, object]:
+    """Return the authenticated user identity from the server."""
+    payload = decode_access_token(token)
+    if payload is None or not payload.get("exp"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return {
+        "accountNo": current_user.username,
+        "email": current_user.email,
+        "role": [current_user.role],
+        "exp": int(payload["exp"]) * 1000,
+    }
