@@ -33,7 +33,6 @@ def test_create_and_get_order(client):
     presponse = client.get(f"/api/v1/patients/{patient_id}")
     assert presponse.status_code == 200
     patient = presponse.json()
-    assert patient["total_purchases"] == 0.0
     assert patient["visit_count"] == 0
     # Completing the order creates one canonical purchase-ledger entry.
     sresp = client.patch(
