@@ -297,7 +297,9 @@ class PatientRepository(BaseRepository[Patient]):
             "conditions": [c.condition_name for c in patient.conditions],
             "blood_type": patient.blood_type,
             "loyalty_tier": patient.loyalty_tier,
-            "total_purchases": patient.total_purchases,
+            "total_purchases": round(
+                sum(purchase.total_amount for purchase in patient.purchases), 2
+            ),
             "visit_count": patient.visit_count,
             "last_visit_date": (
                 patient.last_visit_date.isoformat() if patient.last_visit_date else None
