@@ -51,7 +51,7 @@ class PatientRepository(BaseRepository[Patient]):
             query = query.options(selectinload(Patient.insurances))
         if include_consultations:
             query = query.options(selectinload(Patient.consultations))
-        query = query.options(selectinload(Patient.purchases).selectinload(PatientPurchase.product))
+        query = query.options(\n            selectinload(Patient.purchases).selectinload(PatientPurchase.product),\n            selectinload(Patient.purchases).selectinload(PatientPurchase.batch),\n        )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
