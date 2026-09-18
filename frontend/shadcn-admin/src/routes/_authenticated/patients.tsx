@@ -41,7 +41,7 @@ function PatientsPage() {
     <div className='space-y-6 p-6'>
       <div><h1 className='text-2xl font-bold tracking-tight'>Patients</h1><p className='text-muted-foreground'>Pharmacy customer profiles, prescriptions, OTC purchases, cosmetics, vitamins, devices, and receipts.</p></div>
       <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
-        <MetricCard label='Total patients' value={metrics.total.toString()} detail='Registered pharmacy customers' tone='blue' />
+        <MetricCard label='Total patients' value={metrics.total.toString()} detail='Full database · first 20 displayed' tone='blue' />
         <MetricCard label='Active patients' value={metrics.active.toString()} detail='Currently active profiles' tone='green' />
         <MetricCard label='Purchase value' value={formatCurrency(metrics.revenue)} detail='Synthetic demo portfolio' tone='yellow' />
         <MetricCard label='Loyalty members' value={metrics.loyalty.toString()} detail='Non-standard loyalty tier' tone='red' />
