@@ -15,7 +15,7 @@ export function getCookie(name: string): string | undefined {
   const parts = value.split(`; ${name}=`)
   if (parts.length === 2) {
     const cookieValue = parts.pop()?.split(';').shift()
-    return cookieValue
+    return cookieValue ? decodeURIComponent(cookieValue) : undefined
   }
   return undefined
 }
@@ -30,7 +30,8 @@ export function setCookie(
 ): void {
   if (typeof document === 'undefined') return
 
-  document.cookie = `${name}=${value}; path=/; max-age=${maxAge}`
+  const secure = import.meta.env.PROD ? '; Secure' : ''
+  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`
 }
 
 /**
@@ -39,5 +40,5 @@ export function setCookie(
 export function removeCookie(name: string): void {
   if (typeof document === 'undefined') return
 
-  document.cookie = `${name}=; path=/; max-age=0`
+  document.cookie = `${encodeURIComponent(name)}=; path=/; max-age=0; SameSite=Lax`
 }
