@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { apiFetch } from '@/lib/api-client'
 
 type Patient = { id: number; full_name: string; phone: string; email?: string; city?: string; country: string; customer_category: string; loyalty_tier: string; total_purchases: number; visit_count: number; is_active: boolean }
-type PatientStatistics = { total: number; active: number; inactive: number; total_purchase_value: number; by_loyalty_tier: Record<string, number>; by_country: Record<string, number> }
+type PatientStatistics = { total: number; active: number; inactive: number; total_purchase_value: number; total_loyalty_points: number; by_loyalty_tier: Record<string, number>; by_country: Record<string, number> }
 type PatientDetail = Patient & {
   first_name: string
   last_name: string
@@ -65,7 +65,7 @@ function PatientsPage() {
       <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
         <MetricCard label='Total patients' value={metrics.total.toString()} detail='Full database · first 20 displayed' tone='blue' />
         <MetricCard label='Active patients' value={metrics.active.toString()} detail='Currently active profiles' tone='green' />
-        <MetricCard label='Purchase value' value={formatCurrency(metrics.revenue)} detail='Synthetic demo portfolio' tone='yellow' />
+        <MetricCard label='Purchase value' value={formatCurrency(metrics.revenue)} detail='Full persisted purchase history' tone='yellow' />
         <MetricCard label='Loyalty members' value={metrics.loyalty.toString()} detail='Non-standard loyalty tier' tone='red' />
       </div>
       <div className='rounded-2xl border border-border/70 bg-card p-4 shadow-sm'>
@@ -92,7 +92,7 @@ function PatientsPage() {
             <MetricCard label='Loyalty points' value={selected.loyalty_points.toLocaleString()} detail={`Tier: ${selected.loyalty_tier}`} tone='blue' />
             <MetricCard label='Total spent' value={formatCurrency(selected.total_purchases)} detail='Lifetime purchase value' tone='yellow' />
             <MetricCard label='Visits' value={selected.visit_count.toString()} detail='Pharmacy visits' tone='green' />
-            <MetricCard label='Receipts' value={selected.purchases.length.toString()} detail='Purchase line records' tone='red' />
+            <MetricCard label='Receipts' value={selected.purchases.length.toString()} detail='Persisted purchase line records' tone='red' />
           </div>
           <div className='mt-6 grid gap-6 lg:grid-cols-3'>
             <section className='rounded-xl border p-4'><h3 className='mb-3 font-semibold'>Patient profile</h3><div className='space-y-2 text-sm'>
