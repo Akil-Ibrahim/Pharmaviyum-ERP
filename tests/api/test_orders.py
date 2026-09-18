@@ -61,3 +61,37 @@ def test_create_and_get_order(client):
     statistics = stats.json()
     assert statistics["total_purchase_value"] == 12.5
 
+    # A completed order is terminal and cannot be completed twice.
+    repeat = client.patch(
+        f"/api/v1/orders/{order_id}/status",
+        json={"status": "completed"},
+    )
+    assert repeat.status_code == 409
+
+    # A cancelled order is also terminal and must never enter the purchase ledger.
+    cancel_order = client.post(
+        "/api/v1/orders/",
+        json={"patient_id": patient_id, "total_amount": 30.0},
+    )
+    assert cancel_order.status_code in (201, 403)
+    if cancel_order.status_code == 403:
+        return
+    cancelled_id = cancel_order.json()["id"]
+
+    cancel_response = client.patch(
+        f"/api/v1/orders/{cancelled_id}/status",
+        json={"status": "cancelled"},
+    )
+    assert cancel_response.status_code == 200
+    assert cancel_response.json()["status"] == "cancelled"
+
+    cancelled_patient = client.get(f"/api/v1/patients/{patient_id}")
+    assert cancelled_patient.status_code == 200
+    purchases = cancelled_patient.json()["purchases"]
+    assert len(purchases) == 1
+    assert purchases[0]["receipt_number"] == f"ORDER-{order_id}"
+
+    final_stats = client.get("/api/v1/patients/statistics")
+    assert final_stats.status_code == 200
+    assert final_stats.json()["total_purchase_value"] == 12.5
+
