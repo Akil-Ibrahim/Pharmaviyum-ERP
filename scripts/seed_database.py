@@ -273,9 +273,6 @@ async def seed_patients() -> None:
                         0, batch.available_quantity - packs
                     )
                     product.stock = batch.available_quantity
-                    patient.total_purchases = round(
-                        patient.total_purchases + (packs * spec["price"]), 2
-                    )
 
             if index % 3 == 0:
                 prescription_number = f"DEMO-RX-{index:03d}"
