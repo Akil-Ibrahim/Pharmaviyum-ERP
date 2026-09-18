@@ -10,6 +10,7 @@ from src.pharmaviyum.modules.auth.deps import (
     get_current_active_user,
 )
 from src.pharmaviyum.modules.auth.models import User
+from src.pharmaviyum.services.cache import cache_service
 from src.pharmaviyum.schemas.order_schema import (
     OrderCreate,
     OrderResponse,
@@ -112,6 +113,10 @@ async def update_order_status(
             )
             patient = result.scalar_one()
             patient.visit_count += 1
+            patient.last_visit_date = order.created_at
+            await cache_service.delete(f"patient:{patient.id}")
+            await cache_service.delete(f"patient:ai_profile:{patient.id}")
+            await cache_service.delete(f"patient:phone:{patient.phone}")
 
         order.status = "completed"
 
