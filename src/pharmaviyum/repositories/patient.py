@@ -170,10 +170,17 @@ class PatientRepository(BaseRepository[Patient]):
         return list(result.scalars().all())
 
     async def get_top_customers(self, limit: int = 10) -> list[Patient]:
+        """Return active customers ranked by persisted purchase history."""
+        purchase_value = func.coalesce(
+            func.sum(PatientPurchase.quantity * PatientPurchase.unit_price),
+            0.0,
+        )
         result = await self.session.execute(
             select(Patient)
+            .outerjoin(PatientPurchase, PatientPurchase.patient_id == Patient.id)
             .where(Patient.is_active)
-            .order_by(Patient.total_purchases.desc())
+            .group_by(Patient.id)
+            .order_by(purchase_value.desc())
             .limit(limit)
         )
         return list(result.scalars().all())
