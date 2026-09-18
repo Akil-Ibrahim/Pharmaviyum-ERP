@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -53,7 +53,7 @@ class PatientPurchaseResponse(BaseModel):
     product_id: int | None = None
     batch_id: int | None = None
     batch_number: str | None = None
-    expiry_date: datetime | None = None
+    expiry_date: date | None = None
     product_name: str | None = None
     quantity: int
     dispensed_packs: int = 1
