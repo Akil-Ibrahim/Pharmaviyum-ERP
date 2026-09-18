@@ -159,6 +159,7 @@ workflows:
               only:
                 - dev
                 - main
+                - feat/patients-pipeline-colors
       - integration-tests:
           requires:
             - lint
@@ -167,6 +168,7 @@ workflows:
               only:
                 - dev
                 - main
+                - feat/patients-pipeline-colors
       - security:
           requires:
             - lint
@@ -175,6 +177,7 @@ workflows:
               only:
                 - dev
                 - main
+                - feat/patients-pipeline-colors
       - rag-evaluation:
           requires:
             - unit-tests
@@ -184,3 +187,4 @@ workflows:
               only:
                 - dev
                 - main
+                - feat/patients-pipeline-colors
