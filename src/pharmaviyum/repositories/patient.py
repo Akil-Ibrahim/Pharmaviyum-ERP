@@ -123,6 +123,10 @@ class PatientRepository(BaseRepository[Patient]):
         result = await self.session.execute(query)
         return list(result.scalars().all()), total
 
+    async def get_total_purchase_value(self) -> float:
+        result = await self.session.execute(select(func.coalesce(func.sum(Patient.total_purchases), 0.0)))
+        return float(result.scalar_one())
+
     async def get_loyalty_tiers_stats(self) -> dict:
         result = await self.session.execute(
             select(Patient.loyalty_tier, func.count(Patient.id))
