@@ -204,16 +204,14 @@ class PatientService:
             "by_country": await self.repository.get_country_stats(),
         }
 
-    async def record_visit(
-        self, id: int, purchase_amount: float = 0.0
-    ) -> Optional[Patient]:
-        patient = await self.repository.record_visit(id, purchase_amount)
+    async def record_visit(self, id: int) -> Optional[Patient]:
+        patient = await self.repository.record_visit(id)
         if patient:
             await self._invalidate_patient_cache(id, patient.phone)
             await event_bus.emit(
                 Event(
                     event_type="patient.visit_recorded",
-                    data={"patient_id": id, "purchase_amount": purchase_amount},
+                    data={"patient_id": id},
                 )
             )
         return patient
