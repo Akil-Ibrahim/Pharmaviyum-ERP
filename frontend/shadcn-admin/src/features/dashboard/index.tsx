@@ -1,12 +1,3 @@
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -14,14 +5,31 @@ import { TopNav } from '@/components/layout/top-nav'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { Analytics } from './components/analytics'
-import { Overview } from './components/overview'
-import { RecentSales } from './components/recent-sales'
+import { useEffect, useState } from 'react'
+import { apiFetch } from '@/lib/api-client'
 
 export function Dashboard() {
+  const [stats, setStats] = useState<PatientStatistics | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    apiFetch<PatientStatistics>('/api/v1/patients/statistics')
+      .then(setStats)
+      .finally(() => setLoading(false))
+  }, [])
+
+  const loyaltyMembers = stats
+    ? Object.entries(stats.by_loyalty_tier)
+        .filter(([tier]) => tier.toLowerCase() !== 'standard')
+        .reduce((sum, [, count]) => sum + count, 0)
+    : 0
+
+  const topCountries = stats
+    ? Object.entries(stats.by_country).sort((a, b) => b[1] - a[1]).slice(0, 6)
+    : []
+
   return (
     <>
-      {/* ===== Top Heading ===== */}
       <Header>
         <TopNav links={topNav} className='me-auto' />
         <Search />
@@ -30,164 +38,84 @@ export function Dashboard() {
         <ProfileDropdown />
       </Header>
 
-      {/* ===== Main ===== */}
       <Main>
-        <div className='mb-2 flex items-center justify-between space-y-2'>
-          <h1 className='text-2xl font-bold tracking-tight'>Dashboard</h1>
-          <div className='flex items-center space-x-2'>
-            <Button>Download</Button>
-          </div>
+        <div className='mb-6'>
+          <h1 className='text-2xl font-bold tracking-tight'>Pharmacy Dashboard</h1>
+          <p className='text-muted-foreground'>Live patient, loyalty, revenue, and geographic metrics from the pharmacy database.</p>
         </div>
-        <Tabs
-          orientation='vertical'
-          defaultValue='overview'
-          className='space-y-4'
-        >
-          <div className='w-full overflow-x-auto pb-2'>
-            <TabsList>
-              <TabsTrigger value='overview'>Overview</TabsTrigger>
-              <TabsTrigger value='analytics'>Analytics</TabsTrigger>
-              <TabsTrigger value='reports' disabled>
-                Reports
-              </TabsTrigger>
-              <TabsTrigger value='notifications' disabled>
-                Notifications
-              </TabsTrigger>
-            </TabsList>
+
+        {loading ? (
+          <div className='rounded-xl border p-6 text-sm text-muted-foreground'>Loading pharmacy statistics...</div>
+        ) : (
+          <div className='space-y-6'>
+            <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
+              <MetricCard label='Total patients' value={String(stats?.total ?? 0)} detail='Full patient database' tone='blue' />
+              <MetricCard label='Active patients' value={String(stats?.active ?? 0)} detail='Currently active profiles' tone='green' />
+              <MetricCard label='Purchase value' value={formatCurrency(stats?.total_purchase_value ?? 0)} detail='Lifetime recorded value' tone='yellow' />
+              <MetricCard label='Loyalty members' value={String(loyaltyMembers)} detail='Non-standard loyalty tiers' tone='purple' />
+            </div>
+
+            <div className='grid gap-6 lg:grid-cols-2'>
+              <section className='rounded-2xl border bg-card p-5 shadow-sm'>
+                <div className='mb-4'><h2 className='font-semibold'>Loyalty distribution</h2><p className='text-xs text-muted-foreground'>Active patients by loyalty tier.</p></div>
+                <div className='space-y-3'>
+                  {Object.entries(stats?.by_loyalty_tier ?? {}).sort((a, b) => b[1] - a[1]).map(([tier, count]) => {
+                    const total = stats?.active ?? 1
+                    const percent = Math.round((count / Math.max(total, 1)) * 100)
+                    return <div key={tier}><div className='mb-1 flex justify-between text-sm'><span>{tier}</span><span className='text-muted-foreground'>{count} · {percent}%</span></div><div className='h-2 rounded-full bg-muted'><div className='h-2 rounded-full bg-primary' style={{ width: percent + '%' }} /></div></div>
+                  })}
+                </div>
+              </section>
+
+              <section className='rounded-2xl border bg-card p-5 shadow-sm'>
+                <div className='mb-4'><h2 className='font-semibold'>Patient geography</h2><p className='text-xs text-muted-foreground'>Top active patient countries.</p></div>
+                <div className='space-y-2'>
+                  {topCountries.map(([country, count]) => <div key={country} className='flex items-center justify-between rounded-lg border p-3'><span className='font-medium'>{country}</span><span className='text-sm text-muted-foreground'>{count} patients</span></div>)}
+                  {topCountries.length === 0 && <p className='text-sm text-muted-foreground'>No geographic data recorded.</p>}
+                </div>
+              </section>
+            </div>
+
+            <section className='rounded-2xl border bg-card p-5 shadow-sm'>
+              <div className='mb-4'><h2 className='font-semibold'>Pharmacy operational snapshot</h2><p className='text-xs text-muted-foreground'>Static metrics are sourced from persisted patient data; no synthetic dashboard values.</p></div>
+              <div className='grid gap-4 sm:grid-cols-3'>
+                <Snapshot label='Inactive patients' value={String(stats?.inactive ?? 0)} />
+                <Snapshot label='Loyalty tiers' value={String(Object.keys(stats?.by_loyalty_tier ?? {}).length)} />
+                <Snapshot label='Countries' value={String(Object.keys(stats?.by_country ?? {}).length)} />
+              </div>
+            </section>
           </div>
-          <TabsContent value='overview' className='space-y-4'>
-            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>
-                    Total Revenue
-                  </CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <path d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>$45,231.89</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +20.1% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>
-                    Subscriptions
-                  </CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <path d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' />
-                    <circle cx='9' cy='7' r='4' />
-                    <path d='M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>+2350</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +180.1% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>Sales</CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <rect width='20' height='14' x='2' y='5' rx='2' />
-                    <path d='M2 10h20' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>+12,234</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +19% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>
-                    Active Now
-                  </CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <path d='M22 12h-4l-3 9L9 3l-3 9H2' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>+573</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +201 since last hour
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-            <div className='grid grid-cols-1 gap-4 lg:grid-cols-7'>
-              <Card className='col-span-1 lg:col-span-4'>
-                <CardHeader>
-                  <CardTitle>Overview</CardTitle>
-                </CardHeader>
-                <CardContent className='ps-2'>
-                  <Overview />
-                </CardContent>
-              </Card>
-              <Card className='col-span-1 lg:col-span-3'>
-                <CardHeader>
-                  <CardTitle>Recent Sales</CardTitle>
-                  <CardDescription>
-                    You made 265 sales this month.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <RecentSales />
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-          <TabsContent value='analytics' className='space-y-4'>
-            <Analytics />
-          </TabsContent>
-        </Tabs>
+        )}
       </Main>
     </>
   )
+}
+
+type PatientStatistics = {
+  total: number
+  active: number
+  inactive: number
+  total_purchase_value: number
+  by_loyalty_tier: Record<string, number>
+  by_country: Record<string, number>
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
+}
+
+function MetricCard({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: 'blue' | 'green' | 'yellow' | 'purple' }) {
+  const classes = {
+    blue: 'border-sky-200 bg-sky-50/80 dark:border-sky-900 dark:bg-sky-950/30',
+    green: 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/30',
+    yellow: 'border-amber-200 bg-amber-50/80 dark:border-amber-900 dark:bg-amber-950/30',
+    purple: 'border-purple-200 bg-purple-50/80 dark:border-purple-900 dark:bg-purple-950/30',
+  }
+  return <div className={'rounded-2xl border p-5 shadow-sm ' + classes[tone]}><p className='text-sm font-medium'>{label}</p><p className='mt-3 text-3xl font-bold tracking-tight'>{value}</p><p className='mt-1 text-xs text-muted-foreground'>{detail}</p></div>
+}
+
+function Snapshot({ label, value }: { label: string; value: string }) {
+  return <div className='rounded-xl border bg-muted/20 p-4'><p className='text-xs text-muted-foreground'>{label}</p><p className='mt-1 text-2xl font-semibold'>{value}</p></div>
 }
 
 const topNav = [

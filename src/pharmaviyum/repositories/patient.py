@@ -39,7 +39,7 @@ class PatientRepository(BaseRepository[Patient]):
         include_allergies: bool = True,
         include_conditions: bool = True,
         include_insurances: bool = True,
-        include_consultations: bool = False,
+        include_consultations: bool = True,
     ) -> Optional[Patient]:
         """Get patient by ID with eager-loaded relationships."""
         query = select(Patient).where(Patient.id == id)
@@ -122,6 +122,10 @@ class PatientRepository(BaseRepository[Patient]):
         query = query.offset(skip).limit(limit).order_by(Patient.updated_at.desc())
         result = await self.session.execute(query)
         return list(result.scalars().all()), total
+
+    async def get_total_purchase_value(self) -> float:
+        result = await self.session.execute(select(func.coalesce(func.sum(Patient.total_purchases), 0.0)))
+        return float(result.scalar_one())
 
     async def get_loyalty_tiers_stats(self) -> dict:
         result = await self.session.execute(

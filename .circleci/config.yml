@@ -150,6 +150,7 @@ workflows:
               only:
                 - dev
                 - main
+                - feat/patients-pipeline-colors
       - unit-tests:
           requires:
             - lint

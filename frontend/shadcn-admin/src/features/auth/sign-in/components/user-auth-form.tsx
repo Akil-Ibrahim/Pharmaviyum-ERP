@@ -41,8 +41,8 @@ export function UserAuthForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: '',
-      password: '',
+      username: 'admin',
+      password: 'admin',
     },
   })
 
@@ -122,7 +122,7 @@ export function UserAuthForm({
           name='username'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username or email</FormLabel>
+              <FormLabel>Login</FormLabel>
               <FormControl>
                 <Input placeholder='admin' autoComplete='username' {...field} />
               </FormControl>
