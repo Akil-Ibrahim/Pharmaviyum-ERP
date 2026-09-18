@@ -15,18 +15,25 @@ class PatientPurchase(Base):
     patient_id: Mapped[int] = mapped_column(
         ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    batch_id: Mapped[int | None] = mapped_column(
+        ForeignKey("product_batches.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     product_id: Mapped[int | None] = mapped_column(
         ForeignKey("products.id", ondelete="SET NULL"), nullable=True, index=True
     )
     receipt_number: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    dispensed_packs: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    dispensed_blisters: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    dispensed_units: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     unit_price: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     prescription_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     purchased_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
 
     patient = relationship("Patient", back_populates="purchases")
     product = relationship("Product")
+    batch = relationship("ProductBatch")
 
     @property
     def product_name(self) -> str | None:
