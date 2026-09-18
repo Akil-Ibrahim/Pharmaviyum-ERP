@@ -95,3 +95,17 @@ def test_create_and_get_order(client):
     assert final_stats.status_code == 200
     assert final_stats.json()["total_purchase_value"] == 12.5
 
+    # A cancelled order is terminal too.
+    repeat_cancel = client.patch(
+        f"/api/v1/orders/{cancelled_id}/status",
+        json={"status": "cancelled"},
+    )
+    assert repeat_cancel.status_code == 409
+
+    # The API must reject unsupported lifecycle states at validation time.
+    invalid_status = client.patch(
+        f"/api/v1/orders/{cancelled_id}/status",
+        json={"status": "pending"},
+    )
+    assert invalid_status.status_code == 422
+
