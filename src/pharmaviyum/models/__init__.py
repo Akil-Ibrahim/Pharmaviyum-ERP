@@ -7,6 +7,7 @@ from src.pharmaviyum.models.patients.patient import Patient
 from src.pharmaviyum.models.patients.patient_allergy import PatientAllergy
 from src.pharmaviyum.models.patients.patient_condition import PatientCondition
 from src.pharmaviyum.models.patients.patient_insurance import PatientInsurance
+from src.pharmaviyum.models.patients.patient_purchase import PatientPurchase
 from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.prescription import Prescription
 from src.pharmaviyum.models.supplier import Supplier
@@ -16,6 +17,7 @@ __all__ = [
     "PatientAllergy",
     "PatientCondition",
     "PatientInsurance",
+    "PatientPurchase",
     "Consultation",
     "Prescription",
     "Inventory",
