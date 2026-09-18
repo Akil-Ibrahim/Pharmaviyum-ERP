@@ -30,6 +30,8 @@ def mock_repository():
     repo.count = AsyncMock(return_value=0)
     repo.get_loyalty_tiers_stats = AsyncMock(return_value={})
     repo.get_country_stats = AsyncMock(return_value={})
+    repo.get_total_purchase_value = AsyncMock(return_value=0.0)
+    repo.get_total_loyalty_points = AsyncMock(return_value=0)
     repo.record_visit = AsyncMock()
     return repo
 
@@ -281,6 +283,8 @@ class TestPatientServiceStatistics:
             "VN": 60,
             "TH": 20,
         }
+        mock_repository.get_total_purchase_value.return_value = 12500.5
+        mock_repository.get_total_loyalty_points.return_value = 3400
 
         # Act
         result = await patient_service.get_statistics()
@@ -291,3 +295,5 @@ class TestPatientServiceStatistics:
         assert result["inactive"] == 20
         assert "by_loyalty_tier" in result
         assert "by_country" in result
+        assert result["total_purchase_value"] == 12500.5
+        assert result["total_loyalty_points"] == 3400
