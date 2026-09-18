@@ -40,6 +40,14 @@ function PatientsPage() {
         <MetricCard label='Purchase value' value={formatCurrency(metrics.revenue)} detail='Synthetic demo portfolio' tone='yellow' />
         <MetricCard label='Loyalty members' value={metrics.loyalty.toString()} detail='Non-standard loyalty tier' tone='red' />
       </div>
+      <div className='rounded-2xl border border-border/70 bg-card p-4 shadow-sm'>
+        <div className='flex flex-wrap items-center justify-between gap-3'>
+          <div><p className='text-sm font-semibold'>Patient pipeline</p><p className='text-xs text-muted-foreground'>Visual segmentation for pharmacy customer categories</p></div>
+          <div className='flex flex-wrap gap-2'>
+            {(['blue', 'red', 'green', 'yellow', 'purple', 'orange', 'cyan'] as MetricTone[]).map((tone) => <PipelineBadge key={tone} tone={tone} label={toneLabel(tone)} />)}
+          </div>
+        </div>
+      </div>
       {error && <div className='rounded-lg border p-4 text-sm'>{error}</div>}
       <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
         {patients.map((patient) => (
@@ -72,15 +80,39 @@ function formatCurrency(value: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
 }
 
-function categoryTone(category: string) {
+function categoryTone(category: string): string {
   const value = category.toLowerCase()
-  if (value.includes('chronic') || value.includes('cardio') || value.includes('diabetes')) return 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300'
-  if (value.includes('wellness') || value.includes('vitamin') || value.includes('sports')) return 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300'
-  if (value.includes('skin') || value.includes('cosmetic') || value.includes('women')) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300'
-  return 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300'
+  if (value.includes('chronic') || value.includes('cardio') || value.includes('diabetes')) return metricToneClass('red')
+  if (value.includes('wellness') || value.includes('vitamin') || value.includes('sports')) return metricToneClass('green')
+  if (value.includes('skin') || value.includes('cosmetic') || value.includes('women')) return metricToneClass('yellow')
+  if (value.includes('prescription') || value.includes('rx') || value.includes('therapy')) return metricToneClass('purple')
+  if (value.includes('device') || value.includes('equipment') || value.includes('diagnostic')) return metricToneClass('orange')
+  if (value.includes('senior') || value.includes('family') || value.includes('pediatric')) return metricToneClass('cyan')
+  return metricToneClass('blue')
 }
 
-type MetricTone = 'blue' | 'red' | 'green' | 'yellow'
+type MetricTone = 'blue' | 'red' | 'green' | 'yellow' | 'purple' | 'orange' | 'cyan'
+
+function metricToneClass(tone: MetricTone) {
+  const classes: Record<MetricTone, string> = {
+    blue: 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
+    red: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300',
+    green: 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300',
+    yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300',
+    purple: 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300',
+    orange: 'bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300',
+    cyan: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300',
+  }
+  return classes[tone]
+}
+
+function toneLabel(tone: MetricTone) {
+  return tone.charAt(0).toUpperCase() + tone.slice(1)
+}
+
+function PipelineBadge({ tone, label }: { tone: MetricTone; label: string }) {
+  return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${metricToneClass(tone)}`}><span className='h-1.5 w-1.5 rounded-full bg-current' />{label}</span>
+}
 
 function MetricCard({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: MetricTone }) {
   const tones: Record<MetricTone, string> = {
@@ -88,12 +120,18 @@ function MetricCard({ label, value, detail, tone }: { label: string; value: stri
     red: 'border-red-200 bg-red-50/80 dark:border-red-900 dark:bg-red-950/30',
     green: 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/30',
     yellow: 'border-amber-200 bg-amber-50/80 dark:border-amber-900 dark:bg-amber-950/30',
+    purple: 'border-purple-200 bg-purple-50/80 dark:border-purple-900 dark:bg-purple-950/30',
+    orange: 'border-orange-200 bg-orange-50/80 dark:border-orange-900 dark:bg-orange-950/30',
+    cyan: 'border-cyan-200 bg-cyan-50/80 dark:border-cyan-900 dark:bg-cyan-950/30',
   }
   const dots: Record<MetricTone, string> = {
     blue: 'bg-sky-500',
     red: 'bg-red-500',
     green: 'bg-emerald-500',
     yellow: 'bg-amber-500',
+    purple: 'bg-purple-500',
+    orange: 'bg-orange-500',
+    cyan: 'bg-cyan-500',
   }
 
   return (
