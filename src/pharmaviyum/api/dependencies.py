@@ -12,7 +12,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 
 from src.pharmaviyum.modules.auth.deps import get_current_active_user
-from src.pharmaviyum.modules.auth.models import User
+from src.pharmaviyum.models.user import User
 
 CurrentUser = Annotated[User, Depends(get_current_active_user)]
 
