@@ -25,6 +25,9 @@ async def require_pharmacy_tenant(
     session: SessionDep,
 ) -> TenantContext:
     """Resolve and authorize the requested pharmacy for the current user."""
+    if current_user.is_superuser:
+        return TenantContext(user_id=str(current_user.id), pharmacy_id=pharmacy_id)
+
     membership = await session.scalar(
         select(PharmacyMembership).where(
             PharmacyMembership.user_id == current_user.id,
