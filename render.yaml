@@ -1,0 +1,52 @@
+services:
+  - type: web
+    name: pharmaviyum-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    branch: dev
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: staging
+      - key: LOG_LEVEL
+        value: INFO
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pharmaviyum-postgres
+          property: connectionString
+      - key: PGVECTOR_DATABASE_URL
+        fromDatabase:
+          name: pharmaviyum-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: pharmaviyum-redis
+          property: connectionString
+      - key: OLLAMA_BASE_URL
+        sync: false
+      - key: OLLAMA_API_KEY
+        sync: false
+      - key: OLLAMA_FAST_MODEL
+        value: qwen2.5:1.5b
+      - key: OLLAMA_MAIN_MODEL
+        value: qwen2.5:7b
+      - key: OLLAMA_COMPLEX_MODEL
+        value: qwen2.5:72b
+      - key: OLLAMA_EMBEDDING_MODEL
+        value: mxbai-embed-large
+
+  - type: keyvalue
+    name: pharmaviyum-redis
+    plan: free
+    ipAllowList: []
+
+databases:
+  - name: pharmaviyum-postgres
+    databaseName: pharmaviyum
+    user: pharmaviyum
+    postgresMajorVersion: "16"
+    plan: free
+    ipAllowList: []
