@@ -1,41 +1,120 @@
-"""Database seeding with realistic Vietnamese data."""
+"""Seed stage 1: 20 synthetic English-language pharmacy customers."""
+
 import asyncio
 import random
-from faker import Faker
+from datetime import datetime, timedelta
 
-fake = Faker('vi_VN')
+from sqlalchemy import select
 
-MEDICATIONS = [
-    {'name': 'Paracetamol 500mg', 'dosage': '1 tablet', 'frequency': '3x daily'},
-    {'name': 'Amoxicillin 500mg', 'dosage': '1 tablet', 'frequency': '3x daily'},
-    {'name': 'Metformin 850mg', 'dosage': '1 tablet', 'frequency': '2x daily'},
-    {'name': 'Amlodipine 5mg', 'dosage': '1 tablet', 'frequency': '1x daily'},
-    {'name': 'Omeprazole 20mg', 'dosage': '1 tablet', 'frequency': '1x daily'},
+from src.pharmaviyum.core.database import AsyncSessionLocal
+from src.pharmaviyum.models import Patient
+from src.pharmaviyum.models.patients import PatientPurchase
+
+random.seed(20260918)
+
+CUSTOMERS = [
+    ("James", "Anderson", "Chronic Care", "New York", "US"),
+    ("Emily", "Carter", "Wellness", "London", "GB"),
+    ("Michael", "Brown", "Cardiovascular", "Toronto", "CA"),
+    ("Sophia", "Wilson", "Skincare", "Sydney", "AU"),
+    ("Daniel", "Miller", "Diabetes Care", "New York", "US"),
+    ("Olivia", "Taylor", "Women's Health", "London", "GB"),
+    ("William", "Moore", "OTC / Self-care", "Toronto", "CA"),
+    ("Ava", "Jackson", "Dermatology", "Sydney", "AU"),
+    ("Benjamin", "Martin", "Elderly Care", "New York", "US"),
+    ("Isabella", "Thompson", "Vitamins & Supplements", "London", "GB"),
+    ("Henry", "White", "Respiratory Care", "Toronto", "CA"),
+    ("Mia", "Harris", "Cosmetics", "Sydney", "AU"),
+    ("Alexander", "Clark", "Family Care", "New York", "US"),
+    ("Charlotte", "Lewis", "Allergy Care", "London", "GB"),
+    ("Ethan", "Walker", "Sports & Wellness", "Toronto", "CA"),
+    ("Amelia", "Hall", "Medical Devices", "Sydney", "AU"),
+    ("Noah", "Allen", "Chronic Care", "New York", "US"),
+    ("Grace", "Young", "Skincare", "London", "GB"),
+    ("Lucas", "King", "OTC / Self-care", "Toronto", "CA"),
+    ("Ella", "Wright", "Wellness", "Sydney", "AU"),
 ]
 
-VIETNAMESE_CITIES = ['Ho Chi Minh', 'Hanoi', 'Da Nang', 'Hai Phong', 'Can Tho']
+PURCHASE_CATEGORIES = [
+    ("OTC Medicine", "Paracetamol 500 mg", 4.20, False),
+    ("OTC Medicine", "Ibuprofen 200 mg", 5.10, False),
+    ("OTC Medicine", "Cetirizine 10 mg", 6.30, False),
+    ("Vitamins & Supplements", "Vitamin D3 1000 IU", 11.50, False),
+    ("Vitamins & Supplements", "Magnesium 250 mg", 12.90, False),
+    ("Cosmetics", "Facial Moisturizer 50 ml", 19.90, False),
+    ("Cosmetics", "Gentle Facial Cleanser 200 ml", 13.50, False),
+    ("Cosmetics", "Sunscreen SPF 50 50 ml", 22.00, False),
+    ("Medical Devices", "Blood Pressure Monitor", 39.90, False),
+    ("Medical Devices", "Digital Thermometer", 12.00, False),
+    ("Medical Supplies", "Elastic Support Bandage", 6.50, False),
+    ("Prescription Medicine", "Metformin 500 mg", 8.50, True),
+    ("Prescription Medicine", "Amlodipine 5 mg", 6.90, True),
+    ("Prescription Medicine", "Atorvastatin 20 mg", 9.80, True),
+]
 
 
-async def seed_patients(count: int = 100):
-    """Generate realistic Vietnamese patients."""
-    # TODO: Import your Patient model and session
-    for _ in range(count):
-        data = {
-            "first_name": fake.first_name(),
-            "last_name": fake.last_name(),
-            "phone": f"+84{random.randint(100000000, 999999999)}",
-            "email": fake.email(),
-            "city": random.choice(VIETNAMESE_CITIES),
-            "country": "VN",
-            "preferred_language": "vi",
-            "loyalty_tier": random.choices(
-                ['Bronze', 'Silver', 'Gold', 'Platinum'],
-                weights=[0.50, 0.30, 0.15, 0.05]
-            )[0],
-        }
-        # TODO: save via your repository
-    print(f"✅ Created {count} patients")
+async def seed_patients() -> None:
+    async with AsyncSessionLocal() as session:
+        created = 0
+        for index, (first, last, category, city, country) in enumerate(CUSTOMERS, 1):
+            external_id = f"demo-patient-{index:03d}"
+            patient = await session.scalar(
+                select(Patient).where(Patient.external_id == external_id)
+            )
+            if patient is None:
+                patient = Patient(
+                    external_id=external_id,
+                    first_name=first,
+                    last_name=last,
+                    full_name=f"{first} {last}",
+                    phone=f"+1555010{index:04d}",
+                    email=f"demo-patient-{index:03d}@example.com",
+                    city=city,
+                    country=country,
+                    preferred_language="en",
+                    preferred_notification_channel="email",
+                    customer_category=category,
+                    loyalty_tier=random.choice(["Bronze", "Silver", "Gold"]),
+                    loyalty_points=random.randint(50, 900),
+                    notes="Synthetic demonstration customer.",
+                )
+                session.add(patient)
+                await session.flush()
+                created += 1
+
+            for visit in range(1, 3 + index % 2):
+                receipt = f"DEMO-{index:03d}-{visit:02d}"
+                for item_category, name, price, rx_required in random.sample(
+                    PURCHASE_CATEGORIES, k=3
+                ):
+                    exists = await session.scalar(
+                        select(PatientPurchase).where(
+                            PatientPurchase.patient_id == patient.id,
+                            PatientPurchase.receipt_number == receipt,
+                            PatientPurchase.category == item_category,
+                            PatientPurchase.product_id.is_(None),
+                        )
+                    )
+                    if exists:
+                        continue
+                    session.add(
+                        PatientPurchase(
+                            patient_id=patient.id,
+                            receipt_number=receipt,
+                            category=item_category,
+                            quantity=random.randint(1, 3),
+                            unit_price=price,
+                            prescription_required=rx_required,
+                            purchased_at=datetime.utcnow()
+                            - timedelta(days=random.randint(1, 120)),
+                        )
+                    )
+            patient.visit_count = 2 + index % 2
+            patient.last_visit_date = datetime.utcnow() - timedelta(days=index % 14)
+
+        await session.commit()
+        print(f"Stage 1 complete: {len(CUSTOMERS)} synthetic patients; newly created: {created}.")
 
 
-if __name__ == '__main__':
-    asyncio.run(seed_patients(100))
+if __name__ == "__main__":
+    asyncio.run(seed_patients())
