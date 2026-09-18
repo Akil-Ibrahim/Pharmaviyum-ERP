@@ -2,8 +2,23 @@ from datetime import datetime, timedelta
 from typing import Dict
 
 import jwt
+from jwt import PyJWTError
 
 from src.pharmaviyum.config import settings
+
+
+def decode_access_token(token: str) -> dict | None:
+    """Decode and validate an API JWT using the same signing configuration."""
+    if not settings.API_SECRET_KEY:
+        return None
+    try:
+        return jwt.decode(
+            token,
+            settings.API_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM],
+        )
+    except PyJWTError:
+        return None
 
 
 def create_access_token(subject: str, expires_delta: int | None = None) -> str:
