@@ -141,7 +141,7 @@ async def delete_patient(
 @router.post("/{patient_id}/visit", response_model=PatientResponse)
 async def record_visit(
     patient_id: int,
-    purchase_amount: int = Query(0, ge=0),
+    purchase_amount: float = Query(0.0, ge=0),
     service: PatientService = Depends(get_patient_service),
     _: object = Depends(get_current_active_user),
 ):
