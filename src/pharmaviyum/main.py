@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -21,6 +20,7 @@ from src.pharmaviyum.api.exceptions import (
 from src.pharmaviyum.api.middleware import LoggingMiddleware, RequestIDMiddleware
 from src.pharmaviyum.api.v1 import api_v1_router
 from src.pharmaviyum.core.logging import logger
+from src.pharmaviyum.core.static_files import setup_static_files
 from src.pharmaviyum.database import AsyncSessionLocal
 from src.pharmaviyum.redis_client import close_redis, get_redis
 
@@ -104,19 +104,9 @@ async def root() -> dict[str, str]:
     }
 
 
-# FastAPI Cloud can serve the built React SPA from the same deployment. The
-# path is resolved from this module instead of relying on the process CWD,
-# while check_dir="auto" keeps local API-only development working before a
-# frontend build has been produced.
-frontend_dist = Path("/app/static")
-if not frontend_dist.exists():
-    frontend_dist = (
-        Path(__file__).resolve().parents[2]
-        / "frontend"
-        / "shadcn-admin"
-        / "dist"
-    )
-app.frontend("/", directory=frontend_dist, check_dir="auto")
+# Serve the production React SPA from /app/static in Docker and from the
+# repository frontend build directory during local development.
+setup_static_files(app)
 
 
 if __name__ == "__main__":
