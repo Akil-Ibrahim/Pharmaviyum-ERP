@@ -461,16 +461,15 @@ PRODUCT_CATALOG = [
     ),
 ]
 
-
-
 def synthetic_barcode(index: int) -> str:
     return f"DEMO{index:04d}{20260918}"
-
 
 async def seed_inventory(session) -> dict[str, tuple[Product, ProductBatch]]:
     inventory = {}
     for index, spec in enumerate(PRODUCT_CATALOG, 1):
-        product = await session.scalar(\n            select(Product).where(Product.sku == spec["sku"])\n        )
+        product = await session.scalar(
+            select(Product).where(Product.sku == spec["sku"])
+        )
         if product is None:
             product = Product(
                 name=spec["name"],
@@ -520,7 +519,6 @@ async def seed_inventory(session) -> dict[str, tuple[Product, ProductBatch]]:
             await session.flush()
         inventory[product.sku] = (product, batch)
     return inventory
-
 
 async def seed_patients() -> None:
     async with AsyncSessionLocal() as session:
@@ -627,10 +625,14 @@ async def seed_patients() -> None:
                             product_id=rx_product.id,
                             prescription_number=prescription_number,
                             dosage=(
-                                (\n                                    f"{rx_product.dosage_strength}; follow prescriber directions"\n                                )
+                                (
+                                    f"{rx_product.dosage_strength}; follow prescriber directions"
+                                )
                             ),
                             instructions=(
-                                (\n                                    "Synthetic demonstration prescription. Do not use as clinical guidance."\n                                )
+                                (
+                                    "Synthetic demonstration prescription. Do not use as clinical guidance."
+                                )
                             ),
                             status="active",
                             issued_at=datetime.utcnow() - timedelta(days=30),
