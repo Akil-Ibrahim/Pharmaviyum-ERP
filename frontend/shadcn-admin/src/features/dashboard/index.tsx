@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+import { apiFetch } from '@/lib/api-client'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -5,8 +7,6 @@ import { TopNav } from '@/components/layout/top-nav'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { useEffect, useState } from 'react'
-import { apiFetch } from '@/lib/api-client'
 
 export function Dashboard() {
   const [stats, setStats] = useState<PatientStatistics | null>(null)
@@ -53,6 +53,7 @@ export function Dashboard() {
               <MetricCard label='Active patients' value={String(stats?.active ?? 0)} detail='Currently active profiles' tone='green' />
               <MetricCard label='Purchase value' value={formatCurrency(stats?.total_purchase_value ?? 0)} detail='Lifetime recorded value' tone='yellow' />
               <MetricCard label='Loyalty members' value={String(loyaltyMembers)} detail='Non-standard loyalty tiers' tone='purple' />
+              <MetricCard label='Bonus points' value={String(stats?.total_loyalty_points ?? 0)} detail='Active patient balances' tone='cyan' />
             </div>
 
             <div className='grid gap-6 lg:grid-cols-2'>
@@ -96,6 +97,7 @@ type PatientStatistics = {
   active: number
   inactive: number
   total_purchase_value: number
+  total_loyalty_points: number
   by_loyalty_tier: Record<string, number>
   by_country: Record<string, number>
 }
@@ -104,8 +106,9 @@ function formatCurrency(value: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
 }
 
-function MetricCard({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: 'blue' | 'green' | 'yellow' | 'purple' }) {
+function MetricCard({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: 'blue' | 'green' | 'yellow' | 'purple' | 'cyan' }) {
   const classes = {
+    cyan: 'border-cyan-200 bg-cyan-50/80 dark:border-cyan-900 dark:bg-cyan-950/30',
     blue: 'border-sky-200 bg-sky-50/80 dark:border-sky-900 dark:bg-sky-950/30',
     green: 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/30',
     yellow: 'border-amber-200 bg-amber-50/80 dark:border-amber-900 dark:bg-amber-950/30',
