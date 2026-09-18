@@ -56,3 +56,8 @@ def test_create_and_get_order(client):
     assert purchase["quantity"] == 1
     assert purchase["unit_price"] == 12.5
     assert purchase["total_amount"] == 12.5
+    stats = client.get("/api/v1/patients/statistics")
+    assert stats.status_code == 200
+    statistics = stats.json()
+    assert statistics["total_purchase_value"] == 12.5
+
