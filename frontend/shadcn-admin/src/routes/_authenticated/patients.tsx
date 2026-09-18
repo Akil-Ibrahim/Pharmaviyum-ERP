@@ -38,7 +38,7 @@ function PatientsPage() {
     total: statistics?.total ?? patients.length,
     active: statistics?.active ?? patients.filter((patient) => patient.is_active).length,
     revenue: statistics?.total_purchase_value ?? patients.reduce((sum, patient) => sum + patient.total_purchases, 0),
-    loyalty: statistics ? Object.entries(statistics.by_loyalty_tier).filter(([tier]) => tier !== 'standard').reduce((sum, [, count]) => sum + count, 0) : patients.filter((patient) => patient.loyalty_tier !== 'standard').length,
+    loyalty: statistics ? Object.entries(statistics.by_loyalty_tier).filter(([tier]) => tier.toLowerCase() !== 'standard').reduce((sum, [, count]) => sum + count, 0) : patients.filter((patient) => patient.loyalty_tier.toLowerCase() !== 'standard').length,
   }
 
   useEffect(() => {
@@ -92,7 +92,7 @@ function PatientsPage() {
             <MetricCard label='Loyalty points' value={selected.loyalty_points.toLocaleString()} detail={`Tier: ${selected.loyalty_tier}`} tone='blue' />
             <MetricCard label='Total spent' value={formatCurrency(selected.total_purchases)} detail='Lifetime purchase value' tone='yellow' />
             <MetricCard label='Visits' value={selected.visit_count.toString()} detail='Pharmacy visits' tone='green' />
-            <MetricCard label='Receipts' value={selected.purchases.length.toString()} detail='Persisted purchase line records' tone='red' />
+            <MetricCard label='Receipts' value={new Set(selected.purchases.map((purchase) => purchase.receipt_number)).size.toString()} detail='Unique persisted receipts' tone='red' />
           </div>
           <div className='mt-6 grid gap-6 lg:grid-cols-3'>
             <section className='rounded-xl border p-4'><h3 className='mb-3 font-semibold'>Patient profile</h3><div className='space-y-2 text-sm'>
