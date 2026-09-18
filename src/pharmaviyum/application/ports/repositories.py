@@ -44,5 +44,5 @@ class PatientRepositoryPort(Repository[Patient], Protocol):
     async def get_total_loyalty_points(self) -> int: ...
 
     async def record_visit(
-        self, id: int, purchase_amount: int = 0
+        self, id: int, purchase_amount: float = 0.0
     ) -> Patient | None: ...
