@@ -43,8 +43,17 @@ class Settings(BaseSettings):
     MAX_LOGIN_ATTEMPTS: int = 5
 
     @model_validator(mode="after")
-    def validate_security_configuration(self) -> "Settings":
-        """Fail closed when a deployment environment lacks a JWT secret."""
+    def validate_and_normalize_configuration(self) -> "Settings":
+        """Normalize managed PostgreSQL URLs and enforce deployment security."""
+        if self.DATABASE_URL.startswith("postgres://"):
+            self.DATABASE_URL = self.DATABASE_URL.replace(
+                "postgres://", "postgresql+asyncpg://", 1
+            )
+        elif self.DATABASE_URL.startswith("postgresql://"):
+            self.DATABASE_URL = self.DATABASE_URL.replace(
+                "postgresql://", "postgresql+asyncpg://", 1
+            )
+
         if self.ENVIRONMENT in {Environment.STAGING, Environment.PRODUCTION}:
             if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
                 raise ValueError(
