@@ -168,8 +168,6 @@ class PatientFactory(factory.async_sqlalchemy.AsyncSQLAlchemyFactory):
     # Loyalty
     loyalty_tier = fuzzy.FuzzyChoice(["Bronze", "Silver", "Gold", "Platinum"])
     loyalty_points = factory.LazyFunction(lambda: factory.Faker("random_int", min=0, max=10000).evaluate(None, None, {'locale': None}))
-    # Statistics
-    total_purchases = factory.LazyFunction(lambda: factory.Faker("random_int", min=0, max=100000000).evaluate(None, None, {'locale': None}))
     visit_count = factory.LazyFunction(lambda: factory.Faker("random_int", min=0, max=100).evaluate(None, None, {'locale': None}))
     last_visit_date = factory.LazyFunction(
         lambda: date.today() - timedelta(days=factory.Faker("random_int", min=0, max=365).evaluate(None, None, {'locale': None}))
@@ -421,7 +419,6 @@ def sample_patient():
         country="VN",
         loyalty_tier="Bronze",
         loyalty_points=0,
-        total_purchases=0,
         visit_count=0,
         is_active=True,
     )
