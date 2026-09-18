@@ -470,7 +470,7 @@ def synthetic_barcode(index: int) -> str:
 async def seed_inventory(session) -> dict[str, tuple[Product, ProductBatch]]:
     inventory = {}
     for index, spec in enumerate(PRODUCT_CATALOG, 1):
-        product = await session.scalar(select(Product).where(Product.sku == spec["sku"]))
+        product = await session.scalar(\n            select(Product).where(Product.sku == spec["sku"])\n        )
         if product is None:
             product = Product(
                 name=spec["name"],
@@ -627,10 +627,10 @@ async def seed_patients() -> None:
                             product_id=rx_product.id,
                             prescription_number=prescription_number,
                             dosage=(
-                                f"{rx_product.dosage_strength}; follow prescriber directions"
+                                (\n                                    f"{rx_product.dosage_strength}; follow prescriber directions"\n                                )
                             ),
                             instructions=(
-                                "Synthetic demonstration prescription. Do not use as clinical guidance."
+                                (\n                                    "Synthetic demonstration prescription. Do not use as clinical guidance."\n                                )
                             ),
                             status="active",
                             issued_at=datetime.utcnow() - timedelta(days=30),
