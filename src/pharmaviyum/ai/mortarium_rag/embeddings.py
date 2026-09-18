@@ -178,10 +178,15 @@ class EmbeddingsFactory:
         redis_client: Any = None,
         api_key: str | None = None,
         model: str | None = None,
+        endpoint: str = "http://localhost:11434",
         dimensions: int = 1024,
     ) -> EmbeddingsProvider:
         if provider == "ollama":
-            base: EmbeddingsProvider = OllamaEmbeddings(dimensions=dimensions)
+            base: EmbeddingsProvider = OllamaEmbeddings(
+                model=model or "mxbai-embed-large",
+                endpoint=endpoint,
+                dimensions=dimensions,
+            )
         elif provider == "openai":
             if not api_key:
                 raise RuntimeError(
