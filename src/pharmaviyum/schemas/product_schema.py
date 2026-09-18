@@ -27,6 +27,18 @@ class ProductCreate(BaseModel):
 class ProductUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, max_length=1000)
+    dosage_strength: str | None = Field(default=None, max_length=100)
+    dosage_form: str | None = Field(default=None, max_length=50)
+    units_per_pack: int | None = Field(default=None, gt=0)
+    package_type: str | None = Field(default=None, max_length=50)
+    blisters_per_pack: int | None = Field(default=None, ge=0)
+    units_per_blister: int | None = Field(default=None, ge=0)
+    manufacturer: str | None = Field(default=None, max_length=200)
+    inn_name: str | None = Field(default=None, max_length=200)
+    atc_code: str | None = Field(default=None, max_length=20)
+    regulatory_id: str | None = Field(default=None, max_length=50)
+    gtin: str | None = Field(default=None, min_length=8, max_length=14)
+    barcode: str | None = Field(default=None, max_length=64)
     price: float | None = Field(default=None, ge=0)
     stock: int | None = Field(default=None, ge=0)
     is_active: bool | None = None
