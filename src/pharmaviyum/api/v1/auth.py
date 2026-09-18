@@ -14,7 +14,7 @@ from src.pharmaviyum.core.oauth2 import create_access_token
 from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.user import User
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
 # Password context using bcrypt for hashing
 # Note: bcrypt has a 72-byte password limit, so we truncate longer passwords
@@ -47,7 +47,8 @@ async def _get_user_by_username_or_email(db: AsyncSession, username_or_email: st
 
 @router.post("/token")
 async def token(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Issue a JWT access token for valid credentials.
