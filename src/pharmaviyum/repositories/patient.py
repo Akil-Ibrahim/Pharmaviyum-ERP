@@ -39,7 +39,7 @@ class PatientRepository(BaseRepository[Patient]):
         include_allergies: bool = True,
         include_conditions: bool = True,
         include_insurances: bool = True,
-        include_consultations: bool = False,
+        include_consultations: bool = True,
     ) -> Optional[Patient]:
         """Get patient by ID with eager-loaded relationships."""
         query = select(Patient).where(Patient.id == id)
