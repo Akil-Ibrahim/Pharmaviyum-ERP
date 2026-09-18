@@ -40,5 +40,14 @@ class PatientPurchase(Base):
         return self.product.name if self.product is not None else None
 
     @property
+    @property
+    def batch_number(self) -> str | None:
+        return self.batch.batch_number if self.batch is not None else None
+
+    @property
+    def expiry_date(self):
+        return self.batch.expiry_date if self.batch is not None else None
+
+    @property
     def total_amount(self) -> float:
         return round(self.quantity * self.unit_price, 2)
