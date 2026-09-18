@@ -90,7 +90,7 @@ function PatientsPage() {
           <div className='flex items-start justify-between gap-4'><div><h2 className='text-xl font-semibold'>{selected.full_name}</h2><p className='text-sm text-muted-foreground'>{selected.customer_category} · {selected.city}, {selected.country}</p></div><button type='button' className='rounded-md border px-3 py-1 text-sm' onClick={() => setSelected(null)}>Close</button></div>
           <div className='mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
             <MetricCard label='Loyalty points' value={selected.loyalty_points.toLocaleString()} detail={`Tier: ${selected.loyalty_tier}`} tone='blue' />
-            <MetricCard label='Total spent' value={formatCurrency(selected.total_purchases)} detail='Lifetime purchase value' tone='yellow' />
+            <MetricCard label='Total spent' value={formatCurrency(selected.purchases.reduce((sum, purchase) => sum + purchase.total_amount, 0))} detail='Persisted purchase history' tone='yellow' />
             <MetricCard label='Visits' value={selected.visit_count.toString()} detail='Pharmacy visits' tone='green' />
             <MetricCard label='Receipts' value={new Set(selected.purchases.map((purchase) => purchase.receipt_number)).size.toString()} detail='Unique persisted receipts' tone='red' />
           </div>
@@ -177,7 +177,7 @@ function PatientsPage() {
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(value)
 }
 
 function formatDateTime(value?: string) {
