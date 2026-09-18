@@ -37,6 +37,18 @@ class ProductResponse(BaseModel):
     name: str
     sku: str
     description: str | None = None
+    dosage_strength: str | None = None
+    dosage_form: str | None = None
+    units_per_pack: int = 1
+    package_type: str = "pack"
+    blisters_per_pack: int = 0
+    units_per_blister: int = 0
+    manufacturer: str | None = None
+    inn_name: str | None = None
+    atc_code: str | None = None
+    regulatory_id: str | None = None
+    gtin: str | None = None
+    barcode: str | None = None
     price: float
     stock: int
     is_active: bool
