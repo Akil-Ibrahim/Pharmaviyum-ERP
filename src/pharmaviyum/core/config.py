@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     REDIS_CACHE_TTL: int = 3600
 
     SECRET_KEY: Optional[str] = None
+    API_SECRET_KEY: Optional[str] = None
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -53,6 +54,11 @@ class Settings(BaseSettings):
             self.DATABASE_URL = self.DATABASE_URL.replace(
                 "postgresql://", "postgresql+asyncpg://", 1
             )
+
+        # Keep compatibility with the existing API_SECRET_KEY environment
+        # variable while the application standardizes on SECRET_KEY.
+        if not self.SECRET_KEY and self.API_SECRET_KEY:
+            self.SECRET_KEY = self.API_SECRET_KEY
 
         if self.ENVIRONMENT in {Environment.STAGING, Environment.PRODUCTION}:
             if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
