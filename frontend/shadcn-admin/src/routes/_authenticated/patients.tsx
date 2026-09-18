@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { apiFetch } from '@/lib/api-client'
 
 type Patient = { id: number; full_name: string; phone: string; email?: string; city?: string; country: string; customer_category: string; loyalty_tier: string; total_purchases: number; visit_count: number; is_active: boolean }
-type PatientStatistics = { total: number; active: number; inactive: number; by_loyalty_tier: Record<string, number>; by_country: Record<string, number> }
+type PatientStatistics = { total: number; active: number; inactive: number; total_purchase_value: number; by_loyalty_tier: Record<string, number>; by_country: Record<string, number> }
 type PatientDetail = Patient & {
   first_name: string
   last_name: string
@@ -21,7 +21,7 @@ type PatientDetail = Patient & {
   allergies: Array<{ id: number; allergen_type: string; allergen_name: string; severity: string; reaction?: string; is_verified: boolean; created_at: string; updated_at: string }>
   insurances: Array<{ id: number; provider_name: string; policy_number?: string; is_active: boolean; created_at: string; updated_at: string }>
   consultations: Array<{ id: number; notes?: string; created_at: string; updated_at: string }>
-  purchases: Array<{ id: number; receipt_number: string; category: string; product_id?: number; product_name?: string; batch_number?: string; expiry_date?: string; quantity: number; dispensed_packs?: number; dispensed_blisters?: number; dispensed_units?: number; unit_price: number; total_amount: number; prescription_required: boolean; purchased_at: string }>
+  purchases: Array<{ id: number; receipt_number: string; category: string; product_id?: number; product_name?: string; batch_id?: number; batch_number?: string; expiry_date?: string; quantity: number; dispensed_packs?: number; dispensed_blisters?: number; dispensed_units?: number; unit_price: number; total_amount: number; prescription_required: boolean; purchased_at: string }>
 }
 
 export const Route = createFileRoute('/_authenticated/patients')({ component: PatientsPage })
@@ -37,15 +37,19 @@ function PatientsPage() {
   const metrics = {
     total: statistics?.total ?? patients.length,
     active: statistics?.active ?? patients.filter((patient) => patient.is_active).length,
-    revenue: patients.reduce((sum, patient) => sum + patient.total_purchases, 0),
+    revenue: statistics?.total_purchase_value ?? patients.reduce((sum, patient) => sum + patient.total_purchases, 0),
     loyalty: statistics ? Object.entries(statistics.by_loyalty_tier).filter(([tier]) => tier !== 'standard').reduce((sum, [, count]) => sum + count, 0) : patients.filter((patient) => patient.loyalty_tier !== 'standard').length,
   }
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       apiFetch<Patient[]>('/api/v1/patients/?page=1&page_size=20'),
       apiFetch<PatientStatistics>('/api/v1/patients/statistics'),
-    ]).then(([items, stats]) => { setPatients(items); setStatistics(stats) }).catch((err: Error) => setError(err.message)).finally(() => setLoading(false))
+    ]).then(([patientsResult, statisticsResult]) => {
+      if (patientsResult.status === 'fulfilled') setPatients(patientsResult.value)
+      else setError(patientsResult.reason instanceof Error ? patientsResult.reason.message : 'Failed to load patients')
+      if (statisticsResult.status === 'fulfilled') setStatistics(statisticsResult.value)
+    }).finally(() => setLoading(false))
   }, [])
 
   async function openPatient(id: number) {
@@ -99,11 +103,72 @@ function PatientsPage() {
             </div></section>
             <section className='rounded-xl border p-4'><h3 className='mb-3 font-semibold'>Medical profile</h3>${selected.conditions.length === 0 ? <p className='text-sm text-muted-foreground'>No medical conditions recorded.</p> : <div className='space-y-2'>${selected.conditions.map((condition) => <div key={condition.condition_name} className='rounded-lg border p-3'><p className='font-medium'>${condition.condition_name}</p><p className='text-xs text-muted-foreground'>${condition.status} · ${condition.severity}${condition.is_chronic ? ' · chronic' : ''}</p>${condition.diagnosis_date && <p className='mt-1 text-xs text-muted-foreground'>Diagnosed: ${condition.diagnosis_date}</p>}${condition.current_medications && <p className='mt-1 text-xs'>${condition.current_medications}</p>}</div>)}</div>}</section>
           </div>
-          <section className='mt-6 rounded-xl border p-4'><div className='flex items-center justify-between gap-3'><div><h3 className='font-semibold'>Full patient history</h3><p className='text-xs text-muted-foreground'>All persisted consultations and purchase records for this patient.</p></div><span className='rounded-full bg-muted px-2.5 py-1 text-xs'>${selected.consultations.length + selected.purchases.length} events</span></div>
-            <div className='mt-4 space-y-3'>${selected.consultations.length === 0 && selected.purchases.length === 0 ? <p className='text-sm text-muted-foreground'>No history records are available.</p> : [
-              ...selected.consultations.map((item) => ({ kind: 'Consultation', date: item.created_at, id: `c-${item.id}`, title: 'Consultation', detail: item.notes ?? 'Consultation recorded.' })),
-              ...selected.purchases.map((item) => ({ kind: item.prescription_required ? 'Prescription' : 'Purchase', date: item.purchased_at, id: `p-${item.id}`, title: item.product_name ?? item.category, detail: `${item.receipt_number} · ${formatCurrency(item.total_amount)} · ${item.category}` })),
-            ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((event) => <div key={event.id} className='flex gap-3 rounded-lg border p-3'><div className='mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-sky-500' /><div className='min-w-0'><div className='flex flex-wrap gap-x-2 gap-y-1'><p className='font-medium'>${event.title}</p><span className='text-xs text-muted-foreground'>${event.kind}</span></div><p className='text-sm text-muted-foreground'>${event.detail}</p><p className='mt-1 text-xs text-muted-foreground'>${formatDateTime(event.date)}</p></div></div>)}</div>
+          <section className='mt-6 rounded-xl border p-4'>
+            <div className='flex items-center justify-between gap-3'>
+              <div>
+                <h3 className='font-semibold'>Receipts & purchase history</h3>
+                <p className='text-xs text-muted-foreground'>Every persisted receipt line for this patient, grouped by receipt number.</p>
+              </div>
+              <span className='rounded-full bg-muted px-2.5 py-1 text-xs'>{selected.purchases.length} line records</span>
+            </div>
+            <div className='mt-4 space-y-3'>
+              {groupReceipts(selected.purchases).map((receipt) => (
+                <div key={receipt.receiptNumber} className='rounded-xl border p-4'>
+                  <div className='flex flex-wrap items-start justify-between gap-3'>
+                    <div>
+                      <p className='font-semibold'>Receipt {receipt.receiptNumber}</p>
+                      <p className='text-xs text-muted-foreground'>{formatDateTime(receipt.purchasedAt)} · {receipt.lines.length} item(s)</p>
+                    </div>
+                    <p className='text-lg font-bold'>{formatCurrency(receipt.total)}</p>
+                  </div>
+                  <div className='mt-3 space-y-2'>
+                    {receipt.lines.map((item) => (
+                      <div key={item.id} className='rounded-lg bg-muted/40 p-3'>
+                        <div className='flex flex-wrap items-start justify-between gap-3'>
+                          <div>
+                            <p className='font-medium'>{item.product_name ?? item.category}</p>
+                            <p className='text-xs text-muted-foreground'>{item.category} · {item.prescription_required ? 'Rx' : 'OTC / non-Rx'}</p>
+                          </div>
+                          <p className='font-medium'>{formatCurrency(item.total_amount)}</p>
+                        </div>
+                        <p className='mt-2 text-xs text-muted-foreground'>
+                          {item.dispensed_packs ?? item.quantity} pack(s)
+                          {item.dispensed_blisters ? ' · ' + item.dispensed_blisters + ' blister(s)' : ''}
+                          {item.dispensed_units ? ' · ' + item.dispensed_units + ' unit(s)' : ''}
+                          {item.batch_number ? ' · Batch ' + item.batch_number : ''}
+                          {item.expiry_date ? ' · Exp ' + item.expiry_date : ''}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {selected.purchases.length === 0 && <p className='text-sm text-muted-foreground'>No receipts are recorded for this patient.</p>}
+            </div>
+          </section>
+          <section className='mt-6 rounded-xl border p-4'>
+            <div className='flex items-center justify-between gap-3'>
+              <div>
+                <h3 className='font-semibold'>Full patient history</h3>
+                <p className='text-xs text-muted-foreground'>All persisted consultations and purchase records for this patient.</p>
+              </div>
+              <span className='rounded-full bg-muted px-2.5 py-1 text-xs'>{selected.consultations.length + selected.purchases.length} events</span>
+            </div>
+            <div className='mt-4 space-y-3'>
+              {selected.consultations.length === 0 && selected.purchases.length === 0 ? <p className='text-sm text-muted-foreground'>No history records are available.</p> : [
+                ...selected.consultations.map((item) => ({ kind: 'Consultation', date: item.created_at, id: 'c-' + item.id, title: 'Consultation', detail: item.notes ?? 'Consultation recorded.' })),
+                ...selected.purchases.map((item) => ({ kind: item.prescription_required ? 'Prescription' : 'Purchase', date: item.purchased_at, id: 'p-' + item.id, title: item.product_name ?? item.category, detail: item.receipt_number + ' · ' + formatCurrency(item.total_amount) + ' · ' + item.category })),
+              ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((event) => (
+                <div key={event.id} className='flex gap-3 rounded-lg border p-3'>
+                  <div className='mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-sky-500' />
+                  <div className='min-w-0'>
+                    <div className='flex flex-wrap gap-x-2 gap-y-1'><p className='font-medium'>{event.title}</p><span className='text-xs text-muted-foreground'>{event.kind}</span></div>
+                    <p className='text-sm text-muted-foreground'>{event.detail}</p>
+                    <p className='mt-1 text-xs text-muted-foreground'>{formatDateTime(event.date)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
         </div>
       )}
@@ -118,6 +183,25 @@ function formatCurrency(value: number) {
 function formatDateTime(value?: string) {
   if (!value) return '—'
   return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+}
+
+function groupReceipts(purchases: PatientDetail['purchases']) {
+  const grouped = new Map<string, { receiptNumber: string; purchasedAt: string; total: number; lines: PatientDetail['purchases'] }>()
+  for (const purchase of purchases) {
+    const current = grouped.get(purchase.receipt_number)
+    if (current) {
+      current.total += purchase.total_amount
+      current.lines.push(purchase)
+    } else {
+      grouped.set(purchase.receipt_number, {
+        receiptNumber: purchase.receipt_number,
+        purchasedAt: purchase.purchased_at,
+        total: purchase.total_amount,
+        lines: [purchase],
+      })
+    }
+  }
+  return Array.from(grouped.values()).sort((a, b) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime())
 }
 
 function categoryTone(category: string): string {
