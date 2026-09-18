@@ -75,15 +75,28 @@ export function UserAuthForm({
         )
       }
 
-      const user = {
-        accountNo: 'ADMIN-001',
-        email: data.username.trim(),
-        role: ['admin'],
-        exp: Date.now() + 24 * 60 * 60 * 1000,
+      auth.setAccessToken(result.access_token)
+
+      const meResponse = await fetch(
+        `${apiBaseUrl}/api/v1/auth/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${result.access_token}`,
+          },
+        }
+      )
+      const me = await meResponse.json().catch(() => ({}))
+
+      if (!meResponse.ok) {
+        auth.reset()
+        throw new Error(
+          me?.detail && typeof me.detail === 'string'
+            ? me.detail
+            : 'Unable to load the authenticated user'
+        )
       }
 
-      auth.setUser(user)
-      auth.setAccessToken(result.access_token)
+      auth.setUser(me)
 
       const targetPath = redirectTo || '/'
       navigate({ to: targetPath, replace: true })
