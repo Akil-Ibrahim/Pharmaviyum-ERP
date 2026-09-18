@@ -199,6 +199,7 @@ class PatientService:
             "active": active,
             "inactive": total - active,
             "total_purchase_value": await self.repository.get_total_purchase_value(),
+            "total_loyalty_points": await self.repository.get_total_loyalty_points(),
             "by_loyalty_tier": await self.repository.get_loyalty_tiers_stats(),
             "by_country": await self.repository.get_country_stats(),
         }
