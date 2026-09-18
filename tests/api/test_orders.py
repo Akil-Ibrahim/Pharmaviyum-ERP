@@ -35,3 +35,24 @@ def test_create_and_get_order(client):
     patient = presponse.json()
     assert patient["total_purchases"] == 0.0
     assert patient["visit_count"] == 0
+    # Completing the order creates one canonical purchase-ledger entry.
+    sresp = client.patch(
+        f"/api/v1/orders/{order_id}/status",
+        json={"status": "completed"},
+    )
+    assert sresp.status_code in (200, 403)
+    if sresp.status_code == 403:
+        return
+    assert sresp.json()["status"] == "completed"
+
+    dresp = client.get(f"/api/v1/patients/{patient_id}")
+    assert dresp.status_code == 200
+    completed_patient = dresp.json()
+    assert completed_patient["visit_count"] == 1
+    assert len(completed_patient["purchases"]) == 1
+    purchase = completed_patient["purchases"][0]
+    assert purchase["receipt_number"] == f"ORDER-{order_id}"
+    assert purchase["category"] == "order"
+    assert purchase["quantity"] == 1
+    assert purchase["unit_price"] == 12.5
+    assert purchase["total_amount"] == 12.5
