@@ -14,3 +14,8 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    @property
+    def role(self) -> str:
+        """Expose the authorization role without introducing a second users table model."""
+        return "admin" if self.is_superuser else "pharmacist"
