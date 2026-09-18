@@ -105,12 +105,12 @@ def _validate_inventory_levels(quantity: int, reserved_quantity: int) -> None:
         )
 
 
-@router.get("/pharmacies")
+@router.get("/pharmacies", response_model=None)
 async def list_pharmacies(_: CurrentUser, session: SessionDep) -> list[Pharmacy]:
     return await _list(session, Pharmacy)
 
 
-@router.post("/pharmacies", status_code=status.HTTP_201_CREATED)
+@router.post("/pharmacies", response_model=None, status_code=status.HTTP_201_CREATED)
 async def create_pharmacy(
     data: PharmacyIn, _: CurrentSuperuser, session: SessionDep
 ) -> Pharmacy:
@@ -121,12 +121,12 @@ async def create_pharmacy(
     return pharmacy
 
 
-@router.get("/suppliers")
+@router.get("/suppliers", response_model=None)
 async def list_suppliers(_: CurrentUser, session: SessionDep) -> list[Supplier]:
     return await _list(session, Supplier)
 
 
-@router.post("/suppliers", status_code=status.HTTP_201_CREATED)
+@router.post("/suppliers", response_model=None, status_code=status.HTTP_201_CREATED)
 async def create_supplier(
     data: SupplierIn, _: CurrentSuperuser, session: SessionDep
 ) -> Supplier:
@@ -137,7 +137,7 @@ async def create_supplier(
     return supplier
 
 
-@router.get("/inventory")
+@router.get("/inventory", response_model=None)
 async def list_inventory(
     _: CurrentUser,
     session: SessionDep,
@@ -159,7 +159,7 @@ async def list_inventory(
     return list(result.scalars().all())
 
 
-@router.post("/inventory", status_code=status.HTTP_201_CREATED)
+@router.post("/inventory", response_model=None, status_code=status.HTTP_201_CREATED)
 async def create_inventory(
     data: InventoryIn, _: CurrentSuperuser, session: SessionDep
 ) -> Inventory:
@@ -183,7 +183,7 @@ async def create_inventory(
     return inventory
 
 
-@router.patch("/inventory/{inventory_id}")
+@router.patch("/inventory/{inventory_id}", response_model=None)
 async def update_inventory(
     inventory_id: int,
     data: InventoryUpdate,
@@ -229,7 +229,7 @@ async def delete_inventory(
     await session.commit()
 
 
-@router.get("/prescriptions")
+@router.get("/prescriptions", response_model=None)
 async def list_prescriptions(
     _: CurrentSuperuser, session: SessionDep
 ) -> list[Prescription]:
@@ -237,7 +237,7 @@ async def list_prescriptions(
     return await _list(session, Prescription)
 
 
-@router.post("/prescriptions", status_code=status.HTTP_201_CREATED)
+@router.post("/prescriptions", response_model=None, status_code=status.HTTP_201_CREATED)
 async def create_prescription(
     data: PrescriptionIn, _: CurrentSuperuser, session: SessionDep
 ) -> Prescription:
@@ -248,14 +248,14 @@ async def create_prescription(
     return prescription
 
 
-@router.get("/erp/integrations")
+@router.get("/erp/integrations", response_model=None)
 async def list_erp_integrations(
     _: CurrentSuperuser, session: SessionDep
 ) -> list[ERPIntegration]:
     return await _list(session, ERPIntegration)
 
 
-@router.post("/erp/integrations", status_code=status.HTTP_201_CREATED)
+@router.post("/erp/integrations", response_model=None, status_code=status.HTTP_201_CREATED)
 async def create_erp_integration(
     data: ERPIntegrationIn, _: CurrentSuperuser, session: SessionDep
 ) -> ERPIntegration:
@@ -294,7 +294,7 @@ async def ingest_erp_event(
     return {"status": "accepted", "event_id": data.event_id}
 
 
-@router.get("/erp/integrations/{integration_id}/events")
+@router.get("/erp/integrations/{integration_id}/events", response_model=None)
 async def list_erp_events(
     integration_id: int, _: CurrentSuperuser, session: SessionDep
 ) -> list[ERPSyncEvent]:
