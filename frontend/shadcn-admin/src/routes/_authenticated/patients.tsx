@@ -61,3 +61,43 @@ function PatientsPage() {
     </div>
   )
 }
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
+}
+
+function categoryTone(category: string) {
+  const value = category.toLowerCase()
+  if (value.includes('chronic') || value.includes('cardio') || value.includes('diabetes')) return 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300'
+  if (value.includes('wellness') || value.includes('vitamin') || value.includes('sports')) return 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300'
+  if (value.includes('skin') || value.includes('cosmetic') || value.includes('women')) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300'
+  return 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300'
+}
+
+type MetricTone = 'blue' | 'red' | 'green' | 'yellow'
+
+function MetricCard({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: MetricTone }) {
+  const tones: Record<MetricTone, string> = {
+    blue: 'border-sky-200 bg-sky-50/80 dark:border-sky-900 dark:bg-sky-950/30',
+    red: 'border-red-200 bg-red-50/80 dark:border-red-900 dark:bg-red-950/30',
+    green: 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/30',
+    yellow: 'border-amber-200 bg-amber-50/80 dark:border-amber-900 dark:bg-amber-950/30',
+  }
+  const dots: Record<MetricTone, string> = {
+    blue: 'bg-sky-500',
+    red: 'bg-red-500',
+    green: 'bg-emerald-500',
+    yellow: 'bg-amber-500',
+  }
+
+  return (
+    <div className={`rounded-2xl border p-4 shadow-sm ${tones[tone]}`}>
+      <div className='flex items-center gap-2'>
+        <span className={`h-2.5 w-2.5 rounded-full ${dots[tone]}`} />
+        <p className='text-sm font-medium'>{label}</p>
+      </div>
+      <p className='mt-3 text-3xl font-bold tracking-tight'>{value}</p>
+      <p className='mt-1 text-xs text-muted-foreground'>{detail}</p>
+    </div>
+  )
+}
