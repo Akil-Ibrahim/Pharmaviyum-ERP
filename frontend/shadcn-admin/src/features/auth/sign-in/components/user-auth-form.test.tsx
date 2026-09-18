@@ -12,12 +12,14 @@ const FORM_MESSAGES = {
 const navigate = vi.fn()
 const setUserMock = vi.fn()
 const setAccessTokenMock = vi.fn()
+const resetMock = vi.fn()
 
 vi.mock('@/stores/auth-store', () => ({
   useAuthStore: () => ({
     auth: {
       setUser: setUserMock,
       setAccessToken: setAccessTokenMock,
+      reset: resetMock,
     },
   }),
 }))
@@ -50,6 +52,27 @@ vi.mock('@/lib/utils', async (orig) => ({
 }))
 
 describe('UserAuthForm', () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ access_token: 'mock-access-token', token_type: 'bearer' }), { status: 200 })
+        )
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({
+              accountNo: 'admin',
+              email: 'a@b.com',
+              role: ['admin'],
+              exp: Date.now() + 86_400_000,
+            }),
+            { status: 200 }
+          )
+        )
+    )
+  })
+
   describe('Rendering without redirectTo', () => {
     let screen: RenderResult
     let emailInput: Locator
