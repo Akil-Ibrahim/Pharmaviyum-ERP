@@ -1,11 +1,11 @@
 """
-Authentication endpoints for user login and token generation.
-Supports login by username, email, or fallback admin credentials.
+Authentication endpoints for user login, registration, and token generation.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
+from pydantic import BaseModel
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,16 +16,15 @@ from src.pharmaviyum.models.user import User
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
-# Password context using bcrypt for hashing
-# Note: bcrypt has a 72-byte password limit, so we truncate longer passwords
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+class RegistrationRequest(BaseModel):
+    email: str
+    password: str
+
+
 async def _get_user_by_username_or_email(db: AsyncSession, username_or_email: str):
-    """
-    Get user by username or email.
-    If email contains '@', also try to match by local part of email.
-    """
     if "@" in username_or_email:
         local_part = username_or_email.split("@", 1)[0]
         result = await db.execute(
@@ -41,8 +40,50 @@ async def _get_user_by_username_or_email(db: AsyncSession, username_or_email: st
         result = await db.execute(
             select(User).where(User.username == username_or_email)
         )
-
     return result.scalar_one_or_none()
+
+
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+async def register(
+    payload: RegistrationRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    email = payload.email.strip().lower()
+    password = payload.password
+
+    if "@" not in email or len(email) < 5:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="A valid email address is required",
+        )
+    if len(password) < 7:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Password must be at least 7 characters long",
+        )
+
+    username = email.split("@", 1)[0]
+    existing = await db.execute(
+        select(User).where(or_(User.email == email, User.username == username))
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User already exists",
+        )
+
+    password_to_hash = password[:72]
+    user = User(
+        email=email,
+        username=username,
+        hashed_password=pwd_context.hash(password_to_hash),
+        is_active=True,
+        is_superuser=False,
+    )
+    db.add(user)
+    await db.commit()
+
+    return {"message": "Account created", "username": username, "email": email}
 
 
 @router.post("/token")
@@ -50,38 +91,30 @@ async def token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Issue a JWT access token for valid credentials.
-
-    The endpoint supports login by username, email, or fallback admin credentials.
-    """
     username_or_email = form_data.username.strip()
     user = None
 
-    # Try to get user from database, but don't fail if DB is unavailable
     try:
         user = await _get_user_by_username_or_email(db, username_or_email)
     except Exception:
-        # If DB is unavailable, proceed to fallback admin check
+        # Staging/demo fallback keeps the configured admin available if the DB
+        # is temporarily unavailable.
         pass
 
-    # Verify password against DB user if present
     if user:
-        # Truncate password to 72 bytes for bcrypt compatibility
-        # bcrypt has a hard limit of 72 bytes for password length
         password_to_check = (
             form_data.password[:72]
             if len(form_data.password) > 72
             else form_data.password
         )
-        verified = pwd_context.verify(password_to_check, user.hashed_password)
-        if not verified:
+        if not pwd_context.verify(password_to_check, user.hashed_password):
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials",
+                headers={"WWW-Authenticate": "Bearer"},
             )
         subject = user.username
     else:
-        # Fallback to environment admin credentials
         admin_user = getattr(settings, "ADMIN_USER", "admin")
         admin_pass = settings.ADMIN_PASSWORD
         local_username = username_or_email.split("@", 1)[0]
@@ -92,7 +125,9 @@ async def token(
             and form_data.password == admin_pass
         ):
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials",
+                headers={"WWW-Authenticate": "Bearer"},
             )
         subject = admin_user
 
