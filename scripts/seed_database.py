@@ -103,6 +103,30 @@ PRODUCT_CATALOG = [
          package_type="roll", blisters_per_pack=0, units_per_blister=0,
          manufacturer="Demo medical supply manufacturer", inn_name=None, price=6.50, rx=False),
 ]
+    dict(name="Amoxicillin 250 mg/5 ml Oral Suspension", sku="DEMO-AMOX-SUSP-100", dosage_strength="250 mg/5 ml", dosage_form="oral suspension", units_per_pack=1, package_type="bottle", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name="Amoxicillin", atc_code="J01CA04", price=9.50, rx=True),
+    dict(name="Salbutamol 100 mcg/dose Inhaler", sku="DEMO-SALB-INH-200", dosage_strength="100 mcg/dose", dosage_form="pressurized inhalation", units_per_pack=1, package_type="inhaler", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name="Salbutamol", atc_code="R03AC02", price=14.90, rx=True),
+    dict(name="Xylometazoline 0.1% Nasal Spray", sku="DEMO-XYLO-SPRAY-10", dosage_strength="0.1%", dosage_form="nasal spray", units_per_pack=1, package_type="spray bottle", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name="Xylometazoline", atc_code="R01AA07", price=7.20, rx=False),
+    dict(name="Sodium Chloride 0.9% Nasal Drops", sku="DEMO-NS-DROPS-10", dosage_strength="0.9%", dosage_form="nasal drops", units_per_pack=1, package_type="dropper bottle", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name="Sodium chloride", atc_code="R01AX16", price=5.90, rx=False),
+    dict(name="Chlorhexidine 0.05% Antiseptic Solution", sku="DEMO-CHX-SOL-200", dosage_strength="0.05%", dosage_form="topical solution", units_per_pack=1, package_type="bottle", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name="Chlorhexidine", atc_code="D08AC02", price=6.80, rx=False),
+    dict(name="Hydrocortisone 1% Cream", sku="DEMO-HC-CREAM-15", dosage_strength="1%", dosage_form="cream", units_per_pack=1, package_type="tube", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo dermatology manufacturer", inn_name="Hydrocortisone", atc_code="D07AA02", price=8.90, rx=False),
+    dict(name="Clotrimazole 1% Cream", sku="DEMO-CLOTR-CREAM-20", dosage_strength="1%", dosage_form="cream", units_per_pack=1, package_type="tube", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo dermatology manufacturer", inn_name="Clotrimazole", atc_code="D01AC01", price=7.90, rx=False),
+    dict(name="Mupirocin 2% Ointment", sku="DEMO-MUP-OINT-15", dosage_strength="2%", dosage_form="ointment", units_per_pack=1, package_type="tube", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo dermatology manufacturer", inn_name="Mupirocin", atc_code="D06AX09", price=11.90, rx=True),
+    dict(name="Diclofenac 1% Topical Gel", sku="DEMO-DIC-GEL-50", dosage_strength="1%", dosage_form="gel", units_per_pack=1, package_type="tube", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name="Diclofenac", atc_code="M02AA15", price=10.50, rx=False),
+    dict(name="Calamine Topical Lotion", sku="DEMO-CAL-LOT-100", dosage_strength=None, dosage_form="lotion", units_per_pack=1, package_type="bottle", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo dermatology manufacturer", inn_name="Calamine", price=8.40, rx=False),
+    dict(name="Benzoyl Peroxide 5% Gel", sku="DEMO-BPO-GEL-30", dosage_strength="5%", dosage_form="gel", units_per_pack=1, package_type="tube", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo dermatology manufacturer", inn_name="Benzoyl peroxide", atc_code="D10AE01", price=9.60, rx=False),
+    dict(name="Zinc Oxide 10% Protective Ointment", sku="DEMO-ZNO-OINT-50", dosage_strength="10%", dosage_form="ointment", units_per_pack=1, package_type="tube", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo skincare manufacturer", inn_name="Zinc oxide", price=7.40, rx=False),
+    dict(name="Paracetamol 120 mg/5 ml Oral Suspension", sku="DEMO-PAR-SUSP-100", dosage_strength="120 mg/5 ml", dosage_form="oral suspension", units_per_pack=1, package_type="bottle", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name="Paracetamol", atc_code="N02BE01", price=6.20, rx=False),
+    dict(name="Omeprazole 20 mg Capsules", sku="DEMO-OME-20-28", dosage_strength="20 mg", dosage_form="capsule", units_per_pack=28, package_type="blister", blisters_per_pack=4, units_per_blister=7, manufacturer="Demo international manufacturer", inn_name="Omeprazole", atc_code="A02BC01", price=8.80, rx=False),
+    dict(name="Loperamide 2 mg Capsules", sku="DEMO-LOP-2-20", dosage_strength="2 mg", dosage_form="capsule", units_per_pack=20, package_type="blister", blisters_per_pack=2, units_per_blister=10, manufacturer="Demo international manufacturer", inn_name="Loperamide", atc_code="A07DA03", price=5.80, rx=False),
+    dict(name="Glycerol 2 g Suppositories", sku="DEMO-GLY-SUP-12", dosage_strength="2 g", dosage_form="suppository", units_per_pack=12, package_type="blister", blisters_per_pack=1, units_per_blister=12, manufacturer="Demo international manufacturer", inn_name="Glycerol", atc_code="A06AX01", price=6.70, rx=False),
+    dict(name="Clotrimazole 100 mg Vaginal Tablets", sku="DEMO-CLOTR-VAG-6", dosage_strength="100 mg", dosage_form="vaginal tablet", units_per_pack=6, package_type="blister", blisters_per_pack=1, units_per_blister=6, manufacturer="Demo women's health manufacturer", inn_name="Clotrimazole", atc_code="G01AF02", price=9.90, rx=False),
+    dict(name="Artificial Tears Eye Drops", sku="DEMO-EYE-DROPS-10", dosage_strength=None, dosage_form="eye drops", units_per_pack=1, package_type="dropper bottle", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo ophthalmic manufacturer", inn_name=None, price=10.90, rx=False),
+    dict(name="Antacid Oral Suspension", sku="DEMO-ANT-SUSP-200", dosage_strength=None, dosage_form="oral suspension", units_per_pack=1, package_type="bottle", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name=None, price=7.60, rx=False),
+    dict(name="Oral Rehydration Salts Sachets", sku="DEMO-ORS-10", dosage_strength=None, dosage_form="oral powder", units_per_pack=10, package_type="sachet box", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name=None, price=8.20, rx=False),
+    dict(name="Throat Lozenges", sku="DEMO-THROAT-LOZ-24", dosage_strength=None, dosage_form="lozenge", units_per_pack=24, package_type="blister", blisters_per_pack=2, units_per_blister=12, manufacturer="Demo consumer health manufacturer", inn_name=None, price=6.50, rx=False),
+    dict(name="Antiseptic Wound Dressing", sku="DEMO-WOUND-DRESS-10", dosage_strength=None, dosage_form="wound dressing", units_per_pack=10, package_type="box", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo medical supply manufacturer", inn_name=None, price=8.90, rx=False),
+    dict(name="Hydrocolloid Acne Patches", sku="DEMO-ACNE-PATCH-24", dosage_strength=None, dosage_form="medicated patch", units_per_pack=24, package_type="pouch", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo skincare manufacturer", inn_name=None, price=9.50, rx=False),
+    dict(name="Zinc + Vitamin C Effervescent Tablets", sku="DEMO-ZNC-EFF-20", dosage_strength=None, dosage_form="effervescent tablet", units_per_pack=20, package_type="tube", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo supplement manufacturer", inn_name=None, price=10.50, rx=False),
 
 
 def synthetic_barcode(index: int) -> str:
@@ -261,12 +285,15 @@ async def seed_patients() -> None:
                     )
                 )
                 if existing_rx is None:
+                    rx_spec = next(spec for spec in PRODUCT_CATALOG if spec["rx"])
+                    rx_product, _ = inventory[rx_spec["sku"]]
                     session.add(
                         Prescription(
                             patient_id=patient.id,
+                            product_id=rx_product.id,
                             prescription_number=prescription_number,
-                            dosage="As directed by prescriber",
-                            instructions="Synthetic demonstration prescription.",
+                            dosage=f"{rx_product.dosage_strength}; follow prescriber directions",
+                            instructions="Synthetic demonstration prescription. Do not use as clinical guidance.",
                             status="active",
                             issued_at=datetime.utcnow() - timedelta(days=30),
                             expires_at=datetime.utcnow() + timedelta(days=60),
