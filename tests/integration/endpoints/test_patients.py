@@ -269,9 +269,14 @@ class TestPatientStatistics:
     ):
         """Test statistics endpoint"""
         # Create patients with different tiers
-        await patient_factory.create(loyalty_tier="Bronze")
-        await patient_factory.create(loyalty_tier="Bronze")
-        await patient_factory.create(loyalty_tier="Gold")
+        await patient_factory.create(loyalty_tier="Bronze", loyalty_points=100)
+        await patient_factory.create(loyalty_tier="Bronze", loyalty_points=200)
+        await patient_factory.create(loyalty_tier="Gold", loyalty_points=500)
+        await patient_factory.create(
+            loyalty_tier="Gold",
+            loyalty_points=900,
+            is_active=False,
+        )
 
         response = await authenticated_client.get("/api/v1/patients/statistics")
 
@@ -281,4 +286,7 @@ class TestPatientStatistics:
         assert data["success"] is True
         assert data["data"]["total"] == 3
         assert data["data"]["active"] == 3
-        assert "by_loyalty_tier" in data["data"]
+        assert data["data"]["inactive"] == 1
+        assert data["data"]["total_loyalty_points"] == 800
+        assert data["data"]["by_loyalty_tier"] == {"Bronze": 2, "Gold": 1}
+        assert "by_country" in data["data"]
