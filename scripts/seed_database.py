@@ -102,7 +102,6 @@ PRODUCT_CATALOG = [
          dosage_strength=None, dosage_form="medical supply", units_per_pack=1,
          package_type="roll", blisters_per_pack=0, units_per_blister=0,
          manufacturer="Demo medical supply manufacturer", inn_name=None, price=6.50, rx=False),
-]
     dict(name="Amoxicillin 250 mg/5 ml Oral Suspension", sku="DEMO-AMOX-SUSP-100", dosage_strength="250 mg/5 ml", dosage_form="oral suspension", units_per_pack=1, package_type="bottle", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name="Amoxicillin", atc_code="J01CA04", price=9.50, rx=True),
     dict(name="Salbutamol 100 mcg/dose Inhaler", sku="DEMO-SALB-INH-200", dosage_strength="100 mcg/dose", dosage_form="pressurized inhalation", units_per_pack=1, package_type="inhaler", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name="Salbutamol", atc_code="R03AC02", price=14.90, rx=True),
     dict(name="Xylometazoline 0.1% Nasal Spray", sku="DEMO-XYLO-SPRAY-10", dosage_strength="0.1%", dosage_form="nasal spray", units_per_pack=1, package_type="spray bottle", blisters_per_pack=0, units_per_blister=0, manufacturer="Demo international manufacturer", inn_name="Xylometazoline", atc_code="R01AA07", price=7.20, rx=False),
