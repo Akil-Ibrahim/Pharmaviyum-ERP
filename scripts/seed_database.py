@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import select
 
 from src.pharmaviyum.core.database import AsyncSessionLocal
-from src.pharmaviyum.models import Patient
+from src.pharmaviyum.models import Patient, Prescription
 from src.pharmaviyum.models.patients import PatientPurchase
 
 random.seed(20260918)
@@ -109,6 +109,26 @@ async def seed_patients() -> None:
                             - timedelta(days=random.randint(1, 120)),
                         )
                     )
+            if index % 3 == 0:
+                prescription_number = f"DEMO-RX-{index:03d}"
+                existing_rx = await session.scalar(
+                    select(Prescription).where(
+                        Prescription.prescription_number == prescription_number
+                    )
+                )
+                if existing_rx is None:
+                    session.add(
+                        Prescription(
+                            patient_id=patient.id,
+                            prescription_number=prescription_number,
+                            dosage="As directed by prescriber",
+                            instructions="Synthetic demonstration prescription.",
+                            status="active",
+                            issued_at=datetime.utcnow() - timedelta(days=30),
+                            expires_at=datetime.utcnow() + timedelta(days=60),
+                        )
+                    )
+
             patient.visit_count = 2 + index % 2
             patient.last_visit_date = datetime.utcnow() - timedelta(days=index % 14)
 
