@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { apiFetch } from '@/lib/api-client'
 
-type Patient = { id: number; full_name: string; phone: string; email?: string; city?: string; country: string; customer_category: string; loyalty_tier: string; total_purchases: number; visit_count: number; is_active: boolean }
+type Patient = { id: number; full_name: string; phone: string; email?: string; city?: string; country: string; customer_category: string; loyalty_tier: string; visit_count: number; is_active: boolean }
 type PatientStatistics = { total: number; active: number; inactive: number; total_purchase_value: number; total_loyalty_points: number; by_loyalty_tier: Record<string, number>; by_country: Record<string, number> }
 type PatientDetail = Patient & {
   first_name: string
@@ -37,7 +37,7 @@ function PatientsPage() {
   const metrics = {
     total: statistics?.total ?? patients.length,
     active: statistics?.active ?? patients.filter((patient) => patient.is_active).length,
-    revenue: statistics?.total_purchase_value ?? patients.reduce((sum, patient) => sum + patient.total_purchases, 0),
+    revenue: statistics?.total_purchase_value ?? 0,
     loyalty: statistics ? Object.entries(statistics.by_loyalty_tier).filter(([tier]) => tier.toLowerCase() !== 'standard').reduce((sum, [, count]) => sum + count, 0) : patients.filter((patient) => patient.loyalty_tier.toLowerCase() !== 'standard').length,
   }
 
@@ -81,7 +81,7 @@ function PatientsPage() {
         {patients.map((patient) => (
           <button key={patient.id} type='button' onClick={() => openPatient(patient.id)} className='rounded-xl border border-border/70 bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md'>
             <div className='flex items-start justify-between gap-3'><div><h2 className='font-semibold'>{patient.full_name}</h2><p className='text-sm text-muted-foreground'>{patient.city}, {patient.country}</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${categoryTone(patient.customer_category)}`}>{patient.customer_category}</span></div>
-            <div className='mt-4 grid grid-cols-3 gap-2 text-sm'><div><p className='text-muted-foreground'>Visits</p><p>{patient.visit_count}</p></div><div><p className='text-muted-foreground'>Purchases</p><p>${patient.total_purchases.toFixed(2)}</p></div><div><p className='text-muted-foreground'>Tier</p><p>{patient.loyalty_tier}</p></div></div>
+            <div className='mt-4 grid grid-cols-3 gap-2 text-sm'><div><p className='text-muted-foreground'>Visits</p><p>{patient.visit_count}</p></div><div><p className='text-muted-foreground'>Status</p><p>{patient.is_active ? 'Active' : 'Inactive'}</p></div><div><p className='text-muted-foreground'>Tier</p><p>{patient.loyalty_tier}</p></div></div>
           </button>
         ))}
       </div>
