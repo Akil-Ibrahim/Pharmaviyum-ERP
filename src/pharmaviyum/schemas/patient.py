@@ -114,8 +114,6 @@ class PatientResponse(PatientBase):
     """Patient representation with system-managed aggregate fields."""
 
     id: int
-    # Legacy compatibility field. Financial truth lives in PatientPurchase.
-    total_purchases: float = Field(default=0.0, ge=0)
     visit_count: int = Field(default=0, ge=0)
     full_name: str = Field(..., max_length=200)
     created_at: datetime
@@ -141,8 +139,6 @@ class PatientListResponse(BaseModel):
     customer_category: str
     loyalty_tier: str
     loyalty_points: int = 0
-    # Legacy compatibility field. Financial truth lives in PatientPurchase.
-    total_purchases: float = 0.0
     visit_count: int = 0
     is_active: bool = True
     created_at: datetime
