@@ -8,18 +8,18 @@ Provides reusable dependency functions for:
 - Database session
 """
 
-import uuid
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...core.security import decode_access_token
+from ...core.oauth2 import decode_access_token
 from ...shared.core.database import get_session
-from .models import User
+from ...models.user import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login/access-token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
@@ -27,7 +27,7 @@ async def get_current_user(
     session: SessionDep,
     token: Annotated[str, Depends(oauth2_scheme)],
 ) -> User:
-    """Extract and validate an access token, then load the current user."""
+    """Extract and validate an access token, then load the canonical user."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -38,16 +38,14 @@ async def get_current_user(
     if payload is None:
         raise credentials_exception
 
-    user_id_str = payload.get("sub")
-    if not user_id_str:
+    subject = payload.get("sub")
+    if not subject:
         raise credentials_exception
 
-    try:
-        user_id = uuid.UUID(str(user_id_str))
-    except ValueError as exc:
-        raise credentials_exception from exc
-
-    user = await session.get(User, user_id)
+    result = await session.execute(
+        select(User).where(or_(User.username == str(subject), User.email == str(subject)))
+    )
+    user = result.scalar_one_or_none()
     if user is None:
         raise credentials_exception
 
