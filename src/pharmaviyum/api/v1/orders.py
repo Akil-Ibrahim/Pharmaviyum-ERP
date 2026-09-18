@@ -32,8 +32,10 @@ async def create_order(
 
     order = Order(patient_id=data.patient_id, total_amount=data.total_amount)
     db.add(order)
-    patient.total_purchases += data.total_amount
-    patient.visit_count += 1
+
+    # Orders are not persisted receipt lines yet. Do not mutate the legacy
+    # patient aggregate here: pending orders are not realized revenue, and
+    # doing so would create a second source of truth alongside PatientPurchase.
     await db.commit()
     await db.refresh(order)
     return order
