@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, Float, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.pharmaviyum.db.base import Base
@@ -41,7 +41,6 @@ class Patient(Base):
     )
     loyalty_tier: Mapped[str] = mapped_column(String(20), nullable=False, default="Bronze")
     loyalty_points: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    total_purchases: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     visit_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_visit_date: Mapped[datetime | None] = mapped_column(DateTime)
     notes: Mapped[str | None] = mapped_column(Text)
