@@ -216,14 +216,11 @@ class PatientRepository(BaseRepository[Patient]):
         await self.session.refresh(patient)
         return patient
 
-    async def record_visit(
-        self, id: int, purchase_amount: float = 0.0
-    ) -> Optional[Patient]:
+    async def record_visit(self, id: int) -> Optional[Patient]:
         patient = await self.get_by_id(id)
         if not patient:
             return None
         patient.visit_count += 1
-        patient.total_purchases += purchase_amount
         patient.last_visit_date = datetime.utcnow()
         await self.session.flush()
         await self.session.refresh(patient)
