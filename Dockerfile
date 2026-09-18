@@ -2,7 +2,7 @@
 # PHARMAVIYUM AI - Production Dockerfile
 # ============================================================================
 
-FROM python:3.13-slim AS builder
+FROM python:3.13-slim AS python-builder
 
 WORKDIR /app
 
@@ -20,6 +20,16 @@ RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM oven/bun:1 AS frontend-builder
+
+WORKDIR /frontend
+
+COPY frontend/package.json ./
+RUN bun install
+
+COPY frontend/ ./
+RUN bun run build
 
 FROM python:3.13-slim AS production
 
@@ -41,10 +51,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /install /usr/local
+COPY --from=python-builder /install /usr/local
 COPY src/ ./src/
 COPY alembic/ ./alembic/
 COPY alembic.ini .
+COPY --from=frontend-builder /frontend/dist ./frontend/dist
 
 RUN groupadd --system appgroup && \
     useradd --system --gid appgroup --uid 1000 --create-home appuser && \
