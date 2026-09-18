@@ -55,8 +55,9 @@ export function UserAuthForm({
     setIsLoading(true)
 
     try {
+      const apiBaseUrl = import.meta.env.VITE_API_URL ?? ''
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000'}/api/v1/auth/token`,
+        `${apiBaseUrl}/api/v1/auth/token`,
         {
           method: 'POST',
           headers: {
