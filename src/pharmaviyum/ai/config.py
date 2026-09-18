@@ -68,6 +68,16 @@ class PgVectorSettings(BaseSettings):
     hnsw_ef_search: int = 100
     vector_dimensions: int = 1024
 
+    @field_validator("database_url")
+    @classmethod
+    def normalize_database_url(cls, value: SecretStr) -> SecretStr:
+        url = value.get_secret_value()
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return SecretStr(url)
+
 
 class LangSmithSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="LANGSMITH_")
