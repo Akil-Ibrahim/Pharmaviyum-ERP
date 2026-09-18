@@ -28,3 +28,10 @@ def test_create_and_get_order(client):
     assert gresp.status_code == 200
     assert gresp.json()["id"] == order_id
     assert gresp.json()["patient_id"] == patient_id
+
+    # A pending order must not be counted as realized patient revenue or a visit.
+    presponse = client.get(f"/api/v1/patients/{patient_id}")
+    assert presponse.status_code == 200
+    patient = presponse.json()
+    assert patient["total_purchases"] == 0.0
+    assert patient["visit_count"] == 0
