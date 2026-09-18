@@ -10,7 +10,7 @@ services:
     envVars:
       - key: ENVIRONMENT
         value: staging
-      - key: API_SECRET_KEY
+      - key: SECRET_KEY
         generateValue: true
       - key: LOG_LEVEL
         value: INFO
