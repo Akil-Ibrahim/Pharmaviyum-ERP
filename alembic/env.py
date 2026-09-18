@@ -3,41 +3,41 @@ Alembic environment configuration with async SQLAlchemy support.
 
 This enables Alembic to work with asyncpg and PostgreSQL + pgvector.
 """
-from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool, text
-from sqlalchemy.ext.asyncio import async_engine_from_config
-from alembic import context
+
 import asyncio
 import os
+from logging.config import fileConfig
 
-# Alembic Config object
+from alembic import context
+from sqlalchemy import pool
+from sqlalchemy.ext.asyncio import async_engine_from_config
+
 config = context.config
 
-# Interpret the config file for Python logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Metadata for autogenerate support (optional)
 target_metadata = None
 
-# Get database URL from environment or config
-def get_url():
-    """Get database URL from environment variable or alembic.ini."""
+
+def get_url() -> str:
+    """Get a PostgreSQL URL suitable for Alembic's async engine."""
     url = os.getenv("PGVECTOR_DATABASE_URL")
-    if url:
-        # Convert asyncpg URL to sync for Alembic offline mode
-        return url.replace("+asyncpg", "")
-    return config.get_main_option("sqlalchemy.url")
+    if not url:
+        url = config.get_main_option("sqlalchemy.url")
+
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+asyncpg://", 1)
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if url.startswith("postgresql+asyncpg://"):
+        return url
+    return url
 
 
 def run_migrations_offline() -> None:
-    """
-    Run migrations in 'offline' mode.
-    
-    This configures the context with just a URL and not an Engine,
-    so that actual DB access is not required.
-    """
-    url = get_url()
+    """Run migrations without opening a database connection."""
+    url = get_url().replace("+asyncpg", "")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -50,14 +50,9 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """
-    Run migrations in 'online' mode with async engine.
-    
-    Creates an Engine and associates a connection with the context.
-    """
+    """Run migrations against PostgreSQL using asyncpg."""
     url = get_url()
-    
-    # Create async engine
+
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
@@ -65,25 +60,19 @@ def run_migrations_online() -> None:
         url=url,
     )
 
-    async def run_async_migrations():
-        """Execute migrations asynchronously."""
+    async def run_async_migrations() -> None:
         async with connectable.connect() as connection:
+            def do_run_migrations(sync_connection) -> None:
+                context.configure(
+                    connection=sync_connection,
+                    target_metadata=target_metadata,
+                )
+                with context.begin_transaction():
+                    context.run_migrations()
+
             await connection.run_sync(do_run_migrations)
 
-    async def do_run_migrations(connection):
-        """Run migrations on the given connection."""
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-        )
-
-        with context.begin_transaction():
-            context.run_migrations()
-
-    # Run async migrations
     asyncio.run(run_async_migrations())
-    
-    # Close engine
     asyncio.run(connectable.dispose())
 
 
