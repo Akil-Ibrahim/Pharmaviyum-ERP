@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { apiFetch } from '@/lib/api-client'
 
 type Patient = { id: number; full_name: string; phone: string; email?: string; city?: string; country: string; customer_category: string; loyalty_tier: string; total_purchases: number; visit_count: number; is_active: boolean }
+type PatientStatistics = { total: number; active: number; inactive: number; by_loyalty_tier: Record<string, number>; by_country: Record<string, number> }
 type PatientDetail = Patient & { loyalty_points: number; conditions: Array<{ condition_name: string; severity: string; status: string; is_chronic: boolean }>; purchases: Array<{ id: number; receipt_number: string; category: string; product_id?: number; product_name?: string; batch_number?: string; expiry_date?: string; quantity: number; dispensed_packs?: number; dispensed_blisters?: number; dispensed_units?: number; unit_price: number; total_amount: number; prescription_required: boolean; purchased_at: string }> }
 
 export const Route = createFileRoute('/_authenticated/patients')({ component: PatientsPage })
@@ -13,15 +14,20 @@ function PatientsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const [statistics, setStatistics] = useState<PatientStatistics | null>(null)
+
   const metrics = {
-    total: patients.length,
-    active: patients.filter((patient) => patient.is_active).length,
+    total: statistics?.total ?? patients.length,
+    active: statistics?.active ?? patients.filter((patient) => patient.is_active).length,
     revenue: patients.reduce((sum, patient) => sum + patient.total_purchases, 0),
-    loyalty: patients.filter((patient) => patient.loyalty_tier !== 'standard').length,
+    loyalty: statistics ? Object.entries(statistics.by_loyalty_tier).filter(([tier]) => tier !== 'standard').reduce((sum, [, count]) => sum + count, 0) : patients.filter((patient) => patient.loyalty_tier !== 'standard').length,
   }
 
   useEffect(() => {
-    apiFetch<Patient[]>('/api/v1/patients/?page=1&page_size=100').then(setPatients).catch((err: Error) => setError(err.message)).finally(() => setLoading(false))
+    Promise.all([
+      apiFetch<Patient[]>('/api/v1/patients/?page=1&page_size=20'),
+      apiFetch<PatientStatistics>('/api/v1/patients/statistics'),
+    ]).then(([items, stats]) => { setPatients(items); setStatistics(stats) }).catch((err: Error) => setError(err.message)).finally(() => setLoading(false))
   }, [])
 
   async function openPatient(id: number) {
@@ -42,7 +48,7 @@ function PatientsPage() {
       </div>
       <div className='rounded-2xl border border-border/70 bg-card p-4 shadow-sm'>
         <div className='flex flex-wrap items-center justify-between gap-3'>
-          <div><p className='text-sm font-semibold'>Patient pipeline</p><p className='text-xs text-muted-foreground'>Visual segmentation for pharmacy customer categories</p></div>
+          <div><p className='text-sm font-semibold'>Patient pipeline</p><p className='text-xs text-muted-foreground'>Showing first {patients.length} patients from the full database of {metrics.total}</p></div>
           <div className='flex flex-wrap gap-2'>
             {(['blue', 'red', 'green', 'yellow', 'purple', 'orange', 'cyan'] as MetricTone[]).map((tone) => <PipelineBadge key={tone} tone={tone} label={toneLabel(tone)} />)}
           </div>
