@@ -71,7 +71,7 @@ EXPOSE 8000
 # Render injects PORT (10000 by default). Keep the container healthcheck aligned
 # with the same port used by uvicorn instead of hard-coding local port 8000.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD-SHELL curl -fsS "http://localhost:${PORT:-8000}/health" || exit 1
+    CMD curl -fsS "http://localhost:${PORT:-8000}/health" || exit 1
 
 # Database migrations are a release concern and should run as a separate deployment step.
 CMD ["sh", "-c", "uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
