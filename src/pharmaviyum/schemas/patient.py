@@ -73,6 +73,45 @@ class PatientConditionResponse(BaseModel):
     severity: str
     status: str
     is_chronic: bool
+    diagnosis_date: date | None = None
+    treatment_notes: str | None = None
+    current_medications: str | None = None
+    notes: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class PatientAllergyResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    allergen_type: str
+    allergen_name: str
+    severity: str
+    reaction: str | None = None
+    is_verified: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class PatientInsuranceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    provider_name: str
+    policy_number: str | None = None
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class PatientConsultationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    notes: str | None = None
+    created_at: datetime
+    updated_at: datetime
 
 
 class PatientResponse(PatientBase):
@@ -81,6 +120,9 @@ class PatientResponse(PatientBase):
     created_at: datetime
     updated_at: datetime
     conditions: list[PatientConditionResponse] = []
+    allergies: list[PatientAllergyResponse] = []
+    insurances: list[PatientInsuranceResponse] = []
+    consultations: list[PatientConsultationResponse] = []
     purchases: list[PatientPurchaseResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
