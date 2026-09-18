@@ -164,7 +164,8 @@ class AIComponents:
                 use_cache=True,
                 redis_client=redis,
                 api_key=openai_api_key,
-                model=embedding_model,
+                model=embedding_model or settings.ollama.embedding_model,
+                endpoint=settings.ollama.base_url,
                 dimensions=embedding_dimensions,
             )
             self.ingestion_orchestrator = IngestionOrchestrator(
