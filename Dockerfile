@@ -57,6 +57,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=python-builder /install /usr/local
 COPY src/ ./src/
 COPY alembic/ ./alembic/
+COPY scripts/ ./scripts/
 COPY alembic.ini .
 COPY --from=frontend-builder /frontend/dist ./static
 
@@ -74,4 +75,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -fsS "http://localhost:${PORT:-8000}/health" || exit 1
 
 # Database migrations are a release concern and should run as a separate deployment step.
-CMD ["sh", "-c", "uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "alembic upgrade head && if [ \"${SEED_DEMO_DATA:-false}\" = \"true\" ]; then python scripts/seed_database.py; fi && exec uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
