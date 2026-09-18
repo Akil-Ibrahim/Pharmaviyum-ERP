@@ -74,12 +74,6 @@ class PatientFactory(factory.async_sqlalchemy.AsyncSQLAlchemyFactory):
         )
     )
 
-    # Statistics
-    total_purchases = factory.LazyFunction(
-        lambda: factory.Faker("random_int", min=0, max=100000000).evaluate(
-            None, None, {"locale": None}
-        )
-    )
     visit_count = factory.LazyFunction(
         lambda: factory.Faker("random_int", min=0, max=100).evaluate(
             None, None, {"locale": None}
