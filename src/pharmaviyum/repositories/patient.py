@@ -210,7 +210,7 @@ class PatientRepository(BaseRepository[Patient]):
         return patient
 
     async def record_visit(
-        self, id: int, purchase_amount: int = 0
+        self, id: int, purchase_amount: float = 0.0
     ) -> Optional[Patient]:
         patient = await self.get_by_id(id)
         if not patient:
