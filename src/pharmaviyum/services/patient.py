@@ -205,7 +205,7 @@ class PatientService:
         }
 
     async def record_visit(
-        self, id: int, purchase_amount: int = 0
+        self, id: int, purchase_amount: float = 0.0
     ) -> Optional[Patient]:
         patient = await self.repository.record_visit(id, purchase_amount)
         if patient:
