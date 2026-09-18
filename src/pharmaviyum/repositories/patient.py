@@ -12,7 +12,7 @@ from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.core.logging import get_logger
 from src.pharmaviyum.core.repository import BaseRepository
-from src.pharmaviyum.models.patients import Patient, PatientAllergy, PatientCondition
+from src.pharmaviyum.models.patients import Patient, PatientAllergy, PatientCondition, PatientPurchase
 
 logger = get_logger(__name__)
 
@@ -51,7 +51,7 @@ class PatientRepository(BaseRepository[Patient]):
             query = query.options(selectinload(Patient.insurances))
         if include_consultations:
             query = query.options(selectinload(Patient.consultations))
-        query = query.options(selectinload(Patient.purchases).selectinload("product"))
+        query = query.options(selectinload(Patient.purchases).selectinload(PatientPurchase.product))
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
