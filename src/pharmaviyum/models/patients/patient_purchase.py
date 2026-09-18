@@ -27,3 +27,11 @@ class PatientPurchase(Base):
 
     patient = relationship("Patient", back_populates="purchases")
     product = relationship("Product")
+
+    @property
+    def product_name(self) -> str | None:
+        return self.product.name if self.product is not None else None
+
+    @property
+    def total_amount(self) -> float:
+        return round(self.quantity * self.unit_price, 2)
