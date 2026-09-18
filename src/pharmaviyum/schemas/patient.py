@@ -51,8 +51,14 @@ class PatientPurchaseResponse(BaseModel):
     receipt_number: str
     category: str
     product_id: int | None = None
+    batch_id: int | None = None
+    batch_number: str | None = None
+    expiry_date: datetime | None = None
     product_name: str | None = None
     quantity: int
+    dispensed_packs: int = 1
+    dispensed_blisters: int = 0
+    dispensed_units: int = 0
     unit_price: float
     total_amount: float
     prescription_required: bool
