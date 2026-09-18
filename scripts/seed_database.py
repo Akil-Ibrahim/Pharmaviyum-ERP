@@ -12,6 +12,8 @@ from src.pharmaviyum.models.patients import PatientPurchase
 
 random.seed(20260918)
 
+# Product master data follows WHO INN naming conventions; package/batch identifiers below are synthetic demo data.
+
 CUSTOMERS = [
     ("James", "Anderson", "Chronic Care", "New York", "US"),
     ("Emily", "Carter", "Wellness", "London", "GB"),
