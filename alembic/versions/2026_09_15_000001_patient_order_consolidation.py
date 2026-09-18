@@ -77,7 +77,7 @@ def upgrade() -> None:
                 INSERT INTO patients (
                     external_id, first_name, last_name, full_name, date_of_birth,
                     phone, email, address, country, loyalty_tier, loyalty_points,
-                    total_purchases, is_active, created_at, updated_at
+                    is_active, created_at, updated_at
                 )
                 SELECT
                     'legacy-client:' || c.id,
@@ -94,8 +94,6 @@ def upgrade() -> None:
                     c.address,
                     'VN',
                     CASE WHEN c.discount_percent >= 20 THEN 'Gold' ELSE 'Bronze' END,
-                    0,
-                    COALESCE(c.total_spent, 0),
                     COALESCE(c.is_active, true),
                     COALESCE(c.created_at, now()),
                     COALESCE(c.updated_at, now())
