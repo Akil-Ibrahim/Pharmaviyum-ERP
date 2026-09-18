@@ -1,7 +1,7 @@
 """Remove the legacy patient purchase aggregate.
 
 Revision ID: 2026_09_18_000003
-Revises: 2026_09_18_000002, 2026_09_15_000002
+Revises: 2026_09_18_000002, 2026_09_15_000005
 """
 
 from alembic import op
@@ -9,7 +9,7 @@ import sqlalchemy as sa
 
 
 revision = "2026_09_18_000003"
-down_revision = ("2026_09_18_000002", "2026_09_15_000002")
+down_revision = ("2026_09_18_000002", "2026_09_15_000005")
 branch_labels = None
 depends_on = None
 
