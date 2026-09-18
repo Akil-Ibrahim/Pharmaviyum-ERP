@@ -1,8 +1,6 @@
 name: Runner Diagnostic
 
 on:
-  push:
-    branches: [dev]
   workflow_dispatch:
 
 permissions:
