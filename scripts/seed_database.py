@@ -631,7 +631,7 @@ async def seed_patients() -> None:
                             ),
                             instructions=(
                                 (
-                                    "Synthetic demonstration prescription. Do not use as clinical guidance."
+                                    "Synthetic demonstration prescription. " "Do not use as clinical guidance."
                                 )
                             ),
                             status="active",
