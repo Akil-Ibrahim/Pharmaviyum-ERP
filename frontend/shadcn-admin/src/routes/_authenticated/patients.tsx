@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { apiFetch } from '@/lib/api-client'
 
 type Patient = { id: number; full_name: string; phone: string; email?: string; city?: string; country: string; customer_category: string; loyalty_tier: string; total_purchases: number; visit_count: number; is_active: boolean }
-type PatientDetail = Patient & { conditions: Array<{ condition_name: string; severity: string; status: string; is_chronic: boolean }>; purchases: Array<{ id: number; receipt_number: string; category: string; product_id?: number; product_name?: string; batch_number?: string; expiry_date?: string; quantity: number; dispensed_packs?: number; dispensed_blisters?: number; dispensed_units?: number; unit_price: number; total_amount: number; prescription_required: boolean; purchased_at: string }> }
+type PatientDetail = Patient & { loyalty_points: number; conditions: Array<{ condition_name: string; severity: string; status: string; is_chronic: boolean }>; purchases: Array<{ id: number; receipt_number: string; category: string; product_id?: number; product_name?: string; batch_number?: string; expiry_date?: string; quantity: number; dispensed_packs?: number; dispensed_blisters?: number; dispensed_units?: number; unit_price: number; total_amount: number; prescription_required: boolean; purchased_at: string }> }
 
 export const Route = createFileRoute('/_authenticated/patients')({ component: PatientsPage })
 
@@ -52,6 +52,12 @@ function PatientsPage() {
       {selected && (
         <div className='rounded-xl border p-6'>
           <div className='flex items-start justify-between gap-4'><div><h2 className='text-xl font-semibold'>{selected.full_name}</h2><p className='text-sm text-muted-foreground'>{selected.customer_category} · {selected.city}, {selected.country}</p></div><button type='button' className='rounded-md border px-3 py-1 text-sm' onClick={() => setSelected(null)}>Close</button></div>
+          <div className='mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
+            <MetricCard label='Loyalty points' value={selected.loyalty_points.toLocaleString()} detail={`Tier: ${selected.loyalty_tier}`} tone='blue' />
+            <MetricCard label='Total spent' value={formatCurrency(selected.total_purchases)} detail='Lifetime purchase value' tone='yellow' />
+            <MetricCard label='Visits' value={selected.visit_count.toString()} detail='Pharmacy visits' tone='green' />
+            <MetricCard label='Receipts' value={selected.purchases.length.toString()} detail='Purchase line records' tone='red' />
+          </div>
           <div className='mt-6 grid gap-6 lg:grid-cols-2'>
             <section><h3 className='mb-3 font-semibold'>Medical profile</h3>{selected.conditions.length === 0 ? <p className='text-sm text-muted-foreground'>No medical conditions recorded.</p> : <div className='space-y-2'>{selected.conditions.map((condition) => <div key={condition.condition_name} className='rounded-lg border p-3'><p className='font-medium'>{condition.condition_name}</p><p className='text-xs text-muted-foreground'>{condition.status} · {condition.severity}{condition.is_chronic ? ' · chronic' : ''}</p></div>)}</div>}</section>
             <section><h3 className='mb-3 font-semibold'>Purchase history</h3><div className='space-y-2'>{selected.purchases.map((purchase) => <div key={purchase.id} className='rounded-lg border p-3'><div className='flex justify-between gap-3'><p className='font-medium'>{purchase.product_name ?? purchase.category}</p><p>${purchase.total_amount.toFixed(2)}</p></div><p className='text-xs text-muted-foreground'>{purchase.receipt_number} · {purchase.category} · {purchase.prescription_required ? 'Rx' : 'OTC / non-Rx'}</p><p className='mt-1 text-xs text-muted-foreground'>{purchase.dispensed_packs ?? purchase.quantity} pack(s){purchase.dispensed_blisters ? ` · ${purchase.dispensed_blisters} blister(s)` : ''}{purchase.dispensed_units ? ` · ${purchase.dispensed_units} unit(s)` : ''}{purchase.batch_number ? ` · Batch ${purchase.batch_number}` : ''}{purchase.expiry_date ? ` · Exp ${purchase.expiry_date}` : ''}</p></div>)}</div></section>
