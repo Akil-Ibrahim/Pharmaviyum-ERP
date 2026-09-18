@@ -108,7 +108,14 @@ async def root() -> dict[str, str]:
 # path is resolved from this module instead of relying on the process CWD,
 # while check_dir="auto" keeps local API-only development working before a
 # frontend build has been produced.
-frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+frontend_dist = Path("/app/static")
+if not frontend_dist.exists():
+    frontend_dist = (
+        Path(__file__).resolve().parents[2]
+        / "frontend"
+        / "shadcn-admin"
+        / "dist"
+    )
 app.frontend("/", directory=frontend_dist, check_dir="auto")
 
 
