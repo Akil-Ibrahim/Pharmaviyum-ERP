@@ -55,7 +55,6 @@ def sample_patient():
         country="VN",
         loyalty_tier="Bronze",
         loyalty_points=0,
-        total_purchases=0,
         visit_count=0,
         is_active=True,
     )
