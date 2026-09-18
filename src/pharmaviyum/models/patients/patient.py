@@ -25,16 +25,19 @@ class Patient(Base):
     email: Mapped[str | None] = mapped_column(String(200), index=True)
     address: Mapped[str | None] = mapped_column(Text)
     city: Mapped[str | None] = mapped_column(String(100), index=True)
-    country: Mapped[str] = mapped_column(String(2), nullable=False, default="VN", index=True)
+    country: Mapped[str] = mapped_column(String(2), nullable=False, default="US", index=True)
     postal_code: Mapped[str | None] = mapped_column(String(20))
     national_id: Mapped[str | None] = mapped_column(String(50))
     insurance_number: Mapped[str | None] = mapped_column(String(50))
     allergies_notes: Mapped[str | None] = mapped_column(Text)
     chronic_conditions: Mapped[str | None] = mapped_column(Text)
     blood_type: Mapped[str | None] = mapped_column(String(5))
-    preferred_language: Mapped[str] = mapped_column(String(5), nullable=False, default="vi")
+    preferred_language: Mapped[str] = mapped_column(String(5), nullable=False, default="en")
     preferred_notification_channel: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="zalo"
+        String(20), nullable=False, default="email"
+    )
+    customer_category: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="General", index=True
     )
     loyalty_tier: Mapped[str] = mapped_column(String(20), nullable=False, default="Bronze")
     loyalty_points: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -61,4 +64,7 @@ class Patient(Base):
     )
     consultations = relationship(
         "Consultation", back_populates="patient", cascade="all, delete-orphan"
+    )
+    purchases = relationship(
+        "PatientPurchase", back_populates="patient", cascade="all, delete-orphan"
     )
