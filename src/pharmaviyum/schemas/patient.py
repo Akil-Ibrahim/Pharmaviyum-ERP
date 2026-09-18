@@ -45,6 +45,8 @@ class PatientUpdate(BaseModel):
 
 
 class PatientPurchaseResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     receipt_number: str
     category: str
@@ -58,6 +60,8 @@ class PatientPurchaseResponse(BaseModel):
 
 
 class PatientConditionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     condition_name: str
     icd10_code: str | None = None
     severity: str
