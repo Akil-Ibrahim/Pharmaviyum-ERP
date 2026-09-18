@@ -16,8 +16,6 @@ class PatientBase(BaseModel):
     customer_category: str = Field(default="General", max_length=50)
     loyalty_tier: str = Field(default="Bronze", max_length=50)
     loyalty_points: int = Field(default=0, ge=0)
-    total_purchases: float = Field(default=0.0, ge=0)
-    visit_count: int = Field(default=0, ge=0)
     is_active: bool = True
 
     model_config = ConfigDict(from_attributes=True)
@@ -37,8 +35,6 @@ class PatientUpdate(BaseModel):
     customer_category: Optional[str] = Field(default=None, max_length=50)
     loyalty_tier: Optional[str] = Field(default=None, max_length=50)
     loyalty_points: Optional[int] = Field(default=None, ge=0)
-    total_purchases: Optional[float] = Field(default=None, ge=0)
-    visit_count: Optional[int] = Field(default=None, ge=0)
     is_active: Optional[bool] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -115,7 +111,12 @@ class PatientConsultationResponse(BaseModel):
 
 
 class PatientResponse(PatientBase):
+    """Patient representation with system-managed aggregate fields."""
+
     id: int
+    # Legacy compatibility field. Financial truth lives in PatientPurchase.
+    total_purchases: float = Field(default=0.0, ge=0)
+    visit_count: int = Field(default=0, ge=0)
     full_name: str = Field(..., max_length=200)
     created_at: datetime
     updated_at: datetime
@@ -140,6 +141,7 @@ class PatientListResponse(BaseModel):
     customer_category: str
     loyalty_tier: str
     loyalty_points: int = 0
+    # Legacy compatibility field. Financial truth lives in PatientPurchase.
     total_purchases: float = 0.0
     visit_count: int = 0
     is_active: bool = True
