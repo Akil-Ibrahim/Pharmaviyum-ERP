@@ -8,6 +8,8 @@ from src.pharmaviyum.models.patients.patient_allergy import PatientAllergy
 from src.pharmaviyum.models.patients.patient_condition import PatientCondition
 from src.pharmaviyum.models.patients.patient_insurance import PatientInsurance
 from src.pharmaviyum.models.patients.patient_purchase import PatientPurchase
+from src.pharmaviyum.models.product import Product
+from src.pharmaviyum.models.product_batch import ProductBatch
 from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.prescription import Prescription
 from src.pharmaviyum.models.supplier import Supplier
@@ -20,6 +22,8 @@ __all__ = [
     "PatientPurchase",
     "Consultation",
     "Prescription",
+    "Product",
+    "ProductBatch",
     "Inventory",
     "Pharmacy",
     "Supplier",
