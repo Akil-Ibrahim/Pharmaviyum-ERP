@@ -282,7 +282,11 @@ def ingest_batch(
 
         loop.run_until_complete(
             tracker.update_status(
-                job_id, "completed", processed=len(sources) - failed, failed=failed
+                job_id,
+                "queued",
+                current_step="documents queued",
+                processed=0,
+                failed=failed,
             )
         )
         return {
