@@ -29,13 +29,22 @@ router = APIRouter(prefix="/api/v1/ai", tags=["AI"])
 
 
 class QueryRequest(BaseModel):
-    query: str = Field(..., min_length=1, max_length=2000, description="User's question")
+    query: str = Field(
+        ...,
+        min_length=1,
+        max_length=2000,
+        description="User's question",
+    )
     session_id: str | None = Field(default=None, description="Conversation session ID")
-    patient_id: int | None = Field(default=None, description="Patient ID for history lookup")
+    patient_id: int | None = Field(
+        default=None, description="Patient ID for history lookup"
+    )
     pharmacy_id: int = Field(..., gt=0, description="Authorized pharmacy tenant")
     country: str = Field(default="VN", description="Country code")
     language: str = Field(default="vi", description="Language code")
-    halal_filter: bool = Field(default=False, description="Enable strict halal compliance check")
+    halal_filter: bool = Field(
+        default=False, description="Enable strict halal compliance check"
+    )
     force_fresh: bool = Field(default=False, description="Bypass prompt cache")
 
 
@@ -84,7 +93,12 @@ async def ai_context(current_user: CurrentUser, session: SessionDep):
         .order_by(PharmacyMembership.pharmacy_id)
     )
     pharmacy_ids = [pharmacy_id for pharmacy_id in result.scalars().all()]
-    return {"pharmacies": [{"id": pharmacy_id, "name": f"Pharmacy #{pharmacy_id}"} for pharmacy_id in pharmacy_ids]}
+    return {
+        "pharmacies": [
+            {"id": pharmacy_id, "name": f"Pharmacy #{pharmacy_id}"}
+            for pharmacy_id in pharmacy_ids
+        ]
+    }
 
 
 @router.post("/query", response_model=AgentResponse, status_code=status.HTTP_200_OK)
@@ -111,7 +125,11 @@ async def query_agent(
     token = _set_mcp_context(tenant, current_user)
     try:
         try:
-            result = await harness.run(session_id=session_id, query=request.query, context=context)
+            result = await harness.run(
+                session_id=session_id,
+                query=request.query,
+                context=context,
+            )
             if not result.get("success"):
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -138,7 +156,11 @@ async def query_agent(
                         "tool_name": item.get("tool", "unknown"),
                         "input_data": item.get("input_data", {}),
                         "success": bool(item.get("success", False)),
-                        "output_summary": str(item.get("data", ""))[:500] if item.get("success") else None,
+                        "output_summary": (
+                            str(item.get("data", ""))[:500]
+                            if item.get("success")
+                            else None
+                        ),
                         "error": item.get("error"),
                     }
                     for item in result.get("tool_results", [])
@@ -189,12 +211,19 @@ async def query_agent_stream(
     async def event_generator():
         token = _set_mcp_context(tenant, current_user)
         try:
-            async for event in harness.astream(session_id=session_id, query=request.query, context=context):
+            async for event in harness.astream(
+                session_id=session_id,
+                query=request.query,
+                context=context,
+            ):
                 yield f"data: {json.dumps(event)}\n\n"
             yield "data: [DONE]\n\n"
         except Exception as e:
             logger.error("Stream endpoint failed: %s", e, exc_info=True)
-            yield "data: " + f"{json.dumps({'event': 'error', 'message': 'AI processing failed'})}\n\n"
+            yield (
+                "data: "
+                + f"{json.dumps({'event': 'error', 'message': 'AI processing failed'})}\n\n"
+            )
         finally:
             reset_mcp_context(token)
 
