@@ -122,11 +122,21 @@ async def query_agent(
                 session_id=raw_session_id,
                 query=request.query,
                 answer=result["answer"],
-                sources=[],
+                sources=[
+                    {
+                        "source_id": f"tool:{item.get('tool', 'unknown')}:{index}",
+                        "source_type": "tool_result",
+                        "content": str(item.get("data", ""))[:500],
+                        "metadata": {"tool": item.get("tool", "unknown")},
+                        "relevance_score": 1.0,
+                    }
+                    for index, item in enumerate(result.get("tool_results", []))
+                    if item.get("success")
+                ],
                 tool_calls=[
                     {
                         "tool_name": item.get("tool", "unknown"),
-                        "input_data": {},
+                        "input_data": item.get("input_data", {}),
                         "success": bool(item.get("success", False)),
                         "output_summary": str(item.get("data", ""))[:500] if item.get("success") else None,
                         "error": item.get("error"),
@@ -140,7 +150,7 @@ async def query_agent(
                     {"code": w, "severity": "warning", "message": w}
                     for w in result.get("warnings", [])
                 ],
-                model_used=result.get("model_used", "configured-main"),
+                model_used=result.get("model_used") or "configured-main",
                 total_latency_ms=result.get("latency_ms", 0.0),
                 trace_id=result.get("trace_id", ""),
             )
