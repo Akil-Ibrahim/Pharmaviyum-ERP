@@ -34,6 +34,8 @@ def test_create_and_get_order(client):
     assert presponse.status_code == 200
     patient = presponse.json()
     assert patient["visit_count"] == 0
+    assert patient["purchases"] == []
+
     # Completing the order creates one canonical purchase-ledger entry.
     sresp = client.patch(
         f"/api/v1/orders/{order_id}/status",
@@ -107,4 +109,3 @@ def test_create_and_get_order(client):
         json={"status": "pending"},
     )
     assert invalid_status.status_code == 422
-
