@@ -14,8 +14,6 @@ Matches ibrahimengpy/full-stack-fastapi-template structure exactly:
 - POST /users/signup: PUBLIC REGISTRATION (no auth required)
 """
 
-import uuid
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 
@@ -209,7 +207,7 @@ def register_user(session: SessionDep, user_in: UserRegister) -> UserPublic:
 
 @router.get("/{user_id}", response_model=UserPublic)
 def read_user_by_id(
-    user_id: uuid.UUID,
+    user_id: int,
     session: SessionDep,
     current_user: CurrentUser,
 ) -> UserPublic:
