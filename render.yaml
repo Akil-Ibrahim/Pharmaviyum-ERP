@@ -7,9 +7,8 @@ services:
     branch: dev
     plan: free
     autoDeployTrigger: checksPass
-    # Render's preDeployCommand is paid-only; staging keeps the migration
-    # explicitly in its start command. Production uses deploy/docker-compose.release.yml
-    # with a separate migration service.
+    # Render staging runs migrations before the application process.
+    # Production uses Render's preDeployCommand in render.production.yaml.
     dockerCommand: >-
       sh -c 'alembic upgrade head &&
       if [ "${SEED_DEMO_DATA:-false}" = "true" ]; then
