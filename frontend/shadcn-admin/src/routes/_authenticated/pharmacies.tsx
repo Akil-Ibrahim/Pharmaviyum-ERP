@@ -6,6 +6,8 @@ export const Route = createFileRoute('/_authenticated/pharmacies')({
     <EntityPage
       title='Pharmacies'
       description='Pharmacy locations, operating units, and local inventory ownership.'
+      endpoint='/api/v1/pharmacies'
+      columns={['id', 'name', 'code', 'address', 'timezone', 'is_active']}
     />
   ),
 })
