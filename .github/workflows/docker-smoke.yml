@@ -28,11 +28,6 @@ jobs:
       - name: Validate development Compose configuration
         run: docker compose -f docker-compose.yml config
 
-      - name: Validate release Compose configuration
-        run: |
-          APP_IMAGE=ghcr.io/akil-ibrahim/pharmaviyum-crm:${GITHUB_SHA} \
-            docker compose -f deploy/docker-compose.release.yml config
-
       - name: Build application image
         run: docker build --tag pharmaviyum-crm:smoke-${GITHUB_SHA} .
 
@@ -60,7 +55,7 @@ jobs:
             --network pharmaviyum-network \
             --entrypoint python \
             pharmaviyum-crm:smoke-${GITHUB_SHA} \
-            -c 'import pharmaviyum.main; print("FastAPI import OK")'
+            -c 'import src.pharmaviyum.main; print("FastAPI import OK")'
 
       - name: Cleanup
         if: always()

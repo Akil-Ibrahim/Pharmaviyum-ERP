@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.core.database import get_db
+from src.pharmaviyum.modules.auth.tenant import resolve_pharmacy_scope
 from src.pharmaviyum.modules.auth.deps import (
     get_current_active_superuser,
     get_current_active_user,
@@ -29,10 +30,12 @@ def get_patient_service(db: AsyncSession = Depends(get_db)) -> PatientService:
 async def create_patient(
     data: PatientCreate,
     service: PatientService = Depends(get_patient_service),
-    _: object = Depends(get_current_active_superuser),
+    current_user=Depends(get_current_active_superuser),
+    pharmacy_id: int | None = Query(None, gt=0),
 ):
     try:
-        patient = await service.create_patient(data=data, created_by=None)
+        scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+        patient = await service.create_patient(data=data, created_by=None, pharmacy_id=scope)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return PatientResponse.model_validate(patient)
@@ -48,8 +51,10 @@ async def list_patients(
     loyalty_tier: str | None = Query(None),
     is_active: bool | None = Query(None),
     service: PatientService = Depends(get_patient_service),
-    _: object = Depends(get_current_active_user),
+    current_user=Depends(get_current_active_user),
+    pharmacy_id: int | None = Query(None, gt=0),
 ):
+    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
     patients, _ = await service.list_patients(
         query_text=search,
         city=city,
@@ -58,6 +63,7 @@ async def list_patients(
         is_active=is_active,
         page=page,
         page_size=page_size,
+        pharmacy_id=scope,
     )
     return [PatientListResponse.model_validate(patient) for patient in patients]
 
@@ -65,18 +71,22 @@ async def list_patients(
 @router.get("/statistics")
 async def get_patient_statistics(
     service: PatientService = Depends(get_patient_service),
-    _: object = Depends(get_current_active_user),
+    current_user=Depends(get_current_active_user),
+    pharmacy_id: int | None = Query(None, gt=0),
 ):
-    return await service.get_statistics()
+    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+    return await service.get_statistics(pharmacy_id=scope)
 
 
 @router.get("/phone/{phone}", response_model=PatientResponse)
 async def get_patient_by_phone(
     phone: str,
     service: PatientService = Depends(get_patient_service),
-    _: object = Depends(get_current_active_user),
+    current_user=Depends(get_current_active_user),
+    pharmacy_id: int | None = Query(None, gt=0),
 ):
-    patient = await service.get_patient_by_phone(phone)
+    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+    patient = await service.get_patient_by_phone(phone, pharmacy_id=scope)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return PatientResponse.model_validate(patient)
@@ -86,9 +96,11 @@ async def get_patient_by_phone(
 async def get_patient(
     patient_id: int,
     service: PatientService = Depends(get_patient_service),
-    _: object = Depends(get_current_active_user),
+    current_user=Depends(get_current_active_user),
+    pharmacy_id: int | None = Query(None, gt=0),
 ):
-    patient = await service.get_patient(patient_id)
+    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+    patient = await service.get_patient(patient_id, pharmacy_id=scope)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return PatientResponse.model_validate(patient)
@@ -98,9 +110,11 @@ async def get_patient(
 async def get_patient_ai_profile(
     patient_id: int,
     service: PatientService = Depends(get_patient_service),
-    _: object = Depends(get_current_active_user),
+    current_user=Depends(get_current_active_user),
+    pharmacy_id: int | None = Query(None, gt=0),
 ):
-    profile = await service.get_ai_profile(patient_id)
+    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+    profile = await service.get_ai_profile(patient_id, pharmacy_id=scope)
     if not profile:
         raise HTTPException(status_code=404, detail="Patient not found")
     return profile
@@ -111,11 +125,13 @@ async def update_patient(
     patient_id: int,
     data: PatientUpdate,
     service: PatientService = Depends(get_patient_service),
-    _: object = Depends(get_current_active_superuser),
+    current_user=Depends(get_current_active_superuser),
+    pharmacy_id: int | None = Query(None, gt=0),
 ):
     try:
+        scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
         patient = await service.update_patient(
-            id=patient_id, data=data, updated_by=None
+            id=patient_id, data=data, updated_by=None, pharmacy_id=scope
         )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -128,10 +144,12 @@ async def update_patient(
 async def delete_patient(
     patient_id: int,
     service: PatientService = Depends(get_patient_service),
-    _: object = Depends(get_current_active_superuser),
+    current_user=Depends(get_current_active_superuser),
+    pharmacy_id: int | None = Query(None, gt=0),
 ):
+    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
     deleted = await service.delete_patient(
-        id=patient_id, deleted_by=None, hard_delete=False
+        id=patient_id, deleted_by=None, hard_delete=False, pharmacy_id=scope
     )
     if not deleted:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -143,10 +161,12 @@ async def record_visit(
     patient_id: int,
     purchase_amount: float = Query(0.0, ge=0, deprecated=True, description="Deprecated: purchases must be recorded through Orders."),
     service: PatientService = Depends(get_patient_service),
-    _: object = Depends(get_current_active_user),
+    current_user=Depends(get_current_active_user),
+    pharmacy_id: int | None = Query(None, gt=0),
 ):
     del purchase_amount
-    patient = await service.record_visit(id=patient_id)
+    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+    patient = await service.record_visit(id=patient_id, pharmacy_id=scope)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return PatientResponse.model_validate(patient)

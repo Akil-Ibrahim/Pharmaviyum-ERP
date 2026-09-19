@@ -41,6 +41,7 @@ class PatientRepository(BaseRepository[Patient]):
     async def get_by_id_with_relations(
         self,
         id: int,
+        pharmacy_id: int | None = None,
         include_allergies: bool = True,
         include_conditions: bool = True,
         include_insurances: bool = True,
@@ -48,6 +49,8 @@ class PatientRepository(BaseRepository[Patient]):
     ) -> Optional[Patient]:
         """Get patient by ID with eager-loaded relationships."""
         query = select(Patient).where(Patient.id == id)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
         if include_allergies:
             query = query.options(selectinload(Patient.allergies))
         if include_conditions:
@@ -63,25 +66,28 @@ class PatientRepository(BaseRepository[Patient]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_phone(self, phone: str) -> Optional[Patient]:
-        result = await self.session.execute(
-            select(Patient).where(Patient.phone == phone)
-        )
+    async def get_by_phone(self, phone: str, pharmacy_id: int | None = None) -> Optional[Patient]:
+        query = select(Patient).where(Patient.phone == phone)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: str) -> Optional[Patient]:
-        result = await self.session.execute(
-            select(Patient).where(Patient.email == email)
-        )
+    async def get_by_email(self, email: str, pharmacy_id: int | None = None) -> Optional[Patient]:
+        query = select(Patient).where(Patient.email == email)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def get_by_external_id(
-        self, external_id: str, pos_system: str
+        self, external_id: str, pos_system: str, pharmacy_id: int | None = None
     ) -> Optional[Patient]:
         result = await self.session.execute(
             select(Patient).where(
                 Patient.external_id == external_id,
                 Patient.pos_system == pos_system,
+                *([Patient.pharmacy_id == pharmacy_id] if pharmacy_id is not None else []),
             )
         )
         return result.scalar_one_or_none()
@@ -97,10 +103,13 @@ class PatientRepository(BaseRepository[Patient]):
         date_to: Optional[datetime] = None,
         skip: int = 0,
         limit: int = 50,
+        pharmacy_id: int | None = None,
     ) -> tuple[list[Patient], int]:
         query = select(Patient)
         count_query = select(func.count(Patient.id))
         conditions = []
+        if pharmacy_id is not None:
+            conditions.append(Patient.pharmacy_id == pharmacy_id)
         if query_text:
             search_pattern = f"%{query_text}%"
             conditions.append(
@@ -131,7 +140,7 @@ class PatientRepository(BaseRepository[Patient]):
         result = await self.session.execute(query)
         return list(result.scalars().all()), total
 
-    async def get_total_purchase_value(self) -> float:
+    async def get_total_purchase_value(self, pharmacy_id: int | None = None) -> float:
         result = await self.session.execute(
             select(
                 func.coalesce(
@@ -139,30 +148,32 @@ class PatientRepository(BaseRepository[Patient]):
                     0.0,
                 )
             )
+            .join(Patient, PatientPurchase.patient_id == Patient.id)
+            .where(Patient.pharmacy_id == pharmacy_id) if pharmacy_id is not None else select(
+                func.coalesce(func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0.0)
+            )
         )
         return float(result.scalar_one())
 
-    async def get_total_loyalty_points(self) -> int:
-        result = await self.session.execute(
-            select(func.coalesce(func.sum(Patient.loyalty_points), 0))
-            .where(Patient.is_active)
-        )
+    async def get_total_loyalty_points(self, pharmacy_id: int | None = None) -> int:
+        query = select(func.coalesce(func.sum(Patient.loyalty_points), 0)).where(Patient.is_active)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        result = await self.session.execute(query)
         return int(result.scalar_one())
 
-    async def get_loyalty_tiers_stats(self) -> dict:
-        result = await self.session.execute(
-            select(Patient.loyalty_tier, func.count(Patient.id))
-            .where(Patient.is_active)
-            .group_by(Patient.loyalty_tier)
-        )
+    async def get_loyalty_tiers_stats(self, pharmacy_id: int | None = None) -> dict:
+        query = select(Patient.loyalty_tier, func.count(Patient.id)).where(Patient.is_active)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        result = await self.session.execute(query.group_by(Patient.loyalty_tier))
         return {tier: count for tier, count in result.all()}
 
-    async def get_country_stats(self) -> dict:
-        result = await self.session.execute(
-            select(Patient.country, func.count(Patient.id))
-            .where(Patient.is_active)
-            .group_by(Patient.country)
-        )
+    async def get_country_stats(self, pharmacy_id: int | None = None) -> dict:
+        query = select(Patient.country, func.count(Patient.id)).where(Patient.is_active)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        result = await self.session.execute(query.group_by(Patient.country))
         return {country: count for country, count in result.all()}
 
     async def get_recent_patients(self, limit: int = 10) -> list[Patient]:
@@ -190,8 +201,10 @@ class PatientRepository(BaseRepository[Patient]):
         )
         return list(result.scalars().all())
 
-    async def soft_delete(self, id: int) -> bool:
+    async def soft_delete(self, id: int, pharmacy_id: int | None = None) -> bool:
         patient = await self.get_by_id(id)
+        if pharmacy_id is not None and patient is not None and patient.pharmacy_id != pharmacy_id:
+            return False
         if not patient:
             return False
         patient.is_active = False
@@ -221,8 +234,10 @@ class PatientRepository(BaseRepository[Patient]):
         await self.session.refresh(patient)
         return patient
 
-    async def record_visit(self, id: int) -> Optional[Patient]:
+    async def record_visit(self, id: int, pharmacy_id: int | None = None) -> Optional[Patient]:
         patient = await self.get_by_id(id)
+        if pharmacy_id is not None and patient is not None and patient.pharmacy_id != pharmacy_id:
+            return None
         if not patient:
             return None
         patient.visit_count += 1
@@ -269,10 +284,11 @@ class PatientRepository(BaseRepository[Patient]):
         await self.session.refresh(condition)
         return condition
 
-    async def get_ai_profile(self, id: int) -> Optional[dict]:
+    async def get_ai_profile(self, id: int, pharmacy_id: int | None = None) -> Optional[dict]:
         """Get a patient profile optimized for current AI workflows."""
         patient = await self.get_by_id_with_relations(
             id,
+            pharmacy_id=pharmacy_id,
             include_allergies=True,
             include_conditions=True,
             include_insurances=False,

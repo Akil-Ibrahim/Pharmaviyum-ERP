@@ -30,19 +30,21 @@ class PatientService:
         self.cache_ttl = 3600
 
     async def create_patient(
-        self, data: PatientCreate, created_by: Optional[str] = None
+        self, data: PatientCreate, created_by: Optional[str] = None,
+        pharmacy_id: int | None = None,
     ) -> Patient:
-        existing = await self.repository.get_by_phone(data.phone)
+        existing = await self.repository.get_by_phone(data.phone, pharmacy_id=pharmacy_id)
         if existing:
             raise ValueError(f"Patient with phone {data.phone} already exists")
         if data.email:
-            existing = await self.repository.get_by_email(data.email)
+            existing = await self.repository.get_by_email(data.email, pharmacy_id=pharmacy_id)
             if existing:
                 raise ValueError(f"Patient with email {data.email} already exists")
 
-        patient = Patient(
-            **data.model_dump(), full_name=f"{data.first_name} {data.last_name}"
-        )
+        payload = data.model_dump()
+        if pharmacy_id is not None:
+            payload["pharmacy_id"] = pharmacy_id
+        patient = Patient(**payload, full_name=f"{data.first_name} {data.last_name}")
         patient = await self.repository.create(patient)
         PATIENTS_CREATED_TOTAL.labels(country=patient.country).inc()
         await event_bus.emit(
@@ -64,27 +66,27 @@ class PatientService:
         )
         return patient
 
-    async def get_patient(self, id: int, use_cache: bool = True) -> Optional[Patient]:
-        cache_key = f"patient:{id}"
+    async def get_patient(self, id: int, use_cache: bool = True, pharmacy_id: int | None = None) -> Optional[Patient]:
+        cache_key = f"patient:{pharmacy_id or 0}:{id}"
         if use_cache:
             cached = await cache_service.get(cache_key)
             if cached:
                 CACHE_HITS_TOTAL.labels(cache_type="patient").inc()
                 return cached
         CACHE_MISSES_TOTAL.labels(cache_type="patient").inc()
-        patient = await self.repository.get_by_id_with_relations(id)
+        patient = await self.repository.get_by_id_with_relations(id, pharmacy_id=pharmacy_id)
         if patient and use_cache:
             await cache_service.set(cache_key, patient, ttl=self.cache_ttl)
         return patient
 
-    async def get_patient_by_phone(self, phone: str) -> Optional[Patient]:
-        cache_key = f"patient:phone:{phone}"
+    async def get_patient_by_phone(self, phone: str, pharmacy_id: int | None = None) -> Optional[Patient]:
+        cache_key = f"patient:phone:{pharmacy_id or 0}:{phone}"
         cached = await cache_service.get(cache_key)
         if cached:
             CACHE_HITS_TOTAL.labels(cache_type="patient_phone").inc()
             return cached
         CACHE_MISSES_TOTAL.labels(cache_type="patient_phone").inc()
-        patient = await self.repository.get_by_phone(phone)
+        patient = await self.repository.get_by_phone(phone, pharmacy_id=pharmacy_id)
         if patient:
             await cache_service.set(cache_key, patient, ttl=self.cache_ttl)
         return patient
@@ -98,6 +100,7 @@ class PatientService:
         is_active: Optional[bool] = None,
         page: int = 1,
         page_size: int = 50,
+        pharmacy_id: int | None = None,
     ) -> tuple[list[Patient], int]:
         skip = (page - 1) * page_size
         return await self.repository.search(
@@ -108,6 +111,7 @@ class PatientService:
             is_active=is_active,
             skip=skip,
             limit=page_size,
+            pharmacy_id=pharmacy_id,
         )
 
     async def update_patient(
@@ -115,13 +119,14 @@ class PatientService:
         id: int,
         data: PatientUpdate,
         updated_by: Optional[str] = None,
+        pharmacy_id: int | None = None,
     ) -> Optional[Patient]:
-        patient = await self.get_patient(id, use_cache=False)
+        patient = await self.get_patient(id, use_cache=False, pharmacy_id=pharmacy_id)
         if not patient:
             return None
         update_data = data.model_dump(exclude_unset=True)
         if "phone" in update_data and update_data["phone"] != patient.phone:
-            existing = await self.repository.get_by_phone(update_data["phone"])
+            existing = await self.repository.get_by_phone(update_data["phone"], pharmacy_id=pharmacy_id)
             if existing and existing.id != id:
                 raise ValueError(f"Phone {update_data['phone']} already in use")
         if (
@@ -129,7 +134,7 @@ class PatientService:
             and update_data["email"] != patient.email
             and update_data["email"]
         ):
-            existing = await self.repository.get_by_email(update_data["email"])
+            existing = await self.repository.get_by_email(update_data["email"], pharmacy_id=pharmacy_id)
             if existing and existing.id != id:
                 raise ValueError(f"Email {update_data['email']} already in use")
         for field, value in update_data.items():
@@ -137,7 +142,7 @@ class PatientService:
         if "first_name" in update_data or "last_name" in update_data:
             patient.full_name = f"{patient.first_name} {patient.last_name}"
         patient = await self.repository.update(patient)
-        await self._invalidate_patient_cache(id, patient.phone)
+        await self._invalidate_patient_cache(id, patient.phone, pharmacy_id)
         await event_bus.emit(
             Event(
                 event_type="patient.updated",
@@ -155,16 +160,17 @@ class PatientService:
         id: int,
         deleted_by: Optional[str] = None,
         hard_delete: bool = False,
+        pharmacy_id: int | None = None,
     ) -> bool:
         if hard_delete and not await is_feature_enabled("patient_hard_delete"):
             hard_delete = False
         result = (
             await self.repository.delete(id)
             if hard_delete
-            else await self.repository.soft_delete(id)
+            else await self.repository.soft_delete(id, pharmacy_id=pharmacy_id)
         )
         if result:
-            await self._invalidate_patient_cache(id)
+            await self._invalidate_patient_cache(id, pharmacy_id=pharmacy_id)
             await event_bus.emit(
                 Event(
                     event_type="patient.deleted",
@@ -177,37 +183,38 @@ class PatientService:
             )
         return result
 
-    async def get_ai_profile(self, id: int) -> Optional[dict]:
+    async def get_ai_profile(self, id: int, pharmacy_id: int | None = None) -> Optional[dict]:
         if not await is_feature_enabled("ai_patient_profiles"):
             return None
-        cache_key = f"patient:ai_profile:{id}"
+        cache_key = f"patient:ai_profile:{pharmacy_id or 0}:{id}"
         cached = await cache_service.get(cache_key)
         if cached:
             CACHE_HITS_TOTAL.labels(cache_type="ai_profile").inc()
             return cached
         CACHE_MISSES_TOTAL.labels(cache_type="ai_profile").inc()
-        profile = await self.repository.get_ai_profile(id)
+        profile = await self.repository.get_ai_profile(id, pharmacy_id=pharmacy_id)
         if profile:
             await cache_service.set(cache_key, profile, ttl=self.cache_ttl)
         return profile
 
-    async def get_statistics(self) -> dict:
-        total = await self.repository.count()
-        active = await self.repository.count(is_active=True)
+    async def get_statistics(self, pharmacy_id: int | None = None) -> dict:
+        filters = {"pharmacy_id": pharmacy_id} if pharmacy_id is not None else {}
+        total = await self.repository.count(**filters)
+        active = await self.repository.count(is_active=True, **filters)
         return {
             "total": total,
             "active": active,
             "inactive": total - active,
-            "total_purchase_value": await self.repository.get_total_purchase_value(),
-            "total_loyalty_points": await self.repository.get_total_loyalty_points(),
-            "by_loyalty_tier": await self.repository.get_loyalty_tiers_stats(),
-            "by_country": await self.repository.get_country_stats(),
+            "total_purchase_value": await self.repository.get_total_purchase_value(pharmacy_id=pharmacy_id),
+            "total_loyalty_points": await self.repository.get_total_loyalty_points(pharmacy_id=pharmacy_id),
+            "by_loyalty_tier": await self.repository.get_loyalty_tiers_stats(pharmacy_id=pharmacy_id),
+            "by_country": await self.repository.get_country_stats(pharmacy_id=pharmacy_id),
         }
 
-    async def record_visit(self, id: int) -> Optional[Patient]:
-        patient = await self.repository.record_visit(id)
+    async def record_visit(self, id: int, pharmacy_id: int | None = None) -> Optional[Patient]:
+        patient = await self.repository.record_visit(id, pharmacy_id=pharmacy_id)
         if patient:
-            await self._invalidate_patient_cache(id, patient.phone)
+            await self._invalidate_patient_cache(id, patient.phone, pharmacy_id)
             await event_bus.emit(
                 Event(
                     event_type="patient.visit_recorded",
@@ -217,9 +224,13 @@ class PatientService:
         return patient
 
     async def _invalidate_patient_cache(
-        self, patient_id: int, phone: Optional[str] = None
+        self,
+        patient_id: int,
+        phone: Optional[str] = None,
+        pharmacy_id: int | None = None,
     ) -> None:
-        await cache_service.delete(f"patient:{patient_id}")
-        await cache_service.delete(f"patient:ai_profile:{patient_id}")
+        scope = pharmacy_id or 0
+        await cache_service.delete(f"patient:{scope}:{patient_id}")
+        await cache_service.delete(f"patient:ai_profile:{scope}:{patient_id}")
         if phone:
-            await cache_service.delete(f"patient:phone:{phone}")
+            await cache_service.delete(f"patient:phone:{scope}:{phone}")
