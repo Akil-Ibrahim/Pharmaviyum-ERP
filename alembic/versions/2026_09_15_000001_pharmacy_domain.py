@@ -58,8 +58,6 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.UniqueConstraint("sku", name="uq_products_sku"),
-        sa.CheckConstraint("price >= 0", name="ck_products_price_nonnegative"),
-        sa.CheckConstraint("stock >= 0", name="ck_products_stock_nonnegative"),
     )
     op.create_index("ix_products_id", "products", ["id"])
     op.create_index("ix_products_sku", "products", ["sku"])
