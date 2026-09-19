@@ -40,7 +40,14 @@ class ObjectStorage:
     @staticmethod
     def tenant_key(pharmacy_id: int, job_id: str, suffix: str) -> str:
         """Build a tenant-scoped ingestion key from validated components."""
-        if pharmacy_id <= 0 or not job_id or "/" in job_id or "\\" in job_id:
+        if (
+            not isinstance(pharmacy_id, int)
+            or isinstance(pharmacy_id, bool)
+            or pharmacy_id <= 0
+            or not job_id
+            or "/" in job_id
+            or "\\" in job_id
+        ):
             raise ValueError("Invalid object storage key components")
         clean_suffix = suffix.lstrip(".").lower()
         if clean_suffix not in {"pdf", "docx", "html", "htm"}:
