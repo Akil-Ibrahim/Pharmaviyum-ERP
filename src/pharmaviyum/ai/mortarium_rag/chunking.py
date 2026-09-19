@@ -204,7 +204,18 @@ class MedicalChunker:
         return [s.strip() for s in re.split(pattern, text) if s.strip()]
 
     def _create_chunk(
-        self, document: Document, content: str, chunk_type: str, chunk_index: int
+        self,
+        document: Document,
+        content: str,
+        chunk_type: Literal[
+            "indications",
+            "dosage",
+            "contraindications",
+            "interactions",
+            "side_effects",
+            "general",
+        ],
+        chunk_index: int,
     ) -> Chunk | None:
         content = content.strip()
         if not content or len(content) < 10:
