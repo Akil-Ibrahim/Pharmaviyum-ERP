@@ -133,6 +133,7 @@ async def _ingest_document_async(
         temp_path: str | None = None
         if config.get("source_storage") == "object":
             storage = ObjectStorage()
+            storage.validate_tenant_key(source, config["pharmacy_id"])
             payload = await storage.get_bytes(source)
             suffix = f".{source_type}" if source_type in {"pdf", "docx", "html"} else ""
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
