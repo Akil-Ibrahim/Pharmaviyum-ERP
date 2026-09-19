@@ -80,7 +80,7 @@ class IngestionOrchestrator:
         config = config or {}
         job_id = str(uuid.uuid4())
 
-        logger.info(f"Starting ingestion: {source} (job_id={job_id})")
+        logger.info("Starting ingestion task", extra={"job_id": job_id})
 
         stats = {
             "job_id": job_id,
@@ -109,7 +109,7 @@ class IngestionOrchestrator:
                 documents.append(doc)
 
             stats["documents_loaded"] = len(documents)
-            logger.info(f"Loaded {len(documents)} documents from {source}")
+            logger.info("Loaded documents", extra={"job_id": job_id, "count": len(documents)})
 
             if not documents:
                 raise ValueError(f"No documents loaded from {source}")
@@ -143,7 +143,7 @@ class IngestionOrchestrator:
                 ]
 
             if not processed_docs:
-                logger.info(f"All documents were duplicates: {source}")
+                logger.info("All documents were duplicates", extra={"job_id": job_id})
                 stats["latency_ms"] = (time.perf_counter() - start_time) * 1000
                 return {
                     **stats,
@@ -212,7 +212,7 @@ class IngestionOrchestrator:
             return {**stats, "success": True}
 
         except Exception as e:
-            logger.error(f"Ingestion failed: {source} - {e}", exc_info=True)
+            logger.error("Ingestion failed", extra={"job_id": job_id}, exc_info=True)
             stats["errors"].append(f"fatal: {str(e)}")
             stats["latency_ms"] = (time.perf_counter() - start_time) * 1000
             return {**stats, "success": False, "error": str(e)}
