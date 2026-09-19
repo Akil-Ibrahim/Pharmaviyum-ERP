@@ -141,13 +141,17 @@ class PatientRepository(BaseRepository[Patient]):
         result = await self.session.execute(query)
         return list(result.scalars().all()), total
 
-    async def get_total_purchase_value(self) -> float:
+    async def get_total_purchase_value(self, pharmacy_id: int | None = None) -> float:
         result = await self.session.execute(
             select(
                 func.coalesce(
                     func.sum(PatientPurchase.quantity * PatientPurchase.unit_price),
                     0.0,
                 )
+            )
+            .join(Patient, PatientPurchase.patient_id == Patient.id)
+            .where(Patient.pharmacy_id == pharmacy_id) if pharmacy_id is not None else select(
+                func.coalesce(func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0.0)
             )
         )
         return float(result.scalar_one())
@@ -200,8 +204,10 @@ class PatientRepository(BaseRepository[Patient]):
         )
         return list(result.scalars().all())
 
-    async def soft_delete(self, id: int) -> bool:
+    async def soft_delete(self, id: int, pharmacy_id: int | None = None) -> bool:
         patient = await self.get_by_id(id)
+        if pharmacy_id is not None and patient is not None and patient.pharmacy_id != pharmacy_id:
+            return False
         if not patient:
             return False
         patient.is_active = False
