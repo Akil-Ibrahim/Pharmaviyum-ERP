@@ -48,7 +48,9 @@ class QueryRequest(BaseModel):
     force_fresh: bool = Field(default=False, description="Bypass prompt cache")
 
 
-async def _tenant_context(pharmacy_id: int, current_user: CurrentUser, session: SessionDep):
+async def _tenant_context(
+    pharmacy_id: int, current_user: CurrentUser, session: SessionDep
+):
     return await require_pharmacy_tenant(pharmacy_id, current_user, session)
 
 
@@ -166,7 +168,9 @@ async def query_agent(
                     for item in result.get("tool_results", [])
                 ],
                 confidence=0.9 if not result.get("warnings") else 0.7,
-                requires_human_review="human_review_required" in result.get("warnings", []),
+                requires_human_review=(
+                    "human_review_required" in result.get("warnings", [])
+                ),
                 safety_score=0.95 if not result.get("warnings") else 0.8,
                 warnings=[
                     {"code": w, "severity": "warning", "message": w}
@@ -222,7 +226,8 @@ async def query_agent_stream(
             logger.error("Stream endpoint failed: %s", e, exc_info=True)
             yield (
                 "data: "
-                + f"{json.dumps({'event': 'error', 'message': 'AI processing failed'})}\n\n"
+                + f"{json.dumps({'event': 'error', 'message': 'AI processing failed'})}"
+                + "\n\n"
             )
         finally:
             reset_mcp_context(token)
@@ -230,7 +235,11 @@ async def query_agent_stream(
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
