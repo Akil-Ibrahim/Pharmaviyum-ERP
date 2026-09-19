@@ -57,14 +57,29 @@ class ObjectStorage:
     @staticmethod
     def validate_tenant_key(key: str, pharmacy_id: int) -> None:
         """Reject object keys that are outside the authorized tenant namespace."""
+        expected_prefix = f"ingestion/{pharmacy_id}/"
         if (
             not isinstance(pharmacy_id, int)
             or isinstance(pharmacy_id, bool)
             or pharmacy_id <= 0
             or not isinstance(key, str)
-            or not key.startswith(f"ingestion/{pharmacy_id}/")
+            or not key.startswith(expected_prefix)
         ):
             raise ValueError("Object storage key is outside the tenant scope")
+
+        relative_key = key[len(expected_prefix) :]
+        if (
+            not relative_key
+            or "/" in relative_key
+            or "\\" in relative_key
+            or relative_key in {".", ".."}
+            or ".." in relative_key
+        ):
+            raise ValueError("Object storage key is outside the tenant scope")
+        suffix = relative_key.rsplit(".", 1)[-1].lower() if "." in relative_key else ""
+        if suffix not in {"pdf", "docx", "html", "htm"}:
+            raise ValueError("Unsupported object suffix")
+
 
     async def put_bytes(self, key: str, data: bytes, content_type: str) -> None:
         await asyncio.to_thread(
