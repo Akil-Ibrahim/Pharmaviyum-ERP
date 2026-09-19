@@ -60,18 +60,13 @@ The canonical release chain is:
 GitHub Actions
     -> tests / security / RAG evaluation
     -> Docker image
-    -> GHCR immutable image
-    -> Ansible
-    -> deploy/docker-compose.release.yml
+    -> CI validation
+    -> Render staging (`dev`)
+    -> PR
+    -> Render production (`main`)
 ```
 
-The release deployment script is:
-
-```bash
-scripts/release/deploy.sh
-```
-
-It expects an immutable `APP_IMAGE` plus the database, Redis, and Ollama configuration required by the release Compose file. Database migrations run before the API switch, followed by a health gate.
+Production deployment is managed by Render from `main`; staging is managed by Render from `dev`. Database migrations run as part of the Render deployment contract, followed by the `/health` gate.
 
 ## 6. Health checks
 
