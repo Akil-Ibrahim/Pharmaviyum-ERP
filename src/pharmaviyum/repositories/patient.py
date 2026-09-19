@@ -78,7 +78,6 @@ class PatientRepository(BaseRepository[Patient]):
         if pharmacy_id is not None:
             query = query.where(Patient.pharmacy_id == pharmacy_id)
         result = await self.session.execute(query)
-        )
         return result.scalar_one_or_none()
 
     async def get_by_external_id(
