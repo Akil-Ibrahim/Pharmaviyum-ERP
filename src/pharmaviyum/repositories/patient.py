@@ -71,7 +71,6 @@ class PatientRepository(BaseRepository[Patient]):
         if pharmacy_id is not None:
             query = query.where(Patient.pharmacy_id == pharmacy_id)
         result = await self.session.execute(query)
-        )
         return result.scalar_one_or_none()
 
     async def get_by_email(self, email: str, pharmacy_id: int | None = None) -> Optional[Patient]:
@@ -156,27 +155,25 @@ class PatientRepository(BaseRepository[Patient]):
         )
         return float(result.scalar_one())
 
-    async def get_total_loyalty_points(self) -> int:
-        result = await self.session.execute(
-            select(func.coalesce(func.sum(Patient.loyalty_points), 0))
-            .where(Patient.is_active)
-        )
+    async def get_total_loyalty_points(self, pharmacy_id: int | None = None) -> int:
+        query = select(func.coalesce(func.sum(Patient.loyalty_points), 0)).where(Patient.is_active)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        result = await self.session.execute(query)
         return int(result.scalar_one())
 
-    async def get_loyalty_tiers_stats(self) -> dict:
-        result = await self.session.execute(
-            select(Patient.loyalty_tier, func.count(Patient.id))
-            .where(Patient.is_active)
-            .group_by(Patient.loyalty_tier)
-        )
+    async def get_loyalty_tiers_stats(self, pharmacy_id: int | None = None) -> dict:
+        query = select(Patient.loyalty_tier, func.count(Patient.id)).where(Patient.is_active)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        result = await self.session.execute(query.group_by(Patient.loyalty_tier))
         return {tier: count for tier, count in result.all()}
 
-    async def get_country_stats(self) -> dict:
-        result = await self.session.execute(
-            select(Patient.country, func.count(Patient.id))
-            .where(Patient.is_active)
-            .group_by(Patient.country)
-        )
+    async def get_country_stats(self, pharmacy_id: int | None = None) -> dict:
+        query = select(Patient.country, func.count(Patient.id)).where(Patient.is_active)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        result = await self.session.execute(query.group_by(Patient.country))
         return {country: count for country, count in result.all()}
 
     async def get_recent_patients(self, limit: int = 10) -> list[Patient]:
