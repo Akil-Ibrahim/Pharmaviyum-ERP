@@ -176,7 +176,9 @@ class PatientRepository(BaseRepository[Patient]):
         result = await self.session.execute(query.group_by(Patient.country))
         return {country: count for country, count in result.all()}
 
-    async def get_recent_patients(\n        self, limit: int = 10, pharmacy_id: int | None = None\n    ) -> list[Patient]:
+    async def get_recent_patients(
+        self, limit: int = 10, pharmacy_id: int | None = None
+    ) -> list[Patient]:
         result = await self.session.execute(
             select(Patient)
             .where(Patient.is_active)
@@ -185,7 +187,9 @@ class PatientRepository(BaseRepository[Patient]):
         )
         return list(result.scalars().all())
 
-    async def get_top_customers(\n        self, limit: int = 10, pharmacy_id: int | None = None\n    ) -> list[Patient]:
+    async def get_top_customers(
+        self, limit: int = 10, pharmacy_id: int | None = None
+    ) -> list[Patient]:
         """Return active customers ranked by persisted purchase history."""
         purchase_value = func.coalesce(
             func.sum(PatientPurchase.quantity * PatientPurchase.unit_price),
