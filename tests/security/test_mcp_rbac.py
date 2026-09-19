@@ -1,5 +1,3 @@
-from uuid import uuid4
-
 import pytest
 from pydantic import BaseModel
 
@@ -89,7 +87,7 @@ async def test_mcp_client_rejects_unauthorized_role(monkeypatch) -> None:
             tool_name="restricted_test_tool",
             input_data={"value": "secret"},
             user_role="patient",
-            user_id=uuid4(),
+            user_id=1,
             pharmacy_id=1,
         )
         assert result.success is False
