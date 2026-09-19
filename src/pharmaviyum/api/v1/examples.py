@@ -51,7 +51,6 @@ CLIENT_RESPONSE_EXAMPLE = {
     "notes": "Regular customer, prefers brand medications",
     "created_at": "2024-01-01T10:00:00Z",
     "updated_at": "2024-01-15T14:30:00Z",
-    "total_purchases": 15,
     "total_spent": 1250.50,
 }
 
@@ -65,7 +64,6 @@ CLIENTS_LIST_RESPONSE_EXAMPLE = {
             "phone": "+0987654321",
             "email": "jane.smith@example.com",
             "created_at": "2024-01-05T09:00:00Z",
-            "total_purchases": 8,
             "total_spent": 650.00,
         },
     ],

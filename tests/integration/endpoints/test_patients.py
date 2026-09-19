@@ -3,9 +3,13 @@ Integration tests for patient endpoints
 Best practice 2026: Full stack testing with real database
 """
 
+from datetime import datetime
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.pharmaviyum.models.patients import PatientPurchase
 
 pytestmark = pytest.mark.integration
 
@@ -269,9 +273,14 @@ class TestPatientStatistics:
     ):
         """Test statistics endpoint"""
         # Create patients with different tiers
-        await patient_factory.create(loyalty_tier="Bronze")
-        await patient_factory.create(loyalty_tier="Bronze")
-        await patient_factory.create(loyalty_tier="Gold")
+        await patient_factory.create(loyalty_tier="Bronze", loyalty_points=100)
+        await patient_factory.create(loyalty_tier="Bronze", loyalty_points=200)
+        await patient_factory.create(loyalty_tier="Gold", loyalty_points=500)
+        await patient_factory.create(
+            loyalty_tier="Gold",
+            loyalty_points=900,
+            is_active=False,
+        )
 
         response = await authenticated_client.get("/api/v1/patients/statistics")
 
@@ -281,4 +290,47 @@ class TestPatientStatistics:
         assert data["success"] is True
         assert data["data"]["total"] == 3
         assert data["data"]["active"] == 3
-        assert "by_loyalty_tier" in data["data"]
+        assert data["data"]["inactive"] == 1
+        assert data["data"]["total_loyalty_points"] == 800
+        assert data["data"]["by_loyalty_tier"] == {"Bronze": 2, "Gold": 1}
+        assert "by_country" in data["data"]
+
+    @pytest.mark.asyncio
+    async def test_get_statistics_uses_persisted_purchase_lines(
+        self,
+        authenticated_client: AsyncClient,
+        test_db: AsyncSession,
+        patient_factory,
+    ):
+        """Revenue statistics must be calculated from persisted purchase lines."""
+        patient = await patient_factory.create(loyalty_points=0)
+
+        test_db.add_all(
+            [
+                PatientPurchase(
+                    patient_id=patient.id,
+                    receipt_number="R-1001",
+                    category="OTC",
+                    quantity=2,
+                    unit_price=12.50,
+                    purchased_at=datetime.utcnow(),
+                ),
+                PatientPurchase(
+                    patient_id=patient.id,
+                    receipt_number="R-1002",
+                    category="Rx",
+                    quantity=3,
+                    unit_price=7.25,
+                    purchased_at=datetime.utcnow(),
+                ),
+            ]
+        )
+        await test_db.flush()
+
+        response = await authenticated_client.get("/api/v1/patients/statistics")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["success"] is True
+        assert data["data"]["total_purchase_value"] == 46.75

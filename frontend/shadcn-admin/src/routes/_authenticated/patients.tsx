@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { apiFetch } from '@/lib/api-client'
 
-type Patient = { id: number; full_name: string; phone: string; email?: string; city?: string; country: string; customer_category: string; loyalty_tier: string; total_purchases: number; visit_count: number; is_active: boolean }
-type PatientStatistics = { total: number; active: number; inactive: number; total_purchase_value: number; by_loyalty_tier: Record<string, number>; by_country: Record<string, number> }
+type Patient = { id: number; full_name: string; phone: string; email?: string; city?: string; country: string; customer_category: string; loyalty_tier: string; visit_count: number; is_active: boolean }
+type PatientStatistics = { total: number; active: number; inactive: number; total_purchase_value: number; total_loyalty_points: number; by_loyalty_tier: Record<string, number>; by_country: Record<string, number> }
 type PatientDetail = Patient & {
   first_name: string
   last_name: string
@@ -37,8 +37,8 @@ function PatientsPage() {
   const metrics = {
     total: statistics?.total ?? patients.length,
     active: statistics?.active ?? patients.filter((patient) => patient.is_active).length,
-    revenue: statistics?.total_purchase_value ?? patients.reduce((sum, patient) => sum + patient.total_purchases, 0),
-    loyalty: statistics ? Object.entries(statistics.by_loyalty_tier).filter(([tier]) => tier !== 'standard').reduce((sum, [, count]) => sum + count, 0) : patients.filter((patient) => patient.loyalty_tier !== 'standard').length,
+    revenue: statistics?.total_purchase_value ?? 0,
+    loyalty: statistics ? Object.entries(statistics.by_loyalty_tier).filter(([tier]) => tier.toLowerCase() !== 'standard').reduce((sum, [, count]) => sum + count, 0) : patients.filter((patient) => patient.loyalty_tier.toLowerCase() !== 'standard').length,
   }
 
   useEffect(() => {
@@ -65,7 +65,7 @@ function PatientsPage() {
       <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
         <MetricCard label='Total patients' value={metrics.total.toString()} detail='Full database · first 20 displayed' tone='blue' />
         <MetricCard label='Active patients' value={metrics.active.toString()} detail='Currently active profiles' tone='green' />
-        <MetricCard label='Purchase value' value={formatCurrency(metrics.revenue)} detail='Synthetic demo portfolio' tone='yellow' />
+        <MetricCard label='Purchase value' value={formatCurrency(metrics.revenue)} detail='Full persisted purchase history' tone='yellow' />
         <MetricCard label='Loyalty members' value={metrics.loyalty.toString()} detail='Non-standard loyalty tier' tone='red' />
       </div>
       <div className='rounded-2xl border border-border/70 bg-card p-4 shadow-sm'>
@@ -81,7 +81,7 @@ function PatientsPage() {
         {patients.map((patient) => (
           <button key={patient.id} type='button' onClick={() => openPatient(patient.id)} className='rounded-xl border border-border/70 bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md'>
             <div className='flex items-start justify-between gap-3'><div><h2 className='font-semibold'>{patient.full_name}</h2><p className='text-sm text-muted-foreground'>{patient.city}, {patient.country}</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${categoryTone(patient.customer_category)}`}>{patient.customer_category}</span></div>
-            <div className='mt-4 grid grid-cols-3 gap-2 text-sm'><div><p className='text-muted-foreground'>Visits</p><p>{patient.visit_count}</p></div><div><p className='text-muted-foreground'>Purchases</p><p>${patient.total_purchases.toFixed(2)}</p></div><div><p className='text-muted-foreground'>Tier</p><p>{patient.loyalty_tier}</p></div></div>
+            <div className='mt-4 grid grid-cols-3 gap-2 text-sm'><div><p className='text-muted-foreground'>Visits</p><p>{patient.visit_count}</p></div><div><p className='text-muted-foreground'>Status</p><p>{patient.is_active ? 'Active' : 'Inactive'}</p></div><div><p className='text-muted-foreground'>Tier</p><p>{patient.loyalty_tier}</p></div></div>
           </button>
         ))}
       </div>
@@ -90,9 +90,9 @@ function PatientsPage() {
           <div className='flex items-start justify-between gap-4'><div><h2 className='text-xl font-semibold'>{selected.full_name}</h2><p className='text-sm text-muted-foreground'>{selected.customer_category} · {selected.city}, {selected.country}</p></div><button type='button' className='rounded-md border px-3 py-1 text-sm' onClick={() => setSelected(null)}>Close</button></div>
           <div className='mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
             <MetricCard label='Loyalty points' value={selected.loyalty_points.toLocaleString()} detail={`Tier: ${selected.loyalty_tier}`} tone='blue' />
-            <MetricCard label='Total spent' value={formatCurrency(selected.total_purchases)} detail='Lifetime purchase value' tone='yellow' />
+            <MetricCard label='Total spent' value={formatCurrency(selected.purchases.reduce((sum, purchase) => sum + purchase.total_amount, 0))} detail='Persisted purchase history' tone='yellow' />
             <MetricCard label='Visits' value={selected.visit_count.toString()} detail='Pharmacy visits' tone='green' />
-            <MetricCard label='Receipts' value={selected.purchases.length.toString()} detail='Purchase line records' tone='red' />
+            <MetricCard label='Receipts' value={new Set(selected.purchases.map((purchase) => purchase.receipt_number)).size.toString()} detail='Unique persisted receipts' tone='red' />
           </div>
           <div className='mt-6 grid gap-6 lg:grid-cols-3'>
             <section className='rounded-xl border p-4'><h3 className='mb-3 font-semibold'>Patient profile</h3><div className='space-y-2 text-sm'>
@@ -177,7 +177,7 @@ function PatientsPage() {
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(value)
 }
 
 function formatDateTime(value?: string) {

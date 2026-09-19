@@ -12,7 +12,12 @@ from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.core.logging import get_logger
 from src.pharmaviyum.core.repository import BaseRepository
-from src.pharmaviyum.models.patients import Patient, PatientAllergy, PatientCondition, PatientPurchase
+from src.pharmaviyum.models.patients import (
+    Patient,
+    PatientAllergy,
+    PatientCondition,
+    PatientPurchase,
+)
 
 logger = get_logger(__name__)
 
@@ -51,7 +56,10 @@ class PatientRepository(BaseRepository[Patient]):
             query = query.options(selectinload(Patient.insurances))
         if include_consultations:
             query = query.options(selectinload(Patient.consultations))
-        query = query.options(\n            selectinload(Patient.purchases).selectinload(PatientPurchase.product),\n            selectinload(Patient.purchases).selectinload(PatientPurchase.batch),\n        )
+        query = query.options(
+            selectinload(Patient.purchases).selectinload(PatientPurchase.product),
+            selectinload(Patient.purchases).selectinload(PatientPurchase.batch),
+        )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -124,8 +132,22 @@ class PatientRepository(BaseRepository[Patient]):
         return list(result.scalars().all()), total
 
     async def get_total_purchase_value(self) -> float:
-        result = await self.session.execute(select(func.coalesce(func.sum(Patient.total_purchases), 0.0)))
+        result = await self.session.execute(
+            select(
+                func.coalesce(
+                    func.sum(PatientPurchase.quantity * PatientPurchase.unit_price),
+                    0.0,
+                )
+            )
+        )
         return float(result.scalar_one())
+
+    async def get_total_loyalty_points(self) -> int:
+        result = await self.session.execute(
+            select(func.coalesce(func.sum(Patient.loyalty_points), 0))
+            .where(Patient.is_active)
+        )
+        return int(result.scalar_one())
 
     async def get_loyalty_tiers_stats(self) -> dict:
         result = await self.session.execute(
@@ -153,10 +175,17 @@ class PatientRepository(BaseRepository[Patient]):
         return list(result.scalars().all())
 
     async def get_top_customers(self, limit: int = 10) -> list[Patient]:
+        """Return active customers ranked by persisted purchase history."""
+        purchase_value = func.coalesce(
+            func.sum(PatientPurchase.quantity * PatientPurchase.unit_price),
+            0.0,
+        )
         result = await self.session.execute(
             select(Patient)
+            .outerjoin(PatientPurchase, PatientPurchase.patient_id == Patient.id)
             .where(Patient.is_active)
-            .order_by(Patient.total_purchases.desc())
+            .group_by(Patient.id)
+            .order_by(purchase_value.desc())
             .limit(limit)
         )
         return list(result.scalars().all())
@@ -192,14 +221,11 @@ class PatientRepository(BaseRepository[Patient]):
         await self.session.refresh(patient)
         return patient
 
-    async def record_visit(
-        self, id: int, purchase_amount: int = 0
-    ) -> Optional[Patient]:
+    async def record_visit(self, id: int) -> Optional[Patient]:
         patient = await self.get_by_id(id)
         if not patient:
             return None
         patient.visit_count += 1
-        patient.total_purchases += purchase_amount
         patient.last_visit_date = datetime.utcnow()
         await self.session.flush()
         await self.session.refresh(patient)
@@ -276,7 +302,9 @@ class PatientRepository(BaseRepository[Patient]):
             "conditions": [c.condition_name for c in patient.conditions],
             "blood_type": patient.blood_type,
             "loyalty_tier": patient.loyalty_tier,
-            "total_purchases": patient.total_purchases,
+            "total_purchases": round(
+                sum(purchase.total_amount for purchase in patient.purchases), 2
+            ),
             "visit_count": patient.visit_count,
             "last_visit_date": (
                 patient.last_visit_date.isoformat() if patient.last_visit_date else None

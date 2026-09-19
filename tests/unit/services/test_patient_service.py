@@ -30,6 +30,8 @@ def mock_repository():
     repo.count = AsyncMock(return_value=0)
     repo.get_loyalty_tiers_stats = AsyncMock(return_value={})
     repo.get_country_stats = AsyncMock(return_value={})
+    repo.get_total_purchase_value = AsyncMock(return_value=0.0)
+    repo.get_total_loyalty_points = AsyncMock(return_value=0)
     repo.record_visit = AsyncMock()
     return repo
 
@@ -53,7 +55,6 @@ def sample_patient():
         country="VN",
         loyalty_tier="Bronze",
         loyalty_points=0,
-        total_purchases=0,
         visit_count=0,
         is_active=True,
     )
@@ -281,6 +282,8 @@ class TestPatientServiceStatistics:
             "VN": 60,
             "TH": 20,
         }
+        mock_repository.get_total_purchase_value.return_value = 12500.5
+        mock_repository.get_total_loyalty_points.return_value = 3400
 
         # Act
         result = await patient_service.get_statistics()
@@ -291,3 +294,31 @@ class TestPatientServiceStatistics:
         assert result["inactive"] == 20
         assert "by_loyalty_tier" in result
         assert "by_country" in result
+        assert result["total_purchase_value"] == 12500.5
+        assert result["total_loyalty_points"] == 3400
+
+
+class TestPatientServiceVisit:
+    """Tests for visit tracking without financial side effects."""
+
+    @pytest.mark.asyncio
+    async def test_record_visit_does_not_pass_purchase_amount(
+        self,
+        patient_service,
+        mock_repository,
+        mock_cache_service,
+        mock_event_bus,
+        sample_patient,
+    ):
+        """A visit updates visit state; revenue is recorded elsewhere."""
+        sample_patient.visit_count = 4
+        mock_repository.record_visit.return_value = sample_patient
+
+        result = await patient_service.record_visit(1)
+
+        assert result is sample_patient
+        mock_repository.record_visit.assert_called_once_with(1)
+        mock_cache_service.delete.assert_called()
+        mock_event_bus.emit.assert_called_once()
+        event = mock_event_bus.emit.call_args.args[0]
+        assert event.data == {"patient_id": 1}

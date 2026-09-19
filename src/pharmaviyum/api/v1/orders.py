@@ -4,13 +4,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.order import Order
-from src.pharmaviyum.models.patients import Patient
+from src.pharmaviyum.models.patients import Patient, PatientPurchase
 from src.pharmaviyum.modules.auth.deps import (
     get_current_active_superuser,
     get_current_active_user,
 )
 from src.pharmaviyum.modules.auth.models import User
-from src.pharmaviyum.schemas.order_schema import OrderCreate, OrderResponse
+from src.pharmaviyum.schemas.order_schema import (
+    OrderCreate,
+    OrderResponse,
+    OrderStatusUpdate,
+)
+from src.pharmaviyum.services.cache import cache_service
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
@@ -32,8 +37,10 @@ async def create_order(
 
     order = Order(patient_id=data.patient_id, total_amount=data.total_amount)
     db.add(order)
-    patient.total_purchases += data.total_amount
-    patient.visit_count += 1
+
+    # Orders are not persisted receipt lines yet. Do not mutate the legacy
+    # patient aggregate here: pending orders are not realized revenue, and
+    # doing so would create a second source of truth alongside PatientPurchase.
     await db.commit()
     await db.refresh(order)
     return order
@@ -51,4 +58,68 @@ async def get_order(
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    return order
+
+
+@router.patch("/{order_id}/status", response_model=OrderResponse)
+async def update_order_status(
+    order_id: int,
+    data: OrderStatusUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_superuser),
+):
+    del current_user
+
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.status != "pending":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Order is already {order.status}",
+        )
+
+    if data.status == "cancelled":
+        order.status = "cancelled"
+    else:
+        # The current Order model has no line items. Persist completion as a
+        # single order-level purchase so revenue enters the same canonical
+        # PatientPurchase ledger without inventing product/batch data.
+        receipt_number = f"ORDER-{order.id}"
+        purchase_result = await db.execute(
+            select(PatientPurchase).where(
+                PatientPurchase.receipt_number == receipt_number
+            )
+        )
+        if purchase_result.scalar_one_or_none() is None:
+            db.add(
+                PatientPurchase(
+                    patient_id=order.patient_id,
+                    receipt_number=receipt_number,
+                    category="order",
+                    quantity=1,
+                    dispensed_packs=1,
+                    dispensed_blisters=0,
+                    dispensed_units=0,
+                    unit_price=order.total_amount,
+                    prescription_required=False,
+                    purchased_at=order.created_at,
+                )
+            )
+            result = await db.execute(
+                select(Patient).where(Patient.id == order.patient_id)
+            )
+            patient = result.scalar_one()
+            patient.visit_count += 1
+            patient.last_visit_date = order.created_at
+            await cache_service.delete(f"patient:{patient.id}")
+            await cache_service.delete(f"patient:ai_profile:{patient.id}")
+            await cache_service.delete(f"patient:phone:{patient.phone}")
+
+        order.status = "completed"
+
+    await db.commit()
+    await db.refresh(order)
     return order

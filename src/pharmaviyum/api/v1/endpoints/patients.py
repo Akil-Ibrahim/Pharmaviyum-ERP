@@ -65,7 +65,7 @@ async def list_patients(
 @router.get("/statistics")
 async def get_patient_statistics(
     service: PatientService = Depends(get_patient_service),
-    _: object = Depends(get_current_active_superuser),
+    _: object = Depends(get_current_active_user),
 ):
     return await service.get_statistics()
 
@@ -141,11 +141,12 @@ async def delete_patient(
 @router.post("/{patient_id}/visit", response_model=PatientResponse)
 async def record_visit(
     patient_id: int,
-    purchase_amount: int = Query(0, ge=0),
+    purchase_amount: float = Query(0.0, ge=0, deprecated=True, description="Deprecated: purchases must be recorded through Orders."),
     service: PatientService = Depends(get_patient_service),
     _: object = Depends(get_current_active_user),
 ):
-    patient = await service.record_visit(id=patient_id, purchase_amount=purchase_amount)
+    del purchase_amount
+    patient = await service.record_visit(id=patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return PatientResponse.model_validate(patient)
