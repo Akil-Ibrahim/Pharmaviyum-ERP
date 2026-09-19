@@ -7,7 +7,6 @@ Best practice:
 - No implicit privileged/system role at AI boundaries
 """
 
-import uuid
 from datetime import datetime
 from typing import Literal, Optional
 
