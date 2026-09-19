@@ -26,8 +26,6 @@ from src.pharmaviyum.workers.dead_letter import dead_letter_queue
 from src.pharmaviyum.workers.dispatcher import task_dispatcher
 from src.pharmaviyum.workers.queues import TaskQueue
 from src.pharmaviyum.workers.tasks.notifications import (
-    ProcessAcknowledgmentTask,
-    SendMedicationReminderTask,
     SendPatientNotificationTask,
 )
 from src.pharmaviyum.workers.tasks.pos_sync import (
@@ -39,7 +37,6 @@ from src.pharmaviyum.workers.tasks.pos_sync import (
 from src.pharmaviyum.workers.tasks.scheduled import (
     CleanupExpiredDataTask,
     GenerateDailyReportTask,
-    ProcessDueRemindersTask,
     SyncAllPosTask,
 )
 
@@ -48,13 +45,10 @@ logger = get_logger(__name__)
 
 TASK_REGISTRY = {
     "send_patient_notification": SendPatientNotificationTask,
-    "send_medication_reminder": SendMedicationReminderTask,
-    "process_acknowledgment": ProcessAcknowledgmentTask,
     "sync_products": SyncProductsTask,
     "sync_inventory": SyncInventoryTask,
     "sync_customers": SyncCustomersTask,
     "sync_sales": SyncSalesTask,
-    "process_due_reminders": ProcessDueRemindersTask,
     "cleanup_expired_data": CleanupExpiredDataTask,
     "generate_daily_report": GenerateDailyReportTask,
     "sync_all_pos": SyncAllPosTask,
@@ -223,7 +217,6 @@ class Worker:
         """Run scheduled tasks periodically."""
         logger.info("Starting scheduler")
         schedules = {
-            "process_due_reminders": 60,
             "cleanup_expired_data": 24 * 3600,
             "generate_daily_report": 24 * 3600,
         }
