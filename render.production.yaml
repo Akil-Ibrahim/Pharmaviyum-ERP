@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: pharmaviyum-api-production
+    name: pharmaviyum-crm
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
