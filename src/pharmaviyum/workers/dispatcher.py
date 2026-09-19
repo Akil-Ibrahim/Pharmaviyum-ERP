@@ -40,7 +40,9 @@ class TaskDispatcher:
         scheduled_at: Optional[datetime] = None,
     ) -> str:
         """Dispatch task to queue."""
-        allowed_queues = {queue.value for queue in TaskQueue if queue != TaskQueue.DEAD_LETTER}
+        allowed_queues = {
+            queue.value for queue in TaskQueue if queue != TaskQueue.DEAD_LETTER
+        }
         if queue not in allowed_queues:
             raise ValueError(f"Unsupported task queue: {queue}")
 
