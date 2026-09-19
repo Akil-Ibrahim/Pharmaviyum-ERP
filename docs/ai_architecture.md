@@ -128,7 +128,7 @@ Development Docker Compose currently provides:
 - FastAPI API;
 - Celery ingestion worker.
 
-Production release deployment is handled through GitHub Actions, GHCR, Ansible, and `deploy/docker-compose.release.yml`.
+Production release deployment is handled through GitHub Actions for CI, then Render for staging/production deployment.
 
 The repository does **not** use the removed `gateway/`, `infra/`, or `monitoring/` scaffolding as active deployment paths.
 
