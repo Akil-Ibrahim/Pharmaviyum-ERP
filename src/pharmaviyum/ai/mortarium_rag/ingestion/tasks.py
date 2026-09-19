@@ -299,19 +299,21 @@ def ingest_batch(
                 )
             except Exception as exc:
                 failed += 1
+                loop.run_until_complete(tracker.record_batch_result(job_id, False))
                 results.append(
                     {"source": source, "status": "failed", "error": str(exc)}
                 )
 
-        loop.run_until_complete(
-            tracker.update_status(
-                job_id,
-                "queued",
-                current_step="documents queued",
-                processed=0,
-                failed=failed,
+        if failed == 0:
+            loop.run_until_complete(
+                tracker.update_status(
+                    job_id,
+                    "queued",
+                    current_step="documents queued",
+                    processed=0,
+                    failed=0,
+                )
             )
-        )
         return {
             "success": True,
             "total_documents": len(sources),
