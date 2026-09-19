@@ -68,6 +68,11 @@ class PgVectorStore:
                 ON {self.table_name} USING gin (metadata)
             """
             await session.execute(text(metadata_index_sql))
+            tenant_index_sql = f"""  # nosec B608: validated identifier and fixed SQL template
+                CREATE INDEX IF NOT EXISTS idx_{self.table_name}_pharmacy_id
+                ON {self.table_name} ((metadata ->> 'pharmacy_id'))
+            """
+            await session.execute(text(tenant_index_sql))
             content_index_sql = f"""  # nosec B608: validated identifier and fixed SQL template
                 CREATE INDEX IF NOT EXISTS idx_{self.table_name}_content_fts
                 ON {self.table_name} USING gin (to_tsvector('english', content))
