@@ -110,7 +110,7 @@ GitHub Codespace
       +--> configured LLM provider / Ollama
 ```
 
-Codespaces is a development environment. Production deployment is handled separately through GitHub Actions, GHCR, Ansible, and `deploy/docker-compose.release.yml`.
+Codespaces is a development environment. Production deployment is handled separately through GitHub Actions for CI, then Render for staging/production deployment.
 
 ## 8. Troubleshooting
 
