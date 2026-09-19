@@ -25,6 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.core.logging import logger
 
+from ..context import require_mcp_context
 from ..registry import registry
 from ..schemas import (
     PrescriptionCheck,
@@ -107,6 +108,7 @@ async def verify_prescription(
     4. Duplicate dispensing — not already dispensed
     """
     start = time.perf_counter()
+    auth_context = require_mcp_context()
 
     # Lazy imports to avoid circular dependencies
     from src.pharmaviyum.modules.patients.models import Patient
@@ -121,8 +123,14 @@ async def verify_prescription(
 
     async with async_session_factory() as session:
         # Load prescription with relationships
-        query = select(Prescription).where(
-            Prescription.prescription_number == input.prescription_number
+        query = (
+            select(Prescription)
+            .join(Patient, Prescription.patient_id == Patient.id)
+            .where(
+                Prescription.prescription_number == input.prescription_number,
+                Patient.pharmacy_id == auth_context.pharmacy_id,
+                Patient.is_active.is_(True),
+            )
         )
         result = await session.execute(query)
         prescription = result.scalar_one_or_none()
@@ -142,7 +150,11 @@ async def verify_prescription(
             )
 
         # Load patient and items
-        patient_query = select(Patient).where(Patient.id == prescription.patient_id)
+        patient_query = select(Patient).where(
+            Patient.id == prescription.patient_id,
+            Patient.pharmacy_id == auth_context.pharmacy_id,
+            Patient.is_active.is_(True),
+        )
         patient_result = await session.execute(patient_query)
         patient = patient_result.scalar_one_or_none()
 
@@ -195,6 +207,7 @@ async def verify_prescription(
             f"Prescription verification: {input.prescription_number} — {'VALID ✅' if is_valid else 'INVALID ❌'}",
             extra={
                 "prescription_number": input.prescription_number,
+                "pharmacy_id": auth_context.pharmacy_id,
                 "is_valid": is_valid,
                 "checks_passed": sum(1 for c in checks if c.passed),
                 "checks_total": len(checks),
