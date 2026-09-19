@@ -164,6 +164,9 @@ class IngestionProgressTracker:
         jobs = []
 
         async for key in self.redis.scan_iter(match=pattern, count=100):
+            key_text = key.decode() if isinstance(key, bytes) else key
+            if key_text.endswith(":batch"):
+                continue
             job_data_raw = await self.redis.get(key)
             if job_data_raw:
                 job_data = json.loads(job_data_raw)
@@ -188,6 +191,9 @@ class IngestionProgressTracker:
         removed = 0
 
         async for key in self.redis.scan_iter(match=pattern, count=100):
+            key_text = key.decode() if isinstance(key, bytes) else key
+            if key_text.endswith(":batch"):
+                continue
             job_data_raw = await self.redis.get(key)
             if job_data_raw:
                 job_data = json.loads(job_data_raw)
