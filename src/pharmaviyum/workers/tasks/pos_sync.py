@@ -71,6 +71,7 @@ class SyncProductsTask(BaseTask):
                     select(Product).where(
                         Product.external_id == product_data["id"],
                         Product.pos_system == pos_system,
+                        Product.pharmacy_id == pharmacy_id,
                     )
                 )
                 existing = result.scalar_one_or_none()
