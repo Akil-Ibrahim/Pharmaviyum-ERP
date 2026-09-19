@@ -126,6 +126,7 @@ class DocumentVersionManager:
                     '"active"'
                 ) - 'superseded_by_version' - 'archived_at'
                 WHERE metadata->>'source' = :source
+                  AND (metadata->>'pharmacy_id')::int = :pharmacy_id
                   AND (metadata->>'version_number')::int = :target_version
             """
             )
