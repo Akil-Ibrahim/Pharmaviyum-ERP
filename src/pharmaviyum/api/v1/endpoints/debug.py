@@ -10,20 +10,16 @@ from fastapi import APIRouter, HTTPException, status
 from src.pharmaviyum.core.config import settings
 from src.pharmaviyum.core.health import health_checker
 from src.pharmaviyum.redis_client import get_redis
+from src.pharmaviyum.modules.auth.deps import CurrentSuperuser
 from src.pharmaviyum.workers.dead_letter import dead_letter_queue
 from src.pharmaviyum.workers.dispatcher import task_dispatcher
 
 router = APIRouter(prefix="/debug", tags=["debug"])
 
 
-def require_admin():
-    """Require admin role (placeholder)."""
-    if settings.ENVIRONMENT.value == "production":
-        pass
-
 
 @router.get("/info")
-async def system_info():
+async def system_info(_: CurrentSuperuser):
     import psutil
 
     memory = psutil.virtual_memory()
@@ -63,7 +59,7 @@ async def system_info():
 
 
 @router.get("/config")
-async def config_info():
+async def config_info(_: CurrentSuperuser):
     sensitive_keys = {
         "SECRET_KEY",
         "DATABASE_URL",
@@ -84,7 +80,7 @@ async def config_info():
 
 
 @router.get("/queues")
-async def queue_status():
+async def queue_status(_: CurrentSuperuser):
     queue_lengths = await task_dispatcher.get_all_queue_lengths()
     dead_letter_count = await dead_letter_queue.count()
     return {
@@ -96,18 +92,18 @@ async def queue_status():
 
 
 @router.get("/health/detailed")
-async def detailed_health():
+async def detailed_health(_: CurrentSuperuser):
     return (await health_checker.check_all()).to_dict()
 
 
 @router.post("/health/invalidate-cache")
-async def invalidate_health_cache():
+async def invalidate_health_cache(_: CurrentSuperuser):
     health_checker.invalidate_cache()
     return {"status": "cache_invalidated"}
 
 
 @router.get("/dead-letter")
-async def list_dead_letter(skip: int = 0, limit: int = 50, task_name: str = None):
+async def list_dead_letter(_: CurrentSuperuser, skip: int = 0, limit: int = 50, task_name: str = None):
     entries = await dead_letter_queue.list_entries(
         skip=skip, limit=limit, task_name=task_name
     )
@@ -116,7 +112,7 @@ async def list_dead_letter(skip: int = 0, limit: int = 50, task_name: str = None
 
 
 @router.post("/dead-letter/{entry_id}/retry")
-async def retry_dead_letter_entry(entry_id: str):
+async def retry_dead_letter_entry(_: CurrentSuperuser, entry_id: str):
     entry = await dead_letter_queue.get_entry(entry_id)
     if not entry:
         raise HTTPException(
@@ -132,7 +128,7 @@ async def retry_dead_letter_entry(entry_id: str):
 
 
 @router.delete("/dead-letter/{entry_id}")
-async def discard_dead_letter_entry(entry_id: str):
+async def discard_dead_letter_entry(_: CurrentSuperuser, entry_id: str):
     success = await dead_letter_queue.mark_discarded(entry_id)
     if not success:
         raise HTTPException(
@@ -142,7 +138,7 @@ async def discard_dead_letter_entry(entry_id: str):
 
 
 @router.get("/cache/stats")
-async def cache_stats():
+async def cache_stats(_: CurrentSuperuser):
     redis = await get_redis()
     info = await redis.info("memory")
     keyspace = await redis.info("keyspace")
