@@ -1,6 +1,5 @@
 """Pydantic schemas for User authentication."""
 
-import uuid
 from datetime import datetime
 from typing import Optional
 
@@ -59,7 +58,7 @@ class UserPublic(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: uuid.UUID
+    id: int
     email: EmailStr
     full_name: Optional[str] = None
     is_active: bool
