@@ -6,6 +6,8 @@ export const Route = createFileRoute('/_authenticated/prescriptions')({
     <EntityPage
       title='Prescriptions'
       description='Prescription records, validity, medication, and dispensing status.'
+      endpoint='/api/v1/prescriptions'
+      columns={['id', 'patient_id', 'product_id', 'prescription_number', 'status', 'issued_at', 'expires_at']}
     />
   ),
 })
