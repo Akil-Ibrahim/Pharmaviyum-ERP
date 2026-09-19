@@ -142,7 +142,7 @@ class PatientService:
         if "first_name" in update_data or "last_name" in update_data:
             patient.full_name = f"{patient.first_name} {patient.last_name}"
         patient = await self.repository.update(patient)
-        await self._invalidate_patient_cache(id, patient.phone)
+        await self._invalidate_patient_cache(id, patient.phone, pharmacy_id)
         await event_bus.emit(
             Event(
                 event_type="patient.updated",
@@ -170,7 +170,7 @@ class PatientService:
             else await self.repository.soft_delete(id, pharmacy_id=pharmacy_id)
         )
         if result:
-            await self._invalidate_patient_cache(id)
+            await self._invalidate_patient_cache(id, pharmacy_id=pharmacy_id)
             await event_bus.emit(
                 Event(
                     event_type="patient.deleted",
@@ -214,7 +214,7 @@ class PatientService:
     async def record_visit(self, id: int, pharmacy_id: int | None = None) -> Optional[Patient]:
         patient = await self.repository.record_visit(id, pharmacy_id=pharmacy_id)
         if patient:
-            await self._invalidate_patient_cache(id, patient.phone)
+            await self._invalidate_patient_cache(id, patient.phone, pharmacy_id)
             await event_bus.emit(
                 Event(
                     event_type="patient.visit_recorded",
@@ -224,9 +224,13 @@ class PatientService:
         return patient
 
     async def _invalidate_patient_cache(
-        self, patient_id: int, phone: Optional[str] = None
+        self,
+        patient_id: int,
+        phone: Optional[str] = None,
+        pharmacy_id: int | None = None,
     ) -> None:
-        await cache_service.delete(f"patient:{patient_id}")
-        await cache_service.delete(f"patient:ai_profile:{patient_id}")
+        scope = pharmacy_id or 0
+        await cache_service.delete(f"patient:{scope}:{patient_id}")
+        await cache_service.delete(f"patient:ai_profile:{scope}:{patient_id}")
         if phone:
-            await cache_service.delete(f"patient:phone:{phone}")
+            await cache_service.delete(f"patient:phone:{scope}:{phone}")
