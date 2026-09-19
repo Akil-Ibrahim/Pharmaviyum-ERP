@@ -81,12 +81,13 @@ class PatientRepository(BaseRepository[Patient]):
         return result.scalar_one_or_none()
 
     async def get_by_external_id(
-        self, external_id: str, pos_system: str
+        self, external_id: str, pos_system: str, pharmacy_id: int | None = None
     ) -> Optional[Patient]:
         result = await self.session.execute(
             select(Patient).where(
                 Patient.external_id == external_id,
                 Patient.pos_system == pos_system,
+                *([Patient.pharmacy_id == pharmacy_id] if pharmacy_id is not None else []),
             )
         )
         return result.scalar_one_or_none()
