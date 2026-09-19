@@ -254,12 +254,12 @@ def ingest_document(
             redis_client = loop.run_until_complete(get_redis())
             tracker = IngestionProgressTracker(redis_client)
             loop.run_until_complete(
-                tracker.update_status(job_id, "failed", error=str(exc))
+                tracker.update_status(job_id, "failed", error="Document ingestion failed")
             )
             _record_batch_result(loop, config, False)
         except Exception:
             logger.exception("Failed to mark ingestion job %s as failed", job_id)
-        return {"success": False, "error": str(exc), "source": source}
+        return {"success": False, "error": "Document ingestion failed", "source": source}
 
 
 @celery_app.task(
@@ -303,7 +303,7 @@ def ingest_batch(
                 failed += 1
                 loop.run_until_complete(tracker.record_batch_result(job_id, False))
                 results.append(
-                    {"source": source, "status": "failed", "error": str(exc)}
+                    {"source": source, "status": "failed", "error": "Queue dispatch failed"}
                 )
 
         if failed == 0:
