@@ -187,6 +187,13 @@ async def _ingest_document_async(
             await vector_store.initialize()
             await vector_store.upsert(all_chunks, embeddings)
 
+        if config.get("source_storage") == "object":
+            try:
+                await ObjectStorage().delete(source)
+            except Exception:
+                # Keep the object for retry/recovery if cleanup fails.
+                logger.exception("Failed to delete completed ingestion object %s", source)
+
         await tracker.update_status(job_id, "completed", processed=len(all_chunks))
         return {
             "success": True,
