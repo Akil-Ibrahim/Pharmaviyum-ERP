@@ -100,12 +100,15 @@ def _stamp_tenant_metadata(documents: list, config: dict[str, Any]) -> list:
     return stamped
 
 
-def _record_batch_result(loop, config: dict[str, Any], success: bool) -> None:
+def _record_batch_result(loop, config: dict[str, Any], success: bool, child_job_id: str) -> None:
     batch_job_id = config.get("batch_job_id")
     if not isinstance(batch_job_id, str) or not batch_job_id:
         return
     try:
         redis_client = loop.run_until_complete(get_redis())
+        marker_key = f"ingestion:batch:{batch_job_id}:child:{child_job_id}:counted"
+        if not loop.run_until_complete(redis_client.set(marker_key, "1", nx=True, ex=86400)):
+            return
         tracker = IngestionProgressTracker(redis_client)
         loop.run_until_complete(tracker.record_batch_result(batch_job_id, success))
     except Exception:
@@ -243,7 +246,7 @@ def ingest_document(
         result = loop.run_until_complete(
             _ingest_document_async(source, source_type, job_id, config)
         )
-        _record_batch_result(loop, config, True)
+        _record_batch_result(loop, config, True, job_id)
         return result
     except Exception as exc:
         logger.error("Task failed: %s", exc, exc_info=True)
@@ -256,7 +259,7 @@ def ingest_document(
             loop.run_until_complete(
                 tracker.update_status(job_id, "failed", error="Document ingestion failed")
             )
-            _record_batch_result(loop, config, False)
+            _record_batch_result(loop, config, False, job_id)
         except Exception:
             logger.exception("Failed to mark ingestion job %s as failed", job_id)
         return {"success": False, "error": "Document ingestion failed", "source": source}
