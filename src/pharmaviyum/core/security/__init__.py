@@ -10,6 +10,7 @@ from passlib.context import CryptContext
 from src.pharmaviyum.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+_DEV_SIGNING_KEY: str | None = None
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -26,9 +27,10 @@ def _signing_key() -> str:
     """Return the configured signing key, with a process-local development key."""
     if settings.SECRET_KEY:
         return settings.SECRET_KEY
-    if not hasattr(_signing_key, "_dev_key"):
-        _signing_key._dev_key = secrets.token_urlsafe(48)  # type: ignore[attr-defined]
-    return _signing_key._dev_key  # type: ignore[attr-defined]
+    global _DEV_SIGNING_KEY
+    if _DEV_SIGNING_KEY is None:
+        _DEV_SIGNING_KEY = secrets.token_urlsafe(48)
+    return _DEV_SIGNING_KEY
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
