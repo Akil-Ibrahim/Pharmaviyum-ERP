@@ -63,5 +63,11 @@ for attempt in {1..30}; do
   sleep 2
 done
 
-echo "Release failed health check; application rollback will be attempted"
+echo "Release failed health check; rolling back application image"
+rollback_app
+if [[ -n "$previous_image" && "$previous_image" != "$APP_IMAGE" ]]; then
+  echo "Rollback target restored: $previous_image"
+else
+  echo "No previous application image is available for rollback"
+fi
 exit 1
