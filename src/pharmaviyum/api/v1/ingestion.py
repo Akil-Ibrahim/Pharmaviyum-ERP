@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import uuid
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
@@ -133,6 +134,17 @@ async def ingest_from_url(
     authorized_pharmacy_id = await _authorize_ingestion_tenant(
         request.pharmacy_id, current_user, session
     )
+    if request.source_type not in {"pdf", "html", "docx"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported source type",
+        )
+    parsed = urlparse(request.source)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="URL ingestion requires an absolute http(s) URL",
+        )
     job_id = str(uuid.uuid4())
     config = {
         "pharmacy_id": authorized_pharmacy_id,
