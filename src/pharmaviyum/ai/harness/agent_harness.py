@@ -212,7 +212,10 @@ class AgentHarness:
             )
             return {
                 "success": False,
-                "answer": "I encountered an error while processing your request. Please try again or consult a pharmacist.",
+                "answer": (
+                    "I encountered an error while processing your request. "
+                    "Please try again or consult a pharmacist."
+                ),
                 "warnings": ["harness_execution_error"],
                 "trace_id": trace_id,
                 "latency_ms": latency_ms,
@@ -262,7 +265,9 @@ class AgentHarness:
                 if node == "router":
                     yield {
                         "event": "status",
-                        "message": f"Routing query: {data.get('query_intent', 'analyzing')}...",
+                        "message": (
+                            f"Routing query: {data.get('query_intent', 'analyzing')}..."
+                        ),
                     }
                 elif node == "planner":
                     yield {"event": "status", "message": "Planning tool usage..."}
