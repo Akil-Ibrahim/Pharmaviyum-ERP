@@ -142,36 +142,36 @@ class SendPatientNotificationTask(BaseTask):
     async def _send_zalo(self, phone: str, message: str) -> dict:
         """Send via Zalo API"""
         # TODO: Implement Zalo API integration
-        logger.info(f"Sending Zalo message to {phone}")
-        return {"message_id": f"zalo_{phone}_{int(__import__('time').time())}"}
+        logger.info("Sending Zalo message")
+        return {"message_id": f"zalo_{__import__('uuid').uuid4()}"}
 
     async def _send_line(self, phone: str, message: str) -> dict:
         """Send via LINE API"""
         # TODO: Implement LINE API integration
-        logger.info(f"Sending LINE message to {phone}")
-        return {"message_id": f"line_{phone}_{int(__import__('time').time())}"}
+        logger.info("Sending LINE message")
+        return {"message_id": f"line_{__import__('uuid').uuid4()}"}
 
     async def _send_whatsapp(self, phone: str, message: str) -> dict:
         """Send via WhatsApp Business API"""
         # TODO: Implement WhatsApp API integration
-        logger.info(f"Sending WhatsApp message to {phone}")
-        return {"message_id": f"wa_{phone}_{int(__import__('time').time())}"}
+        logger.info("Sending WhatsApp message")
+        return {"message_id": f"wa_{__import__('uuid').uuid4()}"}
 
     async def _send_messenger(self, phone: str, message: str) -> dict:
         """Send via Facebook Messenger"""
         # TODO: Implement Messenger API integration
-        logger.info(f"Sending Messenger message to {phone}")
-        return {"message_id": f"msg_{phone}_{int(__import__('time').time())}"}
+        logger.info("Sending Messenger message")
+        return {"message_id": f"msg_{__import__('uuid').uuid4()}"}
 
     async def _send_sms(self, phone: str, message: str) -> dict:
         """Send via SMS (fallback)"""
         # TODO: Implement SMS gateway integration
-        logger.info(f"Sending SMS to {phone}")
-        return {"message_id": f"sms_{phone}_{int(__import__('time').time())}"}
+        logger.info("Sending SMS")
+        return {"message_id": f"sms_{__import__('uuid').uuid4()}"}
 
     async def _send_email(self, email: str, message: str) -> dict:
         """Send via Email (fallback)"""
         # TODO: Implement email integration
-        logger.info(f"Sending email to {email}")
-        return {"message_id": f"email_{email}_{int(__import__('time').time())}"}
+        logger.info("Sending email")
+        return {"message_id": f"email_{__import__('uuid').uuid4()}"}
 
