@@ -6,6 +6,8 @@ export const Route = createFileRoute('/_authenticated/inventory')({
     <EntityPage
       title='Inventory'
       description='Stock levels, batches, expiry dates, and inventory movements.'
+      endpoint='/api/v1/inventory'
+      columns={['id', 'product_id', 'pharmacy_id', 'quantity', 'reserved_quantity', 'reorder_level', 'lot_number', 'expires_at']}
     />
   ),
 })
