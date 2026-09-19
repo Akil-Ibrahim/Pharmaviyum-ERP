@@ -15,6 +15,7 @@ from src.pharmaviyum.ai.mcp import get_mcp_health_status
 from src.pharmaviyum.ai.observability import ai_registry
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.redis_client import get_redis
+from src.pharmaviyum.modules.auth.deps import CurrentSuperuser
 
 router = APIRouter(tags=["Monitoring"])
 
@@ -83,6 +84,6 @@ async def metrics() -> Response:
 
 
 @router.get("/mcp/health")
-async def mcp_health():
+async def mcp_health(_: CurrentSuperuser):
     """Detailed health status of MCP tools and dependencies."""
     return await get_mcp_health_status()
