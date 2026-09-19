@@ -47,6 +47,24 @@ def upgrade() -> None:
     op.create_index("ix_suppliers_code", "suppliers", ["code"])
 
     op.create_table(
+        "products",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("name", sa.String(200), nullable=False),
+        sa.Column("sku", sa.String(64), nullable=False),
+        sa.Column("description", sa.String(1000), nullable=True),
+        sa.Column("price", sa.Float(), nullable=False, server_default="0"),
+        sa.Column("stock", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("updated_at", sa.DateTime(), nullable=False),
+        sa.UniqueConstraint("sku", name="uq_products_sku"),
+        sa.CheckConstraint("price >= 0", name="ck_products_price_nonnegative"),
+        sa.CheckConstraint("stock >= 0", name="ck_products_stock_nonnegative"),
+    )
+    op.create_index("ix_products_id", "products", ["id"])
+    op.create_index("ix_products_sku", "products", ["sku"])
+
+    op.create_table(
         "inventory",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("product_id", sa.Integer(), nullable=False),
