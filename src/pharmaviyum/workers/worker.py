@@ -144,6 +144,19 @@ class Worker:
                     await self._mark_failed(task_id, f"Unknown task: {task_name}")
                     continue
 
+                expected_queue = task_class.queue
+                if expected_queue != queue:
+                    error = (
+                        f"Task {task_name} is bound to queue {expected_queue}, "
+                        f"not {queue}"
+                    )
+                    logger.error(error)
+                    WORKER_TASKS_TOTAL.labels(
+                        task=task_name, queue=queue, status="failure"
+                    ).inc()
+                    await self._mark_failed(task_id, error)
+                    continue
+
                 task_instance = task_class()
                 started = time.perf_counter()
                 WORKER_TASKS_IN_FLIGHT.labels(queue=queue).inc()
@@ -229,7 +242,11 @@ class Worker:
                         await task_dispatcher.dispatch(
                             task_name=task_name,
                             task_args={},
-                            queue=TaskQueue.CLEANUP.value,
+                            queue=(
+                                TaskQueue.CLEANUP.value
+                                if task_name == "cleanup_expired_data"
+                                else TaskQueue.ANALYTICS.value
+                            ),
                         )
                         last_run[task_name] = now
                     except Exception as e:
