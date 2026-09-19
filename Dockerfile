@@ -25,9 +25,6 @@ FROM oven/bun:1 AS frontend-builder
 
 WORKDIR /frontend
 
-# The production frontend lives in the shadcn-admin workspace.
-# Build that application explicitly instead of the legacy frontend/package.json
-# at the repository root.
 COPY frontend/shadcn-admin/package.json ./
 RUN bun install
 
@@ -69,10 +66,9 @@ USER appuser
 
 EXPOSE 8000
 
-# Render injects PORT (10000 by default). Keep the container healthcheck aligned
-# with the same port used by uvicorn instead of hard-coding local port 8000.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD curl -fsS "http://localhost:${PORT:-8000}/health" || exit 1
+    CMD curl -fsS "http://localhost:\${PORT:-8000}/health" || exit 1
 
-# Database migrations are a release concern and should run as a separate deployment step.
-CMD ["sh", "-c", "alembic upgrade head && if [ \"${SEED_DEMO_DATA:-false}\" = \"true\" ]; then python scripts/seed_database.py; fi && exec uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Migrations and demo seeding are deployment concerns, not application startup.
+# Production release pipelines must run migrations exactly once before traffic.
+CMD ["sh", "-c", "exec uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port \${PORT:-8000}"]
