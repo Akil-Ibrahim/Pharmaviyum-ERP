@@ -160,13 +160,14 @@ class PatientService:
         id: int,
         deleted_by: Optional[str] = None,
         hard_delete: bool = False,
+        pharmacy_id: int | None = None,
     ) -> bool:
         if hard_delete and not await is_feature_enabled("patient_hard_delete"):
             hard_delete = False
         result = (
             await self.repository.delete(id)
             if hard_delete
-            else await self.repository.soft_delete(id)
+            else await self.repository.soft_delete(id, pharmacy_id=pharmacy_id)
         )
         if result:
             await self._invalidate_patient_cache(id)
@@ -196,17 +197,18 @@ class PatientService:
             await cache_service.set(cache_key, profile, ttl=self.cache_ttl)
         return profile
 
-    async def get_statistics(self) -> dict:
-        total = await self.repository.count()
-        active = await self.repository.count(is_active=True)
+    async def get_statistics(self, pharmacy_id: int | None = None) -> dict:
+        filters = {"pharmacy_id": pharmacy_id} if pharmacy_id is not None else {}
+        total = await self.repository.count(**filters)
+        active = await self.repository.count(is_active=True, **filters)
         return {
             "total": total,
             "active": active,
             "inactive": total - active,
-            "total_purchase_value": await self.repository.get_total_purchase_value(),
-            "total_loyalty_points": await self.repository.get_total_loyalty_points(),
-            "by_loyalty_tier": await self.repository.get_loyalty_tiers_stats(),
-            "by_country": await self.repository.get_country_stats(),
+            "total_purchase_value": await self.repository.get_total_purchase_value(pharmacy_id=pharmacy_id),
+            "total_loyalty_points": await self.repository.get_total_loyalty_points(pharmacy_id=pharmacy_id),
+            "by_loyalty_tier": await self.repository.get_loyalty_tiers_stats(pharmacy_id=pharmacy_id),
+            "by_country": await self.repository.get_country_stats(pharmacy_id=pharmacy_id),
         }
 
     async def record_visit(self, id: int, pharmacy_id: int | None = None) -> Optional[Patient]:
