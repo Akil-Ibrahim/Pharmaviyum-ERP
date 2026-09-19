@@ -100,3 +100,42 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
+
+
+/* Pharmaviyum theme presets. These affect the shared shadcn semantic accent tokens only. */
+:root[data-color-theme='blue'] { --primary: oklch(0.55 0.22 260); --ring: oklch(0.65 0.18 260); }
+:root[data-color-theme='green'] { --primary: oklch(0.55 0.18 145); --ring: oklch(0.65 0.15 145); }
+:root[data-color-theme='red'] { --primary: oklch(0.58 0.22 25); --ring: oklch(0.67 0.18 25); }
+:root[data-color-theme='rose'] { --primary: oklch(0.58 0.2 350); --ring: oklch(0.68 0.16 350); }
+:root[data-color-theme='orange'] { --primary: oklch(0.62 0.19 55); --ring: oklch(0.7 0.15 55); }
+:root[data-color-theme='yellow'] { --primary: oklch(0.62 0.16 90); --ring: oklch(0.72 0.13 90); }
+:root[data-color-theme='violet'] { --primary: oklch(0.58 0.2 295); --ring: oklch(0.68 0.16 295); }
+:root[data-color-theme='amber'] { --primary: oklch(0.62 0.18 75); --ring: oklch(0.72 0.14 75); }
+:root[data-color-theme='purple'] { --primary: oklch(0.57 0.2 315); --ring: oklch(0.68 0.16 315); }
+:root[data-color-theme='teal'] { --primary: oklch(0.56 0.16 180); --ring: oklch(0.67 0.13 180); }
+:root[data-color-theme='cyan'] { --primary: oklch(0.56 0.17 205); --ring: oklch(0.67 0.14 205); }
+
+.dark[data-color-theme='blue'] { --primary: oklch(0.72 0.16 260); --primary-foreground: oklch(0.18 0.03 260); --ring: oklch(0.62 0.15 260); }
+.dark[data-color-theme='green'] { --primary: oklch(0.72 0.15 145); --primary-foreground: oklch(0.18 0.03 145); --ring: oklch(0.62 0.14 145); }
+.dark[data-color-theme='red'] { --primary: oklch(0.72 0.17 25); --primary-foreground: oklch(0.18 0.03 25); --ring: oklch(0.62 0.15 25); }
+.dark[data-color-theme='rose'] { --primary: oklch(0.72 0.16 350); --primary-foreground: oklch(0.18 0.03 350); --ring: oklch(0.62 0.14 350); }
+.dark[data-color-theme='orange'] { --primary: oklch(0.74 0.15 55); --primary-foreground: oklch(0.18 0.03 55); --ring: oklch(0.64 0.13 55); }
+.dark[data-color-theme='yellow'] { --primary: oklch(0.78 0.14 90); --primary-foreground: oklch(0.18 0.03 90); --ring: oklch(0.68 0.12 90); }
+.dark[data-color-theme='violet'] { --primary: oklch(0.72 0.16 295); --primary-foreground: oklch(0.18 0.03 295); --ring: oklch(0.62 0.14 295); }
+.dark[data-color-theme='amber'] { --primary: oklch(0.76 0.15 75); --primary-foreground: oklch(0.18 0.03 75); --ring: oklch(0.66 0.13 75); }
+.dark[data-color-theme='purple'] { --primary: oklch(0.72 0.16 315); --primary-foreground: oklch(0.18 0.03 315); --ring: oklch(0.62 0.14 315); }
+.dark[data-color-theme='teal'] { --primary: oklch(0.72 0.14 180); --primary-foreground: oklch(0.18 0.03 180); --ring: oklch(0.62 0.12 180); }
+.dark[data-color-theme='cyan'] { --primary: oklch(0.72 0.15 205); --primary-foreground: oklch(0.18 0.03 205); --ring: oklch(0.62 0.13 205); }
+
+.bg-theme-default { background: var(--muted); }
+.bg-theme-blue { background: oklch(0.55 0.22 260); }
+.bg-theme-green { background: oklch(0.55 0.18 145); }
+.bg-theme-red { background: oklch(0.58 0.22 25); }
+.bg-theme-rose { background: oklch(0.58 0.2 350); }
+.bg-theme-orange { background: oklch(0.62 0.19 55); }
+.bg-theme-yellow { background: oklch(0.62 0.16 90); }
+.bg-theme-violet { background: oklch(0.58 0.2 295); }
+.bg-theme-amber { background: oklch(0.62 0.18 75); }
+.bg-theme-purple { background: oklch(0.57 0.2 315); }
+.bg-theme-teal { background: oklch(0.56 0.16 180); }
+.bg-theme-cyan { background: oklch(0.56 0.17 205); }
