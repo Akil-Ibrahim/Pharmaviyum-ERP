@@ -193,15 +193,21 @@ class PharmacistAgent:
         ]
         if not ai_messages:
             return {
-                "final_answer": "I could not generate a safe answer. Please consult a licensed pharmacist.",
+                "final_answer": (
+                    "I could not generate a safe answer. "
+                    "Please consult a licensed pharmacist."
+                ),
                 "warnings": warnings + ["no_ai_response_generated"],
             }
         draft = str(ai_messages[-1].content)
         question = str(messages[0].content) if messages else ""
         review_prompt = (
-            "Review this pharmaceutical AI answer. Consider only the user question, draft, and tool results. "
-            "Reject dangerous advice, unsupported dosage claims, and unsupported medication claims. Return the required structured schema.\n"
-            f"Question: {question}\nDraft: {draft}\nTool results: {state.get('tool_results', [])}"
+            "Review this pharmaceutical AI answer. Consider only the user question, "
+            "draft, and tool results. Reject dangerous advice, unsupported dosage "
+            "claims, and unsupported medication claims. Return the required "
+            "structured schema.\n"
+            f"Question: {question}\nDraft: {draft}\n"
+            f"Tool results: {state.get('tool_results', [])}"
         )
         try:
             reviewer = self.main_llm.with_structured_output(SafetyReview)
@@ -213,7 +219,10 @@ class PharmacistAgent:
             )
             warnings.extend(review.new_warnings)
             if not review.is_safe:
-                final = "I cannot provide that information because it may be unsafe. Please consult a licensed pharmacist or physician."
+                final = (
+                    "I cannot provide that information because it may be unsafe. "
+                    "Please consult a licensed pharmacist or physician."
+                )
                 warnings.append("safety_block_triggered")
             elif review.needs_revision and review.revised_response:
                 final = review.revised_response
@@ -222,14 +231,20 @@ class PharmacistAgent:
         except Exception:
             logger.error("Structured safety review failed closed", exc_info=True)
             return {
-                "final_answer": "The response could not be safety-validated. Please consult a licensed pharmacist.",
+                "final_answer": (
+                    "The response could not be safety-validated. "
+                    "Please consult a licensed pharmacist."
+                ),
                 "warnings": warnings + ["reviewer_failed_closed"],
             }
         if (
             "consult a licensed pharmacist" not in final.lower()
             and "consult a physician" not in final.lower()
         ):
-            final += "\n\n*Disclaimer: This is AI assistance. Consult a licensed pharmacist or physician for personalized medical advice.*"
+            final += (
+                "\n\n*Disclaimer: This is AI assistance. Consult a licensed "
+                "pharmacist or physician for personalized medical advice.*"
+            )
         return {"final_answer": final, "warnings": warnings}
 
     @staticmethod
