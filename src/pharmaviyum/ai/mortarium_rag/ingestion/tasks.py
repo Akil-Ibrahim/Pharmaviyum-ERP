@@ -100,6 +100,18 @@ def _stamp_tenant_metadata(documents: list, config: dict[str, Any]) -> list:
     return stamped
 
 
+def _record_batch_result(loop, config: dict[str, Any], success: bool) -> None:
+    batch_job_id = config.get("batch_job_id")
+    if not isinstance(batch_job_id, str) or not batch_job_id:
+        return
+    try:
+        redis_client = loop.run_until_complete(get_redis())
+        tracker = IngestionProgressTracker(redis_client)
+        loop.run_until_complete(tracker.record_batch_result(batch_job_id, success))
+    except Exception:
+        logger.exception("Failed to update parent batch job %s", batch_job_id)
+
+
 async def _ingest_document_async(
     source: str,
     source_type: str,
@@ -228,9 +240,11 @@ def ingest_document(
     logger.info("Starting ingestion task %s", job_id)
     try:
         loop = get_event_loop()
-        return loop.run_until_complete(
+        result = loop.run_until_complete(
             _ingest_document_async(source, source_type, job_id, config)
         )
+        _record_batch_result(loop, config, True)
+        return result
     except Exception as exc:
         logger.error("Task failed: %s", exc, exc_info=True)
         if self.request.retries < self.max_retries:
@@ -242,6 +256,7 @@ def ingest_document(
             loop.run_until_complete(
                 tracker.update_status(job_id, "failed", error=str(exc))
             )
+            _record_batch_result(loop, config, False)
         except Exception:
             logger.exception("Failed to mark ingestion job %s as failed", job_id)
         return {"success": False, "error": str(exc), "source": source}
@@ -275,8 +290,9 @@ def ingest_batch(
             source = source_info["source"]
             source_type = source_info["source_type"]
             try:
+                child_config = {**config, "batch_job_id": job_id}
                 task = ingest_document.delay(
-                    source, source_type, f"{job_id}_doc_{index}", config
+                    source, source_type, f"{job_id}_doc_{index}", child_config
                 )
                 results.append(
                     {"source": source, "task_id": task.id, "status": "queued"}
