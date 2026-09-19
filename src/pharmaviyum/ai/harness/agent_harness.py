@@ -124,6 +124,8 @@ class AgentHarness:
                     "answer": cached_response["answer"],
                     "warnings": cached_response.get("warnings", []),
                     "tool_results": cached_response.get("tool_results", []),
+                    "model_used": cached_response.get("model_used"),
+                    "tool_results": cached_response.get("tool_results", []),
                     "model_used": cached_response.get("model_used", "cached"),
                     "cache_hit": True,
                     "trace_id": trace_id,
@@ -149,10 +151,11 @@ class AgentHarness:
 
             raw_answer = str(agent_result.get("answer", ""))
             agent_warnings = list(agent_result.get("warnings", []))
+            tool_results = list(agent_result.get("tool_results", []))
             final_answer, post_warnings = await self._post_process(
                 answer=raw_answer,
                 question=safe_query,
-                sources=agent_result.get("tool_results", []),
+                sources=tool_results,
             )
             agent_warnings.extend(post_warnings)
 
@@ -186,6 +189,8 @@ class AgentHarness:
                 "cache_hit": False,
                 "trace_id": trace_id,
                 "latency_ms": latency_ms,
+                "tool_results": tool_results,
+                "model_used": agent_result.get("model_used"),
             }
 
         except Exception:
