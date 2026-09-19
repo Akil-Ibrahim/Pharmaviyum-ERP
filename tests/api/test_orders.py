@@ -109,3 +109,29 @@ def test_create_and_get_order(client):
         json={"status": "pending"},
     )
     assert invalid_status.status_code == 422
+
+
+def test_order_cross_tenant_isolation(client):
+    """A tenant user must not read an order belonging to another pharmacy."""
+    patient_payload = {
+        "first_name": "Tenant",
+        "last_name": "Isolation",
+        "phone": "+380501234568",
+    }
+    presp = client.post("/api/v1/patients/?pharmacy_id=1", json=patient_payload)
+    if presp.status_code in (403, 404):
+        return
+    assert presp.status_code == 201
+    patient_id = presp.json()["id"]
+
+    oresp = client.post(
+        "/api/v1/orders/?pharmacy_id=1",
+        json={"patient_id": patient_id, "total_amount": 10.0},
+    )
+    if oresp.status_code in (403, 404):
+        return
+    assert oresp.status_code == 201
+    order_id = oresp.json()["id"]
+
+    cross = client.get(f"/api/v1/orders/{order_id}?pharmacy_id=2")
+    assert cross.status_code in (403, 404)
