@@ -33,6 +33,7 @@ class SendPatientNotificationTask(BaseTask):
     async def execute(
         self,
         patient_id: int,
+        pharmacy_id: int,
         template_name: str,
         template_data: dict[str, Any],
         channel: Optional[str] = None,
@@ -43,6 +44,7 @@ class SendPatientNotificationTask(BaseTask):
 
         Args:
             patient_id: Patient ID
+            pharmacy_id: Authorized pharmacy tenant ID
             template_name: Notification template name
             template_data: Template variables
             channel: Override notification channel (optional)
@@ -58,7 +60,10 @@ class SendPatientNotificationTask(BaseTask):
         # Fetch patient
         async with async_session() as session:
             result = await session.execute(
-                Patient.__table__.select().where(Patient.id == patient_id)
+                Patient.__table__.select().where(
+                    Patient.id == patient_id,
+                    Patient.pharmacy_id == pharmacy_id,
+                )
             )
             patient = result.first()
 
