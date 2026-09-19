@@ -241,7 +241,7 @@ def read_user_by_id(
 )
 def update_user(
     session: SessionDep,
-    user_id: uuid.UUID,
+    user_id: int,
     user_in: UserUpdate,
 ) -> UserPublic:
     """Update a user (superuser only)."""
@@ -274,7 +274,7 @@ def update_user(
 def delete_user(
     session: SessionDep,
     current_user: CurrentUser,
-    user_id: uuid.UUID,
+    user_id: int,
 ) -> Message:
     """Delete a user (superuser only)."""
     user = session.get(crud.User, user_id)
