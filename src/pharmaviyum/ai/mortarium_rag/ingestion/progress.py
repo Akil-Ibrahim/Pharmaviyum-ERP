@@ -66,6 +66,29 @@ class IngestionProgressTracker:
         )
 
         logger.info(f"Ingestion job created: {job_id} ({total_documents} documents)")
+        if total_documents > 0:
+            await self.redis.hset(
+                f"{self.prefix}:{job_id}:batch",
+                mapping={"total": total_documents, "processed": 0, "failed": 0},
+            )
+            await self.redis.expire(f"{self.prefix}:{job_id}:batch", self.ttl_seconds)
+
+    async def record_batch_result(self, batch_job_id: str, success: bool) -> None:
+        """Atomically record one child result and finalize its parent batch."""
+        counters_key = f"{self.prefix}:{batch_job_id}:batch"
+        field = "processed" if success else "failed"
+        counts = await self.redis.hincrby(counters_key, field, 1)
+        total_raw = await self.redis.hget(counters_key, "total")
+        if not total_raw:
+            return
+        total = int(total_raw)
+        failed_raw = await self.redis.hget(counters_key, "failed")
+        failed = int(failed_raw or 0)
+        processed = total - failed if counts == total else int(await self.redis.hget(counters_key, "processed") or 0)
+        if counts == total:
+            await self.update_status(batch_job_id, "completed" if failed == 0 else "failed", current_step="documents processed", processed=processed, failed=failed)
+        else:
+            await self.update_status(batch_job_id, "queued", current_step="processing documents", processed=processed, failed=failed)
 
     async def update_status(
         self,
