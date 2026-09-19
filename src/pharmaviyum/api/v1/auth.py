@@ -110,7 +110,7 @@ async def token(
                 detail="Invalid credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        subject = user.username
+        subject = str(user.id)
     else:
         admin_user = getattr(settings, "ADMIN_USER", "admin")
         admin_pass = settings.ADMIN_PASSWORD
@@ -149,7 +149,7 @@ async def token(
             admin.is_superuser = True
             await db.commit()
 
-        subject = admin.username
+        subject = str(admin.id)
 
     access_token = create_access_token(subject=subject)
     return {"access_token": access_token, "token_type": "bearer"}
