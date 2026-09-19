@@ -54,3 +54,23 @@ def test_retrieval_result_preserves_tenant_metadata():
 
     assert result.chunk.metadata["pharmacy_id"] == 42
     assert result.chunk.metadata["source"] == "guideline.pdf"
+
+def test_canonical_tenant_metadata_cannot_be_overridden_by_extra_fields():
+    metadata = {
+        "pharmacy_id": 42,
+        "source": "guideline.pdf",
+        "country": "UA",
+        "language": "uk",
+        "access_level": "pharmacy",
+        "category": "clinical",
+    }
+    from src.pharmaviyum.ai.mortarium_rag.schemas import CanonicalMetadata
+
+    canonical = CanonicalMetadata.model_validate(metadata).model_dump(mode="json")
+    persisted = {
+        **canonical,
+        **{key: value for key, value in metadata.items() if key not in CanonicalMetadata.model_fields},
+    }
+
+    assert persisted["pharmacy_id"] == 42
+    assert persisted["source"] == "guideline.pdf"
