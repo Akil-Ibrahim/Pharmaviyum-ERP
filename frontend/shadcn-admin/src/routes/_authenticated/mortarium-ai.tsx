@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { Bot, Check, Loader2, Search, Sparkles } from 'lucide-react'
+import { Bot, Check, Loader2, Search, Sparkles, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-client'
 
@@ -27,11 +27,12 @@ function languageName(code: string) {
 }
 
 function MortariumAI() {
-  const [language, setLanguage] = useState('en')
+  const [language, setLanguage] = useState(() => localStorage.getItem('pharmaviyum-ai-language') || 'en')
   const [search, setSearch] = useState('')
   const [pharmacyId, setPharmacyId] = useState<number>()
   const [query, setQuery] = useState('')
   const [answer, setAnswer] = useState('')
+  useEffect(() => { localStorage.setItem('pharmaviyum-ai-language', language) }, [language])
   const [loading, setLoading] = useState(false)
   useEffect(() => { apiFetch<{ pharmacies: { id: number }[] }>('/api/v1/ai/context').then(({ pharmacies }) => setPharmacyId(pharmacies[0]?.id)).catch(() => undefined) }, [])
   async function ask(text: string) {
@@ -67,7 +68,7 @@ function MortariumAI() {
           </div>
           <p className='mt-3 max-w-2xl text-sm text-muted-foreground'>Ask questions about patients, sales, inventory, prescriptions, forecasts, and pharmacy operations. Answers will use the selected language and available CRM context.</p>
         </div>
-        <Button variant='outline' className='gap-2'><Sparkles className='size-4' /> New conversation</Button>
+        <Button variant='outline' className='gap-2' onClick={() => { setAnswer(''); setQuery('') }}><RotateCcw className='size-4' /> New conversation</Button>
       </header>
 
       <div className='grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]'>
