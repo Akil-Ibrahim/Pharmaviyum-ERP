@@ -19,6 +19,7 @@ from src.pharmaviyum.core.logging import logger
 
 IngestionStatus = Literal[
     "pending",
+    "queued",
     "loading",
     "preprocessing",
     "chunking",
