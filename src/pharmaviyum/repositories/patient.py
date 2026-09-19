@@ -231,8 +231,10 @@ class PatientRepository(BaseRepository[Patient]):
         await self.session.refresh(patient)
         return patient
 
-    async def record_visit(self, id: int) -> Optional[Patient]:
+    async def record_visit(self, id: int, pharmacy_id: int | None = None) -> Optional[Patient]:
         patient = await self.get_by_id(id)
+        if pharmacy_id is not None and patient is not None and patient.pharmacy_id != pharmacy_id:
+            return None
         if not patient:
             return None
         patient.visit_count += 1
@@ -279,10 +281,11 @@ class PatientRepository(BaseRepository[Patient]):
         await self.session.refresh(condition)
         return condition
 
-    async def get_ai_profile(self, id: int) -> Optional[dict]:
+    async def get_ai_profile(self, id: int, pharmacy_id: int | None = None) -> Optional[dict]:
         """Get a patient profile optimized for current AI workflows."""
         patient = await self.get_by_id_with_relations(
             id,
+            pharmacy_id=pharmacy_id,
             include_allergies=True,
             include_conditions=True,
             include_insurances=False,
