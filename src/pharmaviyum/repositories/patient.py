@@ -41,6 +41,7 @@ class PatientRepository(BaseRepository[Patient]):
     async def get_by_id_with_relations(
         self,
         id: int,
+        pharmacy_id: int | None = None,
         include_allergies: bool = True,
         include_conditions: bool = True,
         include_insurances: bool = True,
@@ -48,6 +49,8 @@ class PatientRepository(BaseRepository[Patient]):
     ) -> Optional[Patient]:
         """Get patient by ID with eager-loaded relationships."""
         query = select(Patient).where(Patient.id == id)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
         if include_allergies:
             query = query.options(selectinload(Patient.allergies))
         if include_conditions:
@@ -63,15 +66,19 @@ class PatientRepository(BaseRepository[Patient]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_phone(self, phone: str) -> Optional[Patient]:
-        result = await self.session.execute(
-            select(Patient).where(Patient.phone == phone)
+    async def get_by_phone(self, phone: str, pharmacy_id: int | None = None) -> Optional[Patient]:
+        query = select(Patient).where(Patient.phone == phone)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        result = await self.session.execute(query)
         )
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: str) -> Optional[Patient]:
-        result = await self.session.execute(
-            select(Patient).where(Patient.email == email)
+    async def get_by_email(self, email: str, pharmacy_id: int | None = None) -> Optional[Patient]:
+        query = select(Patient).where(Patient.email == email)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        result = await self.session.execute(query)
         )
         return result.scalar_one_or_none()
 
@@ -97,10 +104,13 @@ class PatientRepository(BaseRepository[Patient]):
         date_to: Optional[datetime] = None,
         skip: int = 0,
         limit: int = 50,
+        pharmacy_id: int | None = None,
     ) -> tuple[list[Patient], int]:
         query = select(Patient)
         count_query = select(func.count(Patient.id))
         conditions = []
+        if pharmacy_id is not None:
+            conditions.append(Patient.pharmacy_id == pharmacy_id)
         if query_text:
             search_pattern = f"%{query_text}%"
             conditions.append(
