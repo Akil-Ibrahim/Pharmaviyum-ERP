@@ -15,7 +15,7 @@ from .models import PharmacyMembership
 class TenantContext:
     """Tenant identity proven to belong to the authenticated user."""
 
-    user_id: str
+    user_id: int
     pharmacy_id: int
 
 
@@ -26,7 +26,7 @@ async def require_pharmacy_tenant(
 ) -> TenantContext:
     """Resolve and authorize the requested pharmacy for the current user."""
     if current_user.is_superuser:
-        return TenantContext(user_id=str(current_user.id), pharmacy_id=pharmacy_id)
+        return TenantContext(user_id=current_user.id, pharmacy_id=pharmacy_id)
 
     membership = await session.scalar(
         select(PharmacyMembership).where(
