@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.order import Order
 from src.pharmaviyum.models.patients import Patient, PatientPurchase
+from src.pharmaviyum.modules.auth.tenant import resolve_pharmacy_scope
 from src.pharmaviyum.modules.auth.deps import (
     get_current_active_superuser,
     get_current_active_user,
@@ -25,12 +26,13 @@ async def create_order(
     data: OrderCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_superuser),
+    pharmacy_id: int | None = None,
 ):
-    del current_user
+    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
 
     result = await db.execute(select(Patient).where(Patient.id == data.patient_id))
     patient = result.scalar_one_or_none()
-    if not patient:
+    if not patient or (scope is not None and patient.pharmacy_id != scope):
         raise HTTPException(status_code=404, detail="Patient not found")
     if not patient.is_active:
         raise HTTPException(status_code=409, detail="Patient is inactive")
@@ -51,12 +53,13 @@ async def get_order(
     order_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
+    pharmacy_id: int | None = None,
 ):
-    del current_user
+    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
 
-    result = await db.execute(select(Order).where(Order.id == order_id))
+    result = await db.execute(select(Order).join(Patient, Patient.id == Order.patient_id).where(Order.id == order_id))
     order = result.scalar_one_or_none()
-    if not order:
+    if not order or (scope is not None and order.patient.pharmacy_id != scope):
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 
@@ -67,12 +70,13 @@ async def update_order_status(
     data: OrderStatusUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_superuser),
+    pharmacy_id: int | None = None,
 ):
-    del current_user
+    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
 
-    result = await db.execute(select(Order).where(Order.id == order_id))
+    result = await db.execute(select(Order).join(Patient, Patient.id == Order.patient_id).where(Order.id == order_id))
     order = result.scalar_one_or_none()
-    if not order:
+    if not order or (scope is not None and order.patient.pharmacy_id != scope):
         raise HTTPException(status_code=404, detail="Order not found")
 
     if order.status != "pending":
@@ -114,9 +118,9 @@ async def update_order_status(
             patient = result.scalar_one()
             patient.visit_count += 1
             patient.last_visit_date = order.created_at
-            await cache_service.delete(f"patient:{patient.id}")
-            await cache_service.delete(f"patient:ai_profile:{patient.id}")
-            await cache_service.delete(f"patient:phone:{patient.phone}")
+            await cache_service.delete(f"patient:{patient.pharmacy_id or 0}:{patient.id}")
+            await cache_service.delete(f"patient:ai_profile:{patient.pharmacy_id or 0}:{patient.id}")
+            await cache_service.delete(f"patient:phone:{patient.pharmacy_id or 0}:{patient.phone}")
 
         order.status = "completed"
 
