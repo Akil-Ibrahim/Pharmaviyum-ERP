@@ -10,6 +10,7 @@ Best practice 2026:
 from __future__ import annotations
 
 import json
+from urllib.parse import urlsplit, urlunsplit
 from datetime import datetime, timedelta
 from typing import Any, Literal
 
@@ -38,6 +39,20 @@ class IngestionProgressTracker:
         self.ttl_seconds = ttl_hours * 3600
         self.prefix = "ingestion:job"
 
+    @staticmethod
+    def _safe_source(source: str) -> str:
+        """Redact URL credentials and query/fragment secrets before persistence."""
+        try:
+            parsed = urlsplit(source)
+        except ValueError:
+            return "<redacted>"
+        if parsed.scheme in {"http", "https"} and parsed.hostname:
+            netloc = parsed.hostname
+            if parsed.port:
+                netloc = f"{netloc}:{parsed.port}"
+            return urlunsplit((parsed.scheme, netloc, parsed.path, "", ""))
+        return source
+
     async def create_job(
         self,
         job_id: str,
@@ -48,7 +63,7 @@ class IngestionProgressTracker:
         """Initialize a new ingestion job."""
         job_data = {
             "job_id": job_id,
-            "source": source,
+            "source": self._safe_source(source),
             "status": "pending",
             "total_documents": total_documents,
             "processed_documents": 0,
