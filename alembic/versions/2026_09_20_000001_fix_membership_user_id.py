@@ -19,6 +19,9 @@ def upgrade() -> None:
     if "user_id" not in columns:
         return
 
+    if isinstance(columns["user_id"]["type"], sa.Integer):
+        return
+
     # UUID membership rows cannot be safely converted to the canonical integer
     # users.id without an explicit identity mapping. Fail closed rather than
     # silently corrupting tenant ownership.
@@ -29,11 +32,22 @@ def upgrade() -> None:
             "export/map tenant memberships explicitly before deployment."
         )
 
-    op.drop_constraint(
-        "pharmacy_memberships_user_id_fkey",
-        "pharmacy_memberships",
-        type_="foreignkey",
+    foreign_keys = inspector.get_foreign_keys("pharmacy_memberships")
+    user_fk = next(
+        (
+            fk
+            for fk in foreign_keys
+            if fk.get("constrained_columns") == ["user_id"]
+            and fk.get("referred_table") == "users"
+        ),
+        None,
     )
+    if user_fk and user_fk.get("name"):
+        op.drop_constraint(
+            user_fk["name"],
+            "pharmacy_memberships",
+            type_="foreignkey",
+        )
     op.alter_column(
         "pharmacy_memberships",
         "user_id",
