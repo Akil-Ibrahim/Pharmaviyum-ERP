@@ -13,7 +13,7 @@ from src.pharmaviyum.workers.queues import TaskQueue
 logger = get_logger(__name__)
 
 
-(BaseTask):
+class CleanupExpiredDataTask(BaseTask):
     """Clean up expired data (old logs, cache, etc)"""
 
     name = "cleanup_expired_data"
