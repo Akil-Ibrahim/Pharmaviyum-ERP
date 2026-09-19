@@ -16,6 +16,7 @@ from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.models.product_batch import ProductBatch
 from src.pharmaviyum.models.supplier import Supplier
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
+from src.pharmaviyum.modules.auth.models import PharmacyMembership
 
 router = APIRouter(prefix="/api/v1", tags=["Pharmacy Domain"])
 
@@ -107,8 +108,19 @@ def _validate_inventory_levels(quantity: int, reserved_quantity: int) -> None:
 
 
 @router.get("/pharmacies", response_model=None)
-async def list_pharmacies(_: CurrentUser, session: SessionDep) -> list[Pharmacy]:
-    return await _list(session, Pharmacy)
+async def list_pharmacies(current_user: CurrentUser, session: SessionDep) -> list[Pharmacy]:
+    if current_user.is_superuser:
+        return await _list(session, Pharmacy)
+    result = await session.execute(
+        select(Pharmacy)
+        .join(PharmacyMembership, PharmacyMembership.pharmacy_id == Pharmacy.id)
+        .where(
+            PharmacyMembership.user_id == current_user.id,
+            PharmacyMembership.is_active.is_(True),
+        )
+        .order_by(Pharmacy.id.desc())
+    )
+    return list(result.scalars().unique().all())
 
 
 @router.post("/pharmacies", response_model=None, status_code=status.HTTP_201_CREATED)
@@ -140,13 +152,19 @@ async def create_supplier(
 
 @router.get("/inventory", response_model=None)
 async def list_inventory(
-    _: CurrentUser,
+    current_user: CurrentUser,
     session: SessionDep,
     product_id: int | None = Query(default=None, gt=0),
     pharmacy_id: int | None = Query(default=None, gt=0),
     low_stock: bool = False,
 ) -> list[Inventory]:
     query = select(Inventory)
+    if not current_user.is_superuser:
+        authorized_pharmacies = select(PharmacyMembership.pharmacy_id).where(
+            PharmacyMembership.user_id == current_user.id,
+            PharmacyMembership.is_active.is_(True),
+        )
+        query = query.where(Inventory.pharmacy_id.in_(authorized_pharmacies))
     if product_id is not None:
         query = query.where(Inventory.product_id == product_id)
     if pharmacy_id is not None:
