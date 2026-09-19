@@ -135,7 +135,7 @@ async def create_pharmacy(
 
 
 @router.get("/suppliers", response_model=None)
-async def list_suppliers(_: CurrentUser, session: SessionDep) -> list[Supplier]:
+async def list_suppliers(_: CurrentSuperuser, session: SessionDep) -> list[Supplier]:
     return await _list(session, Supplier)
 
 
