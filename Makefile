@@ -6,7 +6,7 @@
 # The React frontend runs separately from frontend/.
 # =============================================================================
 
-.PHONY: help dev dev-detach stop clean prod prod-stop prod-migrate test test-cov lint format pre-commit logs logs-api logs-db logs-redis logs-ollama shell-api shell-db shell-redis status rebuild update docs security
+.PHONY: help dev dev-detach stop clean test test-cov lint format pre-commit logs logs-api logs-db logs-redis logs-ollama shell-api shell-db shell-redis status rebuild update docs security
 
 .DEFAULT_GOAL := help
 
@@ -150,11 +150,6 @@ help:
 	@echo "  make dev-detach      - Start development stack in background"
 	@echo "  make stop            - Stop development stack"
 	@echo "  make clean           - Stop stack and remove volumes"
-	@echo ""
-	@echo "Release:"
-	@echo "  make prod             - Start release compose stack"
-	@echo "  make prod-stop        - Stop release compose stack"
-	@echo "  make prod-migrate     - Run release migrations"
 	@echo ""
 	@echo "Database:"
 	@echo "  make migrate          - Apply local migrations"
