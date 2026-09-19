@@ -2,25 +2,6 @@
   <img src="assets/pharmaviyum.png" alt="Pharmaviyum CRM Banner" width="100%">
 </p>
 
-<div align="center">
-
-### Demo Access
-
-<table>
-  <tr>
-    <td><strong>Login</strong></td>
-    <td><code>admin</code></td>
-  </tr>
-  <tr>
-    <td><strong>Password</strong></td>
-    <td><code>admin</code></td>
-  </tr>
-</table>
-
-<sub>Default demo credentials for technical evaluation.</sub>
-
-</div>
-
 # Pharmaviyum CRM
 
 ![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.13%2B-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue) ![React](https://img.shields.io/badge/React-19.3-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.x-646CFF)
