@@ -194,10 +194,7 @@ async def _ingest_document_async(
             "chunks_created": len(all_chunks),
             "source": source,
         }
-    except Exception as exc:
-        logger.error("Ingestion failed for %s: %s", source, exc, exc_info=True)
-        await tracker.update_status(job_id, "failed", error=str(exc))
-        return {"success": False, "error": str(exc), "source": source}
+
     finally:
         if temp_path:
             try:
@@ -231,6 +228,15 @@ def ingest_document(
         logger.error("Task failed: %s", exc, exc_info=True)
         if self.request.retries < self.max_retries:
             raise self.retry(exc=exc)
+        try:
+            loop = get_event_loop()
+            redis_client = loop.run_until_complete(get_redis())
+            tracker = IngestionProgressTracker(redis_client)
+            loop.run_until_complete(
+                tracker.update_status(job_id, "failed", error=str(exc))
+            )
+        except Exception:
+            logger.exception("Failed to mark ingestion job %s as failed", job_id)
         return {"success": False, "error": str(exc), "source": source}
 
 
