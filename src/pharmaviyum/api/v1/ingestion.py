@@ -166,12 +166,24 @@ async def ingest_from_url(
 
     tracker = IngestionProgressTracker(redis)
     await tracker.create_job(job_id, request.source, total_documents=1, metadata=config)
-    task = ingest_document.delay(
-        source=request.source,
-        source_type=request.source_type,
-        job_id=job_id,
-        config=config,
-    )
+    try:
+        task = ingest_document.delay(
+            source=request.source,
+            source_type=request.source_type,
+            job_id=job_id,
+            config=config,
+        )
+    except Exception as exc:
+        await tracker.update_status(
+            job_id,
+            "failed",
+            error="Ingestion queue is unavailable",
+        )
+        logger.exception("Failed to dispatch URL ingestion job %s", job_id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Ingestion queue is unavailable",
+        ) from exc
     return {"job_id": job_id, "status": "queued", "task_id": task.id}
 
 
