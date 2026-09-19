@@ -10,8 +10,12 @@ Best practice 2026:
 
 from __future__ import annotations
 
+import asyncio
+import ipaddress
+import socket
 from pathlib import Path
 from typing import Any, AsyncIterator
+from urllib.parse import urlparse
 
 from src.pharmaviyum.ai.mortarium_rag.schemas import Document
 from src.pharmaviyum.core.logging import logger
@@ -39,15 +43,51 @@ class HTMLLoader:
                 language=config.metadata_filters.get("language", "en"),
             )
 
-    async def _load_url(self, url: str, config: LoaderConfig) -> tuple[str, dict]:
-        """Fetch and parse HTML from URL."""
+    @staticmethod
+    async def _validate_remote_url(url: str) -> None:
+        """Reject non-HTTP URLs and destinations on private/internal networks."""
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+            raise ValueError("Only http(s) URLs with a hostname are allowed")
+
+        hostname = parsed.hostname.rstrip(".").lower()
+        if hostname in {"localhost", "localhost.localdomain"} or hostname.endswith(".localhost"):
+            raise ValueError("Localhost URLs are not allowed")
+
         try:
+            literal = ipaddress.ip_address(hostname)
+            addresses = [literal]
+        except ValueError:
+            infos = await asyncio.to_thread(
+                socket.getaddrinfo, hostname, parsed.port or (443 if parsed.scheme == "https" else 80),
+                type=socket.SOCK_STREAM,
+            )
+            addresses = [ipaddress.ip_address(info[4][0]) for info in infos]
+
+        if any(
+            address.is_private
+            or address.is_loopback
+            or address.is_link_local
+            or address.is_reserved
+            or address.is_multicast
+            or address.is_unspecified
+            for address in addresses
+        ):
+            raise ValueError("URLs resolving to private or internal networks are not allowed")
+
+    async def _load_url(self, url: str, config: LoaderConfig) -> tuple[str, dict]:
+        """Fetch and parse HTML from a validated public URL."""
+        try:
+            await self._validate_remote_url(url)
             import aiohttp
             from bs4 import BeautifulSoup
             from readability import Document as ReadabilityDoc
 
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, timeout=30) as resp:
+                async with session.get(url, timeout=30, allow_redirects=False) as resp:
+                    if 300 <= resp.status < 400:
+                        logger.warning("Redirect rejected for URL %s", url)
+                        return "", {}
                     if resp.status != 200:
                         logger.warning(f"HTTP {resp.status} for {url}")
                         return "", {}
@@ -107,6 +147,10 @@ class HTMLLoader:
 
     async def validate_source(self, source: str) -> bool:
         if source.startswith(("http://", "https://")):
+            try:
+                await self._validate_remote_url(source)
+            except (OSError, ValueError):
+                return False
             return True
         path = Path(source)
         return path.exists() and path.suffix.lower() in [".html", ".htm"]
