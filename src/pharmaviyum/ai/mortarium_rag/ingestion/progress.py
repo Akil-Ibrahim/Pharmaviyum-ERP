@@ -84,8 +84,10 @@ class IngestionProgressTracker:
         total = int(total_raw)
         failed_raw = await self.redis.hget(counters_key, "failed")
         failed = int(failed_raw or 0)
-        processed = total - failed if counts == total else int(await self.redis.hget(counters_key, "processed") or 0)
-        if counts == total:
+        processed_raw = await self.redis.hget(counters_key, "processed")
+        processed = int(processed_raw or 0)
+        completed = processed + failed
+        if completed == total:
             await self.update_status(batch_job_id, "completed" if failed == 0 else "failed", current_step="documents processed", processed=processed, failed=failed)
         else:
             await self.update_status(batch_job_id, "queued", current_step="processing documents", processed=processed, failed=failed)
