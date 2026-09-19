@@ -39,18 +39,33 @@ class DocumentDeduplicator:
         self.strategy = strategy
         self.similarity_threshold = similarity_threshold
 
+    @staticmethod
+    def _require_pharmacy_id(pharmacy_id: int) -> None:
+        if (
+            not isinstance(pharmacy_id, int)
+            or isinstance(pharmacy_id, bool)
+            or pharmacy_id <= 0
+        ):
+            raise ValueError(
+                "Document deduplication requires a positive integer pharmacy_id"
+            )
+
     async def filter_duplicates(
         self,
         content_hashes: list[str],
         document_ids: list[str],
+        pharmacy_id: int,
     ) -> tuple[list[str], list[str]]:
-        """Filter out documents that already exist in the vector store."""
+        """Filter out documents already present in one pharmacy tenant."""
+        self._require_pharmacy_id(pharmacy_id)
         if self.strategy == "disabled":
             return content_hashes, document_ids
         if self.strategy == "strict":
-            return await self._strict_dedup(content_hashes, document_ids)
+            return await self._strict_dedup(content_hashes, document_ids, pharmacy_id)
         if self.strategy == "fuzzy":
-            new_hashes, new_ids = await self._strict_dedup(content_hashes, document_ids)
+            new_hashes, new_ids = await self._strict_dedup(
+                content_hashes, document_ids, pharmacy_id
+            )
             return new_hashes, new_ids
         return content_hashes, document_ids
 
@@ -58,8 +73,10 @@ class DocumentDeduplicator:
         self,
         content_hashes: list[str],
         document_ids: list[str],
+        pharmacy_id: int,
     ) -> tuple[list[str], list[str]]:
-        """Filter by exact content hash match."""
+        """Filter by exact content hash within one pharmacy tenant."""
+        self._require_pharmacy_id(pharmacy_id)
         if not content_hashes:
             return [], []
 
@@ -70,9 +87,12 @@ class DocumentDeduplicator:
                        document_id
                 FROM {self.table_name}
                 WHERE metadata->>'content_hash' = ANY(:hashes)
+                  AND (metadata->>'pharmacy_id')::int = :pharmacy_id
             """
             )
-            result = await session.execute(query, {"hashes": content_hashes})
+            result = await session.execute(
+                query, {"hashes": content_hashes, "pharmacy_id": pharmacy_id}
+            )
             existing = {row.hash: row.document_id for row in result}
 
         new_hashes = []
