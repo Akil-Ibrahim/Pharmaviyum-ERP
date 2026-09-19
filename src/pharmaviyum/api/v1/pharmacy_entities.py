@@ -250,10 +250,12 @@ async def delete_inventory(
 
 @router.get("/batches", response_model=None)
 async def list_batches(
-    _: CurrentUser,
+    _: CurrentSuperuser,
     session: SessionDep,
     product_id: int | None = Query(default=None, gt=0),
 ) -> list[ProductBatch]:
+    # ProductBatch currently has no pharmacy_id. Keep operational batch quantities
+    # fail-closed until batch ownership is modeled explicitly.
     query = select(ProductBatch)
     if product_id is not None:
         query = query.where(ProductBatch.product_id == product_id)
