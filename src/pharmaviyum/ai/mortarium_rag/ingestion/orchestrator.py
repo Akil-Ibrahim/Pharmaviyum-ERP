@@ -130,8 +130,12 @@ class IngestionOrchestrator:
             ]
             doc_ids = [str(doc.id) for doc in processed_docs]
 
+            pharmacy_id = config.get("pharmacy_id")
+            if not isinstance(pharmacy_id, int) or isinstance(pharmacy_id, bool) or pharmacy_id <= 0:
+                raise ValueError("RAG ingestion requires a positive integer pharmacy_id")
+
             new_hashes, new_doc_ids = await self.deduplicator.filter_duplicates(
-                content_hashes, doc_ids
+                content_hashes, doc_ids, pharmacy_id
             )
 
             stats["duplicates_skipped"] = len(processed_docs) - len(new_doc_ids)
@@ -152,8 +156,8 @@ class IngestionOrchestrator:
                 }
 
             if self.enable_versioning:
-                new_version = await self.version_manager.get_next_version(source)
-                await self.version_manager.archive_old_versions(source, new_version)
+                new_version = await self.version_manager.get_next_version(source, pharmacy_id)
+                await self.version_manager.archive_old_versions(source, new_version, pharmacy_id)
                 for doc in processed_docs:
                     doc.metadata["version_number"] = new_version
                     doc.metadata["version_status"] = "active"
