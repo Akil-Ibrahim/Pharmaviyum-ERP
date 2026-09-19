@@ -60,7 +60,7 @@ jobs:
             --network pharmaviyum-network \
             --entrypoint python \
             pharmaviyum-crm:smoke-${GITHUB_SHA} \
-            -c 'import pharmaviyum.main; print("FastAPI import OK")'
+            -c 'import src.pharmaviyum.main; print("FastAPI import OK")'
 
       - name: Cleanup
         if: always()
