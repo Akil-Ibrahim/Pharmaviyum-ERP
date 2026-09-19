@@ -11,6 +11,8 @@ Best practice 2026:
 from __future__ import annotations
 
 import asyncio
+import os
+import tempfile
 from typing import Any
 
 from celery.utils.log import get_task_logger
@@ -27,6 +29,7 @@ from src.pharmaviyum.ai.mortarium_rag.preprocessing import DocumentPreprocessor
 from src.pharmaviyum.ai.mortarium_rag.vector_store import PgVectorStore
 from src.pharmaviyum.core.database import async_session_factory
 from src.pharmaviyum.redis_client import get_redis
+from src.pharmaviyum.storage.object_storage import ObjectStorage
 
 from .celery_app import celery_app
 from .progress import IngestionProgressTracker
@@ -111,6 +114,17 @@ async def _ingest_document_async(
 
     try:
         await tracker.update_status(job_id, "loading", "Loading document")
+        local_source = source
+        temp_path: str | None = None
+        if config.get("source_storage") == "object":
+            storage = ObjectStorage()
+            payload = await storage.get_bytes(source)
+            suffix = f".{source_type}" if source_type in {"pdf", "docx", "html"} else ""
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
+                tmp_file.write(payload)
+                temp_path = tmp_file.name
+            local_source = temp_path
+
         loader_config = LoaderConfig(
             source_type=source_type,
             batch_size=config.get("batch_size", 10),
@@ -130,7 +144,7 @@ async def _ingest_document_async(
             raise ValueError(f"Unsupported source type: {source_type}")
 
         documents = []
-        async for doc in loader.load(source, loader_config):
+        async for doc in loader.load(local_source, loader_config):
             documents.append(doc)
         if not documents:
             raise ValueError(f"No documents loaded from {source}")
@@ -184,6 +198,12 @@ async def _ingest_document_async(
         logger.error("Ingestion failed for %s: %s", source, exc, exc_info=True)
         await tracker.update_status(job_id, "failed", error=str(exc))
         return {"success": False, "error": str(exc), "source": source}
+    finally:
+        if temp_path:
+            try:
+                os.unlink(temp_path)
+            except FileNotFoundError:
+                pass
 
 
 @celery_app.task(
