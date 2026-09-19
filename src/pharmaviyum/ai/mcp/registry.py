@@ -13,7 +13,6 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Literal
-from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -95,7 +94,7 @@ class MCPToolRegistry:
         name: str,
         input_data: dict[str, Any],
         user_role: UserRole,
-        user_id: UUID | None = None,
+        user_id: int | None = None,
         pharmacy_id: int | None = None,
     ) -> Any:
         """Call a registered tool with RBAC and trusted tenant context."""
