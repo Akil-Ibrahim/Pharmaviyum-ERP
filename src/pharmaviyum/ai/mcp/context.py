@@ -8,8 +8,6 @@ from __future__ import annotations
 
 from contextvars import ContextVar, Token
 from dataclasses import dataclass
-from uuid import UUID
-
 from .registry import UserRole
 
 
@@ -17,7 +15,7 @@ from .registry import UserRole
 class MCPAuthorizationContext:
     """Authenticated identity and tenant scope for one MCP execution."""
 
-    user_id: UUID
+    user_id: int
     pharmacy_id: int
     user_role: UserRole
 
