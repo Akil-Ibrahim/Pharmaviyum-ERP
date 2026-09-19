@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Package, RefreshCw, Search } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -47,4 +47,4 @@ export function Products() {
     </CardContent></Card>
   </div>
 }
-function Metric({label,value,tone='default',icon}:{label:string;value:string|number;tone?:string;icon?:React.ReactNode}){return <Card><CardContent className='p-4'><div className='flex items-center gap-2 text-xs font-medium text-muted-foreground'>{icon}{label}</div><p className={'mt-2 text-2xl font-semibold '+(tone==='green'?'text-emerald-600 dark:text-emerald-400':tone==='amber'?'text-amber-600 dark:text-amber-400':tone==='blue'?'text-sky-600 dark:text-sky-400':'')}>{value}</p></CardContent></Card>}
+function Metric({label,value,tone='default',icon}:{label:string;value:string|number;tone?:string;icon?:ReactNode}){return <Card><CardContent className='p-4'><div className='flex items-center gap-2 text-xs font-medium text-muted-foreground'>{icon}{label}</div><p className={'mt-2 text-2xl font-semibold '+(tone==='green'?'text-emerald-600 dark:text-emerald-400':tone==='amber'?'text-amber-600 dark:text-amber-400':tone==='blue'?'text-sky-600 dark:text-sky-400':'')}>{value}</p></CardContent></Card>}
