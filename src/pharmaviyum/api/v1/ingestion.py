@@ -77,7 +77,7 @@ async def upload_and_ingest_document(
         )
 
     job_id = str(uuid.uuid4())
-    object_key = f"ingestion/{authorized_pharmacy_id}/{job_id}{file_ext}"
+    object_key = ObjectStorage.tenant_key(authorized_pharmacy_id, job_id, file_ext)
     try:
         storage = ObjectStorage()
         await storage.put_bytes(
@@ -107,12 +107,22 @@ async def upload_and_ingest_document(
 
     tracker = IngestionProgressTracker(redis)
     await tracker.create_job(job_id, object_key, total_documents=1, metadata=config)
-    task = ingest_document.delay(
-        source=object_key,
-        source_type=source_type,
-        job_id=job_id,
-        config={**config, "source_storage": "object"},
-    )
+    try:
+      task = ingest_document.delay(
+          source=object_key,
+          source_type=source_type,
+          job_id=job_id,
+          config={**config, "source_storage": "object"},
+      )
+    except Exception:
+        try:
+            await storage.delete(object_key)
+        except Exception:
+            logger.exception("Failed to clean up orphaned ingestion object %s", object_key)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Ingestion queue is unavailable",
+        )
     logger.info("Dispatched ingestion task %s for job %s", task.id, job_id)
     return {
         "job_id": job_id,
