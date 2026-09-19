@@ -37,6 +37,16 @@ class ObjectStorage:
         self._client = boto3.client(**kwargs)
         self._bucket = settings.OBJECT_STORAGE_BUCKET
 
+    @staticmethod
+    def tenant_key(pharmacy_id: int, job_id: str, suffix: str) -> str:
+        """Build a tenant-scoped ingestion key from validated components."""
+        if pharmacy_id <= 0 or not job_id or "/" in job_id or "\\" in job_id:
+            raise ValueError("Invalid object storage key components")
+        clean_suffix = suffix.lstrip(".").lower()
+        if clean_suffix not in {"pdf", "docx", "html", "htm"}:
+            raise ValueError("Unsupported object suffix")
+        return f"ingestion/{pharmacy_id}/{job_id}.{clean_suffix}"
+
     async def put_bytes(self, key: str, data: bytes, content_type: str) -> None:
         await asyncio.to_thread(
             self._client.put_object,
