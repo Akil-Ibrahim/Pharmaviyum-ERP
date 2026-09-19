@@ -41,3 +41,29 @@ async def require_pharmacy_tenant(
             detail="User is not authorized for this pharmacy tenant",
         )
     return TenantContext(user_id=str(current_user.id), pharmacy_id=pharmacy_id)
+
+
+async def resolve_pharmacy_scope(
+    pharmacy_id: int | None,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> int | None:
+    """Resolve an explicit tenant, or a sole active membership; superusers may remain global."""
+    if current_user.is_superuser:
+        return pharmacy_id
+    if pharmacy_id is not None:
+        await require_pharmacy_tenant(pharmacy_id, current_user, session)
+        return pharmacy_id
+    result = await session.execute(
+        select(PharmacyMembership.pharmacy_id).where(
+            PharmacyMembership.user_id == current_user.id,
+            PharmacyMembership.is_active.is_(True),
+        )
+    )
+    ids = list(result.scalars().all())
+    if len(ids) != 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="pharmacy_id is required when the user has multiple pharmacy tenants",
+        )
+    return ids[0]
