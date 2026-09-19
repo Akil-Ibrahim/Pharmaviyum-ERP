@@ -32,20 +32,8 @@ clean:
 	rm -rf backups/
 
 # =============================================================================
-# Release
-# =============================================================================
-
-prod:
-	@echo "🚀 Starting release stack..."
-	docker compose -f deploy/docker-compose.release.yml up -d
-
-prod-stop:
-	@echo "🛑 Stopping release stack..."
-	docker compose -f deploy/docker-compose.release.yml down
-
-prod-migrate:
-	@echo "📦 Running release database migrations..."
-	docker compose -f deploy/docker-compose.release.yml --profile migration run --rm migration
+# Deployment
+# Production deployment is managed by Render from main; local commands stay development-only.
 
 # =============================================================================
 # Database
