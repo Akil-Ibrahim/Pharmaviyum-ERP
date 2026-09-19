@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { Bot, Check, Search, Sparkles } from 'lucide-react'
+import { Bot, Check, Loader2, Search, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { apiFetch } from '@/lib/api-client'
 
 export const Route = createFileRoute('/_authenticated/mortarium-ai')({
   component: MortariumAI,
@@ -28,6 +29,22 @@ function languageName(code: string) {
 function MortariumAI() {
   const [language, setLanguage] = useState('en')
   const [search, setSearch] = useState('')
+  const [pharmacyId, setPharmacyId] = useState<number>()
+  const [query, setQuery] = useState('')
+  const [answer, setAnswer] = useState('')
+  const [loading, setLoading] = useState(false)
+  useEffect(() => { apiFetch<{ pharmacies: { id: number }[] }>('/api/v1/ai/context').then(({ pharmacies }) => setPharmacyId(pharmacies[0]?.id)).catch(() => undefined) }, [])
+  async function ask(text: string) {
+    if (!text.trim() || !pharmacyId || loading) return
+    setLoading(true)
+    setQuery('')
+    try {
+      const result = await apiFetch<{ answer: string }>('/api/v1/ai/query', { method: 'POST', body: JSON.stringify({ query: text.trim(), pharmacy_id: pharmacyId, language, country: 'VN' }) })
+      setAnswer(result.answer)
+    } catch (error) {
+      setAnswer(error instanceof Error ? error.message : 'AI processing failed')
+    } finally { setLoading(false) }
+  }
 
   const languages = useMemo(
     () => languageCodes
@@ -57,10 +74,13 @@ function MortariumAI() {
         <section className='rounded-2xl border bg-card p-6 shadow-sm'>
           <div className='flex min-h-[420px] flex-col items-center justify-center text-center'>
             <div className='mb-5 flex size-16 items-center justify-center rounded-2xl border bg-muted/40'><Bot className='size-8 text-muted-foreground' /></div>
-            <h2 className='text-xl font-semibold'>How can Mortarium help?</h2>
-            <p className='mt-2 max-w-lg text-sm text-muted-foreground'>Use natural language to analyze pharmacy data. The production chat, CRM tools, RAG evidence, and streaming response pipeline will connect here.</p>
-            <div className='mt-6 grid w-full max-w-2xl gap-2 sm:grid-cols-2'>
-              {['What products are below reorder level?','Show this month’s revenue trend','Which batches expire within 30 days?','Analyze patient purchase activity'].map((prompt) => <button key={prompt} type='button' className='rounded-xl border p-3 text-left text-sm transition hover:bg-muted'>{prompt}</button>)}
+            <h2 className='text-xl font-semibold'>{answer ? 'Mortarium response' : 'How can Mortarium help?'}</h2>
+            <p className='mt-2 max-w-lg whitespace-pre-wrap text-sm text-muted-foreground'>{answer || 'Use natural language to analyze pharmacy data. The production AI query endpoint is connected to the existing agent and tenant-scoped context.'}</p>
+            <div className='mt-6 w-full max-w-2xl'>
+              <div className='mb-3 flex gap-2'><input value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void ask(query) }} placeholder='Ask Mortarium AI…' className='flex-1 rounded-lg border bg-background px-3 py-2 text-sm' /><Button onClick={() => void ask(query)} disabled={!pharmacyId || loading || !query.trim()}>{loading ? <Loader2 className='size-4 animate-spin' /> : 'Ask'}</Button></div>
+              <div className='grid gap-2 sm:grid-cols-2'>
+              {['What products are below reorder level?','Show this month’s revenue trend','Which batches expire within 30 days?','Analyze patient purchase activity'].map((prompt) => <button key={prompt} type='button' onClick={() => void ask(prompt)} className='rounded-xl border p-3 text-left text-sm transition hover:bg-muted'>{prompt}</button>)}
+            </div>
             </div>
           </div>
         </section>
