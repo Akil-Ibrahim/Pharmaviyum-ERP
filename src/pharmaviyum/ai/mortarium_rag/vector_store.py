@@ -92,10 +92,17 @@ class PgVectorStore:
                     "chunk_index": chunk.chunk_index,
                     "chunk_type": chunk.chunk_type,
                     "metadata": json.dumps(
-                        CanonicalMetadata.model_validate(chunk.metadata).model_dump(
-                            mode="json"
-                        )
-                        | dict(chunk.metadata)
+                        {
+                            **CanonicalMetadata.model_validate(chunk.metadata).model_dump(
+                                mode="json"
+                            ),
+                            **{
+                                key: value
+                                for key, value in chunk.metadata.items()
+                                if key
+                                not in CanonicalMetadata.model_fields
+                            },
+                        }
                     ),
                     "token_count": chunk.token_count,
                     "embedding": self._serialize_embedding(embedding),
