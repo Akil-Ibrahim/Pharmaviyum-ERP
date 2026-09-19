@@ -14,11 +14,42 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.create_check_constraint(
-        "ck_products_price_nonnegative", "products", "price >= 0"
+    # These constraints may already exist on databases deployed before
+    # the pharmacy-domain migration was corrected. Keep this migration
+    # idempotent for both fresh and partially migrated PostgreSQL databases.
+    op.execute(
+        """
+        DO $
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_constraint
+                WHERE conname = 'ck_products_price_nonnegative'
+                  AND conrelid = 'products'::regclass
+            ) THEN
+                ALTER TABLE products
+                ADD CONSTRAINT ck_products_price_nonnegative CHECK (price >= 0);
+            END IF;
+        END
+        $;
+        """
     )
-    op.create_check_constraint(
-        "ck_products_stock_nonnegative", "products", "stock >= 0"
+    op.execute(
+        """
+        DO $
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_constraint
+                WHERE conname = 'ck_products_stock_nonnegative'
+                  AND conrelid = 'products'::regclass
+            ) THEN
+                ALTER TABLE products
+                ADD CONSTRAINT ck_products_stock_nonnegative CHECK (stock >= 0);
+            END IF;
+        END
+        $;
+        """
     )
     op.add_column(
         "inventory",
@@ -52,5 +83,9 @@ def downgrade() -> None:
     op.drop_constraint("ck_inventory_reserved_nonnegative", "inventory", type_="check")
     op.drop_constraint("ck_inventory_quantity_nonnegative", "inventory", type_="check")
     op.drop_column("inventory", "reorder_level")
-    op.drop_constraint("ck_products_stock_nonnegative", "products", type_="check")
-    op.drop_constraint("ck_products_price_nonnegative", "products", type_="check")
+    op.execute(
+        "ALTER TABLE products DROP CONSTRAINT IF EXISTS ck_products_stock_nonnegative"
+    )
+    op.execute(
+        "ALTER TABLE products DROP CONSTRAINT IF EXISTS ck_products_price_nonnegative"
+    )
