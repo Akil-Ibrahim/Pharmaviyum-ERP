@@ -18,9 +18,11 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import type { ThemePreset } from '@/context/theme-provider'
 
 const appearanceFormSchema = z.object({
   theme: z.enum(['light', 'dark']),
+  preset: z.enum(['default', 'blue', 'green', 'red', 'rose', 'orange', 'yellow', 'violet', 'amber', 'purple', 'teal', 'cyan']),
   font: z.enum(fonts),
 })
 
@@ -28,11 +30,12 @@ type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
 
 export function AppearanceForm() {
   const { font, setFont } = useFont()
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, preset, setPreset } = useTheme()
 
   // This can come from your database or API.
   const defaultValues: Partial<AppearanceFormValues> = {
     theme: theme as 'light' | 'dark',
+    preset,
     font,
   }
 
@@ -44,6 +47,7 @@ export function AppearanceForm() {
   function onSubmit(data: AppearanceFormValues) {
     if (data.font != font) setFont(data.font)
     if (data.theme != theme) setTheme(data.theme)
+    if (data.preset != preset) setPreset(data.preset as ThemePreset)
 
     showSubmittedData(data)
   }
@@ -155,6 +159,32 @@ export function AppearanceForm() {
           )}
         />
 
+        <FormField
+          control={form.control}
+          name='preset'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Theme preset</FormLabel>
+              <FormDescription>Choose the accent palette for the Pharmaviyum admin interface.</FormDescription>
+              <FormMessage />
+              <RadioGroup onValueChange={field.onChange} value={field.value} className='grid max-w-2xl grid-cols-2 gap-3 pt-2 sm:grid-cols-3'>
+                {(['default','blue','green','red','rose','orange','yellow','violet','amber','purple','teal','cyan'] as const).map((value) => (
+                  <FormItem key={value}>
+                    <FormLabel className='[&:has([data-state=checked])>div]:border-primary'>
+                      <FormControl><RadioGroupItem value={value} className='sr-only' /></FormControl>
+                      <div className='rounded-lg border-2 border-muted bg-card p-3 hover:border-accent'>
+                        <div className='flex items-center gap-2'>
+                          <span className={`h-4 w-4 rounded-full border border-border bg-theme-${value}`} />
+                          <span className='capitalize font-normal'>{value}</span>
+                        </div>
+                      </div>
+                    </FormLabel>
+                  </FormItem>
+                ))}
+              </RadioGroup>
+            </FormItem>
+          )}
+        />
         <Button type='submit'>Update preferences</Button>
       </form>
     </Form>
