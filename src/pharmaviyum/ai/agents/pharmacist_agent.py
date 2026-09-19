@@ -149,16 +149,33 @@ class PharmacistAgent:
                 )
                 if result.success:
                     content = json.dumps(result.data, default=str)
-                    results.append({"tool": name, "input_data": args, "success": True, "data": result.data})
+                    results.append(
+                        {
+                            "tool": name,
+                            "input_data": args,
+                            "success": True,
+                            "data": result.data,
+                        }
+                    )
                 else:
                     content = f"Tool execution failed: {result.error}"
                     results.append(
-                        {"tool": name, "input_data": args, "success": False, "error": result.error}
+                        {
+                            "tool": name,
+                            "input_data": args,
+                            "success": False,
+                            "error": result.error,
+                        }
                     )
             except Exception:
                 content = "Tool execution failed safely."
                 results.append(
-                    {"tool": name, "input_data": args, "success": False, "error": "tool_execution_failed"}
+                    {
+                        "tool": name,
+                        "input_data": args,
+                        "success": False,
+                        "error": "tool_execution_failed",
+                    }
                 )
                 logger.error("MCP execution failed", exc_info=True)
             messages.append(
