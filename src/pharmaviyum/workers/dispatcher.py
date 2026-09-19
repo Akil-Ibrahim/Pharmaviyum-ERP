@@ -40,6 +40,10 @@ class TaskDispatcher:
         scheduled_at: Optional[datetime] = None,
     ) -> str:
         """Dispatch task to queue."""
+        allowed_queues = {queue.value for queue in TaskQueue if queue != TaskQueue.DEAD_LETTER}
+        if queue not in allowed_queues:
+            raise ValueError(f"Unsupported task queue: {queue}")
+
         redis = await self._client()
         task_id = idempotency_key or str(uuid.uuid4())
 
