@@ -13,6 +13,7 @@ from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.prescription import Prescription
 from src.pharmaviyum.models.product import Product
+from src.pharmaviyum.models.product_batch import ProductBatch
 from src.pharmaviyum.models.supplier import Supplier
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
 
@@ -229,6 +230,19 @@ async def delete_inventory(
     await session.commit()
 
 
+@router.get("/batches", response_model=None)
+async def list_batches(
+    _: CurrentUser,
+    session: SessionDep,
+    product_id: int | None = Query(default=None, gt=0),
+) -> list[ProductBatch]:
+    query = select(ProductBatch)
+    if product_id is not None:
+        query = query.where(ProductBatch.product_id == product_id)
+    result = await session.execute(query.order_by(ProductBatch.id.desc()))
+    return list(result.scalars().all())
+
+
 @router.get("/prescriptions", response_model=None)
 async def list_prescriptions(
     _: CurrentSuperuser, session: SessionDep
@@ -292,6 +306,19 @@ async def ingest_erp_event(
     session.add(event)
     await session.commit()
     return {"status": "accepted", "event_id": data.event_id}
+
+
+@router.get("/sync-events", response_model=None)
+async def list_sync_events(
+    _: CurrentSuperuser,
+    session: SessionDep,
+    integration_id: int | None = Query(default=None, gt=0),
+) -> list[ERPSyncEvent]:
+    query = select(ERPSyncEvent)
+    if integration_id is not None:
+        query = query.where(ERPSyncEvent.integration_id == integration_id)
+    result = await session.execute(query.order_by(ERPSyncEvent.id.desc()).limit(100))
+    return list(result.scalars().all())
 
 
 @router.get("/erp/integrations/{integration_id}/events", response_model=None)
