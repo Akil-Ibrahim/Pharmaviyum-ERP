@@ -53,7 +53,10 @@ class ObjectStorage:
             Key=key,
         )
         body: BinaryIO = response["Body"]
-        return await asyncio.to_thread(body.read)
+        try:
+            return await asyncio.to_thread(body.read)
+        finally:
+            await asyncio.to_thread(body.close)
 
     async def delete(self, key: str) -> None:
         await asyncio.to_thread(self._client.delete_object, Bucket=self._bucket, Key=key)
