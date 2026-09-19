@@ -54,6 +54,18 @@ class ObjectStorage:
             raise ValueError("Unsupported object suffix")
         return f"ingestion/{pharmacy_id}/{job_id}.{clean_suffix}"
 
+    @staticmethod
+    def validate_tenant_key(key: str, pharmacy_id: int) -> None:
+        """Reject object keys that are outside the authorized tenant namespace."""
+        if (
+            not isinstance(pharmacy_id, int)
+            or isinstance(pharmacy_id, bool)
+            or pharmacy_id <= 0
+            or not isinstance(key, str)
+            or not key.startswith(f"ingestion/{pharmacy_id}/")
+        ):
+            raise ValueError("Object storage key is outside the tenant scope")
+
     async def put_bytes(self, key: str, data: bytes, content_type: str) -> None:
         await asyncio.to_thread(
             self._client.put_object,
