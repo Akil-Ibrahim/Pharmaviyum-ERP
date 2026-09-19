@@ -275,6 +275,8 @@ def ingest_batch(
     """Queue multiple tenant-scoped ingestion tasks."""
     config = config or {}
     _require_pharmacy_id(config)
+    if not sources:
+        raise ValueError("Batch ingestion requires at least one source")
     redis_client = None
     try:
         loop = get_event_loop()
