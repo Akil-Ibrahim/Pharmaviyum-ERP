@@ -124,8 +124,6 @@ class AgentHarness:
                     "answer": cached_response["answer"],
                     "warnings": cached_response.get("warnings", []),
                     "tool_results": cached_response.get("tool_results", []),
-                    "model_used": cached_response.get("model_used"),
-                    "tool_results": cached_response.get("tool_results", []),
                     "model_used": cached_response.get("model_used", "cached"),
                     "cache_hit": True,
                     "trace_id": trace_id,
@@ -166,7 +164,16 @@ class AgentHarness:
             )
             await self.cache.set(
                 prompt=safe_query,
-                response={"answer": final_answer, "warnings": agent_warnings, "tool_results": agent_result.get("tool_results", []), "model_used": getattr(self.agent.main_llm, "model", None) or getattr(self.agent.main_llm, "model_name", None) or "configured-main"},
+                response={
+                    "answer": final_answer,
+                    "warnings": agent_warnings,
+                    "tool_results": tool_results,
+                    "model_used": (
+                        getattr(self.agent.main_llm, "model", None)
+                        or getattr(self.agent.main_llm, "model_name", None)
+                        or "configured-main"
+                    ),
+                },
                 context=cache_key_context,
             )
 
@@ -184,13 +191,16 @@ class AgentHarness:
                 "success": True,
                 "answer": final_answer,
                 "warnings": list(set(agent_warnings)),
-                "tool_results": agent_result.get("tool_results", []),
-                "model_used": getattr(self.agent.main_llm, "model", None) or getattr(self.agent.main_llm, "model_name", None) or "configured-main",
+                "tool_results": tool_results,
+                "model_used": (
+                    agent_result.get("model_used")
+                    or getattr(self.agent.main_llm, "model", None)
+                    or getattr(self.agent.main_llm, "model_name", None)
+                    or "configured-main"
+                ),
                 "cache_hit": False,
                 "trace_id": trace_id,
                 "latency_ms": latency_ms,
-                "tool_results": tool_results,
-                "model_used": agent_result.get("model_used"),
             }
 
         except Exception:
