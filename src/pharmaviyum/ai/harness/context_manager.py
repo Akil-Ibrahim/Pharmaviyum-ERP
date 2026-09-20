@@ -70,7 +70,7 @@ class ContextWindowManager:
             f"Context window exceeded ({estimated_tokens} > {self.available_tokens}). Truncating history."
         )
 
-        truncated_messages = []
+        truncated_messages: list[BaseMessage] = []
         current_tokens = self.estimate_tokens(system_prompt) if system_prompt else 0
 
         # Iterate backwards to keep most recent messages
