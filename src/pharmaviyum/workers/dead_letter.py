@@ -130,7 +130,7 @@ class DeadLetterQueue:
     async def clear_old(self, days: int = 7) -> int:
         redis = await self._client()
         cutoff = datetime.now(timezone.utc).timestamp() - (days * 24 * 3600)
-        old_entries = await redis.zrangebyscore(self.queue_key, 0, cutoff)
+        old_entries = await cast(\n            Awaitable[list[Any]],\n            redis.zrangebyscore(self.queue_key, 0, cutoff),\n        )
         if not old_entries:
             return 0
         for entry_id in old_entries:
