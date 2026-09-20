@@ -7,7 +7,7 @@ import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, cast
 
 from src.pharmaviyum.core.logging import get_logger
 
@@ -202,9 +202,9 @@ async def check_database() -> HealthCheckResult:
         async with engine.connect() as conn:
             start = datetime.now(timezone.utc)
             result = await conn.execute(text("SELECT 1"))
-            await result.fetchone()
+            result.fetchone()
             latency = (datetime.now(timezone.utc) - start).total_seconds() * 1000
-            pool = engine.pool
+            pool = cast(Any, engine.pool)
             pool_info = {
                 "size": pool.size(),
                 "checkedin": pool.checkedin(),
