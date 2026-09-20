@@ -7,13 +7,12 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from src.pharmaviyum.modules.auth.deps import CurrentSuperuser
-
 from src.pharmaviyum.core.feature_flags import (
     FeatureFlag,
     FlagType,
     feature_flag_service,
 )
+from src.pharmaviyum.modules.auth.deps import CurrentSuperuser
 from src.pharmaviyum.schemas.feature_flag import (
     FeatureFlagCheckRequest,
     FeatureFlagCheckResponse,

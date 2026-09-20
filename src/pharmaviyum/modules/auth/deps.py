@@ -16,8 +16,8 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.oauth2 import decode_access_token
-from ...shared.core.database import get_session
 from ...models.user import User
+from ...shared.core.database import get_session
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
