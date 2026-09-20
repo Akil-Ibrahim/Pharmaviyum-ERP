@@ -158,6 +158,15 @@ PrescriptionCheckType = Literal[
 ]
 
 
+def _default_prescription_checks() -> list[PrescriptionCheckType]:
+    return [
+        "expiry",
+        "prescriber_license",
+        "quantity_limits",
+        "duplicate_dispensing",
+    ]
+
+
 class PrescriptionVerifyRequest(BaseModel):
     """Input for prescription verification."""
 
@@ -166,12 +175,7 @@ class PrescriptionVerifyRequest(BaseModel):
     prescription_number: str
     pharmacist_id: int
     checks: list[PrescriptionCheckType] = Field(
-        default_factory=lambda: [
-            "expiry",
-            "prescriber_license",
-            "quantity_limits",
-            "duplicate_dispensing",
-        ]
+        default_factory=_default_prescription_checks
     )
 
 
