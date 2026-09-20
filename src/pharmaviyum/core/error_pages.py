@@ -1,10 +1,15 @@
 """Custom HTML error pages for better user experience."""
 
 from fastapi import Request
-from fastapi.responses import HTMLResponse\nfrom typing import Any
+from fastapi.responses import HTMLResponse
 
 
-def render_error_page(\n    status_code: int, title: str, message: str, request: Request | None = None\n) -> HTMLResponse:
+def render_error_page(
+    status_code: int,
+    title: str,
+    message: str,
+    request: Request | None = None,
+) -> HTMLResponse:
     """Render a branded HTML error page."""
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>{status_code} - Pharmaviyum</title>
