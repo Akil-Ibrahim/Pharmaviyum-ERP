@@ -235,7 +235,7 @@ class IngestionProgressTracker:
                 if started_at_str:
                     started_at = datetime.fromisoformat(started_at_str)
                     if started_at < cutoff:
-                        await cast(Awaitable[int], self.redis.delete(key)
+                        await cast(Awaitable[int], self.redis.delete(key))
                         removed += 1
 
         logger.info(f"Cleaned up {removed} old ingestion jobs")
