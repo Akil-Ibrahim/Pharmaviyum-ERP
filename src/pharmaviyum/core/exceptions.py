@@ -52,7 +52,7 @@ class NotFoundException(PharmaviyumException):
 class ValidationException(PharmaviyumException):
     """Validation error exception"""
 
-    def __init__(self, message: str, details: dict = None):
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         """Initialize validation exception"""
         super().__init__(
             message=message,
