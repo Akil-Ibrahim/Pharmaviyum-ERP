@@ -23,7 +23,7 @@ class PharmaviyumException(Exception):
         message: str,
         code: str = "ERROR",
         status_code: int = 500,
-        details: dict = None,
+        details: dict[str, Any] | None = None,
     ):
         """Initialize exception"""
         self.message = message
