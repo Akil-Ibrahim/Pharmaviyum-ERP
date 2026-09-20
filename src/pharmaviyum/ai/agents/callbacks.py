@@ -84,7 +84,15 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
             },
         )
 
-    async def on_tool_error(self, error: Exception, **kwargs) -> None:
+    async def on_tool_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Called when a tool raises an error."""
         tool_name = kwargs.get("name", "unknown")
         logger.error(
