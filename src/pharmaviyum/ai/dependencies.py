@@ -92,7 +92,9 @@ def _build_llm(model: str) -> BaseChatModel:
 
     api_key = settings.groq.api_key
     if api_key is None:
-        raise RuntimeError("USE_CLOUD_LLM=true with GROQ provider requires GROQ_API_KEY")
+        raise RuntimeError(
+            "USE_CLOUD_LLM=true with GROQ provider requires GROQ_API_KEY"
+        )
     return ChatGroq(
         model=model,
         api_key=api_key.get_secret_value(),
@@ -102,7 +104,7 @@ def _build_llm(model: str) -> BaseChatModel:
 
 
 def _build_embeddings_provider() -> str:
-    """Keep local Ollama and cloud OpenAI embeddings explicitly separated."""
+    """Select the embedding backend for the active AI provider."""
     if not settings.use_cloud_llm:
         return "ollama"
     return "gemini" if settings.cloud_llm_provider == "gemini" else "openai"
