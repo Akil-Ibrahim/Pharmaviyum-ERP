@@ -81,7 +81,8 @@ class FeatureFlagService:
         await cast(
             Awaitable[Any],
             redis.set(
-                f"feature_flag:{flag.key}", json.dumps(flag.to_dict(), ensure_ascii=False)
+                f"feature_flag:{flag.key}",
+                json.dumps(flag.to_dict(), ensure_ascii=False),
             ),
         )
         await cast(Awaitable[int], redis.sadd("feature_flags_list", flag.key))
@@ -181,7 +182,9 @@ class FeatureFlagService:
             return {}
         redis = await self._client()
         enabled_raw = await cast(Awaitable[Any], redis.get(f"flag_stats:{key}:enabled"))
-        disabled_raw = await cast(Awaitable[Any], redis.get(f"flag_stats:{key}:disabled"))
+        disabled_raw = await cast(
+            Awaitable[Any], redis.get(f"flag_stats:{key}:disabled")
+        )
         enabled_count = int(enabled_raw or 0)
         disabled_count = int(disabled_raw or 0)
         total = enabled_count + disabled_count
