@@ -38,10 +38,14 @@ def request_json(url: str, token: str) -> Any:
         raise RuntimeError(f"CircleCI API {exc.code}: {body}") from exc
 
 
-def fetch_output(output_url: str) -> list[dict[str, Any]]:
+def fetch_output(output_url: str, token: str) -> list[dict[str, Any]]:
     request = urllib.request.Request(
         output_url,
-        headers={"Accept": "application/json", "User-Agent": USER_AGENT},
+        headers={
+            "Accept": "application/json",
+            "Circle-Token": token,
+            "User-Agent": USER_AGENT,
+        },
     )
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
@@ -117,7 +121,7 @@ def main() -> int:
                     continue
 
                 try:
-                    output = fetch_output(output_url)
+                    output = fetch_output(output_url, token)
                 except RuntimeError as exc:
                     log.write(f"Could not fetch output: {exc}\n")
                     continue
