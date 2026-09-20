@@ -17,6 +17,7 @@ from typing import Any
 
 from celery.utils.log import get_task_logger
 
+from src.pharmaviyum.ai.config import settings
 from src.pharmaviyum.ai.mortarium_rag.chunking import MedicalChunker
 from src.pharmaviyum.ai.mortarium_rag.embeddings import EmbeddingsFactory
 from src.pharmaviyum.ai.mortarium_rag.loaders import (
@@ -184,10 +185,34 @@ async def _ingest_document_async(
             )
 
         await tracker.update_status(job_id, "embedding", "Generating embeddings")
+        embeddings_provider_name = config.get("embeddings_provider") or (
+            "gemini"
+            if settings.use_cloud_llm and settings.cloud_llm_provider == "gemini"
+            else "openai"
+            if settings.use_cloud_llm and settings.cloud_llm_provider == "groq"
+            else "ollama"
+        )
+        embeddings_api_key = None
+        embeddings_model = None
+        embeddings_endpoint = settings.ollama.base_url
+        if embeddings_provider_name == "gemini":
+            if settings.gemini.api_key is None:
+                raise RuntimeError("Gemini embeddings require GEMINI_API_KEY")
+            embeddings_api_key = settings.gemini.api_key.get_secret_value()
+            embeddings_model = settings.gemini.embedding_model
+        elif embeddings_provider_name == "openai":
+            if settings.openai.api_key is None:
+                raise RuntimeError("OpenAI embeddings require OPENAI_API_KEY")
+            embeddings_api_key = settings.openai.api_key.get_secret_value()
+            embeddings_model = settings.openai.embedding_model
         embeddings_provider = EmbeddingsFactory.create(
-            provider=config.get("embeddings_provider", "ollama"),
+            provider=embeddings_provider_name,
             use_cache=True,
             redis_client=redis_client,
+            api_key=embeddings_api_key,
+            model=embeddings_model,
+            endpoint=embeddings_endpoint,
+            dimensions=settings.pgvector.vector_dimensions,
         )
         embeddings = await embeddings_provider.embed_batch(
             [chunk.content for chunk in all_chunks],
