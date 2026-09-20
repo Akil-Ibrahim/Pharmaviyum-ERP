@@ -5,7 +5,8 @@ Usage:
   CIRCLECI_TOKEN=... python scripts/circleci_lint_logs.py 2088
 
 The token is read from CIRCLECI_TOKEN or CIRCLECI_CLI_TOKEN and is never
-printed or committed. The script prints failed step output when available.
+printed or committed. The script uses CircleCI API v1.1 for job/step output,
+which supports project tokens.
 """
 from __future__ import annotations
 
@@ -16,11 +17,9 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-BASE_URL = "https://circleci.com/api/v2"
 V1_BASE_URL = "https://circleci.com/api/v1.1"
-V2_PROJECT_SLUG = "gh/Akil-Ibrahim/Pharmaviyum-CRM"
 V1_PROJECT_SLUG = "github/Akil-Ibrahim/Pharmaviyum-CRM"
-USER_AGENT = "pharmaviyum-circleci-diagnostics/1.2"
+USER_AGENT = "pharmaviyum-circleci-diagnostics/1.3"
 
 
 def request_json(url: str, token: str) -> Any:
@@ -68,19 +67,15 @@ def main() -> int:
         return 2
 
     job_number = sys.argv[1]
-    job_url = f"{BASE_URL}/project/{V2_PROJECT_SLUG}/job/{job_number}"
     build_url = f"{V1_BASE_URL}/project/{V1_PROJECT_SLUG}/{job_number}"
-
-    job = request_json(job_url, token)
     build = request_json(build_url, token)
 
     print("=== CircleCI job ===")
-    print(f"number: {job.get('number')}")
-    print(f"name: {job.get('name')}")
-    print(f"status: {job.get('status')}")
-    print(f"started_at: {job.get('started_at')}")
-    print(f"stopped_at: {job.get('stopped_at')}")
-    print(f"web_url: {job.get('web_url')}")
+    print(f"number: {build.get('build_num')}")
+    print(f"status: {build.get('status')}")
+    print(f"started_at: {build.get('start_time')}")
+    print(f"stopped_at: {build.get('stop_time')}")
+    print(f"web_url: {build.get('build_url')}")
 
     print("\n=== Failed step output ===")
     failed = False
