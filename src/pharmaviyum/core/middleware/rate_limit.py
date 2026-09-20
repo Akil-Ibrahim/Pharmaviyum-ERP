@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Redis-based sliding-window rate limiter."""
 
-    def __init__(self, app, redis_client: aioredis.Redis = None):
+    def __init__(self, app, redis_client: aioredis.Redis | None = None):
         super().__init__(app)
         self.redis = redis_client
 
