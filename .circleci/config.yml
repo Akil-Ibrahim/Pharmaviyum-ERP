@@ -51,8 +51,8 @@ jobs:
               python scripts/circleci_lint_logs.py "$CIRCLE_BUILD_NUM" || true
             fi
       - store_artifacts:
-          path: ci-diagnostics
-          destination: circleci-diagnostics
+          path: circleci-diagnostics.log
+          destination: circleci-diagnostics.log
 
   unit-tests:
     docker:
