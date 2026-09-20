@@ -81,15 +81,13 @@ class DocumentDeduplicator:
             return [], []
 
         async with self.session_factory() as session:
-            query = text(  # nosec B608: table_name is validated as a SQL identifier
-                f"""  # nosec B608: table_name is validated as a SQL identifier
+            query = text(f"""  # nosec B608: table_name is validated as a SQL identifier
                 SELECT DISTINCT metadata->>'content_hash' as hash,
                        document_id
                 FROM {self.table_name}
                 WHERE metadata->>'content_hash' = ANY(:hashes)
                   AND (metadata->>'pharmacy_id')::int = :pharmacy_id
-            """
-            )
+            """)  # nosec B608: table_name is validated as a SQL identifier
             result = await session.execute(
                 query, {"hashes": content_hashes, "pharmacy_id": pharmacy_id}
             )
@@ -115,15 +113,13 @@ class DocumentDeduplicator:
     async def get_duplicate_stats(self) -> dict:
         """Get statistics about duplicates in the system."""
         async with self.session_factory() as session:
-            query = text(  # nosec B608: table_name is validated as a SQL identifier
-                f"""  # nosec B608: table_name is validated as a SQL identifier
+            query = text(f"""  # nosec B608: table_name is validated as a SQL identifier
                 SELECT
                     COUNT(*) as total_chunks,
                     COUNT(DISTINCT metadata->>'content_hash') as unique_hashes,
                     COUNT(*) - COUNT(DISTINCT metadata->>'content_hash') as potential_duplicates
                 FROM {self.table_name}
-            """
-            )
+            """)  # nosec B608: table_name is validated as a SQL identifier
             result = await session.execute(query)
             row = result.fetchone()
             return {

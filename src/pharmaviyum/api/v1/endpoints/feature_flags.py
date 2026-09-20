@@ -107,7 +107,9 @@ async def get_feature_flag(_: CurrentSuperuser, key: str):
 
 
 @router.put("/{key}", response_model=FeatureFlagResponse)
-async def update_feature_flag(_: CurrentSuperuser, key: str, flag_data: FeatureFlagUpdate):
+async def update_feature_flag(
+    _: CurrentSuperuser, key: str, flag_data: FeatureFlagUpdate
+):
     """
     Update feature flag
 

@@ -7,7 +7,6 @@ Revises: 2026_09_15_000001
 from alembic import op
 import sqlalchemy as sa
 
-
 revision = "20260915_pharmacy_domain"
 down_revision = "2026_09_15_000001"
 branch_labels = None
@@ -68,7 +67,9 @@ def upgrade() -> None:
         sa.Column("product_id", sa.Integer(), nullable=False),
         sa.Column("pharmacy_id", sa.Integer(), nullable=False),
         sa.Column("quantity", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("reserved_quantity", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column(
+            "reserved_quantity", sa.Integer(), nullable=False, server_default="0"
+        ),
         sa.Column("lot_number", sa.String(100), nullable=True),
         sa.Column("expires_at", sa.DateTime(), nullable=True),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
@@ -110,8 +111,12 @@ def upgrade() -> None:
         sa.Column("name", sa.String(200), nullable=False),
         sa.Column("provider", sa.String(100), nullable=False),
         sa.Column("endpoint", sa.String(500), nullable=False),
-        sa.Column("status", sa.String(32), nullable=False, server_default="disconnected"),
-        sa.Column("sync_mode", sa.String(32), nullable=False, server_default="realtime"),
+        sa.Column(
+            "status", sa.String(32), nullable=False, server_default="disconnected"
+        ),
+        sa.Column(
+            "sync_mode", sa.String(32), nullable=False, server_default="realtime"
+        ),
         sa.Column("last_sync_at", sa.DateTime(), nullable=True),
         sa.Column("last_event_at", sa.DateTime(), nullable=True),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
@@ -133,14 +138,22 @@ def upgrade() -> None:
         sa.Column("error_message", sa.Text(), nullable=True),
         sa.Column("received_at", sa.DateTime(), nullable=False),
         sa.Column("processed_at", sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(["integration_id"], ["erp_integrations.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["integration_id"], ["erp_integrations.id"], ondelete="CASCADE"
+        ),
         sa.UniqueConstraint("event_id", name="uq_erp_sync_events_event_id"),
     )
     op.create_index("ix_erp_sync_events_id", "erp_sync_events", ["id"])
-    op.create_index("ix_erp_sync_events_integration_id", "erp_sync_events", ["integration_id"])
-    op.create_index("ix_erp_sync_events_entity_type", "erp_sync_events", ["entity_type"])
+    op.create_index(
+        "ix_erp_sync_events_integration_id", "erp_sync_events", ["integration_id"]
+    )
+    op.create_index(
+        "ix_erp_sync_events_entity_type", "erp_sync_events", ["entity_type"]
+    )
     op.create_index("ix_erp_sync_events_status", "erp_sync_events", ["status"])
-    op.create_index("ix_erp_sync_events_received_at", "erp_sync_events", ["received_at"])
+    op.create_index(
+        "ix_erp_sync_events_received_at", "erp_sync_events", ["received_at"]
+    )
 
     op.create_table(
         "mortarium_ai_sessions",
@@ -154,9 +167,15 @@ def upgrade() -> None:
         sa.UniqueConstraint("session_key", name="uq_mortarium_ai_sessions_key"),
     )
     op.create_index("ix_mortarium_ai_sessions_id", "mortarium_ai_sessions", ["id"])
-    op.create_index("ix_mortarium_ai_sessions_user_id", "mortarium_ai_sessions", ["user_id"])
-    op.create_index("ix_mortarium_ai_sessions_patient_id", "mortarium_ai_sessions", ["patient_id"])
-    op.create_index("ix_mortarium_ai_sessions_status", "mortarium_ai_sessions", ["status"])
+    op.create_index(
+        "ix_mortarium_ai_sessions_user_id", "mortarium_ai_sessions", ["user_id"]
+    )
+    op.create_index(
+        "ix_mortarium_ai_sessions_patient_id", "mortarium_ai_sessions", ["patient_id"]
+    )
+    op.create_index(
+        "ix_mortarium_ai_sessions_status", "mortarium_ai_sessions", ["status"]
+    )
 
 
 def downgrade() -> None:

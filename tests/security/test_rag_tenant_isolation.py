@@ -55,6 +55,7 @@ def test_retrieval_result_preserves_tenant_metadata():
     assert result.chunk.metadata["pharmacy_id"] == 42
     assert result.chunk.metadata["source"] == "guideline.pdf"
 
+
 def test_canonical_tenant_metadata_cannot_be_overridden_by_extra_fields():
     import json
 

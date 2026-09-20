@@ -198,9 +198,7 @@ class AIComponents:
                 settings.gemini.embedding_model
                 if settings.use_cloud_llm and settings.cloud_llm_provider == "gemini"
                 else (
-                    settings.openai.embedding_model
-                    if settings.use_cloud_llm
-                    else None
+                    settings.openai.embedding_model if settings.use_cloud_llm else None
                 )
             )
             embedding_dimensions = settings.pgvector.vector_dimensions

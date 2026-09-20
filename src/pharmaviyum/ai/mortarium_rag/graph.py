@@ -171,7 +171,11 @@ class LangGraphRAG:
         filter_sets = self._build_filter_sets(state["context"])
         queries = state["transformed_queries"] or [state["question"]]
         results = await asyncio.gather(
-            *[self._retrieve_one(query, filters) for query in queries for filters in filter_sets],
+            *[
+                self._retrieve_one(query, filters)
+                for query in queries
+                for filters in filter_sets
+            ],
             return_exceptions=True,
         )
         all_hits: list[RetrievalResult] = []
@@ -380,11 +384,13 @@ class LangGraphRAG:
             {**base, "access_level": "pharmacy"},
         ]
         if context.patient_id is not None:
-            filter_sets.append({
-                **base,
-                "access_level": "patient",
-                "patient_id": context.patient_id,
-            })
+            filter_sets.append(
+                {
+                    **base,
+                    "access_level": "patient",
+                    "patient_id": context.patient_id,
+                }
+            )
         return filter_sets
 
     async def run(

@@ -8,7 +8,12 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("users", sa.Column("role", sa.String(length=20), nullable=False, server_default="pharmacist"))
+    op.add_column(
+        "users",
+        sa.Column(
+            "role", sa.String(length=20), nullable=False, server_default="pharmacist"
+        ),
+    )
 
 
 def downgrade() -> None:

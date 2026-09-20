@@ -109,7 +109,9 @@ class IngestionOrchestrator:
                 documents.append(doc)
 
             stats["documents_loaded"] = len(documents)
-            logger.info("Loaded documents", extra={"job_id": job_id, "count": len(documents)})
+            logger.info(
+                "Loaded documents", extra={"job_id": job_id, "count": len(documents)}
+            )
 
             if not documents:
                 raise ValueError(f"No documents loaded from {source}")
@@ -131,8 +133,14 @@ class IngestionOrchestrator:
             doc_ids = [str(doc.id) for doc in processed_docs]
 
             pharmacy_id = config.get("pharmacy_id")
-            if not isinstance(pharmacy_id, int) or isinstance(pharmacy_id, bool) or pharmacy_id <= 0:
-                raise ValueError("RAG ingestion requires a positive integer pharmacy_id")
+            if (
+                not isinstance(pharmacy_id, int)
+                or isinstance(pharmacy_id, bool)
+                or pharmacy_id <= 0
+            ):
+                raise ValueError(
+                    "RAG ingestion requires a positive integer pharmacy_id"
+                )
 
             new_hashes, new_doc_ids = await self.deduplicator.filter_duplicates(
                 content_hashes, doc_ids, pharmacy_id
@@ -156,8 +164,12 @@ class IngestionOrchestrator:
                 }
 
             if self.enable_versioning:
-                new_version = await self.version_manager.get_next_version(source, pharmacy_id)
-                await self.version_manager.archive_old_versions(source, new_version, pharmacy_id)
+                new_version = await self.version_manager.get_next_version(
+                    source, pharmacy_id
+                )
+                await self.version_manager.archive_old_versions(
+                    source, new_version, pharmacy_id
+                )
                 for doc in processed_docs:
                     doc.metadata["version_number"] = new_version
                     doc.metadata["version_status"] = "active"

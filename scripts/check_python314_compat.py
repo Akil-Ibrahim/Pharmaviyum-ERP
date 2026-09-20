@@ -4,6 +4,7 @@ Quick compatibility check for Python 3.14.
 Run this before building Docker image to catch issues early:
     python check_python314_compat.py
 """
+
 import sys
 
 

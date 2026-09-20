@@ -32,7 +32,11 @@ async def create_user(
     db: AsyncSession = Depends(get_db),
 ):
     username = data.username.strip()
-    email = str(data.email).strip().lower() if data.email else f"{username}@pharmaviyum.local"
+    email = (
+        str(data.email).strip().lower()
+        if data.email
+        else f"{username}@pharmaviyum.local"
+    )
     result = await db.execute(
         select(User).where((User.username == username) | (User.email == email))
     )

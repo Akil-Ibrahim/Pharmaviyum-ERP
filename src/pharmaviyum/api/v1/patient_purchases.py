@@ -21,7 +21,9 @@ async def list_patient_purchases(
 ) -> list[dict[str, Any]]:
     result = await db.execute(
         select(PatientPurchase)
-        .options(selectinload(PatientPurchase.product), selectinload(PatientPurchase.batch))
+        .options(
+            selectinload(PatientPurchase.product), selectinload(PatientPurchase.batch)
+        )
         .order_by(PatientPurchase.purchased_at.desc(), PatientPurchase.id.desc())
         .offset(skip)
         .limit(limit)

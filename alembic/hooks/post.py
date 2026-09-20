@@ -1,4 +1,5 @@
 """Post-migration hooks."""
+
 from sqlalchemy import text
 
 

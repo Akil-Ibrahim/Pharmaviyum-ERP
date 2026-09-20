@@ -43,26 +43,48 @@ def upgrade() -> None:
             sa.Column("allergies_notes", sa.Text(), nullable=True),
             sa.Column("chronic_conditions", sa.Text(), nullable=True),
             sa.Column("blood_type", sa.String(5), nullable=True),
-            sa.Column("preferred_language", sa.String(5), nullable=False, server_default="vi"),
+            sa.Column(
+                "preferred_language", sa.String(5), nullable=False, server_default="vi"
+            ),
             sa.Column(
                 "preferred_notification_channel",
                 sa.String(20),
                 nullable=False,
                 server_default="zalo",
             ),
-            sa.Column("loyalty_tier", sa.String(20), nullable=False, server_default="Bronze"),
-            sa.Column("loyalty_points", sa.Integer(), nullable=False, server_default="0"),
-            sa.Column("total_purchases", sa.Float(), nullable=False, server_default="0"),
+            sa.Column(
+                "loyalty_tier", sa.String(20), nullable=False, server_default="Bronze"
+            ),
+            sa.Column(
+                "loyalty_points", sa.Integer(), nullable=False, server_default="0"
+            ),
+            sa.Column(
+                "total_purchases", sa.Float(), nullable=False, server_default="0"
+            ),
             sa.Column("visit_count", sa.Integer(), nullable=False, server_default="0"),
             sa.Column("last_visit_date", sa.DateTime(), nullable=True),
             sa.Column("notes", sa.Text(), nullable=True),
-            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
+            sa.Column(
+                "is_active", sa.Boolean(), nullable=False, server_default=sa.true()
+            ),
             sa.Column("pos_system", sa.String(50), nullable=True),
             sa.Column("synced_at", sa.DateTime(), nullable=True),
-            sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
-            sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+            sa.Column(
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.func.now(),
+            ),
+            sa.Column(
+                "updated_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.func.now(),
+            ),
         )
-        op.create_index("ix_patients_external_id", "patients", ["external_id"], unique=True)
+        op.create_index(
+            "ix_patients_external_id", "patients", ["external_id"], unique=True
+        )
         op.create_index("ix_patients_full_name", "patients", ["full_name"])
         op.create_index("ix_patients_phone", "patients", ["phone"], unique=True)
         op.create_index("ix_patients_email", "patients", ["email"])
@@ -71,9 +93,7 @@ def upgrade() -> None:
         op.create_index("ix_patients_is_active", "patients", ["is_active"])
 
     if _table_exists(bind, "clients"):
-        bind.execute(
-            sa.text(
-                """
+        bind.execute(sa.text("""
                 INSERT INTO patients (
                     external_id, first_name, last_name, full_name, date_of_birth,
                     phone, email, address, country, loyalty_tier, loyalty_points,
@@ -102,28 +122,24 @@ def upgrade() -> None:
                     SELECT 1 FROM patients p WHERE p.external_id = 'legacy-client:' || c.id
                 )
                 ON CONFLICT (phone) DO NOTHING
-                """
-            )
-        )
+                """))
 
     if _table_exists(bind, "orders"):
         columns = {column["name"] for column in sa.inspect(bind).get_columns("orders")}
         if "patient_id" not in columns:
-            op.add_column("orders", sa.Column("patient_id", sa.Integer(), nullable=True))
+            op.add_column(
+                "orders", sa.Column("patient_id", sa.Integer(), nullable=True)
+            )
             op.create_index("ix_orders_patient_id", "orders", ["patient_id"])
 
         if "client_id" in columns and _table_exists(bind, "clients"):
-            bind.execute(
-                sa.text(
-                    """
+            bind.execute(sa.text("""
                     UPDATE orders o
                     SET patient_id = p.id
                     FROM clients c
                     JOIN patients p ON p.external_id = 'legacy-client:' || c.id
                     WHERE o.client_id = c.id AND o.patient_id IS NULL
-                    """
-                )
-            )
+                    """))
 
         missing = bind.execute(
             sa.text("SELECT count(*) FROM orders WHERE patient_id IS NULL")
