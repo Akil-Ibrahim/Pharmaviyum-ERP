@@ -28,7 +28,7 @@ class RegistrationRequest(BaseModel):
     password: str
 
 
-async def _get_user_by_username_or_email(db: AsyncSession, username_or_email: str):
+async def _get_user_by_username_or_email(\n    db: AsyncSession, username_or_email: str\n) -> User | None:
     if "@" in username_or_email:
         local_part = username_or_email.split("@", 1)[0]
         result = await db.execute(
