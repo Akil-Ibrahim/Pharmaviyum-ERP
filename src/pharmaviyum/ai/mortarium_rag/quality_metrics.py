@@ -91,9 +91,9 @@ class EmbeddingQualityEvaluator:
         if n_queries == 0:
             return metrics
 
-        recalls = {k: [] for k in k_values}
-        precisions = {k: [] for k in k_values}
-        reciprocal_ranks = []
+        recalls: dict[int, list[float]] = {k: [] for k in k_values}
+        precisions: dict[int, list[float]] = {k: [] for k in k_values}
+        reciprocal_ranks: list[float] = []
 
         for i in range(n_queries):
             relevant = set(relevant_doc_ids[i])
