@@ -1,5 +1,4 @@
-"""
-ARQ worker entry point
+"""ARQ worker entry point
 Best practice 2026: Graceful shutdown, health checks, metrics
 """
 
@@ -8,7 +7,7 @@ import json
 import signal
 import time
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 from redis import asyncio as aioredis
 
@@ -25,9 +24,7 @@ from src.pharmaviyum.redis_client import close_redis, get_redis
 from src.pharmaviyum.workers.dead_letter import dead_letter_queue
 from src.pharmaviyum.workers.dispatcher import task_dispatcher
 from src.pharmaviyum.workers.queues import TaskQueue
-from src.pharmaviyum.workers.tasks.notifications import (
-    SendPatientNotificationTask,
-)
+from src.pharmaviyum.workers.tasks.notifications import SendPatientNotificationTask
 from src.pharmaviyum.workers.tasks.pos_sync import (
     SyncCustomersTask,
     SyncInventoryTask,
@@ -67,15 +64,22 @@ class Worker:
             raise ValueError("At least one supported worker queue is required")
         self.redis: Optional[aioredis.Redis] = None
         self._shutdown_event = asyncio.Event()
-        self._tasks: list[asyncio.Task] = []
-        self._stats = {
+        self._tasks: list[asyncio.Task[Any]] = []
+        self._stats: dict[str, Any] = {
             "started_at": None,
             "processed": 0,
             "failed": 0,
             "queues": {},
         }
 
-    async def start(self):
+    @property
+    def redis_client(self) -> aioredis.Redis:
+        """Return the initialized Redis client."""
+        if self.redis is None:
+            raise RuntimeError("Worker Redis client is not initialized")
+        return self.redis
+
+    async def start(self) -> None:
         """Start worker."""
         logger.info("Starting worker", extra={"queues": self.queues})
         self.redis = await get_redis()
@@ -94,17 +98,18 @@ class Worker:
         await self._shutdown_event.wait()
         await self._cleanup()
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Request graceful shutdown."""
         logger.info("Shutdown requested")
         self._shutdown_event.set()
 
-    async def _publish_queue_depth(self):
+    async def _publish_queue_depth(self) -> None:
         """Refresh queue depth gauges without exposing task IDs or payloads."""
+        redis = self.redis_client
         while not self._shutdown_event.is_set():
             for queue in self.queues:
                 try:
-                    depth = await self.redis.zcard(f"queue:{queue}")
+                    depth = await redis.zcard(f"queue:{queue}")
                     WORKER_QUEUE_DEPTH.labels(queue=queue).set(depth)
                 except Exception:
                     WORKER_QUEUE_POLL_ERRORS_TOTAL.labels(queue=queue).inc()
@@ -114,17 +119,18 @@ class Worker:
             except asyncio.TimeoutError:
                 continue
 
-    async def _process_queue(self, queue: str):
+    async def _process_queue(self, queue: str) -> None:
         """Process tasks from a specific queue."""
+        redis = self.redis_client
         logger.info(f"Processing queue: {queue}")
         while not self._shutdown_event.is_set():
             try:
-                result = await self.redis.bzpopmin(f"queue:{queue}", timeout=1.0)
+                result = await redis.bzpopmin(f"queue:{queue}", timeout=1.0)
                 if not result:
                     continue
 
                 _, task_id, _ = result
-                payload_json = await self.redis.get(f"task:{task_id}")
+                payload_json = await redis.get(f"task:{task_id}")
                 if not payload_json:
                     logger.warning(f"Task payload not found: {task_id}")
                     WORKER_TASKS_TOTAL.labels(
@@ -197,9 +203,10 @@ class Worker:
                 logger.error(f"Queue processor error: {exc}", exc_info=True)
                 await asyncio.sleep(1.0)
 
-    async def _mark_completed(self, task_id: str, result):
+    async def _mark_completed(self, task_id: str, result: Any) -> None:
         """Mark task as completed."""
-        payload_json = await self.redis.get(f"task:{task_id}")
+        redis = self.redis_client
+        payload_json = await redis.get(f"task:{task_id}")
         if payload_json:
             payload = json.loads(payload_json)
             payload["status"] = "completed" if result.success else "failed"
@@ -210,30 +217,31 @@ class Worker:
                 "duration_ms": result.duration_ms,
                 "attempts": result.attempts,
             }
-            await self.redis.setex(
+            await redis.setex(
                 f"task:{task_id}", 86400, json.dumps(payload, ensure_ascii=False)
             )
 
-    async def _mark_failed(self, task_id: str, error: str):
+    async def _mark_failed(self, task_id: str, error: str) -> None:
         """Mark task as failed."""
-        payload_json = await self.redis.get(f"task:{task_id}")
+        redis = self.redis_client
+        payload_json = await redis.get(f"task:{task_id}")
         if payload_json:
             payload = json.loads(payload_json)
             payload["status"] = "failed"
             payload["error"] = error
             payload["failed_at"] = datetime.now(timezone.utc).isoformat()
-            await self.redis.setex(
+            await redis.setex(
                 f"task:{task_id}", 86400, json.dumps(payload, ensure_ascii=False)
             )
 
-    async def _run_scheduler(self):
+    async def _run_scheduler(self) -> None:
         """Run scheduled tasks periodically."""
         logger.info("Starting scheduler")
         schedules = {
             "cleanup_expired_data": 24 * 3600,
             "generate_daily_report": 24 * 3600,
         }
-        last_run = {name: 0 for name in schedules}
+        last_run = {name: 0.0 for name in schedules}
         while not self._shutdown_event.is_set():
             now = datetime.now(timezone.utc).timestamp()
             for task_name, interval in schedules.items():
@@ -249,11 +257,11 @@ class Worker:
                             ),
                         )
                         last_run[task_name] = now
-                    except Exception as e:
-                        logger.error(f"Scheduler error for {task_name}: {e}")
+                    except Exception as exc:
+                        logger.error(f"Scheduler error for {task_name}: {exc}")
             await asyncio.sleep(1.0)
 
-    async def _cleanup(self):
+    async def _cleanup(self) -> None:
         """Cleanup on shutdown."""
         logger.info("Cleaning up worker")
         WORKER_UP.set(0)
@@ -263,12 +271,12 @@ class Worker:
         await close_redis()
         logger.info("Worker shutdown complete")
 
-    def get_stats(self) -> dict:
+    def get_stats(self) -> dict[str, Any]:
         """Get worker statistics."""
         return self._stats
 
 
-async def run_worker(queues: Optional[list[str]] = None):
+async def run_worker(queues: Optional[list[str]] = None) -> None:
     """Run worker main entry point."""
     worker = Worker(queues=queues)
     await worker.start()
