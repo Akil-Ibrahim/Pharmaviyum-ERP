@@ -73,9 +73,7 @@ class DeadLetterQueue:
         task_name: Optional[str] = None,
     ) -> list[dict[str, Any]]:
         redis = await self._client()
-        entry_ids = await redis.zrevrange(
-            self.queue_key, skip, skip + limit - 1
-        )
+        entry_ids = await redis.zrevrange(self.queue_key, skip, skip + limit - 1)
         if not entry_ids:
             return []
 
