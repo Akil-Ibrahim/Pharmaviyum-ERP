@@ -168,10 +168,10 @@ class LangGraphRAG:
 
     async def retrieve_node(self, state: RAGState) -> dict[str, Any]:
         started = time.perf_counter()
-        filters = self._build_filters(state["context"])
+        filter_sets = self._build_filter_sets(state["context"])
         queries = state["transformed_queries"] or [state["question"]]
         results = await asyncio.gather(
-            *[self._retrieve_one(query, filters) for query in queries],
+            *[self._retrieve_one(query, filters) for query in queries for filters in filter_sets],
             return_exceptions=True,
         )
         all_hits: list[RetrievalResult] = []
@@ -371,6 +371,21 @@ class LangGraphRAG:
         if context.halal_filter:
             filters["halal"] = True
         return filters
+
+    @classmethod
+    def _build_filter_sets(cls, context: QueryContext) -> list[dict[str, Any]]:
+        base = cls._build_filters(context)
+        filter_sets = [
+            {**base, "access_level": "public"},
+            {**base, "access_level": "pharmacy"},
+        ]
+        if context.patient_id is not None:
+            filter_sets.append({
+                **base,
+                "access_level": "patient",
+                "patient_id": context.patient_id,
+            })
+        return filter_sets
 
     async def run(
         self, question: str, context: QueryContext, thread_id: str | None = None
