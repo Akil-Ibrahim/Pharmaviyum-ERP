@@ -13,25 +13,25 @@ Functions:
 from typing import Any
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import User
 from .schemas import UserCreate, UserUpdate
 from .security import get_password_hash, verify_password
 
 
-def get_user_by_email(session: Session, email: str) -> User | None:
+async def get_user_by_email(session: AsyncSession, email: str) -> User | None:
     """Find a user by email address."""
     statement = select(User).where(User.email == email)
-    return session.execute(statement).scalar_one_or_none()
+    return (await session.execute(statement)).scalar_one_or_none()
 
 
-def get_user_by_id(session: Session, user_id: Any) -> User | None:
+async def get_user_by_id(session: AsyncSession, user_id: Any) -> User | None:
     """Find a user by ID."""
-    return session.get(User, user_id)
+    return await session.get(User, user_id)
 
 
-def authenticate(session: Session, email: str, password: str) -> User | None:
+async def authenticate(session: AsyncSession, email: str, password: str) -> User | None:
     """
     Authenticate user by email and password.
 
@@ -42,7 +42,7 @@ def authenticate(session: Session, email: str, password: str) -> User | None:
     - verify_password is constant-time internally (passlib)
     - Runs dummy hash check for non-existent users to prevent timing attacks
     """
-    user = get_user_by_email(session=session, email=email)
+    user = await get_user_by_email(session=session, email=email)
     if not user:
         # Run hash anyway to prevent timing attacks
         # This makes the response time consistent whether user exists or not
@@ -55,7 +55,7 @@ def authenticate(session: Session, email: str, password: str) -> User | None:
     return user
 
 
-def create_user(session: Session, user_create: UserCreate) -> User:
+async def create_user(session: AsyncSession, user_create: UserCreate) -> User:
     """
     Create a new user with hashed password.
 
@@ -79,13 +79,13 @@ def create_user(session: Session, user_create: UserCreate) -> User:
     )
 
     session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
+    await session.commit()
+    await session.refresh(db_user)
 
     return db_user
 
 
-def update_user(session: Session, db_user: User, user_in: UserUpdate) -> User:
+async def update_user(session: AsyncSession, db_user: User, user_in: UserUpdate) -> User:
     """
     Update user details.
 
@@ -103,15 +103,15 @@ def update_user(session: Session, db_user: User, user_in: UserUpdate) -> User:
         setattr(db_user, field, value)
 
     session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
+    await session.commit()
+    await session.refresh(db_user)
 
     return db_user
 
 
-def delete_user(session: Session, user_id: Any) -> None:
+async def delete_user(session: AsyncSession, user_id: Any) -> None:
     """Delete a user by ID."""
-    user = session.get(User, user_id)
+    user = await session.get(User, user_id)
     if user:
         session.delete(user)
-        session.commit()
+        await session.commit()
