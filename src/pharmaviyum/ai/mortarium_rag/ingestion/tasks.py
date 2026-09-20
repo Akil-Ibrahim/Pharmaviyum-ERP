@@ -71,6 +71,10 @@ def _stamp_tenant_metadata(documents: list, config: dict[str, Any]) -> list:
     country = config.get("country", "VN")
     language = config.get("language", "vi")
     access_level = config.get("access_level", "pharmacy")
+    if access_level == "patient":
+        raise ValueError(
+            "Patient-level RAG ingestion requires explicit patient_id scoping"
+        )
     version = config.get("version")
     effective_from = config.get("effective_from")
     effective_to = config.get("effective_to")
