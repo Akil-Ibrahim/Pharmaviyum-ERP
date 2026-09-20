@@ -4,7 +4,7 @@
 Usage:
   CIRCLECI_TOKEN=... python scripts/circleci_lint_logs.py 2088
 
-The token is read from CIRCLECI_TOKEN or CIRCLECI_CLI_TOKEN and is never
+The token is read from CIRCLECI_PERSONAL_TOKEN, CIRCLECI_TOKEN, or CIRCLECI_CLI_TOKEN and is never
 printed or committed. The script uses CircleCI API v1.1 for job/step output,
 which supports project tokens.
 """
@@ -58,7 +58,7 @@ def main() -> int:
         print(f"Usage: {sys.argv[0]} <circleci-job-number>", file=sys.stderr)
         return 2
 
-    token = os.getenv("CIRCLECI_TOKEN") or os.getenv("CIRCLECI_CLI_TOKEN")
+    token = (\n        os.getenv("CIRCLECI_PERSONAL_TOKEN")\n        or os.getenv("CIRCLECI_TOKEN")\n        or os.getenv("CIRCLECI_CLI_TOKEN")\n    )
     if not token:
         print(
             "Set CIRCLECI_TOKEN (or CIRCLECI_CLI_TOKEN) before running.",
