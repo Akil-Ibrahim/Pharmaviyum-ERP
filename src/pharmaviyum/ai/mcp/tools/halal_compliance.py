@@ -15,7 +15,7 @@ Key principles applied:
 from __future__ import annotations
 
 import time
-from typing import Literal, Optional
+from typing import Literal, Optional, cast
 
 from pydantic import BaseModel, Field
 
@@ -243,7 +243,7 @@ async def check_halal_compliance(input: HalalCheckRequest) -> HalalCertification
     country_info = COUNTRY_FIQH.get(
         country, {"school": "Hanbali", "marja": "state_mufti"}
     )
-    fiqh_school = input.patient_fiqh or country_info["school"]
+    fiqh_school = input.patient_fiqh or cast(FiqhSchool, country_info["school"])
     marja = country_info.get("marja")
 
     # 2. Lookup in DB
@@ -264,7 +264,7 @@ async def check_halal_compliance(input: HalalCheckRequest) -> HalalCertification
         )
 
     # 3. Apply fiqh-specific ruling
-    status = cert_data["status"]
+    status = cast(HalalStatus, cert_data["status"])
     notes = cert_data.get("notes", "")
     darurah_applied = False
 
@@ -291,7 +291,7 @@ async def check_halal_compliance(input: HalalCheckRequest) -> HalalCertification
             status = "mushbooh"
             notes = f"**Sistani's Ruling**: {fiqh_note}"
         else:
-            status = ruling.replace("permissible", "halal").replace("haram", "haram")
+            status = cast(HalalStatus, ruling.replace("permissible", "halal").replace("haram", "haram"))
             notes = fiqh_note
 
     # 4. Check Istihalah
