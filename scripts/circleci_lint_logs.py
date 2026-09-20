@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Collect failed CircleCI job output into a single diagnostics artifact.
+"""Collect failed CircleCI output and optionally publish it to GitHub.
 
-The generated file is written to ci-diagnostics/circleci-lint.log in the CI
-workspace and uploaded by CircleCI as an artifact. Credentials are never
-written to the artifact.
+CircleCI always writes the diagnostic report to circleci-diagnostics.log and
+uploads it as an artifact. When GITHUB_TOKEN is configured, the report is
+also committed to the dedicated ci-diagnostics branch so it can be inspected
+through the repository API without modifying dev/main.
 """
 from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -17,8 +19,10 @@ from typing import Any
 
 V1_BASE_URL = "https://circleci.com/api/v1.1"
 V1_PROJECT_SLUG = "github/Akil-Ibrahim/Pharmaviyum-CRM"
-USER_AGENT = "pharmaviyum-circleci-diagnostics/2.0"
-OUTPUT_FILE = Path("ci-diagnostics/circleci-lint.log")
+GITHUB_REPOSITORY = "Akil-Ibrahim/Pharmaviyum-CRM"
+DIAGNOSTICS_BRANCH = "ci-diagnostics"
+USER_AGENT = "pharmaviyum-circleci-diagnostics/3.0"
+OUTPUT_FILE = Path("circleci-diagnostics.log")
 
 
 def request_json(url: str, token: str) -> Any:
@@ -54,6 +58,63 @@ def fetch_output(output_url: str, token: str) -> list[dict[str, Any]]:
         body = exc.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"CircleCI output API {exc.code}: {body}") from exc
     return data if isinstance(data, list) else []
+
+
+def publish_to_github() -> None:
+    token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        print("GITHUB_TOKEN is not configured; keeping diagnostics as an artifact.")
+        return
+
+    subprocess.run(
+        ["git", "config", "user.name", "CircleCI Diagnostics"],
+        check=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "circleci-diagnostics@users.noreply.github.com"],
+        check=True,
+    )
+    subprocess.run(
+        [
+            "git",
+            "config",
+            "credential.helper",
+            "!f() { echo username=x-access-token; echo password=$GITHUB_TOKEN; }; f",
+        ],
+        check=True,
+    )
+    subprocess.run(
+        ["git", "fetch", "origin", f"refs/heads/{DIAGNOSTICS_BRANCH}:refs/remotes/origin/{DIAGNOSTICS_BRANCH}"],
+        check=False,
+    )
+
+    branch_exists = subprocess.run(
+        ["git", "show-ref", "--verify", f"refs/remotes/origin/{DIAGNOSTICS_BRANCH}"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode == 0
+
+    if branch_exists:
+        subprocess.run(
+            ["git", "checkout", "-B", DIAGNOSTICS_BRANCH, f"origin/{DIAGNOSTICS_BRANCH}"],
+            check=True,
+        )
+    else:
+        subprocess.run(
+            ["git", "checkout", "-B", DIAGNOSTICS_BRANCH],
+            check=True,
+        )
+
+    subprocess.run(["git", "add", str(OUTPUT_FILE)], check=True)
+    subprocess.run(
+        ["git", "commit", "-m", f"ci: update diagnostics for build {os.environ.get('CIRCLE_BUILD_NUM', 'unknown')}"],
+        check=False,
+    )
+    subprocess.run(
+        ["git", "push", "origin", f"HEAD:{DIAGNOSTICS_BRANCH}"],
+        check=True,
+    )
+    print(f"Diagnostics published to {GITHUB_REPOSITORY}:{DIAGNOSTICS_BRANCH}")
 
 
 def main() -> int:
@@ -112,9 +173,7 @@ def main() -> int:
                     continue
 
                 failed = True
-                log.write(
-                    f"\n--- Failed step output: {name} / {status} ---\n"
-                )
+                log.write(f"\n--- Failed step output: {name} / {status} ---\n")
                 output_url = action.get("output_url")
                 if not output_url:
                     log.write("No output URL supplied by CircleCI.\n")
@@ -138,6 +197,10 @@ def main() -> int:
             log.write("\nNo failed step action found.\n")
 
     print(f"Diagnostics written to {OUTPUT_FILE}")
+    try:
+        publish_to_github()
+    except (OSError, subprocess.CalledProcessError) as exc:
+        print(f"GitHub diagnostics publication failed: {exc}", file=sys.stderr)
     return 0
 
 
