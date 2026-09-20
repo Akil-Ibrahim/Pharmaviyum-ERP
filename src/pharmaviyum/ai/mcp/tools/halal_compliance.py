@@ -25,7 +25,7 @@ from ..registry import registry
 from .fiqh_authorities import COUNTRY_FIQH
 
 HalalStatus = Literal["halal", "haram", "mushbooh", "darurah_exempt"]
-FiqhSchool = Literal["Hanafi", "Shafii", "Maliki", "Hanbali", "Ja'fari", "Zaydi"]
+FiqhSchool = Literal["Hanafi", "Shafii", "Maliki", "Hanbali", "Ja'fari", "Zaydi", "Ibadi"]
 
 
 class HalalCheckRequest(BaseModel):
