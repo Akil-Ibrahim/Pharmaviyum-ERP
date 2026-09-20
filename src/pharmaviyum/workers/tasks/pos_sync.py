@@ -29,7 +29,11 @@ class SyncProductsTask(BaseTask):
 
         logger.info(
             "Starting product sync",
-            extra={"pos_system": pos_system, "pharmacy_id": pharmacy_id, "since": since},
+            extra={
+                "pos_system": pos_system,
+                "pharmacy_id": pharmacy_id,
+                "since": since,
+            },
         )
 
         pos_client = self._get_pos_client(pos_system, pharmacy_id)
