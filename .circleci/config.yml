@@ -42,11 +42,14 @@ jobs:
           name: Collect CircleCI lint diagnostics
           when: on_fail
           command: |
-            if [ -z "$CIRCLECI_TOKEN" ]; then
-              echo "CIRCLECI_TOKEN is not configured; skipping automatic CircleCI log collection."
-              exit 0
+            if [ -z "$CIRCLECI_PERSONAL_TOKEN" ] && [ -z "$CIRCLECI_TOKEN" ] && [ -z "$CIRCLECI_CLI_TOKEN" ]; then
+              echo "No CircleCI diagnostic token is configured; skipping automatic log collection."
+            else
+              python scripts/circleci_lint_logs.py "$CIRCLE_BUILD_NUM" || true
             fi
-            python scripts/circleci_lint_logs.py "$CIRCLE_BUILD_NUM" || true
+      - store_artifacts:
+          path: ci-diagnostics
+          destination: circleci-diagnostics
 
   unit-tests:
     docker:
