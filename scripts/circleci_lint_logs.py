@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-"""Fetch CircleCI job logs for CI diagnostics.
+"""Collect failed CircleCI job output into a single diagnostics artifact.
 
-Usage:
-  CIRCLECI_TOKEN=... python scripts/circleci_lint_logs.py 2088
-
-The token is read from CIRCLECI_PERSONAL_TOKEN, CIRCLECI_TOKEN, or CIRCLECI_CLI_TOKEN and is never
-printed or committed. The script uses CircleCI API v1.1 for job/step output,
-which supports project tokens.
+The generated file is written to ci-diagnostics/circleci-lint.log in the CI
+workspace and uploaded by CircleCI as an artifact. Credentials are never
+written to the artifact.
 """
 from __future__ import annotations
 
@@ -15,11 +12,13 @@ import os
 import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Any
 
 V1_BASE_URL = "https://circleci.com/api/v1.1"
 V1_PROJECT_SLUG = "github/Akil-Ibrahim/Pharmaviyum-CRM"
-USER_AGENT = "pharmaviyum-circleci-diagnostics/1.4"
+USER_AGENT = "pharmaviyum-circleci-diagnostics/2.0"
+OUTPUT_FILE = Path("ci-diagnostics/circleci-lint.log")
 
 
 def request_json(url: str, token: str) -> Any:
@@ -58,54 +57,83 @@ def main() -> int:
         print(f"Usage: {sys.argv[0]} <circleci-job-number>", file=sys.stderr)
         return 2
 
-    token = (\n        os.getenv("CIRCLECI_PERSONAL_TOKEN")\n        or os.getenv("CIRCLECI_TOKEN")\n        or os.getenv("CIRCLECI_CLI_TOKEN")\n    )
-    if not token:
-        print(
-            "Set CIRCLECI_TOKEN (or CIRCLECI_CLI_TOKEN) before running.",
-            file=sys.stderr,
-        )
-        return 2
+    token = (
+        os.getenv("CIRCLECI_PERSONAL_TOKEN")
+        or os.getenv("CIRCLECI_TOKEN")
+        or os.getenv("CIRCLECI_CLI_TOKEN")
+    )
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-    job_number = sys.argv[1]
-    build_url = f"{V1_BASE_URL}/project/{V1_PROJECT_SLUG}/{job_number}"
-    build = request_json(build_url, token)
+    with OUTPUT_FILE.open("w", encoding="utf-8") as log:
+        if not token:
+            log.write(
+                "CircleCI diagnostics unavailable: no diagnostic token is configured.\n"
+            )
+            return 0
 
-    print("=== CircleCI job ===")
-    for key in ("build_num", "status", "outcome", "lifecycle", "fail_reason", "start_time", "stop_time", "build_url"):
-        print(f"{key}: {build.get(key)}")
+        job_number = sys.argv[1]
+        build_url = f"{V1_BASE_URL}/project/{V1_PROJECT_SLUG}/{job_number}"
 
-    print("\n=== CircleCI steps ===")
-    failed = False
-    for step in build.get("steps", []):
-        for action in step.get("actions", []):
-            status = action.get("status")
-            exit_code = action.get("exit_code")
-            name = step.get("name")
-            print(f"step={name!r} status={status!r} exit_code={exit_code!r}")
-            if status not in {"failed", "error", "timed_out"}:
-                continue
+        try:
+            build = request_json(build_url, token)
+        except RuntimeError as exc:
+            log.write(f"Failed to fetch CircleCI job metadata: {exc}\n")
+            return 0
 
-            failed = True
-            print(f"\n--- Failed step output: {name} / {status} ---")
-            output_url = action.get("output_url")
-            if not output_url:
-                print("No output URL supplied by CircleCI.")
-                continue
+        log.write("=== CircleCI job ===\n")
+        for key in (
+            "build_num",
+            "status",
+            "outcome",
+            "lifecycle",
+            "fail_reason",
+            "start_time",
+            "stop_time",
+            "build_url",
+        ):
+            log.write(f"{key}: {build.get(key)}\n")
 
-            try:
-                output = fetch_output(output_url)
-            except RuntimeError as exc:
-                print(f"Could not fetch output: {exc}")
-                continue
+        log.write("\n=== CircleCI steps ===\n")
+        failed = False
+        for step in build.get("steps", []):
+            for action in step.get("actions", []):
+                status = action.get("status")
+                exit_code = action.get("exit_code")
+                name = step.get("name")
+                log.write(
+                    f"step={name!r} status={status!r} exit_code={exit_code!r}\n"
+                )
 
-            for chunk in output:
-                message = chunk.get("message")
-                if message:
-                    print(message, end="" if message.endswith("\n") else "\n")
+                if status not in {"failed", "error", "timed_out"}:
+                    continue
 
-    if not failed:
-        print("\nNo failed step action found.")
+                failed = True
+                log.write(
+                    f"\n--- Failed step output: {name} / {status} ---\n"
+                )
+                output_url = action.get("output_url")
+                if not output_url:
+                    log.write("No output URL supplied by CircleCI.\n")
+                    continue
 
+                try:
+                    output = fetch_output(output_url)
+                except RuntimeError as exc:
+                    log.write(f"Could not fetch output: {exc}\n")
+                    continue
+
+                for chunk in output:
+                    message = chunk.get("message")
+                    if message:
+                        log.write(
+                            message,
+                            end="" if message.endswith("\n") else "\n",
+                        )
+
+        if not failed:
+            log.write("\nNo failed step action found.\n")
+
+    print(f"Diagnostics written to {OUTPUT_FILE}")
     return 0
 
 
