@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import time
 from dataclasses import dataclass, field
+from typing import Any
 
 from src.pharmaviyum.ai.observability.tracer import tracer
 from src.pharmaviyum.core.logging import logger
@@ -31,7 +32,7 @@ class BenchmarkResult:
     avg_latency_ms: float
     safety_violations: int
     tool_call_accuracy: float  # % of cases where expected tools were called
-    detailed_results: list[dict] = field(default_factory=list)
+    detailed_results: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def pass_rate(self) -> float:
@@ -77,7 +78,7 @@ class BenchmarkRunner:
         total_latency = 0.0
         tool_call_hits = 0
 
-        processed_results = []
+        processed_results: list[dict[str, Any]] = []
         for i, result in enumerate(detailed_results):
             case = self.dataset[i]
 
@@ -168,7 +169,7 @@ class BenchmarkRunner:
 
     async def _evaluate_case(
         self, case: EvaluationCase, semaphore: asyncio.Semaphore
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Evaluate a single case."""
         async with semaphore:
             start = time.perf_counter()
