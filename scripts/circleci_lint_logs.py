@@ -17,8 +17,9 @@ import urllib.request
 from typing import Any
 
 BASE_URL = "https://circleci.com/api/v2"
+V1_BASE_URL = "https://circleci.com/api/v1.1"
 PROJECT_SLUG = "gh/Akil-Ibrahim/Pharmaviyum-CRM"
-USER_AGENT = "pharmaviyum-circleci-diagnostics/1.0"
+USER_AGENT = "pharmaviyum-circleci-diagnostics/1.1"
 
 
 def request_json(url: str, token: str) -> Any:
@@ -38,8 +39,17 @@ def request_json(url: str, token: str) -> Any:
         raise RuntimeError(f"CircleCI API {exc.code}: {body}") from exc
 
 
-def fetch_output(output_url: str, token: str) -> list[dict[str, Any]]:
-    data = request_json(output_url, token)
+def fetch_output(output_url: str) -> list[dict[str, Any]]:
+    request = urllib.request.Request(
+        output_url,
+        headers={"Accept": "application/json", "User-Agent": USER_AGENT},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            data = json.load(response)
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"CircleCI output API {exc.code}: {body}") from exc
     return data if isinstance(data, list) else []
 
 
@@ -58,10 +68,10 @@ def main() -> int:
 
     job_number = sys.argv[1]
     job_url = f"{BASE_URL}/project/{PROJECT_SLUG}/job/{job_number}"
-    steps_url = f"{BASE_URL}/project/{PROJECT_SLUG}/{job_number}/steps"
+    build_url = f"{V1_BASE_URL}/project/{PROJECT_SLUG}/{job_number}"
 
     job = request_json(job_url, token)
-    steps = request_json(steps_url, token)
+    build = request_json(build_url, token)
 
     print("=== CircleCI job ===")
     print(f"number: {job.get('number')}")
@@ -73,7 +83,7 @@ def main() -> int:
 
     print("\n=== Failed step output ===")
     failed = False
-    for step in steps.get("steps", []):
+    for step in build.get("steps", []):
         for action in step.get("actions", []):
             status = action.get("status")
             output_url = action.get("output_url")
@@ -87,7 +97,7 @@ def main() -> int:
                 continue
 
             try:
-                output = fetch_output(output_url, token)
+                output = fetch_output(output_url)
             except RuntimeError as exc:
                 print(f"Could not fetch output: {exc}")
                 continue
