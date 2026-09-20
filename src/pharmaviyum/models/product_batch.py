@@ -22,4 +22,4 @@ class ProductBatch(Base):
     barcode: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
-    product = relationship("Product", back_populates="batches")
+    product: Mapped["Product"] = relationship("Product", back_populates="batches")
