@@ -25,7 +25,9 @@ from ..registry import registry
 from .fiqh_authorities import COUNTRY_FIQH
 
 HalalStatus = Literal["halal", "haram", "mushbooh", "darurah_exempt"]
-FiqhSchool = Literal["Hanafi", "Shafii", "Maliki", "Hanbali", "Ja'fari", "Zaydi", "Ibadi"]
+FiqhSchool = Literal[
+    "Hanafi", "Shafii", "Maliki", "Hanbali", "Ja'fari", "Zaydi", "Ibadi"
+]
 
 
 class HalalCheckRequest(BaseModel):
@@ -291,7 +293,10 @@ async def check_halal_compliance(input: HalalCheckRequest) -> HalalCertification
             status = "mushbooh"
             notes = f"**Sistani's Ruling**: {fiqh_note}"
         else:
-            status = cast(HalalStatus, ruling.replace("permissible", "halal").replace("haram", "haram"))
+            status = cast(
+                HalalStatus,
+                ruling.replace("permissible", "halal").replace("haram", "haram"),
+            )
             notes = fiqh_note
 
     # 4. Check Istihalah
