@@ -1,10 +1,10 @@
 """Custom HTML error pages for better user experience."""
 
 from fastapi import Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse\nfrom typing import Any
 
 
-def render_error_page(status_code, title, message, request=None):
+def render_error_page(\n    status_code: int, title: str, message: str, request: Request | None = None\n) -> HTMLResponse:
     """Render a branded HTML error page."""
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>{status_code} - Pharmaviyum</title>
@@ -28,13 +28,13 @@ body {{ font-family: sans-serif; background: linear-gradient(135deg, #667eea, #7
     return HTMLResponse(content=html, status_code=status_code)
 
 
-async def custom_404_handler(request: Request, exc):
+async def custom_404_handler(request: Request, exc: Exception) -> HTMLResponse:
     return render_error_page(
         404, "Page Not Found", "The page you're looking for doesn't exist.", request
     )
 
 
-async def custom_500_handler(request: Request, exc):
+async def custom_500_handler(request: Request, exc: Exception) -> HTMLResponse:
     return render_error_page(
         500, "Server Error", "Something went wrong. Please try again later.", request
     )
