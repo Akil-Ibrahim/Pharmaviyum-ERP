@@ -4,7 +4,7 @@ Best practice 2026: Periodic maintenance and analytics
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from src.pharmaviyum.core.logging import get_logger
 from src.pharmaviyum.workers.base import BaseTask, RetryConfig
@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 
 
 class CleanupExpiredDataTask(BaseTask):
-    """Clean up expired data (old logs, cache, etc)"""
+    """Clean up expired data."""
 
     name = "cleanup_expired_data"
     queue = TaskQueue.CLEANUP.value
@@ -22,26 +22,16 @@ class CleanupExpiredDataTask(BaseTask):
     retry_config = RetryConfig(max_attempts=1)
 
     async def execute(self, **kwargs: Any) -> dict[str, Any]:
-        """
-        Clean up expired data
-
-        Returns:
-            Cleanup result
-        """
+        """Clean up expired data and old dead-letter entries."""
         logger.info("Starting data cleanup")
 
         from src.pharmaviyum.workers.dead_letter import dead_letter_queue
 
-        # Clean old dead letter entries
         deleted_dlq = await dead_letter_queue.clear_old(days=30)
-
-        # TODO: Add more cleanup tasks
-        # - Expired sessions
-        # - Old audit logs
-        # - Stale cache entries
-
-        logger.info(f"Cleanup completed: {deleted_dlq} dead letter entries removed")
-
+        logger.info(
+            "Cleanup completed",
+            extra={"dead_letter_entries_removed": deleted_dlq},
+        )
         return {
             "dead_letter_deleted": deleted_dlq,
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -49,7 +39,7 @@ class CleanupExpiredDataTask(BaseTask):
 
 
 class GenerateDailyReportTask(BaseTask):
-    """Generate daily analytics report"""
+    """Generate daily analytics report."""
 
     name = "generate_daily_report"
     queue = TaskQueue.ANALYTICS.value
@@ -57,32 +47,17 @@ class GenerateDailyReportTask(BaseTask):
     retry_config = RetryConfig(max_attempts=1)
 
     async def execute(self, **kwargs: Any) -> dict[str, Any]:
-        date = cast(Optional[str], kwargs.get("date"))
-        """
-        Generate daily report
+        """Generate the daily report."""
+        report_date_arg = cast(str | None, kwargs.get("date"))
 
-        Args:
-            date: Report date (ISO format, default: yesterday)
-
-        Returns:
-            Report result
-        """
         from datetime import date as date_type
 
-        if date:
-            report_date = datetime.fromisoformat(date).date()
+        if report_date_arg:
+            report_date = datetime.fromisoformat(report_date_arg).date()
         else:
             report_date = date_type.today() - timedelta(days=1)
 
-        logger.info(f"Generating daily report for {report_date}")
-
-        # TODO: Implement report generation
-        # - Patient registrations
-        # - Prescription fills
-        # - Revenue
-        # - AI usage stats
-        # - Notification delivery rates
-
+        logger.info("Generating daily report", extra={"report_date": str(report_date)})
         return {
             "date": report_date.isoformat(),
             "status": "not_implemented",
@@ -90,7 +65,7 @@ class GenerateDailyReportTask(BaseTask):
 
 
 class SyncAllPosTask(BaseTask):
-    """Trigger sync for all pharmacies"""
+    """Trigger sync for all pharmacies."""
 
     name = "sync_all_pos"
     queue = TaskQueue.POS_SYNC.value
@@ -98,18 +73,8 @@ class SyncAllPosTask(BaseTask):
     retry_config = RetryConfig(max_attempts=1)
 
     async def execute(self, **kwargs: Any) -> dict[str, Any]:
-        """
-        Queue sync tasks for all pharmacies
-
-        Returns:
-            Dispatch result
-        """
+        """Queue sync tasks for all pharmacies."""
         logger.info("Queuing POS sync for all pharmacies")
-
-        # TODO: Replace with actual Pharmacy model
-        # For now, just log
-        # pharmacies = await session.execute(select(Pharmacy))
-
         return {
             "status": "not_implemented",
             "timestamp": datetime.now(timezone.utc).isoformat(),
