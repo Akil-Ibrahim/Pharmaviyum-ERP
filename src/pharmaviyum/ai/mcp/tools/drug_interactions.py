@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import time
 from datetime import datetime
+from typing import Literal, cast
 
 from src.pharmaviyum.core.logging import logger
 
@@ -26,6 +27,8 @@ from ..registry import registry
 from ..schemas import DrugInteraction, DrugInteractionCheck, InteractionCheckResult
 
 # ============================================================================
+Severity = Literal["none", "low", "moderate", "high", "critical"]
+
 # STATIC INTERACTION DATABASE (curated for SEA pharmacies)
 # ============================================================================
 # In production: load from PostgreSQL + RAG enrichment
@@ -168,11 +171,11 @@ def find_interaction(drug_a: str, drug_b: str) -> dict | None:
 SEVERITY_ORDER = {"none": 0, "low": 1, "moderate": 2, "high": 3, "critical": 4}
 
 
-def aggregate_severity(interactions: list[DrugInteraction]) -> str:
+def aggregate_severity(interactions: list[DrugInteraction]) -> Severity:
     """Get overall severity (highest among all interactions)."""
     if not interactions:
         return "none"
-    return max(interactions, key=lambda i: SEVERITY_ORDER[i.severity]).severity
+    return cast(Severity, max(interactions, key=lambda i: SEVERITY_ORDER[i.severity]).severity)
 
 
 # ============================================================================
