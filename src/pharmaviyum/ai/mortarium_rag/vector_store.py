@@ -103,14 +103,16 @@ class PgVectorStore:
                 for chunk, embedding in zip(chunks, embeddings)
             ]
             await session.execute(
-                text(f"""  # nosec B608: table_name is validated as a SQL identifier
+                text(
+                    f"""  # nosec B608: table_name is validated as a SQL identifier
                 INSERT INTO {self.table_name}
                 (id, document_id, content, chunk_index, chunk_type, metadata, token_count, embedding)
                 VALUES (:id, :document_id, :content, :chunk_index, :chunk_type, :metadata, :token_count, :embedding)
                 ON CONFLICT (document_id, chunk_index)
                 DO UPDATE SET content = EXCLUDED.content, metadata = EXCLUDED.metadata,
                               embedding = EXCLUDED.embedding, token_count = EXCLUDED.token_count
-                """),
+                """
+                ),
                 values,
             )
             await session.commit()
