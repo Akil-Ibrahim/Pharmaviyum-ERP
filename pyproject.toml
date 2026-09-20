@@ -102,3 +102,10 @@ packages = ["src/pharmaviyum"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.mypy]
+python_version = "3.13"
+
+[[tool.mypy.overrides]]
+module = ["boto3", "botocore.*", "langdetect", "fitz", "pytesseract", "readability", "celery.*"]
+ignore_missing_imports = true
