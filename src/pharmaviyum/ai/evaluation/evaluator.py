@@ -161,13 +161,13 @@ Respond ONLY with a valid JSON object in this exact format:
                     extra={
                         "query_preview": query[:50],
                         "scores": result.model_dump(
-                            include=[
+                            include={
                                 "accuracy",
                                 "safety",
                                 "completeness",
                                 "compliance",
                                 "overall_score",
-                            ]
+                            }
                         ),
                         "feedback": result.feedback,
                     },
