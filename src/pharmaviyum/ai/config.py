@@ -40,6 +40,18 @@ class OpenAISettings(BaseSettings):
     temperature: float = 0.1
 
 
+class GeminiSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="GEMINI_")
+    api_key: SecretStr | None = None
+    model: str = "gemini-3.8-flash"
+    fast_model: str = "gemini-3.5-flash-lite"
+    complex_model: str = "gemini-2.5-pro"
+    embedding_model: str = "gemini-embedding-001"
+    embedding_dimensions: int = 1024
+    timeout_seconds: float = 30.0
+    temperature: float = 0.1
+
+
 class AnthropicSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="ANTHROPIC_")
     api_key: SecretStr | None = None
@@ -154,6 +166,7 @@ class AISettings(BaseSettings):
     groq: GroqSettings = Field(default_factory=GroqSettings)
     openai: OpenAISettings = Field(default_factory=OpenAISettings)
     anthropic: AnthropicSettings = Field(default_factory=AnthropicSettings)
+    gemini: GeminiSettings = Field(default_factory=GeminiSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     pgvector: PgVectorSettings = Field(default_factory=PgVectorSettings)
     langsmith: LangSmithSettings = Field(default_factory=LangSmithSettings)
@@ -167,6 +180,7 @@ class AISettings(BaseSettings):
     log_level: str = "INFO"
     enable_telemetry: bool = True
     use_cloud_llm: bool = False
+    cloud_llm_provider: Literal["gemini", "groq"] = "gemini"
     cors_origins: list[str] = Field(default_factory=list)
 
     @field_validator("environment")
