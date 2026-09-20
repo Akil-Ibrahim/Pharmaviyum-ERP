@@ -4,7 +4,7 @@ Best practice 2026: Periodic maintenance and analytics
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Any, Optional, cast
 
 from src.pharmaviyum.core.logging import get_logger
 from src.pharmaviyum.workers.base import BaseTask, RetryConfig
@@ -21,7 +21,7 @@ class CleanupExpiredDataTask(BaseTask):
     timeout_seconds = 600
     retry_config = RetryConfig(max_attempts=1)
 
-    async def execute(self) -> dict:
+    async def execute(self, **kwargs: Any) -> dict[str, Any]:
         """
         Clean up expired data
 
@@ -56,7 +56,8 @@ class GenerateDailyReportTask(BaseTask):
     timeout_seconds = 600
     retry_config = RetryConfig(max_attempts=1)
 
-    async def execute(self, date: Optional[str] = None) -> dict:
+    async def execute(self, **kwargs: Any) -> dict[str, Any]:
+        date = cast(Optional[str], kwargs.get("date"))
         """
         Generate daily report
 
@@ -96,7 +97,7 @@ class SyncAllPosTask(BaseTask):
     timeout_seconds = 60
     retry_config = RetryConfig(max_attempts=1)
 
-    async def execute(self) -> dict:
+    async def execute(self, **kwargs: Any) -> dict[str, Any]:
         """
         Queue sync tasks for all pharmacies
 
