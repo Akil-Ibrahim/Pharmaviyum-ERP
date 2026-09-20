@@ -86,7 +86,9 @@ class DeadLetterQueue:
             return []
         entries = []
         for entry_id in entry_ids:
-            entry_json = await cast(Awaitable[Any], redis.hget(self.index_key, entry_id))
+            entry_json = await cast(
+                Awaitable[Any], redis.hget(self.index_key, entry_id)
+            )
             if entry_json:
                 entry = json.loads(entry_json)
                 if task_name and entry.get("task_name") != task_name:
@@ -96,9 +98,7 @@ class DeadLetterQueue:
 
     async def get_entry(self, entry_id: str) -> Optional[dict]:
         redis = await self._client()
-        entry_json = await cast(
-                Awaitable[Any], redis.hget(self.index_key, entry_id)
-            )
+        entry_json = await cast(Awaitable[Any], redis.hget(self.index_key, entry_id))
         if entry_json:
             return json.loads(entry_json)
         return None
