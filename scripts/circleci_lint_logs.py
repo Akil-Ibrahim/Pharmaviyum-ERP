@@ -18,8 +18,9 @@ from typing import Any
 
 BASE_URL = "https://circleci.com/api/v2"
 V1_BASE_URL = "https://circleci.com/api/v1.1"
-PROJECT_SLUG = "gh/Akil-Ibrahim/Pharmaviyum-CRM"
-USER_AGENT = "pharmaviyum-circleci-diagnostics/1.1"
+V2_PROJECT_SLUG = "gh/Akil-Ibrahim/Pharmaviyum-CRM"
+V1_PROJECT_SLUG = "github/Akil-Ibrahim/Pharmaviyum-CRM"
+USER_AGENT = "pharmaviyum-circleci-diagnostics/1.2"
 
 
 def request_json(url: str, token: str) -> Any:
@@ -67,8 +68,8 @@ def main() -> int:
         return 2
 
     job_number = sys.argv[1]
-    job_url = f"{BASE_URL}/project/{PROJECT_SLUG}/job/{job_number}"
-    build_url = f"{V1_BASE_URL}/project/{PROJECT_SLUG}/{job_number}"
+    job_url = f"{BASE_URL}/project/{V2_PROJECT_SLUG}/job/{job_number}"
+    build_url = f"{V1_BASE_URL}/project/{V1_PROJECT_SLUG}/{job_number}"
 
     job = request_json(job_url, token)
     build = request_json(build_url, token)
