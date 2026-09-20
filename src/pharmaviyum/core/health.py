@@ -140,7 +140,7 @@ class HealthChecker:
         results = await asyncio.gather(*tasks, return_exceptions=True)
         check_results = []
         for result in results:
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 check_results.append(
                     HealthCheckResult(
                         name="unknown",
