@@ -737,7 +737,7 @@ This is an important senior-level distinction: **degrade selectively instead of 
 
 # 22. Deployment architecture
 
-The development architecture uses Docker Compose for PostgreSQL/pgvector, Redis, Ollama, FastAPI, and Celery ingestion. The documented release path uses GitHub Actions, GHCR, Ansible, and `deploy/docker-compose.release.yml`. fileciteturn56file0L2-L2
+The development architecture uses Docker Compose for PostgreSQL/pgvector, Redis, Ollama, FastAPI, and Celery ingestion. The documented release path uses GitHub Actions for CI, then Render for staging/production deployment. fileciteturn56file0L2-L2
 
 A production evolution can introduce additional infrastructure only when justified by measurable requirements.
 

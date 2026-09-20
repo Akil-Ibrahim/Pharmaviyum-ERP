@@ -9,7 +9,7 @@ dependencies = [
     # Core
     "fastapi[standard]==0.141.1",
     "uvicorn[standard]==0.35.0",
-    "pydantic==2.11.7",
+    "pydantic==2.12.5",
     "pydantic-settings==2.10.1",
     "structlog==25.5.0",
     "slowapi==0.1.9",
@@ -31,7 +31,9 @@ dependencies = [
     "langchain-ollama==1.1.0",
     "langchain-groq==1.1.0",
     "langchain-openai==1.6.2",
+    "langchain-google-genai==4.4.0",
     "celery==5.5.3",
+    "boto3==1.40.30",
 
     # Security
     "PyJWT==2.14.0",

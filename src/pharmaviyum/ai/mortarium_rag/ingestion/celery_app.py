@@ -30,7 +30,6 @@ _ALLOWED_QUEUES = {"ingestion", "maintenance", "default"}
 _ALLOWED_TASKS = {
     "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.ingest_document",
     "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.ingest_batch",
-    "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.reindex_collection",
     "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.cleanup_old_jobs",
     "other",
 }
@@ -126,9 +125,6 @@ def create_celery_app() -> Celery:
             },
             "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.ingest_batch": {
                 "queue": "ingestion"
-            },
-            "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.reindex_collection": {
-                "queue": "maintenance"
             },
             "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.cleanup_old_jobs": {
                 "queue": "maintenance"

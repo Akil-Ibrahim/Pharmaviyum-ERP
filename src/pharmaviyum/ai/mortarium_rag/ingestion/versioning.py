@@ -36,8 +36,14 @@ class DocumentVersionManager:
         self.session_factory = session_factory
         self.table_name = table_name
 
-    async def archive_old_versions(self, source: str, new_version: int) -> int:
-        """Archive all previous versions of a document source."""
+    @staticmethod
+    def _require_pharmacy_id(pharmacy_id: int) -> None:
+        if not isinstance(pharmacy_id, int) or isinstance(pharmacy_id, bool) or pharmacy_id <= 0:
+            raise ValueError("Document versioning requires a positive integer pharmacy_id")
+
+    async def archive_old_versions(self, source: str, new_version: int, pharmacy_id: int) -> int:
+        """Archive previous versions within one pharmacy tenant."""
+        self._require_pharmacy_id(pharmacy_id)
         async with self.session_factory() as session:
             query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""  # nosec B608: table_name is validated as a SQL identifier
@@ -51,6 +57,7 @@ class DocumentVersionManager:
                     'archived_at', :now::text
                 )
                 WHERE metadata->>'source' = :source
+                  AND (metadata->>'pharmacy_id')::int = :pharmacy_id
                   AND (metadata->>'version_status' IS NULL
                        OR metadata->>'version_status' = 'active')
                   AND (metadata->>'version_number')::int < :new_version
@@ -60,6 +67,7 @@ class DocumentVersionManager:
                 query,
                 {
                     "source": source,
+                    "pharmacy_id": pharmacy_id,
                     "new_version": new_version,
                     "now": datetime.utcnow().isoformat(),
                 },
@@ -72,8 +80,9 @@ class DocumentVersionManager:
                 )
             return archived_count
 
-    async def get_next_version(self, source: str) -> int:
-        """Get the next version number for a document source."""
+    async def get_next_version(self, source: str, pharmacy_id: int) -> int:
+        """Get the next version within one pharmacy tenant."""
+        self._require_pharmacy_id(pharmacy_id)
         async with self.session_factory() as session:
             query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""  # nosec B608: table_name is validated as a SQL identifier
@@ -83,13 +92,15 @@ class DocumentVersionManager:
                 ) + 1
                 FROM {self.table_name}
                 WHERE metadata->>'source' = :source
+                  AND (metadata->>'pharmacy_id')::int = :pharmacy_id
             """
             )
-            result = await session.execute(query, {"source": source})
+            result = await session.execute(query, {"source": source, "pharmacy_id": pharmacy_id})
             return result.scalar_one()
 
-    async def rollback_to_version(self, source: str, target_version: int) -> int:
-        """Rollback to a previous document version."""
+    async def rollback_to_version(self, source: str, target_version: int, pharmacy_id: int) -> int:
+        """Rollback to a previous version within one pharmacy tenant."""
+        self._require_pharmacy_id(pharmacy_id)
         async with self.session_factory() as session:
             archive_query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""  # nosec B608: table_name is validated as a SQL identifier
@@ -100,10 +111,11 @@ class DocumentVersionManager:
                     '"archived"'
                 )
                 WHERE metadata->>'source' = :source
+                  AND (metadata->>'pharmacy_id')::int = :pharmacy_id
                   AND metadata->>'version_status' = 'active'
             """
             )
-            await session.execute(archive_query, {"source": source})
+            await session.execute(archive_query, {"source": source, "pharmacy_id": pharmacy_id})
 
             restore_query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""  # nosec B608: table_name is validated as a SQL identifier
@@ -114,12 +126,13 @@ class DocumentVersionManager:
                     '"active"'
                 ) - 'superseded_by_version' - 'archived_at'
                 WHERE metadata->>'source' = :source
+                  AND (metadata->>'pharmacy_id')::int = :pharmacy_id
                   AND (metadata->>'version_number')::int = :target_version
             """
             )
             result = await session.execute(
                 restore_query,
-                {"source": source, "target_version": target_version},
+                {"source": source, "pharmacy_id": pharmacy_id, "target_version": target_version},
             )
             await session.commit()
             restored_count = result.rowcount
@@ -128,8 +141,9 @@ class DocumentVersionManager:
             )
             return restored_count
 
-    async def get_version_history(self, source: str) -> list[dict]:
-        """Get version history for a document source."""
+    async def get_version_history(self, source: str, pharmacy_id: int) -> list[dict]:
+        """Get version history within one pharmacy tenant."""
+        self._require_pharmacy_id(pharmacy_id)
         async with self.session_factory() as session:
             query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""  # nosec B608: table_name is validated as a SQL identifier
@@ -141,12 +155,13 @@ class DocumentVersionManager:
                     MAX(created_at) as last_updated
                 FROM {self.table_name}
                 WHERE metadata->>'source' = :source
+                  AND (metadata->>'pharmacy_id')::int = :pharmacy_id
                   AND metadata->>'version_number' IS NOT NULL
                 GROUP BY version, status
                 ORDER BY version DESC
             """
             )
-            result = await session.execute(query, {"source": source})
+            result = await session.execute(query, {"source": source, "pharmacy_id": pharmacy_id})
             return [
                 {
                     "version": row.version,

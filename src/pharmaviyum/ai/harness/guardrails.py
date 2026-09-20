@@ -94,10 +94,8 @@ class MedicalGuardrails:
             "jailbreak",
         ]
         if any(kw in sanitized.lower() for kw in injection_keywords):
-            logger.warning(
-                "Potential prompt injection detected",
-                extra={"input_preview": sanitized[:50]},
-            )
+            # Never log user-controlled prompt content; it may contain PII.
+            logger.warning("Potential prompt injection detected")
             return GuardrailResult(
                 is_safe=False,
                 blocked_reason="Potential prompt injection detected",

@@ -7,6 +7,8 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
 
+from src.pharmaviyum.modules.auth.deps import CurrentSuperuser
+
 from src.pharmaviyum.core.feature_flags import (
     FeatureFlag,
     FlagType,
@@ -28,7 +30,7 @@ router = APIRouter(prefix="/feature-flags", tags=["feature-flags"])
 @router.post(
     "/", response_model=FeatureFlagResponse, status_code=status.HTTP_201_CREATED
 )
-async def create_feature_flag(flag_data: FeatureFlagCreate):
+async def create_feature_flag(_: CurrentSuperuser, flag_data: FeatureFlagCreate):
     """
     Create a new feature flag
 
@@ -65,7 +67,7 @@ async def create_feature_flag(flag_data: FeatureFlagCreate):
 
 
 @router.get("/", response_model=FeatureFlagListResponse)
-async def list_feature_flags():
+async def list_feature_flags(_: CurrentSuperuser):
     """
     List all feature flags
 
@@ -81,7 +83,7 @@ async def list_feature_flags():
 
 
 @router.get("/{key}", response_model=FeatureFlagResponse)
-async def get_feature_flag(key: str):
+async def get_feature_flag(_: CurrentSuperuser, key: str):
     """
     Get feature flag by key
 
@@ -105,7 +107,7 @@ async def get_feature_flag(key: str):
 
 
 @router.put("/{key}", response_model=FeatureFlagResponse)
-async def update_feature_flag(key: str, flag_data: FeatureFlagUpdate):
+async def update_feature_flag(_: CurrentSuperuser, key: str, flag_data: FeatureFlagUpdate):
     """
     Update feature flag
 
@@ -137,7 +139,7 @@ async def update_feature_flag(key: str, flag_data: FeatureFlagUpdate):
 
 
 @router.delete("/{key}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_feature_flag(key: str):
+async def delete_feature_flag(_: CurrentSuperuser, key: str):
     """
     Delete feature flag
 
@@ -156,7 +158,7 @@ async def delete_feature_flag(key: str):
 
 
 @router.get("/{key}/stats", response_model=FeatureFlagStatsResponse)
-async def get_feature_flag_stats(key: str):
+async def get_feature_flag_stats(_: CurrentSuperuser, key: str):
     """
     Get feature flag statistics
 
@@ -177,7 +179,7 @@ async def get_feature_flag_stats(key: str):
 
 
 @router.post("/check", response_model=FeatureFlagCheckResponse)
-async def check_feature_flag(request: FeatureFlagCheckRequest):
+async def check_feature_flag(_: CurrentSuperuser, request: FeatureFlagCheckRequest):
     """
     Check if feature flag is enabled
 
@@ -213,7 +215,7 @@ async def check_feature_flag(request: FeatureFlagCheckRequest):
 
 
 @router.post("/{key}/enable")
-async def enable_feature_flag(key: str):
+async def enable_feature_flag(_: CurrentSuperuser, key: str):
     """
     Enable feature flag
 
@@ -231,7 +233,7 @@ async def enable_feature_flag(key: str):
 
 
 @router.post("/{key}/disable")
-async def disable_feature_flag(key: str):
+async def disable_feature_flag(_: CurrentSuperuser, key: str):
     """
     Disable feature flag
 
@@ -250,6 +252,7 @@ async def disable_feature_flag(key: str):
 
 @router.post("/{key}/set-percentage")
 async def set_percentage_rollout(
+    _: CurrentSuperuser,
     key: str,
     percentage: int = Query(..., ge=0, le=100),
 ):
@@ -271,7 +274,7 @@ async def set_percentage_rollout(
 
 
 @router.post("/cache/invalidate")
-async def invalidate_cache(key: Optional[str] = None):
+async def invalidate_cache(_: CurrentSuperuser, key: Optional[str] = None):
     """
     Invalidate feature flag cache
 

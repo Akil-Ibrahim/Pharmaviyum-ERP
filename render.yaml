@@ -39,18 +39,22 @@ services:
           type: keyvalue
           name: pharmaviyum-redis
           property: connectionString
-      - key: OLLAMA_BASE_URL
+      - key: USE_CLOUD_LLM
+        value: "true"
+      - key: CLOUD_LLM_PROVIDER
+        value: gemini
+      - key: GEMINI_API_KEY
         sync: false
-      - key: OLLAMA_API_KEY
-        sync: false
-      - key: OLLAMA_FAST_MODEL
-        value: qwen2.5:1.5b
-      - key: OLLAMA_MAIN_MODEL
-        value: qwen2.5:7b
-      - key: OLLAMA_COMPLEX_MODEL
-        value: qwen2.5:72b
-      - key: OLLAMA_EMBEDDING_MODEL
-        value: mxbai-embed-large
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash
+      - key: GEMINI_FAST_MODEL
+        value: gemini-3.5-flash-lite
+      - key: GEMINI_COMPLEX_MODEL
+        value: gemini-2.5-pro
+      - key: GEMINI_EMBEDDING_MODEL
+        value: gemini-embedding-001
+      - key: GEMINI_EMBEDDING_DIMENSIONS
+        value: "1024"
 
   - type: keyvalue
     name: pharmaviyum-redis

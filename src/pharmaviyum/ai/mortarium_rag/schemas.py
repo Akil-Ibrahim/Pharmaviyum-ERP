@@ -20,6 +20,7 @@ class CanonicalMetadata(BaseModel):
     effective_from: datetime | None = None
     effective_to: datetime | None = None
     access_level: Literal["public", "pharmacy", "patient"] = "pharmacy"
+    patient_id: int | None = Field(default=None, gt=0)
     country: str = Field(default="VN", min_length=2, max_length=8)
     language: str = Field(default="vi", min_length=2, max_length=8)
     category: str | None = None
@@ -27,6 +28,8 @@ class CanonicalMetadata(BaseModel):
 
     @model_validator(mode="after")
     def validate_effective_window(self) -> "CanonicalMetadata":
+        if self.access_level == "patient" and self.patient_id is None:
+            raise ValueError("patient access_level requires patient_id")
         if (
             self.effective_from is not None
             and self.effective_to is not None

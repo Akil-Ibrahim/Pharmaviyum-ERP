@@ -33,6 +33,7 @@ class SendPatientNotificationTask(BaseTask):
     async def execute(
         self,
         patient_id: int,
+        pharmacy_id: int,
         template_name: str,
         template_data: dict[str, Any],
         channel: Optional[str] = None,
@@ -43,6 +44,7 @@ class SendPatientNotificationTask(BaseTask):
 
         Args:
             patient_id: Patient ID
+            pharmacy_id: Authorized pharmacy tenant ID
             template_name: Notification template name
             template_data: Template variables
             channel: Override notification channel (optional)
@@ -58,7 +60,10 @@ class SendPatientNotificationTask(BaseTask):
         # Fetch patient
         async with async_session() as session:
             result = await session.execute(
-                Patient.__table__.select().where(Patient.id == patient_id)
+                Patient.__table__.select().where(
+                    Patient.id == patient_id,
+                    Patient.pharmacy_id == pharmacy_id,
+                )
             )
             patient = result.first()
 
@@ -137,155 +142,36 @@ class SendPatientNotificationTask(BaseTask):
     async def _send_zalo(self, phone: str, message: str) -> dict:
         """Send via Zalo API"""
         # TODO: Implement Zalo API integration
-        logger.info(f"Sending Zalo message to {phone}")
-        return {"message_id": f"zalo_{phone}_{int(__import__('time').time())}"}
+        logger.info("Sending Zalo message")
+        return {"message_id": f"zalo_{__import__('uuid').uuid4()}"}
 
     async def _send_line(self, phone: str, message: str) -> dict:
         """Send via LINE API"""
         # TODO: Implement LINE API integration
-        logger.info(f"Sending LINE message to {phone}")
-        return {"message_id": f"line_{phone}_{int(__import__('time').time())}"}
+        logger.info("Sending LINE message")
+        return {"message_id": f"line_{__import__('uuid').uuid4()}"}
 
     async def _send_whatsapp(self, phone: str, message: str) -> dict:
         """Send via WhatsApp Business API"""
         # TODO: Implement WhatsApp API integration
-        logger.info(f"Sending WhatsApp message to {phone}")
-        return {"message_id": f"wa_{phone}_{int(__import__('time').time())}"}
+        logger.info("Sending WhatsApp message")
+        return {"message_id": f"wa_{__import__('uuid').uuid4()}"}
 
     async def _send_messenger(self, phone: str, message: str) -> dict:
         """Send via Facebook Messenger"""
         # TODO: Implement Messenger API integration
-        logger.info(f"Sending Messenger message to {phone}")
-        return {"message_id": f"msg_{phone}_{int(__import__('time').time())}"}
+        logger.info("Sending Messenger message")
+        return {"message_id": f"msg_{__import__('uuid').uuid4()}"}
 
     async def _send_sms(self, phone: str, message: str) -> dict:
         """Send via SMS (fallback)"""
         # TODO: Implement SMS gateway integration
-        logger.info(f"Sending SMS to {phone}")
-        return {"message_id": f"sms_{phone}_{int(__import__('time').time())}"}
+        logger.info("Sending SMS")
+        return {"message_id": f"sms_{__import__('uuid').uuid4()}"}
 
     async def _send_email(self, email: str, message: str) -> dict:
         """Send via Email (fallback)"""
         # TODO: Implement email integration
-        logger.info(f"Sending email to {email}")
-        return {"message_id": f"email_{email}_{int(__import__('time').time())}"}
+        logger.info("Sending email")
+        return {"message_id": f"email_{__import__('uuid').uuid4()}"}
 
-
-class SendMedicationReminderTask(BaseTask):
-    """Send scheduled medication reminder to patient"""
-
-    name = "send_medication_reminder"
-    queue = TaskQueue.NOTIFICATIONS.value
-    timeout_seconds = 30
-    retry_config = RetryConfig(max_attempts=3)
-
-    async def execute(
-        self,
-        reminder_id: int,
-    ) -> dict:
-        """
-        Send medication reminder
-
-        Args:
-            reminder_id: Medication reminder ID
-
-        Returns:
-            Reminder send result
-        """
-        from src.pharmaviyum.core.database import async_session
-        from src.pharmaviyum.models.prescriptions import MedicationReminder
-
-        async with async_session() as session:
-            result = await session.execute(
-                MedicationReminder.__table__.select().where(
-                    MedicationReminder.id == reminder_id
-                )
-            )
-            reminder = result.first()
-
-            if not reminder:
-                raise ValueError(f"Reminder {reminder_id} not found")
-
-            if not reminder.is_active:
-                return {"status": "skipped", "reason": "reminder_inactive"}
-
-            # Send notification
-            notification_task = SendPatientNotificationTask()
-            send_result = await notification_task.run_with_retry(
-                patient_id=reminder.patient_id,
-                template_name="medication_reminder",
-                template_data={
-                    "medication_name": reminder.medication_name,
-                    "dosage": reminder.dosage or "",
-                },
-                channel=reminder.reminder_channel,
-                language=reminder.language,
-            )
-
-            # Update reminder stats
-            reminder.total_sent += 1
-            from datetime import datetime, timezone
-
-            reminder.last_sent_at = datetime.now(timezone.utc)
-
-            await session.commit()
-
-        return {
-            "reminder_id": reminder_id,
-            "status": "sent",
-            "notification": send_result.data if send_result.success else None,
-        }
-
-
-class ProcessAcknowledgmentTask(BaseTask):
-    """Process patient acknowledgment of medication reminder"""
-
-    name = "process_acknowledgment"
-    queue = TaskQueue.NOTIFICATIONS.value
-    timeout_seconds = 30
-    retry_config = RetryConfig(max_attempts=2)
-
-    async def execute(
-        self,
-        reminder_id: int,
-        acknowledgment_type: str,  # "ok", "snooze", "skip"
-    ) -> dict:
-        """
-        Process patient acknowledgment
-
-        Args:
-            reminder_id: Reminder ID
-            acknowledgment_type: Type of acknowledgment
-
-        Returns:
-            Processing result
-        """
-        from src.pharmaviyum.core.database import async_session
-        from src.pharmaviyum.models.prescriptions import MedicationReminder
-
-        async with async_session() as session:
-            result = await session.execute(
-                MedicationReminder.__table__.select().where(
-                    MedicationReminder.id == reminder_id
-                )
-            )
-            reminder = result.first()
-
-            if not reminder:
-                raise ValueError(f"Reminder {reminder_id} not found")
-
-            reminder.total_acknowledged += 1
-
-            # Update adherence rate
-            if reminder.total_sent > 0:
-                reminder.adherence_rate = int(
-                    (reminder.total_acknowledged / reminder.total_sent) * 100
-                )
-
-            await session.commit()
-
-        return {
-            "reminder_id": reminder_id,
-            "acknowledgment": acknowledgment_type,
-            "adherence_rate": reminder.adherence_rate,
-        }

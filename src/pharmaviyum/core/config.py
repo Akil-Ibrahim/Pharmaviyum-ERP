@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_CACHE_TTL: int = 3600
 
+    OBJECT_STORAGE_BUCKET: Optional[str] = None
+    OBJECT_STORAGE_REGION: str = "auto"
+    OBJECT_STORAGE_ENDPOINT: Optional[str] = None
+    OBJECT_STORAGE_ACCESS_KEY: Optional[str] = None
+    OBJECT_STORAGE_SECRET_KEY: Optional[str] = None
+
     SECRET_KEY: Optional[str] = None
     API_SECRET_KEY: Optional[str] = None
     ALGORITHM: str = "HS256"

@@ -11,7 +11,7 @@ def upgrade() -> None:
     op.create_table(
         "pharmacy_memberships",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column("user_id", sa.Uuid(), nullable=False),
+        sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("pharmacy_id", sa.Integer(), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default="true"),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("CURRENT_TIMESTAMP")),

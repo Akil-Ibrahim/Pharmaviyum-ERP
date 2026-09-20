@@ -1,55 +1,41 @@
-# Immutable Release Runbook
+# Render Deployment Runbook
 
 ## Scope
 
-`dev` is the implementation branch. CI builds one immutable container image per commit and publishes it to GHCR. Deployment is a separate, manually triggered workflow so a passing build cannot mutate an environment by itself.
+`dev` is the staging implementation branch. `main` is production. Render is the deployment platform; GitHub Actions and CircleCI provide CI validation. Production is never deployed from `dev`.
 
-## Staging target contract
+## Staging
 
-The current release adapter targets a Docker Compose host. The host must have Docker Engine + Compose v2 and network access to PostgreSQL, Redis, the configured LLM endpoint, and GHCR.
-
-The workflow uses these **GitHub Environment = `staging`** secrets:
-
-- `STAGING_SSH_HOST`
-- `STAGING_SSH_USER`
-- `STAGING_SSH_PRIVATE_KEY`
-- `STAGING_SSH_KNOWN_HOSTS`
-- `STAGING_GHCR_USERNAME`
-- `STAGING_GHCR_TOKEN` — read-only package access is sufficient
-- `STAGING_DATABASE_URL`
-- `STAGING_PGVECTOR_DATABASE_URL`
-- `STAGING_REDIS_URL`
-- `STAGING_OLLAMA_BASE_URL`
-- `STAGING_OLLAMA_API_KEY` — optional for providers that require it
-- `STAGING_URL`
-
-Optional GitHub Environment variables configure model names:
-
-- `STAGING_OLLAMA_FAST_MODEL`
-- `STAGING_OLLAMA_MAIN_MODEL`
-- `STAGING_OLLAMA_COMPLEX_MODEL`
-- `STAGING_OLLAMA_EMBEDDING_MODEL`
-
-`STAGING_SSH_KNOWN_HOSTS` must be populated from a trusted fingerprint/source. Do not use `ssh-keyscan` at deployment time as a substitute for host-key verification.
-
-## Release flow
-
-1. CI on `dev` runs lint/type checks, unit and integration tests, security scans, RAG regression tests, and builds the image.
-2. The image is published as `ghcr.io/akil-ibrahim/pharmaviyum-crm:<commit-sha>`.
-3. Start **Actions → Release → Run workflow** and enter the exact 40-character commit SHA.
-4. The workflow verifies that exact image exists before touching staging.
-5. The workflow checks that every staging secret is configured.
-6. The migration container runs `alembic upgrade head` exactly once.
-7. The API starts from the immutable image with `docker compose up --no-build`.
-8. The deployment script waits for `/health` and performs rollback to the previously running image if the release becomes unhealthy.
-9. The workflow then performs an external smoke test against `STAGING_URL/health`.
-
-## Rollback
-
-Rollback is an image promotion, not a rebuild. Re-run the Release workflow with the previous known-good commit SHA. The deployment script also attempts an automatic rollback to the image that was running before the failed deployment.
-
-Database rollback is **not** automatic. Schema migrations must be backward-compatible with the previous application version, or have an explicitly reviewed downgrade/forward-fix procedure.
+- Render service: `pharmaviyum-api`
+- Branch: `dev`
+- Environment: `staging`
+- Health endpoint: `/health`
+- Database migrations: `alembic upgrade head`
+- Demo seed data: enabled only for staging.
 
 ## Production
 
-There is intentionally no production deployment adapter yet. Do not point the staging secrets at production infrastructure. A production adapter must add a separate protected GitHub Environment, approval policy, production credentials, migration target, smoke test, and rollback procedure before production mutation is enabled.
+- Render service: `pharmaviyum-crm`
+- Branch: `main`
+- Environment: `production`
+- Health endpoint: `/health`
+- Database migrations: Render `preDeployCommand`
+- Demo seed data: disabled.
+
+## Release flow
+
+1. Implement and validate changes on `dev`.
+2. Wait for available CI checks to pass.
+3. Review the PR from `dev` to `main`.
+4. Merge only after required checks are green.
+5. Render deploys the production service from `main`.
+6. Verify `/health`, application logs, database migrations and critical smoke paths.
+7. If production is unhealthy, stop promotion and use the Render rollback/redeploy mechanism after identifying the failing revision.
+
+## Database safety
+
+Migrations are forward production changes. Prefer backward-compatible expand/contract migrations. Never rely on an automatic schema downgrade as the primary rollback mechanism.
+
+## Current status
+
+The runbook describes the intended Render architecture. Production readiness is not declared until CI, staging smoke tests, backups/restore, observability and rollback are verified.

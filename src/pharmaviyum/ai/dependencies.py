@@ -16,6 +16,7 @@ from typing import Any, AsyncGenerator
 from fastapi import HTTPException, Request, status
 from langchain_core.language_models import BaseChatModel
 from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
 from redis.asyncio import Redis
 
@@ -76,26 +77,47 @@ def _build_llm(model: str) -> BaseChatModel:
             temperature=settings.ollama.temperature,
         )
 
+    if settings.cloud_llm_provider == "gemini":
+        api_key = settings.gemini.api_key
+        if api_key is None:
+            raise RuntimeError(
+                "USE_CLOUD_LLM=true with GEMINI provider requires GEMINI_API_KEY"
+            )
+        return ChatGoogleGenerativeAI(
+            model=model,
+            google_api_key=api_key.get_secret_value(),
+            temperature=settings.gemini.temperature,
+            timeout=settings.gemini.timeout_seconds,
+        )
+
     api_key = settings.groq.api_key
     if api_key is None:
-        raise RuntimeError("USE_CLOUD_LLM=true requires GROQ_API_KEY to be configured")
+        raise RuntimeError(
+            "USE_CLOUD_LLM=true with GROQ provider requires GROQ_API_KEY"
+        )
     return ChatGroq(
         model=model,
-        api_key=api_key,
+        api_key=api_key.get_secret_value(),
         temperature=settings.groq.temperature,
         timeout=settings.groq.timeout_seconds,
     )
 
 
 def _build_embeddings_provider() -> str:
-    """Keep local Ollama and cloud OpenAI embeddings explicitly separated."""
-    return "openai" if settings.use_cloud_llm else "ollama"
+    """Select the embedding backend for the active AI provider."""
+    if not settings.use_cloud_llm:
+        return "ollama"
+    return "gemini" if settings.cloud_llm_provider == "gemini" else "openai"
 
 
 @lru_cache(maxsize=1)
 def get_llm_fast() -> BaseChatModel:
     model = (
-        settings.groq.fast_model
+        (
+            settings.gemini.fast_model
+            if settings.cloud_llm_provider == "gemini"
+            else settings.groq.fast_model
+        )
         if settings.use_cloud_llm
         else settings.ollama.fast_model
     )
@@ -105,7 +127,13 @@ def get_llm_fast() -> BaseChatModel:
 @lru_cache(maxsize=1)
 def get_llm_main() -> BaseChatModel:
     model = (
-        settings.groq.model if settings.use_cloud_llm else settings.ollama.main_model
+        (
+            settings.gemini.model
+            if settings.cloud_llm_provider == "gemini"
+            else settings.groq.model
+        )
+        if settings.use_cloud_llm
+        else settings.ollama.main_model
     )
     return _build_llm(model)
 
@@ -113,7 +141,13 @@ def get_llm_main() -> BaseChatModel:
 @lru_cache(maxsize=1)
 def get_llm_complex() -> BaseChatModel:
     model = (
-        settings.groq.model if settings.use_cloud_llm else settings.ollama.complex_model
+        (
+            settings.gemini.complex_model
+            if settings.cloud_llm_provider == "gemini"
+            else settings.groq.model
+        )
+        if settings.use_cloud_llm
+        else settings.ollama.complex_model
     )
     return _build_llm(model)
 
@@ -149,13 +183,25 @@ class AIComponents:
                 logger.warning("PgVectorStore initialize deferred: %s", exc)
 
             embeddings_provider = _build_embeddings_provider()
-            openai_api_key = (
-                settings.openai.api_key.get_secret_value()
-                if settings.use_cloud_llm and settings.openai.api_key
-                else None
+            embeddings_api_key = (
+                settings.gemini.api_key.get_secret_value()
+                if settings.use_cloud_llm
+                and settings.cloud_llm_provider == "gemini"
+                and settings.gemini.api_key
+                else (
+                    settings.openai.api_key.get_secret_value()
+                    if settings.use_cloud_llm and settings.openai.api_key
+                    else None
+                )
             )
             embedding_model = (
-                settings.openai.embedding_model if settings.use_cloud_llm else None
+                settings.gemini.embedding_model
+                if settings.use_cloud_llm and settings.cloud_llm_provider == "gemini"
+                else (
+                    settings.openai.embedding_model
+                    if settings.use_cloud_llm
+                    else None
+                )
             )
             embedding_dimensions = settings.pgvector.vector_dimensions
 
@@ -163,7 +209,7 @@ class AIComponents:
                 provider=embeddings_provider,
                 use_cache=True,
                 redis_client=redis,
-                api_key=openai_api_key,
+                api_key=embeddings_api_key,
                 model=embedding_model or settings.ollama.embedding_model,
                 endpoint=settings.ollama.base_url,
                 dimensions=embedding_dimensions,
@@ -172,7 +218,7 @@ class AIComponents:
                 session_factory=db_session_factory,
                 redis_client=redis,
                 embeddings_provider=embeddings_provider,
-                embeddings_api_key=openai_api_key,
+                embeddings_api_key=embeddings_api_key,
                 embeddings_model=embedding_model,
                 embeddings_dimensions=embedding_dimensions,
             )
@@ -227,7 +273,11 @@ class AIComponents:
             self.evaluator = AgentEvaluator(
                 eval_llm=get_llm_complex(),
                 evaluator_model_name=(
-                    settings.groq.model
+                    (
+                        settings.gemini.complex_model
+                        if settings.cloud_llm_provider == "gemini"
+                        else settings.groq.model
+                    )
                     if settings.use_cloud_llm
                     else settings.ollama.complex_model
                 ),

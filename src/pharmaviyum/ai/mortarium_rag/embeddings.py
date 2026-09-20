@@ -7,6 +7,7 @@ import hashlib
 from typing import Any, Protocol, cast
 
 import numpy as np
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_openai import OpenAIEmbeddings
 
 
@@ -58,6 +59,55 @@ class OllamaEmbeddings:
             batch = texts[i : i + batch_size]
             batch_results = await asyncio.gather(*[self.embed(t) for t in batch])
             results.extend(batch_results)
+        return results
+
+    @property
+    def dimensions(self) -> int:
+        return self._dimensions
+
+
+class GeminiEmbeddingsProvider:
+    """Cloud embeddings via Gemini at a fixed vector dimension."""
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "gemini-embedding-001",
+        dimensions: int = 1024,
+        batch_size: int = 32,
+    ) -> None:
+        self.model = model
+        self._dimensions = dimensions
+        self._batch_size = batch_size
+        self._client = GoogleGenerativeAIEmbeddings(
+            model=model,
+            google_api_key=api_key,
+            output_dimensionality=dimensions,
+        )
+
+    @staticmethod
+    def _normalize(embedding: list[float]) -> list[float]:
+        """Normalize reduced Gemini 001 vectors for cosine distance."""
+        vector = np.asarray(embedding, dtype=np.float32)
+        norm = float(np.linalg.norm(vector))
+        if norm == 0.0:
+            raise ValueError("Gemini embedding returned a zero vector")
+        return (vector / norm).tolist()
+
+    async def embed(self, text: str) -> list[float]:
+        embedding = await self._client.aembed_query(text)
+        return self._normalize(embedding)
+
+    async def embed_batch(
+        self, texts: list[str], batch_size: int = 32
+    ) -> list[list[float]]:
+        size = max(1, min(batch_size, self._batch_size))
+        results: list[list[float]] = []
+        for i in range(0, len(texts), size):
+            embeddings = await self._client.aembed_documents(
+                texts[i : i + size]
+            )
+            results.extend(self._normalize(embedding) for embedding in embeddings)
         return results
 
     @property
@@ -185,6 +235,16 @@ class EmbeddingsFactory:
             base: EmbeddingsProvider = OllamaEmbeddings(
                 model=model or "mxbai-embed-large",
                 endpoint=endpoint,
+                dimensions=dimensions,
+            )
+        elif provider == "gemini":
+            if not api_key:
+                raise RuntimeError(
+                    "Gemini embeddings require GEMINI_API_KEY to be configured"
+                )
+            base = GeminiEmbeddingsProvider(
+                api_key=api_key,
+                model=model or "gemini-embedding-001",
                 dimensions=dimensions,
             )
         elif provider == "openai":

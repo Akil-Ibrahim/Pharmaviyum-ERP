@@ -16,7 +16,6 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 from typing import Any
-from uuid import UUID
 
 from src.pharmaviyum.core.logging import logger
 
@@ -67,7 +66,7 @@ class MCPClient:
         input_data: dict[str, Any],
         user_role: UserRole | None = None,
         trace_id: str | None = None,
-        user_id: UUID | None = None,
+        user_id: int | None = None,
         pharmacy_id: int | None = None,
     ) -> ToolExecutionResult:
         """Call an MCP tool with retry while enforcing RBAC and tenant scope."""

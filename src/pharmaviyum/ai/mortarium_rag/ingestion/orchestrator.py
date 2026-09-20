@@ -80,7 +80,7 @@ class IngestionOrchestrator:
         config = config or {}
         job_id = str(uuid.uuid4())
 
-        logger.info(f"Starting ingestion: {source} (job_id={job_id})")
+        logger.info("Starting ingestion task", extra={"job_id": job_id})
 
         stats = {
             "job_id": job_id,
@@ -109,7 +109,7 @@ class IngestionOrchestrator:
                 documents.append(doc)
 
             stats["documents_loaded"] = len(documents)
-            logger.info(f"Loaded {len(documents)} documents from {source}")
+            logger.info("Loaded documents", extra={"job_id": job_id, "count": len(documents)})
 
             if not documents:
                 raise ValueError(f"No documents loaded from {source}")
@@ -130,8 +130,12 @@ class IngestionOrchestrator:
             ]
             doc_ids = [str(doc.id) for doc in processed_docs]
 
+            pharmacy_id = config.get("pharmacy_id")
+            if not isinstance(pharmacy_id, int) or isinstance(pharmacy_id, bool) or pharmacy_id <= 0:
+                raise ValueError("RAG ingestion requires a positive integer pharmacy_id")
+
             new_hashes, new_doc_ids = await self.deduplicator.filter_duplicates(
-                content_hashes, doc_ids
+                content_hashes, doc_ids, pharmacy_id
             )
 
             stats["duplicates_skipped"] = len(processed_docs) - len(new_doc_ids)
@@ -143,7 +147,7 @@ class IngestionOrchestrator:
                 ]
 
             if not processed_docs:
-                logger.info(f"All documents were duplicates: {source}")
+                logger.info("All documents were duplicates", extra={"job_id": job_id})
                 stats["latency_ms"] = (time.perf_counter() - start_time) * 1000
                 return {
                     **stats,
@@ -152,8 +156,8 @@ class IngestionOrchestrator:
                 }
 
             if self.enable_versioning:
-                new_version = await self.version_manager.get_next_version(source)
-                await self.version_manager.archive_old_versions(source, new_version)
+                new_version = await self.version_manager.get_next_version(source, pharmacy_id)
+                await self.version_manager.archive_old_versions(source, new_version, pharmacy_id)
                 for doc in processed_docs:
                     doc.metadata["version_number"] = new_version
                     doc.metadata["version_status"] = "active"
@@ -212,7 +216,7 @@ class IngestionOrchestrator:
             return {**stats, "success": True}
 
         except Exception as e:
-            logger.error(f"Ingestion failed: {source} - {e}", exc_info=True)
+            logger.error("Ingestion failed", extra={"job_id": job_id}, exc_info=True)
             stats["errors"].append(f"fatal: {str(e)}")
             stats["latency_ms"] = (time.perf_counter() - start_time) * 1000
             return {**stats, "success": False, "error": str(e)}

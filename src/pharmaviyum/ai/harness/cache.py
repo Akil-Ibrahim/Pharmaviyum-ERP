@@ -63,7 +63,7 @@ class PromptCache:
 
         # 2. Try semantic match (if enabled and available)
         if self.embeddings:
-            semantic_result = await self._semantic_search(prompt)
+            semantic_result = await self._semantic_search(prompt, context)
             if (
                 semantic_result
                 and semantic_result["score"] >= self.similarity_threshold
@@ -99,7 +99,7 @@ class PromptCache:
                 embedding = await self.embeddings.embed(prompt)
                 # Store in Redis sorted set for similarity search
                 # Score = 1.0 (we'll calculate actual similarity at query time)
-                semantic_key = f"{self._semantic_prefix}"
+                semantic_key = f"{self._semantic_prefix}:{self._context_scope(context)}"
                 payload = json.dumps(
                     {
                         "key": cache_key,
@@ -113,13 +113,27 @@ class PromptCache:
             except Exception as e:
                 logger.warning(f"Failed to cache semantic embedding: {e}")
 
+    @staticmethod
+    def _context_scope(context: dict[str, Any] | None) -> str:
+        """Keep semantic cache candidates isolated by authenticated tenant/user context."""
+        if not context:
+            return "anonymous"
+        scoped = {
+            key: context.get(key)
+            for key in ("pharmacy_id", "user_id", "patient_id", "country", "language")
+        }
+        raw = json.dumps(scoped, sort_keys=True, default=str)
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
+
     def _build_cache_key(self, prompt: str, context: dict[str, Any] | None) -> str:
         """Generate a unique hash for the prompt + context."""
         context_str = json.dumps(context, sort_keys=True) if context else ""
         combined = f"{prompt}|{context_str}"
         return hashlib.sha256(combined.encode("utf-8")).hexdigest()[:32]
 
-    async def _semantic_search(self, prompt: str) -> dict | None:
+    async def _semantic_search(
+        self, prompt: str, context: dict[str, Any] | None = None
+    ) -> dict | None:
         """
         Find semantically similar cached prompts.
 
@@ -130,7 +144,7 @@ class PromptCache:
             query_embedding = await self.embeddings.embed(prompt)
 
             # Get top 5 candidates from semantic cache
-            semantic_key = f"{self._semantic_prefix}"
+            semantic_key = f"{self._semantic_prefix}:{self._context_scope(context)}"
             candidates = await self.redis.zrevrange(
                 semantic_key, 0, 4, withscores=False
             )

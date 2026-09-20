@@ -7,9 +7,9 @@ pharmacy membership before the tenant id reaches the worker.
 
 from __future__ import annotations
 
-import tempfile
 import uuid
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
@@ -18,6 +18,7 @@ from redis.asyncio import Redis
 from src.pharmaviyum.ai.dependencies import get_redis_client
 from src.pharmaviyum.ai.mortarium_rag.ingestion import ingest_document
 from src.pharmaviyum.core.logging import logger
+from src.pharmaviyum.storage.object_storage import ObjectStorage, ObjectStorageError
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
 
@@ -76,9 +77,19 @@ async def upload_and_ingest_document(
         )
 
     job_id = str(uuid.uuid4())
-    with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp_file:
-        tmp_file.write(contents)
-        temp_path = tmp_file.name
+    object_key = ObjectStorage.tenant_key(authorized_pharmacy_id, job_id, file_ext)
+    try:
+        storage = ObjectStorage()
+        await storage.put_bytes(
+            object_key,
+            contents,
+            file.content_type or "application/octet-stream",
+        )
+    except ObjectStorageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Document storage is not configured",
+        ) from exc
 
     source_type = (
         "pdf" if file_ext == ".pdf" else "docx" if file_ext == ".docx" else "html"
@@ -95,13 +106,23 @@ async def upload_and_ingest_document(
     from src.pharmaviyum.ai.mortarium_rag.ingestion import IngestionProgressTracker
 
     tracker = IngestionProgressTracker(redis)
-    await tracker.create_job(job_id, temp_path, total_documents=1, metadata=config)
-    task = ingest_document.delay(
-        source=temp_path,
-        source_type=source_type,
-        job_id=job_id,
-        config=config,
-    )
+    await tracker.create_job(job_id, object_key, total_documents=1, metadata=config)
+    try:
+      task = ingest_document.delay(
+          source=object_key,
+          source_type=source_type,
+          job_id=job_id,
+          config={**config, "source_storage": "object"},
+      )
+    except Exception:
+        try:
+            await storage.delete(object_key)
+        except Exception:
+            logger.exception("Failed to clean up orphaned ingestion object %s", object_key)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Ingestion queue is unavailable",
+        )
     logger.info("Dispatched ingestion task %s for job %s", task.id, job_id)
     return {
         "job_id": job_id,
@@ -123,6 +144,17 @@ async def ingest_from_url(
     authorized_pharmacy_id = await _authorize_ingestion_tenant(
         request.pharmacy_id, current_user, session
     )
+    if request.source_type not in {"pdf", "html", "docx"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported source type",
+        )
+    parsed = urlparse(request.source)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="URL ingestion requires an absolute http(s) URL",
+        )
     job_id = str(uuid.uuid4())
     config = {
         "pharmacy_id": authorized_pharmacy_id,
@@ -134,12 +166,24 @@ async def ingest_from_url(
 
     tracker = IngestionProgressTracker(redis)
     await tracker.create_job(job_id, request.source, total_documents=1, metadata=config)
-    task = ingest_document.delay(
-        source=request.source,
-        source_type=request.source_type,
-        job_id=job_id,
-        config=config,
-    )
+    try:
+        task = ingest_document.delay(
+            source=request.source,
+            source_type=request.source_type,
+            job_id=job_id,
+            config=config,
+        )
+    except Exception as exc:
+        await tracker.update_status(
+            job_id,
+            "failed",
+            error="Ingestion queue is unavailable",
+        )
+        logger.exception("Failed to dispatch URL ingestion job %s", job_id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Ingestion queue is unavailable",
+        ) from exc
     return {"job_id": job_id, "status": "queued", "task_id": task.id}
 
 

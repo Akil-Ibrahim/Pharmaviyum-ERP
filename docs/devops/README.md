@@ -15,8 +15,8 @@ GitHub Actions
     -> tests / lint / type checks / security / RAG evaluation
     -> immutable Docker image
     -> GHCR
-    -> staging Docker Compose host
-    -> deploy/docker-compose.release.yml
+    -> Render staging (`dev`)
+    -> Render production (`main`)
 ```
 
 The current repository also contains an opt-in monitoring Compose stack for controlled deployments. Nginx/edge infrastructure, OpenTelemetry Collector, managed data services and multi-node orchestration are target capabilities, not assumptions about the current base deployment.
@@ -334,7 +334,7 @@ The exact topology remains subject to capacity measurements and deployment const
 - `docs/ai_architecture.md` — AI, RAG, memory, guardrails and MCP architecture.
 - `docs/guides/ENVIRONMENT_SETUP.md` — environment configuration and deployment prerequisites.
 - `docs/guides/TESTING.md` — test and CI strategy.
-- `deploy/docker-compose.release.yml` — staging/release container topology.
+- `render.yaml` / `render.production.yaml` — Render staging and production topology.
 - `docker-compose.monitoring.yml` — opt-in Prometheus/Grafana monitoring stack.
 - `.github/workflows/ci.yml` — CI quality, security, evaluation and image build gates.
 - `.github/workflows/release.yml` — staging deployment workflow.

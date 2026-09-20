@@ -7,7 +7,6 @@ Best practice:
 - No implicit privileged/system role at AI boundaries
 """
 
-import uuid
 from datetime import datetime
 from typing import Literal, Optional
 
@@ -16,32 +15,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from ...shared.core.database import Base
+from ...models.user import User
 
 UserRole = Literal["patient", "pharmacist", "admin", "system"]
-
-
-class User(Base):
-    """User entity for authentication and authorization."""
-
-    __tablename__ = "users"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        primary_key=True, default=uuid.uuid4, index=True
-    )
-    email: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
-    )
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
-    full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    role: Mapped[str] = mapped_column(String(20), nullable=False, default="pharmacist")
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-
-    def __repr__(self) -> str:
-        return f"<User id={self.id} email={self.email}>"
 
 
 class PharmacyMembership(Base):
@@ -57,7 +33,7 @@ class PharmacyMembership(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[uuid.UUID] = mapped_column(
+    user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     pharmacy_id: Mapped[int] = mapped_column(

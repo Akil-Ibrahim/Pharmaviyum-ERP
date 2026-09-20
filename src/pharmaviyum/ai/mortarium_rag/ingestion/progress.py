@@ -10,6 +10,7 @@ Best practice 2026:
 from __future__ import annotations
 
 import json
+from urllib.parse import urlsplit, urlunsplit
 from datetime import datetime, timedelta
 from typing import Any, Literal
 
@@ -19,6 +20,7 @@ from src.pharmaviyum.core.logging import logger
 
 IngestionStatus = Literal[
     "pending",
+    "queued",
     "loading",
     "preprocessing",
     "chunking",
@@ -37,6 +39,20 @@ class IngestionProgressTracker:
         self.ttl_seconds = ttl_hours * 3600
         self.prefix = "ingestion:job"
 
+    @staticmethod
+    def _safe_source(source: str) -> str:
+        """Redact URL credentials and query/fragment secrets before persistence."""
+        try:
+            parsed = urlsplit(source)
+        except ValueError:
+            return "<redacted>"
+        if parsed.scheme in {"http", "https"} and parsed.hostname:
+            netloc = parsed.hostname
+            if parsed.port:
+                netloc = f"{netloc}:{parsed.port}"
+            return urlunsplit((parsed.scheme, netloc, parsed.path, "", ""))
+        return source
+
     async def create_job(
         self,
         job_id: str,
@@ -47,7 +63,7 @@ class IngestionProgressTracker:
         """Initialize a new ingestion job."""
         job_data = {
             "job_id": job_id,
-            "source": source,
+            "source": self._safe_source(source),
             "status": "pending",
             "total_documents": total_documents,
             "processed_documents": 0,
@@ -65,6 +81,49 @@ class IngestionProgressTracker:
         )
 
         logger.info(f"Ingestion job created: {job_id} ({total_documents} documents)")
+        if total_documents > 0:
+            await self.redis.hset(
+                f"{self.prefix}:{job_id}:batch",
+                mapping={"total": total_documents, "processed": 0, "failed": 0},
+            )
+            await self.redis.expire(f"{self.prefix}:{job_id}:batch", self.ttl_seconds)
+
+    async def record_batch_result(self, batch_job_id: str, success: bool) -> None:
+        """Record one child result and finalize its parent without lost updates."""
+        lock = self.redis.lock(
+            f"{self.prefix}:{batch_job_id}:batch:lock",
+            timeout=30,
+            blocking_timeout=10,
+        )
+        async with lock:
+            counters_key = f"{self.prefix}:{batch_job_id}:batch"
+            field = "processed" if success else "failed"
+            await self.redis.hincrby(counters_key, field, 1)
+            total_raw = await self.redis.hget(counters_key, "total")
+            if not total_raw:
+                return
+            total = int(total_raw)
+            failed_raw = await self.redis.hget(counters_key, "failed")
+            failed = int(failed_raw or 0)
+            processed_raw = await self.redis.hget(counters_key, "processed")
+            processed = int(processed_raw or 0)
+            completed = processed + failed
+            if completed >= total:
+                await self.update_status(
+                    batch_job_id,
+                    "completed" if failed == 0 else "failed",
+                    current_step="documents processed",
+                    processed=processed,
+                    failed=failed,
+                )
+            else:
+                await self.update_status(
+                    batch_job_id,
+                    "queued",
+                    current_step="processing documents",
+                    processed=processed,
+                    failed=failed,
+                )
 
     async def update_status(
         self,
@@ -138,6 +197,9 @@ class IngestionProgressTracker:
         jobs = []
 
         async for key in self.redis.scan_iter(match=pattern, count=100):
+            key_text = key.decode() if isinstance(key, bytes) else key
+            if key_text.endswith(":batch"):
+                continue
             job_data_raw = await self.redis.get(key)
             if job_data_raw:
                 job_data = json.loads(job_data_raw)
@@ -162,6 +224,9 @@ class IngestionProgressTracker:
         removed = 0
 
         async for key in self.redis.scan_iter(match=pattern, count=100):
+            key_text = key.decode() if isinstance(key, bytes) else key
+            if key_text.endswith(":batch"):
+                continue
             job_data_raw = await self.redis.get(key)
             if job_data_raw:
                 job_data = json.loads(job_data_raw)

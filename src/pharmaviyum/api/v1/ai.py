@@ -24,6 +24,7 @@ from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.models import PharmacyMembership
 from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
+from src.pharmaviyum.models.patients import Patient
 
 router = APIRouter(prefix="/api/v1/ai", tags=["AI"])
 
@@ -52,6 +53,26 @@ async def _tenant_context(
     pharmacy_id: int, current_user: CurrentUser, session: SessionDep
 ):
     return await require_pharmacy_tenant(pharmacy_id, current_user, session)
+
+
+async def _validate_patient_scope(
+    patient_id: int | None, pharmacy_id: int, session: SessionDep
+) -> None:
+    """Reject AI requests that reference a patient outside the tenant."""
+    if patient_id is None:
+        return
+    patient = await session.scalar(
+        select(Patient.id).where(
+            Patient.id == patient_id,
+            Patient.pharmacy_id == pharmacy_id,
+            Patient.is_active.is_(True),
+        )
+    )
+    if patient is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found or not accessible",
+        )
 
 
 def _set_mcp_context(tenant, current_user: CurrentUser):
@@ -112,6 +133,7 @@ async def query_agent(
 ):
     """Synchronous AI query bound to the authenticated pharmacy tenant."""
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
+    await _validate_patient_scope(request.patient_id, tenant.pharmacy_id, session)
     raw_session_id = request.session_id or str(uuid.uuid4())
     session_id = _scoped_session_id(raw_session_id, tenant, current_user)
     context = {
@@ -201,6 +223,7 @@ async def query_agent_stream(
 ):
     """Streaming AI query bound to the authenticated pharmacy tenant."""
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
+    await _validate_patient_scope(request.patient_id, tenant.pharmacy_id, session)
     raw_session_id = request.session_id or str(uuid.uuid4())
     session_id = _scoped_session_id(raw_session_id, tenant, current_user)
     context = {

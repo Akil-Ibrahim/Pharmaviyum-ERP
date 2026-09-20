@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { Bot, Check, Loader2, Search, Sparkles, RotateCcw } from 'lucide-react'
+import { Bot, Check, Loader2, Search, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-client'
 

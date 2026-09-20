@@ -68,6 +68,11 @@ class PgVectorStore:
                 ON {self.table_name} USING gin (metadata)
             """
             await session.execute(text(metadata_index_sql))
+            tenant_index_sql = f"""  # nosec B608: validated identifier and fixed SQL template
+                CREATE INDEX IF NOT EXISTS idx_{self.table_name}_pharmacy_id
+                ON {self.table_name} ((metadata ->> 'pharmacy_id'))
+            """
+            await session.execute(text(tenant_index_sql))
             content_index_sql = f"""  # nosec B608: validated identifier and fixed SQL template
                 CREATE INDEX IF NOT EXISTS idx_{self.table_name}_content_fts
                 ON {self.table_name} USING gin (to_tsvector('english', content))
@@ -91,12 +96,7 @@ class PgVectorStore:
                     "content": chunk.content,
                     "chunk_index": chunk.chunk_index,
                     "chunk_type": chunk.chunk_type,
-                    "metadata": json.dumps(
-                        CanonicalMetadata.model_validate(chunk.metadata).model_dump(
-                            mode="json"
-                        )
-                        | dict(chunk.metadata)
-                    ),
+                    "metadata": self._serialize_metadata(chunk.metadata),
                     "token_count": chunk.token_count,
                     "embedding": self._serialize_embedding(embedding),
                 }
@@ -271,6 +271,17 @@ class PgVectorStore:
     def _require_tenant_metadata(metadata: dict[str, Any]) -> None:
         """Fail closed if an ingested chunk has no canonical tenant metadata."""
         CanonicalMetadata.model_validate(metadata)
+
+    @staticmethod
+    def _serialize_metadata(metadata: dict[str, Any]) -> str:
+        """Persist canonical fields first so extension fields cannot override them."""
+        canonical = CanonicalMetadata.model_validate(metadata).model_dump(mode="json")
+        extra = {
+            key: value
+            for key, value in metadata.items()
+            if key not in CanonicalMetadata.model_fields
+        }
+        return json.dumps({**canonical, **extra})
 
     def _row_to_chunk(self, row: Row[Any]) -> Chunk:
         return Chunk(
