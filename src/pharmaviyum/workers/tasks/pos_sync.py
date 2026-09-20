@@ -4,7 +4,7 @@ Best practice 2026: Bidirectional sync with KiotViet/Sapo/Viettel PMS
 """
 
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional, cast
 
 from src.pharmaviyum.core.logging import get_logger
 from src.pharmaviyum.workers.base import BaseTask, RetryConfig
@@ -21,12 +21,10 @@ class SyncProductsTask(BaseTask):
     timeout_seconds = 300
     retry_config = RetryConfig(max_attempts=3, base_delay_seconds=5.0)
 
-    async def execute(
-        self,
-        pos_system: str,
-        pharmacy_id: int,
-        since: Optional[str] = None,
-    ) -> dict:
+    async def execute(self, **kwargs: Any) -> dict[str, Any]:
+        pos_system = cast(str, kwargs["pos_system"])
+        pharmacy_id = cast(int, kwargs["pharmacy_id"])
+        since = cast(Optional[str], kwargs.get("since"))
         """
         Sync products from POS
 
@@ -65,7 +63,7 @@ class SyncProductsTask(BaseTask):
                 # Check if product exists
                 from sqlalchemy import select
 
-                from src.pharmaviyum.models.integrations import Product
+                from src.pharmaviyum.models.product import Product
 
                 result = await session.execute(
                     select(Product).where(
@@ -135,11 +133,9 @@ class SyncInventoryTask(BaseTask):
     timeout_seconds = 300
     retry_config = RetryConfig(max_attempts=3)
 
-    async def execute(
-        self,
-        pos_system: str,
-        pharmacy_id: int,
-    ) -> dict:
+    async def execute(self, **kwargs: Any) -> dict[str, Any]:
+        pos_system = cast(str, kwargs["pos_system"])
+        pharmacy_id = cast(int, kwargs["pharmacy_id"])
         """
         Sync inventory from POS
 
@@ -173,12 +169,10 @@ class SyncCustomersTask(BaseTask):
     timeout_seconds = 300
     retry_config = RetryConfig(max_attempts=3)
 
-    async def execute(
-        self,
-        pos_system: str,
-        pharmacy_id: int,
-        since: Optional[str] = None,
-    ) -> dict:
+    async def execute(self, **kwargs: Any) -> dict[str, Any]:
+        pos_system = cast(str, kwargs["pos_system"])
+        pharmacy_id = cast(int, kwargs["pharmacy_id"])
+        since = cast(Optional[str], kwargs.get("since"))
         """
         Sync customers from POS
 
@@ -216,13 +210,11 @@ class SyncSalesTask(BaseTask):
     timeout_seconds = 300
     retry_config = RetryConfig(max_attempts=3)
 
-    async def execute(
-        self,
-        pos_system: str,
-        pharmacy_id: int,
-        date_from: str,
-        date_to: str,
-    ) -> dict:
+    async def execute(self, **kwargs: Any) -> dict[str, Any]:
+        pos_system = cast(str, kwargs["pos_system"])
+        pharmacy_id = cast(int, kwargs["pharmacy_id"])
+        date_from = cast(str, kwargs["date_from"])
+        date_to = cast(str, kwargs["date_to"])
         """
         Sync sales from POS
 
