@@ -35,6 +35,15 @@ jobs:
       - run:
           name: mypy
           command: mypy --explicit-package-bases src/pharmaviyum/
+      - run:
+          name: Collect CircleCI lint diagnostics
+          when: on_fail
+          command: |
+            if [ -z "$CIRCLECI_TOKEN" ]; then
+              echo "CIRCLECI_TOKEN is not configured; skipping automatic CircleCI log collection."
+              exit 0
+            fi
+            python scripts/circleci_lint_logs.py "$CIRCLE_BUILD_NUM"
 
   unit-tests:
     docker:
