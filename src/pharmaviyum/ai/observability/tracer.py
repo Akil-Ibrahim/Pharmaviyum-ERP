@@ -16,7 +16,6 @@ from opentelemetry.trace import Span, Status, StatusCode
 
 from src.pharmaviyum.core.logging import logger
 
-
 LangSmithRunType = Literal[
     "tool", "chain", "llm", "retriever", "embedding", "prompt", "parser"
 ]
