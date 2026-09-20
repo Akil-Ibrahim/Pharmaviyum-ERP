@@ -15,7 +15,7 @@ Fields:
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, Integer, JSON, String
+from sqlalchemy import JSON, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.pharmaviyum.db.base import Base
