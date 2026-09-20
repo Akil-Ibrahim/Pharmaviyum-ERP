@@ -43,7 +43,7 @@ class OpenAISettings(BaseSettings):
 class GeminiSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="GEMINI_")
     api_key: SecretStr | None = None
-    model: str = "gemini-3.8-flash"
+    model: str = "gemini-3.5-flash"
     fast_model: str = "gemini-3.5-flash-lite"
     complex_model: str = "gemini-2.5-pro"
     embedding_model: str = "gemini-embedding-001"
