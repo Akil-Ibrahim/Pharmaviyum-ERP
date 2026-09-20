@@ -1,5 +1,7 @@
 version: 2.1
 
+# CI pipeline validation trigger
+
 jobs:
   lint:
     docker:
