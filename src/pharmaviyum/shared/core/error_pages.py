@@ -6,7 +6,9 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse
 
 
-def render_error_page(status_code: int, title: str, message: str, request: Optional[Request] = None) -> HTMLResponse:
+def render_error_page(
+    status_code: int, title: str, message: str, request: Optional[Request] = None
+) -> HTMLResponse:
     """Render a branded HTML error page."""
     html = f"""
     <!DOCTYPE html>
@@ -39,9 +41,19 @@ def render_error_page(status_code: int, title: str, message: str, request: Optio
 
 async def custom_404_handler(request: Request, exc):
     """Handle 404 Not Found errors."""
-    return render_error_page(404, "Page Not Found", "The page you're looking for doesn't exist or has been moved.", request)
+    return render_error_page(
+        404,
+        "Page Not Found",
+        "The page you're looking for doesn't exist or has been moved.",
+        request,
+    )
 
 
 async def custom_500_handler(request: Request, exc):
     """Handle 500 Internal Server Error."""
-    return render_error_page(500, "Server Error", "Something went wrong on our end. Please try again later.", request)
+    return render_error_page(
+        500,
+        "Server Error",
+        "Something went wrong on our end. Please try again later.",
+        request,
+    )
