@@ -312,7 +312,9 @@ async def _check_duplicate_dispensing(
     """Check if prescription has already been dispensed."""
     from src.pharmaviyum.models.prescription import Prescription
 
-    result = await session.execute(select(Prescription.status).where(Prescription.id == prescription_id))
+    result = await session.execute(
+        select(Prescription.status).where(Prescription.id == prescription_id)
+    )
     prescription_status = result.scalar_one_or_none()
     is_not_duplicate = prescription_status not in {"dispensed", "filled"}
     fill_count = 0 if is_not_duplicate else 1
