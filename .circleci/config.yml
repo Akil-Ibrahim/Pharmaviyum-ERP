@@ -46,7 +46,7 @@ jobs:
               echo "CIRCLECI_TOKEN is not configured; skipping automatic CircleCI log collection."
               exit 0
             fi
-            python scripts/circleci_lint_logs.py "$CIRCLE_BUILD_NUM"
+            python scripts/circleci_lint_logs.py "$CIRCLE_BUILD_NUM" || true
 
   unit-tests:
     docker:
