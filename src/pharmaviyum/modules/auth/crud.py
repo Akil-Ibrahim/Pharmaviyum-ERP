@@ -85,7 +85,9 @@ async def create_user(session: AsyncSession, user_create: UserCreate) -> User:
     return db_user
 
 
-async def update_user(session: AsyncSession, db_user: User, user_in: UserUpdate) -> User:
+async def update_user(
+    session: AsyncSession, db_user: User, user_in: UserUpdate
+) -> User:
     """
     Update user details.
 
