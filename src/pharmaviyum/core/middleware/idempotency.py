@@ -19,7 +19,7 @@ IDEMPOTENCY_TTL = 86400
 class IdempotencyMiddleware(BaseHTTPMiddleware):
     """Prevent duplicate state-changing requests during retries."""
 
-    def __init__(self, app, redis_client: aioredis.Redis = None):
+    def __init__(self, app, redis_client: aioredis.Redis | None = None):
         super().__init__(app)
         self.redis = redis_client
 
