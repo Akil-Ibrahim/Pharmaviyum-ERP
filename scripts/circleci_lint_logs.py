@@ -19,7 +19,7 @@ from typing import Any
 
 V1_BASE_URL = "https://circleci.com/api/v1.1"
 V1_PROJECT_SLUG = "github/Akil-Ibrahim/Pharmaviyum-CRM"
-USER_AGENT = "pharmaviyum-circleci-diagnostics/1.3"
+USER_AGENT = "pharmaviyum-circleci-diagnostics/1.4"
 
 
 def request_json(url: str, token: str) -> Any:
@@ -71,23 +71,23 @@ def main() -> int:
     build = request_json(build_url, token)
 
     print("=== CircleCI job ===")
-    print(f"number: {build.get('build_num')}")
-    print(f"status: {build.get('status')}")
-    print(f"started_at: {build.get('start_time')}")
-    print(f"stopped_at: {build.get('stop_time')}")
-    print(f"web_url: {build.get('build_url')}")
+    for key in ("build_num", "status", "outcome", "lifecycle", "fail_reason", "start_time", "stop_time", "build_url"):
+        print(f"{key}: {build.get(key)}")
 
-    print("\n=== Failed step output ===")
+    print("\n=== CircleCI steps ===")
     failed = False
     for step in build.get("steps", []):
         for action in step.get("actions", []):
             status = action.get("status")
-            output_url = action.get("output_url")
+            exit_code = action.get("exit_code")
+            name = step.get("name")
+            print(f"step={name!r} status={status!r} exit_code={exit_code!r}")
             if status not in {"failed", "error", "timed_out"}:
                 continue
 
             failed = True
-            print(f"\n--- {step.get('name')} / {status} ---")
+            print(f"\n--- Failed step output: {name} / {status} ---")
+            output_url = action.get("output_url")
             if not output_url:
                 print("No output URL supplied by CircleCI.")
                 continue
@@ -104,7 +104,7 @@ def main() -> int:
                     print(message, end="" if message.endswith("\n") else "\n")
 
     if not failed:
-        print("No failed step action found.")
+        print("\nNo failed step action found.")
 
     return 0
 
