@@ -82,7 +82,7 @@ class BenchmarkRunner:
         for i, result in enumerate(detailed_results):
             case = self.dataset[i]
 
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 logger.error(
                     f"Benchmark case {case.id} failed with exception: {result}"
                 )
