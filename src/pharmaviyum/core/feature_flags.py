@@ -5,7 +5,7 @@ import json
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Awaitable, Optional, cast
 
 from redis import asyncio as aioredis
 
@@ -81,7 +81,7 @@ class FeatureFlagService:
         await redis.set(
             f"feature_flag:{flag.key}", json.dumps(flag.to_dict(), ensure_ascii=False)
         )
-        await redis.sadd("feature_flags_list", flag.key)
+        await cast(Awaitable[int], redis.sadd("feature_flags_list", flag.key))
         self.cache[flag.key] = flag
         logger.info("Created feature flag", extra={"flag_key": flag.key})
         return flag
@@ -104,8 +104,8 @@ class FeatureFlagService:
 
     async def delete_flag(self, key: str) -> bool:
         redis = await self._client()
-        deleted = await redis.delete(f"feature_flag:{key}")
-        await redis.srem("feature_flags_list", key)
+        deleted = await cast(Awaitable[int], redis.delete(f"feature_flag:{key}"))
+        await cast(Awaitable[int], redis.srem("feature_flags_list", key))
         self.cache.pop(key, None)
         if deleted:
             logger.info("Deleted feature flag", extra={"flag_key": key})
@@ -113,7 +113,7 @@ class FeatureFlagService:
 
     async def list_flags(self) -> list[FeatureFlag]:
         redis = await self._client()
-        keys = await redis.smembers("feature_flags_list")
+        keys = await cast(Awaitable[set[Any]], redis.smembers("feature_flags_list"))
         flags = []
         for key in keys:
             flag = await self.get_flag(key)
@@ -188,7 +188,7 @@ class FeatureFlagService:
     async def record_check(self, key: str, enabled: bool) -> None:
         redis = await self._client()
         suffix = "enabled" if enabled else "disabled"
-        await redis.incr(f"flag_stats:{key}:{suffix}")
+        await cast(Awaitable[int], redis.incr(f"flag_stats:{key}:{suffix}"))
 
     def invalidate_cache(self, key: Optional[str] = None) -> None:
         if key:
