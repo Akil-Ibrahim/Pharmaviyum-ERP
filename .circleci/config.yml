@@ -50,6 +50,7 @@ jobs:
       - store_artifacts:
           path: ci-diagnostics
           destination: circleci-diagnostics
+          when: on_fail
 
   unit-tests:
     docker:
