@@ -11,7 +11,6 @@ from typing import Any
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.types import ASGIApp
 
 from src.pharmaviyum.core.logging import get_logger
 
@@ -37,7 +36,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def add_logging_middleware(app: ASGIApp) -> None:
+def add_logging_middleware(app: Any) -> None:
     """Register request logging middleware on the application."""
     app.add_middleware(LoggingMiddleware)
 
