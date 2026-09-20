@@ -85,8 +85,18 @@ class GeminiEmbeddingsProvider:
             output_dimensionality=dimensions,
         )
 
+    @staticmethod
+    def _normalize(embedding: list[float]) -> list[float]:
+        """Normalize reduced Gemini 001 vectors for cosine distance."""
+        vector = np.asarray(embedding, dtype=np.float32)
+        norm = float(np.linalg.norm(vector))
+        if norm == 0.0:
+            raise ValueError("Gemini embedding returned a zero vector")
+        return (vector / norm).tolist()
+
     async def embed(self, text: str) -> list[float]:
-        return await self._client.aembed_query(text)
+        embedding = await self._client.aembed_query(text)
+        return self._normalize(embedding)
 
     async def embed_batch(
         self, texts: list[str], batch_size: int = 32
@@ -94,9 +104,10 @@ class GeminiEmbeddingsProvider:
         size = max(1, min(batch_size, self._batch_size))
         results: list[list[float]] = []
         for i in range(0, len(texts), size):
-            results.extend(
-                await self._client.aembed_documents(texts[i : i + size])
+            embeddings = await self._client.aembed_documents(
+                texts[i : i + size]
             )
+            results.extend(self._normalize(embedding) for embedding in embeddings)
         return results
 
     @property
