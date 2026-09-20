@@ -13,40 +13,44 @@ Fields:
 """
 
 from datetime import datetime
+from typing import Any
 
-from sqlalchemy import JSON, Column, DateTime, Integer, String, Text
+from sqlalchemy import DateTime, Integer, JSON, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.pharmaviyum.db.base import Base
 
 
 class AuditLog(Base):
-	__tablename__ = "audit_logs"
+    __tablename__ = "audit_logs"
 
-	id = Column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
-	# Actor who performed the action (can be null for system events)
-	actor_id = Column(Integer, nullable=True, index=True)
-	actor_type = Column(String(50), nullable=True)
+    # Actor who performed the action (can be null for system events)
+    actor_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    actor_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
-	# Action metadata
-	action = Column(String(100), nullable=False, index=True)
-	entity = Column(String(100), nullable=False, index=True)
-	entity_id = Column(Integer, nullable=True, index=True)
+    # Action metadata
+    action: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    entity: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
 
-	# Optional structured diff or payload describing the change
-	changes = Column(JSON, nullable=True)
+    # Optional structured diff or payload describing the change
+    changes: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
 
-	# Request metadata useful for auditing and security
-	ip_address = Column(String(45), nullable=True)
-	user_agent = Column(String(512), nullable=True)
+    # Request metadata useful for auditing and security
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
-	created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )
 
-	def __repr__(self) -> str:  # pragma: no cover - simple debug helper
-		return (
-			f"<AuditLog id={self.id} action={self.action} entity={self.entity} "
-			f"entity_id={self.entity_id} actor_id={self.actor_id} created_at={self.created_at}>"
-		)
+    def __repr__(self) -> str:  # pragma: no cover - simple debug helper
+        return (
+            f"<AuditLog id={self.id} action={self.action} entity={self.entity} "
+            f"entity_id={self.entity_id} actor_id={self.actor_id} created_at={self.created_at}>"
+        )
 
 
 __all__ = ["AuditLog"]
