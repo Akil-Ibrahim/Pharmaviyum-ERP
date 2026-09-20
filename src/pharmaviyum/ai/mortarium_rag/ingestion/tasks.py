@@ -332,7 +332,7 @@ def ingest_batch(
                 results.append(
                     {"source": source, "task_id": task.id, "status": "queued"}
                 )
-            except Exception as exc:
+            except Exception:
                 failed += 1
                 loop.run_until_complete(tracker.record_batch_result(job_id, False))
                 results.append(

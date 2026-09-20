@@ -8,15 +8,13 @@ Best practice:
 """
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from ...shared.core.database import Base
-from ...models.user import User
-
 UserRole = Literal["patient", "pharmacist", "admin", "system"]
 
 
