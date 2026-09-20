@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from contextlib import contextmanager
-from typing import Any, Iterator
+from typing import Any, Iterator, Literal
 
 from langsmith import Client as LangSmithClient
 from opentelemetry import trace
@@ -116,7 +116,7 @@ class ObservabilityTracer:
         self,
         run_name: str,
         inputs: dict[str, Any],
-        run_type: str = "llm",
+        run_type: LangSmithRunType = "llm",
         outputs: dict[str, Any] | None = None,
         metadata: dict[str, Any] | None = None,
         tags: list[str] | None = None,
@@ -135,7 +135,8 @@ class ObservabilityTracer:
                 tags=tags or [],
                 session_id=session_id,
             )
-            return str(run.id)
+            run_id = getattr(run, "id", None)
+            return str(run_id) if run_id is not None else None
         except Exception as exc:
             logger.error("Failed to log to LangSmith: %s", exc, exc_info=True)
             return None
@@ -174,7 +175,7 @@ class ObservabilityTracer:
         try:
             self.langsmith_client.create_run(
                 name="agent_evaluation",
-                run_type="evaluator",
+                run_type="chain",
                 inputs=self._payload({"query": query}),
                 outputs=self._payload({"answer": answer, **evaluation_result}),
                 tags=["evaluation", "llm_as_judge"],
