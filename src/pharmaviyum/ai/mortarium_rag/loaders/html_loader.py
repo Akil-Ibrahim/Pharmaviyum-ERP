@@ -90,7 +90,9 @@ class HTMLLoader:
             from readability import Document as ReadabilityDoc
 
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, timeout=aiohttp.ClientTimeout(total=30), allow_redirects=False) as resp:
+                async with session.get(
+                    url, timeout=aiohttp.ClientTimeout(total=30), allow_redirects=False
+                ) as resp:
                     if 300 <= resp.status < 400:
                         logger.warning("Redirect rejected for URL %s", url)
                         return "", {}
