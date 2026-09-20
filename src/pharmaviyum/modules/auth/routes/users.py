@@ -41,7 +41,9 @@ router = APIRouter(prefix="/users", tags=["users"])
     dependencies=[Depends(get_current_active_superuser)],
     response_model=UsersPublic,
 )
-async def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> UsersPublic:
+async def read_users(
+    session: SessionDep, skip: int = 0, limit: int = 100
+) -> UsersPublic:
     """Retrieve all users (superuser only)."""
     # Count total
     count_statement = select(func.count()).select_from(crud.User)
