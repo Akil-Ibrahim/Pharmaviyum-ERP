@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Fetch CircleCI job/step output for CI diagnostics.
+"""Fetch CircleCI job logs for CI diagnostics.
 
 Usage:
   CIRCLECI_TOKEN=... python scripts/circleci_lint_logs.py 2088
 
-The token is read from CIRCLECI_TOKEN or CIRCLECI_CLI_TOKEN.
-It is never printed. For CircleCI Cloud, the project slug is:
-  gh/Akil-Ibrahim/Pharmaviyum-CRM
+The token is read from CIRCLECI_TOKEN or CIRCLECI_CLI_TOKEN and is never
+printed or committed. The script prints failed step output when available.
 """
 from __future__ import annotations
 
@@ -19,15 +18,16 @@ from typing import Any
 
 BASE_URL = "https://circleci.com/api/v2"
 PROJECT_SLUG = "gh/Akil-Ibrahim/Pharmaviyum-CRM"
+USER_AGENT = "pharmaviyum-circleci-diagnostics/1.0"
 
 
-def get_json(path: str, token: str) -> Any:
+def request_json(url: str, token: str) -> Any:
     request = urllib.request.Request(
-        BASE_URL + path,
+        url,
         headers={
             "Accept": "application/json",
             "Circle-Token": token,
-            "User-Agent": "pharmaviyum-circleci-diagnostics/1.0",
+            "User-Agent": USER_AGENT,
         },
     )
     try:
@@ -36,6 +36,11 @@ def get_json(path: str, token: str) -> Any:
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"CircleCI API {exc.code}: {body}") from exc
+
+
+def fetch_output(output_url: str, token: str) -> list[dict[str, Any]]:
+    data = request_json(output_url, token)
+    return data if isinstance(data, list) else []
 
 
 def main() -> int:
@@ -52,8 +57,11 @@ def main() -> int:
         return 2
 
     job_number = sys.argv[1]
-    job = get_json(f"/project/{PROJECT_SLUG}/job/{job_number}", token)
-    steps = get_json(f"/project/{PROJECT_SLUG}/{job_number}/steps", token)
+    job_url = f"{BASE_URL}/project/{PROJECT_SLUG}/job/{job_number}"
+    steps_url = f"{BASE_URL}/project/{PROJECT_SLUG}/{job_number}/steps"
+
+    job = request_json(job_url, token)
+    steps = request_json(steps_url, token)
 
     print("=== CircleCI job ===")
     print(f"number: {job.get('number')}")
@@ -63,14 +71,34 @@ def main() -> int:
     print(f"stopped_at: {job.get('stopped_at')}")
     print(f"web_url: {job.get('web_url')}")
 
-    print("\n=== Step output URLs ===")
+    print("\n=== Failed step output ===")
+    failed = False
     for step in steps.get("steps", []):
-        print(f"\n[{step.get('name')}]")
         for action in step.get("actions", []):
-            print(
-                f"  status={action.get('status')} "
-                f"output_url={action.get('output_url')}"
-            )
+            status = action.get("status")
+            output_url = action.get("output_url")
+            if status not in {"failed", "error", "timed_out"}:
+                continue
+
+            failed = True
+            print(f"\n--- {step.get('name')} / {status} ---")
+            if not output_url:
+                print("No output URL supplied by CircleCI.")
+                continue
+
+            try:
+                output = fetch_output(output_url, token)
+            except RuntimeError as exc:
+                print(f"Could not fetch output: {exc}")
+                continue
+
+            for chunk in output:
+                message = chunk.get("message")
+                if message:
+                    print(message, end="" if message.endswith("\n") else "\n")
+
+    if not failed:
+        print("No failed step action found.")
 
     return 0
 
