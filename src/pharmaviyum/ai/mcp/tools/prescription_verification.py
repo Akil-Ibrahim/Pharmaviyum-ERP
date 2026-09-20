@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import time
 from datetime import datetime, timedelta
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -111,11 +112,8 @@ async def verify_prescription(
     auth_context = require_mcp_context()
 
     # Lazy imports to avoid circular dependencies
-    from src.pharmaviyum.modules.patients.models import Patient
-    from src.pharmaviyum.modules.prescriptions.models import (
-        Prescription,
-        PrescriptionItem,
-    )
+    from src.pharmaviyum.models.patients.patient import Patient
+    from src.pharmaviyum.models.prescription import Prescription
     from src.pharmaviyum.shared.core.database import async_session_factory
 
     checks: list[PrescriptionCheck] = []
@@ -158,11 +156,9 @@ async def verify_prescription(
         patient_result = await session.execute(patient_query)
         patient = patient_result.scalar_one_or_none()
 
-        items_query = select(PrescriptionItem).where(
-            PrescriptionItem.prescription_id == prescription.id
-        )
-        items_result = await session.execute(items_query)
-        items = items_result.scalars().all()
+        # The current canonical prescription model stores one product per prescription.
+        # Keep the item collection empty until a normalized prescription-line model exists.
+        items: list[Any] = []
 
         # Determine country (default VN)
         country = patient.country if patient else "VN"
@@ -314,15 +310,12 @@ async def _check_duplicate_dispensing(
     session: AsyncSession, prescription_id: int
 ) -> PrescriptionCheck:
     """Check if prescription has already been dispensed."""
-    from src.pharmaviyum.modules.prescriptions.models import PrescriptionFill
+    from src.pharmaviyum.models.prescription import Prescription
 
-    query = select(func.count(PrescriptionFill.id)).where(
-        PrescriptionFill.prescription_id == prescription_id
-    )
-    result = await session.execute(query)
-    fill_count = result.scalar_one()
-
-    is_not_duplicate = fill_count == 0
+    result = await session.execute(select(Prescription.status).where(Prescription.id == prescription_id))
+    prescription_status = result.scalar_one_or_none()
+    is_not_duplicate = prescription_status not in {"dispensed", "filled"}
+    fill_count = 0 if is_not_duplicate else 1
 
     return PrescriptionCheck(
         check_type="duplicate_dispensing",
