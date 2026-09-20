@@ -53,12 +53,18 @@ class DeadLetterQueue:
             "failed_at": datetime.now(timezone.utc).isoformat(),
             "status": "failed",
         }
-        await cast(Awaitable[int], redis.hset(
-            self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
-        ))
-        await cast(Awaitable[int], redis.zadd(
-            self.queue_key, {entry_id: datetime.now(timezone.utc).timestamp()}
-        ))
+        await cast(
+            Awaitable[int],
+            redis.hset(
+                self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
+            ),
+        )
+        await cast(
+            Awaitable[int],
+            redis.zadd(
+                self.queue_key, {entry_id: datetime.now(timezone.utc).timestamp()}
+            ),
+        )
         await cast(Awaitable[bool], redis.expire(self.queue_key, DEAD_LETTER_TTL))
         await cast(Awaitable[bool], redis.expire(self.index_key, DEAD_LETTER_TTL))
         logger.error(
@@ -74,7 +80,10 @@ class DeadLetterQueue:
         task_name: Optional[str] = None,
     ) -> list[dict]:
         redis = await self._client()
-        entry_ids = await cast(Awaitable[list[Any]], redis.zrevrange(self.queue_key, skip, skip + limit - 1))
+        entry_ids = await cast(
+            Awaitable[list[Any]],
+            redis.zrevrange(self.queue_key, skip, skip + limit - 1),
+        )
         if not entry_ids:
             return []
         entries = []
@@ -101,9 +110,12 @@ class DeadLetterQueue:
         entry["status"] = "retried"
         entry["retried_at"] = datetime.now(timezone.utc).isoformat()
         redis = await self._client()
-        await cast(Awaitable[int], redis.hset(
-            self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
-        ))
+        await cast(
+            Awaitable[int],
+            redis.hset(
+                self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
+            ),
+        )
         return True
 
     async def mark_discarded(self, entry_id: str) -> bool:
@@ -113,9 +125,12 @@ class DeadLetterQueue:
         entry["status"] = "discarded"
         entry["discarded_at"] = datetime.now(timezone.utc).isoformat()
         redis = await self._client()
-        await cast(Awaitable[int], redis.hset(
-            self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
-        ))
+        await cast(
+            Awaitable[int],
+            redis.hset(
+                self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
+            ),
+        )
         return True
 
     async def delete_entry(self, entry_id: str) -> bool:
@@ -130,7 +145,10 @@ class DeadLetterQueue:
     async def clear_old(self, days: int = 7) -> int:
         redis = await self._client()
         cutoff = datetime.now(timezone.utc).timestamp() - (days * 24 * 3600)
-        old_entries = await cast(\n            Awaitable[list[Any]],\n            redis.zrangebyscore(self.queue_key, 0, cutoff),\n        )
+        old_entries = await cast(
+            Awaitable[list[Any]],
+            redis.zrangebyscore(self.queue_key, 0, cutoff),
+        )
         if not old_entries:
             return 0
         for entry_id in old_entries:
