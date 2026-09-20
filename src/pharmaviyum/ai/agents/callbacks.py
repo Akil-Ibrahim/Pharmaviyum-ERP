@@ -9,7 +9,7 @@ Best practice 2026:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any\nfrom uuid import UUID
 
 from langchain_core.callbacks import AsyncCallbackHandler, CallbackManager
 
