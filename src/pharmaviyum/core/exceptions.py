@@ -36,7 +36,7 @@ class PharmaviyumException(Exception):
 class NotFoundException(PharmaviyumException):
     """Resource not found exception"""
 
-    def __init__(self, resource: str, id: int = None):
+    def __init__(self, resource: str, id: int | None = None):
         """Initialize not found exception"""
         message = f"{resource} not found"
         if id:
