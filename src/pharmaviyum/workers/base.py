@@ -140,9 +140,7 @@ class BaseTask:
                 )
                 await asyncio.sleep(delay)
 
-        duration_ms = (
-            datetime.now(timezone.utc) - start_time
-        ).total_seconds() * 1000
+        duration_ms = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
         logger.error(
             f"Task {self.name} failed after {self.retry_config.max_attempts} attempts",
             extra={
