@@ -6,8 +6,6 @@ import os
 from contextlib import contextmanager
 from typing import Any, Iterator, Literal
 
-LangSmithRunType = Literal["tool", "chain", "llm", "retriever", "embedding", "prompt", "parser"]
-
 from langsmith import Client as LangSmithClient
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -17,6 +15,9 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, Status, StatusCode
 
 from src.pharmaviyum.core.logging import logger
+
+
+LangSmithRunType = Literal["tool", "chain", "llm", "retriever", "embedding", "prompt", "parser"]
 
 
 class ObservabilityTracer:
