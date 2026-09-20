@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.pharmaviyum.db.base import Base
 
@@ -9,10 +9,12 @@ from src.pharmaviyum.db.base import Base
 class Order(Base):
     __tablename__ = "orders"
 
-    id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False, index=True)
-    total_amount = Column(Float, default=0.0)
-    status = Column(String(50), default="pending")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    patient_id: Mapped[int] = mapped_column(
+        ForeignKey("patients.id"), nullable=False, index=True
+    )
+    total_amount: Mapped[float] = mapped_column(Float, default=0.0)
+    status: Mapped[str] = mapped_column(String(50), default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    patient = relationship("Patient", backref="orders")
+    patient: Mapped["Patient"] = relationship("Patient", backref="orders")
