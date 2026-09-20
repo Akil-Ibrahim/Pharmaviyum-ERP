@@ -31,9 +31,9 @@ class PatientPurchase(Base):
     prescription_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     purchased_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
 
-    patient = relationship("Patient", back_populates="purchases")
-    product = relationship("Product")
-    batch = relationship("ProductBatch")
+    patient: Mapped["Patient"] = relationship("Patient", back_populates="purchases")
+    product: Mapped["Product"] = relationship("Product")
+    batch: Mapped["ProductBatch"] = relationship("ProductBatch")
 
     @property
     def product_name(self) -> str | None:
