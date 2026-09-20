@@ -152,7 +152,7 @@ class PIIRedactor:
         Redact PII from content.
         Returns: (redacted_content, list_of_redacted_types)
         """
-        redacted_types = []
+        redacted_types: list[str] = []
         redacted_content = content
 
         for pii_type, pattern in cls.PATTERNS.items():
