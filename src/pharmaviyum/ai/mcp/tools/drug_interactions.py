@@ -175,7 +175,9 @@ def aggregate_severity(interactions: list[DrugInteraction]) -> Severity:
     """Get overall severity (highest among all interactions)."""
     if not interactions:
         return "none"
-    return cast(Severity, max(interactions, key=lambda i: SEVERITY_ORDER[i.severity]).severity)
+    return cast(
+        Severity, max(interactions, key=lambda i: SEVERITY_ORDER[i.severity]).severity
+    )
 
 
 # ============================================================================
