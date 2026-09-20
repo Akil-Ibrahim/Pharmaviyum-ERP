@@ -121,7 +121,7 @@ function MetricCard({ label, value }: { label: string; value: number }) {
 }
 
 function formatLabel(value: string) {
-  return value.replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase())
+  return value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
 }
 
 function formatCell(value: unknown, column: string) {
