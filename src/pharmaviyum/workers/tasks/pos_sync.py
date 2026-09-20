@@ -1,4 +1,4 @@
-""" 
+"""
 POS synchronization tasks
 Best practice 2026: Bidirectional sync with KiotViet/Sapo/Viettel PMS
 """
