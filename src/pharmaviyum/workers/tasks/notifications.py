@@ -3,7 +3,7 @@ Notification tasks for patient communication
 Best practice 2026: Multi-channel (Zalo/LINE/WhatsApp) with templates
 """
 
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from src.pharmaviyum.core.logging import get_logger
 from src.pharmaviyum.workers.base import BaseTask, RetryConfig
@@ -30,15 +30,13 @@ class SendPatientNotificationTask(BaseTask):
     timeout_seconds = 30
     retry_config = RetryConfig(max_attempts=3, base_delay_seconds=2.0)
 
-    async def execute(
-        self,
-        patient_id: int,
-        pharmacy_id: int,
-        template_name: str,
-        template_data: dict[str, Any],
-        channel: Optional[str] = None,
-        language: str = "vi",
-    ) -> dict:
+    async def execute(self, **kwargs: Any) -> dict[str, Any]:
+        patient_id = cast(int, kwargs["patient_id"])
+        pharmacy_id = cast(int, kwargs["pharmacy_id"])
+        template_name = cast(str, kwargs["template_name"])
+        template_data = cast(dict[str, Any], kwargs["template_data"])
+        channel = cast(Optional[str], kwargs.get("channel"))
+        language = cast(str, kwargs.get("language", "vi"))
         """
         Send notification to patient
 
