@@ -1,4 +1,4 @@
-"""
+""" 
 POS synchronization tasks
 Best practice 2026: Bidirectional sync with KiotViet/Sapo/Viettel PMS
 """
@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 
 
 class SyncProductsTask(BaseTask):
-    """Sync products from POS to CRM."""
+    """Sync products from POS."""
 
     name = "sync_products"
     queue = TaskQueue.POS_SYNC.value
@@ -71,9 +71,7 @@ class SyncProductsTask(BaseTask):
                         pos_system=pos_system,
                         pharmacy_id=pharmacy_id,
                         **{
-                            k: v
-                            for k, v in product_data.items()
-                            if hasattr(Product, k)
+                            k: v for k, v in product_data.items() if hasattr(Product, k)
                         },
                         synced_at=datetime.now(timezone.utc),
                     )
@@ -146,7 +144,11 @@ class SyncCustomersTask(BaseTask):
 
         logger.info(
             "Starting customer sync",
-            extra={"pos_system": pos_system, "pharmacy_id": pharmacy_id, "since": since},
+            extra={
+                "pos_system": pos_system,
+                "pharmacy_id": pharmacy_id,
+                "since": since,
+            },
         )
         return {
             "pos_system": pos_system,
