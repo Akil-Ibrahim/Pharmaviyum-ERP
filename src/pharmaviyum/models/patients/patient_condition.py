@@ -27,4 +27,4 @@ class PatientCondition(Base):
         DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
-    patient = relationship("Patient", back_populates="conditions")
+    patient: Mapped["Patient"] = relationship("Patient", back_populates="conditions")
