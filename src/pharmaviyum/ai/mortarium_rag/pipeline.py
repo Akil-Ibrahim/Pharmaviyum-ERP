@@ -91,12 +91,7 @@ class RAGPipeline:
         self, question: str, context: QueryContext
     ) -> AsyncIterator[str]:
         query_embedding = await self.embeddings.embed(question)
-        retrieved = await self.vector_store.hybrid_search(
-            query=question,
-            query_embedding=query_embedding,
-            top_k=10,
-            filters=self._build_filters(context),
-        )
+        retrieved = await self._hybrid_search_scoped(question, query_embedding, context)
         if not retrieved:
             yield "I couldn't find relevant information for your question."
             return
