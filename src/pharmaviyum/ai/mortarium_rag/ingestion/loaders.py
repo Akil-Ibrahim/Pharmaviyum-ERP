@@ -117,7 +117,7 @@ class DocumentLoader:
         try:
             from docx import Document as DocxDocument
 
-            doc = DocxDocument(file_path)
+            doc = DocxDocument(str(file_path))
             text_parts: list[str] = [
                 para.text for para in doc.paragraphs if para.text.strip()
             ]
