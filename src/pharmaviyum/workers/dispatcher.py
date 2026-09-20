@@ -92,12 +92,14 @@ class TaskDispatcher:
         )
         return task_id
 
-    async def get_task_status(self, task_id: str) -> Optional[dict]:
+    async def get_task_status(self, task_id: str) -> dict[str, Any] | None:
         """Get task status."""
         redis = await self._client()
         payload = await redis.get(f"task:{task_id}")
         if payload:
-            return json.loads(payload)
+            result = json.loads(payload)
+            if isinstance(result, dict):
+                return result
         return None
 
     async def cancel_task(self, task_id: str) -> bool:
@@ -108,6 +110,9 @@ class TaskDispatcher:
             return False
 
         queue = payload.get("queue")
+        if not isinstance(queue, str):
+            return False
+
         queue_key = f"queue:{queue}"
         removed = await redis.zrem(queue_key, task_id)
 
