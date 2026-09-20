@@ -6,7 +6,6 @@ Revises: 20260915_pharmacy_domain
 
 from alembic import op
 
-
 revision = "2026_09_16_000001"
 down_revision = "20260915_pharmacy_domain"
 branch_labels = None

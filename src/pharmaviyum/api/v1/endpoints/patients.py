@@ -34,8 +34,12 @@ async def create_patient(
     pharmacy_id: int | None = Query(None, gt=0),
 ):
     try:
-        scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
-        patient = await service.create_patient(data=data, created_by=None, pharmacy_id=scope)
+        scope = await resolve_pharmacy_scope(
+            pharmacy_id, current_user, service.repository.session
+        )
+        patient = await service.create_patient(
+            data=data, created_by=None, pharmacy_id=scope
+        )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return PatientResponse.model_validate(patient)
@@ -54,7 +58,9 @@ async def list_patients(
     current_user=Depends(get_current_active_user),
     pharmacy_id: int | None = Query(None, gt=0),
 ):
-    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+    scope = await resolve_pharmacy_scope(
+        pharmacy_id, current_user, service.repository.session
+    )
     patients, _ = await service.list_patients(
         query_text=search,
         city=city,
@@ -74,7 +80,9 @@ async def get_patient_statistics(
     current_user=Depends(get_current_active_user),
     pharmacy_id: int | None = Query(None, gt=0),
 ):
-    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+    scope = await resolve_pharmacy_scope(
+        pharmacy_id, current_user, service.repository.session
+    )
     return await service.get_statistics(pharmacy_id=scope)
 
 
@@ -85,7 +93,9 @@ async def get_patient_by_phone(
     current_user=Depends(get_current_active_user),
     pharmacy_id: int | None = Query(None, gt=0),
 ):
-    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+    scope = await resolve_pharmacy_scope(
+        pharmacy_id, current_user, service.repository.session
+    )
     patient = await service.get_patient_by_phone(phone, pharmacy_id=scope)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -99,7 +109,9 @@ async def get_patient(
     current_user=Depends(get_current_active_user),
     pharmacy_id: int | None = Query(None, gt=0),
 ):
-    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+    scope = await resolve_pharmacy_scope(
+        pharmacy_id, current_user, service.repository.session
+    )
     patient = await service.get_patient(patient_id, pharmacy_id=scope)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -113,7 +125,9 @@ async def get_patient_ai_profile(
     current_user=Depends(get_current_active_user),
     pharmacy_id: int | None = Query(None, gt=0),
 ):
-    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+    scope = await resolve_pharmacy_scope(
+        pharmacy_id, current_user, service.repository.session
+    )
     profile = await service.get_ai_profile(patient_id, pharmacy_id=scope)
     if not profile:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -129,7 +143,9 @@ async def update_patient(
     pharmacy_id: int | None = Query(None, gt=0),
 ):
     try:
-        scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+        scope = await resolve_pharmacy_scope(
+            pharmacy_id, current_user, service.repository.session
+        )
         patient = await service.update_patient(
             id=patient_id, data=data, updated_by=None, pharmacy_id=scope
         )
@@ -147,7 +163,9 @@ async def delete_patient(
     current_user=Depends(get_current_active_superuser),
     pharmacy_id: int | None = Query(None, gt=0),
 ):
-    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+    scope = await resolve_pharmacy_scope(
+        pharmacy_id, current_user, service.repository.session
+    )
     deleted = await service.delete_patient(
         id=patient_id, deleted_by=None, hard_delete=False, pharmacy_id=scope
     )
@@ -159,13 +177,20 @@ async def delete_patient(
 @router.post("/{patient_id}/visit", response_model=PatientResponse)
 async def record_visit(
     patient_id: int,
-    purchase_amount: float = Query(0.0, ge=0, deprecated=True, description="Deprecated: purchases must be recorded through Orders."),
+    purchase_amount: float = Query(
+        0.0,
+        ge=0,
+        deprecated=True,
+        description="Deprecated: purchases must be recorded through Orders.",
+    ),
     service: PatientService = Depends(get_patient_service),
     current_user=Depends(get_current_active_user),
     pharmacy_id: int | None = Query(None, gt=0),
 ):
     del purchase_amount
-    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, service.repository.session)
+    scope = await resolve_pharmacy_scope(
+        pharmacy_id, current_user, service.repository.session
+    )
     patient = await service.record_visit(id=patient_id, pharmacy_id=scope)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")

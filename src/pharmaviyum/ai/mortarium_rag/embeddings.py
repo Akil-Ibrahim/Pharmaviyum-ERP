@@ -104,9 +104,7 @@ class GeminiEmbeddingsProvider:
         size = max(1, min(batch_size, self._batch_size))
         results: list[list[float]] = []
         for i in range(0, len(texts), size):
-            embeddings = await self._client.aembed_documents(
-                texts[i : i + size]
-            )
+            embeddings = await self._client.aembed_documents(texts[i : i + size])
             results.extend(self._normalize(embedding) for embedding in embeddings)
         return results
 

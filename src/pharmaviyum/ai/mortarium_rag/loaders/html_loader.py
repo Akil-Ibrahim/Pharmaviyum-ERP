@@ -51,7 +51,9 @@ class HTMLLoader:
             raise ValueError("Only http(s) URLs with a hostname are allowed")
 
         hostname = parsed.hostname.rstrip(".").lower()
-        if hostname in {"localhost", "localhost.localdomain"} or hostname.endswith(".localhost"):
+        if hostname in {"localhost", "localhost.localdomain"} or hostname.endswith(
+            ".localhost"
+        ):
             raise ValueError("Localhost URLs are not allowed")
 
         try:
@@ -59,7 +61,9 @@ class HTMLLoader:
             addresses = [literal]
         except ValueError:
             infos = await asyncio.to_thread(
-                socket.getaddrinfo, hostname, parsed.port or (443 if parsed.scheme == "https" else 80),
+                socket.getaddrinfo,
+                hostname,
+                parsed.port or (443 if parsed.scheme == "https" else 80),
                 type=socket.SOCK_STREAM,
             )
             addresses = [ipaddress.ip_address(info[4][0]) for info in infos]
@@ -73,7 +77,9 @@ class HTMLLoader:
             or address.is_unspecified
             for address in addresses
         ):
-            raise ValueError("URLs resolving to private or internal networks are not allowed")
+            raise ValueError(
+                "URLs resolving to private or internal networks are not allowed"
+            )
 
     async def _load_url(self, url: str, config: LoaderConfig) -> tuple[str, dict]:
         """Fetch and parse HTML from a validated public URL."""

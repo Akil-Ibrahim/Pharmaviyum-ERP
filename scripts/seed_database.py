@@ -38,76 +38,209 @@ CUSTOMERS = [
 # Real medicine/product names and package characteristics are based on public
 # international/US labeling examples. Batch numbers and barcodes are synthetic.
 PRODUCT_CATALOG = [
-    dict(name="Metformin Hydrochloride 500 mg", sku="DEMO-MET-500-100",
-         dosage_strength="500 mg", dosage_form="film-coated tablet", units_per_pack=100,
-         package_type="bottle", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Aurobindo Pharma", inn_name="Metformin", atc_code="A10BA02",
-         regulatory_id="NDC 59651-854-01", price=8.50, rx=True),
-    dict(name="Amlodipine 5 mg", sku="DEMO-AML-5-30",
-         dosage_strength="5 mg", dosage_form="tablet", units_per_pack=30,
-         package_type="blister", blisters_per_pack=3, units_per_blister=10,
-         manufacturer="Demo international manufacturer", inn_name="Amlodipine",
-         atc_code="C08CA01", price=6.90, rx=True),
-    dict(name="Atorvastatin 20 mg", sku="DEMO-ATO-20-30",
-         dosage_strength="20 mg", dosage_form="film-coated tablet", units_per_pack=30,
-         package_type="blister", blisters_per_pack=3, units_per_blister=10,
-         manufacturer="Demo international manufacturer", inn_name="Atorvastatin",
-         atc_code="C10AA05", price=9.80, rx=True),
-    dict(name="Ibuprofen 200 mg", sku="DEMO-IBU-200-100",
-         dosage_strength="200 mg", dosage_form="film-coated tablet", units_per_pack=100,
-         package_type="bottle", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="HyVee", inn_name="Ibuprofen", atc_code="M01AE01",
-         price=5.10, rx=False),
-    dict(name="Paracetamol 500 mg", sku="DEMO-PAR-500-100",
-         dosage_strength="500 mg", dosage_form="tablet", units_per_pack=100,
-         package_type="bottle", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo international manufacturer", inn_name="Paracetamol",
-         atc_code="N02BE01", price=4.20, rx=False),
-    dict(name="Cetirizine 10 mg", sku="DEMO-CET-10-30",
-         dosage_strength="10 mg", dosage_form="tablet", units_per_pack=30,
-         package_type="blister", blisters_per_pack=3, units_per_blister=10,
-         manufacturer="Demo international manufacturer", inn_name="Cetirizine",
-         atc_code="R06AE07", price=6.30, rx=False),
-    dict(name="Cholecalciferol (Vitamin D3) 1000 IU", sku="DEMO-VITD3-1000-100",
-         dosage_strength="1000 IU", dosage_form="tablet", units_per_pack=100,
-         package_type="bottle", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo supplement manufacturer", inn_name="Cholecalciferol",
-         price=11.50, rx=False),
-    dict(name="Magnesium 250 mg", sku="DEMO-MAG-250-100",
-         dosage_strength="250 mg", dosage_form="tablet", units_per_pack=100,
-         package_type="bottle", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo supplement manufacturer", inn_name="Magnesium",
-         price=12.90, rx=False),
-    dict(name="Facial Moisturizer 50 ml", sku="DEMO-COS-MOIST-50",
-         dosage_strength=None, dosage_form="cream", units_per_pack=1,
-         package_type="tube", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo skincare manufacturer", inn_name=None,
-         price=19.90, rx=False),
-    dict(name="Gentle Facial Cleanser 200 ml", sku="DEMO-COS-CLEAN-200",
-         dosage_strength=None, dosage_form="cleanser", units_per_pack=1,
-         package_type="bottle", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo skincare manufacturer", inn_name=None,
-         price=13.50, rx=False),
-    dict(name="Sunscreen SPF 50 50 ml", sku="DEMO-COS-SPF50-50",
-         dosage_strength="SPF 50", dosage_form="cream", units_per_pack=1,
-         package_type="tube", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo skincare manufacturer", inn_name=None,
-         price=22.00, rx=False),
-    dict(name="Blood Pressure Monitor", sku="DEMO-DEVICE-BP-1",
-         dosage_strength=None, dosage_form="electronic device", units_per_pack=1,
-         package_type="box", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo medical device manufacturer", inn_name=None,
-         price=39.90, rx=False),
-    dict(name="Digital Thermometer", sku="DEMO-DEVICE-TEMP-1",
-         dosage_strength=None, dosage_form="electronic device", units_per_pack=1,
-         package_type="box", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo medical device manufacturer", inn_name=None,
-         price=12.00, rx=False),
-    dict(name="Elastic Support Bandage", sku="DEMO-SUPPLY-BANDAGE-1",
-         dosage_strength=None, dosage_form="medical supply", units_per_pack=1,
-         package_type="roll", blisters_per_pack=0, units_per_blister=0,
-         manufacturer="Demo medical supply manufacturer", inn_name=None,
-         price=6.50, rx=False),
+    dict(
+        name="Metformin Hydrochloride 500 mg",
+        sku="DEMO-MET-500-100",
+        dosage_strength="500 mg",
+        dosage_form="film-coated tablet",
+        units_per_pack=100,
+        package_type="bottle",
+        blisters_per_pack=0,
+        units_per_blister=0,
+        manufacturer="Aurobindo Pharma",
+        inn_name="Metformin",
+        atc_code="A10BA02",
+        regulatory_id="NDC 59651-854-01",
+        price=8.50,
+        rx=True,
+    ),
+    dict(
+        name="Amlodipine 5 mg",
+        sku="DEMO-AML-5-30",
+        dosage_strength="5 mg",
+        dosage_form="tablet",
+        units_per_pack=30,
+        package_type="blister",
+        blisters_per_pack=3,
+        units_per_blister=10,
+        manufacturer="Demo international manufacturer",
+        inn_name="Amlodipine",
+        atc_code="C08CA01",
+        price=6.90,
+        rx=True,
+    ),
+    dict(
+        name="Atorvastatin 20 mg",
+        sku="DEMO-ATO-20-30",
+        dosage_strength="20 mg",
+        dosage_form="film-coated tablet",
+        units_per_pack=30,
+        package_type="blister",
+        blisters_per_pack=3,
+        units_per_blister=10,
+        manufacturer="Demo international manufacturer",
+        inn_name="Atorvastatin",
+        atc_code="C10AA05",
+        price=9.80,
+        rx=True,
+    ),
+    dict(
+        name="Ibuprofen 200 mg",
+        sku="DEMO-IBU-200-100",
+        dosage_strength="200 mg",
+        dosage_form="film-coated tablet",
+        units_per_pack=100,
+        package_type="bottle",
+        blisters_per_pack=0,
+        units_per_blister=0,
+        manufacturer="HyVee",
+        inn_name="Ibuprofen",
+        atc_code="M01AE01",
+        price=5.10,
+        rx=False,
+    ),
+    dict(
+        name="Paracetamol 500 mg",
+        sku="DEMO-PAR-500-100",
+        dosage_strength="500 mg",
+        dosage_form="tablet",
+        units_per_pack=100,
+        package_type="bottle",
+        blisters_per_pack=0,
+        units_per_blister=0,
+        manufacturer="Demo international manufacturer",
+        inn_name="Paracetamol",
+        atc_code="N02BE01",
+        price=4.20,
+        rx=False,
+    ),
+    dict(
+        name="Cetirizine 10 mg",
+        sku="DEMO-CET-10-30",
+        dosage_strength="10 mg",
+        dosage_form="tablet",
+        units_per_pack=30,
+        package_type="blister",
+        blisters_per_pack=3,
+        units_per_blister=10,
+        manufacturer="Demo international manufacturer",
+        inn_name="Cetirizine",
+        atc_code="R06AE07",
+        price=6.30,
+        rx=False,
+    ),
+    dict(
+        name="Cholecalciferol (Vitamin D3) 1000 IU",
+        sku="DEMO-VITD3-1000-100",
+        dosage_strength="1000 IU",
+        dosage_form="tablet",
+        units_per_pack=100,
+        package_type="bottle",
+        blisters_per_pack=0,
+        units_per_blister=0,
+        manufacturer="Demo supplement manufacturer",
+        inn_name="Cholecalciferol",
+        price=11.50,
+        rx=False,
+    ),
+    dict(
+        name="Magnesium 250 mg",
+        sku="DEMO-MAG-250-100",
+        dosage_strength="250 mg",
+        dosage_form="tablet",
+        units_per_pack=100,
+        package_type="bottle",
+        blisters_per_pack=0,
+        units_per_blister=0,
+        manufacturer="Demo supplement manufacturer",
+        inn_name="Magnesium",
+        price=12.90,
+        rx=False,
+    ),
+    dict(
+        name="Facial Moisturizer 50 ml",
+        sku="DEMO-COS-MOIST-50",
+        dosage_strength=None,
+        dosage_form="cream",
+        units_per_pack=1,
+        package_type="tube",
+        blisters_per_pack=0,
+        units_per_blister=0,
+        manufacturer="Demo skincare manufacturer",
+        inn_name=None,
+        price=19.90,
+        rx=False,
+    ),
+    dict(
+        name="Gentle Facial Cleanser 200 ml",
+        sku="DEMO-COS-CLEAN-200",
+        dosage_strength=None,
+        dosage_form="cleanser",
+        units_per_pack=1,
+        package_type="bottle",
+        blisters_per_pack=0,
+        units_per_blister=0,
+        manufacturer="Demo skincare manufacturer",
+        inn_name=None,
+        price=13.50,
+        rx=False,
+    ),
+    dict(
+        name="Sunscreen SPF 50 50 ml",
+        sku="DEMO-COS-SPF50-50",
+        dosage_strength="SPF 50",
+        dosage_form="cream",
+        units_per_pack=1,
+        package_type="tube",
+        blisters_per_pack=0,
+        units_per_blister=0,
+        manufacturer="Demo skincare manufacturer",
+        inn_name=None,
+        price=22.00,
+        rx=False,
+    ),
+    dict(
+        name="Blood Pressure Monitor",
+        sku="DEMO-DEVICE-BP-1",
+        dosage_strength=None,
+        dosage_form="electronic device",
+        units_per_pack=1,
+        package_type="box",
+        blisters_per_pack=0,
+        units_per_blister=0,
+        manufacturer="Demo medical device manufacturer",
+        inn_name=None,
+        price=39.90,
+        rx=False,
+    ),
+    dict(
+        name="Digital Thermometer",
+        sku="DEMO-DEVICE-TEMP-1",
+        dosage_strength=None,
+        dosage_form="electronic device",
+        units_per_pack=1,
+        package_type="box",
+        blisters_per_pack=0,
+        units_per_blister=0,
+        manufacturer="Demo medical device manufacturer",
+        inn_name=None,
+        price=12.00,
+        rx=False,
+    ),
+    dict(
+        name="Elastic Support Bandage",
+        sku="DEMO-SUPPLY-BANDAGE-1",
+        dosage_strength=None,
+        dosage_form="medical supply",
+        units_per_pack=1,
+        package_type="roll",
+        blisters_per_pack=0,
+        units_per_blister=0,
+        manufacturer="Demo medical supply manufacturer",
+        inn_name=None,
+        price=6.50,
+        rx=False,
+    ),
     dict(
         name="Amoxicillin 250 mg/5 ml Oral Suspension",
         sku="DEMO-AMOX-SUSP-100",
@@ -461,8 +594,10 @@ PRODUCT_CATALOG = [
     ),
 ]
 
+
 def synthetic_barcode(index: int) -> str:
     return f"DEMO{index:04d}{20260918}"
+
 
 async def seed_inventory(session) -> dict[str, tuple[Product, ProductBatch]]:
     inventory = {}
@@ -493,9 +628,18 @@ async def seed_inventory(session) -> dict[str, tuple[Product, ProductBatch]]:
             await session.flush()
         else:
             for field in (
-                "name", "dosage_strength", "dosage_form", "units_per_pack",
-                "package_type", "blisters_per_pack", "units_per_blister",
-                "manufacturer", "inn_name", "atc_code", "regulatory_id", "price",
+                "name",
+                "dosage_strength",
+                "dosage_form",
+                "units_per_pack",
+                "package_type",
+                "blisters_per_pack",
+                "units_per_blister",
+                "manufacturer",
+                "inn_name",
+                "atc_code",
+                "regulatory_id",
+                "price",
             ):
                 setattr(product, field, spec.get(field))
 
@@ -519,6 +663,7 @@ async def seed_inventory(session) -> dict[str, tuple[Product, ProductBatch]]:
             await session.flush()
         inventory[product.sku] = (product, batch)
     return inventory
+
 
 async def seed_patients() -> None:
     async with AsyncSessionLocal() as session:
@@ -586,13 +731,17 @@ async def seed_patients() -> None:
                             batch_id=batch.id,
                             receipt_number=receipt,
                             category=(
-                                "Prescription Medicine" if spec["rx"]
-                                else "OTC / Consumer Health"
-                                if spec["dosage_form"] in {
-                                    "tablet",
-                                    "film-coated tablet",
-                                }
-                                else "Consumer / Medical"
+                                "Prescription Medicine"
+                                if spec["rx"]
+                                else (
+                                    "OTC / Consumer Health"
+                                    if spec["dosage_form"]
+                                    in {
+                                        "tablet",
+                                        "film-coated tablet",
+                                    }
+                                    else "Consumer / Medical"
+                                )
                             ),
                             quantity=packs,
                             dispensed_packs=packs,
@@ -604,9 +753,7 @@ async def seed_patients() -> None:
                             - timedelta(days=random.randint(1, 120)),
                         )
                     )
-                    batch.available_quantity = max(
-                        0, batch.available_quantity - packs
-                    )
+                    batch.available_quantity = max(0, batch.available_quantity - packs)
                     product.stock = batch.available_quantity
 
             if index % 3 == 0:
@@ -631,7 +778,8 @@ async def seed_patients() -> None:
                             ),
                             instructions=(
                                 (
-                                    "Synthetic demonstration prescription. " "Do not use as clinical guidance."
+                                    "Synthetic demonstration prescription. "
+                                    "Do not use as clinical guidance."
                                 )
                             ),
                             status="active",

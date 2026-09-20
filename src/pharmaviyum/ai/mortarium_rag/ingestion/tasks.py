@@ -105,14 +105,18 @@ def _stamp_tenant_metadata(documents: list, config: dict[str, Any]) -> list:
     return stamped
 
 
-def _record_batch_result(loop, config: dict[str, Any], success: bool, child_job_id: str) -> None:
+def _record_batch_result(
+    loop, config: dict[str, Any], success: bool, child_job_id: str
+) -> None:
     batch_job_id = config.get("batch_job_id")
     if not isinstance(batch_job_id, str) or not batch_job_id:
         return
     try:
         redis_client = loop.run_until_complete(get_redis())
         marker_key = f"ingestion:batch:{batch_job_id}:child:{child_job_id}:counted"
-        if not loop.run_until_complete(redis_client.set(marker_key, "1", nx=True, ex=86400)):
+        if not loop.run_until_complete(
+            redis_client.set(marker_key, "1", nx=True, ex=86400)
+        ):
             return
         tracker = IngestionProgressTracker(redis_client)
         loop.run_until_complete(tracker.record_batch_result(batch_job_id, success))
@@ -192,9 +196,11 @@ async def _ingest_document_async(
         embeddings_provider_name = config.get("embeddings_provider") or (
             "gemini"
             if settings.use_cloud_llm and settings.cloud_llm_provider == "gemini"
-            else "openai"
-            if settings.use_cloud_llm and settings.cloud_llm_provider == "groq"
-            else "ollama"
+            else (
+                "openai"
+                if settings.use_cloud_llm and settings.cloud_llm_provider == "groq"
+                else "ollama"
+            )
         )
         embeddings_api_key = None
         embeddings_model = None
@@ -236,7 +242,9 @@ async def _ingest_document_async(
             try:
                 await ObjectStorage().delete(source)
             except Exception:
-                logger.exception("Failed to delete completed ingestion object %s", source)
+                logger.exception(
+                    "Failed to delete completed ingestion object %s", source
+                )
 
         await tracker.update_status(job_id, "completed", processed=len(all_chunks))
         return {
@@ -286,12 +294,18 @@ def ingest_document(
             redis_client = loop.run_until_complete(get_redis())
             tracker = IngestionProgressTracker(redis_client)
             loop.run_until_complete(
-                tracker.update_status(job_id, "failed", error="Document ingestion failed")
+                tracker.update_status(
+                    job_id, "failed", error="Document ingestion failed"
+                )
             )
             _record_batch_result(loop, config, False, job_id)
         except Exception:
             logger.exception("Failed to mark ingestion job %s as failed", job_id)
-        return {"success": False, "error": "Document ingestion failed", "source": source}
+        return {
+            "success": False,
+            "error": "Document ingestion failed",
+            "source": source,
+        }
 
 
 @celery_app.task(
@@ -335,7 +349,11 @@ def ingest_batch(
                 failed += 1
                 loop.run_until_complete(tracker.record_batch_result(job_id, False))
                 results.append(
-                    {"source": source, "status": "failed", "error": "Queue dispatch failed"}
+                    {
+                        "source": source,
+                        "status": "failed",
+                        "error": "Queue dispatch failed",
+                    }
                 )
 
         if failed == 0:

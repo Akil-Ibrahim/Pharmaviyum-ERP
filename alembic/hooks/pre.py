@@ -1,4 +1,5 @@
 """Pre-migration hooks."""
+
 import shutil
 from sqlalchemy import text
 
@@ -22,8 +23,8 @@ async def _check_database_connection(engine):
 
 def _check_disk_space(min_free_gb: float = 1.0):
     total, used, free = shutil.disk_usage("/")
-    free_gb = free / (1024 ** 3)
-    
+    free_gb = free / (1024**3)
+
     if free_gb < min_free_gb:
         raise RuntimeError(f"Insufficient disk space: {free_gb:.2f}GB")
     print(f"  Disk space: {free_gb:.2f}GB free")

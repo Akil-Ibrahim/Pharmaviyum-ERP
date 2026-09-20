@@ -3,7 +3,6 @@
 from alembic import op
 import sqlalchemy as sa
 
-
 revision = "2026_09_18_000002"
 down_revision = "2026_09_18_000001"
 branch_labels = None
@@ -34,7 +33,19 @@ def upgrade() -> None:
                 name,
                 typ,
                 nullable=nullable,
-                server_default=("1" if name == "units_per_pack" else "pack" if name == "package_type" else "0" if name in {"blisters_per_pack", "units_per_blister"} else None),
+                server_default=(
+                    "1"
+                    if name == "units_per_pack"
+                    else (
+                        "pack"
+                        if name == "package_type"
+                        else (
+                            "0"
+                            if name in {"blisters_per_pack", "units_per_blister"}
+                            else None
+                        )
+                    )
+                ),
             ),
         )
 
@@ -49,21 +60,42 @@ def upgrade() -> None:
         sa.Column("product_id", sa.Integer(), nullable=False),
         sa.Column("batch_number", sa.String(length=64), nullable=False),
         sa.Column("expiry_date", sa.Date(), nullable=False),
-        sa.Column("received_quantity", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("available_quantity", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column(
+            "received_quantity", sa.Integer(), nullable=False, server_default="0"
+        ),
+        sa.Column(
+            "available_quantity", sa.Integer(), nullable=False, server_default="0"
+        ),
         sa.Column("barcode", sa.String(length=64), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(["product_id"], ["products.id"], ondelete="CASCADE"),
     )
     op.create_index("ix_product_batches_product_id", "product_batches", ["product_id"])
-    op.create_index("ix_product_batches_batch_number", "product_batches", ["batch_number"])
-    op.create_index("ix_product_batches_expiry_date", "product_batches", ["expiry_date"])
+    op.create_index(
+        "ix_product_batches_batch_number", "product_batches", ["batch_number"]
+    )
+    op.create_index(
+        "ix_product_batches_expiry_date", "product_batches", ["expiry_date"]
+    )
     op.create_index("ix_product_batches_barcode", "product_batches", ["barcode"])
 
-    op.add_column("patient_purchases", sa.Column("batch_id", sa.Integer(), nullable=True))
-    op.add_column("patient_purchases", sa.Column("dispensed_packs", sa.Integer(), nullable=False, server_default="1"))
-    op.add_column("patient_purchases", sa.Column("dispensed_blisters", sa.Integer(), nullable=False, server_default="0"))
-    op.add_column("patient_purchases", sa.Column("dispensed_units", sa.Integer(), nullable=False, server_default="0"))
+    op.add_column(
+        "patient_purchases", sa.Column("batch_id", sa.Integer(), nullable=True)
+    )
+    op.add_column(
+        "patient_purchases",
+        sa.Column("dispensed_packs", sa.Integer(), nullable=False, server_default="1"),
+    )
+    op.add_column(
+        "patient_purchases",
+        sa.Column(
+            "dispensed_blisters", sa.Integer(), nullable=False, server_default="0"
+        ),
+    )
+    op.add_column(
+        "patient_purchases",
+        sa.Column("dispensed_units", sa.Integer(), nullable=False, server_default="0"),
+    )
     op.create_foreign_key(
         "fk_patient_purchases_batch_id",
         "patient_purchases",
@@ -77,7 +109,9 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_index("ix_patient_purchases_batch_id", table_name="patient_purchases")
-    op.drop_constraint("fk_patient_purchases_batch_id", "patient_purchases", type_="foreignkey")
+    op.drop_constraint(
+        "fk_patient_purchases_batch_id", "patient_purchases", type_="foreignkey"
+    )
     op.drop_column("patient_purchases", "dispensed_units")
     op.drop_column("patient_purchases", "dispensed_blisters")
     op.drop_column("patient_purchases", "dispensed_packs")

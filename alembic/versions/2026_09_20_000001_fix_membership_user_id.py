@@ -15,7 +15,10 @@ def upgrade() -> None:
     if not inspector.has_table("pharmacy_memberships"):
         return
 
-    columns = {column["name"]: column for column in inspector.get_columns("pharmacy_memberships")}
+    columns = {
+        column["name"]: column
+        for column in inspector.get_columns("pharmacy_memberships")
+    }
     if "user_id" not in columns:
         return
 
@@ -25,7 +28,9 @@ def upgrade() -> None:
     # UUID membership rows cannot be safely converted to the canonical integer
     # users.id without an explicit identity mapping. Fail closed rather than
     # silently corrupting tenant ownership.
-    count = bind.execute(sa.text("SELECT count(*) FROM pharmacy_memberships")).scalar_one()
+    count = bind.execute(
+        sa.text("SELECT count(*) FROM pharmacy_memberships")
+    ).scalar_one()
     if count:
         raise RuntimeError(
             "Cannot migrate pharmacy_memberships.user_id from UUID to integer while rows exist; "
@@ -67,4 +72,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    raise RuntimeError("Downgrade intentionally blocked: tenant identity type changes require an explicit migration plan.")
+    raise RuntimeError(
+        "Downgrade intentionally blocked: tenant identity type changes require an explicit migration plan."
+    )

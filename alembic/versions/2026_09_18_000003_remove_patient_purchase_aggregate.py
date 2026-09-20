@@ -7,7 +7,6 @@ Revises: 2026_09_18_000002, 2026_09_15_000005
 from alembic import op
 import sqlalchemy as sa
 
-
 revision = "2026_09_18_000003"
 down_revision = ("2026_09_18_000002", "2026_09_15_000005")
 branch_labels = None
@@ -27,11 +26,11 @@ def downgrade() -> None:
     if "total_purchases" not in columns:
         op.add_column(
             "patients",
-            sa.Column("total_purchases", sa.Float(), nullable=False, server_default="0"),
+            sa.Column(
+                "total_purchases", sa.Float(), nullable=False, server_default="0"
+            ),
         )
-        op.execute(
-            sa.text(
-                """
+        op.execute(sa.text("""
                 UPDATE patients p
                 SET total_purchases = COALESCE(
                     (
@@ -41,7 +40,5 @@ def downgrade() -> None:
                     ),
                     0
                 )
-                """
-            )
-        )
+                """))
         op.alter_column("patients", "total_purchases", server_default=None)

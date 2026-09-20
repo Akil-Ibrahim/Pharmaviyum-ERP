@@ -22,7 +22,10 @@ class ObjectStorage:
     def __init__(self) -> None:
         if not settings.OBJECT_STORAGE_BUCKET:
             raise ObjectStorageError("OBJECT_STORAGE_BUCKET is not configured")
-        if not settings.OBJECT_STORAGE_ACCESS_KEY or not settings.OBJECT_STORAGE_SECRET_KEY:
+        if (
+            not settings.OBJECT_STORAGE_ACCESS_KEY
+            or not settings.OBJECT_STORAGE_SECRET_KEY
+        ):
             raise ObjectStorageError("Object storage credentials are not configured")
 
         kwargs: dict[str, object] = {
@@ -80,7 +83,6 @@ class ObjectStorage:
         if suffix not in {"pdf", "docx", "html", "htm"}:
             raise ValueError("Unsupported object suffix")
 
-
     async def put_bytes(self, key: str, data: bytes, content_type: str) -> None:
         await asyncio.to_thread(
             self._client.put_object,
@@ -103,4 +105,6 @@ class ObjectStorage:
             await asyncio.to_thread(body.close)
 
     async def delete(self, key: str) -> None:
-        await asyncio.to_thread(self._client.delete_object, Bucket=self._bucket, Key=key)
+        await asyncio.to_thread(
+            self._client.delete_object, Bucket=self._bucket, Key=key
+        )
