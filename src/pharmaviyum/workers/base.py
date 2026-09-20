@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 
 @dataclass
 class TaskResult:
-    """Result of a task execution"""
+    """Result of a task execution."""
 
     success: bool
     data: Any = None
@@ -29,7 +29,7 @@ class TaskResult:
 
 @dataclass
 class RetryConfig:
-    """Configuration for task retry behavior"""
+    """Configuration for task retry behavior."""
 
     max_attempts: int = 3
     base_delay_seconds: float = 1.0
@@ -38,71 +38,40 @@ class RetryConfig:
     jitter: bool = True
 
     def get_delay(self, attempt: int) -> float:
-        """Calculate delay for given attempt with exponential backoff"""
+        """Calculate delay for given attempt with exponential backoff."""
         import random
 
         delay = min(
             self.base_delay_seconds * (self.exponential_base ** (attempt - 1)),
             self.max_delay_seconds,
         )
-
         if self.jitter:
-            # Add jitter to prevent thundering herd
-            delay = delay * (0.5 + random.random())
-
+            delay *= 0.5 + random.random()
         return delay
 
 
 class BaseTask:
-    """
-    Base class for all background tasks
+    """Base class for all background tasks."""
 
-    Features:
-    - Automatic retry with exponential backoff
-    - Dead letter queue for failed tasks
-    - Structured logging
-    - Metrics collection
-    - Graceful shutdown support
-    """
-
-    # Task metadata (override in subclasses)
     name: str = "base_task"
     queue: str = "default"
     timeout_seconds: int = 300
     retry_config: RetryConfig = RetryConfig()
 
-    def __init__(self):
-        """Initialize task"""
+    def __init__(self) -> None:
         self._shutdown_event = asyncio.Event()
 
     async def execute(self, **kwargs: Any) -> Any:
-        """
-        Execute task logic (override in subclasses)
-
-        Args:
-            **kwargs: Task arguments
-
-        Returns:
-            Task result data
-        """
+        """Execute task logic; subclasses override this method."""
         raise NotImplementedError("Subclasses must implement execute()")
 
     async def run_with_retry(self, **kwargs: Any) -> TaskResult:
-        """
-        Run task with retry logic
-
-        Args:
-            **kwargs: Task arguments
-
-        Returns:
-            TaskResult with success/failure info
-        """
+        """Run task with retry logic."""
         start_time = datetime.now(timezone.utc)
-        last_error = None
+        last_error: Optional[str] = None
 
         for attempt in range(1, self.retry_config.max_attempts + 1):
             try:
-                # Check for shutdown
                 if self._shutdown_event.is_set():
                     logger.warning(
                         f"Task {self.name} interrupted by shutdown",
@@ -123,12 +92,10 @@ class BaseTask:
                     },
                 )
 
-                # Execute task with timeout
                 result = await asyncio.wait_for(
                     self.execute(**kwargs),
                     timeout=self.timeout_seconds,
                 )
-
                 duration_ms = (
                     datetime.now(timezone.utc) - start_time
                 ).total_seconds() * 1000
@@ -140,7 +107,6 @@ class BaseTask:
                         "attempts": attempt,
                     },
                 )
-
                 return TaskResult(
                     success=True,
                     data=result,
@@ -154,20 +120,18 @@ class BaseTask:
                     f"Task {self.name} timeout",
                     extra={"attempt": attempt, "timeout": self.timeout_seconds},
                 )
-
-            except Exception as e:
-                last_error = str(e)
+            except Exception as exc:
+                last_error = str(exc)
                 logger.error(
                     f"Task {self.name} failed",
                     extra={
                         "attempt": attempt,
-                        "error": str(e),
-                        "error_type": type(e).__name__,
+                        "error": str(exc),
+                        "error_type": type(exc).__name__,
                     },
                     exc_info=True,
                 )
 
-            # Wait before retry (if not last attempt)
             if attempt < self.retry_config.max_attempts:
                 delay = self.retry_config.get_delay(attempt)
                 logger.info(
@@ -176,9 +140,9 @@ class BaseTask:
                 )
                 await asyncio.sleep(delay)
 
-        # All attempts failed
-        duration_ms = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
-
+        duration_ms = (
+            datetime.now(timezone.utc) - start_time
+        ).total_seconds() * 1000
         logger.error(
             f"Task {self.name} failed after {self.retry_config.max_attempts} attempts",
             extra={
@@ -186,7 +150,6 @@ class BaseTask:
                 "last_error": last_error,
             },
         )
-
         return TaskResult(
             success=False,
             error=last_error,
@@ -194,6 +157,6 @@ class BaseTask:
             attempts=self.retry_config.max_attempts,
         )
 
-    def request_shutdown(self):
-        """Request graceful shutdown"""
+    def request_shutdown(self) -> None:
+        """Request graceful shutdown."""
         self._shutdown_event.set()
