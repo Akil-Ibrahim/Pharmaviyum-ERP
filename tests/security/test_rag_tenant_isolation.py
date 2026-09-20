@@ -73,3 +73,42 @@ def test_canonical_tenant_metadata_cannot_be_overridden_by_extra_fields():
     assert persisted["pharmacy_id"] == 42
     assert persisted["source"] == "guideline.pdf"
     assert persisted["custom"] == "extension-field"
+
+
+def test_rag_access_level_filter_sets_include_public_and_pharmacy():
+    context = QueryContext(pharmacy_id=42, country="UA", language="uk")
+    filters = LangGraphRAG._build_filter_sets(context)
+
+    assert {item["access_level"] for item in filters} == {"public", "pharmacy"}
+    assert all(item["pharmacy_id"] == 42 for item in filters)
+
+
+def test_rag_patient_filter_requires_authenticated_patient_scope():
+    context = QueryContext(
+        pharmacy_id=42,
+        patient_id=7,
+        country="UA",
+        language="uk",
+    )
+    filters = LangGraphRAG._build_filter_sets(context)
+
+    patient_filters = [item for item in filters if item["access_level"] == "patient"]
+    assert patient_filters == [
+        {
+            "pharmacy_id": 42,
+            "country": "UA",
+            "access_level": "patient",
+            "patient_id": 7,
+        }
+    ]
+
+
+def test_patient_metadata_requires_patient_id():
+    from src.pharmaviyum.ai.mortarium_rag.schemas import CanonicalMetadata
+
+    with pytest.raises(ValueError, match="requires patient_id"):
+        CanonicalMetadata(
+            pharmacy_id=42,
+            source="patient-record.pdf",
+            access_level="patient",
+        )
