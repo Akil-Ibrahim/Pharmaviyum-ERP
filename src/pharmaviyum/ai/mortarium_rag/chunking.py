@@ -24,7 +24,14 @@ SECTION_PATTERNS = {
     ),
 }
 
-ChunkType = Literal["indications", "dosage", "contraindications", "interactions", "side_effects", "general"]
+ChunkType = Literal[
+    "indications",
+    "dosage",
+    "contraindications",
+    "interactions",
+    "side_effects",
+    "general",
+]
 
 MAX_CHUNK_TOKENS = 512
 CHUNK_OVERLAP = 50
@@ -227,7 +234,7 @@ class MedicalChunker:
             document_id=document.id,
             content=content,
             chunk_index=chunk_index,
-            chunk_type=chunk_type,  # type: ignore
+            chunk_type=chunk_type,
             metadata={
                 **document.metadata,
                 "source": document.source,
