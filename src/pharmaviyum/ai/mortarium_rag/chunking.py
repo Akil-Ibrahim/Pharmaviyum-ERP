@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Literal
+from typing import Literal, cast
 from uuid import uuid4
 
 from .schemas import Chunk, Document
@@ -23,6 +23,8 @@ SECTION_PATTERNS = {
         r"(side effects?|tác d[ụụ]ng ph[ụụ]|ผลข้างเคียง)", re.IGNORECASE
     ),
 }
+
+ChunkType = Literal["indications", "dosage", "contraindications", "interactions", "side_effects", "general"]
 
 MAX_CHUNK_TOKENS = 512
 CHUNK_OVERLAP = 50
@@ -52,7 +54,7 @@ class MedicalChunker:
     def _medical_chunking(self, document: Document) -> list[Chunk]:
         """Section-aware chunking preserving medical context."""
         chunks: list[Chunk] = []
-        current_section: str | None = None
+        current_section: ChunkType | None = None
         current_content: list[str] = []
         chunk_index = 0
 
@@ -184,16 +186,16 @@ class MedicalChunker:
 
         return chunks
 
-    def _detect_section(self, line: str) -> str | None:
+    def _detect_section(self, line: str) -> ChunkType | None:
         line = line.strip()
         if not line or len(line) > 100:
             return None
         for section_type, pattern in SECTION_PATTERNS.items():
             if pattern.search(line):
-                return section_type
+                return cast(ChunkType, section_type)
         return None
 
-    def _classify_content(self, content: str) -> str:
+    def _classify_content(self, content: str) -> ChunkType:
         for section_type, pattern in SECTION_PATTERNS.items():
             if pattern.search(content.lower()):
                 return section_type
