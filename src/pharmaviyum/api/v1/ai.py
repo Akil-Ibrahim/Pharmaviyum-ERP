@@ -21,10 +21,10 @@ from src.pharmaviyum.ai.mcp.context import (
 )
 from src.pharmaviyum.ai.mcp.registry import UserRole
 from src.pharmaviyum.core.logging import logger
+from src.pharmaviyum.models.patients import Patient
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.models import PharmacyMembership
 from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
-from src.pharmaviyum.models.patients import Patient
 
 router = APIRouter(prefix="/api/v1/ai", tags=["AI"])
 

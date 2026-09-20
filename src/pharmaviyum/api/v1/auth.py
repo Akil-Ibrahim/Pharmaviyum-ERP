@@ -14,8 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.pharmaviyum.config import settings
 from src.pharmaviyum.core.oauth2 import create_access_token, decode_access_token
 from src.pharmaviyum.db.session import get_db
-from src.pharmaviyum.modules.auth.deps import CurrentUser
 from src.pharmaviyum.models.user import User
+from src.pharmaviyum.modules.auth.deps import CurrentUser
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
