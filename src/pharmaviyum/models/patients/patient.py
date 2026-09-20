@@ -66,18 +66,18 @@ class Patient(Base):
         DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
-    allergies = relationship(
+    allergies: Mapped[list["PatientAllergy"]] = relationship(
         "PatientAllergy", back_populates="patient", cascade="all, delete-orphan"
     )
-    conditions = relationship(
+    conditions: Mapped[list["PatientCondition"]] = relationship(
         "PatientCondition", back_populates="patient", cascade="all, delete-orphan"
     )
-    insurances = relationship(
+    insurances: Mapped[list["PatientInsurance"]] = relationship(
         "PatientInsurance", back_populates="patient", cascade="all, delete-orphan"
     )
-    consultations = relationship(
+    consultations: Mapped[list["Consultation"]] = relationship(
         "Consultation", back_populates="patient", cascade="all, delete-orphan"
     )
-    purchases = relationship(
+    purchases: Mapped[list["PatientPurchase"]] = relationship(
         "PatientPurchase", back_populates="patient", cascade="all, delete-orphan"
     )
