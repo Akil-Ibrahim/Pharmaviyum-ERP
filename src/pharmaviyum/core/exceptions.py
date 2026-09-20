@@ -3,6 +3,8 @@ Global exception handlers
 Best practice 2026: Consistent error responses across all endpoints
 """
 
+from typing import Any
+
 from fastapi import HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
