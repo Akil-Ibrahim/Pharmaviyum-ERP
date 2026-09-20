@@ -1,5 +1,7 @@
 version: 2.1
 
+# CI diagnostics are collected automatically when lint fails.
+
 # CI pipeline validation trigger
 
 jobs:
