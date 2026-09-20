@@ -75,7 +75,7 @@ class BaseTask:
         """Initialize task"""
         self._shutdown_event = asyncio.Event()
 
-    async def execute(self, **kwargs) -> Any:
+    async def execute(self, **kwargs: Any) -> Any:
         """
         Execute task logic (override in subclasses)
 
@@ -87,7 +87,7 @@ class BaseTask:
         """
         raise NotImplementedError("Subclasses must implement execute()")
 
-    async def run_with_retry(self, **kwargs) -> TaskResult:
+    async def run_with_retry(self, **kwargs: Any) -> TaskResult:
         """
         Run task with retry logic
 
