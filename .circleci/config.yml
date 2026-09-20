@@ -13,8 +13,9 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-deps-{{ checksum "requirements.txt" }}
-            - v1-deps-
+            - v2-pip-{{ .Branch }}-{{ checksum "requirements.txt" }}
+            - v2-pip-{{ .Branch }}-
+            - v2-pip-
       - run:
           name: Install quality tools
           command: |
@@ -22,7 +23,7 @@ jobs:
             pip install -r requirements.txt
             pip install ruff==0.12.10 black==25.1.0 isort==6.0.1 mypy==1.17.1
       - save_cache:
-          key: v1-deps-{{ checksum "requirements.txt" }}
+          key: v2-pip-{{ .Branch }}-{{ checksum "requirements.txt" }}
           paths:
             - ~/.cache/pip
       - run:
@@ -195,4 +196,4 @@ workflows:
             branches:
               only:
                 - dev
-                - main 
+                - main
