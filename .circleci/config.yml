@@ -27,6 +27,9 @@ jobs:
           paths:
             - ~/.cache/pip
       - run:
+          name: Initialize CI diagnostics
+          command: mkdir -p ci-diagnostics
+      - run:
           name: Ruff
           command: ruff check src tests
       - run:
@@ -50,7 +53,6 @@ jobs:
       - store_artifacts:
           path: ci-diagnostics
           destination: circleci-diagnostics
-          when: on_fail
 
   unit-tests:
     docker:
