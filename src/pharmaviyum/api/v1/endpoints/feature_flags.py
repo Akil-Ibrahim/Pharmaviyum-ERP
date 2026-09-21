@@ -47,7 +47,7 @@ async def create_feature_flag(_: CurrentSuperuser, flag_data: FeatureFlagCreate)
             key=flag_data.key,
             name=flag_data.name,
             description=flag_data.description or "",
-            flag_type=flag_data.flag_type,
+            flag_type=FlagType(flag_data.flag_type.value),
             enabled=flag_data.enabled,
             percentage=flag_data.percentage,
             segments=flag_data.segments,
