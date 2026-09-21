@@ -248,12 +248,12 @@ class AIComponents:
                 similarity_threshold=settings.rag.similarity_threshold,
             )
             model_router = ModelRouter(
-                models={
+                models=cast(Any, {
                     "fast": get_llm_fast(),
                     "main": get_llm_main(),
                     "complex": get_llm_complex(),
                     "fallback": get_llm_main(),
-                }
+                })
             )
             agent = PharmacistAgent(
                 router_llm=get_llm_fast(),
