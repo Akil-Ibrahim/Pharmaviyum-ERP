@@ -59,6 +59,8 @@ class SendPatientNotificationTask(BaseTask):
             elif target_channel == "sms":
                 send_result = await self._send_sms(patient.phone, message)
             elif target_channel == "email":
+                if patient.email is None:
+                    raise ValueError(f"Patient {patient_id} has no email address")
                 send_result = await self._send_email(patient.email, message)
             else:
                 raise ValueError(f"Unsupported channel: {target_channel}")
