@@ -32,10 +32,10 @@ from src.pharmaviyum.ai.harness.model_router import ModelRouter
 from src.pharmaviyum.ai.mcp.client import MCPClient
 from src.pharmaviyum.ai.mortarium_rag.embeddings import EmbeddingsFactory
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
-from src.pharmaviyum.ai.mortarium_rag.ports import LLMPort, RetrieverPort
 from src.pharmaviyum.ai.mortarium_rag.ingestion.orchestrator import (
     IngestionOrchestrator,
 )
+from src.pharmaviyum.ai.mortarium_rag.ports import LLMPort, RetrieverPort
 from src.pharmaviyum.ai.mortarium_rag.vector_store import PgVectorStore
 from src.pharmaviyum.ai.observability.tracer import ObservabilityTracer, tracer
 from src.pharmaviyum.core.logging import logger
