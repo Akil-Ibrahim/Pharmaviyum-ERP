@@ -52,7 +52,8 @@ class AgentStreamManager:
 
         try:
             async with asyncio.timeout(self.timeout_seconds):
-                async for event in self.graph.astream_events(
+                graph: Any = self.graph
+                async for event in graph.astream_events(
                     initial_state,
                     config=config,
                     version="v2",
@@ -109,7 +110,7 @@ class AgentStreamManager:
                         }
 
                 # Final state
-                final_state = await self.graph.ainvoke(
+                final_state = await graph.ainvoke(
                     initial_state, config=config, version="v2"
                 )
                 yield {
