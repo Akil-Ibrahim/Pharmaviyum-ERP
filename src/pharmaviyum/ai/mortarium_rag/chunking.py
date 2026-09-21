@@ -66,7 +66,7 @@ class MedicalChunker:
         chunk_index = 0
 
         for line in document.content.split("\n"):
-            section_type = self.return cast(ChunkType, section_type)(line)
+            section_type = self._detect_section(line)
 
             if section_type and section_type != current_section:
                 if current_section and current_content:
