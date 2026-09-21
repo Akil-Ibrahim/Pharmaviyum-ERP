@@ -130,7 +130,7 @@ class ObservabilityTracer:
         if not self.langsmith_client:
             return None
         try:
-            run = self.langsmith_client.create_run(
+            self.langsmith_client.create_run(
                 name=run_name,
                 run_type=run_type,
                 inputs=self._payload(inputs),
@@ -139,8 +139,7 @@ class ObservabilityTracer:
                 tags=tags or [],
                 session_id=session_id,
             )
-            run_id = getattr(run, "id", None)
-            return str(run_id) if run_id is not None else None
+            return None
         except Exception as exc:
             logger.error("Failed to log to LangSmith: %s", exc, exc_info=True)
             return None
