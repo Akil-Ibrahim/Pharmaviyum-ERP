@@ -15,8 +15,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from ...shared.core.database import Base
-from src.pharmaviyum.models.user import User
-
 UserRole = Literal["patient", "pharmacist", "admin", "system"]
 
 
