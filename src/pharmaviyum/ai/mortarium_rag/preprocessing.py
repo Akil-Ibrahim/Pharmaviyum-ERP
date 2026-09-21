@@ -190,7 +190,7 @@ class DocumentPreprocessor:
 
         # Step 2: Redact PII
         redacted_content = clean_content
-        redacted_types = []
+        redacted_types: list[str] = []
         if self.enable_pii_redaction:
             redacted_content, redacted_types = PIIRedactor.redact(clean_content)
 
