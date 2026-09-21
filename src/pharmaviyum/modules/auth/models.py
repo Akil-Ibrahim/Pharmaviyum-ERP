@@ -16,7 +16,6 @@ from sqlalchemy.sql import func
 
 from ...shared.core.database import Base
 
-
 UserRole = Literal["patient", "pharmacist", "admin", "system"]
 
 
