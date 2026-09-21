@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 from typing import Any, Protocol, cast
+from pydantic import SecretStr
 
 import numpy as np
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -81,7 +82,7 @@ class GeminiEmbeddingsProvider:
         self._batch_size = batch_size
         self._client = GoogleGenerativeAIEmbeddings(
             model=model,
-            google_api_key=api_key,
+            google_api_key=SecretStr(api_key),
             output_dimensionality=dimensions,
         )
 
@@ -129,7 +130,7 @@ class OpenAIEmbeddingsProvider:
         self._client = OpenAIEmbeddings(
             model=model,
             dimensions=dimensions,
-            api_key=api_key,
+            api_key=SecretStr(api_key),
         )
 
     async def embed(self, text: str) -> list[float]:
