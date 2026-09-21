@@ -123,7 +123,7 @@ async def update_order_status(
             result = await db.execute(
                 select(Patient).where(Patient.id == order.patient_id)
             )
-            patient = result.scalar_one()
+            patient: Patient = result.scalar_one()
             patient.visit_count += 1
             patient.last_visit_date = order.created_at
             await cache_service.delete(
