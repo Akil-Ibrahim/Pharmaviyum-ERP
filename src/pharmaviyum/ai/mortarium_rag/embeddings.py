@@ -5,11 +5,11 @@ from __future__ import annotations
 import asyncio
 import hashlib
 from typing import Any, Protocol, cast
-from pydantic import SecretStr
 
 import numpy as np
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_openai import OpenAIEmbeddings
+from pydantic import SecretStr
 
 
 class EmbeddingsProvider(Protocol):
