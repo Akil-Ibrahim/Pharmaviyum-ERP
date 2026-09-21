@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from typing import cast
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
