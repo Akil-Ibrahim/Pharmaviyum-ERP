@@ -114,6 +114,7 @@ For API support, contact: support@pharmaviyum.com
                 method["security"] = [{"BearerAuth": []}]
 
     app.openapi_schema = openapi_schema
+    return openapi_schema
     return app.openapi_schema
 
 
