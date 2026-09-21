@@ -72,6 +72,7 @@ async def create_user(session: AsyncSession, user_create: UserCreate) -> User:
     # Create user object
     db_user = User(
         email=user_create.email,
+        username=user_create.email,
         full_name=user_create.full_name,
         is_active=user_create.is_active,
         is_superuser=user_create.is_superuser,
