@@ -28,8 +28,8 @@ def get_patient_service(db: AsyncSession = Depends(get_db)) -> PatientService:
 
 @router.post("/", response_model=PatientResponse, status_code=status.HTTP_201_CREATED)
 async def create_patient(
-    db: AsyncSession = Depends(get_db),
     data: PatientCreate,
+    db: AsyncSession = Depends(get_db),
     service: PatientService = Depends(get_patient_service),
     current_user=Depends(get_current_active_superuser),
     pharmacy_id: int | None = Query(None, gt=0),
@@ -61,7 +61,7 @@ async def list_patients(
     pharmacy_id: int | None = Query(None, gt=0),
 ):
     scope = await resolve_pharmacy_scope(
-        pharmacy_id, current_user, service.repository.session
+        pharmacy_id, current_user, db
     )
     patients, _ = await service.list_patients(
         query_text=search,
@@ -91,8 +91,8 @@ async def get_patient_statistics(
 
 @router.get("/phone/{phone}", response_model=PatientResponse)
 async def get_patient_by_phone(
-    db: AsyncSession = Depends(get_db),
     phone: str,
+    db: AsyncSession = Depends(get_db),
     service: PatientService = Depends(get_patient_service),
     current_user=Depends(get_current_active_user),
     pharmacy_id: int | None = Query(None, gt=0),
@@ -108,8 +108,8 @@ async def get_patient_by_phone(
 
 @router.get("/{patient_id}", response_model=PatientResponse)
 async def get_patient(
-    db: AsyncSession = Depends(get_db),
     patient_id: int,
+    db: AsyncSession = Depends(get_db),
     service: PatientService = Depends(get_patient_service),
     current_user=Depends(get_current_active_user),
     pharmacy_id: int | None = Query(None, gt=0),
@@ -125,8 +125,8 @@ async def get_patient(
 
 @router.get("/{patient_id}/ai-profile", response_model=PatientAIProfile)
 async def get_patient_ai_profile(
-    db: AsyncSession = Depends(get_db),
     patient_id: int,
+    db: AsyncSession = Depends(get_db),
     service: PatientService = Depends(get_patient_service),
     current_user=Depends(get_current_active_user),
     pharmacy_id: int | None = Query(None, gt=0),
@@ -142,9 +142,9 @@ async def get_patient_ai_profile(
 
 @router.put("/{patient_id}", response_model=PatientResponse)
 async def update_patient(
-    db: AsyncSession = Depends(get_db),
     patient_id: int,
     data: PatientUpdate,
+    db: AsyncSession = Depends(get_db),
     service: PatientService = Depends(get_patient_service),
     current_user=Depends(get_current_active_superuser),
     pharmacy_id: int | None = Query(None, gt=0),
@@ -165,8 +165,8 @@ async def update_patient(
 
 @router.delete("/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_patient(
-    db: AsyncSession = Depends(get_db),
     patient_id: int,
+    db: AsyncSession = Depends(get_db),
     service: PatientService = Depends(get_patient_service),
     current_user=Depends(get_current_active_superuser),
     pharmacy_id: int | None = Query(None, gt=0),
@@ -184,8 +184,8 @@ async def delete_patient(
 
 @router.post("/{patient_id}/visit", response_model=PatientResponse)
 async def record_visit(
-    db: AsyncSession = Depends(get_db),
     patient_id: int,
+    db: AsyncSession = Depends(get_db),
     purchase_amount: float = Query(
         0.0,
         ge=0,
