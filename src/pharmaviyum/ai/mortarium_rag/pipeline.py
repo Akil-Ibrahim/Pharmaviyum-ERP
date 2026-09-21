@@ -35,7 +35,12 @@ class RAGPipeline:
         start_time = time.perf_counter()
         total_chunks = 0
         for document in documents:
-            chunks = self.chunker.chunk(document, strategy=cast(Literal["medical", "semantic", "recursive"], chunking_strategy))
+            chunks = self.chunker.chunk(
+                document,
+                strategy=cast(
+                    Literal["medical", "semantic", "recursive"], chunking_strategy
+                ),
+            )
             if not chunks:
                 continue
             embeddings = await self.embeddings.embed_batch(
