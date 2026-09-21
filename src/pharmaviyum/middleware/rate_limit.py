@@ -2,6 +2,7 @@
 
 import structlog
 from fastapi import FastAPI, Request
+from fastapi.responses import Response
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -25,7 +26,12 @@ def setup_rate_limiting(app: FastAPI) -> None:
         strategy="fixed-window",
     )
     app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    async def _rate_limit_handler(request: Request, exc: Exception) -> Response:
+        if not isinstance(exc, RateLimitExceeded):
+            raise exc
+        return _rate_limit_exceeded_handler(request, exc)
+
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
     app.add_middleware(SlowAPIMiddleware)
     logger.info(
         "rate_limiting_configured",
