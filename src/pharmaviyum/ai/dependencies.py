@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 from functools import lru_cache
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, cast
 
 from fastapi import HTTPException, Request, status
 from langchain_core.language_models import BaseChatModel
@@ -32,6 +32,7 @@ from src.pharmaviyum.ai.harness.model_router import ModelRouter
 from src.pharmaviyum.ai.mcp.client import MCPClient
 from src.pharmaviyum.ai.mortarium_rag.embeddings import EmbeddingsFactory
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
+from src.pharmaviyum.ai.mortarium_rag.ports import LLMPort, RetrieverPort
 from src.pharmaviyum.ai.mortarium_rag.ingestion.orchestrator import (
     IngestionOrchestrator,
 )
@@ -97,7 +98,7 @@ def _build_llm(model: str) -> BaseChatModel:
         )
     return ChatGroq(
         model=model,
-        api_key=api_key.get_secret_value(),
+        api_key=api_key,
         temperature=settings.groq.temperature,
         timeout=settings.groq.timeout_seconds,
     )
@@ -234,10 +235,10 @@ class AIComponents:
             )
             self.checkpoint_saver = await self.checkpointer.initialize()
             self.rag_pipeline = LangGraphRAG(
-                vector_store=vector_store,
+                vector_store=cast(RetrieverPort, vector_store),
                 embeddings=embeddings,
-                llm=get_llm_main(),
-                fast_llm=get_llm_fast(),
+                llm=cast(LLMPort, get_llm_main()),
+                fast_llm=cast(LLMPort, get_llm_fast()),
                 guardrails=guardrails,
                 checkpointer=self.checkpoint_saver,
             )
