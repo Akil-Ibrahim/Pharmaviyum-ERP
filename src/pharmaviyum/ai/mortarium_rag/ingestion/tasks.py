@@ -151,7 +151,9 @@ async def _ingest_document_async(
             local_source = temp_path
 
         loader_config = LoaderConfig(
-            source_type=cast(Literal["pdf", "html", "docx", "database", "web", "file"], source_type),
+            source_type=cast(
+                Literal["pdf", "html", "docx", "database", "web", "file"], source_type
+            ),
             batch_size=config.get("batch_size", 10),
             extract_tables=config.get("extract_tables", True),
             ocr_enabled=config.get("ocr_enabled", True),
