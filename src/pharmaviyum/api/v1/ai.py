@@ -166,32 +166,32 @@ async def query_agent(
                 sources=cast(
                     Any,
                     [
-                    {
-                        "source_id": f"tool:{item.get('tool', 'unknown')}:{index}",
-                        "source_type": "tool_result",
-                        "content": str(item.get("data", ""))[:500],
-                        "metadata": {"tool": item.get("tool", "unknown")},
-                        "relevance_score": 1.0,
-                    }
-                    for index, item in enumerate(result.get("tool_results", []))
-                    if item.get("success")
+                        {
+                            "source_id": f"tool:{item.get('tool', 'unknown')}:{index}",
+                            "source_type": "tool_result",
+                            "content": str(item.get("data", ""))[:500],
+                            "metadata": {"tool": item.get("tool", "unknown")},
+                            "relevance_score": 1.0,
+                        }
+                        for index, item in enumerate(result.get("tool_results", []))
+                        if item.get("success")
                     ],
                 ),
                 tool_calls=cast(
                     Any,
                     [
-                    {
-                        "tool_name": item.get("tool", "unknown"),
-                        "input_data": item.get("input_data", {}),
-                        "success": bool(item.get("success", False)),
-                        "output_summary": (
-                            str(item.get("data", ""))[:500]
-                            if item.get("success")
-                            else None
-                        ),
-                        "error": item.get("error"),
-                    }
-                    for item in result.get("tool_results", [])
+                        {
+                            "tool_name": item.get("tool", "unknown"),
+                            "input_data": item.get("input_data", {}),
+                            "success": bool(item.get("success", False)),
+                            "output_summary": (
+                                str(item.get("data", ""))[:500]
+                                if item.get("success")
+                                else None
+                            ),
+                            "error": item.get("error"),
+                        }
+                        for item in result.get("tool_results", [])
                     ],
                 ),
                 confidence=0.9 if not result.get("warnings") else 0.7,
@@ -202,8 +202,8 @@ async def query_agent(
                 warnings=cast(
                     Any,
                     [
-                    {"code": w, "severity": "warning", "message": w}
-                    for w in result.get("warnings", [])
+                        {"code": w, "severity": "warning", "message": w}
+                        for w in result.get("warnings", [])
                     ],
                 ),
                 model_used=result.get("model_used") or "configured-main",
@@ -251,14 +251,14 @@ async def query_agent_stream(
                 query=request.query,
                 context=context,
             ):
-                yield f"data: {json.dumps(event)}\n\n"
-            yield "data: [DONE]\n\n"
+                yield f"data: {json.dumps(event)}\\n\\n"
+            yield "data: [DONE]\\n\\n"
         except Exception as e:
             logger.error("Stream endpoint failed: %s", e, exc_info=True)
             yield (
                 "data: "
                 + f"{json.dumps({'event': 'error', 'message': 'AI processing failed'})}"
-                + "\n\n"
+                + "\\n\\n"
             )
         finally:
             reset_mcp_context(token)
