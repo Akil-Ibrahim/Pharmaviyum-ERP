@@ -109,7 +109,9 @@ class AgentStreamManager:
                         }
 
                 # Final state
-                final_state = await self.graph.ainvoke(initial_state, config=config, version="v2")
+                final_state = await self.graph.ainvoke(
+                    initial_state, config=config, version="v2"
+                )
                 yield {
                     "type": "complete",
                     "final_state": final_state,
