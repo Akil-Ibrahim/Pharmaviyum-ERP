@@ -6,6 +6,11 @@ from sqlalchemy import Boolean, Date, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.pharmaviyum.db.base import Base
+from src.pharmaviyum.models.patients.consultation import Consultation
+from src.pharmaviyum.models.patients.patient_allergy import PatientAllergy
+from src.pharmaviyum.models.patients.patient_condition import PatientCondition
+from src.pharmaviyum.models.patients.patient_insurance import PatientInsurance
+from src.pharmaviyum.models.patients.patient_purchase import PatientPurchase
 
 
 class Patient(Base):
