@@ -58,12 +58,14 @@ class DeadLetterQueue:
             "failed_at": datetime.now(timezone.utc).isoformat(),
             "status": "failed",
         }
-        await _await_redis(redis.hset(
-            self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
-        ))
-        await _await_redis(redis.zadd(
-            self.queue_key, {entry_id: datetime.now(timezone.utc).timestamp()}
-        ))
+        await _await_redis(
+            redis.hset(self.index_key, entry_id, json.dumps(entry, ensure_ascii=False))
+        )
+        await _await_redis(
+            redis.zadd(
+                self.queue_key, {entry_id: datetime.now(timezone.utc).timestamp()}
+            )
+        )
         await _await_redis(redis.expire(self.queue_key, DEAD_LETTER_TTL))
         await _await_redis(redis.expire(self.index_key, DEAD_LETTER_TTL))
         logger.error(
@@ -79,7 +81,9 @@ class DeadLetterQueue:
         task_name: Optional[str] = None,
     ) -> list[dict[str, Any]]:
         redis = await self._client()
-        entry_ids = await _await_redis(redis.zrevrange(self.queue_key, skip, skip + limit - 1))
+        entry_ids = await _await_redis(
+            redis.zrevrange(self.queue_key, skip, skip + limit - 1)
+        )
         if not entry_ids:
             return []
 
