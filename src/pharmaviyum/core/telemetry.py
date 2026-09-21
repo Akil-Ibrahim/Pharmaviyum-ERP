@@ -11,6 +11,16 @@ from typing import Any
 
 from src.pharmaviyum.core.config import settings
 
+trace: Any
+TracerProvider: Any
+BatchSpanProcessor: Any
+ConsoleSpanExporter: Any
+Resource: Any
+FastAPIInstrumentor: Any
+SQLAlchemyInstrumentor: Any
+RedisInstrumentor: Any
+HTTPXClientInstrumentor: Any
+
 try:
     from opentelemetry import trace
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -73,7 +83,7 @@ def setup_telemetry(app=None, engine=None) -> None:
 
             exporter = OTLPSpanExporter(endpoint=settings.OTEL_EXPORTER_ENDPOINT)
         else:
-            exporter = ConsoleSpanExporter()
+            exporter: Any = ConsoleSpanExporter()
 
         provider.add_span_processor(
             BatchSpanProcessor(
