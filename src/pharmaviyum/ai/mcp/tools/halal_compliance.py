@@ -270,7 +270,7 @@ async def check_halal_compliance(input: HalalCheckRequest) -> HalalCertification
     notes = cert_data.get("notes", "")
     darurah_applied = False
 
-    fiqh_key = fiqh_school
+    fiqh_key: str = fiqh_school
     if fiqh_school == "Ja'fari" and marja:
         fiqh_key = f"Ja'fari_{marja.split('_')[-1]}"  # e.g., "Ja'fari_Sistani"
 
