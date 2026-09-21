@@ -218,5 +218,25 @@ async def list_jobs(
 
     limit = min(max(limit, 1), 100)
     tracker = IngestionProgressTracker(redis)
-    jobs = await tracker.list_jobs(status=cast(Literal["pending", "queued", "loading", "preprocessing", "chunking", "embedding", "storing", "completed", "failed"], status_filter) if status_filter is not None else None, limit=limit)
+    jobs = await tracker.list_jobs(
+        status=(
+            cast(
+                Literal[
+                    "pending",
+                    "queued",
+                    "loading",
+                    "preprocessing",
+                    "chunking",
+                    "embedding",
+                    "storing",
+                    "completed",
+                    "failed",
+                ],
+                status_filter,
+            )
+            if status_filter is not None
+            else None
+        ),
+        limit=limit,
+    )
     return {"jobs": jobs, "count": len(jobs)}
