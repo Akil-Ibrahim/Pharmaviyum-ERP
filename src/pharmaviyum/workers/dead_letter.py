@@ -6,7 +6,7 @@ Best practice 2026: Never lose failed tasks, enable manual retry
 import json
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, Awaitable, Optional, cast
 
 from redis import asyncio as aioredis
 
@@ -52,13 +52,13 @@ class DeadLetterQueue:
             "failed_at": datetime.now(timezone.utc).isoformat(),
             "status": "failed",
         }
-        await redis.hset(
+        await cast(Awaitable[Any], redis.hset(
             self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
-        )
-        await redis.zadd(
+        ))
+        await cast(Awaitable[Any], redis.zadd(
             self.queue_key, {entry_id: datetime.now(timezone.utc).timestamp()}
-        )
-        await redis.expire(self.queue_key, DEAD_LETTER_TTL)
+        ))
+        await cast(Awaitable[Any], redis.expire(self.queue_key, DEAD_LETTER_TTL)
         await redis.expire(self.index_key, DEAD_LETTER_TTL)
         logger.error(
             "Task added to dead letter queue",
@@ -105,7 +105,7 @@ class DeadLetterQueue:
         entry["status"] = "retried"
         entry["retried_at"] = datetime.now(timezone.utc).isoformat()
         redis = await self._client()
-        await redis.hset(
+        await cast(Awaitable[Any], redis.hset(
             self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
         )
         return True
@@ -117,7 +117,7 @@ class DeadLetterQueue:
         entry["status"] = "discarded"
         entry["discarded_at"] = datetime.now(timezone.utc).isoformat()
         redis = await self._client()
-        await redis.hset(
+        await cast(Awaitable[Any], redis.hset(
             self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
         )
         return True
