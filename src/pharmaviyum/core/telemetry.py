@@ -1,4 +1,5 @@
-"""OpenTelemetry setup for distributed tracing.
+"""
+OpenTelemetry setup for distributed tracing.
 
 The OTLP/protobuf stack can fail to import on Python 3.14 in some environments,
 so we degrade gracefully instead of crashing the application during startup.
@@ -29,7 +30,7 @@ try:
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
-except Exception:  # pragma: no cover
+except Exception:  # pragma: no cover - compatibility fallback for Python 3.14
     trace = None
     TracerProvider = None
     BatchSpanProcessor = None
@@ -42,41 +43,64 @@ except Exception:  # pragma: no cover
 
 
 def _otlp_exporter_available() -> bool:
+    """Return whether the OTLP exporter is importable in this runtime."""
     try:
         from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (  # type: ignore
             OTLPSpanExporter,
         )
+
         return OTLPSpanExporter is not None
     except Exception:
         return False
 
 
 def setup_telemetry(app=None, engine=None) -> None:
+    """
+    Setup OpenTelemetry for the application.
+
+    Args:
+        app: FastAPI application instance
+        engine: SQLAlchemy engine instance
+    """
     if not settings.OTEL_ENABLED or trace is None:
         return
+
     try:
-        resource = Resource.create({
-            "service.name": settings.OTEL_SERVICE_NAME,
-            "service.version": settings.APP_VERSION,
-            "deployment.environment": settings.ENVIRONMENT.value,
-        })
+        resource = Resource.create(
+            {
+                "service.name": settings.OTEL_SERVICE_NAME,
+                "service.version": settings.APP_VERSION,
+                "deployment.environment": settings.ENVIRONMENT.value,
+            }
+        )
+
         provider = TracerProvider(resource=resource)
-        exporter: Any
+
         if settings.OTEL_EXPORTER_ENDPOINT and _otlp_exporter_available():
             from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (  # type: ignore
                 OTLPSpanExporter,
             )
+
             exporter = OTLPSpanExporter(endpoint=settings.OTEL_EXPORTER_ENDPOINT)
         else:
             exporter = ConsoleSpanExporter()
+
         provider.add_span_processor(
-            BatchSpanProcessor(exporter, max_queue_size=2048, schedule_delay_millis=5000)
+            BatchSpanProcessor(
+                exporter,
+                max_queue_size=2048,
+                schedule_delay_millis=5000,
+            )
         )
+
         trace.set_tracer_provider(provider)
+
         if app and FastAPIInstrumentor is not None:
             FastAPIInstrumentor.instrument_app(app)
+
         if engine and SQLAlchemyInstrumentor is not None:
             SQLAlchemyInstrumentor().instrument(engine=engine)
+
         if RedisInstrumentor is not None:
             RedisInstrumentor().instrument()
         if HTTPXClientInstrumentor is not None:
@@ -86,6 +110,7 @@ def setup_telemetry(app=None, engine=None) -> None:
 
 
 def get_tracer(name: str) -> Any:
+    """Get a tracer with the given name."""
     if trace is None:
         return None
     return trace.get_tracer(name)
