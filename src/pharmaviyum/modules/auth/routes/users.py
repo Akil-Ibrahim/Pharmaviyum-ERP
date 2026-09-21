@@ -178,7 +178,7 @@ async def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Mess
             detail="Super users are not allowed to delete themselves",
         )
 
-    session.delete(current_user)
+    await session.delete(current_user)
     await session.commit()
 
     return Message(message="User deleted successfully")
