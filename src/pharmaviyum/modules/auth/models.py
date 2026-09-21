@@ -19,6 +19,8 @@ from ...shared.core.database import Base
 
 UserRole = Literal["patient", "pharmacist", "admin", "system"]
 
+__all__ = ["User", "UserRole", "PharmacyMembership"]
+
 
 class PharmacyMembership(Base):
     """Explicit user-to-pharmacy tenant membership."""
