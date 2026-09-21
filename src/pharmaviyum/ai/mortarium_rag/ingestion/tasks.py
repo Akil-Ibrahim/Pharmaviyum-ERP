@@ -159,14 +159,13 @@ async def _ingest_document_async(
             metadata_filters=config.get("metadata_filters", {}),
         )
 
+        loader: PDFLoader | HTMLLoader | DOCXLoader
+        documents = []
         if source_type == "pdf":
-            documents = []
             loader = PDFLoader()
         elif source_type == "html":
-            documents = []
             loader = HTMLLoader()
         elif source_type == "docx":
-            documents = []
             loader = DOCXLoader()
         else:
             raise ValueError(f"Unsupported source type: {source_type}")
