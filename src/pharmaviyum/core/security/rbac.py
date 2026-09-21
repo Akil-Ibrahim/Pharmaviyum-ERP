@@ -5,8 +5,8 @@ from functools import wraps
 
 from fastapi import Depends, HTTPException, status
 
-from src.pharmaviyum.modules.auth.deps import get_current_active_user
 from src.pharmaviyum.models.user import User
+from src.pharmaviyum.modules.auth.deps import get_current_active_user
 
 
 async def get_current_user(
