@@ -13,7 +13,7 @@ from __future__ import annotations
 import time
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, cast
 
 from src.pharmaviyum.core.logging import logger
 
@@ -82,7 +82,7 @@ class IngestionOrchestrator:
 
         logger.info("Starting ingestion task", extra={"job_id": job_id})
 
-        stats = {
+        stats: dict[str, Any] = {
             "job_id": job_id,
             "source": source,
             "documents_loaded": 0,
@@ -96,7 +96,10 @@ class IngestionOrchestrator:
         try:
             loader = self._get_loader(source, source_type)
             loader_config = LoaderConfig(
-                source_type=source_type or self._detect_source_type(source),
+                source_type=cast(
+                    Literal["pdf", "html", "docx", "database", "web", "file"],
+                    source_type or self._detect_source_type(source),
+                ),
                 batch_size=config.get("batch_size", 10),
                 extract_tables=config.get("extract_tables", True),
                 ocr_enabled=config.get("ocr_enabled", True),
@@ -104,7 +107,7 @@ class IngestionOrchestrator:
                 metadata_filters=config,
             )
 
-            documents = []
+            documents: list[Any] = []
             async for doc in loader.load(source, loader_config):
                 documents.append(doc)
 
@@ -116,7 +119,7 @@ class IngestionOrchestrator:
             if not documents:
                 raise ValueError(f"No documents loaded from {source}")
 
-            processed_docs = []
+            processed_docs: list[Any] = []
             for doc in documents:
                 try:
                     processed = self.preprocessor.process(doc)
@@ -179,7 +182,7 @@ class IngestionOrchestrator:
                 overlap=config.get("chunk_overlap", 50),
             )
 
-            all_chunks = []
+            all_chunks: list[Any] = []
             for doc in processed_docs:
                 chunks = chunker.chunk(
                     doc, strategy=config.get("chunking_strategy", "medical")
