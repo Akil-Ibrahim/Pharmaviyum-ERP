@@ -80,7 +80,7 @@ async def get_patient_statistics(
     pharmacy_id: int | None = Query(None, gt=0),
 ):
     scope = await resolve_pharmacy_scope(
-        pharmacy_id, current_user, service.repository.session
+        pharmacy_id, current_user, db
     )
     return await service.get_statistics(pharmacy_id=scope)
 
@@ -94,7 +94,7 @@ async def get_patient_by_phone(
     pharmacy_id: int | None = Query(None, gt=0),
 ):
     scope = await resolve_pharmacy_scope(
-        pharmacy_id, current_user, service.repository.session
+        pharmacy_id, current_user, db
     )
     patient = await service.get_patient_by_phone(phone, pharmacy_id=scope)
     if not patient:
@@ -111,7 +111,7 @@ async def get_patient(
     pharmacy_id: int | None = Query(None, gt=0),
 ):
     scope = await resolve_pharmacy_scope(
-        pharmacy_id, current_user, service.repository.session
+        pharmacy_id, current_user, db
     )
     patient = await service.get_patient(patient_id, pharmacy_id=scope)
     if not patient:
@@ -128,7 +128,7 @@ async def get_patient_ai_profile(
     pharmacy_id: int | None = Query(None, gt=0),
 ):
     scope = await resolve_pharmacy_scope(
-        pharmacy_id, current_user, service.repository.session
+        pharmacy_id, current_user, db
     )
     profile = await service.get_ai_profile(patient_id, pharmacy_id=scope)
     if not profile:
@@ -147,7 +147,7 @@ async def update_patient(
 ):
     try:
         scope = await resolve_pharmacy_scope(
-            pharmacy_id, current_user, service.repository.session
+            pharmacy_id, current_user, db
         )
         patient = await service.update_patient(
             id=patient_id, data=data, updated_by=None, pharmacy_id=scope
@@ -168,7 +168,7 @@ async def delete_patient(
     pharmacy_id: int | None = Query(None, gt=0),
 ):
     scope = await resolve_pharmacy_scope(
-        pharmacy_id, current_user, service.repository.session
+        pharmacy_id, current_user, db
     )
     deleted = await service.delete_patient(
         id=patient_id, deleted_by=None, hard_delete=False, pharmacy_id=scope
@@ -194,7 +194,7 @@ async def record_visit(
 ):
     del purchase_amount
     scope = await resolve_pharmacy_scope(
-        pharmacy_id, current_user, service.repository.session
+        pharmacy_id, current_user, db
     )
     patient = await service.record_visit(id=patient_id, pharmacy_id=scope)
     if not patient:
