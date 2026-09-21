@@ -17,7 +17,7 @@ Matches ibrahimengpy/full-stack-fastapi-template structure exactly:
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 
-from ....shared.core.config import settings
+from src.pharmaviyum.core.config import settings
 from .. import crud
 from ..deps import CurrentUser, SessionDep, get_current_active_superuser
 from ..schemas import (
