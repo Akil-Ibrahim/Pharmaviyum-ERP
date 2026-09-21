@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import os
 import tempfile
-from typing import Any
+from typing import Any, Literal, cast
 
 from celery.utils.log import get_task_logger
 
@@ -151,7 +151,7 @@ async def _ingest_document_async(
             local_source = temp_path
 
         loader_config = LoaderConfig(
-            source_type=source_type,
+            source_type=cast(Literal["pdf", "html", "docx", "database", "web", "file"], source_type),
             batch_size=config.get("batch_size", 10),
             extract_tables=config.get("extract_tables", True),
             ocr_enabled=config.get("ocr_enabled", True),
@@ -160,15 +160,17 @@ async def _ingest_document_async(
         )
 
         if source_type == "pdf":
+            documents = []
             loader = PDFLoader()
         elif source_type == "html":
+            documents = []
             loader = HTMLLoader()
         elif source_type == "docx":
+            documents = []
             loader = DOCXLoader()
         else:
             raise ValueError(f"Unsupported source type: {source_type}")
 
-        documents = []
         async for doc in loader.load(local_source, loader_config):
             documents.append(doc)
         if not documents:
