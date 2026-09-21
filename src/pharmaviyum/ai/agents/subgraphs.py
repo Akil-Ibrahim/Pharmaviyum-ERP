@@ -9,7 +9,7 @@ Best practice 2026:
 
 from __future__ import annotations
 
-from typing import Annotated, TypedDict
+from typing import Annotated, Any, TypedDict
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
@@ -27,7 +27,7 @@ class SafetyCheckState(TypedDict):
     safety_warnings: list[str]
 
 
-def create_safety_check_subgraph(llm, guardrails) -> StateGraph:
+def create_safety_check_subgraph(llm: Any, guardrails: Any) -> Any:
     """
     Creates a reusable subgraph for medical safety validation.
 
