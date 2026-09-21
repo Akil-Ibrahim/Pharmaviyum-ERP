@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import AsyncIterator
+from typing import AsyncIterator, Literal, cast
 
 from .chunking import MedicalChunker
 from .embeddings import EmbeddingsProvider
@@ -35,7 +35,7 @@ class RAGPipeline:
         start_time = time.perf_counter()
         total_chunks = 0
         for document in documents:
-            chunks = self.chunker.chunk(document, strategy=chunking_strategy)
+            chunks = self.chunker.chunk(document, strategy=cast(Literal["medical", "semantic", "recursive"], chunking_strategy))
             if not chunks:
                 continue
             embeddings = await self.embeddings.embed_batch(
@@ -46,7 +46,7 @@ class RAGPipeline:
         return {
             "documents_processed": len(documents),
             "chunks_created": total_chunks,
-            "latency_ms": (time.perf_counter() - start_time) * 1000,
+            "latency_ms": int((time.perf_counter() - start_time) * 1000),
         }
 
     async def query(self, question: str, context: QueryContext) -> RAGResponse:
