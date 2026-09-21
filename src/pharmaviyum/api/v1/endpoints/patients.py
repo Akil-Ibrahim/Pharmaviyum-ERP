@@ -58,9 +58,7 @@ async def list_patients(
     current_user=Depends(get_current_active_user),
     pharmacy_id: int | None = Query(None, gt=0),
 ):
-    scope = await resolve_pharmacy_scope(
-        pharmacy_id, current_user, db
-    )
+    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
     patients, _ = await service.list_patients(
         query_text=search,
         city=city,
