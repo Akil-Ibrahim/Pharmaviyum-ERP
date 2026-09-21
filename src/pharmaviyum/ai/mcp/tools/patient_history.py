@@ -1,5 +1,4 @@
-"""
-MCP Tool: Patient History Retrieval.
+"""MCP Tool: Patient History Retrieval.
 
 Loads patient medical history from PostgreSQL for AI context.
 
@@ -10,6 +9,7 @@ from __future__ import annotations
 
 import time
 from datetime import date, datetime, timedelta
+from typing import Literal, cast
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -73,8 +73,10 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
             [
                 AllergyInfo(
                     allergen=a.allergen_name,
-                    type=a.allergen_type,
-                    severity=a.severity,
+                    type=cast(Literal["drug", "food", "environmental"], a.allergen_type),
+                    severity=cast(
+                        Literal["mild", "moderate", "severe"], a.severity
+                    ),
                     verified=a.is_verified,
                 )
                 for a in patient.allergies
@@ -88,7 +90,9 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
                     name=c.condition_name,
                     icd10_code=c.icd10_code,
                     is_chronic=c.is_chronic,
-                    status=c.status,
+                    status=cast(
+                        Literal["active", "resolved", "managed"], c.status
+                    ),
                 )
                 for c in patient.conditions
             ]
@@ -140,7 +144,6 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
 async def _count_active_prescriptions(
     session: AsyncSession, patient_id: int, months_back: int, pharmacy_id: int
 ) -> int:
-    """Count prescriptions within the authenticated pharmacy tenant."""
     try:
         from src.pharmaviyum.models.prescription import Prescription
 
@@ -165,7 +168,6 @@ async def _count_active_prescriptions(
 async def _count_recent_orders(
     session: AsyncSession, patient_id: int, months_back: int, pharmacy_id: int
 ) -> int:
-    """Count orders within the authenticated pharmacy tenant."""
     try:
         from src.pharmaviyum.models.order import Order
 
