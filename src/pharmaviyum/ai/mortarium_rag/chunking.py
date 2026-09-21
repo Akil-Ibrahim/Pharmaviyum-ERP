@@ -205,7 +205,7 @@ class MedicalChunker:
     def _classify_content(self, content: str) -> ChunkType:
         for section_type, pattern in SECTION_PATTERNS.items():
             if pattern.search(content.lower()):
-                return section_type
+                return cast(ChunkType, section_type)
         return "general"
 
     def _split_sentences(self, text: str) -> list[str]:
