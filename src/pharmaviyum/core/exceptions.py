@@ -65,7 +65,7 @@ class ValidationException(PharmaviyumException):
 class ConflictException(PharmaviyumException):
     """Resource conflict exception (duplicate, etc)"""
 
-    def __init__(self, message: str, details: dict = None):
+    def __init__(self, message: str, details: dict[str, Any] | None = None):
         """Initialize conflict exception"""
         super().__init__(
             message=message,
