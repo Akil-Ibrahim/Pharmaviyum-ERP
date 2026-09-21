@@ -103,7 +103,7 @@ async def invalidate_health_cache(_: CurrentSuperuser):
 
 @router.get("/dead-letter")
 async def list_dead_letter(
-    _: CurrentSuperuser, skip: int = 0, limit: int = 50, task_name: str = None
+    _: CurrentSuperuser, skip: int = 0, limit: int = 50, task_name: str | None = None
 ):
     entries = await dead_letter_queue.list_entries(
         skip=skip, limit=limit, task_name=task_name
