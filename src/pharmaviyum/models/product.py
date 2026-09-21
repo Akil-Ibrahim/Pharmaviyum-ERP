@@ -5,6 +5,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.pharmaviyum.db.base import Base
 
+if False:  # pragma: no cover
+    from src.pharmaviyum.models.product_batch import ProductBatch
+
 
 class Product(Base):
     __tablename__ = "products"
