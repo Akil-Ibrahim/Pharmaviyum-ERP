@@ -8,7 +8,7 @@ LangGraph graph.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg_pool import AsyncConnectionPool
@@ -48,7 +48,7 @@ class AgentCheckpointer:
         )
         await self._pool.open(wait=True)
 
-        self._saver = AsyncPostgresSaver(conn=self._pool)
+        self._saver = AsyncPostgresSaver(conn=cast(Any, self._pool))
         await self._saver.setup()
 
         logger.info(
