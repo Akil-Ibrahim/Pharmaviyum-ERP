@@ -7,6 +7,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.pharmaviyum.db.base import Base
 
+if False:  # pragma: no cover
+    from src.pharmaviyum.models.patients.patient import Patient
+    from src.pharmaviyum.models.product import Product
+    from src.pharmaviyum.models.product_batch import ProductBatch
+
 
 class PatientPurchase(Base):
     __tablename__ = "patient_purchases"
