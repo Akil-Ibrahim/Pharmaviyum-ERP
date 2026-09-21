@@ -216,7 +216,7 @@ async def verify_prescription(
             is_valid=is_valid,
             checks=checks,
             patient_name=patient.full_name if patient else None,
-            prescriber_name=prescription.prescriber_name,
+            prescriber_name=None,
             drugs=[item.medication_name for item in items],
             overall_warnings=overall_warnings,
         )
