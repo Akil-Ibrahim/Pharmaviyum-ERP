@@ -35,9 +35,7 @@ async def create_patient(
     pharmacy_id: int | None = Query(None, gt=0),
 ):
     try:
-        scope = await resolve_pharmacy_scope(
-            pharmacy_id, current_user, db
-        )
+        scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
         patient = await service.create_patient(
             data=data, created_by=None, pharmacy_id=scope
         )
