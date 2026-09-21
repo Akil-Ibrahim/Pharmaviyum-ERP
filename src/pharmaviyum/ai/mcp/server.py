@@ -30,7 +30,7 @@ class MCPServer:
     def __init__(self, name: str = "pharmaviyum-mcp", version: str = "1.0.0"):
         self.name = name
         self.version = version
-        self.capabilities = {
+        self.capabilities: dict[str, dict[str, Any]] = {
             "tools": {},
             "resources": {},
             "prompts": {},
@@ -88,6 +88,8 @@ class MCPServer:
 
         elif method == "tools/call":
             tool_name = params.get("name")
+            if not isinstance(tool_name, str):
+                raise ValueError("tools/call requires a string name")
             tool_args = params.get("arguments", {})
 
             # Execute via MCP Client (which handles validation, retry, circuit breaker)
@@ -117,6 +119,8 @@ class MCPServer:
 
         elif method == "resources/read":
             uri = params.get("uri")
+            if not isinstance(uri, str):
+                raise ValueError("resources/read requires a string uri")
             # Extract kwargs from URI (simplified)
             content = await resource_registry.read_resource(uri)
             return {
@@ -144,6 +148,8 @@ class MCPServer:
 
         elif method == "prompts/get":
             name = params.get("name")
+            if not isinstance(name, str):
+                raise ValueError("prompts/get requires a string name")
             arguments = params.get("arguments", {})
             template_text = await prompt_registry.get_prompt(name, arguments)
             return {
