@@ -293,7 +293,7 @@ async def delete_user(
             detail="Super users are not allowed to delete themselves",
         )
 
-    session.delete(user)
+    await session.delete(user)
     await session.commit()
 
     return Message(message="User deleted successfully")
