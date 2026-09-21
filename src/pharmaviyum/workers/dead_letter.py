@@ -115,9 +115,9 @@ class DeadLetterQueue:
         entry["status"] = "retried"
         entry["retried_at"] = datetime.now(timezone.utc).isoformat()
         redis = await self._client()
-        await _await_redis(redis.hset(
-            self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
-        ))
+        await _await_redis(
+            redis.hset(self.index_key, entry_id, json.dumps(entry, ensure_ascii=False))
+        )
         return True
 
     async def mark_discarded(self, entry_id: str) -> bool:
@@ -127,9 +127,9 @@ class DeadLetterQueue:
         entry["status"] = "discarded"
         entry["discarded_at"] = datetime.now(timezone.utc).isoformat()
         redis = await self._client()
-        await _await_redis(redis.hset(
-            self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
-        ))
+        await _await_redis(
+            redis.hset(self.index_key, entry_id, json.dumps(entry, ensure_ascii=False))
+        )
         return True
 
     async def delete_entry(self, entry_id: str) -> bool:
