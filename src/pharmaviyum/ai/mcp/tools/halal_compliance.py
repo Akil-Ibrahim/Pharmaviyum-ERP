@@ -212,7 +212,7 @@ def check_istihalah(ingredient: str, final_product: str) -> dict:
             "note": "Must be proven by lab analysis.",
         },
     }
-    return ISTIHALA_CASES.get(ingredient, None)
+    return cast(dict[str, str] | None, ISTIHALA_CASES.get(ingredient))
 
 
 # ============================================================================
