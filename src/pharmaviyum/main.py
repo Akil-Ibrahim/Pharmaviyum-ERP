@@ -88,9 +88,23 @@ app.add_middleware(
     ),
 )
 
-app.add_exception_handler(PharmaviyumAPIError, lambda request, exc: pharmaviyum_api_error_handler(request, cast(PharmaviyumAPIError, exc)))
-app.add_exception_handler(RequestValidationError, lambda request, exc: validation_exception_handler(request, cast(RequestValidationError, exc)))
-app.add_exception_handler(ValidationError, lambda request, exc: validation_exception_handler(request, cast(ValidationError, exc)))
+app.add_exception_handler(
+    PharmaviyumAPIError,
+    lambda request, exc: pharmaviyum_api_error_handler(
+        request, cast(PharmaviyumAPIError, exc)
+    ),
+)
+app.add_exception_handler(
+    RequestValidationError,
+    lambda request, exc: validation_exception_handler(
+        request, cast(RequestValidationError, exc)
+    ),
+)
+app.add_exception_handler(
+    ValidationError,
+    lambda request, exc: validation_exception_handler(
+        request, cast(ValidationError, exc)
+    ),
 app.add_exception_handler(Exception, general_exception_handler)
 app.include_router(api_v1_router)
 
