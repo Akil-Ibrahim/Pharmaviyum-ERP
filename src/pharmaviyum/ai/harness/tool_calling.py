@@ -14,7 +14,7 @@ from __future__ import annotations
 import asyncio
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, ValidationError
 
@@ -142,7 +142,7 @@ class ToolCallingLayer:
                         )
                     )
                 else:
-                    results.append(result)
+                    results.append(cast(ToolCallRecord, result))
 
         # Execute sequential tools one by one
         for tc in sequential_tools:
