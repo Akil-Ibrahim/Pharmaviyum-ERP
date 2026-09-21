@@ -118,7 +118,7 @@ For API support, contact: support@pharmaviyum.com
     return app.openapi_schema
 
 
-app.openapi = custom_openapi
+setattr(app, "openapi", custom_openapi)
 
 
 @router.get("/api-docs", include_in_schema=False)
