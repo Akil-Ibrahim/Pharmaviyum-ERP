@@ -26,6 +26,7 @@ def setup_rate_limiting(app: FastAPI) -> None:
         strategy="fixed-window",
     )
     app.state.limiter = limiter
+
     async def _rate_limit_handler(request: Request, exc: Exception) -> Response:
         if not isinstance(exc, RateLimitExceeded):
             raise exc
