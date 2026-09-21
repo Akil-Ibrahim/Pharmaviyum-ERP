@@ -115,5 +115,5 @@ async def delete_user(session: AsyncSession, user_id: Any) -> None:
     """Delete a user by ID."""
     user = await session.get(User, user_id)
     if user:
-        session.delete(user)
+        await session.delete(user)
         await session.commit()
