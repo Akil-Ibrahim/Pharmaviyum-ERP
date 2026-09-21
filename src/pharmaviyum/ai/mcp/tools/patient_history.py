@@ -142,7 +142,7 @@ async def _count_active_prescriptions(
 ) -> int:
     """Count prescriptions within the authenticated pharmacy tenant."""
     try:
-        from src.pharmaviyum.modules.prescriptions.models import Prescription
+        from src.pharmaviyum.models.prescription import Prescription
 
         cutoff = datetime.utcnow() - timedelta(days=months_back * 30)
         query = (
@@ -151,7 +151,7 @@ async def _count_active_prescriptions(
             .where(
                 Prescription.patient_id == patient_id,
                 Patient.pharmacy_id == pharmacy_id,
-                Prescription.date_issued >= cutoff,
+                Prescription.issued_at >= cutoff,
                 Prescription.status.in_(["active", "filled"]),
             )
         )
@@ -167,16 +167,16 @@ async def _count_recent_orders(
 ) -> int:
     """Count orders within the authenticated pharmacy tenant."""
     try:
-        from src.pharmaviyum.modules.orders.models import InternetOrder
+        from src.pharmaviyum.models.order import Order
 
         cutoff = datetime.utcnow() - timedelta(days=months_back * 30)
         query = (
-            select(func.count(InternetOrder.id))
-            .join(Patient, InternetOrder.patient_id == Patient.id)
+            select(func.count(Order.id))
+            .join(Patient, Order.patient_id == Patient.id)
             .where(
-                InternetOrder.patient_id == patient_id,
+                Order.patient_id == patient_id,
                 Patient.pharmacy_id == pharmacy_id,
-                InternetOrder.created_at >= cutoff,
+                Order.created_at >= cutoff,
             )
         )
         result = await session.execute(query)
