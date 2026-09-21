@@ -2,10 +2,11 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING
 
 from src.pharmaviyum.db.base import Base
 
-if False:  # pragma: no cover
+if TYPE_CHECKING:
     from src.pharmaviyum.models.patients.patient import Patient
 
 
