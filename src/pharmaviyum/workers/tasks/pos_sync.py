@@ -36,7 +36,7 @@ class SyncProductsTask(BaseTask):
             },
         )
 
-        pos_client = self._get_pos_client(pos_system, pharmacy_id)
+        pos_client: Any = self._get_pos_client(pos_system, pharmacy_id)
         products = await pos_client.fetch_products(since=since)
 
         synced = 0
