@@ -5,11 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.order import Order
 from src.pharmaviyum.models.patients import Patient, PatientPurchase
+from src.pharmaviyum.models.user import User
 from src.pharmaviyum.modules.auth.deps import (
     get_current_active_superuser,
     get_current_active_user,
 )
-from src.pharmaviyum.models.user import User
 from src.pharmaviyum.modules.auth.tenant import resolve_pharmacy_scope
 from src.pharmaviyum.schemas.order_schema import (
     OrderCreate,
