@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 
-import asyncpg
+import asyncpg  # type: ignore[import-untyped]
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
