@@ -91,7 +91,7 @@ class PharmacistAgent:
         return {"query_intent": intent}
 
     def _route_decision(self, state: AgentState) -> str:
-        return state.get("query_intent", "patient_consultation")
+        return str(state.get("query_intent", "patient_consultation"))
 
     def _should_continue(self, state: AgentState) -> str:
         if state.get("iteration", 0) >= self.MAX_ITERATIONS:
