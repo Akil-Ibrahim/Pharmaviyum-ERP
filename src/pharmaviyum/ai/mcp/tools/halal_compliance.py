@@ -189,7 +189,7 @@ HALAL_DB: dict[str, dict] = {
 # ============================================================================
 
 
-def check_istihalah(ingredient: str, final_product: str) -> dict:
+def check_istihalah(ingredient: str, final_product: str) -> dict[str, str] | None:
     """
     Check if chemical transformation (Istihalah) has occurred.
 
@@ -212,7 +212,7 @@ def check_istihalah(ingredient: str, final_product: str) -> dict:
             "note": "Must be proven by lab analysis.",
         },
     }
-    return cast(dict[str, str] | None, ISTIHALA_CASES.get(ingredient))
+    return ISTIHALA_CASES.get(ingredient)
 
 
 # ============================================================================
