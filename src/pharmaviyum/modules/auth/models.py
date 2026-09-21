@@ -14,6 +14,7 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
+from ...models.user import User
 from ...shared.core.database import Base
 
 UserRole = Literal["patient", "pharmacist", "admin", "system"]
