@@ -23,9 +23,10 @@ class Repository(Protocol[EntityT]):
 
 
 class PatientRepositoryPort(Repository[Patient], Protocol):
+    """Patient persistence contract exposed to the application layer."""
+
     @property
     def session(self) -> AsyncSession: ...
-    """Patient persistence contract exposed to the application layer."""
 
     async def get_by_external_id(
         self, external_id: str, pos_system: str, pharmacy_id: int | None = None
@@ -68,6 +69,7 @@ class PatientRepositoryPort(Repository[Patient], Protocol):
     async def get_loyalty_tiers_stats(self, pharmacy_id: int | None = None) -> dict: ...
 
     async def get_country_stats(self, pharmacy_id: int | None = None) -> dict: ...
+
     async def get_total_purchase_value(
         self, pharmacy_id: int | None = None
     ) -> float: ...
