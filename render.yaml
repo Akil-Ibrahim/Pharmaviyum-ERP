@@ -21,16 +21,16 @@ services:
         value: "false"
       - key: DATABASE_URL
         fromDatabase:
-          name: pharmaviyum-postgres-production
+          name: pharmaviyum-postgres
           property: connectionString
       - key: PGVECTOR_DATABASE_URL
         fromDatabase:
-          name: pharmaviyum-postgres-production
+          name: pharmaviyum-postgres
           property: connectionString
       - key: REDIS_URL
         fromService:
           type: keyvalue
-          name: pharmaviyum-redis-production
+          name: pharmaviyum-redis
           property: connectionString
       - key: USE_CLOUD_LLM
         value: "true"
@@ -48,16 +48,3 @@ services:
         value: gemini-embedding-001
       - key: GEMINI_EMBEDDING_DIMENSIONS
         value: "1024"
-
-  - type: keyvalue
-    name: pharmaviyum-redis-production
-    plan: free
-    ipAllowList: []
-
-databases:
-  - name: pharmaviyum-postgres-production
-    databaseName: pharmaviyum
-    user: pharmaviyum
-    postgresMajorVersion: "16"
-    plan: free
-    ipAllowList: []
