@@ -66,14 +66,18 @@ class PatientRepository(BaseRepository[Patient]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_phone(self, phone: str, pharmacy_id: int | None = None) -> Optional[Patient]:
+    async def get_by_phone(
+        self, phone: str, pharmacy_id: int | None = None
+    ) -> Optional[Patient]:
         query = select(Patient).where(Patient.phone == phone)
         if pharmacy_id is not None:
             query = query.where(Patient.pharmacy_id == pharmacy_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: str, pharmacy_id: int | None = None) -> Optional[Patient]:
+    async def get_by_email(
+        self, email: str, pharmacy_id: int | None = None
+    ) -> Optional[Patient]:
         query = select(Patient).where(Patient.email == email)
         if pharmacy_id is not None:
             query = query.where(Patient.pharmacy_id == pharmacy_id)
@@ -87,7 +91,11 @@ class PatientRepository(BaseRepository[Patient]):
             select(Patient).where(
                 Patient.external_id == external_id,
                 Patient.pos_system == pos_system,
-                *([Patient.pharmacy_id == pharmacy_id] if pharmacy_id is not None else []),
+                *(
+                    [Patient.pharmacy_id == pharmacy_id]
+                    if pharmacy_id is not None
+                    else []
+                ),
             )
         )
         return result.scalar_one_or_none()
@@ -149,21 +157,29 @@ class PatientRepository(BaseRepository[Patient]):
                 )
             )
             .join(Patient, PatientPurchase.patient_id == Patient.id)
-            .where(Patient.pharmacy_id == pharmacy_id) if pharmacy_id is not None else select(
-                func.coalesce(func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0.0)
+            .where(Patient.pharmacy_id == pharmacy_id)
+            if pharmacy_id is not None
+            else select(
+                func.coalesce(
+                    func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0.0
+                )
             )
         )
         return float(result.scalar_one())
 
     async def get_total_loyalty_points(self, pharmacy_id: int | None = None) -> int:
-        query = select(func.coalesce(func.sum(Patient.loyalty_points), 0)).where(Patient.is_active)
+        query = select(func.coalesce(func.sum(Patient.loyalty_points), 0)).where(
+            Patient.is_active
+        )
         if pharmacy_id is not None:
             query = query.where(Patient.pharmacy_id == pharmacy_id)
         result = await self.session.execute(query)
         return int(result.scalar_one())
 
     async def get_loyalty_tiers_stats(self, pharmacy_id: int | None = None) -> dict:
-        query = select(Patient.loyalty_tier, func.count(Patient.id)).where(Patient.is_active)
+        query = select(Patient.loyalty_tier, func.count(Patient.id)).where(
+            Patient.is_active
+        )
         if pharmacy_id is not None:
             query = query.where(Patient.pharmacy_id == pharmacy_id)
         result = await self.session.execute(query.group_by(Patient.loyalty_tier))
@@ -207,7 +223,11 @@ class PatientRepository(BaseRepository[Patient]):
 
     async def soft_delete(self, id: int, pharmacy_id: int | None = None) -> bool:
         patient = await self.get_by_id(id)
-        if pharmacy_id is not None and patient is not None and patient.pharmacy_id != pharmacy_id:
+        if (
+            pharmacy_id is not None
+            and patient is not None
+            and patient.pharmacy_id != pharmacy_id
+        ):
             return False
         if not patient:
             return False
@@ -238,9 +258,15 @@ class PatientRepository(BaseRepository[Patient]):
         await self.session.refresh(patient)
         return patient
 
-    async def record_visit(self, id: int, pharmacy_id: int | None = None) -> Optional[Patient]:
+    async def record_visit(
+        self, id: int, pharmacy_id: int | None = None
+    ) -> Optional[Patient]:
         patient = await self.get_by_id(id)
-        if pharmacy_id is not None and patient is not None and patient.pharmacy_id != pharmacy_id:
+        if (
+            pharmacy_id is not None
+            and patient is not None
+            and patient.pharmacy_id != pharmacy_id
+        ):
             return None
         if not patient:
             return None
@@ -288,7 +314,9 @@ class PatientRepository(BaseRepository[Patient]):
         await self.session.refresh(condition)
         return condition
 
-    async def get_ai_profile(self, id: int, pharmacy_id: int | None = None) -> Optional[dict]:
+    async def get_ai_profile(
+        self, id: int, pharmacy_id: int | None = None
+    ) -> Optional[dict]:
         """Get a patient profile optimized for current AI workflows."""
         patient = await self.get_by_id_with_relations(
             id,

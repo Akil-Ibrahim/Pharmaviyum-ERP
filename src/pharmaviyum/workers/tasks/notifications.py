@@ -174,4 +174,3 @@ class SendPatientNotificationTask(BaseTask):
         # TODO: Implement email integration
         logger.info("Sending email")
         return {"message_id": f"email_{__import__('uuid').uuid4()}"}
-

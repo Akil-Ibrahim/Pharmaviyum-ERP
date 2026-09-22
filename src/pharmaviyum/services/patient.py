@@ -30,14 +30,20 @@ class PatientService:
         self.cache_ttl = 3600
 
     async def create_patient(
-        self, data: PatientCreate, created_by: Optional[str] = None,
+        self,
+        data: PatientCreate,
+        created_by: Optional[str] = None,
         pharmacy_id: int | None = None,
     ) -> Patient:
-        existing = await self.repository.get_by_phone(data.phone, pharmacy_id=pharmacy_id)
+        existing = await self.repository.get_by_phone(
+            data.phone, pharmacy_id=pharmacy_id
+        )
         if existing:
             raise ValueError(f"Patient with phone {data.phone} already exists")
         if data.email:
-            existing = await self.repository.get_by_email(data.email, pharmacy_id=pharmacy_id)
+            existing = await self.repository.get_by_email(
+                data.email, pharmacy_id=pharmacy_id
+            )
             if existing:
                 raise ValueError(f"Patient with email {data.email} already exists")
 
@@ -66,7 +72,9 @@ class PatientService:
         )
         return patient
 
-    async def get_patient(self, id: int, use_cache: bool = True, pharmacy_id: int | None = None) -> Optional[Patient]:
+    async def get_patient(
+        self, id: int, use_cache: bool = True, pharmacy_id: int | None = None
+    ) -> Optional[Patient]:
         cache_key = f"patient:{pharmacy_id or 0}:{id}"
         if use_cache:
             cached = await cache_service.get(cache_key)
@@ -74,12 +82,16 @@ class PatientService:
                 CACHE_HITS_TOTAL.labels(cache_type="patient").inc()
                 return cached
         CACHE_MISSES_TOTAL.labels(cache_type="patient").inc()
-        patient = await self.repository.get_by_id_with_relations(id, pharmacy_id=pharmacy_id)
+        patient = await self.repository.get_by_id_with_relations(
+            id, pharmacy_id=pharmacy_id
+        )
         if patient and use_cache:
             await cache_service.set(cache_key, patient, ttl=self.cache_ttl)
         return patient
 
-    async def get_patient_by_phone(self, phone: str, pharmacy_id: int | None = None) -> Optional[Patient]:
+    async def get_patient_by_phone(
+        self, phone: str, pharmacy_id: int | None = None
+    ) -> Optional[Patient]:
         cache_key = f"patient:phone:{pharmacy_id or 0}:{phone}"
         cached = await cache_service.get(cache_key)
         if cached:
@@ -126,7 +138,9 @@ class PatientService:
             return None
         update_data = data.model_dump(exclude_unset=True)
         if "phone" in update_data and update_data["phone"] != patient.phone:
-            existing = await self.repository.get_by_phone(update_data["phone"], pharmacy_id=pharmacy_id)
+            existing = await self.repository.get_by_phone(
+                update_data["phone"], pharmacy_id=pharmacy_id
+            )
             if existing and existing.id != id:
                 raise ValueError(f"Phone {update_data['phone']} already in use")
         if (
@@ -134,7 +148,9 @@ class PatientService:
             and update_data["email"] != patient.email
             and update_data["email"]
         ):
-            existing = await self.repository.get_by_email(update_data["email"], pharmacy_id=pharmacy_id)
+            existing = await self.repository.get_by_email(
+                update_data["email"], pharmacy_id=pharmacy_id
+            )
             if existing and existing.id != id:
                 raise ValueError(f"Email {update_data['email']} already in use")
         for field, value in update_data.items():
@@ -183,7 +199,9 @@ class PatientService:
             )
         return result
 
-    async def get_ai_profile(self, id: int, pharmacy_id: int | None = None) -> Optional[dict]:
+    async def get_ai_profile(
+        self, id: int, pharmacy_id: int | None = None
+    ) -> Optional[dict]:
         if not await is_feature_enabled("ai_patient_profiles"):
             return None
         cache_key = f"patient:ai_profile:{pharmacy_id or 0}:{id}"
@@ -205,13 +223,23 @@ class PatientService:
             "total": total,
             "active": active,
             "inactive": total - active,
-            "total_purchase_value": await self.repository.get_total_purchase_value(pharmacy_id=pharmacy_id),
-            "total_loyalty_points": await self.repository.get_total_loyalty_points(pharmacy_id=pharmacy_id),
-            "by_loyalty_tier": await self.repository.get_loyalty_tiers_stats(pharmacy_id=pharmacy_id),
-            "by_country": await self.repository.get_country_stats(pharmacy_id=pharmacy_id),
+            "total_purchase_value": await self.repository.get_total_purchase_value(
+                pharmacy_id=pharmacy_id
+            ),
+            "total_loyalty_points": await self.repository.get_total_loyalty_points(
+                pharmacy_id=pharmacy_id
+            ),
+            "by_loyalty_tier": await self.repository.get_loyalty_tiers_stats(
+                pharmacy_id=pharmacy_id
+            ),
+            "by_country": await self.repository.get_country_stats(
+                pharmacy_id=pharmacy_id
+            ),
         }
 
-    async def record_visit(self, id: int, pharmacy_id: int | None = None) -> Optional[Patient]:
+    async def record_visit(
+        self, id: int, pharmacy_id: int | None = None
+    ) -> Optional[Patient]:
         patient = await self.repository.record_visit(id, pharmacy_id=pharmacy_id)
         if patient:
             await self._invalidate_patient_cache(id, patient.phone, pharmacy_id)

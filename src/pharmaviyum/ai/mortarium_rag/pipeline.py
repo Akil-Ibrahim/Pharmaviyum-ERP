@@ -131,25 +131,29 @@ class RAGPipeline:
             {**base, "access_level": "pharmacy"},
         ]
         if context.patient_id is not None:
-            filter_sets.append({
-                **base,
-                "access_level": "patient",
-                "patient_id": context.patient_id,
-            })
+            filter_sets.append(
+                {
+                    **base,
+                    "access_level": "patient",
+                    "patient_id": context.patient_id,
+                }
+            )
         return filter_sets
 
     async def _hybrid_search_scoped(
         self, question: str, query_embedding: list[float], context: QueryContext
     ) -> list[RetrievalResult]:
-        results = await asyncio.gather(*[
-            self.vector_store.hybrid_search(
-                query=question,
-                query_embedding=query_embedding,
-                top_k=10,
-                filters=filters,
-            )
-            for filters in self._build_filter_sets(context)
-        ])
+        results = await asyncio.gather(
+            *[
+                self.vector_store.hybrid_search(
+                    query=question,
+                    query_embedding=query_embedding,
+                    top_k=10,
+                    filters=filters,
+                )
+                for filters in self._build_filter_sets(context)
+            ]
+        )
         best: dict[str, RetrievalResult] = {}
         for hits in results:
             for hit in hits:

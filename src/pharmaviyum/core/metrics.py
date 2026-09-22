@@ -245,5 +245,3 @@ def record_cache_hit(cache_type: str, hit: bool) -> None:
         CACHE_HITS_TOTAL.labels(cache_type=cache_type).inc()
     else:
         CACHE_MISSES_TOTAL.labels(cache_type=cache_type).inc()
-
-

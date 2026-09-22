@@ -38,10 +38,18 @@ class DocumentVersionManager:
 
     @staticmethod
     def _require_pharmacy_id(pharmacy_id: int) -> None:
-        if not isinstance(pharmacy_id, int) or isinstance(pharmacy_id, bool) or pharmacy_id <= 0:
-            raise ValueError("Document versioning requires a positive integer pharmacy_id")
+        if (
+            not isinstance(pharmacy_id, int)
+            or isinstance(pharmacy_id, bool)
+            or pharmacy_id <= 0
+        ):
+            raise ValueError(
+                "Document versioning requires a positive integer pharmacy_id"
+            )
 
-    async def archive_old_versions(self, source: str, new_version: int, pharmacy_id: int) -> int:
+    async def archive_old_versions(
+        self, source: str, new_version: int, pharmacy_id: int
+    ) -> int:
         """Archive previous versions within one pharmacy tenant."""
         self._require_pharmacy_id(pharmacy_id)
         async with self.session_factory() as session:
@@ -95,10 +103,14 @@ class DocumentVersionManager:
                   AND (metadata->>'pharmacy_id')::int = :pharmacy_id
             """
             )
-            result = await session.execute(query, {"source": source, "pharmacy_id": pharmacy_id})
+            result = await session.execute(
+                query, {"source": source, "pharmacy_id": pharmacy_id}
+            )
             return result.scalar_one()
 
-    async def rollback_to_version(self, source: str, target_version: int, pharmacy_id: int) -> int:
+    async def rollback_to_version(
+        self, source: str, target_version: int, pharmacy_id: int
+    ) -> int:
         """Rollback to a previous version within one pharmacy tenant."""
         self._require_pharmacy_id(pharmacy_id)
         async with self.session_factory() as session:
@@ -115,7 +127,9 @@ class DocumentVersionManager:
                   AND metadata->>'version_status' = 'active'
             """
             )
-            await session.execute(archive_query, {"source": source, "pharmacy_id": pharmacy_id})
+            await session.execute(
+                archive_query, {"source": source, "pharmacy_id": pharmacy_id}
+            )
 
             restore_query = text(  # nosec B608: table_name is validated as a SQL identifier
                 f"""  # nosec B608: table_name is validated as a SQL identifier
@@ -132,7 +146,11 @@ class DocumentVersionManager:
             )
             result = await session.execute(
                 restore_query,
-                {"source": source, "pharmacy_id": pharmacy_id, "target_version": target_version},
+                {
+                    "source": source,
+                    "pharmacy_id": pharmacy_id,
+                    "target_version": target_version,
+                },
             )
             await session.commit()
             restored_count = result.rowcount
@@ -161,7 +179,9 @@ class DocumentVersionManager:
                 ORDER BY version DESC
             """
             )
-            result = await session.execute(query, {"source": source, "pharmacy_id": pharmacy_id})
+            result = await session.execute(
+                query, {"source": source, "pharmacy_id": pharmacy_id}
+            )
             return [
                 {
                     "version": row.version,
