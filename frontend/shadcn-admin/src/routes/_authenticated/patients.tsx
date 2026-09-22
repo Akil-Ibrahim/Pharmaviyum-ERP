@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Activity, HeartPulse, ShieldCheck, ShoppingBag } from 'lucide-react'
 import { createFileRoute } from '@tanstack/react-router'
 import { apiFetch } from '@/lib/api-client'
 
@@ -60,14 +61,14 @@ function PatientsPage() {
   if (loading) return <div className='p-6 text-muted-foreground'>Loading patients...</div>
 
   return (
-    <div className='space-y-6 p-6'>
-      <div><h1 className='text-2xl font-bold tracking-tight'>Patients</h1><p className='text-muted-foreground'>Pharmacy customer profiles, prescriptions, OTC purchases, cosmetics, vitamins, devices, and receipts.</p></div>
+    <div className='space-y-6 p-6 font-inter'>
+      <div><p className='text-xs font-semibold uppercase tracking-[0.18em] text-primary'>Pharmaviyum entity</p><h1 className='mt-1 text-[23px] font-semibold tracking-tight text-black dark:text-white'>Patients</h1><p className='text-muted-foreground'>Pharmacy customer profiles, prescriptions, OTC purchases, cosmetics, vitamins, devices, and receipts.</p></div>
       <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
-        <MetricCard label='Total patients' value={metrics.total.toString()} detail='Full database · first 20 displayed' tone='blue' />
-        <MetricCard label='Active patients' value={metrics.active.toString()} detail='Currently active profiles' tone='green' />
-        <MetricCard label='Purchase value' value={formatCurrency(metrics.revenue)} detail='Full persisted purchase history' tone='yellow' />
-        <MetricCard label='Loyalty members' value={metrics.loyalty.toString()} detail='Non-standard loyalty tier' tone='red' />
-      </div>
+        <CircleMetric icon={HeartPulse} label='Total patients' value={metrics.total} />
+        <CircleMetric icon={Activity} label='Active patients' value={metrics.active} />
+        <CircleMetric icon={ShoppingBag} label='Purchase value' value={metrics.revenue} currency />
+        <CircleMetric icon={ShieldCheck} label='Loyalty members' value={metrics.loyalty} />
+        </div>
       <div className='rounded-2xl border border-border/70 bg-card p-4 shadow-sm'>
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <div><p className='text-sm font-semibold'>Patient pipeline</p><p className='text-xs text-muted-foreground'>Showing first {patients.length} patients from the full database of {metrics.total}</p></div>
@@ -80,14 +81,14 @@ function PatientsPage() {
       <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
         {patients.map((patient) => (
           <button key={patient.id} type='button' onClick={() => openPatient(patient.id)} className='rounded-xl border border-border/70 bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md'>
-            <div className='flex items-start justify-between gap-3'><div><h2 className='font-semibold'>{patient.full_name}</h2><p className='text-sm text-muted-foreground'>{patient.city}, {patient.country}</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${categoryTone(patient.customer_category)}`}>{patient.customer_category}</span></div>
+            <div className='flex items-start justify-between gap-3'><div><h2 className='text-base font-semibold tracking-tight text-black dark:text-white'>{patient.full_name}</h2><p className='text-sm text-muted-foreground'>{patient.city}, {patient.country}</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${categoryTone(patient.customer_category)}`}>{patient.customer_category}</span></div>
             <div className='mt-4 grid grid-cols-3 gap-2 text-sm'><div><p className='text-muted-foreground'>Visits</p><p>{patient.visit_count}</p></div><div><p className='text-muted-foreground'>Status</p><p>{patient.is_active ? 'Active' : 'Inactive'}</p></div><div><p className='text-muted-foreground'>Tier</p><p>{patient.loyalty_tier}</p></div></div>
           </button>
         ))}
       </div>
       {selected && (
         <div className='rounded-xl border p-6'>
-          <div className='flex items-start justify-between gap-4'><div><h2 className='text-xl font-semibold'>{selected.full_name}</h2><p className='text-sm text-muted-foreground'>{selected.customer_category} · {selected.city}, {selected.country}</p></div><button type='button' className='rounded-md border px-3 py-1 text-sm' onClick={() => setSelected(null)}>Close</button></div>
+          <div className='flex items-start justify-between gap-4'><div><h2 className='text-xl font-semibold tracking-tight text-black dark:text-white'>{selected.full_name}</h2><p className='text-sm text-muted-foreground'>{selected.customer_category} · {selected.city}, {selected.country}</p></div><button type='button' className='rounded-md border px-3 py-1 text-sm' onClick={() => setSelected(null)}>Close</button></div>
           <div className='mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
             <MetricCard label='Loyalty points' value={selected.loyalty_points.toLocaleString()} detail={`Tier: ${selected.loyalty_tier}`} tone='blue' />
             <MetricCard label='Total spent' value={formatCurrency(selected.purchases.reduce((sum, purchase) => sum + purchase.total_amount, 0))} detail='Persisted purchase history' tone='yellow' />
@@ -268,4 +269,9 @@ function MetricCard({ label, value, detail, tone }: { label: string; value: stri
       <p className='mt-1 text-xs text-muted-foreground'>{detail}</p>
     </div>
   )
+}
+
+function CircleMetric({icon:Icon,label,value,currency=false}:{icon:typeof HeartPulse;label:string;value:number;currency?:boolean}){
+ const display=currency?formatCurrency(value):value.toLocaleString()
+ return <div className='rounded-2xl border bg-card p-4 shadow-sm'><div className='flex items-center gap-4'><div className='relative flex size-14 shrink-0 items-center justify-center rounded-full bg-primary/10'><div className='flex size-10 items-center justify-center rounded-full bg-card'><Icon className='size-4 text-primary'/></div></div><div><p className='text-xs text-muted-foreground'>{label}</p><p className='text-xl font-bold text-foreground'>{display}</p></div></div></div>
 }
