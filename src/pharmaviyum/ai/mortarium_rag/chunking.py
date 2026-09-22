@@ -110,7 +110,17 @@ class MedicalChunker:
             chunk = self._create_chunk(
                 document,
                 "\n".join(current_content),
-                cast(Literal["indications", "dosage", "contraindications", "interactions", "side_effects", "general"], current_section or "general"),
+                cast(
+                    Literal[
+                        "indications",
+                        "dosage",
+                        "contraindications",
+                        "interactions",
+                        "side_effects",
+                        "general",
+                    ],
+                    current_section or "general",
+                ),
                 chunk_index,
             )
             if chunk:
