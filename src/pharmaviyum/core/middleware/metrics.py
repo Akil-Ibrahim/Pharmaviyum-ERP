@@ -9,8 +9,12 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
+from src.pharmaviyum.ai.observability.metrics import (
+    HTTP_REQUEST_DURATION,
+    HTTP_REQUESTS_IN_FLIGHT,
+    HTTP_REQUESTS_TOTAL,
+)
 from src.pharmaviyum.core.logging import get_logger
-from src.pharmaviyum.core.metrics import HTTP_REQUESTS_IN_PROGRESS, record_http_request
 
 logger = get_logger(__name__)
 
@@ -46,7 +50,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         endpoint = self._normalize_endpoint(request.url.path)
 
         # Track in-progress requests
-        HTTP_REQUESTS_IN_PROGRESS.labels(method=method).inc()
+        HTTP_REQUESTS_IN_FLIGHT.inc()
 
         start_time = time.time()
         request_size = int(request.headers.get("content-length", 0))
@@ -58,34 +62,38 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             status = response.status_code
             response_size = int(response.headers.get("content-length", 0))
 
-            # Record metrics
-            record_http_request(
+            status_class = f"{status // 100}xx"
+            HTTP_REQUESTS_TOTAL.labels(
                 method=method,
-                endpoint=endpoint,
-                status=status,
-                duration=duration,
-                request_size=request_size,
-                response_size=response_size,
-            )
+                route=endpoint,
+                status_class=status_class,
+            ).inc()
+            HTTP_REQUEST_DURATION.labels(
+                method=method,
+                route=endpoint,
+                status_class=status_class,
+            ).observe(duration)
 
             return response
 
         except Exception:
             duration = time.time() - start_time
 
-            # Record error metrics
-            record_http_request(
+            HTTP_REQUESTS_TOTAL.labels(
                 method=method,
-                endpoint=endpoint,
-                status=500,
-                duration=duration,
-                request_size=request_size,
-            )
+                route=endpoint,
+                status_class="5xx",
+            ).inc()
+            HTTP_REQUEST_DURATION.labels(
+                method=method,
+                route=endpoint,
+                status_class="5xx",
+            ).observe(duration)
 
             raise
 
         finally:
-            HTTP_REQUESTS_IN_PROGRESS.labels(method=method).dec()
+            HTTP_REQUESTS_IN_FLIGHT.dec()
 
     def _normalize_endpoint(self, path: str) -> str:
         """
