@@ -15,8 +15,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from ...shared.core.database import Base
+from ...models.user import User
 
 UserRole = Literal["patient", "pharmacist", "admin", "system"]
+
+__all__ = ["PharmacyMembership", "User", "UserRole"]
 
 
 class PharmacyMembership(Base):
