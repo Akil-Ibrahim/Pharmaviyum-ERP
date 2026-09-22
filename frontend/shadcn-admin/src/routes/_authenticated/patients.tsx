@@ -93,7 +93,7 @@ function PatientsPage() {
       </div>
       {selected && (
         <div className='rounded-xl border p-6'>
-          <div className='flex items-start justify-between gap-4'><div><h2 className='text-xl font-semibold'>{selected.full_name}</h2><p className='text-sm text-muted-foreground'>{selected.customer_category} · {selected.city}, {selected.country}</p></div><button type='button' className='rounded-md border px-3 py-1 text-sm' onClick={() => setSelected(null)}>Close</button></div>
+          <div className='flex items-start justify-between gap-4'><div><h2 className='text-xl font-semibold tracking-tight text-foreground'>{selected.full_name}</h2><p className='text-sm text-muted-foreground'>{selected.customer_category} · {selected.city}, {selected.country}</p></div><button type='button' className='rounded-md border px-3 py-1 text-sm' onClick={() => setSelected(null)}>Close</button></div>
           <div className='mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
             <MetricCard label='Loyalty points' value={selected.loyalty_points.toLocaleString()} detail={`Tier: ${selected.loyalty_tier}`} tone='blue' />
             <MetricCard label='Total spent' value={formatCurrency(selected.purchases.reduce((sum, purchase) => sum + purchase.total_amount, 0))} detail='Persisted purchase history' tone='yellow' />
