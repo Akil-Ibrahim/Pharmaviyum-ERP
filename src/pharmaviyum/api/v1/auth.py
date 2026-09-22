@@ -109,9 +109,7 @@ async def token(
         and local_username.casefold() == admin_user.casefold()
         and form_data.password == admin_pass
     ):
-        admin_result = await db.execute(
-            select(User).where(User.username == admin_user)
-        )
+        admin_result = await db.execute(select(User).where(User.username == admin_user))
         admin = admin_result.scalar_one_or_none()
         if admin is None:
             admin_email = f"{admin_user}@pharmaviyum.local"
@@ -158,9 +156,7 @@ async def token(
 
         # Bootstrap the configured admin into the canonical users table on
         # first successful login. The password is never stored in plaintext.
-        admin_result = await db.execute(
-            select(User).where(User.username == admin_user)
-        )
+        admin_result = await db.execute(select(User).where(User.username == admin_user))
         admin = admin_result.scalar_one_or_none()
         if admin is None:
             admin_email = f"{admin_user}@pharmaviyum.local"

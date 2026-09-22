@@ -57,7 +57,11 @@ async def get_order(
 ):
     scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
 
-    result = await db.execute(select(Order).join(Patient, Patient.id == Order.patient_id).where(Order.id == order_id))
+    result = await db.execute(
+        select(Order)
+        .join(Patient, Patient.id == Order.patient_id)
+        .where(Order.id == order_id)
+    )
     order = result.scalar_one_or_none()
     if not order or (scope is not None and order.patient.pharmacy_id != scope):
         raise HTTPException(status_code=404, detail="Order not found")
@@ -74,7 +78,11 @@ async def update_order_status(
 ):
     scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
 
-    result = await db.execute(select(Order).join(Patient, Patient.id == Order.patient_id).where(Order.id == order_id))
+    result = await db.execute(
+        select(Order)
+        .join(Patient, Patient.id == Order.patient_id)
+        .where(Order.id == order_id)
+    )
     order = result.scalar_one_or_none()
     if not order or (scope is not None and order.patient.pharmacy_id != scope):
         raise HTTPException(status_code=404, detail="Order not found")
@@ -118,9 +126,15 @@ async def update_order_status(
             patient = result.scalar_one()
             patient.visit_count += 1
             patient.last_visit_date = order.created_at
-            await cache_service.delete(f"patient:{patient.pharmacy_id or 0}:{patient.id}")
-            await cache_service.delete(f"patient:ai_profile:{patient.pharmacy_id or 0}:{patient.id}")
-            await cache_service.delete(f"patient:phone:{patient.pharmacy_id or 0}:{patient.phone}")
+            await cache_service.delete(
+                f"patient:{patient.pharmacy_id or 0}:{patient.id}"
+            )
+            await cache_service.delete(
+                f"patient:ai_profile:{patient.pharmacy_id or 0}:{patient.id}"
+            )
+            await cache_service.delete(
+                f"patient:phone:{patient.pharmacy_id or 0}:{patient.phone}"
+            )
 
         order.status = "completed"
 

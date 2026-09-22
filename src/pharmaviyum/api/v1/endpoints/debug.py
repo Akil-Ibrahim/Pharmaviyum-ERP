@@ -17,7 +17,6 @@ from src.pharmaviyum.workers.dispatcher import task_dispatcher
 router = APIRouter(prefix="/debug", tags=["debug"])
 
 
-
 @router.get("/info")
 async def system_info(_: CurrentSuperuser):
     import psutil
@@ -103,7 +102,9 @@ async def invalidate_health_cache(_: CurrentSuperuser):
 
 
 @router.get("/dead-letter")
-async def list_dead_letter(_: CurrentSuperuser, skip: int = 0, limit: int = 50, task_name: str = None):
+async def list_dead_letter(
+    _: CurrentSuperuser, skip: int = 0, limit: int = 50, task_name: str = None
+):
     entries = await dead_letter_queue.list_entries(
         skip=skip, limit=limit, task_name=task_name
     )

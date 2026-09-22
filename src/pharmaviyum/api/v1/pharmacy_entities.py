@@ -108,7 +108,9 @@ def _validate_inventory_levels(quantity: int, reserved_quantity: int) -> None:
 
 
 @router.get("/pharmacies", response_model=None)
-async def list_pharmacies(current_user: CurrentUser, session: SessionDep) -> list[Pharmacy]:
+async def list_pharmacies(
+    current_user: CurrentUser, session: SessionDep
+) -> list[Pharmacy]:
     if current_user.is_superuser:
         return await _list(session, Pharmacy)
     result = await session.execute(
@@ -289,7 +291,9 @@ async def list_erp_integrations(
     return await _list(session, ERPIntegration)
 
 
-@router.post("/erp/integrations", response_model=None, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/erp/integrations", response_model=None, status_code=status.HTTP_201_CREATED
+)
 async def create_erp_integration(
     data: ERPIntegrationIn, _: CurrentSuperuser, session: SessionDep
 ) -> ERPIntegration:
