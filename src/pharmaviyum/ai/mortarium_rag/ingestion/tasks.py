@@ -13,9 +13,9 @@ from __future__ import annotations
 import asyncio
 import os
 import tempfile
-from typing import Any
+from typing import Any, Literal, cast
 
-from celery.utils.log import get_task_logger
+from celery.utils.log import get_task_logger  # type: ignore[import-untyped]
 
 from src.pharmaviyum.ai.config import settings
 from src.pharmaviyum.ai.mortarium_rag.chunking import MedicalChunker
@@ -150,8 +150,11 @@ async def _ingest_document_async(
                 temp_path = tmp_file.name
             local_source = temp_path
 
+        loader_source_type = cast(
+            Literal["pdf", "html", "docx", "database", "web", "file"], source_type
+        )
         loader_config = LoaderConfig(
-            source_type=source_type,
+            source_type=loader_source_type,
             batch_size=config.get("batch_size", 10),
             extract_tables=config.get("extract_tables", True),
             ocr_enabled=config.get("ocr_enabled", True),
@@ -159,6 +162,7 @@ async def _ingest_document_async(
             metadata_filters=config.get("metadata_filters", {}),
         )
 
+        loader: Any
         if source_type == "pdf":
             loader = PDFLoader()
         elif source_type == "html":
