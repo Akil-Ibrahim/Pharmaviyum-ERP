@@ -86,7 +86,7 @@ function PatientsPage() {
       <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
         {patients.map((patient) => (
           <button key={patient.id} type='button' onClick={() => openPatient(patient.id)} className='rounded-xl border border-border/70 bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md'>
-            <div className='flex items-start justify-between gap-3'><div><h2 className='font-semibold text-foreground'>{patient.full_name}</h2><p className='text-sm text-muted-foreground'>{patient.city}, {patient.country}</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${categoryTone(patient.customer_category)}`}>{patient.customer_category}</span></div>
+            <div className='flex items-start justify-between gap-3'><div><h2 className='text-base font-semibold tracking-tight text-foreground'>{patient.full_name}</h2><p className='text-sm text-muted-foreground'>{patient.city}, {patient.country}</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${categoryTone(patient.customer_category)}`}>{patient.customer_category}</span></div>
             <div className='mt-4 grid grid-cols-3 gap-2 text-sm'><div><p className='text-muted-foreground'>Visits</p><p>{patient.visit_count}</p></div><div><p className='text-muted-foreground'>Status</p><p>{patient.is_active ? 'Active' : 'Inactive'}</p></div><div><p className='text-muted-foreground'>Tier</p><p>{patient.loyalty_tier}</p></div></div>
           </button>
         ))}
