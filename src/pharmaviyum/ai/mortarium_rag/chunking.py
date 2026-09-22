@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Literal
+from typing import Literal, cast
 from uuid import uuid4
 
 from .schemas import Chunk, Document
@@ -78,7 +78,7 @@ class MedicalChunker:
                     chunk = self._create_chunk(
                         document,
                         "\n".join(current_content[:-1]),
-                        current_section or "general",
+                        cast(Literal["indications", "dosage", "contraindications", "interactions", "side_effects", "general"], current_section or "general"),
                         chunk_index,
                     )
                     if chunk:
@@ -112,7 +112,7 @@ class MedicalChunker:
                 chunk = self._create_chunk(
                     document,
                     " ".join(current_sentences),
-                    self._classify_content(" ".join(current_sentences)),
+                    cast(Literal["indications", "dosage", "contraindications", "interactions", "side_effects", "general"], self._classify_content(" ".join(current_sentences))),
                     chunk_index,
                 )
                 if chunk:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import AsyncIterator
+from typing import AsyncIterator, Literal
 
 from .chunking import MedicalChunker
 from .embeddings import EmbeddingsProvider
@@ -30,7 +30,7 @@ class RAGPipeline:
         self.guardrails = guardrails
 
     async def ingest(
-        self, documents: list[Document], chunking_strategy: str = "medical"
+        self, documents: list[Document], chunking_strategy: Literal["medical", "semantic", "recursive"] = "medical"
     ) -> dict[str, int]:
         start_time = time.perf_counter()
         total_chunks = 0
