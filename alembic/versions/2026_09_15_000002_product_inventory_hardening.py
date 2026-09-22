@@ -19,7 +19,7 @@ def upgrade() -> None:
     # idempotent for both fresh and partially migrated PostgreSQL databases.
     op.execute(
         """
-        DO $
+        DO $$
         BEGIN
             IF NOT EXISTS (
                 SELECT 1
@@ -31,12 +31,12 @@ def upgrade() -> None:
                 ADD CONSTRAINT ck_products_price_nonnegative CHECK (price >= 0);
             END IF;
         END
-        $;
+        $$;
         """
     )
     op.execute(
         """
-        DO $
+        DO $$
         BEGIN
             IF NOT EXISTS (
                 SELECT 1
@@ -48,7 +48,7 @@ def upgrade() -> None:
                 ADD CONSTRAINT ck_products_stock_nonnegative CHECK (stock >= 0);
             END IF;
         END
-        $;
+        $$;
         """
     )
     op.add_column(
