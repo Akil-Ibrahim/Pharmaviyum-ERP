@@ -20,7 +20,7 @@ Private GitHub Release Asset
 CircleCI restore -> PostgreSQL
 ```
 
-GitHub supports release assets through its Releases API. Each release asset can be up to 2 GiB. citeturn0search0turn0search2
+GitHub supports release assets through its Releases API. Each release asset can be up to 2 GiB.
 
 The dump is **not committed to Git history**. It is uploaded only as a release asset.
 
@@ -78,7 +78,7 @@ Run:
 
 The script locates the selected GitHub Release, downloads its encrypted asset through the GitHub Releases API, decrypts it, and runs `pg_restore --clean --if-exists`.
 
-GitHub's Releases API supports creating releases and uploading/deleting release assets. citeturn0search0turn0search1
+GitHub's Releases API supports creating releases and uploading/deleting release assets.
 
 ## Retention
 
@@ -88,7 +88,7 @@ For production, keep a defined retention policy (for example, 90 daily backups) 
 
 ## Important
 
-This is a practical zero-cost interim backup design for the current project. GitHub recommends storing generated files outside Git itself, which is why the database dumps are release assets rather than repository files. citeturn0search5
+This is a practical zero-cost interim backup design for the current project. GitHub recommends storing generated files outside Git itself, which is why the database dumps are release assets rather than repository files.
 
 For a future enterprise deployment, move long-term backups to dedicated object storage with immutable retention, separate credentials, and an independent failure domain.
 
