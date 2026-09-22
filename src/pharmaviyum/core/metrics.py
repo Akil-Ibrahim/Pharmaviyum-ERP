@@ -248,32 +248,3 @@ def record_cache_hit(cache_type: str, hit: bool) -> None:
         CACHE_MISSES_TOTAL.labels(cache_type=cache_type).inc()
 
 
-def record_ai_request(
-    task_type: str,
-    model: str,
-    status: str,
-    duration: float,
-    tokens_input: int = 0,
-    tokens_output: int = 0,
-    confidence: float = 0.0,
-) -> None:
-    """Record AI request metrics"""
-    AI_REQUESTS_TOTAL.labels(
-        task_type=task_type,
-        model=model,
-        status=status,
-    ).inc()
-
-    AI_REQUEST_DURATION.labels(
-        task_type=task_type,
-        model=model,
-    ).observe(duration)
-
-    if tokens_input > 0:
-        AI_TOKENS_USED.labels(model=model, type="input").inc(tokens_input)
-
-    if tokens_output > 0:
-        AI_TOKENS_USED.labels(model=model, type="output").inc(tokens_output)
-
-    if confidence > 0:
-        AI_CONFIDENCE_SCORE.labels(task_type=task_type).observe(confidence)
