@@ -1,5 +1,10 @@
 version: 2.1
 
+parameters:
+  run_backup:
+    type: boolean
+    default: false
+
 jobs:
   lint:
     docker:
@@ -126,6 +131,23 @@ jobs:
               src/pharmaviyum/ai/mortarium_rag/vector_store.py \
               -ll -s B608
 
+  postgres-backup:
+    docker:
+      - image: cimg/postgres:16.10
+    working_directory: ~/project
+    steps:
+      - checkout
+      - run:
+          name: Verify backup configuration
+          command: |
+            test -n "$DATABASE_URL"
+            test -n "$GITHUB_BACKUP_TOKEN"
+            test -n "$GITHUB_REPOSITORY"
+            test -n "$BACKUP_ENCRYPTION_KEY"
+      - run:
+          name: Create encrypted backup and upload to GitHub Release
+          command: bash scripts/backup_to_github_release.sh
+
   rag-evaluation:
     docker:
       - image: cimg/python:3.13
@@ -183,3 +205,12 @@ workflows:
               only:
                 - dev
                 - main 
+
+  database-backup:
+    when: pipeline.parameters.run_backup
+    jobs:
+      - postgres-backup:
+          filters:
+            branches:
+              only:
+                - main
