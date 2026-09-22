@@ -2,11 +2,10 @@
 set -Eeuo pipefail
 
 : "${DATABASE_URL:?DATABASE_URL is required}"
-: "${BACKUP_S3_URI:?BACKUP_S3_URI is required}"
-: "${AWS_ACCESS_KEY_ID:?AWS_ACCESS_KEY_ID is required}"
-: "${AWS_SECRET_ACCESS_KEY:?AWS_SECRET_ACCESS_KEY is required}"
-: "${AWS_DEFAULT_REGION:?AWS_DEFAULT_REGION is required}"
-: "${BACKUP_OBJECT:?BACKUP_OBJECT is required, e.g. pharmaviyum_20260922T020000Z.dump}"
+: "${GITHUB_BACKUP_TOKEN:?GITHUB_BACKUP_TOKEN is required}"
+: "${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required, e.g. ibrahimengpy/Pharmaviyum-CRM}"
+: "${BACKUP_TAG:?BACKUP_TAG is required, e.g. db-backup-20260922T020000Z}"
+: "${BACKUP_ENCRYPTION_KEY:?BACKUP_ENCRYPTION_KEY is required}"
 
 if [[ "${ALLOW_DESTRUCTIVE_RESTORE:-false}" != "true" ]]; then
   echo "Refusing destructive restore. Set ALLOW_DESTRUCTIVE_RESTORE=true explicitly." >&2
@@ -14,23 +13,28 @@ if [[ "${ALLOW_DESTRUCTIVE_RESTORE:-false}" != "true" ]]; then
 fi
 
 command -v pg_restore >/dev/null || { echo "pg_restore is required" >&2; exit 1; }
-command -v aws >/dev/null || { echo "aws CLI is required" >&2; exit 1; }
+command -v curl >/dev/null || { echo "curl is required" >&2; exit 1; }
+command -v openssl >/dev/null || { echo "openssl is required" >&2; exit 1; }
 
 BACKUP_DIR="${BACKUP_DIR:-/tmp/pharmaviyum-backups}"
-BACKUP_FILE="${BACKUP_DIR}/$(basename "$BACKUP_OBJECT")"
 mkdir -p "$BACKUP_DIR"
-trap 'rm -f "$BACKUP_FILE"' EXIT
+trap 'rm -f "$BACKUP_DIR"/backup.dump.enc "$BACKUP_DIR"/backup.dump' EXIT
 
-REMOTE_FILE="${BACKUP_S3_URI%/}/${BACKUP_OBJECT}"
-echo "Downloading backup: $REMOTE_FILE"
+API="https://api.github.com/repos/${GITHUB_REPOSITORY}"
+AUTH=(-H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GITHUB_BACKUP_TOKEN" -H "X-GitHub-Api-Version: 2026-03-10")
 
-AWS_ARGS=(s3 cp "$REMOTE_FILE" "$BACKUP_FILE")
-if [[ -n "${AWS_S3_ENDPOINT_URL:-}" ]]; then
-  AWS_ARGS+=(--endpoint-url "$AWS_S3_ENDPOINT_URL")
-fi
-aws "${AWS_ARGS[@]}"
+echo "Locating release $BACKUP_TAG."
+RELEASE_JSON="$(curl -fsSL "$API/releases/tags/$BACKUP_TAG" "${AUTH[@]}")"
+ASSET_URL="$(printf '%s' "$RELEASE_JSON" | python -c 'import json,sys; d=json.load(sys.stdin); a=[x for x in d["assets"] if x["name"].endswith(".dump.enc")]; print(a[0]["url"] if a else (_ for _ in ()).throw(SystemExit("Encrypted backup asset not found")))')"
+
+echo "Downloading encrypted backup."
+curl -fsSL "$ASSET_URL" "${AUTH[@]}" -H "Accept: application/octet-stream" -o "$BACKUP_DIR/backup.dump.enc"
+
+echo "Decrypting backup."
+openssl enc -d -aes-256-cbc -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY \
+  -in "$BACKUP_DIR/backup.dump.enc" -out "$BACKUP_DIR/backup.dump"
 
 echo "Restoring into target database."
-pg_restore --dbname="$DATABASE_URL" --format=custom --clean --if-exists --no-owner --no-privileges "$BACKUP_FILE"
+pg_restore --dbname="$DATABASE_URL" --format=custom --clean --if-exists --no-owner --no-privileges "$BACKUP_DIR/backup.dump"
 
 echo "Restore completed successfully."
