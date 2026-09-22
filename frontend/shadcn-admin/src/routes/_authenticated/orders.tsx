@@ -1,44 +1,30 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Search, RefreshCw } from 'lucide-react'
+import { ClipboardCheck, Clock3, CircleCheck, CircleX, RefreshCw, Search } from 'lucide-react'
 import { createFileRoute } from '@tanstack/react-router'
-import { apiFetch } from '@/lib/api-client'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { apiFetch } from '@/lib/api-client'
 
-type Order = { id: number; patient_id: number; total_amount: number; status: string; created_at: string }
+type Order={id:number;patient_id:number;total_amount:number;status:string;created_at:string}
+export const Route=createFileRoute('/_authenticated/orders')({component:OrdersPage})
 
-export const Route = createFileRoute('/_authenticated/orders')({ component: OrdersPage })
-
-function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [query, setQuery] = useState('')
-
-  const load = () => {
-    setLoading(true); setError(null)
-    apiFetch<Order[]>('/api/v1/orders/?limit=50').then(setOrders).catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to load orders')).finally(() => setLoading(false))
-  }
-  useEffect(() => { load() }, [])
-
-  const completed = orders.filter((order) => order.status === 'completed')
-  const pending = orders.filter((order) => order.status === 'pending')
-  const cancelled = orders.filter((order) => order.status === 'cancelled')
-  const revenue = completed.reduce((sum, order) => sum + order.total_amount, 0)
-  const filtered = useMemo(() => {
-    const q=query.trim().toLowerCase()
-    return q ? orders.filter((o)=>String(o.id).includes(q)||String(o.patient_id).includes(q)||o.status.toLowerCase().includes(q)) : orders
-  }, [orders,query])
-
-  return <div className='space-y-6 p-6'>
-    <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'><div><h1 className='text-2xl font-bold tracking-tight'>Orders</h1><p className='text-muted-foreground'>Sales orders, fulfillment status, and patient purchase history.</p></div><Button variant='outline' size='sm' onClick={load} disabled={loading}><RefreshCw className='mr-2 size-4'/>Refresh</Button></div>
-    <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'><Stat title='Orders' value={orders.length}/><Stat title='Completed' value={completed.length}/><Stat title='Pending' value={pending.length}/><Stat title='Completed revenue' value={new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(revenue)}/></div>
-    <Card><CardHeader><div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'><CardTitle>Order ledger</CardTitle><div className='relative w-full sm:max-w-sm'><Search className='absolute left-2.5 top-2.5 size-4 text-muted-foreground'/><Input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder='Search orders...' className='pl-9'/></div></div></CardHeader><CardContent>
-      {loading&&<p className='text-sm text-muted-foreground'>Loading orders...</p>}{error&&<p className='text-sm text-destructive'>{error}</p>}{!loading&&!error&&filtered.length===0&&<p className='text-sm text-muted-foreground'>No orders match the current search.</p>}
-      {!loading&&!error&&filtered.length>0&&<div className='overflow-x-auto rounded-md border'><table className='w-full text-sm'><thead><tr className='border-b bg-muted/40 text-left text-muted-foreground'><th className='p-3'>Order</th><th className='p-3'>Patient</th><th className='p-3'>Status</th><th className='p-3 text-right'>Amount</th><th className='p-3'>Created</th></tr></thead><tbody>{filtered.map((order)=><tr key={order.id} className='border-b last:border-0 hover:bg-muted/30'><td className='p-3 font-medium'>#{order.id}</td><td className='p-3'>{order.patient_id}</td><td className='p-3'><Badge variant='outline' className={order.status==='completed'?'bg-green-500/15 text-green-700 dark:text-green-300':order.status==='cancelled'?'bg-red-500/15 text-red-700 dark:text-red-300':'bg-amber-500/15 text-amber-700 dark:text-amber-300'}>{order.status}</Badge></td><td className='p-3 text-right'>{order.total_amount.toFixed(2)}</td><td className='p-3 text-muted-foreground'>{new Date(order.created_at).toLocaleString()}</td></tr>)}</tbody></table><p className='mt-3 text-xs text-muted-foreground'>Cancelled orders: {cancelled.length}</p></div>}
-    </CardContent></Card>
-  </div>
+function OrdersPage(){
+ const [orders,setOrders]=useState<Order[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState<string|null>(null),[query,setQuery]=useState('')
+ const load=()=>{setLoading(true);setError(null);apiFetch<Order[]>('/api/v1/orders/?limit=50').then(setOrders).catch((e:unknown)=>setError(e instanceof Error?e.message:'Unable to load orders')).finally(()=>setLoading(false))}
+ useEffect(()=>{load()},[])
+ const completed=orders.filter(o=>o.status==='completed'),pending=orders.filter(o=>o.status==='pending'),cancelled=orders.filter(o=>o.status==='cancelled'),processing=orders.filter(o=>o.status==='processing'),revenue=completed.reduce((s,o)=>s+o.total_amount,0)
+ const filtered=useMemo(()=>{const q=query.trim().toLowerCase();return q?orders.filter(o=>[o.id,o.patient_id,o.status].some(v=>String(v).toLowerCase().includes(q))):orders},[orders,query])
+ return <div className='space-y-6 p-6'>
+  <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'><div><p className='text-xs font-semibold uppercase tracking-[0.18em] text-primary'>Pharmaviyum entity</p><h1 className='mt-1 text-2xl font-bold tracking-tight text-foreground'>Orders</h1><p className='mt-1 text-sm text-muted-foreground'>Sales orders, fulfillment status and patient purchase activity.</p></div><Button variant='outline' size='sm' onClick={load} disabled={loading}><RefreshCw className='mr-2 size-4'/>Refresh</Button></div>
+  <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'><Metric icon={ClipboardCheck} label='Total orders' value={orders.length} percent={100}/><Metric icon={CircleCheck} label='Completed' value={completed.length} percent={orders.length?completed.length/orders.length*100:0}/><Metric icon={Clock3} label='In workflow' value={pending.length+processing.length} percent={orders.length?(pending.length+processing.length)/orders.length*100:0}/><Metric icon={CircleX} label='Cancelled' value={cancelled.length} percent={orders.length?cancelled.length/orders.length*100:0}/></div>
+  <div className='rounded-2xl border bg-card p-5 shadow-sm'><div className='mb-4'><h2 className='font-semibold'>Order pipeline</h2><p className='text-xs text-muted-foreground'>A visual snapshot of fulfillment stages.</p></div><div className='grid gap-3 sm:grid-cols-4'>{[['Pending',pending.length,'bg-sky-500'],['Processing',processing.length,'bg-orange-500'],['Completed',completed.length,'bg-emerald-500'],['Cancelled',cancelled.length,'bg-red-500']].map(([label,count,color])=><div key={String(label)} className='rounded-xl border p-4'><div className='flex items-center gap-2'><span className={'size-2.5 rounded-full '+color}/><span className='text-sm font-medium'>{label}</span></div><p className='mt-3 text-2xl font-bold'>{count}</p></div>)}</div><div className='mt-4 rounded-xl bg-primary/5 p-4'><p className='text-xs text-muted-foreground'>Completed revenue</p><p className='mt-1 text-xl font-bold text-primary'>{new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(revenue)}</p></div></div>
+  <Card className='overflow-hidden shadow-sm'><CardHeader className='border-b'><div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'><CardTitle className='text-foreground'>Order ledger</CardTitle><div className='relative w-full sm:max-w-sm'><Search className='absolute left-2.5 top-2.5 size-4 text-muted-foreground'/><Input value={query} onChange={e=>setQuery(e.target.value)} placeholder='Search orders...' className='pl-9'/></div></div></CardHeader><CardContent className='p-0'>
+   {loading&&<p className='p-5 text-sm text-muted-foreground'>Loading orders...</p>}{error&&<p className='p-5 text-sm text-destructive'>{error}</p>}{!loading&&!error&&filtered.length===0&&<p className='p-5 text-sm text-muted-foreground'>No orders match the current search.</p>}
+   {!loading&&!error&&filtered.length>0&&<div className='overflow-x-auto'><table className='w-full text-sm'><thead><tr className='border-b bg-muted/40 text-left'><th className='p-3 font-medium text-foreground'>Order</th><th className='p-3 font-medium text-foreground'>Patient</th><th className='p-3 font-medium text-foreground'>Status</th><th className='p-3 text-right font-medium text-foreground'>Amount</th><th className='p-3 font-medium text-foreground'>Created</th></tr></thead><tbody>{filtered.map(o=><tr key={o.id} className='border-b last:border-0 hover:bg-muted/30'><td className='p-3 font-semibold text-foreground'>#{o.id}</td><td className='p-3 text-foreground'>Patient #{o.patient_id}</td><td className='p-3'><Badge variant='outline' className={o.status==='completed'?'bg-green-500/15 text-green-700 dark:text-green-300':o.status==='cancelled'?'bg-red-500/15 text-red-700 dark:text-red-300':o.status==='processing'?'bg-orange-500/15 text-orange-700 dark:text-orange-300':'bg-blue-500/15 text-blue-700 dark:text-blue-300'}>{o.status}</Badge></td><td className='p-3 text-right font-medium text-foreground'>{o.total_amount.toFixed(2)}</td><td className='p-3 text-muted-foreground'>{new Date(o.created_at).toLocaleString()}</td></tr>)}</tbody></table></div>}
+  </CardContent></Card>
+ </div>
 }
-function Stat({title,value}:{title:string;value:string|number}) { return <Card><CardContent className='p-4'><p className='text-xs font-medium text-muted-foreground'>{title}</p><p className='mt-2 text-2xl font-semibold'>{value}</p></CardContent></Card> }
+
+function Metric({icon:Icon,label,value,percent}:{icon:typeof ClipboardCheck;label:string;value:number;percent:number}){const safe=Math.max(0,Math.min(100,percent));return <Card className='rounded-2xl'><CardContent className='flex items-center gap-4 p-4'><div className='relative flex size-14 shrink-0 items-center justify-center rounded-full' style={{background:'conic-gradient(var(--primary) '+safe+'%, hsl(var(--muted)) 0)'}}><div className='flex size-10 items-center justify-center rounded-full bg-card'><Icon className='size-4 text-primary'/></div></div><div><p className='text-xs text-muted-foreground'>{label}</p><p className='text-2xl font-bold text-foreground'>{value.toLocaleString()}</p></div></CardContent></Card>}
