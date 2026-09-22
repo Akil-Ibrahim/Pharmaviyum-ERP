@@ -9,6 +9,7 @@ from typing import Any, Protocol, cast
 import numpy as np
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_openai import OpenAIEmbeddings
+from pydantic import SecretStr
 
 
 class EmbeddingsProvider(Protocol):
@@ -79,9 +80,10 @@ class GeminiEmbeddingsProvider:
         self.model = model
         self._dimensions = dimensions
         self._batch_size = batch_size
-        self._client = GoogleGenerativeAIEmbeddings(
+        client_cls: Any = GoogleGenerativeAIEmbeddings
+        self._client = client_cls(
             model=model,
-            google_api_key=api_key,
+            google_api_key=SecretStr(api_key),
             output_dimensionality=dimensions,
         )
 

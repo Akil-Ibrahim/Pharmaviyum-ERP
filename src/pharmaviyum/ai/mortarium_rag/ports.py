@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, Sequence
+from typing import Any, Protocol
 
 from .schemas import RetrievalResult
 
@@ -12,9 +12,9 @@ class RetrieverPort(Protocol):
         self,
         *,
         query: str,
-        query_embedding: Sequence[float],
-        top_k: int,
-        filters: dict[str, Any],
+        query_embedding: list[float],
+        top_k: int = 10,
+        filters: dict[str, Any] | None = None,
     ) -> list[RetrievalResult]: ...
 
 
