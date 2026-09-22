@@ -146,7 +146,7 @@ jobs:
             test -n "$BACKUP_ENCRYPTION_KEY"
       - run:
           name: Create encrypted backup and upload to GitHub Release
-          command: bash scripts/backup_to_s3.sh
+          command: bash scripts/backup_to_github_release.sh
 
   rag-evaluation:
     docker:
