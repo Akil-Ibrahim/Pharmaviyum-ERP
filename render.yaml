@@ -1,23 +1,19 @@
 services:
   - type: web
-    name: pharmaviyum-api
+    name: pharmaviyum-crm
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    branch: dev
-    plan: free
+    branch: main
+    plan: starter
     autoDeployTrigger: checksPass
-    # Render staging runs migrations before the application process.
-    # Production uses Render's preDeployCommand in render.production.yaml.
-    dockerCommand: >-
-      sh -c 'alembic upgrade head &&
-      if [ "${SEED_DEMO_DATA:-false}" = "true" ]; then
-      python scripts/seed_database.py; fi &&
-      exec uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port ${PORT:-8000}'
+    preDeployCommand: alembic upgrade head
+    startCommand: uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
+    maxShutdownDelaySeconds: 60
     envVars:
       - key: ENVIRONMENT
-        value: staging
+        value: production
       - key: SECRET_KEY
         generateValue: true
       - key: API_SECRET_KEY
@@ -25,19 +21,19 @@ services:
       - key: LOG_LEVEL
         value: INFO
       - key: SEED_DEMO_DATA
-        value: "true"
+        value: "false"
       - key: DATABASE_URL
         fromDatabase:
-          name: pharmaviyum-postgres
+          name: pharmaviyum-postgres-production
           property: connectionString
       - key: PGVECTOR_DATABASE_URL
         fromDatabase:
-          name: pharmaviyum-postgres
+          name: pharmaviyum-postgres-production
           property: connectionString
       - key: REDIS_URL
         fromService:
           type: keyvalue
-          name: pharmaviyum-redis
+          name: pharmaviyum-redis-production
           property: connectionString
       - key: USE_CLOUD_LLM
         value: "true"
@@ -57,14 +53,14 @@ services:
         value: "1024"
 
   - type: keyvalue
-    name: pharmaviyum-redis
-    plan: free
+    name: pharmaviyum-redis-production
+    plan: starter
     ipAllowList: []
 
 databases:
-  - name: pharmaviyum-postgres
+  - name: pharmaviyum-postgres-production
     databaseName: pharmaviyum
     user: pharmaviyum
     postgresMajorVersion: "16"
-    plan: free
+    plan: basic-256mb
     ipAllowList: []
