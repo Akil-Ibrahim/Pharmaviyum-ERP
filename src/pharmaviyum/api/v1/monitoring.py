@@ -14,8 +14,8 @@ from src.pharmaviyum.ai.dependencies import ai_container
 from src.pharmaviyum.ai.mcp import get_mcp_health_status
 from src.pharmaviyum.ai.observability import ai_registry
 from src.pharmaviyum.core.logging import logger
-from src.pharmaviyum.redis_client import get_redis
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser
+from src.pharmaviyum.redis_client import get_redis
 
 router = APIRouter(tags=["Monitoring"])
 
