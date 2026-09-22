@@ -138,18 +138,14 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install AWS CLI
-          command: pip install --no-cache-dir awscli
-      - run:
           name: Verify backup configuration
           command: |
             test -n "$DATABASE_URL"
-            test -n "$BACKUP_S3_URI"
-            test -n "$AWS_ACCESS_KEY_ID"
-            test -n "$AWS_SECRET_ACCESS_KEY"
-            test -n "$AWS_DEFAULT_REGION"
+            test -n "$GITHUB_BACKUP_TOKEN"
+            test -n "$GITHUB_REPOSITORY"
+            test -n "$BACKUP_ENCRYPTION_KEY"
       - run:
-          name: Create and upload PostgreSQL backup
+          name: Create encrypted backup and upload to GitHub Release
           command: bash scripts/backup_to_s3.sh
 
   rag-evaluation:
