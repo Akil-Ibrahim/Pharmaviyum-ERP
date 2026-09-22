@@ -36,6 +36,10 @@ services:
         value: "true"
       - key: CLOUD_LLM_PROVIDER
         value: gemini
+      - key: ADMIN_USER
+        value: admin
+      - key: ADMIN_PASSWORD
+        value: admin
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
