@@ -11,17 +11,6 @@ from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-from src.pharmaviyum.ai.observability.metrics import (
-    DB_CONNECTION_HOLD_DURATION,
-    DB_POOL_CHECKED_OUT,
-    DB_POOL_MAX_OVERFLOW,
-    DB_POOL_OVERFLOW,
-    DB_POOL_SIZE,
-    DB_POOL_TIMEOUTS_TOTAL,
-    DB_QUERY_DURATION,
-    DB_QUERY_ERRORS_TOTAL,
-    DB_QUERY_TOTAL,
-)
 from src.pharmaviyum.config import settings
 
 logger = structlog.get_logger()
@@ -44,6 +33,13 @@ engine = create_async_engine(
 
 def _pool_metrics() -> None:
     """Publish pool metrics when the underlying pool exposes them."""
+    from src.pharmaviyum.ai.observability.metrics import (
+        DB_POOL_CHECKED_OUT,
+        DB_POOL_MAX_OVERFLOW,
+        DB_POOL_OVERFLOW,
+        DB_POOL_SIZE,
+    )
+
     pool: Any = engine.sync_engine.pool
     try:
         DB_POOL_SIZE.set(pool.size())
@@ -81,6 +77,8 @@ def _on_checkout(
 
 @event.listens_for(engine.sync_engine, "checkin")
 def _on_checkin(dbapi_connection: Any, connection_record: Any) -> None:
+    from src.pharmaviyum.ai.observability.metrics import DB_CONNECTION_HOLD_DURATION
+
     started = connection_record.info.pop("checkout_started_at", None)
     if started is not None:
         DB_CONNECTION_HOLD_DURATION.observe(time.perf_counter() - started)
@@ -108,6 +106,11 @@ def _after_cursor_execute(
     context: Any,
     executemany: bool,
 ) -> None:
+    from src.pharmaviyum.ai.observability.metrics import (
+        DB_QUERY_DURATION,
+        DB_QUERY_TOTAL,
+    )
+
     started = getattr(context, "_pharmaviyum_query_started_at", None)
     if started is None:
         return
@@ -118,6 +121,12 @@ def _after_cursor_execute(
 
 @event.listens_for(engine.sync_engine, "handle_error")
 def _handle_db_error(exception_context: Any) -> None:
+    from src.pharmaviyum.ai.observability.metrics import (
+        DB_POOL_TIMEOUTS_TOTAL,
+        DB_QUERY_ERRORS_TOTAL,
+        DB_QUERY_TOTAL,
+    )
+
     operation = _classify_operation(exception_context.statement or "")
     DB_QUERY_TOTAL.labels(operation=operation, status="error").inc()
     DB_QUERY_ERRORS_TOTAL.labels(operation=operation).inc()
@@ -125,9 +134,6 @@ def _handle_db_error(exception_context: Any) -> None:
         DB_POOL_TIMEOUTS_TOTAL.inc()
     _pool_metrics()
 
-
-DB_POOL_SIZE.set(settings.DB_POOL_SIZE)
-DB_POOL_MAX_OVERFLOW.set(settings.DB_MAX_OVERFLOW)
 
 AsyncSessionLocal = async_sessionmaker(
     engine,
