@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     )
     ADMIN_USER: str = "admin"
     ADMIN_EMAIL: str = "Admin"
+    # Production deployment pins the bootstrap credentials explicitly in render.yaml.
     ADMIN_PASSWORD: str = "admin"
 
     # JWT
