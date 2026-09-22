@@ -1,8 +1,6 @@
 # Pharmaviyum PostgreSQL Backup & Restore
 
-Pharmaviyum includes a portable PostgreSQL backup/restore mechanism designed for the Render Free PostgreSQL 30-day limitation.
-
-Render Free Postgres does not provide managed backups and expires after 30 days. The application therefore must export the database to storage outside Render before the database expires. See the Render documentation for the current Free Postgres limitations.
+Pharmaviyum uses CircleCI to create encrypted PostgreSQL backups and stores them as **GitHub Release Assets** in the private repository. This avoids GitHub Actions minutes and does not require a separate storage provider.
 
 ## Architecture
 
@@ -13,67 +11,85 @@ Render PostgreSQL
       v
 CircleCI scheduled backup
       |
-      | S3-compatible object storage
+      | AES-256 encrypted dump
       v
-Long-term backup archive
+Private GitHub Release Asset
+      |
+      | selected release
+      v
+CircleCI restore -> PostgreSQL
 ```
 
-The repository provides:
+GitHub supports release assets through its Releases API. Each release asset can be up to 2 GiB. citeturn0search0turn0search2
 
-- `scripts/backup_to_s3.sh` — creates a PostgreSQL custom-format dump and uploads it.
-- `scripts/restore_from_s3.sh` — downloads a selected dump and restores it.
-- CircleCI backup workflow — can be triggered automatically by a CircleCI Schedule Trigger or manually with `run_backup=true`.
-
-GitHub Actions is deliberately not used for backups, preserving the project's GitHub Actions minutes.
+The dump is **not committed to Git history**. It is uploaded only as a release asset.
 
 ## Required CircleCI variables
 
-Set these as protected project/environment variables or in a restricted CircleCI context:
+Configure these as protected project/environment variables or in a restricted CircleCI context:
 
-- `DATABASE_URL` — Render PostgreSQL external connection string.
-- `BACKUP_S3_URI` — e.g. `s3://my-bucket/pharmaviyum/postgres`.
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `AWS_DEFAULT_REGION`
+- `DATABASE_URL` — Render PostgreSQL connection string.
+- `GITHUB_REPOSITORY` — `ibrahimengpy/Pharmaviyum-CRM`.
+- `GITHUB_BACKUP_TOKEN` — fine-grained GitHub token with repository Contents write permission so CircleCI can create releases and upload assets.
+- `BACKUP_ENCRYPTION_KEY` — strong secret used to encrypt/decrypt the database dump.
 
-For S3-compatible providers such as Cloudflare R2, also set:
-
-- `AWS_S3_ENDPOINT_URL`
-
-Never commit database URLs, access keys, secret keys, or backup files to Git.
+Never commit database URLs, GitHub tokens, encryption keys, or backup files to Git.
 
 ## Automatic schedule
 
-Create a CircleCI **Schedule Trigger** for the `main` branch and set the pipeline parameter:
+Create a CircleCI **Schedule Trigger** for the `main` branch with:
 
 `run_backup=true`
 
-A daily schedule is appropriate for this mechanism. CircleCI Schedule Triggers are configured in the CircleCI project settings; they do not consume GitHub Actions minutes.
+A daily schedule is recommended.
 
-## Manual backup
+GitHub Actions is deliberately not used for backups, preserving the project's Actions minutes.
 
-Run the CircleCI pipeline with:
+## Backup
 
-`run_backup=true`
+The backup job:
 
-The backup job will create a timestamped `.dump` file and upload it to the configured object-storage prefix.
+1. Creates a PostgreSQL custom-format dump with `pg_dump`.
+2. Encrypts the dump with AES-256-CBC + PBKDF2.
+3. Creates a prerelease tagged `db-backup-YYYYMMDDTHHMMSSZ`.
+4. Uploads the encrypted `.dump.enc` file as the release asset.
+5. Removes the local temporary files.
+
+A release asset is limited to 2 GiB, so the job fails safely if the encrypted dump reaches that limit. citeturn0search2
 
 ## Restore
 
-1. Create a new PostgreSQL database.
-2. Set `DATABASE_URL` to the target database.
-3. Set `BACKUP_OBJECT` to the exact object name, for example `pharmaviyum_20260922T020000Z.dump`.
-4. Set `ALLOW_DESTRUCTIVE_RESTORE=true`.
-5. Run the restore command:
+Restore only into a disposable/new target database unless replacement has been explicitly approved.
+
+Required variables:
+
+- `DATABASE_URL`
+- `GITHUB_REPOSITORY`
+- `GITHUB_BACKUP_TOKEN`
+- `BACKUP_TAG`
+- `BACKUP_ENCRYPTION_KEY`
+- `ALLOW_DESTRUCTIVE_RESTORE=true`
+
+Run:
 
 ```bash
 ./scripts/restore_from_s3.sh
 ```
 
-The restore uses `pg_restore --clean --if-exists`, so the target database must be treated as disposable or explicitly approved for replacement.
+The script locates the selected GitHub Release, downloads its encrypted asset through the GitHub Releases API, decrypts it, and runs `pg_restore --clean --if-exists`.
+
+GitHub's Releases API supports creating releases and uploading/deleting release assets. citeturn0search0turn0search1
+
+## Retention
+
+Backups remain available until their GitHub Releases/assets are deleted. The initial implementation does not automatically delete old backups.
+
+For production, keep a defined retention policy (for example, 90 daily backups) and add automated cleanup after the backup flow has been validated.
 
 ## Important
 
-The backup mechanism is portable and protects the database beyond Render's 30-day Free Postgres lifetime, but it does not automatically create an external storage account or credentials. Those must be configured once in CircleCI.
+This is a practical zero-cost interim backup design for the current project. GitHub recommends storing generated files outside Git itself, which is why the database dumps are release assets rather than repository files. citeturn0search5
 
-Redis is separate: Render Free Key Value is in-memory and can lose its contents on restart. The application should therefore treat Redis as a cache/queue, not the source of truth.
+For a future enterprise deployment, move long-term backups to dedicated object storage with immutable retention, separate credentials, and an independent failure domain.
+
+Redis remains a cache/queue and is not treated as the source of truth.
