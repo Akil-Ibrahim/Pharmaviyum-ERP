@@ -97,8 +97,41 @@ async def token(
 ):
     username_or_email = form_data.username.strip()
     user = await _get_user_by_username_or_email(db, username_or_email)
+    admin_user = getattr(settings, "ADMIN_USER", "admin")
+    admin_pass = settings.ADMIN_PASSWORD
+    local_username = username_or_email.split("@", 1)[0]
 
-    if user:
+    # Keep the configured bootstrap admin usable after the password is changed
+    # in deployment configuration. If the canonical admin row already exists,
+    # synchronize its hash before normal user verification.
+    if (
+        admin_pass
+        and local_username.casefold() == admin_user.casefold()
+        and form_data.password == admin_pass
+    ):
+        admin_result = await db.execute(
+            select(User).where(User.username == admin_user)
+        )
+        admin = admin_result.scalar_one_or_none()
+        if admin is None:
+            admin_email = f"{admin_user}@pharmaviyum.local"
+            admin = User(
+                email=admin_email,
+                username=admin_user,
+                hashed_password=pwd_context.hash(admin_pass[:72]),
+                is_active=True,
+                is_superuser=True,
+            )
+            db.add(admin)
+            await db.commit()
+            await db.refresh(admin)
+        else:
+            admin.hashed_password = pwd_context.hash(admin_pass[:72])
+            admin.is_active = True
+            admin.is_superuser = True
+            await db.commit()
+        subject = str(admin.id)
+    elif user:
         password_to_check = (
             form_data.password[:72]
             if len(form_data.password) > 72
@@ -112,10 +145,6 @@ async def token(
             )
         subject = str(user.id)
     else:
-        admin_user = getattr(settings, "ADMIN_USER", "admin")
-        admin_pass = settings.ADMIN_PASSWORD
-        local_username = username_or_email.split("@", 1)[0]
-
         if not (
             admin_pass
             and local_username.casefold() == admin_user.casefold()
