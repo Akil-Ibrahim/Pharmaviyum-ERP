@@ -18,9 +18,9 @@ from redis.asyncio import Redis
 from src.pharmaviyum.ai.dependencies import get_redis_client
 from src.pharmaviyum.ai.mortarium_rag.ingestion import ingest_document
 from src.pharmaviyum.core.logging import logger
-from src.pharmaviyum.storage.object_storage import ObjectStorage, ObjectStorageError
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
+from src.pharmaviyum.storage.object_storage import ObjectStorage, ObjectStorageError
 
 router = APIRouter(prefix="/api/v1/ingest", tags=["Ingestion"])
 

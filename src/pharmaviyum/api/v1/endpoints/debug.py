@@ -9,8 +9,8 @@ from fastapi import APIRouter, HTTPException, status
 
 from src.pharmaviyum.core.config import settings
 from src.pharmaviyum.core.health import health_checker
-from src.pharmaviyum.redis_client import get_redis
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser
+from src.pharmaviyum.redis_client import get_redis
 from src.pharmaviyum.workers.dead_letter import dead_letter_queue
 from src.pharmaviyum.workers.dispatcher import task_dispatcher
 

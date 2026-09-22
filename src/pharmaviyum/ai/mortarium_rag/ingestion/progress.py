@@ -10,9 +10,9 @@ Best practice 2026:
 from __future__ import annotations
 
 import json
-from urllib.parse import urlsplit, urlunsplit
 from datetime import datetime, timedelta
 from typing import Any, Literal
+from urllib.parse import urlsplit, urlunsplit
 
 from redis.asyncio import Redis
 
