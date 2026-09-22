@@ -14,6 +14,7 @@ import asyncio
 from typing import Any, AsyncIterator
 
 from langchain_core.messages import AIMessageChunk
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 
 from src.pharmaviyum.core.logging import logger
@@ -36,7 +37,7 @@ class AgentStreamManager:
     async def stream_tokens(
         self,
         initial_state: dict[str, Any],
-        config: dict[str, Any] | None = None,
+        config: RunnableConfig | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
         """
         Stream agent execution with token-level granularity.
