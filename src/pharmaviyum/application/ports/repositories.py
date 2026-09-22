@@ -1,5 +1,6 @@
 """Application-layer repository contracts."""
 
+from datetime import datetime
 from typing import Protocol, TypeVar
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -49,8 +50,8 @@ class PatientRepositoryPort(Repository[Patient], Protocol):
         country: str | None = None,
         loyalty_tier: str | None = None,
         is_active: bool | None = None,
-        date_from: object | None = None,
-        date_to: object | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
         skip: int = 0,
         limit: int = 50,
         pharmacy_id: int | None = None,
