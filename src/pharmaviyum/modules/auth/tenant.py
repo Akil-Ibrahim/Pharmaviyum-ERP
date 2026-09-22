@@ -40,7 +40,7 @@ async def require_pharmacy_tenant(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User is not authorized for this pharmacy tenant",
         )
-    return TenantContext(user_id=str(current_user.id), pharmacy_id=pharmacy_id)
+    return TenantContext(user_id=current_user.id, pharmacy_id=pharmacy_id)
 
 
 async def resolve_pharmacy_scope(
