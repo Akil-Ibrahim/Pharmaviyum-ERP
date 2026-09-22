@@ -18,7 +18,7 @@ export function SignIn() {
       <div className='w-full max-w-sm'>
         <div className='mb-6 overflow-hidden rounded-xl border bg-card shadow-sm'>
           <img
-            src='https://raw.githubusercontent.com/Akil-Ibrahim/Pharmaviyum-CRM/feat/patients-pipeline-colors/assets/pharmaviyum.png'
+            src='/assets/pharmaviyum.png'
             alt='Pharmaviyum CRM'
             className='h-auto w-full object-cover'
           />
