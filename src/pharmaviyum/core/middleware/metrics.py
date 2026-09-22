@@ -26,7 +26,6 @@ class MetricsMiddleware(BaseHTTPMiddleware):
     Collects:
     - Request count by method/endpoint/status
     - Request duration histogram
-    - Request/response sizes
     - In-progress requests gauge
     """
 
@@ -53,15 +52,11 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         HTTP_REQUESTS_IN_FLIGHT.inc()
 
         start_time = time.time()
-        request_size = int(request.headers.get("content-length", 0))
-
         try:
             response = await call_next(request)
 
             duration = time.time() - start_time
             status = response.status_code
-            response_size = int(response.headers.get("content-length", 0))
-
             status_class = f"{status // 100}xx"
             HTTP_REQUESTS_TOTAL.labels(
                 method=method,
