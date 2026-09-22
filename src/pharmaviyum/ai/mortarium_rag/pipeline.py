@@ -31,7 +31,7 @@ class RAGPipeline:
 
     async def ingest(
         self, documents: list[Document], chunking_strategy: Literal["medical", "semantic", "recursive"] = "medical"
-    ) -> dict[str, int]:
+    ) -> dict[str, int | float]:
         start_time = time.perf_counter()
         total_chunks = 0
         for document in documents:

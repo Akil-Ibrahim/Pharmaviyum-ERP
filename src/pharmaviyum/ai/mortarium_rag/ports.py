@@ -10,12 +10,11 @@ from .schemas import RetrievalResult
 class RetrieverPort(Protocol):
     async def hybrid_search(
         self,
+        *,
         query: str,
-        query_embedding: list[float],
-        top_k: int = 10,
-        filters: dict[str, Any] | None = None,
-        reranker: RerankerPort | None = None,
-        rrf_k: int = 60,
+        query_embedding: Sequence[float],
+        top_k: int,
+        filters: dict[str, Any],
     ) -> list[RetrievalResult]: ...
 
 

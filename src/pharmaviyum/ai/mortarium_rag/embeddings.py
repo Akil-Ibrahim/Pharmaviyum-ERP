@@ -79,8 +79,7 @@ class GeminiEmbeddingsProvider:
         self.model = model
         self._dimensions = dimensions
         self._batch_size = batch_size
-        embeddings_cls: Any = GoogleGenerativeAIEmbeddings
-        self._client = embeddings_cls(
+        self._client = GoogleGenerativeAIEmbeddings(
             model=model,
             google_api_key=api_key,
             output_dimensionality=dimensions,
@@ -127,8 +126,7 @@ class OpenAIEmbeddingsProvider:
         self.model = model
         self._dimensions = dimensions
         self._batch_size = batch_size
-        embeddings_cls: Any = OpenAIEmbeddings
-        self._client = embeddings_cls(
+        self._client = OpenAIEmbeddings(
             model=model,
             dimensions=dimensions,
             api_key=api_key,
