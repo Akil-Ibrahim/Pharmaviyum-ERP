@@ -73,7 +73,7 @@ Required variables:
 Run:
 
 ```bash
-./scripts/restore_from_s3.sh
+./scripts/restore_from_github_release.sh
 ```
 
 The script locates the selected GitHub Release, downloads its encrypted asset through the GitHub Releases API, decrypts it, and runs `pg_restore --clean --if-exists`.
