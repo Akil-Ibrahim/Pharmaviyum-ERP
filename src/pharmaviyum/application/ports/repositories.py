@@ -2,6 +2,8 @@
 
 from typing import Protocol, TypeVar
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.pharmaviyum.models.patients import Patient
 
 EntityT = TypeVar("EntityT")
@@ -20,6 +22,8 @@ class Repository(Protocol[EntityT]):
 
 
 class PatientRepositoryPort(Repository[Patient], Protocol):
+    @property
+    def session(self) -> AsyncSession: ...
     """Patient persistence contract exposed to the application layer."""
 
     async def get_by_external_id(
@@ -38,7 +42,19 @@ class PatientRepositoryPort(Repository[Patient], Protocol):
         self, id: int, pharmacy_id: int | None = None
     ) -> Patient | None: ...
 
-    async def search(self, **filters: object) -> tuple[list[Patient], int]: ...
+    async def search(
+        self,
+        query_text: str | None = None,
+        city: str | None = None,
+        country: str | None = None,
+        loyalty_tier: str | None = None,
+        is_active: bool | None = None,
+        date_from: object | None = None,
+        date_to: object | None = None,
+        skip: int = 0,
+        limit: int = 50,
+        pharmacy_id: int | None = None,
+    ) -> tuple[list[Patient], int]: ...
 
     async def soft_delete(self, id: int, pharmacy_id: int | None = None) -> bool: ...
 
