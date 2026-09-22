@@ -19,13 +19,6 @@ from src.pharmaviyum.core.config import settings
 # DATABASE METRICS
 # ============================================================================
 
-DB_QUERY_DURATION = Histogram(
-    "db_query_duration_seconds",
-    "Database query duration in seconds",
-    ["operation", "table"],
-    buckets=(0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0),
-)
-
 DB_CONNECTIONS_ACTIVE = Gauge(
     "db_connections_active",
     "Number of active database connections",
@@ -69,12 +62,6 @@ CACHE_HIT_RATIO = Gauge(
 # ============================================================================
 # AI / RAG METRICS
 # ============================================================================
-
-AI_REQUESTS_TOTAL = Counter(
-    "ai_requests_total",
-    "Total number of AI requests",
-    ["task_type", "model", "status"],
-)
 
 AI_REQUEST_DURATION = Histogram(
     "ai_request_duration_seconds",
@@ -148,23 +135,6 @@ NOTIFICATIONS_SENT_TOTAL = Counter(
     ["channel", "status"],  # channel: zalo/line/whatsapp, status: success/failed
 )
 
-
-# ============================================================================
-# BACKGROUND WORKER METRICS
-# ============================================================================
-
-WORKER_TASKS_TOTAL = Counter(
-    "worker_tasks_total",
-    "Total number of background tasks processed",
-    ["task_name", "queue", "status"],  # status: success/failed
-)
-
-WORKER_TASK_DURATION = Histogram(
-    "worker_task_duration_seconds",
-    "Background task duration in seconds",
-    ["task_name", "queue"],
-    buckets=(0.1, 0.5, 1.0, 5.0, 10.0, 30.0, 60.0, 300.0),
-)
 
 WORKER_QUEUE_LENGTH = Gauge(
     "worker_queue_length",
@@ -269,39 +239,6 @@ def get_metrics() -> tuple[bytes, str]:
     return generate_latest(), CONTENT_TYPE_LATEST
 
 
-def record_http_request(
-    method: str,
-    endpoint: str,
-    status: int,
-    duration: float,
-    request_size: int = 0,
-    response_size: int = 0,
-) -> None:
-    """Record HTTP request metrics"""
-    status_str = str(status)
-
-    HTTP_REQUESTS_TOTAL.labels(
-        method=method,
-        endpoint=endpoint,
-        status=status_str,
-        service=settings.APP_NAME,
-    ).inc()
-
-    HTTP_REQUEST_DURATION.labels(
-        method=method,
-        endpoint=endpoint,
-        status=status_str,
-    ).observe(duration)
-
-    if request_size > 0:
-        HTTP_REQUEST_SIZE.labels(method=method, endpoint=endpoint).observe(request_size)
-
-    if response_size > 0:
-        HTTP_RESPONSE_SIZE.labels(method=method, endpoint=endpoint).observe(
-            response_size
-        )
-
-
 def record_cache_hit(cache_type: str, hit: bool) -> None:
     """Record cache hit/miss"""
     if hit:
@@ -310,32 +247,3 @@ def record_cache_hit(cache_type: str, hit: bool) -> None:
         CACHE_MISSES_TOTAL.labels(cache_type=cache_type).inc()
 
 
-def record_ai_request(
-    task_type: str,
-    model: str,
-    status: str,
-    duration: float,
-    tokens_input: int = 0,
-    tokens_output: int = 0,
-    confidence: float = 0.0,
-) -> None:
-    """Record AI request metrics"""
-    AI_REQUESTS_TOTAL.labels(
-        task_type=task_type,
-        model=model,
-        status=status,
-    ).inc()
-
-    AI_REQUEST_DURATION.labels(
-        task_type=task_type,
-        model=model,
-    ).observe(duration)
-
-    if tokens_input > 0:
-        AI_TOKENS_USED.labels(model=model, type="input").inc(tokens_input)
-
-    if tokens_output > 0:
-        AI_TOKENS_USED.labels(model=model, type="output").inc(tokens_output)
-
-    if confidence > 0:
-        AI_CONFIDENCE_SCORE.labels(task_type=task_type).observe(confidence)
