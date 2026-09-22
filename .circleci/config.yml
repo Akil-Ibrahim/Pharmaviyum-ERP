@@ -1,5 +1,10 @@
 version: 2.1
 
+parameters:
+  run_backup:
+    type: boolean
+    default: false
+
 jobs:
   lint:
     docker:
@@ -126,6 +131,27 @@ jobs:
               src/pharmaviyum/ai/mortarium_rag/vector_store.py \
               -ll -s B608
 
+  postgres-backup:
+    docker:
+      - image: cimg/postgres:16.10
+    working_directory: ~/project
+    steps:
+      - checkout
+      - run:
+          name: Install AWS CLI
+          command: pip install --no-cache-dir awscli
+      - run:
+          name: Verify backup configuration
+          command: |
+            test -n "$DATABASE_URL"
+            test -n "$BACKUP_S3_URI"
+            test -n "$AWS_ACCESS_KEY_ID"
+            test -n "$AWS_SECRET_ACCESS_KEY"
+            test -n "$AWS_DEFAULT_REGION"
+      - run:
+          name: Create and upload PostgreSQL backup
+          command: bash scripts/backup_to_s3.sh
+
   rag-evaluation:
     docker:
       - image: cimg/python:3.13
@@ -183,3 +209,12 @@ workflows:
               only:
                 - dev
                 - main 
+
+  database-backup:
+    when: pipeline.parameters.run_backup
+    jobs:
+      - postgres-backup:
+          filters:
+            branches:
+              only:
+                - main
