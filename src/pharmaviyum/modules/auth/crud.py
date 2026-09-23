@@ -32,9 +32,7 @@ async def get_user_by_id(session: AsyncSession, user_id: Any) -> User | None:
     return await session.get(User, user_id)
 
 
-async def authenticate(
-    session: AsyncSession, email: str, password: str
-) -> User | None:
+async def authenticate(session: AsyncSession, email: str, password: str) -> User | None:
     """
     Authenticate user by email and password.
 
