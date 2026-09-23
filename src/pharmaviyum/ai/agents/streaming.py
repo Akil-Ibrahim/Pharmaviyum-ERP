@@ -79,7 +79,9 @@ class AgentStreamManager:
 
                     # LLM token streaming
                     elif event_kind == "on_chat_model_stream":
-                        chunk = cast(AIMessageChunk | None, event.get("data", {}).get("chunk"))
+                        chunk = cast(
+                            AIMessageChunk | None, event.get("data", {}).get("chunk")
+                        )
                         if chunk and chunk.content:
                             yield {
                                 "type": "token",
