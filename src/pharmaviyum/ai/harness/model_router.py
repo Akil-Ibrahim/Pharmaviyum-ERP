@@ -18,11 +18,9 @@ from src.pharmaviyum.core.logging import logger
 class LLMProvider(Protocol):
     """Protocol for LLM providers to ensure compatibility."""
 
-    model_name: str
+    async def ainvoke(self, input: Any, **kwargs: Any) -> Any: ...
 
-    async def ainvoke(self, messages: list, **kwargs) -> Any: ...
-
-    async def astream(self, messages: list, **kwargs) -> Any: ...
+    async def astream(self, input: Any, **kwargs: Any) -> Any: ...
 
 
 class ModelRouter:
