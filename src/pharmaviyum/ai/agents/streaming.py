@@ -11,7 +11,7 @@ Best practice 2026:
 from __future__ import annotations
 
 import asyncio
-from typing import Any, AsyncIterator
+from typing import Any, AsyncIterator, cast
 
 from langchain_core.messages import AIMessageChunk
 from langchain_core.runnables import RunnableConfig
@@ -79,7 +79,7 @@ class AgentStreamManager:
 
                     # LLM token streaming
                     elif event_kind == "on_chat_model_stream":
-                        chunk: AIMessageChunk = event.get("data", {}).get("chunk")
+                        chunk = cast(AIMessageChunk | None, event.get("data", {}).get("chunk"))
                         if chunk and chunk.content:
                             yield {
                                 "type": "token",
