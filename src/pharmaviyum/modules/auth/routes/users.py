@@ -168,9 +168,7 @@ async def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Mess
 
 
 @router.post("/signup", response_model=UserPublic)
-async def register_user(
-    session: SessionDep, user_in: UserRegister
-) -> UserPublic:
+async def register_user(session: SessionDep, user_in: UserRegister) -> UserPublic:
     """Public user registration endpoint."""
     existing = await crud.get_user_by_email(session=session, email=user_in.email)
     if existing:
@@ -238,9 +236,7 @@ async def update_user(
                 detail="User with this email already exists",
             )
 
-    db_user = await crud.update_user(
-        session=session, db_user=db_user, user_in=user_in
-    )
+    db_user = await crud.update_user(session=session, db_user=db_user, user_in=user_in)
     return UserPublic.model_validate(db_user)
 
 
