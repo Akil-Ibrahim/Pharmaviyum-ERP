@@ -41,23 +41,24 @@ router = APIRouter(prefix="/users", tags=["users"])
     dependencies=[Depends(get_current_active_superuser)],
     response_model=UsersPublic,
 )
-def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> UsersPublic:
+async def read_users(
+    session: SessionDep, skip: int = 0, limit: int = 100
+) -> UsersPublic:
     """Retrieve all users (superuser only)."""
-    # Count total
     count_statement = select(func.count()).select_from(crud.User)
-    count = session.execute(count_statement).scalar_one()
+    count_result = await session.execute(count_statement)
+    count = count_result.scalar_one()
 
-    # Get paginated users
     statement = (
         select(crud.User)
         .order_by(crud.User.created_at.desc())
         .offset(skip)
         .limit(limit)
     )
-    users = session.execute(statement).scalars().all()
+    result = await session.execute(statement)
+    users = result.scalars().all()
 
     users_public = [UserPublic.model_validate(user) for user in users]
-
     return UsersPublic(data=users_public, count=count)
 
 
@@ -66,24 +67,17 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> UsersPub
     dependencies=[Depends(get_current_active_superuser)],
     response_model=UserPublic,
 )
-def create_user(session: SessionDep, user_in: UserCreate) -> UserPublic:
-    """
-    Create new user (superuser only).
-
-    Sends welcome email with password if emails are enabled.
-    """
-    # Check email uniqueness
-    existing = crud.get_user_by_email(session=session, email=user_in.email)
+async def create_user(session: SessionDep, user_in: UserCreate) -> UserPublic:
+    """Create new user (superuser only)."""
+    existing = await crud.get_user_by_email(session=session, email=user_in.email)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The user with this email already exists in the system",
         )
 
-    # Create user
-    user = crud.create_user(session=session, user_create=user_in)
+    user = await crud.create_user(session=session, user_create=user_in)
 
-    # Send welcome email
     if settings.EMAILS_ENABLED and user_in.email:
         email_data = generate_new_account_email(
             email_to=user_in.email,
@@ -100,41 +94,38 @@ def create_user(session: SessionDep, user_in: UserCreate) -> UserPublic:
 
 
 @router.patch("/me", response_model=UserPublic)
-def update_user_me(
+async def update_user_me(
     session: SessionDep,
     user_in: UserUpdateMe,
     current_user: CurrentUser,
 ) -> UserPublic:
     """Update own user profile."""
-    # Check email uniqueness if changing email
     if user_in.email:
-        existing = crud.get_user_by_email(session=session, email=user_in.email)
+        existing = await crud.get_user_by_email(session=session, email=user_in.email)
         if existing and existing.id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="User with this email already exists",
             )
 
-    # Update user
     update_data = user_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(current_user, field, value)
 
     session.add(current_user)
-    session.commit()
-    session.refresh(current_user)
+    await session.commit()
+    await session.refresh(current_user)
 
     return UserPublic.model_validate(current_user)
 
 
 @router.patch("/me/password", response_model=Message)
-def update_password_me(
+async def update_password_me(
     session: SessionDep,
     body: UpdatePassword,
     current_user: CurrentUser,
 ) -> Message:
     """Change own password."""
-    # Verify current password
     verified = verify_password(body.current_password, current_user.hashed_password)
     if not verified:
         raise HTTPException(
@@ -142,17 +133,15 @@ def update_password_me(
             detail="Incorrect password",
         )
 
-    # Prevent same password
     if body.current_password == body.new_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="New password cannot be the same as the current one",
         )
 
-    # Update password
     current_user.hashed_password = get_password_hash(body.new_password)
     session.add(current_user)
-    session.commit()
+    await session.commit()
 
     return Message(message="Password updated successfully")
 
@@ -164,61 +153,50 @@ def read_user_me(current_user: CurrentUser) -> UserPublic:
 
 
 @router.delete("/me", response_model=Message)
-def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Message:
-    """
-    Delete own account.
-
-    SECURITY: Superusers cannot delete themselves (prevents accidental lockout).
-    """
+async def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Message:
+    """Delete own account."""
     if current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Super users are not allowed to delete themselves",
         )
 
-    session.delete(current_user)
-    session.commit()
+    await session.delete(current_user)
+    await session.commit()
 
     return Message(message="User deleted successfully")
 
 
 @router.post("/signup", response_model=UserPublic)
-def register_user(session: SessionDep, user_in: UserRegister) -> UserPublic:
-    """
-    PUBLIC REGISTRATION endpoint (no authentication required).
-
-    Users can create their own accounts.
-    New users are NOT superusers (security).
-    """
-    # Check email uniqueness
-    existing = crud.get_user_by_email(session=session, email=user_in.email)
+async def register_user(
+    session: SessionDep, user_in: UserRegister
+) -> UserPublic:
+    """Public user registration endpoint."""
+    existing = await crud.get_user_by_email(session=session, email=user_in.email)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The user with this email already exists in the system",
         )
 
-    # Create user (is_superuser always False for public signup)
     user_create = UserCreate.model_validate(user_in)
-    user = crud.create_user(session=session, user_create=user_create)
+    user = await crud.create_user(session=session, user_create=user_create)
 
     return UserPublic.model_validate(user)
 
 
 @router.get("/{user_id}", response_model=UserPublic)
-def read_user_by_id(
+async def read_user_by_id(
     user_id: int,
     session: SessionDep,
     current_user: CurrentUser,
 ) -> UserPublic:
     """Get a specific user by ID."""
-    user = session.get(crud.User, user_id)
+    user = await session.get(crud.User, user_id)
 
-    # Allow users to read their own profile
     if user == current_user:
         return UserPublic.model_validate(user)
 
-    # Others require superuser privileges
     if not current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -239,31 +217,30 @@ def read_user_by_id(
     dependencies=[Depends(get_current_active_superuser)],
     response_model=UserPublic,
 )
-def update_user(
+async def update_user(
     session: SessionDep,
     user_id: int,
     user_in: UserUpdate,
 ) -> UserPublic:
     """Update a user (superuser only)."""
-    db_user = session.get(crud.User, user_id)
+    db_user = await session.get(crud.User, user_id)
     if not db_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="The user with this id does not exist in the system",
         )
 
-    # Check email uniqueness
     if user_in.email:
-        existing = crud.get_user_by_email(session=session, email=user_in.email)
+        existing = await crud.get_user_by_email(session=session, email=user_in.email)
         if existing and existing.id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="User with this email already exists",
             )
 
-    # Update user
-    db_user = crud.update_user(session=session, db_user=db_user, user_in=user_in)
-
+    db_user = await crud.update_user(
+        session=session, db_user=db_user, user_in=user_in
+    )
     return UserPublic.model_validate(db_user)
 
 
@@ -271,27 +248,26 @@ def update_user(
     "/{user_id}",
     dependencies=[Depends(get_current_active_superuser)],
 )
-def delete_user(
+async def delete_user(
     session: SessionDep,
     current_user: CurrentUser,
     user_id: int,
 ) -> Message:
     """Delete a user (superuser only)."""
-    user = session.get(crud.User, user_id)
+    user = await session.get(crud.User, user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
 
-    # Prevent superusers from deleting themselves
     if user == current_user:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Super users are not allowed to delete themselves",
         )
 
-    session.delete(user)
-    session.commit()
+    await session.delete(user)
+    await session.commit()
 
     return Message(message="User deleted successfully")
