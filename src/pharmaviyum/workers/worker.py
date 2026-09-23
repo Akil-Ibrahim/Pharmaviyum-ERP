@@ -8,7 +8,7 @@ import json
 import signal
 import time
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional, TypedDict
 
 from redis import asyncio as aioredis
 
@@ -57,6 +57,13 @@ TASK_REGISTRY = {
 _ALLOWED_QUEUES = {queue.value for queue in TaskQueue if queue != TaskQueue.DEAD_LETTER}
 
 
+class WorkerStats(TypedDict):
+    started_at: str | None
+    processed: int
+    failed: int
+    queues: dict[str, Any]
+
+
 class Worker:
     """Background job worker with shared Redis instrumentation."""
 
@@ -68,7 +75,7 @@ class Worker:
         self.redis: Optional[aioredis.Redis] = None
         self._shutdown_event = asyncio.Event()
         self._tasks: list[asyncio.Task] = []
-        self._stats = {
+        self._stats: WorkerStats = {
             "started_at": None,
             "processed": 0,
             "failed": 0,
@@ -104,7 +111,7 @@ class Worker:
         while not self._shutdown_event.is_set():
             for queue in self.queues:
                 try:
-                    depth = await self.redis.zcard(f"queue:{queue}")
+                    depth = await redis.zcard(f"queue:{queue}")
                     WORKER_QUEUE_DEPTH.labels(queue=queue).set(depth)
                 except Exception:
                     WORKER_QUEUE_POLL_ERRORS_TOTAL.labels(queue=queue).inc()
@@ -119,12 +126,12 @@ class Worker:
         logger.info(f"Processing queue: {queue}")
         while not self._shutdown_event.is_set():
             try:
-                result = await self.redis.bzpopmin(f"queue:{queue}", timeout=1.0)
+                result = await redis.bzpopmin(f"queue:{queue}", timeout=1.0)
                 if not result:
                     continue
 
                 _, task_id, _ = result
-                payload_json = await self.redis.get(f"task:{task_id}")
+                payload_json = await redis.get(f"task:{task_id}")
                 if not payload_json:
                     logger.warning(f"Task payload not found: {task_id}")
                     WORKER_TASKS_TOTAL.labels(
@@ -210,7 +217,7 @@ class Worker:
                 "duration_ms": result.duration_ms,
                 "attempts": result.attempts,
             }
-            await self.redis.setex(
+            await redis.setex(
                 f"task:{task_id}", 86400, json.dumps(payload, ensure_ascii=False)
             )
 
@@ -263,7 +270,7 @@ class Worker:
         await close_redis()
         logger.info("Worker shutdown complete")
 
-    def get_stats(self) -> dict:
+    def get_stats(self) -> WorkerStats:
         """Get worker statistics."""
         return self._stats
 
