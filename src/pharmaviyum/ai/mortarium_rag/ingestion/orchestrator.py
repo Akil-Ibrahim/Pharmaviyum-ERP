@@ -19,10 +19,10 @@ from src.pharmaviyum.core.logging import logger
 
 from ..chunking import MedicalChunker
 from ..embeddings import EmbeddingsFactory
-from ..preprocessing import DocumentPreprocessor
-from ..vector_store import PgVectorStore
 from ..loaders import DOCXLoader, HTMLLoader, LoaderConfig, PDFLoader
+from ..preprocessing import DocumentPreprocessor
 from ..schemas import Document
+from ..vector_store import PgVectorStore
 from .deduplication import DedupStrategy, DocumentDeduplicator
 from .versioning import DocumentVersionManager
 
