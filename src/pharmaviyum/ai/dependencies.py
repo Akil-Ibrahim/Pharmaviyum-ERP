@@ -13,6 +13,8 @@ import asyncio
 from functools import lru_cache
 from typing import Any, AsyncGenerator
 
+from pydantic import SecretStr
+
 from fastapi import HTTPException, Request, status
 from langchain_core.language_models import BaseChatModel
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -97,7 +99,7 @@ def _build_llm(model: str) -> BaseChatModel:
         )
     return ChatGroq(
         model=model,
-        api_key=api_key.get_secret_value(),
+        api_key=SecretStr(api_key.get_secret_value()),
         temperature=settings.groq.temperature,
         timeout=settings.groq.timeout_seconds,
     )
