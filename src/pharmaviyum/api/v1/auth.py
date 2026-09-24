@@ -41,9 +41,7 @@ async def _get_user_by_username_or_email(db: AsyncSession, username_or_email: st
             )
         )
     else:
-        result = await db.execute(
-            select(User).where(User.username == username_or_email)
-        )
+        result = await db.execute(select(User).where(User.username == username_or_email))
     return result.scalar_one_or_none()
 
 
@@ -101,9 +99,6 @@ async def token(
     admin_pass = settings.ADMIN_PASSWORD
     local_username = username_or_email.split("@", 1)[0]
 
-    # Keep the configured bootstrap admin usable after the password is changed
-    # in deployment configuration. If the canonical admin row already exists,
-    # synchronize its hash before normal user verification.
     if (
         admin_pass
         and local_username.casefold() == admin_user.casefold()
@@ -154,8 +149,6 @@ async def token(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # Bootstrap the configured admin into the canonical users table on
-        # first successful login. The password is never stored in plaintext.
         admin_result = await db.execute(select(User).where(User.username == admin_user))
         admin = admin_result.scalar_one_or_none()
         if admin is None:
@@ -199,3 +192,4 @@ async def me(
         "role": [current_user.role],
         "exp": int(payload["exp"]) * 1000,
     }
+

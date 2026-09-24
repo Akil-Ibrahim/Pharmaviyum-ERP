@@ -36,27 +36,36 @@ class QueryRequest(BaseModel):
         max_length=2000,
         description="User's question",
     )
-    session_id: str | None = Field(default=None, description="Conversation session ID")
+    session_id: str | None = Field(
+        default=None,
+        description="Conversation session ID",
+    )
     patient_id: int | None = Field(
-        default=None, description="Patient ID for history lookup"
+        default=None,
+        description="Patient ID for history lookup",
     )
     pharmacy_id: int = Field(..., gt=0, description="Authorized pharmacy tenant")
     country: str = Field(default="VN", description="Country code")
     language: str = Field(default="vi", description="Language code")
     halal_filter: bool = Field(
-        default=False, description="Enable strict halal compliance check"
+        default=False,
+        description="Enable strict halal compliance check",
     )
     force_fresh: bool = Field(default=False, description="Bypass prompt cache")
 
 
 async def _tenant_context(
-    pharmacy_id: int, current_user: CurrentUser, session: SessionDep
+    pharmacy_id: int,
+    current_user: CurrentUser,
+    session: SessionDep,
 ):
     return await require_pharmacy_tenant(pharmacy_id, current_user, session)
 
 
 async def _validate_patient_scope(
-    patient_id: int | None, pharmacy_id: int, session: SessionDep
+    patient_id: int | None,
+    pharmacy_id: int,
+    session: SessionDep,
 ) -> None:
     """Reject AI requests that reference a patient outside the tenant."""
     if patient_id is None:
@@ -102,7 +111,8 @@ async def ai_context(current_user: CurrentUser, session: SessionDep):
         )
         return {
             "pharmacies": [
-                {"id": pharmacy_id, "name": name} for pharmacy_id, name in result.all()
+                {"id": pharmacy_id, "name": name}
+                for pharmacy_id, name in result.all()
             ]
         }
 
@@ -281,3 +291,4 @@ async def list_tools(current_user: CurrentUser):
             }
         )
     return {"tools": tools, "authenticated_user_id": str(current_user.id)}
+
