@@ -108,10 +108,13 @@ class Worker:
 
     async def _publish_queue_depth(self):
         """Refresh queue depth gauges without exposing task IDs or payloads."""
+        redis = self.redis
+        if redis is None:
+            raise RuntimeError("Worker Redis client is not initialized")
         while not self._shutdown_event.is_set():
             for queue in self.queues:
                 try:
-                    depth = await self.redis.zcard(f"queue:{queue}")
+                    depth = await redis.zcard(f"queue:{queue}")
                     WORKER_QUEUE_DEPTH.labels(queue=queue).set(depth)
                 except Exception:
                     WORKER_QUEUE_POLL_ERRORS_TOTAL.labels(queue=queue).inc()
@@ -123,15 +126,18 @@ class Worker:
 
     async def _process_queue(self, queue: str):
         """Process tasks from a specific queue."""
+        redis = self.redis
+        if redis is None:
+            raise RuntimeError("Worker Redis client is not initialized")
         logger.info(f"Processing queue: {queue}")
         while not self._shutdown_event.is_set():
             try:
-                result = await self.redis.bzpopmin(f"queue:{queue}", timeout=1.0)
+                result = await redis.bzpopmin(f"queue:{queue}", timeout=1.0)
                 if not result:
                     continue
 
                 _, task_id, _ = result
-                payload_json = await self.redis.get(f"task:{task_id}")
+                payload_json = await redis.get(f"task:{task_id}")
                 if not payload_json:
                     logger.warning(f"Task payload not found: {task_id}")
                     WORKER_TASKS_TOTAL.labels(
@@ -206,7 +212,10 @@ class Worker:
 
     async def _mark_completed(self, task_id: str, result):
         """Mark task as completed."""
-        payload_json = await self.redis.get(f"task:{task_id}")
+        redis = self.redis
+        if redis is None:
+            raise RuntimeError("Worker Redis client is not initialized")
+        payload_json = await redis.get(f"task:{task_id}")
         if payload_json:
             payload = json.loads(payload_json)
             payload["status"] = "completed" if result.success else "failed"
@@ -217,13 +226,16 @@ class Worker:
                 "duration_ms": result.duration_ms,
                 "attempts": result.attempts,
             }
-            await self.redis.setex(
+            await redis.setex(
                 f"task:{task_id}", 86400, json.dumps(payload, ensure_ascii=False)
             )
 
     async def _mark_failed(self, task_id: str, error: str):
         """Mark task as failed."""
-        payload_json = await self.redis.get(f"task:{task_id}")
+        redis = self.redis
+        if redis is None:
+            raise RuntimeError("Worker Redis client is not initialized")
+        payload_json = await redis.get(f"task:{task_id}")
         if payload_json:
             payload = json.loads(payload_json)
             payload["status"] = "failed"
