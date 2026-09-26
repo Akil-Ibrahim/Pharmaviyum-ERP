@@ -41,7 +41,9 @@ async def _get_user_by_username_or_email(db: AsyncSession, username_or_email: st
             )
         )
     else:
-        result = await db.execute(\n            select(User).where(User.username == username_or_email)\n        )
+        result = await db.execute(
+            select(User).where(User.username == username_or_email)
+        )
     return result.scalar_one_or_none()
 
 
@@ -60,9 +62,10 @@ async def register(
         )
     if len(password) < 7:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Password must be at least 7 characters long",
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Password must be at least 7 characters long",
         )
+    )
 
     username = email.split("@", 1)[0]
     existing = await db.execute(
@@ -192,4 +195,3 @@ async def me(
         "role": [current_user.role],
         "exp": int(payload["exp"]) * 1000,
     }
-
