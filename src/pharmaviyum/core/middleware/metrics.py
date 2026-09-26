@@ -1,119 +1,166 @@
-"""
-Metrics collection middleware
-Best practice 2026: Automatic HTTP metrics collection
-"""
+"""Database engine, session factory, and PostgreSQL observability."""
+
+from __future__ import annotations
 
 import time
+from collections.abc import AsyncGenerator
+from typing import Any
 
-from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
+import structlog
+from sqlalchemy import event
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
 
-from src.pharmaviyum.ai.observability.metrics import (
-    HTTP_REQUEST_DURATION,
-    HTTP_REQUESTS_IN_FLIGHT,
-    HTTP_REQUESTS_TOTAL,
+from src.pharmaviyum.config import settings
+
+logger = structlog.get_logger()
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    echo=settings.DEBUG,
+    pool_size=settings.DB_POOL_SIZE,
+    max_overflow=settings.DB_MAX_OVERFLOW,
+    pool_timeout=settings.DB_POOL_TIMEOUT,
+    pool_recycle=settings.DB_POOL_RECYCLE,
+    pool_pre_ping=True,
 )
-from src.pharmaviyum.core.logging import get_logger
-
-logger = get_logger(__name__)
 
 
-class MetricsMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware for automatic HTTP metrics collection
+def _pool_metrics() -> None:
+    """Publish pool metrics when the underlying pool exposes them."""
+    from src.pharmaviyum.ai.observability.metrics import (
+        DB_POOL_CHECKED_OUT,
+        DB_POOL_MAX_OVERFLOW,
+        DB_POOL_OVERFLOW,
+        DB_POOL_SIZE,
+    )
 
-    Collects:
-    - Request count by method/endpoint/status
-    - Request duration histogram
-    - In-progress requests gauge
-    """
+    pool: Any = engine.sync_engine.pool
+    try:
+        DB_POOL_SIZE.set(pool.size())
+        DB_POOL_MAX_OVERFLOW.set(
+            getattr(pool, "_max_overflow", settings.DB_MAX_OVERFLOW)
+        )
+        DB_POOL_CHECKED_OUT.set(pool.checkedout())
+        DB_POOL_OVERFLOW.set(pool.overflow())
+    except (AttributeError, TypeError):
+        logger.debug("database_pool_metrics_unavailable", exc_info=True)
 
-    # Endpoints to exclude from metrics
-    EXCLUDED_PATHS = {
-        "/health",
-        "/ready",
-        "/metrics",
-        "/docs",
-        "/redoc",
-        "/openapi.json",
-    }
 
-    async def dispatch(self, request: Request, call_next) -> Response:
-        """Process request and collect metrics"""
-        # Skip metrics for excluded paths
-        if request.url.path in self.EXCLUDED_PATHS:
-            return await call_next(request)
+def _classify_operation(statement: str) -> str:
+    first = statement.lstrip().split(None, 1)
+    operation = first[0].lower() if first else "other"
+    return (
+        operation
+        if operation in {"select", "insert", "update", "delete", "merge", "call"}
+        else "other"
+    )
 
-        method = request.method
-        endpoint = self._normalize_endpoint(request.url.path)
 
-        # Track in-progress requests
-        HTTP_REQUESTS_IN_FLIGHT.inc()
+@event.listens_for(engine.sync_engine, "connect")
+def _on_connect(dbapi_connection: Any, connection_record: Any) -> None:
+    _pool_metrics()
 
-        start_time = time.time()
+
+@event.listens_for(engine.sync_engine, "checkout")
+def _on_checkout(
+    dbapi_connection: Any,
+    connection_record: Any,
+    connection_proxy: Any,
+) -> None:
+    connection_record.info["checkout_started_at"] = time.perf_counter()
+    _pool_metrics()
+
+
+@event.listens_for(engine.sync_engine, "checkin")
+def _on_checkin(dbapi_connection: Any, connection_record: Any) -> None:
+    from src.pharmaviyum.ai.observability.metrics import DB_CONNECTION_HOLD_DURATION
+
+    started = connection_record.info.pop("checkout_started_at", None)
+    if started is not None:
+        DB_CONNECTION_HOLD_DURATION.observe(time.perf_counter() - started)
+    _pool_metrics()
+
+
+@event.listens_for(engine.sync_engine, "before_cursor_execute")
+def _before_cursor_execute(
+    conn: Any,
+    cursor: Any,
+    statement: str,
+    parameters: Any,
+    context: Any,
+    executemany: bool,
+) -> None:
+    context._pharmaviyum_query_started_at = time.perf_counter()
+
+
+@event.listens_for(engine.sync_engine, "after_cursor_execute")
+def _after_cursor_execute(
+    conn: Any,
+    cursor: Any,
+    statement: str,
+    parameters: Any,
+    context: Any,
+    executemany: bool,
+) -> None:
+    from src.pharmaviyum.ai.observability.metrics import (
+        DB_QUERY_DURATION,
+        DB_QUERY_TOTAL,
+    )
+
+    started = getattr(context, "_pharmaviyum_query_started_at", None)
+    if started is None:
+        return
+    operation = _classify_operation(statement)
+    DB_QUERY_DURATION.labels(operation=operation).observe(
+        time.perf_counter() - started
+    )
+    DB_QUERY_TOTAL.labels(operation=operation, status="success").inc()
+
+
+@event.listens_for(engine.sync_engine, "handle_error")
+def _handle_db_error(exception_context: Any) -> None:
+    from src.pharmaviyum.ai.observability.metrics import (
+        DB_POOL_TIMEOUTS_TOTAL,
+        DB_QUERY_ERRORS_TOTAL,
+        DB_QUERY_TOTAL,
+    )
+
+    operation = _classify_operation(exception_context.statement or "")
+    DB_QUERY_TOTAL.labels(operation=operation, status="error").inc()
+    DB_QUERY_ERRORS_TOTAL.labels(operation=operation).inc()
+    if exception_context.original_exception.__class__.__name__ == "TimeoutError":
+        DB_POOL_TIMEOUTS_TOTAL.inc()
+    _pool_metrics()
+
+
+AsyncSessionLocal = async_sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autoflush=False,
+)
+
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Yield an async SQLAlchemy session with transaction management."""
+    async with AsyncSessionLocal() as session:
         try:
-            response = await call_next(request)
-
-            duration = time.time() - start_time
-            status = response.status_code
-            status_class = f"{status // 100}xx"
-            HTTP_REQUESTS_TOTAL.labels(
-                method=method,
-                route=endpoint,
-                status_class=status_class,
-            ).inc()
-            HTTP_REQUEST_DURATION.labels(
-                method=method,
-                route=endpoint,
-                status_class=status_class,
-            ).observe(duration)
-
-            return response
-
+            yield session
+            await session.commit()
         except Exception:
-            duration = time.time() - start_time
-
-            HTTP_REQUESTS_TOTAL.labels(
-                method=method,
-                route=endpoint,
-                status_class="5xx",
-            ).inc()
-            HTTP_REQUEST_DURATION.labels(
-                method=method,
-                route=endpoint,
-                status_class="5xx",
-            ).observe(duration)
-
+            await session.rollback()
             raise
 
-        finally:
-            HTTP_REQUESTS_IN_FLIGHT.dec()
 
-    def _normalize_endpoint(self, path: str) -> str:
-        """
-        Normalize endpoint path for metrics labels
-
-        Converts:
-        - /api/v1/patients/123 → /api/v1/patients/{id}
-        - /api/v1/orders/abc-def → /api/v1/orders/{id}
-
-        This prevents metrics explosion from unique IDs.
-        """
-        parts = path.split("/")
-        normalized = []
-
-        for i, part in enumerate(parts):
-            # Skip numeric IDs
-            if part.isdigit():
-                normalized.append("{id}")
-            # Skip UUIDs
-            elif len(part) == 36 and part.count("-") == 4:
-                normalized.append("{id}")
-            # Skip long alphanumeric strings (likely IDs)
-            elif len(part) > 20 and part.isalnum():
-                normalized.append("{id}")
-            else:
-                normalized.append(part)
-
-        return "/".join(normalized)
+async def create_db_and_tables() -> None:
+    """Create database tables for environments that explicitly request it."""
+    logger.info("creating_database_tables")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    logger.info("database_tables_created")
