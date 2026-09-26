@@ -130,7 +130,7 @@ class AgentHarness:
                     "latency_ms": (time.perf_counter() - start_time) * 1000,
                 }
 
-            self.model_router.select(
+            await self.model_router.select(
                 query=safe_query,
                 history_length=len(history),
                 context=context,
