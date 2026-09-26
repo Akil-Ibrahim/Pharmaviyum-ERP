@@ -18,6 +18,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
+from pydantic import SecretStr
 from redis.asyncio import Redis
 
 from src.pharmaviyum.ai.agents.checkpointer import AgentCheckpointer
@@ -97,7 +98,7 @@ def _build_llm(model: str) -> BaseChatModel:
         )
     return ChatGroq(
         model=model,
-        api_key=api_key.get_secret_value(),
+        api_key=SecretStr(api_key.get_secret_value()),
         temperature=settings.groq.temperature,
         timeout=settings.groq.timeout_seconds,
     )
