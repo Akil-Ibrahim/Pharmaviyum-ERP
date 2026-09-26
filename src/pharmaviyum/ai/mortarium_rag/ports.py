@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
+from langchain_core.runnables import RunnableConfig
+
 from .schemas import RetrievalResult
 
 
@@ -31,7 +33,9 @@ class EmbeddingsPort(Protocol):
 
 
 class LLMPort(Protocol):
-    async def ainvoke(self, prompt: Any) -> Any: ...
+    async def ainvoke(
+        self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
+    ) -> Any: ...
 
 
 class GuardrailsPort(Protocol):
