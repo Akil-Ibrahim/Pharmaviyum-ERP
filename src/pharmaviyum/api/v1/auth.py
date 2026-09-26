@@ -62,10 +62,9 @@ async def register(
         )
     if len(password) < 7:
         raise HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        detail="Password must be at least 7 characters long",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Password must be at least 7 characters long",
         )
-    )
 
     username = email.split("@", 1)[0]
     existing = await db.execute(
