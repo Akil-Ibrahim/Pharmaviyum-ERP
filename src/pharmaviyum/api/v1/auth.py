@@ -41,7 +41,7 @@ async def _get_user_by_username_or_email(db: AsyncSession, username_or_email: st
             )
         )
     else:
-        result = await db.execute(select(User).where(User.username == username_or_email))
+        result = await db.execute(\n            select(User).where(User.username == username_or_email)\n        )
     return result.scalar_one_or_none()
 
 
