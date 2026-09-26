@@ -111,8 +111,7 @@ async def ai_context(current_user: CurrentUser, session: SessionDep):
         )
         return {
             "pharmacies": [
-                {"id": pharmacy_id, "name": name}
-                for pharmacy_id, name in result.all()
+                {"id": pharmacy_id, "name": name} for pharmacy_id, name in result.all()
             ]
         }
 
@@ -291,4 +290,3 @@ async def list_tools(current_user: CurrentUser):
             }
         )
     return {"tools": tools, "authenticated_user_id": str(current_user.id)}
-
