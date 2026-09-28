@@ -28,7 +28,7 @@ from src.pharmaviyum.database import AsyncSessionLocal
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.inventory_transaction import InventoryTransaction
 from src.pharmaviyum.models.order_item import OrderItem
-from src.pharmaviyum.models.patient_purchase import PatientPurchase
+from src.pharmaviyum.models.patients.patient_purchase import PatientPurchase
 from src.pharmaviyum.models.patients.patient import Patient
 from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.product import Product
