@@ -1,0 +1,706 @@
+{
+  "purpose": "Halal assessment benchmark. Drug names are representative common INNs/medicine names; test_evidence is synthetic and must not be interpreted as factual formulation data.",
+  "source_basis": "WHO ATC first-level grouping",
+  "cases": [
+    {
+      "id": 1,
+      "name": "omeprazole",
+      "atc_group": "A",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 2,
+      "name": "pantoprazole",
+      "atc_group": "A",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 3,
+      "name": "esomeprazole",
+      "atc_group": "A",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 4,
+      "name": "metformin",
+      "atc_group": "A",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 5,
+      "name": "glimepiride",
+      "atc_group": "A",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 6,
+      "name": "gliclazide",
+      "atc_group": "A",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 7,
+      "name": "ondansetron",
+      "atc_group": "A",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 8,
+      "name": "domperidone",
+      "atc_group": "A",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 9,
+      "name": "loperamide",
+      "atc_group": "A",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 10,
+      "name": "lactulose",
+      "atc_group": "A",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 11,
+      "name": "bisacodyl",
+      "atc_group": "A",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 12,
+      "name": "mesalazine",
+      "atc_group": "A",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 13,
+      "name": "aspirin",
+      "atc_group": "B",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 14,
+      "name": "clopidogrel",
+      "atc_group": "B",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 15,
+      "name": "warfarin",
+      "atc_group": "B",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 16,
+      "name": "rivaroxaban",
+      "atc_group": "B",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 17,
+      "name": "apixaban",
+      "atc_group": "B",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 18,
+      "name": "enoxaparin",
+      "atc_group": "B",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 19,
+      "name": "ferrous sulfate",
+      "atc_group": "B",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 20,
+      "name": "cyanocobalamin",
+      "atc_group": "B",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 21,
+      "name": "folic acid",
+      "atc_group": "B",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 22,
+      "name": "tranexamic acid",
+      "atc_group": "B",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 23,
+      "name": "amlodipine",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 24,
+      "name": "lisinopril",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 25,
+      "name": "enalapril",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 26,
+      "name": "losartan",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 27,
+      "name": "valsartan",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 28,
+      "name": "bisoprolol",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 29,
+      "name": "metoprolol",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 30,
+      "name": "carvedilol",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 31,
+      "name": "furosemide",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 32,
+      "name": "hydrochlorothiazide",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 33,
+      "name": "spironolactone",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 34,
+      "name": "atorvastatin",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 35,
+      "name": "rosuvastatin",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 36,
+      "name": "simvastatin",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 37,
+      "name": "nitroglycerin",
+      "atc_group": "C",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 38,
+      "name": "hydrocortisone",
+      "atc_group": "D",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 39,
+      "name": "betamethasone",
+      "atc_group": "D",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 40,
+      "name": "clobetasol",
+      "atc_group": "D",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 41,
+      "name": "mupirocin",
+      "atc_group": "D",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 42,
+      "name": "clotrimazole",
+      "atc_group": "D",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 43,
+      "name": "terbinafine",
+      "atc_group": "D",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 44,
+      "name": "acyclovir",
+      "atc_group": "D",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 45,
+      "name": "adapalene",
+      "atc_group": "D",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 46,
+      "name": "ketoconazole",
+      "atc_group": "D",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 47,
+      "name": "calamine",
+      "atc_group": "D",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 48,
+      "name": "tamsulosin",
+      "atc_group": "G",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 49,
+      "name": "finasteride",
+      "atc_group": "G",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 50,
+      "name": "dutasteride",
+      "atc_group": "G",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 51,
+      "name": "sildenafil",
+      "atc_group": "G",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 52,
+      "name": "oxybutynin",
+      "atc_group": "G",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 53,
+      "name": "levonorgestrel",
+      "atc_group": "G",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 54,
+      "name": "ethinylestradiol",
+      "atc_group": "G",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 55,
+      "name": "progesterone",
+      "atc_group": "G",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 56,
+      "name": "prednisolone",
+      "atc_group": "H",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 57,
+      "name": "dexamethasone",
+      "atc_group": "H",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 58,
+      "name": "levothyroxine",
+      "atc_group": "H",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 59,
+      "name": "hydrocortisone",
+      "atc_group": "H",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 60,
+      "name": "desmopressin",
+      "atc_group": "H",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 61,
+      "name": "insulin human",
+      "atc_group": "H",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 62,
+      "name": "insulin glargine",
+      "atc_group": "H",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 63,
+      "name": "amoxicillin",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 64,
+      "name": "amoxicillin clavulanate",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 65,
+      "name": "azithromycin",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 66,
+      "name": "clarithromycin",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 67,
+      "name": "doxycycline",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 68,
+      "name": "ciprofloxacin",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 69,
+      "name": "levofloxacin",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 70,
+      "name": "metronidazole",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 71,
+      "name": "cefuroxime",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 72,
+      "name": "cefixime",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 73,
+      "name": "fluconazole",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 74,
+      "name": "oseltamivir",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 75,
+      "name": "valacyclovir",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 76,
+      "name": "rifampicin",
+      "atc_group": "J",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 77,
+      "name": "methotrexate",
+      "atc_group": "L",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 78,
+      "name": "tamoxifen",
+      "atc_group": "L",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 79,
+      "name": "anastrozole",
+      "atc_group": "L",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 80,
+      "name": "letrozole",
+      "atc_group": "L",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 81,
+      "name": "cyclophosphamide",
+      "atc_group": "L",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 82,
+      "name": "azathioprine",
+      "atc_group": "L",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 83,
+      "name": "ibuprofen",
+      "atc_group": "M",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 84,
+      "name": "naproxen",
+      "atc_group": "M",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 85,
+      "name": "diclofenac",
+      "atc_group": "M",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 86,
+      "name": "ketorolac",
+      "atc_group": "M",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 87,
+      "name": "meloxicam",
+      "atc_group": "M",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 88,
+      "name": "celecoxib",
+      "atc_group": "M",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 89,
+      "name": "paracetamol",
+      "atc_group": "M",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 90,
+      "name": "allopurinol",
+      "atc_group": "M",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 91,
+      "name": "colchicine",
+      "atc_group": "M",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 92,
+      "name": "paracetamol",
+      "atc_group": "N",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 93,
+      "name": "gabapentin",
+      "atc_group": "N",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 94,
+      "name": "pregabalin",
+      "atc_group": "N",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 95,
+      "name": "carbamazepine",
+      "atc_group": "N",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 96,
+      "name": "valproate",
+      "atc_group": "N",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 97,
+      "name": "sertraline",
+      "atc_group": "N",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 98,
+      "name": "fluoxetine",
+      "atc_group": "N",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 99,
+      "name": "escitalopram",
+      "atc_group": "N",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    },
+    {
+      "id": 100,
+      "name": "amitriptyline",
+      "atc_group": "N",
+      "test_evidence": "synthetic_only",
+      "expected": "not_assessed_from_name"
+    }
+  ]
+}
