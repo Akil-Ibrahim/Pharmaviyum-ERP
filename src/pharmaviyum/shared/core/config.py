@@ -71,6 +71,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 100
 
     # Feature flags
+    EMAILS_ENABLED: bool = False
     FEATURE_AI_RECOMMENDATIONS: bool = True
     FEATURE_HALAL_FILTER: bool = True
     FEATURE_SOCIAL_COMMERCE: bool = False
