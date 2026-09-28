@@ -155,6 +155,8 @@ async def query_agent(
         "patient_id": request.patient_id,
         "country": request.country,
         "language": request.language,
+        "user_role": cast(UserRole, current_user.role),
+        "user_role": cast(UserRole, current_user.role),
         "halal_filter": request.halal_filter,
         "force_fresh": request.force_fresh,
     }
@@ -245,7 +247,9 @@ async def query_agent_stream(
         "patient_id": request.patient_id,
         "country": request.country,
         "language": request.language,
+        "user_role": cast(UserRole, current_user.role),
         "halal_filter": request.halal_filter,
+        "force_fresh": request.force_fresh,
     }
 
     async def event_generator():
