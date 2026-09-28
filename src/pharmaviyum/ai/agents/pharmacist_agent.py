@@ -271,6 +271,7 @@ class PharmacistAgent:
             "claims, and unsupported medication claims. Return the required "
             "structured schema.\n"
             f"Question: {question}\nDraft: {draft}\n"
+            f"RAG evidence: {state.get('rag_context', '')}\n"
             f"Tool results: {state.get('tool_results', [])}"
         )
         try:
