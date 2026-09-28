@@ -6,11 +6,11 @@
 
 ![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.14.7-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue) ![React](https://img.shields.io/badge/React-19.3.0-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.3.1-646CFF)
 
-> AI-powered CRM platform for pharmacies, designed to complement existing ERP systems with client-oriented workflows, order handling, analytics, and AI-assisted knowledge retrieval.
+> Pharmacy ERP/CRM platform with an AI layer — Mortarium — designed to support pharmacy operations, inventory, dispensing, procurement, defectura, suppliers, goods receiving, stock transfers, and AI-assisted pharmacy workflows.
 
 ## Overview
 
-Pharmaviyum CRM is a modular pharmacy CRM platform built around a FastAPI backend, a React 19 frontend, PostgreSQL with pgvector, Redis, and an AI/RAG layer.
+Pharmaviyum is a modular pharmacy ERP/CRM platform built around a FastAPI backend, a React 19 frontend, PostgreSQL with pgvector, Redis, and an AI/RAG layer. It is designed around the real operational cycle of a pharmacy network: receiving medicines, registering batches and expiry dates, storing products under defined conditions, managing stock and defectura, reordering from suppliers, transferring stock between locations, and dispensing products.
 
 The system is designed to centralize pharmacy workflows and client interactions without replacing the pharmacy's core ERP. The AI layer provides application-level orchestration, retrieval-augmented generation (RAG), dialogue memory, guardrails, tool access, and observability.
 
