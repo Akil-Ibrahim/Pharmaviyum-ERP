@@ -172,12 +172,27 @@ async def confirm_pos_transaction(
             if batch.expiry_date < now.date():
                 raise HTTPException(status_code=409, detail="Cannot dispense an expired batch")
 
-        inventory_query = select(Inventory).where(
-            Inventory.product_id == product.id,
-            Inventory.pharmacy_id == tenant.pharmacy_id,
+        # FEFO: when the pharmacist does not explicitly choose a batch,
+        # select the earliest-expiring usable batch(es) automatically.
+        inventory_query = (
+            select(Inventory)
+            .join(ProductBatch, ProductBatch.id == Inventory.batch_id, isouter=True)
+            .where(
+                Inventory.product_id == product.id,
+                Inventory.pharmacy_id == tenant.pharmacy_id,
+                Inventory.quantity >= quantity_units,
+            )
         )
         if batch is not None:
             inventory_query = inventory_query.where(Inventory.batch_id == batch.id)
+        else:
+            inventory_query = inventory_query.where(
+                (Inventory.expires_at.is_(None)) | (Inventory.expires_at >= now)
+            ).order_by(
+                ProductBatch.expiry_date.asc().nulls_last(),
+                Inventory.expires_at.asc().nulls_last(),
+                Inventory.id.asc(),
+            )
         inventory = await db.scalar(inventory_query.with_for_update())
         if inventory is None:
             raise HTTPException(status_code=409, detail="Product is not stocked in this pharmacy")
