@@ -44,6 +44,10 @@ class Product(Base):
     halal_status = Column(String(16), nullable=False, default="unknown")
     halal_standard = Column(String(128), nullable=True)
     halal_evidence = Column(JSON, nullable=False, default=dict)
+    storage_temperature_min = Column(Float, nullable=True)
+    storage_temperature_max = Column(Float, nullable=True)
+    storage_location_type = Column(String(32), nullable=False, default="shelf")
+    storage_instructions = Column(String(500), nullable=True)
 
     price = Column(Float, nullable=False, default=0.0)
     # Legacy aggregate stock. Per-pharmacy stock is authoritative in Inventory.
