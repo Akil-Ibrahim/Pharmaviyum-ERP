@@ -1,0 +1,66 @@
+{
+  "purpose": "Registry for real-world pharmaceutical evidence sources used by the halal benchmark.",
+  "status_policy": "A source is evidence only. Missing or unresolved composition/origin must remain unknown.",
+  "sources": [
+    {
+      "id": "us_dailymed",
+      "country": "US",
+      "name": "DailyMed",
+      "authority": "NLM/FDA SPL",
+      "role": "structured drug labeling and ingredient evidence",
+      "access": "rest_v2",
+      "url": "https://dailymed.nlm.nih.gov/dailymed/services/v2/"
+    },
+    {
+      "id": "eu_ema",
+      "country": "EU",
+      "name": "EMA",
+      "authority": "European Medicines Agency",
+      "role": "Article 57 medicine master data and product information",
+      "access": "public_dataset",
+      "url": "https://www.ema.europa.eu/en/human-regulatory-overview/post-authorisation/data-medicines-iso-idmp-standards-post-authorisation/public-data-article-57-database"
+    },
+    {
+      "id": "id_bpom_bpjph",
+      "country": "ID",
+      "name": "BPOM + BPJPH",
+      "authority": "Indonesian FDA + Halal Product Assurance Agency",
+      "role": "registered medicine evidence plus halal certification evidence",
+      "access": "public_search",
+      "url": "https://bpjph.halal.go.id/cari/sertifikat"
+    },
+    {
+      "id": "ir_ttac",
+      "country": "IR",
+      "name": "TTAC / IFDA",
+      "authority": "Iran Food and Drug Organization",
+      "role": "medicine registration, traceability and composition evidence",
+      "access": "public_system"
+    },
+    {
+      "id": "iq_gudea",
+      "country": "IQ",
+      "name": "GUDEA",
+      "authority": "Iraq National Drug System",
+      "role": "medicine registration and traceability evidence",
+      "access": "public_search",
+      "url": "https://gudea.gov.iq/"
+    },
+    {
+      "id": "my_npra_jakim",
+      "country": "MY",
+      "name": "NPRA + JAKIM",
+      "authority": "Malaysia National Pharmaceutical Regulatory Agency + Department of Islamic Development",
+      "role": "registered pharmaceutical evidence plus halal evidence",
+      "access": "public_search"
+    },
+    {
+      "id": "eg_eda",
+      "country": "EG",
+      "name": "EDA / EDDB",
+      "authority": "Egyptian Drug Authority",
+      "role": "registered pharmaceutical products, composition and leaflet evidence",
+      "access": "public_database"
+    }
+  ]
+}
