@@ -21,7 +21,14 @@ export function Products() {
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to load products'))
       .finally(() => setLoading(false))
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    let active = true
+    apiFetch<Product[]>('/api/v1/products/?limit=50')
+      .then((data) => { if (active) setProducts(data) })
+      .catch((err: unknown) => { if (active) setError(err instanceof Error ? err.message : 'Unable to load products') })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [])
 
   const filtered = useMemo(() => {
     const q=query.trim().toLowerCase()
