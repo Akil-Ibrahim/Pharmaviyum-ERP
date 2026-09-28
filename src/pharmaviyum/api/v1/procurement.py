@@ -121,7 +121,7 @@ async def _inventory_for_batch(
 async def list_procurement_suppliers(
     current_user: CurrentUser, db: SessionDep, pharmacy_id: int = Query(gt=0)
 ) -> list[dict[str, object]]:
-    tenant = await require_pharmacy_tenant(pharmacy_id, current_user, db)
+    await require_pharmacy_tenant(pharmacy_id, current_user, db)
     result = await db.execute(
         select(Supplier).where(Supplier.is_active.is_(True)).order_by(Supplier.name)
     )
