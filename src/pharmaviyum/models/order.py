@@ -11,8 +11,15 @@ class Order(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False, index=True)
-    total_amount = Column(Float, default=0.0)
-    status = Column(String(50), default="pending")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    pharmacy_id = Column(Integer, ForeignKey("pharmacies.id"), nullable=True, index=True)
+    pharmacist_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    total_amount = Column(Float, default=0.0, nullable=False)
+    status = Column(String(50), default="pending", nullable=False, index=True)
+    payment_method = Column(String(20), nullable=True)
+    payment_status = Column(String(20), default="unpaid", nullable=False)
+    receipt_number = Column(String(64), unique=True, nullable=True, index=True)
+    confirmed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     patient = relationship("Patient", backref="orders")
+    items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
