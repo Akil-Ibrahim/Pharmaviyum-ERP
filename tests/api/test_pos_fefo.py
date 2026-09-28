@@ -1,4 +1,5 @@
 """FEFO stock selection tests for POS schemas and ordering logic."""
+
 from datetime import date, datetime, timedelta
 
 
