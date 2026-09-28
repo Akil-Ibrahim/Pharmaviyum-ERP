@@ -15,6 +15,7 @@ from typing import Any
 
 from src.pharmaviyum.core.logging import logger
 
+from .context import MCPAuthorizationContext
 from .prompts import prompt_registry
 from .registry import registry as tool_registry
 from .resources import resource_registry
@@ -36,7 +37,11 @@ class MCPServer:
             "prompts": {},
         }
 
-    async def handle_request(self, request_body: str) -> str:
+    async def handle_request(
+        self,
+        request_body: str,
+        authorization_context: MCPAuthorizationContext | None = None,
+    ) -> str:
         """
         Process a JSON-RPC 2.0 request and return a JSON-RPC response.
         """
@@ -53,13 +58,18 @@ class MCPServer:
         request_id = request.get("id")
 
         try:
-            result = await self._route_method(method, params)
+            result = await self._route_method(method, params, authorization_context)
             return self._success_response(request_id, result)
         except Exception as e:
             logger.error(f"MCP method {method} failed: {e}", exc_info=True)
             return self._error_response(request_id, -32603, str(e))
 
-    async def _route_method(self, method: str, params: dict[str, Any]) -> Any:
+    async def _route_method(
+        self,
+        method: str,
+        params: dict[str, Any],
+        authorization_context: MCPAuthorizationContext | None = None,
+    ) -> Any:
         """Route JSON-RPC method to appropriate handler."""
 
         # 1. Initialization
@@ -75,8 +85,12 @@ class MCPServer:
 
         # 2. Tools
         elif method == "tools/list":
+            if authorization_context is None:
+                raise PermissionError("MCP authorization context is required")
             tools = []
-            for meta in tool_registry.list_tools():
+            for meta in tool_registry.list_tools_for_role(
+                authorization_context.user_role
+            ):
                 tools.append(
                     {
                         "name": meta.name,
@@ -93,7 +107,15 @@ class MCPServer:
             # Execute via MCP Client (which handles validation, retry, circuit breaker)
             from .client import mcp_client
 
-            result = await mcp_client.call_tool(tool_name, tool_args)
+            if authorization_context is None:
+                raise PermissionError("MCP authorization context is required")
+            result = await mcp_client.call_tool(
+                tool_name,
+                tool_args,
+                user_role=authorization_context.user_role,
+                user_id=authorization_context.user_id,
+                pharmacy_id=authorization_context.pharmacy_id,
+            )
 
             if result.success:
                 return {
