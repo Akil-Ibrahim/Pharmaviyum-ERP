@@ -4,7 +4,7 @@
 
 # Pharmaviyum CRM
 
-![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.13%2B-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue) ![React](https://img.shields.io/badge/React-19.3-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.x-646CFF)
+![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.14.7-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue) ![React](https://img.shields.io/badge/React-19.3-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.x-646CFF)
 
 > AI-powered CRM platform for pharmacies, designed to complement existing ERP systems with client-oriented workflows, order handling, analytics, and AI-assisted knowledge retrieval.
 
@@ -81,7 +81,7 @@ The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is inte
 
 ### Backend
 
-- Python 3.13+
+- Python 3.14.7
 - FastAPI 0.141.1
 - Uvicorn
 - Pydantic / Pydantic Settings
@@ -177,7 +177,7 @@ The repository's detailed AI architecture is documented in [`docs/ai_architectur
 
 ### Prerequisites
 
-- Python 3.13+
+- Python 3.14.7
 - Docker and Docker Compose
 - Bun
 - Node.js 20.19+ or 22.12+ for the Vite 8 toolchain
