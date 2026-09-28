@@ -19,8 +19,9 @@ from src.pharmaviyum.core.logging import logger
 
 from ..chunking import MedicalChunker
 from ..embeddings import EmbeddingsFactory
-from ..loaders import DOCXLoader, HTMLLoader, LoadedDocument, LoaderConfig, PDFLoader
+from ..loaders import DOCXLoader, HTMLLoader, LoaderConfig, PDFLoader
 from ..preprocessing import DocumentPreprocessor
+from ..schemas import Document
 from ..vector_store import PgVectorStore
 from .deduplication import DedupStrategy, DocumentDeduplicator
 from .versioning import DocumentVersionManager
@@ -108,7 +109,7 @@ class IngestionOrchestrator:
                 metadata_filters=config,
             )
 
-            documents: list[LoadedDocument] = []
+            documents: list[Document] = []
             async for doc in loader.load(source, loader_config):
                 documents.append(doc)
 
@@ -120,7 +121,7 @@ class IngestionOrchestrator:
             if not documents:
                 raise ValueError(f"No documents loaded from {source}")
 
-            processed_docs: list[LoadedDocument] = []
+            processed_docs: list[Document] = []
             for doc in documents:
                 try:
                     processed = self.preprocessor.process(doc)

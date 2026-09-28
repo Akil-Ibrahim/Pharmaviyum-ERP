@@ -131,7 +131,7 @@ class OpenAIEmbeddingsProvider:
         self._client = OpenAIEmbeddings(
             model=model,
             dimensions=dimensions,
-            api_key=api_key,
+            api_key=SecretStr(api_key),
         )
 
     async def embed(self, text: str) -> list[float]:

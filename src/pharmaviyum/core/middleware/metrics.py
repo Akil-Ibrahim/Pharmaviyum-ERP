@@ -117,9 +117,7 @@ def _after_cursor_execute(
     if started is None:
         return
     operation = _classify_operation(statement)
-    DB_QUERY_DURATION.labels(operation=operation).observe(
-        time.perf_counter() - started
-    )
+    DB_QUERY_DURATION.labels(operation=operation).observe(time.perf_counter() - started)
     DB_QUERY_TOTAL.labels(operation=operation, status="success").inc()
 
 

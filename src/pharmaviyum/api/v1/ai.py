@@ -12,7 +12,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from src.pharmaviyum.ai.dependencies import get_agent_harness
-from src.pharmaviyum.ai.harness import AgentResponse
+from src.pharmaviyum.ai.harness import (
+    AgentResponse,
+    SourceCitation,
+    ToolCallRecord,
+    Warning,
+)
 from src.pharmaviyum.ai.mcp import tool_registry
 from src.pharmaviyum.ai.mcp.context import (
     MCPAuthorizationContext,
@@ -111,8 +116,7 @@ async def ai_context(current_user: CurrentUser, session: SessionDep):
         )
         return {
             "pharmacies": [
-                {"id": pharmacy_id, "name": name}
-                for pharmacy_id, name in result.all()
+                {"id": pharmacy_id, "name": name} for pharmacy_id, name in result.all()
             ]
         }
 
@@ -174,28 +178,28 @@ async def query_agent(
                 query=request.query,
                 answer=result["answer"],
                 sources=[
-                    {
-                        "source_id": f"tool:{item.get('tool', 'unknown')}:{index}",
-                        "source_type": "tool_result",
-                        "content": str(item.get("data", ""))[:500],
-                        "metadata": {"tool": item.get("tool", "unknown")},
-                        "relevance_score": 1.0,
-                    }
+                    SourceCitation(
+                        source_id=f"tool:{item.get('tool', 'unknown')}:{index}",
+                        source_type="tool_result",
+                        content=str(item.get("data", ""))[:500],
+                        metadata={"tool": item.get("tool", "unknown")},
+                        relevance_score=1.0,
+                    )
                     for index, item in enumerate(result.get("tool_results", []))
                     if item.get("success")
                 ],
                 tool_calls=[
-                    {
-                        "tool_name": item.get("tool", "unknown"),
-                        "input_data": item.get("input_data", {}),
-                        "success": bool(item.get("success", False)),
-                        "output_summary": (
+                    ToolCallRecord(
+                        tool_name=item.get("tool", "unknown"),
+                        input_data=item.get("input_data", {}),
+                        success=bool(item.get("success", False)),
+                        output_summary=(
                             str(item.get("data", ""))[:500]
                             if item.get("success")
                             else None
                         ),
-                        "error": item.get("error"),
-                    }
+                        error=item.get("error"),
+                    )
                     for item in result.get("tool_results", [])
                 ],
                 confidence=0.9 if not result.get("warnings") else 0.7,
@@ -204,7 +208,7 @@ async def query_agent(
                 ),
                 safety_score=0.95 if not result.get("warnings") else 0.8,
                 warnings=[
-                    {"code": w, "severity": "warning", "message": w}
+                    Warning(code=w, severity="warning", message=w)
                     for w in result.get("warnings", [])
                 ],
                 model_used=result.get("model_used") or "configured-main",
@@ -291,4 +295,3 @@ async def list_tools(current_user: CurrentUser):
             }
         )
     return {"tools": tools, "authenticated_user_id": str(current_user.id)}
-
