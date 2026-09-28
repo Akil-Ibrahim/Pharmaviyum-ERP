@@ -13,7 +13,14 @@ export const Route=createFileRoute('/_authenticated/orders')({component:OrdersPa
 function OrdersPage(){
  const [orders,setOrders]=useState<Order[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState<string|null>(null),[query,setQuery]=useState('')
  const load=()=>{setLoading(true);setError(null);apiFetch<Order[]>('/api/v1/orders/?limit=50').then(setOrders).catch((e:unknown)=>setError(e instanceof Error?e.message:'Unable to load orders')).finally(()=>setLoading(false))}
- useEffect(()=>{load()},[])
+ useEffect(()=>{
+  let active=true
+  apiFetch<Order[]>('/api/v1/orders/?limit=50')
+    .then(data=>{if(active)setOrders(data)})
+    .catch((e:unknown)=>{if(active)setError(e instanceof Error?e.message:'Unable to load orders')})
+    .finally(()=>{if(active)setLoading(false)})
+  return ()=>{active=false}
+ },[])
  const completed=orders.filter(o=>o.status==='completed'),pending=orders.filter(o=>o.status==='pending'),cancelled=orders.filter(o=>o.status==='cancelled'),processing=orders.filter(o=>o.status==='processing'),revenue=completed.reduce((s,o)=>s+o.total_amount,0)
  const filtered=useMemo(()=>{const q=query.trim().toLowerCase();return q?orders.filter(o=>[o.id,o.patient_id,o.status].some(v=>String(v).toLowerCase().includes(q))):orders},[orders,query])
  return <div className='space-y-6 p-6 font-inter'>
