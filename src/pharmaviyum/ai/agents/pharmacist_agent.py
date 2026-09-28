@@ -126,18 +126,18 @@ class PharmacistAgent:
                 halal_filter=bool(context.get("halal_filter", False)),
                 force_fresh=bool(context.get("force_fresh", False)),
             )
-            response = await self.rag_pipeline.run(
+            sources, warnings = await self.rag_pipeline.retrieve_evidence(
                 question=str(state["messages"][0].content),
                 context=rag_context,
                 thread_id=str(context.get("trace_id", "")) or None,
             )
             evidence = [
                 f"[src-{source.chunk.id}] {source.chunk.content[:1200]}"
-                for source in response.sources
+                for source in sources
             ]
             return {
                 "rag_context": "\n\n".join(evidence),
-                "warnings": list(response.warnings),
+                "warnings": list(warnings),
             }
         except Exception:
             logger.error("RAG retrieval failed closed", exc_info=True)
