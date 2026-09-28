@@ -156,7 +156,6 @@ async def query_agent(
         "country": request.country,
         "language": request.language,
         "user_role": cast(UserRole, current_user.role),
-        "user_role": cast(UserRole, current_user.role),
         "halal_filter": request.halal_filter,
         "force_fresh": request.force_fresh,
     }
