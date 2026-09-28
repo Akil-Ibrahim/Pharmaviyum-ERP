@@ -19,6 +19,12 @@ class ProductCreate(BaseModel):
     regulatory_id: str | None = Field(default=None, max_length=50)
     gtin: str | None = Field(default=None, min_length=8, max_length=14)
     barcode: str | None = Field(default=None, max_length=64)
+    halal_status: str | None = Field(default=None, pattern="^(halal|haram|unknown)$")
+    halal_standard: str | None = Field(default=None, max_length=128)
+    halal_evidence: dict | None = None
+    halal_status: str = Field(default="unknown", pattern="^(halal|haram|unknown)$")
+    halal_standard: str | None = Field(default=None, max_length=128)
+    halal_evidence: dict = Field(default_factory=dict)
     price: float = Field(default=0.0, ge=0)
     # Kept for backward compatibility; per-pharmacy stock belongs to Inventory.
     stock: int = Field(default=0, ge=0)
@@ -61,6 +67,9 @@ class ProductResponse(BaseModel):
     regulatory_id: str | None = None
     gtin: str | None = None
     barcode: str | None = None
+    halal_status: str = "unknown"
+    halal_standard: str | None = None
+    halal_evidence: dict = {}
     price: float
     stock: int
     is_active: bool
