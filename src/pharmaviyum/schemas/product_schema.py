@@ -19,9 +19,6 @@ class ProductCreate(BaseModel):
     regulatory_id: str | None = Field(default=None, max_length=50)
     gtin: str | None = Field(default=None, min_length=8, max_length=14)
     barcode: str | None = Field(default=None, max_length=64)
-    halal_status: str | None = Field(default=None, pattern="^(halal|haram|unknown)$")
-    halal_standard: str | None = Field(default=None, max_length=128)
-    halal_evidence: dict | None = None
     halal_status: str = Field(default="unknown", pattern="^(halal|haram|unknown)$")
     halal_standard: str | None = Field(default=None, max_length=128)
     halal_evidence: dict = Field(default_factory=dict)
@@ -45,6 +42,9 @@ class ProductUpdate(BaseModel):
     regulatory_id: str | None = Field(default=None, max_length=50)
     gtin: str | None = Field(default=None, min_length=8, max_length=14)
     barcode: str | None = Field(default=None, max_length=64)
+    halal_status: str | None = Field(default=None, pattern="^(halal|haram|unknown)$")
+    halal_standard: str | None = Field(default=None, max_length=128)
+    halal_evidence: dict | None = None
     price: float | None = Field(default=None, ge=0)
     stock: int | None = Field(default=None, ge=0)
     is_active: bool | None = None
