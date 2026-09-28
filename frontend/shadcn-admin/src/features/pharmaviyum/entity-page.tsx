@@ -13,7 +13,7 @@ const STATUS_COLORS:Record<string,string>={active:'bg-green-500/15 text-green-70
 export function EntityPage({title,description,endpoint,columns=[],status}:EntityPageProps){
  const [rows,setRows]=useState<Row[]>([]),[loading,setLoading]=useState(Boolean(endpoint)),[error,setError]=useState<string|null>(null),[query,setQuery]=useState('')
  const load=()=>{if(!endpoint)return;setLoading(true);setError(null);apiFetch<Row[]>(endpoint).then(setRows).catch((err:unknown)=>setError(err instanceof Error?err.message:'Unable to load data')).finally(()=>setLoading(false))}
- useEffect(()=>{load()},[endpoint])
+ useEffect(()=>{if(!endpoint)return;let active=true;void apiFetch<Row[]>(endpoint).then(data=>{if(active)setRows(data)}).catch((err:unknown)=>{if(active)setError(err instanceof Error?err.message:'Unable to load data')}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[endpoint])
  const visibleColumns=columns.length?columns:(rows[0]?Object.keys(rows[0]).slice(0,6):[])
  const filteredRows=useMemo(()=>{const q=query.trim().toLowerCase();return q?rows.filter(row=>Object.values(row).some(v=>formatValue(v).toLowerCase().includes(q))):rows},[rows,query])
  const statusCounts=useMemo(()=>{const result:Record<string,number>={};rows.forEach(row=>{const value=row.status??row.is_active;if(value!==undefined&&value!==null){const key=typeof value==='boolean'?(value?'active':'inactive'):String(value).toLowerCase();result[key]=(result[key]??0)+1}});return result},[rows])
