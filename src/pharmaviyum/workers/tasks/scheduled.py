@@ -21,7 +21,7 @@ class CleanupExpiredDataTask(BaseTask):
     timeout_seconds = 600
     retry_config = RetryConfig(max_attempts=1)
 
-    async def execute(self, **kwargs: object) -> dict:
+    async def execute(self) -> dict:
         """
         Clean up expired data
 
@@ -56,7 +56,7 @@ class GenerateDailyReportTask(BaseTask):
     timeout_seconds = 600
     retry_config = RetryConfig(max_attempts=1)
 
-    async def execute(self, date: Optional[str] = None, **kwargs: object) -> dict:
+    async def execute(self, date: Optional[str] = None) -> dict:
         """
         Generate daily report
 
