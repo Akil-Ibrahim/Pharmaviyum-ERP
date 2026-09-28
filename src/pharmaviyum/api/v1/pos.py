@@ -3,7 +3,6 @@ from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import or_, select
-from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.models.audit_log import AuditLog
 from src.pharmaviyum.services.expired_inventory import (
