@@ -102,6 +102,7 @@ async def confirm_pos_transaction(
 
     total = 0.0
     now = datetime.utcnow()
+    purchase_entries: list[PatientPurchase] = []
     for item in data.items:
         product = await db.scalar(
             select(Product).where(Product.id == item.product_id, Product.is_active.is_(True))
@@ -209,22 +210,22 @@ async def confirm_pos_transaction(
                 created_at=now,
             )
         )
-        db.add(
-            PatientPurchase(
-                patient_id=patient.id,
-                batch_id=batch.id if batch else None,
-                product_id=product.id,
-                receipt_number="PENDING",
-                category="pos",
-                quantity=quantity_units,
-                dispensed_packs=item.packs,
-                dispensed_blisters=item.blisters,
-                dispensed_units=item.units,
-                unit_price=unit_price,
-                prescription_required=item.prescription_id is not None,
-                purchased_at=now,
-            )
+        purchase = PatientPurchase(
+            patient_id=patient.id,
+            batch_id=batch.id if batch else None,
+            product_id=product.id,
+            receipt_number="PENDING",
+            category="pos",
+            quantity=quantity_units,
+            dispensed_packs=item.packs,
+            dispensed_blisters=item.blisters,
+            dispensed_units=item.units,
+            unit_price=unit_price,
+            prescription_required=item.prescription_id is not None,
+            purchased_at=now,
         )
+        db.add(purchase)
+        purchase_entries.append(purchase)
 
     receipt_number = f"PV-{now:%Y%m%d%H%M%S}-{uuid4().hex[:8].upper()}"
     order.total_amount = total
@@ -236,10 +237,7 @@ async def confirm_pos_transaction(
     patient.last_visit_date = now
 
     await db.flush()
-    purchases = await db.scalars(
-        select(PatientPurchase).where(PatientPurchase.receipt_number == "PENDING")
-    )
-    for purchase in purchases:
+    for purchase in purchase_entries:
         purchase.receipt_number = receipt_number
 
     db.add(
