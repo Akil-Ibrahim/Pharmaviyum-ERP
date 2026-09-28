@@ -11,7 +11,13 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta
-from typing import Any, Literal
+from typing import Any, Awaitable, Literal, TypeVar, cast
+
+T = TypeVar("T")
+
+
+async def _await_redis(value: Awaitable[T] | T) -> T:
+    return await cast(Awaitable[T], value)
 from urllib.parse import urlsplit, urlunsplit
 
 from redis.asyncio import Redis
@@ -76,9 +82,9 @@ class IngestionProgressTracker:
             "metadata": metadata or {},
         }
 
-        await self.redis.setex(
+        await _await_redis(self.redis.setex(
             f"{self.prefix}:{job_id}", self.ttl_seconds, json.dumps(job_data)
-        )
+        ))
 
         logger.info(f"Ingestion job created: {job_id} ({total_documents} documents)")
         if total_documents > 0:
@@ -86,7 +92,7 @@ class IngestionProgressTracker:
                 f"{self.prefix}:{job_id}:batch",
                 mapping={"total": total_documents, "processed": 0, "failed": 0},
             )
-            await self.redis.expire(f"{self.prefix}:{job_id}:batch", self.ttl_seconds)
+            await _await_redis(self.redis.expire(f"{self.prefix}:{job_id}:batch", self.ttl_seconds)
 
     async def record_batch_result(self, batch_job_id: str, success: bool) -> None:
         """Record one child result and finalize its parent without lost updates."""
@@ -98,8 +104,8 @@ class IngestionProgressTracker:
         async with lock:
             counters_key = f"{self.prefix}:{batch_job_id}:batch"
             field = "processed" if success else "failed"
-            await self.redis.hincrby(counters_key, field, 1)
-            total_raw = await self.redis.hget(counters_key, "total")
+            await _await_redis(self.redis.hincrby(counters_key, field, 1))
+            total_raw = await _await_redis(self.redis.hget(counters_key, "total"))
             if not total_raw:
                 return
             total = int(total_raw)
