@@ -59,8 +59,12 @@ class GoodsReceiptItemCreate(BaseModel):
     expiry_date: date
     quantity: int = Field(gt=0)
     purchase_price: float = Field(default=0, ge=0)
-    storage_location: str = Field(default="shelf", pattern="^(shelf|refrigerator|special_storage|quarantine)$")
-    inspection_status: str = Field(default="accepted", pattern="^(accepted|quarantine|rejected)$")
+    storage_location: str = Field(
+        default="shelf", pattern="^(shelf|refrigerator|special_storage|quarantine)$"
+    )
+    inspection_status: str = Field(
+        default="accepted", pattern="^(accepted|quarantine|rejected)$"
+    )
     rejection_reason: str | None = Field(default=None, max_length=500)
 
 
@@ -68,7 +72,9 @@ class GoodsReceiptCreate(BaseModel):
     pharmacy_id: int = Field(gt=0)
     supplier_id: int | None = Field(default=None, gt=0)
     purchase_order_id: int | None = Field(default=None, gt=0)
-    source_type: str = Field(default="supplier", pattern="^(supplier|central_warehouse|pharmacy_transfer)$")
+    source_type: str = Field(
+        default="supplier", pattern="^(supplier|central_warehouse|pharmacy_transfer)$"
+    )
     notes: str | None = Field(default=None, max_length=1000)
     items: list[GoodsReceiptItemCreate] = Field(min_length=1, max_length=100)
 
@@ -87,18 +93,27 @@ class StockTransferCreate(BaseModel):
 
 class TemperatureLogCreate(BaseModel):
     pharmacy_id: int = Field(gt=0)
-    storage_location: str = Field(pattern="^(shelf|refrigerator|special_storage|quarantine)$")
+    storage_location: str = Field(
+        pattern="^(shelf|refrigerator|special_storage|quarantine)$"
+    )
     temperature_c: float
     recorded_at: datetime | None = None
     notes: str | None = Field(default=None, max_length=500)
 
 
 def _storage_status(product: Product, temperature: float) -> str:
-    if product.storage_temperature_min is None or product.storage_temperature_max is None:
+    if (
+        product.storage_temperature_min is None
+        or product.storage_temperature_max is None
+    ):
         return "range_not_configured"
     return (
         "within_range"
-        if product.storage_temperature_min <= temperature <= product.storage_temperature_max
+        if (
+            product.storage_temperature_min
+            <= temperature
+            <= product.storage_temperature_max
+        )
         else "out_of_range"
     )
 
@@ -125,7 +140,10 @@ async def list_procurement_suppliers(
     result = await db.execute(
         select(Supplier).where(Supplier.is_active.is_(True)).order_by(Supplier.name)
     )
-    return [{"id": s.id, "name": s.name, "code": s.code} for s in result.scalars().all()]
+    return [
+        {"id": s.id, "name": s.name, "code": s.code}
+        for s in result.scalars().all()
+    ]
 
 
 @router.post("/supplier-products", status_code=201)
@@ -175,7 +193,9 @@ async def get_defectura(
             continue
         incoming = await db.scalar(
             select(func.coalesce(func.sum(PurchaseOrderItem.quantity), 0))
-            .join(PurchaseOrder, PurchaseOrder.id == PurchaseOrderItem.purchase_order_id)
+            .join(
+                PurchaseOrder, PurchaseOrder.id == PurchaseOrderItem.purchase_order_id
+            )
             .where(
                 PurchaseOrder.pharmacy_id == tenant.pharmacy_id,
                 PurchaseOrderItem.product_id == product.id,
@@ -274,11 +294,14 @@ async def create_purchase_order(
             else (mapping.purchase_price if mapping else None)
         )
         if unit_price is None:
-            raise HTTPException(422, f"No purchase price for product {item_data.product_id}")
+            raise HTTPException(
+                422, f"No purchase price for product {item_data.product_id}"
+            )
         if mapping and item_data.quantity < mapping.min_order_quantity:
             raise HTTPException(
                 422,
-                f"Quantity for product {item_data.product_id} is below supplier minimum",
+                f"Quantity for product {item_data.product_id} is below supplier "
+                "minimum",
             )
         product = await db.get(Product, item_data.product_id)
         if product is None or not product.is_active:
@@ -358,7 +381,11 @@ async def receive_goods(
                 batch_number=item_data.batch_number,
                 expiry_date=item_data.expiry_date,
                 received_quantity=item_data.quantity,
-                available_quantity=item_data.quantity if item_data.inspection_status == "accepted" else 0,
+                available_quantity=(
+                    item_data.quantity
+                    if item_data.inspection_status == "accepted"
+                    else 0
+                ),
             )
             db.add(batch)
             await db.flush()
@@ -407,7 +434,9 @@ async def receive_goods(
                 db.add(inventory)
                 await db.flush()
             inventory.quantity += item_data.quantity
-            inventory.expires_at = datetime.combine(batch.expiry_date, datetime.min.time())
+            inventory.expires_at = datetime.combine(
+                batch.expiry_date, datetime.min.time()
+            )
             db.add(
                 InventoryTransaction(
                     pharmacy_id=tenant.pharmacy_id,
@@ -427,7 +456,10 @@ async def receive_goods(
             action="goods_received",
             entity="goods_receipt",
             entity_id=receipt.id,
-            changes={"source_type": data.source_type, "pharmacy_id": tenant.pharmacy_id},
+            changes={
+                "source_type": data.source_type,
+                "pharmacy_id": tenant.pharmacy_id,
+            },
         )
     )
     await db.commit()
@@ -518,7 +550,9 @@ async def receive_stock_transfer(
         raise HTTPException(409, "Transfer is not awaiting receipt")
 
     result = await db.execute(
-        select(StockTransferItem).where(StockTransferItem.stock_transfer_id == transfer.id)
+        select(StockTransferItem).where(
+            StockTransferItem.stock_transfer_id == transfer.id
+        )
     )
     for item in result.scalars().all():
         batch = await db.get(ProductBatch, item.batch_id)
