@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 from functools import lru_cache
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, cast
 
 from fastapi import HTTPException, Request, status
 from langchain_core.language_models import BaseChatModel
@@ -29,7 +29,7 @@ from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
 from src.pharmaviyum.ai.harness.cache import PromptCache
 from src.pharmaviyum.ai.harness.guardrails import MedicalGuardrails
 from src.pharmaviyum.ai.harness.memory import DialogueMemory
-from src.pharmaviyum.ai.harness.model_router import ModelRouter
+from src.pharmaviyum.ai.harness.model_router import LLMProvider, ModelRouter
 from src.pharmaviyum.ai.mcp.client import MCPClient
 from src.pharmaviyum.ai.mortarium_rag.embeddings import EmbeddingsFactory
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
@@ -249,10 +249,10 @@ class AIComponents:
             )
             model_router = ModelRouter(
                 models={
-                    "fast": get_llm_fast(),
-                    "main": get_llm_main(),
-                    "complex": get_llm_complex(),
-                    "fallback": get_llm_main(),
+                    "fast": cast(LLMProvider, get_llm_fast()),
+                    "main": cast(LLMProvider, get_llm_main()),
+                    "complex": cast(LLMProvider, get_llm_complex()),
+                    "fallback": cast(LLMProvider, get_llm_main()),
                 }
             )
             agent = PharmacistAgent(
