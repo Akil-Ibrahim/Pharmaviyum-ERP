@@ -40,7 +40,3 @@ class ExpiredInventory(Base):
     product = relationship("Product")
     batch = relationship("ProductBatch")
 
-    __table_args__ = (
-        # Multiple expiry events for the same inventory row are allowed after
-        # partial adjustments, so this is intentionally not unique.
-    )
