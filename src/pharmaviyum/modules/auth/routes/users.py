@@ -51,7 +51,7 @@ async def read_users(
 
     statement = (
         select(crud.User)
-        .order_by(crud.User.created_at.desc())
+        .order_by(crud.User.id.desc())
         .offset(skip)
         .limit(limit)
     )
