@@ -21,7 +21,10 @@ from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.models.product_batch import ProductBatch
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
-from src.pharmaviyum.schemas.pos_schema import POSTransactionCreate, POSTransactionResponse
+from src.pharmaviyum.schemas.pos_schema import (
+    POSTransactionCreate,
+    POSTransactionResponse,
+)
 
 router = APIRouter(prefix="/pos", tags=["POS"])
 
@@ -124,7 +127,9 @@ async def confirm_pos_transaction(
         )
     )
     if patient is None:
-        raise HTTPException(status_code=404, detail="Patient not found in pharmacy tenant")
+        raise HTTPException(
+            status_code=404, detail="Patient not found in pharmacy tenant"
+        )
 
     if not data.items:
         raise HTTPException(status_code=400, detail="At least one product is required")
@@ -145,10 +150,14 @@ async def confirm_pos_transaction(
     purchase_entries: list[PatientPurchase] = []
     for item in data.items:
         product = await db.scalar(
-            select(Product).where(Product.id == item.product_id, Product.is_active.is_(True))
+            select(Product).where(
+                Product.id == item.product_id, Product.is_active.is_(True)
+            )
         )
         if product is None:
-            raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found")
+            raise HTTPException(
+                status_code=404, detail=f"Product {item.product_id} not found"
+            )
 
         quantity_units = (
             item.packs * product.units_per_pack
@@ -156,7 +165,10 @@ async def confirm_pos_transaction(
             + item.units
         )
         if quantity_units <= 0:
-            raise HTTPException(status_code=400, detail=f"Quantity for product {product.id} must be greater than zero")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Quantity for product {product.id} must be greater than zero",
+            )
 
         batch = None
         if item.batch_id is not None:
@@ -169,7 +181,9 @@ async def confirm_pos_transaction(
             if batch is None:
                 raise HTTPException(status_code=404, detail="Product batch not found")
             if batch.expiry_date < now.date():
-                raise HTTPException(status_code=409, detail="Cannot dispense an expired batch")
+                raise HTTPException(
+                    status_code=409, detail="Cannot dispense an expired batch"
+                )
 
         # FEFO: when the pharmacist does not explicitly choose a batch,
         # select the earliest-expiring usable batch automatically.
@@ -194,20 +208,28 @@ async def confirm_pos_transaction(
             )
         inventory = await db.scalar(inventory_query.with_for_update())
         if inventory is None:
-            raise HTTPException(status_code=409, detail="Product is not stocked in this pharmacy")
+            raise HTTPException(
+                status_code=409, detail="Product is not stocked in this pharmacy"
+            )
         if inventory.quantity < quantity_units:
             raise HTTPException(status_code=409, detail="Insufficient inventory")
         if inventory.expires_at is not None and inventory.expires_at < now:
-            raise HTTPException(status_code=409, detail="Cannot dispense expired inventory")
+            raise HTTPException(
+                status_code=409, detail="Cannot dispense expired inventory"
+            )
 
         # When FEFO selected the batch implicitly, keep that batch attached to
         # the order, dispensing record, patient history and stock ledger.
         if batch is None and inventory.batch_id is not None:
             batch = await db.get(ProductBatch, inventory.batch_id)
             if batch is None:
-                raise HTTPException(status_code=409, detail="Inventory batch no longer exists")
+                raise HTTPException(
+                    status_code=409, detail="Inventory batch no longer exists"
+                )
             if batch.expiry_date < now.date():
-                raise HTTPException(status_code=409, detail="Cannot dispense an expired batch")
+                raise HTTPException(
+                    status_code=409, detail="Cannot dispense an expired batch"
+                )
 
         if item.prescription_id is not None:
             prescription = await db.scalar(
@@ -218,9 +240,17 @@ async def confirm_pos_transaction(
                 )
             )
             if prescription is None:
-                raise HTTPException(status_code=409, detail="Prescription is not active for this patient")
-            if prescription.product_id is not None and prescription.product_id != product.id:
-                raise HTTPException(status_code=409, detail="Prescription does not match product")
+                raise HTTPException(
+                    status_code=409,
+                    detail="Prescription is not active for this patient",
+                )
+            if (
+                prescription.product_id is not None
+                and prescription.product_id != product.id
+            ):
+                raise HTTPException(
+                    status_code=409, detail="Prescription does not match product"
+                )
             if prescription.expires_at is not None and prescription.expires_at < now:
                 raise HTTPException(status_code=409, detail="Prescription has expired")
 
