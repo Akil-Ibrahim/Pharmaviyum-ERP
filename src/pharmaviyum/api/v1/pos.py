@@ -238,6 +238,8 @@ async def confirm_pos_transaction(
         await db.flush()
 
         inventory.quantity -= quantity_units
+        if batch is not None:
+            batch.available_quantity = max(batch.available_quantity - quantity_units, 0)
         dispensing = Dispensing(
             pharmacy_id=tenant.pharmacy_id,
             patient_id=patient.id,
