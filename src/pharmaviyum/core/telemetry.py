@@ -11,16 +11,6 @@ from typing import Any
 
 from src.pharmaviyum.core.config import settings
 
-trace: Any = None
-TracerProvider: Any = None
-BatchSpanProcessor: Any = None
-ConsoleSpanExporter: Any = None
-Resource: Any = None
-FastAPIInstrumentor: Any = None
-SQLAlchemyInstrumentor: Any = None
-RedisInstrumentor: Any = None
-HTTPXClientInstrumentor: Any = None
-
 try:
     from opentelemetry import trace
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -31,6 +21,15 @@ try:
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 except Exception:  # pragma: no cover - compatibility fallback for Python 3.14
+    trace = None
+    TracerProvider = None
+    BatchSpanProcessor = None
+    ConsoleSpanExporter = None
+    Resource = None
+    FastAPIInstrumentor = None
+    SQLAlchemyInstrumentor = None
+    RedisInstrumentor = None
+    HTTPXClientInstrumentor = None
 
 
 def _otlp_exporter_available() -> bool:
@@ -72,7 +71,7 @@ def setup_telemetry(app=None, engine=None) -> None:
                 OTLPSpanExporter,
             )
 
-            exporter: Any = OTLPSpanExporter(endpoint=settings.OTEL_EXPORTER_ENDPOINT)
+            exporter = OTLPSpanExporter(endpoint=settings.OTEL_EXPORTER_ENDPOINT)
         else:
             exporter = ConsoleSpanExporter()
 
