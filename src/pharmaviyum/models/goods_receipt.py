@@ -1,12 +1,12 @@
 """Goods receiving documents and their accounting status."""
 from datetime import datetime
-from sqlalchemy import Column, DateTime, ForeignKey, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from src.pharmaviyum.db.base import Base
 
 class GoodsReceipt(Base):
     __tablename__ = "goods_receipts"
-    id = Column(__import__("sqlalchemy").Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     receipt_number = Column(String(64), unique=True, nullable=False, index=True)
     supplier_id = Column(ForeignKey("suppliers.id", ondelete="RESTRICT"), nullable=True, index=True)
     pharmacy_id = Column(ForeignKey("pharmacies.id", ondelete="RESTRICT"), nullable=False, index=True)
