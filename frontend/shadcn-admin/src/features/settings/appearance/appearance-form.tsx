@@ -6,7 +6,7 @@ import { fonts } from '@/config/fonts'
 import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
 import { useFont } from '@/context/font-provider'
-import { useTheme } from '@/context/theme-provider'
+import { type ThemePreset, useTheme } from '@/context/theme-provider'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
   Form,
@@ -18,7 +18,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import type { ThemePreset } from '@/context/theme-provider'
 
 const appearanceFormSchema = z.object({
   theme: z.enum(['light', 'dark']),
