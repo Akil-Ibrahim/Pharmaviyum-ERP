@@ -33,6 +33,7 @@ class AgentState(TypedDict):
     context: dict[str, Any]
     tool_calls: list[dict[str, Any]]
     tool_results: list[dict[str, Any]]
+    rag_context: str
     final_answer: str | None
     warnings: list[str]
     iteration: int
