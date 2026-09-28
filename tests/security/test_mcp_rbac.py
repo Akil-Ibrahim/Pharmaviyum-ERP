@@ -96,3 +96,43 @@ async def test_mcp_client_rejects_unauthorized_role(monkeypatch) -> None:
     finally:
         registry._tools.clear()
         registry._tools.update(original)
+
+
+@pytest.mark.asyncio
+async def test_mcp_server_tool_discovery_requires_and_filters_authorization() -> None:
+    from src.pharmaviyum.ai.mcp.context import MCPAuthorizationContext
+    from src.pharmaviyum.ai.mcp.server import MCPServer
+    from src.pharmaviyum.ai.mcp import registry as registry_module
+
+    original = dict(registry_module.registry._tools)
+
+    @registry_module.registry.tool(
+        name="server_pharmacist_tool",
+        description="Visible only to pharmacists",
+        input_schema=_Input,
+        output_schema=_Output,
+        required_roles=["pharmacist"],
+    )
+    async def server_pharmacist_tool(data: _Input) -> _Output:
+        return _Output(value=data.value)
+
+    try:
+        server = MCPServer()
+        unauthorized = await server.handle_request(
+            '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+        )
+        assert "authorization context is required" in unauthorized
+
+        context = MCPAuthorizationContext(
+            user_id=7,
+            pharmacy_id=42,
+            user_role="pharmacist",
+        )
+        response = await server.handle_request(
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}',
+            authorization_context=context,
+        )
+        assert "server_pharmacist_tool" in response
+    finally:
+        registry_module.registry._tools.clear()
+        registry_module.registry._tools.update(original)
