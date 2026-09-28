@@ -4,7 +4,7 @@
 
 # Pharmaviyum CRM
 
-![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.14.7-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue) ![React](https://img.shields.io/badge/React-19.3-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.x-646CFF)
+![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.14.7-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue) ![React](https://img.shields.io/badge/React-19.3.0-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.3.1-646CFF)
 
 > AI-powered CRM platform for pharmacies, designed to complement existing ERP systems with client-oriented workflows, order handling, analytics, and AI-assisted knowledge retrieval.
 
@@ -84,10 +84,12 @@ The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is inte
 - Python 3.14.7
 - FastAPI 0.141.1
 - Uvicorn
-- Pydantic / Pydantic Settings
-- SQLAlchemy 2.0
-- Alembic
-- asyncpg / psycopg
+- Pydantic 2.13.5 / Pydantic Settings 2.15.0
+- SQLAlchemy 2.0.53
+- Alembic 1.20.0
+- asyncpg 0.30.0 / psycopg 3.3.5
+- Uvicorn 0.35.0
+- Redis Python client 6.2.0 / Celery 5.5.3
 - Ruff / Black / isort / mypy / pytest
 
 ### Data & Infrastructure
@@ -100,9 +102,13 @@ The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is inte
 
 ### AI / RAG
 
-- LangGraph
-- LangChain
-- LangChain Ollama integration
+- LangGraph 1.2.12
+- LangGraph PostgreSQL Checkpoint 3.1.2
+- LangChain 1.4.2
+- LangChain OpenAI 1.6.6
+- LangChain Google GenAI 4.4.0
+- LangChain Groq 1.1.3
+- LangChain Ollama 1.1.0
 - Ollama / configured LLM provider
 - PostgreSQL + pgvector for vector retrieval
 - MCP JSON-RPC tool layer
@@ -110,21 +116,21 @@ The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is inte
 
 ### Frontend
 
-- React 19.3
-- React DOM 19.3
-- TypeScript 6
-- Vite 8
-- TanStack Query 5
-- TanStack Router 1.x
-- Axios 1.x
-- Vitest 5
-- Playwright 1.x
+- React 19.3.0
+- React DOM 19.3.0
+- TypeScript 6.0.3
+- Vite 8.3.1
+- TanStack Query 5.103.1
+- TanStack Router 1.170.39
+- Axios 1.20.0
+- Vitest 4.1.11
+- Playwright 1.59.1
 
 Dependency source of truth:
 
 - Python: `pyproject.toml` and generated `uv.lock`
 - Compatibility installation: `requirements.txt`
-- Frontend: `frontend/package.json` and Bun lockfile when present
+- Frontend: `frontend/shadcn-admin/package.json` (Bun lockfile is not currently committed)
 
 ## AI / RAG
 
@@ -179,7 +185,7 @@ The repository's detailed AI architecture is documented in [`docs/ai_architectur
 
 - Python 3.14.7
 - Docker and Docker Compose
-- Bun
+- Bun 1.4.2
 - Node.js 20.19+ or 22.12+ for the Vite 8 toolchain
 
 ### Backend
