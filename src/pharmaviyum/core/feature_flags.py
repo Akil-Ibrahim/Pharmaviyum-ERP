@@ -5,7 +5,13 @@ import json
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Awaitable, Optional, TypeVar, cast
+
+T = TypeVar("T")
+
+
+async def _await_redis(value: Awaitable[T] | T) -> T:
+    return await cast(Awaitable[T], value)
 
 from redis import asyncio as aioredis
 
@@ -67,7 +73,7 @@ class FeatureFlagService:
         if key in self.cache:
             return self.cache[key]
         redis = await self._client()
-        flag_json = await redis.get(f"feature_flag:{key}")
+        flag_json = await _await_redis(redis.get(f"feature_flag:{key}"))
         if not flag_json:
             return None
         flag = FeatureFlag.from_dict(json.loads(flag_json))
@@ -78,10 +84,12 @@ class FeatureFlagService:
         if await self.get_flag(flag.key):
             raise ValueError(f"Feature flag '{flag.key}' already exists")
         redis = await self._client()
-        await redis.set(
-            f"feature_flag:{flag.key}", json.dumps(flag.to_dict(), ensure_ascii=False)
+        await _await_redis(
+            redis.set(
+                f"feature_flag:{flag.key}", json.dumps(flag.to_dict(), ensure_ascii=False)
+            )
         )
-        await redis.sadd("feature_flags_list", flag.key)
+        await _await_redis(redis.sadd("feature_flags_list", flag.key))
         self.cache[flag.key] = flag
         logger.info("Created feature flag", extra={"flag_key": flag.key})
         return flag
@@ -95,8 +103,10 @@ class FeatureFlagService:
                 setattr(flag, field_name, value)
         flag.updated_at = datetime.now(timezone.utc).isoformat()
         redis = await self._client()
-        await redis.set(
-            f"feature_flag:{key}", json.dumps(flag.to_dict(), ensure_ascii=False)
+        await _await_redis(
+            redis.set(
+                f"feature_flag:{key}", json.dumps(flag.to_dict(), ensure_ascii=False)
+            )
         )
         self.cache[key] = flag
         logger.info("Updated feature flag", extra={"flag_key": key})
@@ -104,8 +114,8 @@ class FeatureFlagService:
 
     async def delete_flag(self, key: str) -> bool:
         redis = await self._client()
-        deleted = await redis.delete(f"feature_flag:{key}")
-        await redis.srem("feature_flags_list", key)
+        deleted = await _await_redis(redis.delete(f"feature_flag:{key}"))
+        await _await_redis(redis.srem("feature_flags_list", key))
         self.cache.pop(key, None)
         if deleted:
             logger.info("Deleted feature flag", extra={"flag_key": key})
@@ -113,7 +123,7 @@ class FeatureFlagService:
 
     async def list_flags(self) -> list[FeatureFlag]:
         redis = await self._client()
-        keys = await redis.smembers("feature_flags_list")
+        keys = await _await_redis(redis.smembers("feature_flags_list"))
         flags = []
         for key in keys:
             flag = await self.get_flag(key)
@@ -174,8 +184,8 @@ class FeatureFlagService:
         if not await self.get_flag(key):
             return {}
         redis = await self._client()
-        enabled_count = int(await redis.get(f"flag_stats:{key}:enabled") or 0)
-        disabled_count = int(await redis.get(f"flag_stats:{key}:disabled") or 0)
+        enabled_count = int(await _await_redis(redis.get(f"flag_stats:{key}:enabled")) or 0)
+        disabled_count = int(await _await_redis(redis.get(f"flag_stats:{key}:disabled")) or 0)
         total = enabled_count + disabled_count
         return {
             "flag_key": key,
@@ -188,7 +198,7 @@ class FeatureFlagService:
     async def record_check(self, key: str, enabled: bool) -> None:
         redis = await self._client()
         suffix = "enabled" if enabled else "disabled"
-        await redis.incr(f"flag_stats:{key}:{suffix}")
+        await _await_redis(redis.incr(f"flag_stats:{key}:{suffix}"))
 
     def invalidate_cache(self, key: Optional[str] = None) -> None:
         if key:
