@@ -1,8 +1,6 @@
 """FEFO stock selection tests for POS schemas and ordering logic."""
 from datetime import date, datetime, timedelta
 
-import pytest
-
 
 def test_fefo_orders_earliest_expiry_first() -> None:
     batches = [
