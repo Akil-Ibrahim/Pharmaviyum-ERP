@@ -199,17 +199,6 @@ async def get_defectura(
         )
         supplier_row = supplier_result.first()
         supplier = supplier_row[1] if supplier_row else None
-        item = DefecturaItem(
-            pharmacy_id=tenant.pharmacy_id,
-            product_id=product.id,
-            supplier_id=supplier.id if supplier else None,
-            current_quantity=available,
-            reserved_quantity=inventory.reserved_quantity,
-            reorder_level=inventory.reorder_level,
-            recommended_quantity=recommended,
-            status="open" if recommended > 0 else "covered_by_incoming",
-        )
-        db.add(item)
         result.append(
             {
                 "product_id": product.id,
@@ -233,7 +222,6 @@ async def get_defectura(
                 ),
             }
         )
-    await db.commit()
     return result
 
 
@@ -458,6 +446,8 @@ async def create_stock_transfer(
     destination = await db.get(Pharmacy, data.destination_pharmacy_id)
     if destination is None or not destination.is_active:
         raise HTTPException(404, "Destination pharmacy not found")
+    if not current_user.is_superuser:
+        await require_pharmacy_tenant(data.destination_pharmacy_id, current_user, db)
     transfer = StockTransfer(
         transfer_number=f"TR-{datetime.utcnow():%Y%m%d}-{uuid4().hex[:8].upper()}",
         source_pharmacy_id=source.pharmacy_id,
