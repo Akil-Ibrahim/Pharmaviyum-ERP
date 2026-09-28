@@ -14,6 +14,8 @@ Pharmaviyum CRM is a modular pharmacy CRM platform built around a FastAPI backen
 
 The system is designed to centralize pharmacy workflows and client interactions without replacing the pharmacy's core ERP. The AI layer provides application-level orchestration, retrieval-augmented generation (RAG), dialogue memory, guardrails, tool access, and observability.
 
+Pharmaviyum is a pharmacy workflow platform with an AI layer, where Mortarium assists the pharmacist by retrieving evidence, interacting with authorized pharmacy tools, and supporting routine work while keeping the final professional decision with the pharmacist.
+
 The repository is currently developed and reviewed through the `dev` branch.
 
 ## Demo / NDA Notice
