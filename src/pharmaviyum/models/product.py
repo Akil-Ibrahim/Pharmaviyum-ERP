@@ -7,6 +7,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     Integer,
+    JSON,
     String,
 )
 from sqlalchemy.orm import relationship
@@ -40,6 +41,9 @@ class Product(Base):
     regulatory_id = Column(String(50), nullable=True, index=True)
     gtin = Column(String(14), nullable=True, index=True)
     barcode = Column(String(64), nullable=True, index=True)
+    halal_status = Column(String(16), nullable=False, default="unknown")
+    halal_standard = Column(String(128), nullable=True)
+    halal_evidence = Column(JSON, nullable=False, default=dict)
 
     price = Column(Float, nullable=False, default=0.0)
     # Legacy aggregate stock. Per-pharmacy stock is authoritative in Inventory.
