@@ -6,6 +6,10 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.models.audit_log import AuditLog
+from src.pharmaviyum.services.expired_inventory import (
+    list_expired_inventory,
+    quarantine_expired_inventory,
+)
 from src.pharmaviyum.models.dispensing import Dispensing
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.inventory_transaction import InventoryTransaction
@@ -67,6 +71,38 @@ async def search_pos_products(
     ]
 
 
+@router.post("/inventory/expire")
+async def quarantine_expired_pos_inventory(
+    db: SessionDep,
+    current_user: CurrentUser,
+    pharmacy_id: int = Query(gt=0),
+) -> dict[str, int | str]:
+    """Remove expired stock from usable inventory and record it separately."""
+    tenant = await require_pharmacy_tenant(pharmacy_id, current_user, db)
+    count = await quarantine_expired_inventory(
+        db, pharmacy_id=tenant.pharmacy_id, actor_id=current_user.id
+    )
+    await db.commit()
+    return {
+        "status": "ok",
+        "quarantined_inventory_rows": count,
+    }
+
+
+@router.get("/inventory/expired")
+async def get_expired_pos_inventory(
+    db: SessionDep,
+    current_user: CurrentUser,
+    pharmacy_id: int = Query(gt=0),
+    limit: int = Query(default=100, ge=1, le=500),
+) -> list[dict[str, object]]:
+    """List stock that has been removed from usable inventory because it expired."""
+    tenant = await require_pharmacy_tenant(pharmacy_id, current_user, db)
+    return await list_expired_inventory(
+        db, pharmacy_id=tenant.pharmacy_id, limit=limit
+    )
+
+
 @router.post("/transactions", response_model=POSTransactionResponse, status_code=201)
 async def confirm_pos_transaction(
     data: POSTransactionCreate,
@@ -75,6 +111,11 @@ async def confirm_pos_transaction(
 ) -> POSTransactionResponse:
     """Atomically confirm a pharmacist POS sale/dispensing transaction."""
     tenant = await require_pharmacy_tenant(data.pharmacy_id, current_user, db)
+
+    # Expired stock is quarantined before any dispensing transaction is processed.
+    await quarantine_expired_inventory(
+        db, pharmacy_id=tenant.pharmacy_id, actor_id=current_user.id
+    )
 
     patient = await db.scalar(
         select(Patient).where(
