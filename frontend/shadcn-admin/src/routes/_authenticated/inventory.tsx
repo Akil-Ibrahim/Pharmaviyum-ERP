@@ -12,7 +12,7 @@ export const Route=createFileRoute('/_authenticated/inventory')({component:Inven
 function InventoryPage(){
  const [rows,setRows]=useState<InventoryRow[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState<string|null>(null),[query,setQuery]=useState('')
  const load=()=>{setLoading(true);setError(null);apiFetch<InventoryRow[]>('/api/v1/inventory').then(setRows).catch((e:unknown)=>setError(e instanceof Error?e.message:'Unable to load inventory')).finally(()=>setLoading(false))}
- useEffect(()=>{load()},[])
+ useEffect(()=>{let active=true;void apiFetch<InventoryRow[]>('/api/v1/inventory').then(data=>{if(active)setRows(data)}).catch((e:unknown)=>{if(active)setError(e instanceof Error?e.message:'Unable to load inventory')}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[])
  const filtered=useMemo(()=>{const q=query.trim().toLowerCase();return q?rows.filter(r=>[r.product_id,r.pharmacy_id,r.lot_number??'',r.quantity,r.reorder_level].some(v=>String(v).toLowerCase().includes(q))):rows},[rows,query])
  const low=rows.filter(r=>r.quantity-r.reserved_quantity<=r.reorder_level).length,out=rows.filter(r=>r.quantity-r.reserved_quantity<=0).length,total=rows.length,healthy=total?Math.round(((total-low)/total)*100):100
  return <div className='space-y-6 p-6 font-inter'><div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'><div><h1 className='text-[23px] font-semibold tracking-tight text-black dark:text-white'>Inventory</h1><p className='text-muted-foreground'>Stock health, reserved quantities, reorder levels, lots, and expiry.</p></div><Button variant='outline' size='sm' onClick={load} disabled={loading}><RefreshCw className='mr-2 size-4'/>Refresh</Button></div>
