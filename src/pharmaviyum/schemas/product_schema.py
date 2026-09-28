@@ -24,7 +24,9 @@ class ProductCreate(BaseModel):
     halal_evidence: dict = Field(default_factory=dict)
     storage_temperature_min: float | None = None
     storage_temperature_max: float | None = None
-    storage_location_type: str = Field(default="shelf", pattern="^(shelf|refrigerator|special_storage)$")
+    storage_location_type: str = Field(
+        default="shelf", pattern="^(shelf|refrigerator|special_storage)$"
+    )
     storage_instructions: str | None = Field(default=None, max_length=500)
     price: float = Field(default=0.0, ge=0)
     # Kept for backward compatibility; per-pharmacy stock belongs to Inventory.
@@ -51,7 +53,9 @@ class ProductUpdate(BaseModel):
     halal_evidence: dict | None = None
     storage_temperature_min: float | None = None
     storage_temperature_max: float | None = None
-    storage_location_type: str | None = Field(default=None, pattern="^(shelf|refrigerator|special_storage)$")
+    storage_location_type: str | None = Field(
+        default=None, pattern="^(shelf|refrigerator|special_storage)$"
+    )
     storage_instructions: str | None = Field(default=None, max_length=500)
     price: float | None = Field(default=None, ge=0)
     stock: int | None = Field(default=None, ge=0)
