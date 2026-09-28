@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from typing import Any, cast
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -87,10 +88,10 @@ app.add_middleware(
     ),
 )
 
-app.add_exception_handler(PharmaviyumAPIError, pharmaviyum_api_error_handler)
-app.add_exception_handler(RequestValidationError, validation_exception_handler)
-app.add_exception_handler(ValidationError, validation_exception_handler)
-app.add_exception_handler(Exception, general_exception_handler)
+app.add_exception_handler(PharmaviyumAPIError, cast(Any, pharmaviyum_api_error_handler))
+app.add_exception_handler(RequestValidationError, cast(Any, validation_exception_handler))
+app.add_exception_handler(ValidationError, cast(Any, validation_exception_handler))
+app.add_exception_handler(Exception, cast(Any, general_exception_handler))
 app.include_router(api_v1_router)
 
 
