@@ -241,7 +241,7 @@ class Worker:
             payload["status"] = "failed"
             payload["error"] = error
             payload["failed_at"] = datetime.now(timezone.utc).isoformat()
-            await self.redis.setex(
+            await redis.setex(
                 f"task:{task_id}", 86400, json.dumps(payload, ensure_ascii=False)
             )
 
