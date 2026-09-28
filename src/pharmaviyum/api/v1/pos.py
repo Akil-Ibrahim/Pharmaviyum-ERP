@@ -194,6 +194,9 @@ async def confirm_pos_transaction(
                 Inventory.id.asc(),
             )
         inventory = await db.scalar(inventory_query.with_for_update())
+        if inventory is None and batch is None:
+            # A single requested quantity may span multiple FEFO batches.
+            inventory = None
         if inventory is None:
             raise HTTPException(status_code=409, detail="Product is not stocked in this pharmacy")
         if inventory.quantity < quantity_units:
