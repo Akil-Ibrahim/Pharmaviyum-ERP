@@ -1,8 +1,11 @@
 """Pharmaviyum CRM database models."""
 
+from src.pharmaviyum.models.dispensing import Dispensing
 from src.pharmaviyum.models.erp_sync import ERPIntegration, ERPSyncEvent
 from src.pharmaviyum.models.inventory import Inventory
+from src.pharmaviyum.models.inventory_transaction import InventoryTransaction
 from src.pharmaviyum.models.order import Order
+from src.pharmaviyum.models.order_item import OrderItem
 from src.pharmaviyum.models.patients.consultation import Consultation
 from src.pharmaviyum.models.patients.patient import Patient
 from src.pharmaviyum.models.patients.patient_allergy import PatientAllergy
@@ -18,6 +21,7 @@ from src.pharmaviyum.models.user import User
 from src.pharmaviyum.modules.auth.models import PharmacyMembership
 
 __all__ = [
+    "Dispensing",
     "Patient",
     "PatientAllergy",
     "PatientCondition",
@@ -28,11 +32,13 @@ __all__ = [
     "Product",
     "ProductBatch",
     "Inventory",
+    "InventoryTransaction",
     "Pharmacy",
     "Supplier",
     "ERPIntegration",
     "ERPSyncEvent",
     "Order",
+    "OrderItem",
     "User",
     "PharmacyMembership",
 ]
