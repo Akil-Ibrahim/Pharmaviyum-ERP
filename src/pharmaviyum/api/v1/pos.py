@@ -173,7 +173,7 @@ async def confirm_pos_transaction(
                 raise HTTPException(status_code=409, detail="Cannot dispense an expired batch")
 
         # FEFO: when the pharmacist does not explicitly choose a batch,
-        # select the earliest-expiring usable batch(es) automatically.
+        # select the earliest-expiring usable batch automatically.
         inventory_query = (
             select(Inventory)
             .join(ProductBatch, ProductBatch.id == Inventory.batch_id, isouter=True)
@@ -194,15 +194,21 @@ async def confirm_pos_transaction(
                 Inventory.id.asc(),
             )
         inventory = await db.scalar(inventory_query.with_for_update())
-        if inventory is None and batch is None:
-            # A single requested quantity may span multiple FEFO batches.
-            inventory = None
         if inventory is None:
             raise HTTPException(status_code=409, detail="Product is not stocked in this pharmacy")
         if inventory.quantity < quantity_units:
             raise HTTPException(status_code=409, detail="Insufficient inventory")
         if inventory.expires_at is not None and inventory.expires_at < now:
             raise HTTPException(status_code=409, detail="Cannot dispense expired inventory")
+
+        # When FEFO selected the batch implicitly, keep that batch attached to
+        # the order, dispensing record, patient history and stock ledger.
+        if batch is None and inventory.batch_id is not None:
+            batch = await db.get(ProductBatch, inventory.batch_id)
+            if batch is None:
+                raise HTTPException(status_code=409, detail="Inventory batch no longer exists")
+            if batch.expiry_date < now.date():
+                raise HTTPException(status_code=409, detail="Cannot dispense an expired batch")
 
         if item.prescription_id is not None:
             prescription = await db.scalar(
