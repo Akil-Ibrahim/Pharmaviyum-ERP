@@ -38,7 +38,6 @@ class SendPatientNotificationTask(BaseTask):
         template_data: dict[str, Any],
         channel: Optional[str] = None,
         language: str = "vi",
-        **kwargs: object,
     ) -> dict:
         """
         Send notification to patient
@@ -79,17 +78,17 @@ class SendPatientNotificationTask(BaseTask):
 
             # Send via appropriate channel
             if target_channel == "zalo":
-                send_result = await self._send_zalo(patient.phone, message)
+                result = await self._send_zalo(patient.phone, message)
             elif target_channel == "line":
-                send_result = await self._send_line(patient.phone, message)
+                result = await self._send_line(patient.phone, message)
             elif target_channel == "whatsapp":
-                send_result = await self._send_whatsapp(patient.phone, message)
+                result = await self._send_whatsapp(patient.phone, message)
             elif target_channel == "messenger":
-                send_result = await self._send_messenger(patient.phone, message)
+                result = await self._send_messenger(patient.phone, message)
             elif target_channel == "sms":
-                send_result = await self._send_sms(patient.phone, message)
+                result = await self._send_sms(patient.phone, message)
             elif target_channel == "email":
-                send_result = await self._send_email(patient.email, message)
+                result = await self._send_email(patient.email, message)
             else:
                 raise ValueError(f"Unsupported channel: {target_channel}")
 
@@ -97,7 +96,7 @@ class SendPatientNotificationTask(BaseTask):
             "patient_id": patient_id,
             "channel": target_channel,
             "template": template_name,
-            "message_id": send_result.get("message_id"),
+            "message_id": result.get("message_id"),
             "status": "sent",
         }
 
