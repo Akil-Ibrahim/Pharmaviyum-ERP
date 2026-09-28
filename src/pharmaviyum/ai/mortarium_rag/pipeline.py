@@ -122,7 +122,7 @@ class RAGPipeline:
         if context.category:
             filters["category"] = context.category
         if context.halal_filter:
-            filters["halal"] = True
+            filters["halal_status"] = "halal"
         return filters
 
     @classmethod
