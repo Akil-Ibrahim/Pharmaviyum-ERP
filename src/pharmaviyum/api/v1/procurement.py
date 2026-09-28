@@ -8,7 +8,6 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.models.audit_log import AuditLog
-from src.pharmaviyum.models.defectura_item import DefecturaItem
 from src.pharmaviyum.models.goods_receipt import GoodsReceipt
 from src.pharmaviyum.models.goods_receipt_item import GoodsReceiptItem
 from src.pharmaviyum.models.inventory import Inventory
