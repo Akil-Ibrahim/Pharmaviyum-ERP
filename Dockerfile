@@ -2,7 +2,7 @@
 # PHARMAVIYUM AI - Production Dockerfile
 # ============================================================================
 
-FROM python:3.13-slim AS python-builder
+FROM python:3.14.7-slim AS python-builder
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential gcc g++ libpq-dev libjpeg-dev zlib1g-dev libffi-dev && rm -rf /var/lib/apt/lists/*
 RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel
@@ -16,7 +16,7 @@ RUN bun install
 COPY frontend/shadcn-admin/ ./
 RUN bun run build
 
-FROM python:3.13-slim AS production
+FROM python:3.14.7-slim AS production
 LABEL maintainer="Pharmaviyum Team"
 LABEL description="Enterprise AI/LLM layer for pharmaceutical CRM"
 WORKDIR /app
