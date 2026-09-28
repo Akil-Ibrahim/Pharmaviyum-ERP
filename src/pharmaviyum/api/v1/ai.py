@@ -54,7 +54,7 @@ class QueryRequest(BaseModel):
     language: str = Field(default="vi", description="Language code")
     halal_filter: bool = Field(
         default=False,
-        description="Enable strict halal compliance check",
+        description="Only use products with evidence-based halal_status=halal",
     )
     force_fresh: bool = Field(default=False, description="Bypass prompt cache")
 
