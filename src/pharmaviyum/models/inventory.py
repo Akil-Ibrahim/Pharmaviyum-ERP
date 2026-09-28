@@ -35,6 +35,7 @@ class Inventory(Base):
     quantity = Column(Integer, nullable=False, default=0)
     reserved_quantity = Column(Integer, nullable=False, default=0)
     reorder_level = Column(Integer, nullable=False, default=0)
+    batch_id = Column(Integer, ForeignKey("product_batches.id", ondelete="SET NULL"), nullable=True, index=True)
     lot_number = Column(String(100), nullable=True, index=True)
     expires_at = Column(DateTime, nullable=True, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
