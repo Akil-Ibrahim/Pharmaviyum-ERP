@@ -52,6 +52,7 @@ class LangGraphRAG:
         self.transformer = QueryTransformer(llm=self.fast_llm)
         self.compressor = ContextualCompressor(llm=self.fast_llm)
         self.graph = self._build_graph(checkpointer)
+        self.evidence_graph = self._build_evidence_graph(checkpointer)
 
     def _build_graph(self, checkpointer: Any):
         workflow = StateGraph(RAGState)
@@ -86,6 +87,38 @@ class LangGraphRAG:
         workflow.add_edge("no_answer", "guardrails")
         workflow.add_edge("blocked", "guardrails")
         workflow.add_edge("guardrails", END)
+        return workflow.compile(checkpointer=checkpointer)
+
+    def _build_evidence_graph(self, checkpointer: Any):
+        """Build a retrieval-only graph for agent grounding without duplicate generation."""
+        workflow = StateGraph(RAGState)
+        workflow.add_node("transform_query", self.transform_query_node)
+        workflow.add_node("blocked", self.blocked_node)
+        workflow.add_node("retrieve", self.retrieve_node)
+        workflow.add_node("grade_documents", self.grade_documents_node)
+        workflow.add_node("rewrite_query", self.rewrite_query_node)
+        workflow.add_node("compress", self.compress_node)
+        workflow.add_node("no_answer", self.no_answer_node)
+        workflow.set_entry_point("transform_query")
+        workflow.add_conditional_edges(
+            "transform_query",
+            self._route_after_transform,
+            {"safe": "retrieve", "blocked": "blocked"},
+        )
+        workflow.add_edge("retrieve", "grade_documents")
+        workflow.add_conditional_edges(
+            "grade_documents",
+            self._route_after_grade,
+            {
+                "sufficient": "compress",
+                "rewrite": "rewrite_query",
+                "give_up": "no_answer",
+            },
+        )
+        workflow.add_edge("rewrite_query", "retrieve")
+        workflow.add_edge("compress", END)
+        workflow.add_edge("no_answer", END)
+        workflow.add_edge("blocked", END)
         return workflow.compile(checkpointer=checkpointer)
 
     @staticmethod
@@ -392,6 +425,38 @@ class LangGraphRAG:
                 }
             )
         return filter_sets
+
+    async def retrieve_evidence(
+        self, question: str, context: QueryContext, thread_id: str | None = None
+    ) -> tuple[list[RetrievalResult], list[str]]:
+        """Run retrieval, grading, and compression without duplicate answer generation."""
+        initial: RAGState = {
+            "question": question,
+            "context": context,
+            "transformed_queries": [],
+            "retrieved": [],
+            "graded": [],
+            "compressed_context": "",
+            "grade_decision": "insufficient",
+            "rewrite_count": 0,
+            "input_blocked": False,
+            "answer": None,
+            "warnings": [],
+            "confidence": 0.0,
+            "model_used": "none",
+            "latency_ms": 0.0,
+            "tokens_used": 0,
+        }
+        config = {
+            "configurable": {
+                "thread_id": (
+                    f"rag-evidence:{context.pharmacy_id}:{context.user_id}:"
+                    f"{thread_id or uuid4()}"
+                )
+            }
+        }
+        final: RAGState = await self.evidence_graph.ainvoke(initial, config=config)
+        return final.get("graded") or [], final.get("warnings") or []
 
     async def run(
         self, question: str, context: QueryContext, thread_id: str | None = None
