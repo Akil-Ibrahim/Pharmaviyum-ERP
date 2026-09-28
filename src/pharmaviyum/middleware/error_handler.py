@@ -7,7 +7,7 @@ API returns stable JSON structures for errors.
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from src.pharmaviyum.core.exceptions import PharmaviyumException
+from src.pharmaviyum.core.exceptions import APIException
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -17,7 +17,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     consistent shape: {"detail": ..., "code": ...}.
     """
 
-    @app.exception_handler(PharmaviyumException)
+    @app.exception_handler(APIException)
     async def _api_exception_handler(request: Request, exc: APIException):
         return JSONResponse(
             status_code=getattr(exc, "status_code", 500),
