@@ -47,6 +47,25 @@ jobs:
       - name: mypy diagnostics
         run: mypy --explicit-package-bases src/pharmaviyum/
 
+  frontend:
+    name: Frontend Build and Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - name: Install frontend dependencies
+        working-directory: frontend/shadcn-admin
+        run: bun install --no-save
+      - name: Lint frontend
+        working-directory: frontend/shadcn-admin
+        run: bun run lint
+      - name: Build frontend
+        working-directory: frontend/shadcn-admin
+        run: bun run build
+
   test-unit:
     name: Unit Tests
     runs-on: ubuntu-latest
