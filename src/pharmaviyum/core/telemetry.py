@@ -9,6 +9,9 @@ from __future__ import annotations
 
 from typing import Any
 
+# Optional OpenTelemetry imports are intentionally typed as Any because they may
+# be unavailable in Python 3.14 environments and are guarded at runtime.
+
 from src.pharmaviyum.core.config import settings
 
 try:
@@ -21,15 +24,15 @@ try:
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 except Exception:  # pragma: no cover - compatibility fallback for Python 3.14
-    trace = None
-    TracerProvider = None
-    BatchSpanProcessor = None
-    ConsoleSpanExporter = None
-    Resource = None
-    FastAPIInstrumentor = None
-    SQLAlchemyInstrumentor = None
-    RedisInstrumentor = None
-    HTTPXClientInstrumentor = None
+    trace: Any = None
+    TracerProvider: Any = None
+    BatchSpanProcessor: Any = None
+    ConsoleSpanExporter: Any = None
+    Resource: Any = None
+    FastAPIInstrumentor: Any = None
+    SQLAlchemyInstrumentor: Any = None
+    RedisInstrumentor: Any = None
+    HTTPXClientInstrumentor: Any = None
 
 
 def _otlp_exporter_available() -> bool:
@@ -73,7 +76,7 @@ def setup_telemetry(app=None, engine=None) -> None:
 
             exporter = OTLPSpanExporter(endpoint=settings.OTEL_EXPORTER_ENDPOINT)
         else:
-            exporter = ConsoleSpanExporter()
+            exporter: Any = ConsoleSpanExporter()
 
         provider.add_span_processor(
             BatchSpanProcessor(
