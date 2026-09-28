@@ -1,6 +1,8 @@
 """Rate limiting middleware for production deployments."""
 
 import structlog
+from typing import Any, cast
+
 from fastapi import FastAPI, Request
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -25,7 +27,9 @@ def setup_rate_limiting(app: FastAPI) -> None:
         strategy="fixed-window",
     )
     app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    app.add_exception_handler(
+        RateLimitExceeded, cast(Any, _rate_limit_exceeded_handler)
+    )
     app.add_middleware(SlowAPIMiddleware)
     logger.info(
         "rate_limiting_configured",
