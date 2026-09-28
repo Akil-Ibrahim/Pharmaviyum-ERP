@@ -2,6 +2,7 @@
 
 from src.pharmaviyum.models.dispensing import Dispensing
 from src.pharmaviyum.models.erp_sync import ERPIntegration, ERPSyncEvent
+from src.pharmaviyum.models.expired_inventory import ExpiredInventory
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.inventory_transaction import InventoryTransaction
 from src.pharmaviyum.models.order import Order
@@ -22,6 +23,7 @@ from src.pharmaviyum.modules.auth.models import PharmacyMembership
 
 __all__ = [
     "Dispensing",
+    "ExpiredInventory",
     "Patient",
     "PatientAllergy",
     "PatientCondition",
