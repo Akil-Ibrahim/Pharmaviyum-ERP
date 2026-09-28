@@ -53,13 +53,13 @@ class DeadLetterQueue:
             "failed_at": datetime.now(timezone.utc).isoformat(),
             "status": "failed",
         }
-        await redis.hset(
+        await _await_redis(redis.hset(
             self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
-        )
-        await redis.zadd(
+        )))
+        await _await_redis(redis.zadd(
             self.queue_key, {entry_id: datetime.now(timezone.utc).timestamp()}
-        )
-        await redis.expire(self.queue_key, DEAD_LETTER_TTL)
+        ))
+        await _await_redis(redis.expire(self.queue_key, DEAD_LETTER_TTL)
         await redis.expire(self.index_key, DEAD_LETTER_TTL)
         logger.error(
             "Task added to dead letter queue",
@@ -74,12 +74,12 @@ class DeadLetterQueue:
         task_name: Optional[str] = None,
     ) -> list[dict]:
         redis = await self._client()
-        entry_ids = await redis.zrevrange(self.queue_key, skip, skip + limit - 1)
+        entry_ids = await _await_redis(redis.zrevrange(self.queue_key, skip, skip + limit - 1))
         if not entry_ids:
             return []
         entries = []
         for entry_id in entry_ids:
-            entry_json = await redis.hget(self.index_key, entry_id)
+            entry_json = await _await_redis(redis.hget(self.index_key, entry_id))
             if entry_json:
                 entry = json.loads(entry_json)
                 if task_name and entry.get("task_name") != task_name:
@@ -120,17 +120,17 @@ class DeadLetterQueue:
 
     async def delete_entry(self, entry_id: str) -> bool:
         redis = await self._client()
-        await redis.hdel(self.index_key, entry_id)
-        await redis.zrem(self.queue_key, entry_id)
+        await _await_redis(redis.hdel(self.index_key, entry_id)
+        await _await_redis(redis.zrem(self.queue_key, entry_id)
         return True
 
     async def count(self) -> int:
-        return await (await self._client()).zcard(self.queue_key)
+        return await (await _await_redis((await self._client()).zcard(self.queue_key))
 
     async def clear_old(self, days: int = 7) -> int:
         redis = await self._client()
         cutoff = datetime.now(timezone.utc).timestamp() - (days * 24 * 3600)
-        old_entries = await redis.zrangebyscore(self.queue_key, 0, cutoff)
+        old_entries = await _await_redis(redis.zrangebyscore(self.queue_key, 0, cutoff))
         if not old_entries:
             return 0
         for entry_id in old_entries:
