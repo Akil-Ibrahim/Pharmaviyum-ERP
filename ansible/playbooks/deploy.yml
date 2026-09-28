@@ -41,8 +41,8 @@
     - name: Validate Python version
       assert:
         that:
-          - ansible_python_version is version('3.9', '>=')
-        fail_msg: "Python 3.9+ required"
+          - ansible_python_version is version('3.14', '>=')
+        fail_msg: "Python 3.14+ required"
 
   roles:
     - role: docker
