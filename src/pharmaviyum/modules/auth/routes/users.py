@@ -50,10 +50,7 @@ async def read_users(
     count = count_result.scalar_one()
 
     statement = (
-        select(crud.User)
-        .order_by(crud.User.id.desc())
-        .offset(skip)
-        .limit(limit)
+        select(crud.User).order_by(crud.User.id.desc()).offset(skip).limit(limit)
     )
     result = await session.execute(statement)
     users = result.scalars().all()
