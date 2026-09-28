@@ -2,7 +2,7 @@
 
 ## Scope
 
-`dev` is the staging implementation branch. `main` is production. Render is the deployment platform; GitHub Actions and CircleCI provide CI validation. Production is never deployed from `dev`.
+`dev` is the staging implementation branch. `main` is production. Render is the deployment platform; GitHub Actions provides CI validation. Production is never deployed from `dev`.
 
 ## Staging
 
