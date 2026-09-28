@@ -170,7 +170,9 @@ async def test_receiving_fefo_dispensing_and_pharmacy_transfer() -> None:
         assert sale_item.batch_id == early_batch.id
 
         purchase = await db.scalar(
-            select(PatientPurchase).where(PatientPurchase.receipt_number == sale.receipt_number)
+            select(PatientPurchase).where(
+                PatientPurchase.receipt_number == sale.receipt_number
+            )
         )
         assert purchase is not None
         assert purchase.batch_id == early_batch.id
