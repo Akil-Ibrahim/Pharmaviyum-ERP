@@ -33,6 +33,7 @@ class Order(Base):
     patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False, index=True)
     pharmacy_id = Column(Integer, ForeignKey("pharmacies.id"), nullable=True, index=True)
     pharmacist_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    cash_shift_id = Column(Integer, ForeignKey("cash_shifts.id", ondelete="SET NULL"), nullable=True, index=True)
     total_amount = Column(Float, default=0.0, nullable=False)
     status = Column(String(50), default="pending", nullable=False, index=True)
     payment_method = Column(String(20), nullable=True)
