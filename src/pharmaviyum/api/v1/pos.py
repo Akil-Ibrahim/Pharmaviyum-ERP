@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.pharmaviyum.models.audit_log import AuditLog
 from src.pharmaviyum.models.cash_shift import CashShift
+from src.pharmaviyum.models.cash_transaction import CashTransaction
 from src.pharmaviyum.services.fefo import allocate_fefo
 from src.pharmaviyum.services.pos_state import confirm_payment
 from src.pharmaviyum.services.expired_inventory import (
@@ -449,6 +450,21 @@ async def confirm_pos_transaction(
             },
         )
     )
+    if active_shift is not None:
+        db.add(
+            CashTransaction(
+                cash_shift_id=active_shift.id,
+                pharmacy_id=tenant.pharmacy_id,
+                order_id=order.id,
+                actor_id=current_user.id,
+                transaction_type="sale",
+                payment_method=order.payment_method or "unknown",
+                amount=float(order.total_amount),
+                idempotency_key=f"sale:{order.id}",
+                created_at=now,
+            )
+        )
+
     await db.commit()
 
     return POSTransactionResponse(
@@ -597,6 +613,22 @@ async def void_pos_transaction(
                     purchased_at=now,
                 )
             )
+
+    shift = await db.scalar(select(CashShift).where(CashShift.id == order.cash_shift_id)) if order.cash_shift_id else None
+    if shift is not None:
+        db.add(
+            CashTransaction(
+                cash_shift_id=shift.id,
+                pharmacy_id=order.pharmacy_id,
+                order_id=order.id,
+                actor_id=current_user.id,
+                transaction_type="refund",
+                payment_method=order.payment_method or "unknown",
+                amount=-float(order.total_amount),
+                idempotency_key=f"void:{order.id}",
+                created_at=now,
+            )
+        )
 
     order.status = "voided"
     order.payment_status = "refunded"
