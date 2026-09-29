@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, Integer, String
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.pharmaviyum.db.base import Base
@@ -50,8 +50,14 @@ class Product(Base):
     gtin: Mapped[str | None] = mapped_column(String(14), nullable=True, index=True)
     barcode: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
 
+    medicinal_product_id: Mapped[int | None] = mapped_column(
+        ForeignKey("medicinal_products.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    medicinal_product: Mapped["MedicinalProduct | None"] = relationship()
+
     price: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
-    # Legacy aggregate stock. Per-pharmacy stock is authoritative in Inventory.
     stock: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
