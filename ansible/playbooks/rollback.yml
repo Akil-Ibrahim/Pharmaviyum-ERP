@@ -1,0 +1,38 @@
+---
+- name: Roll back Pharmaviyum backend
+  hosts: pharmacy_servers
+  become: true
+  gather_facts: false
+  vars:
+    rollback_version: ""
+  pre_tasks:
+    - name: Require explicit rollback version
+      ansible.builtin.assert:
+        that:
+          - rollback_version | length > 0
+          - rollback_version != "latest"
+        fail_msg: "Pass -e rollback_version=<previous immutable release tag>."
+
+  tasks:
+    - name: Pull rollback image
+      community.docker.docker_image:
+        name: "{{ backend_image }}:{{ rollback_version }}"
+        source: pull
+
+    - name: Switch backend image
+      ansible.builtin.command:
+        cmd: docker compose -f "{{ app_directory }}/docker-compose.yml" up -d --no-build backend
+      environment:
+        BACKEND_IMAGE: "{{ backend_image }}:{{ rollback_version }}"
+      register: rollback_result
+      changed_when: true
+
+    - name: Wait for rollback health
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ backend_port }}/health"
+        status_code: 200
+        timeout: 10
+      register: health
+      retries: 12
+      delay: 5
+      until: health.status == 200
