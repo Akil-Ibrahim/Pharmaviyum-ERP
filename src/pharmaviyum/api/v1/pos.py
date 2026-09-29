@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from uuid import uuid4
 
-from fastapi import APIRouter, Header, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 
@@ -450,6 +450,177 @@ async def confirm_pos_transaction(
         payment_status=order.payment_status,
         total_amount=total,
         item_count=len(data.items),
+        inventory_updated=True,
+        patient_history_updated=True,
+        audit_created=True,
+    )
+
+
+
+@router.post("/transactions/{order_id}/void", response_model=POSTransactionResponse)
+async def void_pos_transaction(
+    order_id: int,
+    db: SessionDep,
+    current_user: CurrentUser,
+    reason: str = Query(min_length=3, max_length=500),
+    idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=255),
+) -> POSTransactionResponse:
+    """Void a completed POS sale and restore every dispensed batch exactly once."""
+    idempotency_key = idempotency_key.strip()
+    if not idempotency_key:
+        raise HTTPException(status_code=400, detail="Idempotency-Key is required")
+
+    order = await db.scalar(select(Order).where(Order.id == order_id))
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    await require_pharmacy_tenant(order.pharmacy_id, current_user, db)
+
+    existing_void = await db.scalar(
+        select(Order).where(
+            Order.pharmacy_id == order.pharmacy_id,
+            Order.void_idempotency_key == idempotency_key,
+        )
+    )
+    if existing_void is not None:
+        if existing_void.id != order.id:
+            raise HTTPException(
+                status_code=409,
+                detail="Idempotency key was already used for another void",
+            )
+        return POSTransactionResponse(
+            order_id=order.id,
+            receipt_number=order.receipt_number or "",
+            status=order.status,
+            payment_method=order.payment_method or "",
+            payment_status=order.payment_status,
+            total_amount=float(order.total_amount),
+            item_count=await db.scalar(
+                select(func.count(OrderItem.id)).where(OrderItem.order_id == order.id)
+            )
+            or 0,
+            inventory_updated=True,
+            patient_history_updated=True,
+            audit_created=True,
+        )
+
+    if order.status != "completed" or order.payment_status != "paid":
+        raise HTTPException(
+            status_code=409,
+            detail="Only a completed paid POS sale can be voided",
+        )
+    if order.voided_at is not None:
+        raise HTTPException(status_code=409, detail="POS sale is already voided")
+
+    now = datetime.utcnow()
+    dispense_transactions = (
+        await db.execute(
+            select(InventoryTransaction)
+            .where(
+                InventoryTransaction.order_id == order.id,
+                InventoryTransaction.transaction_type == "dispense",
+            )
+            .with_for_update()
+        )
+    ).scalars().all()
+    if not dispense_transactions:
+        raise HTTPException(
+            status_code=409,
+            detail="POS sale has no inventory dispense records to reverse",
+        )
+
+    receipt_number = f"{order.receipt_number or order.id}-VOID"
+    for transaction in dispense_transactions:
+        inventory = await db.get(Inventory, transaction.inventory_id, with_for_update=True)
+        if inventory is None:
+            raise HTTPException(status_code=409, detail="Inventory record no longer exists")
+        batch = (
+            await db.get(ProductBatch, transaction.batch_id, with_for_update=True)
+            if transaction.batch_id is not None
+            else None
+        )
+        inventory.quantity += -transaction.quantity_delta
+        if batch is not None:
+            batch.available_quantity += -transaction.quantity_delta
+
+        db.add(
+            InventoryTransaction(
+                pharmacy_id=order.pharmacy_id,
+                inventory_id=inventory.id,
+                product_id=transaction.product_id,
+                batch_id=transaction.batch_id,
+                order_id=order.id,
+                dispensing_id=transaction.dispensing_id,
+                transaction_type="return",
+                quantity_delta=-transaction.quantity_delta,
+                quantity_after=inventory.quantity,
+                actor_id=current_user.id,
+                created_at=now,
+            )
+        )
+
+        if transaction.dispensing_id is not None:
+            dispensing = await db.get(Dispensing, transaction.dispensing_id)
+            if dispensing is not None:
+                dispensing.status = "voided"
+
+        purchase = await db.scalar(
+            select(PatientPurchase).where(
+                PatientPurchase.receipt_number == order.receipt_number,
+                PatientPurchase.patient_id == order.patient_id,
+                PatientPurchase.batch_id == transaction.batch_id,
+                PatientPurchase.product_id == transaction.product_id,
+            )
+        )
+        if purchase is not None:
+            db.add(
+                PatientPurchase(
+                    patient_id=order.patient_id,
+                    batch_id=transaction.batch_id,
+                    product_id=transaction.product_id,
+                    receipt_number=receipt_number,
+                    category="pos_void",
+                    quantity=-abs(purchase.quantity),
+                    dispensed_packs=-abs(purchase.dispensed_packs),
+                    dispensed_blisters=-abs(purchase.dispensed_blisters),
+                    dispensed_units=-abs(purchase.dispensed_units),
+                    unit_price=purchase.unit_price,
+                    prescription_required=purchase.prescription_required,
+                    purchased_at=now,
+                )
+            )
+
+    order.status = "voided"
+    order.payment_status = "refunded"
+    order.void_idempotency_key = idempotency_key
+    order.voided_at = now
+    order.void_reason = reason
+    await db.flush()
+
+    db.add(
+        AuditLog(
+            actor_id=current_user.id,
+            actor_type="user",
+            action="void",
+            entity="order",
+            entity_id=order.id,
+            changes={
+                "pharmacy_id": order.pharmacy_id,
+                "reason": reason,
+                "restored_transactions": len(dispense_transactions),
+                "original_receipt": order.receipt_number,
+            },
+        )
+    )
+    await db.commit()
+
+    return POSTransactionResponse(
+        order_id=order.id,
+        receipt_number=order.receipt_number or "",
+        status=order.status,
+        payment_method=order.payment_method or "",
+        payment_status=order.payment_status,
+        total_amount=float(order.total_amount),
+        item_count=len(dispense_transactions),
         inventory_updated=True,
         patient_history_updated=True,
         audit_created=True,
