@@ -62,8 +62,8 @@ function BatchesPage() {
     })
   }, [rows, query, alertFilter])
 
-  const hot = rows.filter((row) => row.expiry_status === 'red').length
-  const soon = rows.filter((row) => row.expiry_status === 'yellow').length
+  const critical = rows.filter((row) => row.expiry_status === 'red').length
+  const warning = rows.filter((row) => row.expiry_status === 'yellow').length
   const good = rows.filter((row) => row.expiry_status === 'green').length
   const alert12 = rows.filter((row) => row.expiry_alert === '12_months').length
   const alert9 = rows.filter((row) => row.expiry_alert === '9_months').length
@@ -87,9 +87,9 @@ function BatchesPage() {
 
       <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-7'>
         <Metric title='Batches' value={rows.length} />
-        <Metric title='🔴 Hot / expired' value={hot} tone='red' />
-        <Metric title='🟡 Approaching' value={soon} tone='amber' />
-        <Metric title='🟢 Good shelf life' value={good} tone='green' />
+        <Metric title='🔴 Critical ≤30d' value={critical} tone='red' />
+        <Metric title='🟡 Warning 31–90d' value={warning} tone='amber' />
+        <Metric title='🟢 Good >90d' value={good} tone='green' />
         <Metric title='12-month alert' value={alert12} tone='blue' />
         <Metric title='9-month alert' value={alert9} tone='blue' />
         <Metric title='3-month alert' value={alert3} tone='amber' />
@@ -161,19 +161,21 @@ function BatchesPage() {
                     <th className='p-3 text-right'>Available</th>
                     <th className='p-3'>Barcode</th>
                     <th className='p-3'>Days left</th>
-                    <th className='p-3'>WHO alert</th>
-                    <th className='p-3'>Status</th>
+                    <th className='p-3'>Planning alert</th>
+                    <th className='p-3'>Operational status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((row) => {
                     const status = row.expiry_status
                     const label =
-                      status === 'red'
-                        ? 'Hot / expired'
-                        : status === 'yellow'
-                          ? 'Approaching expiry'
-                          : 'Good shelf life'
+                      row.expiry_alert === 'expired'
+                        ? 'Expired'
+                        : status === 'red'
+                          ? 'Critical'
+                          : status === 'yellow'
+                            ? 'Warning'
+                            : 'Good'
                     const alertLabel =
                       row.expiry_alert === 'expired'
                         ? 'Expired'
