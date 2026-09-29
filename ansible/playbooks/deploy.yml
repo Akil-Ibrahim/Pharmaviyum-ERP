@@ -1,224 +1,54 @@
 ---
-# =============================================================================
-# Pharmaviyum-CRM - Main Deployment Playbook
-# Production-ready with error handling, validation, and rollback support
-# Usage: ansible-playbook deploy.yml -i inventory/prod/hosts.ini -t backend,nginx
-# =============================================================================
-
-# Pre-flight checks
-- name: Pre-deployment validation
-  hosts: localhost
-  gather_facts: false
+- name: Validate deployment inputs
+  hosts: pharmacy_servers
+  become: false
+  gather_facts: true
   tasks:
-    - name: Check Ansible version
-      assert:
+    - name: Require immutable application version
+      ansible.builtin.assert:
         that:
-          - ansible_version.major >= 2
-          - ansible_version.minor >= 9
-        fail_msg: "Ansible 2.9+ required"
+          - app_version is defined
+          - app_version | length > 0
+          - app_version != "latest"
+        fail_msg: "app_version must be an immutable release tag, never latest."
 
-    - name: Verify required inventories exist
-      assert:
-        that:
-          - groups['pharmacy_servers'] is defined
-        fail_msg: "pharmacy_servers group not defined in inventory"
+    - name: Check Docker availability
+      ansible.builtin.command: docker --version
+      changed_when: false
 
-# Stage 1: Infrastructure Preparation
-- name: Prepare pharmacy server infrastructure
+    - name: Check Compose availability
+      ansible.builtin.command: docker compose version
+      changed_when: false
+
+- name: Deploy Pharmaviyum
   hosts: pharmacy_servers
   become: true
   gather_facts: true
-  max_fail_percentage: 0  # Fail on any error
-
-  pre_tasks:
-    - name: Display deployment info
-      debug:
-        msg: |
-          🚀 Starting deployment to {{ inventory_hostname }}
-          Environment: {{ app_environment | default('development') }}
-          Timestamp: {{ ansible_date_time.iso8601 }}
-
-    - name: Validate Python version
-      assert:
-        that:
-          - ansible_python_version is version('3.9', '>=')
-        fail_msg: "Python 3.9+ required"
-
   roles:
     - role: docker
       tags: [docker, infrastructure]
-      vars:
-        docker_retry_count: 3
-        docker_retry_delay: 5
-
     - role: postgresql
-      tags: [database, postgresql]
-      vars:
-        postgres_retry_count: 5
-        postgres_retry_delay: 10
-
-  post_tasks:
-    - name: Verify Docker installation
-      shell: docker --version
-      register: docker_version
-      changed_when: false
-      failed_when: docker_version.rc != 0
-
-    - name: Display Docker version
-      debug:
-        msg: "{{ docker_version.stdout }}"
-
-# Stage 2: Application Deployment
-- name: Deploy Pharmaviyum-CRM backend
-  hosts: pharmacy_servers
-  become: true
-  gather_facts: false
-  strategy: linear
-
-  pre_tasks:
-    - name: Load deployment variables
-      include_vars:
-        file: "{{ playbook_dir }}/../group_vars/all.yml"
-        name: deploy_vars
-
-    - name: Check available disk space
-      shell: df -h / | tail -1 | awk '{print $4}'
-      register: disk_space
-      changed_when: false
-
-    - name: Verify sufficient disk space
-      assert:
-        that:
-          - disk_space.stdout | int > 10  # At least 10GB
-        fail_msg: "Insufficient disk space"
-
-  roles:
+      tags: [database, infrastructure]
     - role: app-backend
-      tags: [backend, api]
-      vars:
-        deploy_retry_count: 3
-        deploy_retry_delay: 10
-
+      tags: [backend, application]
     - role: nginx
-      tags: [proxy, nginx]
-      vars:
-        nginx_retry_count: 3
-        nginx_retry_delay: 5
+      tags: [nginx, proxy]
 
-  handlers:
-    - name: Restart nginx
-      ansible.builtin.service:
-        name: nginx
-        state: restarted
-      listen: "Restart nginx"
-
-    - name: Reload docker compose
-      community.docker.docker_compose_v2:
-        project_src: "{{ app_directory }}"
-        state: present
-        restarted: true
-      register: compose_result
-      retries: 3
-      delay: 10
-      until: compose_result is succeeded
-      listen: "Restart application"
-
-# Stage 3: Health Checks & Validation
-- name: Post-deployment validation and health checks
+- name: Verify deployment
   hosts: pharmacy_servers
   become: false
   gather_facts: false
-
   tasks:
-    - name: Wait for backend service
+    - name: Check backend health
       ansible.builtin.uri:
-        url: "http://localhost:{{ backend_port | default(8000) }}/health"
+        url: "http://127.0.0.1:{{ backend_port }}/health"
         status_code: 200
         timeout: 10
-      register: backend_health
-      retries: 15
+      register: health
+      retries: 12
       delay: 5
-      until: backend_health.status == 200
-      failed_when: false
+      until: health.status == 200
 
-    - name: Verify backend health
-      assert:
-        that:
-          - backend_health.status == 200
-        fail_msg: "Backend service failed health check"
-
-    - name: Check database connectivity
-      community.postgresql.postgresql_query:
-        db: "{{ postgres_db }}"
-        query: "SELECT version();"
-      become: true
-      register: db_version
-      failed_when: false
-
-    - name: Verify database connection
-      assert:
-        that:
-          - db_version.query_result is defined
-        fail_msg: "Database connectivity check failed"
-
-    - name: Collect deployment artifacts
-      block:
-        - name: Get running containers
-          shell: docker-compose -f "{{ app_directory }}/docker-compose.yml" ps --services
-          register: running_services
-          changed_when: false
-
-        - name: Get service logs
-          shell: "docker-compose -f {{ app_directory }}/docker-compose.yml logs --tail=20 {{ item }}"
-          loop: "{{ running_services.stdout_lines }}"
-          register: service_logs
-          changed_when: false
-          failed_when: false
-
-      when: debug_mode | default(false) | bool
-
-    - name: Deployment summary
-      debug:
-        msg: |
-          ✅ Deployment successful on {{ inventory_hostname }}
-
-          Services deployed:
-          {% for service in running_services.stdout_lines %}
-            - {{ service }}
-          {% endfor %}
-
-          Backend Health: {{ backend_health.status | default('Unknown') }}
-
-          Timestamp: {{ ansible_date_time.iso8601 }}
-
-# Cleanup on failure
-  rescue:
-    - name: Deployment failed - collecting diagnostics
-      block:
-        - name: Collect error logs
-          command: "docker-compose -f {{ app_directory }}/docker-compose.yml logs --tail=50"
-          register: error_logs
-          changed_when: false
-
-        - name: Display error logs
-          debug:
-            msg: "{{ error_logs.stdout }}"
-
-        - name: Create incident report
-          copy:
-            content: |
-              Deployment Failure Report
-              ========================
-              Hostname: {{ inventory_hostname }}
-              Timestamp: {{ ansible_date_time.iso8601 }}
-
-              Error Logs:
-              {{ error_logs.stdout }}
-            dest: "{{ app_directory }}/deployment_failure_{{ ansible_date_time.iso8601 }}.log"
-          become: true
-
-      when: debug_mode | default(false) | bool
-      always:
-        - name: Alert administrator
-          debug:
-            msg: "⚠️ Deployment FAILED on {{ inventory_hostname }} - check logs for details"
+    - name: Show deployed release
+      ansible.builtin.debug:
+        msg: "Pharmaviyum {{ app_version }} is healthy on {{ inventory_hostname }}"
