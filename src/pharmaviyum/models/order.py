@@ -22,6 +22,11 @@ class Order(Base):
             "idempotency_key",
             name="uq_orders_pharmacy_idempotency_key",
         ),
+        UniqueConstraint(
+            "pharmacy_id",
+            "void_idempotency_key",
+            name="uq_orders_pharmacy_void_idempotency_key",
+        ),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -36,6 +41,9 @@ class Order(Base):
     receipt_number = Column(String(64), unique=True, nullable=True, index=True)
     idempotency_key = Column(String(255), nullable=True)
     idempotency_request_hash = Column(String(64), nullable=True)
+    void_idempotency_key = Column(String(255), nullable=True)
+    voided_at = Column(DateTime, nullable=True)
+    void_reason = Column(String(500), nullable=True)
     confirmed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
