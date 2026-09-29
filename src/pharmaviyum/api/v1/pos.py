@@ -251,70 +251,83 @@ async def confirm_pos_transaction(
         line_total = round(unit_price * quantity_units, 2)
         total = round(total + line_total, 2)
 
-        order_item = OrderItem(
-            order_id=order.id,
-            product_id=product.id,
-            batch_id=batch.id if batch else None,
-            quantity_units=quantity_units,
-            dispensed_packs=item.packs,
-            dispensed_blisters=item.blisters,
-            dispensed_units=item.units,
-            unit_price=unit_price,
-            line_total=line_total,
-        )
-        db.add(order_item)
-        await db.flush()
-
-        inventory.quantity -= quantity_units
-        if batch is not None:
-            batch.available_quantity = max(batch.available_quantity - quantity_units, 0)
-        dispensing = Dispensing(
-            pharmacy_id=tenant.pharmacy_id,
-            patient_id=patient.id,
-            order_id=order.id,
-            prescription_id=item.prescription_id,
-            product_id=product.id,
-            inventory_id=inventory.id,
-            batch_id=batch.id if batch else None,
-            quantity_units=quantity_units,
-            pharmacist_id=current_user.id,
-            status="completed",
-            dispensed_at=now,
-        )
-        db.add(dispensing)
-        await db.flush()
-
-        db.add(
-            InventoryTransaction(
-                pharmacy_id=tenant.pharmacy_id,
-                inventory_id=inventory.id,
-                product_id=product.id,
-                batch_id=batch.id if batch else None,
-                order_id=order.id,
-                dispensing_id=dispensing.id,
-                transaction_type="dispense",
-                quantity_delta=-quantity_units,
-                quantity_after=inventory.quantity,
-                actor_id=current_user.id,
-                created_at=now,
+        for allocation_index, allocation in enumerate(allocations):
+            allocation_quantity = allocation["quantity"]
+            inventory = inventory_by_batch[allocation["batch_id"]]
+            allocation_batch = (
+                await db.get(ProductBatch, inventory.batch_id)
+                if inventory.batch_id is not None
+                else None
             )
-        )
-        purchase = PatientPurchase(
-            patient_id=patient.id,
-            batch_id=batch.id if batch else None,
-            product_id=product.id,
-            receipt_number="PENDING",
-            category="pos",
-            quantity=quantity_units,
-            dispensed_packs=item.packs,
-            dispensed_blisters=item.blisters,
-            dispensed_units=item.units,
-            unit_price=unit_price,
-            prescription_required=item.prescription_id is not None,
-            purchased_at=now,
-        )
-        db.add(purchase)
-        purchase_entries.append(purchase)
+
+            allocation_line_total = round(unit_price * allocation_quantity, 2)
+            order_item = OrderItem(
+                order_id=order.id,
+                product_id=product.id,
+                batch_id=allocation_batch.id if allocation_batch else None,
+                quantity_units=allocation_quantity,
+                dispensed_packs=item.packs if allocation_index == 0 else 0,
+                dispensed_blisters=item.blisters if allocation_index == 0 else 0,
+                dispensed_units=item.units if allocation_index == 0 else 0,
+                unit_price=unit_price,
+                line_total=allocation_line_total,
+            )
+            db.add(order_item)
+            await db.flush()
+
+            inventory.quantity -= allocation_quantity
+            if allocation_batch is not None:
+                allocation_batch.available_quantity = max(
+                    allocation_batch.available_quantity - allocation_quantity, 0
+                )
+
+            dispensing = Dispensing(
+                pharmacy_id=tenant.pharmacy_id,
+                patient_id=patient.id,
+                order_id=order.id,
+                prescription_id=item.prescription_id,
+                product_id=product.id,
+                inventory_id=inventory.id,
+                batch_id=allocation_batch.id if allocation_batch else None,
+                quantity_units=allocation_quantity,
+                pharmacist_id=current_user.id,
+                status="completed",
+                dispensed_at=now,
+            )
+            db.add(dispensing)
+            await db.flush()
+
+            db.add(
+                InventoryTransaction(
+                    pharmacy_id=tenant.pharmacy_id,
+                    inventory_id=inventory.id,
+                    product_id=product.id,
+                    batch_id=allocation_batch.id if allocation_batch else None,
+                    order_id=order.id,
+                    dispensing_id=dispensing.id,
+                    transaction_type="dispense",
+                    quantity_delta=-allocation_quantity,
+                    quantity_after=inventory.quantity,
+                    actor_id=current_user.id,
+                    created_at=now,
+                )
+            )
+            purchase = PatientPurchase(
+                patient_id=patient.id,
+                batch_id=allocation_batch.id if allocation_batch else None,
+                product_id=product.id,
+                receipt_number="PENDING",
+                category="pos",
+                quantity=allocation_quantity,
+                dispensed_packs=item.packs if allocation_index == 0 else 0,
+                dispensed_blisters=item.blisters if allocation_index == 0 else 0,
+                dispensed_units=item.units if allocation_index == 0 else 0,
+                unit_price=unit_price,
+                prescription_required=item.prescription_id is not None,
+                purchased_at=now,
+            )
+            db.add(purchase)
+            purchase_entries.append(purchase)
 
     receipt_number = f"PV-{now:%Y%m%d%H%M%S}-{uuid4().hex[:8].upper()}"
     order.total_amount = total
