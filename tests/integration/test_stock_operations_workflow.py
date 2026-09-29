@@ -15,7 +15,7 @@ import pytest
 from fastapi import HTTPException
 from sqlalchemy import func, select
 
-from src.pharmaviyum.api.v1.pos import (\n    confirm_pos_transaction,\n    return_pos_transaction,\n    void_pos_transaction,\n)
+from src.pharmaviyum.api.v1.pos import (\n    confirm_pos_transaction,\n    open_cash_shift,\n    close_cash_shift,\n    return_pos_transaction,\n    void_pos_transaction,\n)
 from src.pharmaviyum.api.v1.procurement import (
     GoodsReceiptCreate,
     GoodsReceiptItemCreate,
@@ -27,7 +27,7 @@ from src.pharmaviyum.api.v1.procurement import (
 )
 from src.pharmaviyum.database import AsyncSessionLocal
 from src.pharmaviyum.models.audit_log import AuditLog
-from src.pharmaviyum.models.dispensing import Dispensing
+from src.pharmaviyum.models.cash_transaction import CashTransaction\nfrom src.pharmaviyum.models.dispensing import Dispensing
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.inventory_transaction import InventoryTransaction
 from src.pharmaviyum.models.order import Order
@@ -39,7 +39,7 @@ from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.models.product_batch import ProductBatch
 from src.pharmaviyum.models.supplier import Supplier
 from src.pharmaviyum.models.user import User
-from src.pharmaviyum.schemas.pos_schema import (\n    POSItem,\n    POSReturnCreate,\n    POSReturnItemCreate,\n    POSTransactionCreate,\n)
+from src.pharmaviyum.schemas.pos_shifts import CashShiftClose, CashShiftOpen\nfrom src.pharmaviyum.schemas.pos_schema import (\n    POSItem,\n    POSReturnCreate,\n    POSReturnItemCreate,\n    POSTransactionCreate,\n)
 
 
 pytestmark = pytest.mark.integration
