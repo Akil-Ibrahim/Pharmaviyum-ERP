@@ -950,7 +950,7 @@ async def return_pos_transaction(
             status=existing_return.status,
             refund_method=existing_return.refund_method,
             total_amount=float(existing_return.total_amount),
-            item_count=len(existing_return.items),
+            item_count=int(await db.scalar(select(func.count(POSReturnItem.id)).where(POSReturnItem.return_id == existing_return.id)) or 0),
         )
 
     return POSReturnResponse(
