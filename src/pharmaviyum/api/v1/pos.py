@@ -804,17 +804,23 @@ async def return_pos_transaction(
             )
 
     now = datetime.utcnow()
-    active_shift = None
-    if order.cash_shift_id is not None:
-        active_shift = await db.scalar(
-            select(CashShift).where(CashShift.id == order.cash_shift_id)
+    active_shift = await db.scalar(
+        select(CashShift).where(
+            CashShift.pharmacy_id == tenant.pharmacy_id,
+            CashShift.status == "open",
+        )
+    )
+    if data.refund_method == "cash" and active_shift is None:
+        raise HTTPException(
+            status_code=409,
+            detail="An open cash shift is required for cash refunds",
         )
 
     return_record = POSReturn(
         pharmacy_id=tenant.pharmacy_id,
         order_id=order.id,
         patient_id=order.patient_id,
-        cash_shift_id=order.cash_shift_id,
+        cash_shift_id=active_shift.id if active_shift is not None else None,
         actor_id=current_user.id,
         status="completed",
         reason=data.reason,
