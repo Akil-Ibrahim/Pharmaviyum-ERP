@@ -492,7 +492,10 @@ async def test_pos_rejects_expired_batch_without_creating_sale() -> None:
         assert exc_info.value.detail == "Cannot dispense an expired batch"
 
         await db.rollback()
-        assert await db.scalar(select(Order).where(Order.patient_id == patient.id)) is None
+        assert (
+            await db.scalar(select(Order).where(Order.patient_id == patient.id))
+            is None
+        )
         assert (
             await db.scalar(
                 select(Dispensing).where(Dispensing.patient_id == patient.id)
