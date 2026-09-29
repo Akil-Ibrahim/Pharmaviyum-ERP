@@ -1,4 +1,5 @@
 """Procurement, receiving, transfers and storage-control APIs."""
+
 from datetime import date, datetime
 from uuid import uuid4
 
@@ -141,14 +142,15 @@ async def list_procurement_suppliers(
         select(Supplier).where(Supplier.is_active.is_(True)).order_by(Supplier.name)
     )
     return [
-        {"id": s.id, "name": s.name, "code": s.code}
-        for s in result.scalars().all()
+        {"id": s.id, "name": s.name, "code": s.code} for s in result.scalars().all()
     ]
 
 
 @router.post("/supplier-products", status_code=201)
 async def create_supplier_product(
-    data: SupplierProductCreate, current_user: CurrentUser, db: SessionDep,
+    data: SupplierProductCreate,
+    current_user: CurrentUser,
+    db: SessionDep,
     pharmacy_id: int = Query(gt=0),
 ) -> SupplierProduct:
     await require_pharmacy_tenant(pharmacy_id, current_user, db)
@@ -621,8 +623,10 @@ async def record_temperature(
         if product.storage_temperature_min is not None
         or product.storage_temperature_max is not None
     ]
-    status = "out_of_range" if "out_of_range" in statuses else (
-        "within_range" if statuses else "range_not_configured"
+    status = (
+        "out_of_range"
+        if "out_of_range" in statuses
+        else ("within_range" if statuses else "range_not_configured")
     )
     log = TemperatureLog(
         pharmacy_id=tenant.pharmacy_id,
