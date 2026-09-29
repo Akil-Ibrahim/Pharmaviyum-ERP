@@ -23,9 +23,7 @@ from src.pharmaviyum.api.v1.pharmacy_entities import (
         (91, "green"),
     ],
 )
-def test_batch_expiry_status_boundaries(
-    days: int, expected_status: str
-) -> None:
+def test_batch_expiry_status_boundaries(days: int, expected_status: str) -> None:
     today = date(2026, 9, 29)
 
     days_to_expiry, status = _batch_expiry_status(
