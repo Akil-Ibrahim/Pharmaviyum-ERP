@@ -77,8 +77,30 @@ def upgrade() -> None:
         ["regulatory_id"],
     )
 
+    op.add_column(
+        "products",
+        sa.Column("medicinal_product_id", sa.Integer(), nullable=True),
+    )
+    op.create_foreign_key(
+        "fk_products_medicinal_product_id",
+        "products",
+        "medicinal_products",
+        ["medicinal_product_id"],
+        ["id"],
+        ondelete="SET NULL",
+    )
+    op.create_index(
+        "ix_products_medicinal_product_id", "products", ["medicinal_product_id"]
+    )
+
 
 def downgrade() -> None:
+    op.drop_index("ix_products_medicinal_product_id", table_name="products")
+    op.drop_constraint(
+        "fk_products_medicinal_product_id", "products", type_="foreignkey"
+    )
+    op.drop_column("products", "medicinal_product_id")
+
     op.drop_index("ix_medicinal_products_regulatory_id", table_name="medicinal_products")
     op.drop_index("ix_medicinal_products_gtin", table_name="medicinal_products")
     op.drop_index("ix_medicinal_products_manufacturer", table_name="medicinal_products")
