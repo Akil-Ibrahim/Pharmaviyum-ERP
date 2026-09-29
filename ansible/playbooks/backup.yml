@@ -13,6 +13,7 @@
 
     - name: Create compressed PostgreSQL backup on host
       ansible.builtin.shell: >-
+        set -o pipefail &&
         docker compose
         -f "{{ app_directory }}/docker-compose.yml"
         exec -T db
