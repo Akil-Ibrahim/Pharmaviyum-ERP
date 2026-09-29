@@ -5,7 +5,7 @@ app_version: ""
 app_environment: production
 
 container_registry: ghcr.io
-backend_image: "ghcr.io/ibrahimengpy/pharmaviyum-crm-api"
+backend_image: "ghcr.io/ibrahimengpy/pharmaviyum-crm"
 
 backend_port: 8000
 backend_workers: 2
