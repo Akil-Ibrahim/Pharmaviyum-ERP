@@ -29,3 +29,22 @@ class POSTransactionResponse(BaseModel):
     inventory_updated: bool
     patient_history_updated: bool
     audit_created: bool
+
+class POSReturnItemCreate(BaseModel):
+    order_item_id: int = Field(gt=0)
+    quantity_units: int = Field(gt=0)
+
+
+class POSReturnCreate(BaseModel):
+    reason: str = Field(min_length=3, max_length=500)
+    refund_method: str = Field(pattern="^(cash|card)$")
+    items: list[POSReturnItemCreate] = Field(min_length=1, max_length=50)
+
+
+class POSReturnResponse(BaseModel):
+    return_id: int
+    order_id: int
+    status: str
+    refund_method: str
+    total_amount: float
+    item_count: int
