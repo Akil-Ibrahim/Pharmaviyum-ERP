@@ -55,13 +55,12 @@
     state: present
 
 - name: Run database migrations
-  community.docker.docker_compose_v2_exec:
+  community.docker.docker_compose_v2_run:
     project_src: "{{ app_directory }}"
     service: backend
     command: alembic upgrade head
-    env:
-      BACKEND_IMAGE: "{{ backend_image }}:{{ app_version }}"
-    chdir: "{{ app_directory }}"
+    remove_orphans: true
+    cleanup: true
   register: migration_result
   changed_when: true
 
