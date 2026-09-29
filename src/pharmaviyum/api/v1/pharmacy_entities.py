@@ -1,5 +1,6 @@
 """Authenticated API for the pharmacy domain entities."""
 
+import calendar
 from datetime import date, datetime
 from typing import Any
 
@@ -93,10 +94,20 @@ class BatchOut(EntityOut):
     barcode: str | None
     days_to_expiry: int
     expiry_status: str
+    expiry_alert: str
 
 
 EXPIRY_HOT_DAYS = 7
 EXPIRY_WARNING_DAYS = 30
+EXPIRY_ALERT_MONTHS = (12, 9, 3)
+
+
+def _add_months(value: date, months: int) -> date:
+    month_index = value.month - 1 + months
+    year = value.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(value.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
 
 
 def _batch_expiry_status(expiry_date: date, today: date | None = None) -> tuple[int, str]:
@@ -107,6 +118,16 @@ def _batch_expiry_status(expiry_date: date, today: date | None = None) -> tuple[
     if days_to_expiry <= EXPIRY_WARNING_DAYS:
         return days_to_expiry, "yellow"
     return days_to_expiry, "green"
+
+
+def _batch_expiry_alert(expiry_date: date, today: date | None = None) -> str:
+    current_date = today or date.today()
+    if expiry_date < current_date:
+        return "expired"
+    for months in EXPIRY_ALERT_MONTHS[::-1]:
+        if expiry_date <= _add_months(current_date, months):
+            return f"{months}_months"
+    return "none"
 
 
 async def _list(session: AsyncSession, model: type[Any]) -> list[Any]:
@@ -282,6 +303,9 @@ async def list_batches(
     session: SessionDep,
     product_id: int | None = Query(default=None, gt=0),
     expiry_status: str | None = Query(default=None, pattern="^(red|yellow|green)$"),
+    expiry_alert: str | None = Query(
+        default=None, pattern="^(expired|3_months|9_months|12_months|none)$"
+    ),
 ) -> list[BatchOut]:
     # ProductBatch currently has no pharmacy_id. Keep operational batch quantities
     # fail-closed until batch ownership is modeled explicitly.
@@ -294,7 +318,10 @@ async def list_batches(
     response: list[BatchOut] = []
     for batch in batches:
         days_to_expiry, status = _batch_expiry_status(batch.expiry_date)
+        alert = _batch_expiry_alert(batch.expiry_date)
         if expiry_status is not None and status != expiry_status:
+            continue
+        if expiry_alert is not None and alert != expiry_alert:
             continue
         response.append(
             BatchOut(
@@ -307,6 +334,7 @@ async def list_batches(
                 barcode=batch.barcode,
                 days_to_expiry=days_to_expiry,
                 expiry_status=status,
+                expiry_alert=alert,
             )
         )
     return response
