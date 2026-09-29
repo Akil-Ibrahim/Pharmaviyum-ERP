@@ -1,15 +1,8 @@
 ---
-# =============================================================================
-# Pharmaviyum-CRM - Automated Backup Playbook
-# Backs up PostgreSQL database and manages retention policy
-# Usage: ansible-playbook playbooks/backup.yml --ask-vault-pass
-# =============================================================================
-
-- name: Backup PostgreSQL and manage retention
+- name: Backup Pharmaviyum PostgreSQL
   hosts: pharmacy_servers
   become: true
   gather_facts: true
-
   tasks:
     - name: Ensure backup directory exists
       ansible.builtin.file:
@@ -18,39 +11,31 @@
         owner: "{{ deploy_user }}"
         mode: "0750"
 
-    - name: Generate timestamp for backup file
-      ansible.builtin.set_fact:
-        backup_ts: "{{ ansible_date_time.iso8601_basic_short }}"
-
-    - name: Create compressed PostgreSQL dump
-      ansible.builtin.shell: >
-        set -o pipefail &&
-        docker compose -f {{ app_directory }}/docker-compose.yml
-        exec -T db pg_dump -U {{ postgres_user }} -d {{ postgres_db }}
-        | gzip > "{{ app_directory }}/backups/pharmaviyum_{{ backup_ts }}.sql.gz"
-      args:
-        executable: /bin/bash
+    - name: Create compressed PostgreSQL backup
+      community.docker.docker_compose_v2_exec:
+        project_src: "{{ app_directory }}"
+        service: db
+        command: >-
+          sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" | gzip > /backups/pharmaviyum_{{ ansible_date_time.iso8601_basic_short }}.sql.gz'
+      register: backup_result
       changed_when: true
 
-    - name: Find backups older than retention period
+    - name: Find expired backups
       ansible.builtin.find:
         paths: "{{ app_directory }}/backups"
         patterns: "pharmaviyum_*.sql.gz"
         age: "{{ backup_retention_days }}d"
       register: old_backups
 
-    - name: Delete expired backup files
+    - name: Remove expired backups
       ansible.builtin.file:
         path: "{{ item.path }}"
         state: absent
       loop: "{{ old_backups.files }}"
 
-    - name: Schedule daily backup via cron
-      ansible.builtin.cron:
-        name: "Pharmaviyum DB Backup"
-        minute: "0"
-        hour: "2"
-        job: "ansible-playbook /opt/ansible/playbooks/backup.yml
-              --vault-password-file /opt/ansible/vault.key"
-        user: root
-      when: backup_enabled | bool
+    - name: Verify at least one backup exists
+      ansible.builtin.find:
+        paths: "{{ app_directory }}/backups"
+        patterns: "pharmaviyum_*.sql.gz"
+      register: backups
+      failed_when: backups.matched < 1
