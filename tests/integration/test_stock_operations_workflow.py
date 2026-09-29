@@ -1055,3 +1055,132 @@ async def test_pos_partial_return_is_batch_accurate_and_idempotent() -> None:
                 )
             )
         ) == 2
+
+
+@pytest.mark.asyncio
+async def test_pos_cash_ledger_tracks_sale_partial_refund_and_shift_reconciliation() -> None:
+    """Cash shift reconciliation must include sale and partial refund ledger entries."""
+    async with AsyncSessionLocal() as db:
+        suffix = os.urandom(6).hex()
+        user = User(
+            email=f"ledger-{suffix}@example.test",
+            username=f"ledger-{suffix}",
+            hashed_password="not-used-in-test",
+            is_active=True,
+            is_superuser=True,
+        )
+        pharmacy = Pharmacy(name=f"Ledger Pharmacy {suffix}", code=f"LED-{suffix}")
+        product = Product(
+            name=f"Ledger Product {suffix}",
+            sku=f"LED-{suffix}",
+            units_per_pack=1,
+            price=10.0,
+            is_active=True,
+        )
+        patient = Patient(
+            pharmacy_id=None,
+            first_name="Ledger",
+            last_name="Patient",
+            full_name="Ledger Patient",
+            phone=f"+38068{suffix[:7]}",
+            country="UA",
+            is_active=True,
+        )
+        db.add_all([user, pharmacy, product, patient])
+        await db.flush()
+        patient.pharmacy_id = pharmacy.id
+        batch = ProductBatch(
+            product_id=product.id,
+            batch_number=f"LED-{suffix}",
+            expiry_date=date.today() + timedelta(days=120),
+            received_quantity=5,
+            available_quantity=5,
+        )
+        db.add(batch)
+        await db.flush()
+        db.add(
+            Inventory(
+                product_id=product.id,
+                pharmacy_id=pharmacy.id,
+                batch_id=batch.id,
+                lot_number=batch.batch_number,
+                quantity=5,
+            )
+        )
+        await db.commit()
+
+        shift = await open_cash_shift(
+            CashShiftOpen(pharmacy_id=pharmacy.id, opening_cash=100.0),
+            db,
+            user,
+            "shift-open",
+        )
+        sale = await confirm_pos_transaction(
+            POSTransactionCreate(
+                pharmacy_id=pharmacy.id,
+                patient_id=patient.id,
+                payment_method="cash",
+                items=[POSItem(product_id=product.id, units=2)],
+            ),
+            db,
+            user,
+            "ledger-sale",
+        )
+        order_item = await db.scalar(
+            select(OrderItem).where(OrderItem.order_id == sale.order_id)
+        )
+        assert order_item is not None
+
+        refund = await return_pos_transaction(
+            sale.order_id,
+            POSReturnCreate(
+                reason="Partial cash refund",
+                refund_method="cash",
+                items=[
+                    POSReturnItemCreate(
+                        order_item_id=order_item.id,
+                        quantity_units=1,
+                    )
+                ],
+            ),
+            db,
+            user,
+            "ledger-return",
+        )
+        assert refund.total_amount == 10.0
+
+        ledger = (
+            await db.execute(
+                select(CashTransaction)
+                .where(CashTransaction.cash_shift_id == shift["id"])
+                .order_by(CashTransaction.id)
+            )
+        ).scalars().all()
+        assert len(ledger) == 2
+        assert ledger[0].transaction_type == "sale"
+        assert ledger[0].amount == 20.0
+        assert ledger[1].transaction_type == "refund"
+        assert ledger[1].amount == -10.0
+        assert sum(float(entry.amount) for entry in ledger) == 10.0
+
+        closed = await close_cash_shift(
+            shift["id"],
+            CashShiftClose(closing_cash=110.0),
+            db,
+            user,
+            "shift-close",
+        )
+        assert closed["status"] == "closed"
+        assert closed["expected_cash"] == 110.0
+        assert closed["closing_cash"] == 110.0
+        assert closed["difference"] == 0.0
+
+        repeated_close = await close_cash_shift(
+            shift["id"],
+            CashShiftClose(closing_cash=999.0, reason="retry"),
+            db,
+            user,
+            "shift-close",
+        )
+        assert repeated_close["expected_cash"] == 110.0
+        assert repeated_close["closing_cash"] == 110.0
