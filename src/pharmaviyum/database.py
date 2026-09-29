@@ -33,7 +33,7 @@ engine = create_async_engine(
 
 def _pool_metrics() -> None:
     """Publish pool metrics when the underlying pool exposes them."""
-    from src.pharmaviyum.ai.observability.metrics import DB_POOL_CHECKED_OUT, DB_POOL_MAX_OVERFLOW, DB_POOL_OVERFLOW, DB_POOL_SIZE
+    from src.pharmaviyum.ai.observability.metrics import (\n        DB_POOL_CHECKED_OUT,\n        DB_POOL_MAX_OVERFLOW,\n        DB_POOL_OVERFLOW,\n        DB_POOL_SIZE,\n    )
 
     pool: Any = engine.sync_engine.pool
     try:
