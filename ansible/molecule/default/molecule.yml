@@ -16,7 +16,7 @@ provisioner:
   name: ansible
   config_options:
     defaults:
-      remote_tmp: /tmp/.ansible/tmp
+      remote_tmp: /root/.ansible/tmp
   inventory:
     host_vars:
       pharmaviyum-ansible-test:
@@ -30,6 +30,7 @@ provisioner:
         ghcr_username: ""
         ghcr_token: ""
         ansible_user: root
-        ansible_remote_tmp: /tmp/.ansible/tmp
+        ansible_connection: community.docker.docker
+        ansible_remote_tmp: /root/.ansible/tmp
 verifier:
   name: ansible
