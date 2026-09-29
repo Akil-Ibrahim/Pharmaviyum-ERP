@@ -96,7 +96,8 @@ target-version = "py314"
 
 [tool.black]
 line-length = 88
-target-version = ["py314"]
+# Black 25.1.0 does not recognize py314 yet; formatting is syntax-compatible.
+target-version = ["py313"]
 
 [tool.isort]
 profile = "black"
