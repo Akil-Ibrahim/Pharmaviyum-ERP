@@ -1,8 +1,11 @@
+import hashlib
+import json
 from datetime import datetime
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import or_, select
+from fastapi import APIRouter, Header, HTTPException, Query
+from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 
 from src.pharmaviyum.models.audit_log import AuditLog
 from src.pharmaviyum.services.fefo import allocate_fefo
@@ -28,6 +31,47 @@ from src.pharmaviyum.schemas.pos_schema import (
 )
 
 router = APIRouter(prefix="/pos", tags=["POS"])
+
+
+def _pos_request_hash(data: POSTransactionCreate) -> str:
+    payload = json.dumps(
+        data.model_dump(mode="json"),
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+async def _idempotent_pos_response(
+    db,
+    order: Order,
+    request_hash: str,
+) -> POSTransactionResponse:
+    if order.idempotency_request_hash != request_hash:
+        raise HTTPException(
+            status_code=409,
+            detail="Idempotency key was already used with a different transaction payload",
+        )
+    if order.status != "completed":
+        raise HTTPException(
+            status_code=409,
+            detail="Idempotency key is associated with an incomplete POS transaction",
+        )
+    item_count = await db.scalar(
+        select(func.count(OrderItem.id)).where(OrderItem.order_id == order.id)
+    )
+    return POSTransactionResponse(
+        order_id=order.id,
+        receipt_number=order.receipt_number or "",
+        status=order.status,
+        payment_method=order.payment_method or "",
+        payment_status=order.payment_status,
+        total_amount=float(order.total_amount),
+        item_count=int(item_count or 0),
+        inventory_updated=True,
+        patient_history_updated=True,
+        audit_created=True,
+    )
 
 
 @router.get("/products/search")
@@ -109,9 +153,31 @@ async def confirm_pos_transaction(
     data: POSTransactionCreate,
     db: SessionDep,
     current_user: CurrentUser,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> POSTransactionResponse:
     """Atomically confirm a pharmacist POS sale/dispensing transaction."""
+    if idempotency_key is not None:
+        idempotency_key = idempotency_key.strip()
+        if not idempotency_key or len(idempotency_key) > 255:
+            raise HTTPException(
+                status_code=400,
+                detail="Idempotency-Key must contain 1-255 non-whitespace characters",
+            )
+
     tenant = await require_pharmacy_tenant(data.pharmacy_id, current_user, db)
+    request_hash = _pos_request_hash(data) if idempotency_key else None
+
+    if idempotency_key is not None:
+        existing_order = await db.scalar(
+            select(Order).where(
+                Order.pharmacy_id == tenant.pharmacy_id,
+                Order.idempotency_key == idempotency_key,
+            )
+        )
+        if existing_order is not None:
+            return await _idempotent_pos_response(
+                db, existing_order, request_hash or ""
+            )
 
     # Expired stock is quarantined before any dispensing transaction is processed.
     await quarantine_expired_inventory(
@@ -140,9 +206,27 @@ async def confirm_pos_transaction(
         status="pending",
         payment_method=data.payment_method,
         payment_status="unpaid",
+        idempotency_key=idempotency_key,
+        idempotency_request_hash=request_hash,
     )
     db.add(order)
-    await db.flush()
+    try:
+        await db.flush()
+    except IntegrityError:
+        if idempotency_key is None:
+            raise
+        await db.rollback()
+        existing_order = await db.scalar(
+            select(Order).where(
+                Order.pharmacy_id == tenant.pharmacy_id,
+                Order.idempotency_key == idempotency_key,
+            )
+        )
+        if existing_order is None:
+            raise
+        return await _idempotent_pos_response(
+            db, existing_order, request_hash or ""
+        )
 
     total = 0.0
     now = datetime.utcnow()
