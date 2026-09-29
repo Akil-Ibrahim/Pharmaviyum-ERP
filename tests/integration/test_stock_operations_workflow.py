@@ -15,7 +15,7 @@ import pytest
 from fastapi import HTTPException
 from sqlalchemy import func, select
 
-from src.pharmaviyum.api.v1.pos import confirm_pos_transaction
+from src.pharmaviyum.api.v1.pos import confirm_pos_transaction, void_pos_transaction
 from src.pharmaviyum.api.v1.procurement import (
     GoodsReceiptCreate,
     GoodsReceiptItemCreate,
@@ -745,3 +745,124 @@ async def test_pos_transaction_idempotency_prevents_duplicate_sale() -> None:
                 "retry-key-1",
             )
         assert exc_info.value.status_code == 409
+
+
+
+@pytest.mark.asyncio
+async def test_pos_void_restores_inventory_and_is_idempotent() -> None:
+    """A full POS void restores stock once and records a reversible audit trail."""
+    async with AsyncSessionLocal() as db:
+        suffix = os.urandom(6).hex()
+        user = User(
+            email=f"void-{suffix}@example.test",
+            username=f"void-{suffix}",
+            hashed_password="not-used-in-test",
+            is_active=True,
+            is_superuser=True,
+        )
+        pharmacy = Pharmacy(name=f"Void Pharmacy {suffix}", code=f"VOID-{suffix}")
+        product = Product(
+            name=f"Void Product {suffix}",
+            sku=f"VOID-{suffix}",
+            units_per_pack=1,
+            price=10.0,
+            is_active=True,
+        )
+        patient = Patient(
+            pharmacy_id=None,
+            first_name="Void",
+            last_name="Patient",
+            full_name="Void Patient",
+            phone=f"+38065{suffix[:7]}",
+            country="UA",
+            is_active=True,
+        )
+        db.add_all([user, pharmacy, product, patient])
+        await db.flush()
+        patient.pharmacy_id = pharmacy.id
+        batch = ProductBatch(
+            product_id=product.id,
+            batch_number=f"VOID-{suffix}",
+            expiry_date=date.today() + timedelta(days=120),
+            received_quantity=5,
+            available_quantity=5,
+        )
+        db.add(batch)
+        await db.flush()
+        inventory = Inventory(
+            product_id=product.id,
+            pharmacy_id=pharmacy.id,
+            batch_id=batch.id,
+            lot_number=batch.batch_number,
+            quantity=5,
+            expires_at=datetime.utcnow() + timedelta(days=120),
+        )
+        db.add(inventory)
+        await db.commit()
+
+        sale = await confirm_pos_transaction(
+            POSTransactionCreate(
+                pharmacy_id=pharmacy.id,
+                patient_id=patient.id,
+                payment_method="cash",
+                items=[POSItem(product_id=product.id, units=2)],
+            ),
+            db,
+            user,
+            "sale-void-test",
+        )
+        await db.refresh(inventory)
+        assert inventory.quantity == 3
+
+        voided = await void_pos_transaction(
+            sale.order_id,
+            db,
+            user,
+            reason="Customer return at counter",
+            idempotency_key="void-1",
+        )
+        assert voided.status == "voided"
+        assert voided.payment_status == "refunded"
+
+        await db.refresh(inventory)
+        await db.refresh(batch)
+        assert inventory.quantity == 5
+        assert batch.available_quantity == 5
+
+        return_tx = await db.scalar(
+            select(InventoryTransaction).where(
+                InventoryTransaction.order_id == sale.order_id,
+                InventoryTransaction.transaction_type == "return",
+            )
+        )
+        assert return_tx is not None
+        assert return_tx.quantity_delta == 2
+        assert return_tx.quantity_after == 5
+
+        dispensing = await db.scalar(
+            select(Dispensing).where(Dispensing.order_id == sale.order_id)
+        )
+        assert dispensing is not None
+        assert dispensing.status == "voided"
+
+        audit = await db.scalar(
+            select(AuditLog).where(
+                AuditLog.entity == "order",
+                AuditLog.entity_id == sale.order_id,
+                AuditLog.action == "void",
+            )
+        )
+        assert audit is not None
+
+        repeated = await void_pos_transaction(
+            sale.order_id,
+            db,
+            user,
+            reason="same request",
+            idempotency_key="void-1",
+        )
+        assert repeated.order_id == sale.order_id
+        assert repeated.status == "voided"
+
+        await db.refresh(inventory)
+        assert inventory.quantity == 5
