@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.pharmaviyum.models.audit_log import AuditLog
 from src.pharmaviyum.services.fefo import allocate_fefo
+from src.pharmaviyum.services.pos_state import confirm_payment
 from src.pharmaviyum.services.expired_inventory import (
     list_expired_inventory,
     quarantine_expired_inventory,
@@ -414,8 +415,7 @@ async def confirm_pos_transaction(
     receipt_number = f"PV-{now:%Y%m%d%H%M%S}-{uuid4().hex[:8].upper()}"
     order.total_amount = total
     order.receipt_number = receipt_number
-    order.status = "completed"
-    order.payment_status = "paid"
+    confirm_payment(order, now)
     order.confirmed_at = now
     patient.visit_count += 1
     patient.last_visit_date = now
