@@ -32,6 +32,7 @@ class Order(Base):
     status = Column(String(50), default="pending", nullable=False, index=True)
     payment_method = Column(String(20), nullable=True)
     payment_status = Column(String(20), default="unpaid", nullable=False)
+    payment_confirmed_at = Column(DateTime, nullable=True)
     receipt_number = Column(String(64), unique=True, nullable=True, index=True)
     idempotency_key = Column(String(255), nullable=True)
     idempotency_request_hash = Column(String(64), nullable=True)
