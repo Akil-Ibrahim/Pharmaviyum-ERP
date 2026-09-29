@@ -121,12 +121,16 @@ async def test_receiving_fefo_dispensing_and_pharmacy_transfer() -> None:
         assert receipt.status == "accepted"
 
         batches = (
-            await db.execute(
-                select(ProductBatch)
-                .where(ProductBatch.product_id == product.id)
-                .order_by(ProductBatch.expiry_date)
+            (
+                await db.execute(
+                    select(ProductBatch)
+                    .where(ProductBatch.product_id == product.id)
+                    .order_by(ProductBatch.expiry_date)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         assert [batch.batch_number for batch in batches] == [
             f"EARLY-{suffix}",
             f"LATE-{suffix}",
@@ -136,14 +140,17 @@ async def test_receiving_fefo_dispensing_and_pharmacy_transfer() -> None:
         assert late_batch.available_quantity == 10
 
         inventories = (
-            await db.execute(
-                select(Inventory)
-                .where(
-                    Inventory.pharmacy_id == pharmacy_a.id,
-                    Inventory.product_id == product.id,
+            (
+                await db.execute(
+                    select(Inventory).where(
+                        Inventory.pharmacy_id == pharmacy_a.id,
+                        Inventory.product_id == product.id,
+                    )
                 )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         assert sorted(row.quantity for row in inventories) == [5, 10]
 
         sale = await confirm_pos_transaction(
