@@ -187,4 +187,3 @@ async def _count_recent_orders(
     except Exception as exc:
         logger.warning("Could not count orders: %s", exc)
         return 0
-
