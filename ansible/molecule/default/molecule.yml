@@ -16,7 +16,7 @@ provisioner:
   name: ansible
   config_options:
     defaults:
-      remote_tmp: /root/.ansible/tmp
+      remote_tmp: /tmp/.ansible/tmp
   inventory:
     host_vars:
       pharmaviyum-ansible-test:
