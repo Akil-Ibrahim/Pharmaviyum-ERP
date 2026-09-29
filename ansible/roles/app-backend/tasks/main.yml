@@ -4,52 +4,82 @@
     path: "{{ app_directory }}"
     state: directory
     owner: "{{ deploy_user }}"
-    mode: "0755"
+    mode: "0750"
 
-- name: Copy src directory
-  ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../../src"
-    dest: "{{ app_directory }}/src"
+- name: Ensure backup directory exists
+  ansible.builtin.file:
+    path: "{{ app_directory }}/backups"
+    state: directory
     owner: "{{ deploy_user }}"
-    mode: "0755"
-    force: true
+    mode: "0750"
 
-- name: Copy nginx directory
-  ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../../nginx"
-    dest: "{{ app_directory }}/nginx"
+- name: Render application environment file
+  ansible.builtin.template:
+    src: app.env.j2
+    dest: "{{ app_directory }}/.env"
     owner: "{{ deploy_user }}"
-    mode: "0755"
-    force: true
+    mode: "0600"
+  notify: Restart application
 
-- name: Copy docker-compose.yml
+- name: Deploy Compose definition
   ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../../docker-compose.yml"
+    src: docker-compose-backend.yml
     dest: "{{ app_directory }}/docker-compose.yml"
     owner: "{{ deploy_user }}"
     mode: "0644"
-    force: true
+  notify: Restart application
 
-- name: Copy Dockerfile from root
-  ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../../Dockerfile"
-    dest: "{{ app_directory }}/Dockerfile"
-    owner: "{{ deploy_user }}"
-    mode: "0644"
-    force: true
+- name: Log in to GHCR
+  community.docker.docker_login:
+    registry_url: "{{ container_registry }}"
+    username: "{{ ghcr_username }}"
+    password: "{{ ghcr_token }}"
+  no_log: true
+  when:
+    - ghcr_username | default('') | length > 0
+    - ghcr_token | default('') | length > 0
 
-- name: Copy requirements.txt
-  ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../../requirements.txt"
-    dest: "{{ app_directory }}/requirements.txt"
-    owner: "{{ deploy_user }}"
-    mode: "0644"
-    force: true
+- name: Pull immutable application image
+  community.docker.docker_image:
+    name: "{{ backend_image }}:{{ app_version }}"
+    source: pull
+  register: backend_image_pull
 
-- name: Deploy via Docker Compose
+- name: Start database and cache
   community.docker.docker_compose_v2:
     project_src: "{{ app_directory }}"
     project_name: "{{ docker_compose_project }}"
+    services:
+      - db
+      - redis
     state: present
-    build: always
-    pull: always
+
+- name: Run database migrations
+  community.docker.docker_compose_v2_exec:
+    project_src: "{{ app_directory }}"
+    service: backend
+    command: alembic upgrade head
+    env:
+      BACKEND_IMAGE: "{{ backend_image }}:{{ app_version }}"
+    chdir: "{{ app_directory }}"
+  register: migration_result
+  changed_when: true
+
+- name: Start backend
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_directory }}"
+    project_name: "{{ docker_compose_project }}"
+    services:
+      - backend
+    state: present
+    pull: missing
+
+- name: Wait for backend health endpoint
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ backend_port }}/health"
+    status_code: 200
+    timeout: 10
+  register: backend_health
+  retries: 12
+  delay: 5
+  until: backend_health.status == 200
