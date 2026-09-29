@@ -4,6 +4,7 @@ from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, In
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.pharmaviyum.db.base import Base
+from src.pharmaviyum.models.drug_catalog import MedicinalProduct
 
 if False:  # pragma: no cover
     from src.pharmaviyum.models.product_batch import ProductBatch
@@ -55,7 +56,7 @@ class Product(Base):
         nullable=True,
         index=True,
     )
-    medicinal_product: Mapped["MedicinalProduct | None"] = relationship()
+    medicinal_product: Mapped[MedicinalProduct | None] = relationship()
 
     price: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     stock: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
