@@ -161,7 +161,7 @@ async def test_receiving_fefo_dispensing_and_pharmacy_transfer() -> None:
             POSTransactionCreate(
                 pharmacy_id=pharmacy_a.id,
                 patient_id=patient.id,
-                payment_method="cash",
+                payment_method="card",
                 items=[POSItem(product_id=product.id, units=4)],
             ),
             db,
@@ -506,7 +506,7 @@ async def test_pos_rejects_expired_batch_without_creating_sale() -> None:
                 POSTransactionCreate(
                     pharmacy_id=pharmacy.id,
                     patient_id=patient.id,
-                    payment_method="cash",
+                    payment_method="card",
                     items=[
                         POSItem(
                             product_id=product.id,
@@ -602,7 +602,7 @@ async def test_pos_transaction_rolls_back_all_changes_on_late_failure() -> None:
                 POSTransactionCreate(
                     pharmacy_id=pharmacy.id,
                     patient_id=patient.id,
-                    payment_method="cash",
+                    payment_method="card",
                     items=[
                         POSItem(product_id=product.id, units=2),
                         POSItem(product_id=999999999, units=1),
@@ -713,7 +713,7 @@ async def test_pos_transaction_idempotency_prevents_duplicate_sale() -> None:
         request = POSTransactionCreate(
             pharmacy_id=pharmacy.id,
             patient_id=patient.id,
-            payment_method="cash",
+            payment_method="card",
             items=[POSItem(product_id=product.id, units=2)],
         )
         first = await confirm_pos_transaction(request, db, user, "retry-key-1")
@@ -804,7 +804,7 @@ async def test_pos_void_restores_inventory_and_is_idempotent() -> None:
             POSTransactionCreate(
                 pharmacy_id=pharmacy.id,
                 patient_id=patient.id,
-                payment_method="cash",
+                payment_method="card",
                 items=[POSItem(product_id=product.id, units=2)],
             ),
             db,
@@ -925,7 +925,7 @@ async def test_pos_partial_return_is_batch_accurate_and_idempotent() -> None:
             POSTransactionCreate(
                 pharmacy_id=pharmacy.id,
                 patient_id=patient.id,
-                payment_method="cash",
+                payment_method="card",
                 items=[POSItem(product_id=product.id, units=3)],
             ),
             db,
@@ -1184,3 +1184,81 @@ async def test_pos_cash_ledger_tracks_sale_partial_refund_and_shift_reconciliati
         )
         assert repeated_close["expected_cash"] == 110.0
         assert repeated_close["closing_cash"] == 110.0
+
+
+@pytest.mark.asyncio
+async def test_cash_pos_sale_requires_open_shift() -> None:
+    """Cash sales must be tied to an active cash shift."""
+    async with AsyncSessionLocal() as db:
+        suffix = os.urandom(6).hex()
+        user = User(
+            email=f"cash-shift-{suffix}@example.test",
+            username=f"cash-shift-{suffix}",
+            hashed_password="not-used-in-test",
+            is_active=True,
+            is_superuser=True,
+        )
+        pharmacy = Pharmacy(name=f"Cash Shift Pharmacy {suffix}", code=f"CS-{suffix}")
+        product = Product(
+            name=f"Cash Shift Product {suffix}",
+            sku=f"CS-{suffix}",
+            units_per_pack=1,
+            price=10.0,
+            is_active=True,
+        )
+        patient = Patient(
+            pharmacy_id=None,
+            first_name="Cash",
+            last_name="Patient",
+            full_name="Cash Patient",
+            phone=f"+38069{suffix[:7]}",
+            country="UA",
+            is_active=True,
+        )
+        db.add_all([user, pharmacy, product, patient])
+        await db.flush()
+        patient.pharmacy_id = pharmacy.id
+        batch = ProductBatch(
+            product_id=product.id,
+            batch_number=f"CS-{suffix}",
+            expiry_date=date.today() + timedelta(days=120),
+            received_quantity=2,
+            available_quantity=2,
+        )
+        db.add(batch)
+        await db.flush()
+        db.add(
+            Inventory(
+                product_id=product.id,
+                pharmacy_id=pharmacy.id,
+                batch_id=batch.id,
+                lot_number=batch.batch_number,
+                quantity=2,
+            )
+        )
+        await db.commit()
+
+        request = POSTransactionCreate(
+            pharmacy_id=pharmacy.id,
+            patient_id=patient.id,
+            payment_method="cash",
+            items=[POSItem(product_id=product.id, units=1)],
+        )
+        with pytest.raises(HTTPException) as exc_info:
+            await confirm_pos_transaction(request, db, user, "cash-no-shift")
+        assert exc_info.value.status_code == 409
+
+        shift = await open_cash_shift(
+            CashShiftOpen(pharmacy_id=pharmacy.id, opening_cash=50.0),
+            db,
+            user,
+            "cash-shift-open",
+        )
+        sale = await confirm_pos_transaction(request, db, user, "cash-with-shift")
+        assert sale.status == "completed"
+        assert sale.payment_method == "cash"
+        assert sale.payment_status == "paid"
+
+        order = await db.get(Order, sale.order_id)
+        assert order is not None
+        assert order.cash_shift_id == shift["id"]
