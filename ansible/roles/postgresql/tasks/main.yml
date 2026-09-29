@@ -9,9 +9,9 @@
 
 - name: Ensure PostgreSQL data directory exists
   ansible.builtin.file:
-    path: "{{ postgres_data_dir | default('/var/lib/postgresql/data') }}"
+    path: "{{ postgresql_data_dir | default('/var/lib/postgresql/data') }}"
     state: directory
     owner: "{{ deploy_user }}"
     mode: "0750"
-  when: postgres_data_dir is defined
+  when: postgresql_data_dir is defined
   tags: [postgresql, setup]
