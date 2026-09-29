@@ -5,6 +5,7 @@ from fastapi import APIRouter, Header, HTTPException
 from sqlalchemy import func, select
 
 from src.pharmaviyum.models.cash_shift import CashShift
+from src.pharmaviyum.models.cash_transaction import CashTransaction
 from src.pharmaviyum.models.order import Order
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
@@ -102,26 +103,13 @@ async def close_cash_shift(
             return _response(shift)
         raise HTTPException(status_code=409, detail="Cash shift is already closed")
 
-    cash_sales = await db.scalar(
-        select(func.coalesce(func.sum(Order.total_amount), 0.0)).where(
-            Order.cash_shift_id == shift.id,
-            Order.status == "completed",
-            Order.payment_status == "paid",
-            Order.payment_method == "cash",
+    cash_net = await db.scalar(
+        select(func.coalesce(func.sum(CashTransaction.amount), 0.0)).where(
+            CashTransaction.cash_shift_id == shift.id,
+            CashTransaction.payment_method == "cash",
         )
     )
-    cash_returns = await db.scalar(
-        select(func.coalesce(func.sum(Order.total_amount), 0.0)).where(
-            Order.cash_shift_id == shift.id,
-            Order.status == "voided",
-            Order.payment_status == "refunded",
-            Order.payment_method == "cash",
-        )
-    )
-    expected = round(
-        float(shift.opening_cash) + float(cash_sales or 0.0) - float(cash_returns or 0.0),
-        2,
-    )
+    expected = round(float(shift.opening_cash) + float(cash_net or 0.0), 2)
     now = datetime.utcnow()
     shift.expected_cash = expected
     shift.closing_cash = data.closing_cash
