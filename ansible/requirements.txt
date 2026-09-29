@@ -1,0 +1,6 @@
+# On-premise deployment control node dependencies.
+# Keep the stable Ansible line until ansible-core 2.22 reaches GA.
+ansible==14.4.0
+ansible-core==2.21.4
+ansible-lint==25.9.0
+yamllint==1.37.1
