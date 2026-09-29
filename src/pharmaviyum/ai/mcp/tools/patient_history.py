@@ -74,8 +74,12 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
             [
                 AllergyInfo(
                     allergen=a.allergen_name,
-                    type=cast(Literal["drug", "food", "environmental"], a.allergen_type),
-                    severity=cast(Literal["mild", "moderate", "severe"], a.severity),
+                    type=cast(
+                        Literal["drug", "food", "environmental"], a.allergen_type
+                    ),
+                    severity=cast(
+                        Literal["mild", "moderate", "severe"], a.severity
+                    ),
                     verified=a.is_verified,
                 )
                 for a in patient.allergies
@@ -185,3 +189,4 @@ async def _count_recent_orders(
     except Exception as exc:
         logger.warning("Could not count orders: %s", exc)
         return 0
+
