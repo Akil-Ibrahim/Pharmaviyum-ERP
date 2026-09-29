@@ -1,0 +1,23 @@
+name: Regenerate uv lock (temporary)
+on:
+  push:
+    branches: [dev]
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14.7"
+      - uses: astral-sh/setup-uv@v7
+      - name: Regenerate lock
+        run: uv lock --python 3.14.7
+      - name: Commit lock
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add uv.lock
+          git diff --cached --quiet && exit 0
+          git commit -m "build: regenerate uv lock after pyproject cleanup"
+          git push
