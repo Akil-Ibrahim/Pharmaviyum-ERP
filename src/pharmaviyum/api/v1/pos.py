@@ -8,6 +8,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 
 from src.pharmaviyum.models.audit_log import AuditLog
+from src.pharmaviyum.models.cash_shift import CashShift
 from src.pharmaviyum.services.fefo import allocate_fefo
 from src.pharmaviyum.services.pos_state import confirm_payment
 from src.pharmaviyum.services.expired_inventory import (
@@ -200,10 +201,18 @@ async def confirm_pos_transaction(
     if not data.items:
         raise HTTPException(status_code=400, detail="At least one product is required")
 
+    active_shift = await db.scalar(
+        select(CashShift).where(
+            CashShift.pharmacy_id == tenant.pharmacy_id,
+            CashShift.status == "open",
+        )
+    )
+
     order = Order(
         patient_id=patient.id,
         pharmacy_id=tenant.pharmacy_id,
         pharmacist_id=current_user.id,
+        cash_shift_id=active_shift.id if active_shift is not None else None,
         status="pending",
         payment_method=data.payment_method,
         payment_status="unpaid",
