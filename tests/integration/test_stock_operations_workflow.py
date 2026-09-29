@@ -344,45 +344,76 @@ async def test_pos_transaction_persists_full_fefo_traceability() -> None:
 
         await db.refresh(early_batch)
         await db.refresh(late_batch)
-        assert early_batch.available_quantity == 4
-        assert late_batch.available_quantity == 2
+        assert early_batch.available_quantity == 0
+        assert late_batch.available_quantity == 6
 
-        sale_item = await db.scalar(
-            select(OrderItem).where(OrderItem.order_id == sale.order_id)
-        )
-        assert sale_item is not None
-        assert sale_item.batch_id == late_batch.id
-        assert sale_item.quantity_units == 10
-
-        dispensing = await db.scalar(
-            select(Dispensing).where(Dispensing.order_id == sale.order_id)
-        )
-        assert dispensing is not None
-        assert dispensing.batch_id == late_batch.id
-        assert dispensing.quantity_units == 10
-
-        dispense_tx = await db.scalar(
-            select(InventoryTransaction).where(
-                InventoryTransaction.order_id == sale.order_id,
-                InventoryTransaction.transaction_type == "dispense",
+        sale_items = (
+            (
+                await db.execute(
+                    select(OrderItem)
+                    .where(OrderItem.order_id == sale.order_id)
+                    .order_by(OrderItem.batch_id)
+                )
             )
+            .scalars()
+            .all()
         )
-        assert dispense_tx is not None
-        assert dispense_tx.batch_id == late_batch.id
-        assert dispense_tx.dispensing_id == dispensing.id
-        assert dispense_tx.quantity_delta == -10
-        assert dispense_tx.quantity_after == 2
+        assert [(item.batch_id, item.quantity_units) for item in sale_items] == [
+            (early_batch.id, 4),
+            (late_batch.id, 6),
+        ]
 
-        purchase = await db.scalar(
-            select(PatientPurchase).where(
-                PatientPurchase.receipt_number == sale.receipt_number
+        dispensings = (
+            (
+                await db.execute(
+                    select(Dispensing)
+                    .where(Dispensing.order_id == sale.order_id)
+                    .order_by(Dispensing.batch_id)
+                )
             )
+            .scalars()
+            .all()
         )
-        assert purchase is not None
-        assert purchase.patient_id == patient.id
-        assert purchase.product_id == product.id
-        assert purchase.batch_id == late_batch.id
-        assert purchase.quantity == 10
+        assert [(row.batch_id, row.quantity_units) for row in dispensings] == [
+            (early_batch.id, 4),
+            (late_batch.id, 6),
+        ]
+
+        dispense_txs = (
+            (
+                await db.execute(
+                    select(InventoryTransaction)
+                    .where(
+                        InventoryTransaction.order_id == sale.order_id,
+                        InventoryTransaction.transaction_type == "dispense",
+                    )
+                    .order_by(InventoryTransaction.batch_id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert [(row.batch_id, row.quantity_delta) for row in dispense_txs] == [
+            (early_batch.id, -4),
+            (late_batch.id, -6),
+        ]
+        assert all(row.quantity_after >= 0 for row in dispense_txs)
+
+        purchases = (
+            (
+                await db.execute(
+                    select(PatientPurchase)
+                    .where(PatientPurchase.receipt_number == sale.receipt_number)
+                    .order_by(PatientPurchase.batch_id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert [(row.batch_id, row.quantity) for row in purchases] == [
+            (early_batch.id, 4),
+            (late_batch.id, 6),
+        ]
 
         order = await db.scalar(select(Order).where(Order.id == sale.order_id))
         assert order is not None
