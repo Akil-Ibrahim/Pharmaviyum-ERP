@@ -1,6 +1,6 @@
 """Authenticated API for the pharmacy domain entities."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -81,6 +81,32 @@ class ERPEventIn(BaseModel):
 
 class EntityOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
+
+class BatchOut(EntityOut):
+    id: int
+    product_id: int
+    batch_number: str
+    expiry_date: date
+    received_quantity: int
+    available_quantity: int
+    barcode: str | None
+    days_to_expiry: int
+    expiry_status: str
+
+
+EXPIRY_HOT_DAYS = 7
+EXPIRY_WARNING_DAYS = 30
+
+
+def _batch_expiry_status(expiry_date: date, today: date | None = None) -> tuple[int, str]:
+    current_date = today or date.today()
+    days_to_expiry = (expiry_date - current_date).days
+    if days_to_expiry <= EXPIRY_HOT_DAYS:
+        return days_to_expiry, "red"
+    if days_to_expiry <= EXPIRY_WARNING_DAYS:
+        return days_to_expiry, "yellow"
+    return days_to_expiry, "green"
 
 
 async def _list(session: AsyncSession, model: type[Any]) -> list[Any]:
@@ -255,14 +281,35 @@ async def list_batches(
     _: CurrentSuperuser,
     session: SessionDep,
     product_id: int | None = Query(default=None, gt=0),
-) -> list[ProductBatch]:
+    expiry_status: str | None = Query(default=None, pattern="^(red|yellow|green)$"),
+) -> list[BatchOut]:
     # ProductBatch currently has no pharmacy_id. Keep operational batch quantities
     # fail-closed until batch ownership is modeled explicitly.
     query = select(ProductBatch)
     if product_id is not None:
         query = query.where(ProductBatch.product_id == product_id)
     result = await session.execute(query.order_by(ProductBatch.id.desc()))
-    return list(result.scalars().all())
+    batches = list(result.scalars().all())
+
+    response: list[BatchOut] = []
+    for batch in batches:
+        days_to_expiry, status = _batch_expiry_status(batch.expiry_date)
+        if expiry_status is not None and status != expiry_status:
+            continue
+        response.append(
+            BatchOut(
+                id=batch.id,
+                product_id=batch.product_id,
+                batch_number=batch.batch_number,
+                expiry_date=batch.expiry_date,
+                received_quantity=batch.received_quantity,
+                available_quantity=batch.available_quantity,
+                barcode=batch.barcode,
+                days_to_expiry=days_to_expiry,
+                expiry_status=status,
+            )
+        )
+    return response
 
 
 @router.get("/prescriptions", response_model=None)
