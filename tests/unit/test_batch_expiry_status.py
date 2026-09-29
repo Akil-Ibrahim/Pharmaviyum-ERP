@@ -16,10 +16,11 @@ from src.pharmaviyum.api.v1.pharmacy_entities import (
     [
         (-1, "red"),
         (0, "red"),
-        (7, "red"),
-        (8, "yellow"),
-        (30, "yellow"),
-        (31, "green"),
+        (30, "red"),
+        (31, "yellow"),
+        (60, "yellow"),
+        (90, "yellow"),
+        (91, "green"),
     ],
 )
 def test_batch_expiry_status_boundaries(
