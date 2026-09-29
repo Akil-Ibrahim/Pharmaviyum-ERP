@@ -2,7 +2,7 @@
 source = src/pharmaviyum
 branch = True
 parallel = True
-concurrency = asyncio,thread
+concurrency = thread
 omit =
     */tests/*
     */migrations/*
