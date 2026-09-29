@@ -11,17 +11,6 @@ from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-from src.pharmaviyum.ai.observability.metrics import (
-    DB_CONNECTION_HOLD_DURATION,
-    DB_POOL_CHECKED_OUT,
-    DB_POOL_MAX_OVERFLOW,
-    DB_POOL_OVERFLOW,
-    DB_POOL_SIZE,
-    DB_POOL_TIMEOUTS_TOTAL,
-    DB_QUERY_DURATION,
-    DB_QUERY_ERRORS_TOTAL,
-    DB_QUERY_TOTAL,
-)
 from src.pharmaviyum.config import settings
 
 logger = structlog.get_logger()
@@ -44,6 +33,8 @@ engine = create_async_engine(
 
 def _pool_metrics() -> None:
     """Publish pool metrics when the underlying pool exposes them."""
+    from src.pharmaviyum.ai.observability.metrics import DB_POOL_CHECKED_OUT, DB_POOL_MAX_OVERFLOW, DB_POOL_OVERFLOW, DB_POOL_SIZE
+
     pool: Any = engine.sync_engine.pool
     try:
         DB_POOL_SIZE.set(pool.size())
@@ -83,6 +74,7 @@ def _on_checkout(
 def _on_checkin(dbapi_connection: Any, connection_record: Any) -> None:
     started = connection_record.info.pop("checkout_started_at", None)
     if started is not None:
+        from src.pharmaviyum.ai.observability.metrics import DB_CONNECTION_HOLD_DURATION
         DB_CONNECTION_HOLD_DURATION.observe(time.perf_counter() - started)
     _pool_metrics()
 
@@ -112,6 +104,7 @@ def _after_cursor_execute(
     if started is None:
         return
     operation = _classify_operation(statement)
+    from src.pharmaviyum.ai.observability.metrics import DB_QUERY_DURATION, DB_QUERY_TOTAL
     DB_QUERY_DURATION.labels(operation=operation).observe(time.perf_counter() - started)
     DB_QUERY_TOTAL.labels(operation=operation, status="success").inc()
 
@@ -119,12 +112,16 @@ def _after_cursor_execute(
 @event.listens_for(engine.sync_engine, "handle_error")
 def _handle_db_error(exception_context: Any) -> None:
     operation = _classify_operation(exception_context.statement or "")
+    from src.pharmaviyum.ai.observability.metrics import DB_QUERY_ERRORS_TOTAL, DB_QUERY_TOTAL
     DB_QUERY_TOTAL.labels(operation=operation, status="error").inc()
     DB_QUERY_ERRORS_TOTAL.labels(operation=operation).inc()
     if exception_context.original_exception.__class__.__name__ == "TimeoutError":
+        from src.pharmaviyum.ai.observability.metrics import DB_POOL_TIMEOUTS_TOTAL
         DB_POOL_TIMEOUTS_TOTAL.inc()
     _pool_metrics()
 
+
+from src.pharmaviyum.ai.observability.metrics import DB_POOL_MAX_OVERFLOW, DB_POOL_SIZE
 
 DB_POOL_SIZE.set(settings.DB_POOL_SIZE)
 DB_POOL_MAX_OVERFLOW.set(settings.DB_MAX_OVERFLOW)
