@@ -32,6 +32,12 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         if request.method not in ["POST", "PUT", "PATCH"]:
             return await call_next(request)
 
+        # POS transactions use database-backed, pharmacy-scoped idempotency.
+        # Do not serve a Redis cache hit before the endpoint can validate the
+        # tenant and request fingerprint.
+        if request.url.path.endswith("/pos/transactions"):
+            return await call_next(request)
+
         idempotency_key = request.headers.get(IDEMPOTENCY_KEY_HEADER)
         if not idempotency_key:
             return await call_next(request)
