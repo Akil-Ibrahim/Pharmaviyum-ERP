@@ -22,7 +22,7 @@ provisioner:
         deploy_user: molecule
         docker_compose_project: pharmaviyum
         app_version: "test-release"
-        backend_image: "ghcr.io/ibrahimengpy/pharmaviyum-crm-api"
+        backend_image: "ghcr.io/ibrahimengpy/pharmaviyum-crm"
         postgres_password: "molecule-test-password"
         ghcr_username: ""
         ghcr_token: ""
