@@ -2,6 +2,7 @@
 
 from src.pharmaviyum.models.cash_shift import CashShift
 from src.pharmaviyum.models.cash_transaction import CashTransaction
+from src.pharmaviyum.models.pos_return import POSReturn, POSReturnItem
 from src.pharmaviyum.models.dispensing import Dispensing
 from src.pharmaviyum.models.defectura_item import DefecturaItem
 from src.pharmaviyum.models.goods_receipt import GoodsReceipt
@@ -35,6 +36,8 @@ from src.pharmaviyum.modules.auth.models import PharmacyMembership
 __all__ = [
     "CashShift",
     "CashTransaction",
+    "POSReturn",
+    "POSReturnItem",
     "Dispensing",
     "DefecturaItem",
     "GoodsReceipt",
