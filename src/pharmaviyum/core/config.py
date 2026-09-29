@@ -12,6 +12,7 @@ class Environment(str, Enum):
 
     DEVELOPMENT = "development"
     STAGING = "staging"
+    TESTING = "testing"
     PRODUCTION = "production"
 
 
