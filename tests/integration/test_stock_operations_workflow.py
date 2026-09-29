@@ -1186,6 +1186,144 @@ async def test_pos_cash_ledger_tracks_sale_partial_refund_and_shift_reconciliati
         assert repeated_close["closing_cash"] == 110.0
 
 
+
+@pytest.mark.asyncio
+async def test_cash_refund_requires_current_open_shift() -> None:
+    """A cash refund cannot post against a closed historical shift."""
+    async with AsyncSessionLocal() as db:
+        suffix = os.urandom(6).hex()
+        user = User(
+            email=f"refund-shift-{suffix}@example.test",
+            username=f"refund-shift-{suffix}",
+            hashed_password="not-used-in-test",
+            is_active=True,
+            is_superuser=True,
+        )
+        pharmacy = Pharmacy(name=f"Refund Shift Pharmacy {suffix}", code=f"RS-{suffix}")
+        product = Product(
+            name=f"Refund Shift Product {suffix}",
+            sku=f"RS-{suffix}",
+            units_per_pack=1,
+            price=10.0,
+            is_active=True,
+        )
+        patient = Patient(
+            pharmacy_id=None,
+            first_name="Refund",
+            last_name="Patient",
+            full_name="Refund Patient",
+            phone=f"+38070{suffix[:7]}",
+            country="UA",
+            is_active=True,
+        )
+        db.add_all([user, pharmacy, product, patient])
+        await db.flush()
+        patient.pharmacy_id = pharmacy.id
+        batch = ProductBatch(
+            product_id=product.id,
+            batch_number=f"RS-{suffix}",
+            expiry_date=date.today() + timedelta(days=120),
+            received_quantity=2,
+            available_quantity=2,
+        )
+        db.add(batch)
+        await db.flush()
+        db.add(
+            Inventory(
+                product_id=product.id,
+                pharmacy_id=pharmacy.id,
+                batch_id=batch.id,
+                lot_number=batch.batch_number,
+                quantity=2,
+            )
+        )
+        await db.commit()
+
+        shift = await open_cash_shift(
+            CashShiftOpen(pharmacy_id=pharmacy.id, opening_cash=50.0),
+            db,
+            user,
+            "refund-shift-open",
+        )
+        sale = await confirm_pos_transaction(
+            POSTransactionCreate(
+                pharmacy_id=pharmacy.id,
+                patient_id=patient.id,
+                payment_method="cash",
+                items=[POSItem(product_id=product.id, units=1)],
+            ),
+            db,
+            user,
+            "refund-shift-sale",
+        )
+        order_item = await db.scalar(
+            select(OrderItem).where(OrderItem.order_id == sale.order_id)
+        )
+        assert order_item is not None
+
+        closed = await close_cash_shift(
+            shift["id"],
+            CashShiftClose(closing_cash=60.0),
+            db,
+            user,
+            "refund-shift-close",
+        )
+        assert closed["status"] == "closed"
+
+        with pytest.raises(HTTPException) as exc_info:
+            await return_pos_transaction(
+                sale.order_id,
+                POSReturnCreate(
+                    reason="Refund after shift close",
+                    refund_method="cash",
+                    items=[
+                        POSReturnItemCreate(
+                            order_item_id=order_item.id,
+                            quantity_units=1,
+                        )
+                    ],
+                ),
+                db,
+                user,
+                "refund-after-close",
+            )
+        assert exc_info.value.status_code == 409
+
+        current_shift = await open_cash_shift(
+            CashShiftOpen(pharmacy_id=pharmacy.id, opening_cash=60.0),
+            db,
+            user,
+            "refund-shift-open-2",
+        )
+        refund = await return_pos_transaction(
+            sale.order_id,
+            POSReturnCreate(
+                reason="Refund in new shift",
+                refund_method="cash",
+                items=[
+                    POSReturnItemCreate(
+                        order_item_id=order_item.id,
+                        quantity_units=1,
+                    )
+                ],
+            ),
+            db,
+            user,
+            "refund-current-shift",
+        )
+        assert refund.total_amount == 10.0
+
+        cash_refund = await db.scalar(
+            select(CashTransaction).where(
+                CashTransaction.order_id == sale.order_id,
+                CashTransaction.transaction_type == "refund",
+            )
+        )
+        assert cash_refund is not None
+        assert cash_refund.cash_shift_id == current_shift["id"]
+        assert cash_refund.payment_method == "cash"
+        assert cash_refund.amount == -10.0
+
 @pytest.mark.asyncio
 async def test_cash_pos_sale_requires_open_shift() -> None:
     """Cash sales must be tied to an active cash shift."""
