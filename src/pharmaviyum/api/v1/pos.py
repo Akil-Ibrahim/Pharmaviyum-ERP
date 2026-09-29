@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import or_, select
 
 from src.pharmaviyum.models.audit_log import AuditLog
+from src.pharmaviyum.services.fefo import allocate_fefo
 from src.pharmaviyum.services.expired_inventory import (
     list_expired_inventory,
     quarantine_expired_inventory,
@@ -207,8 +208,6 @@ async def confirm_pos_transaction(
         if batch is not None:
             inventory_rows = [row for row in inventory_rows if row.batch_id == batch.id]
 
-        from src.pharmaviyum.services.fefo import allocate_fefo
-
         allocations = allocate_fefo(
             [
                 {
@@ -222,7 +221,6 @@ async def confirm_pos_transaction(
             today=now.date(),
         )
         inventory_by_batch = {row.batch_id or row.id: row for row in inventory_rows}
-
 
         if item.prescription_id is not None:
             prescription = await db.scalar(
