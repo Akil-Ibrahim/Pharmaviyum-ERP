@@ -15,7 +15,7 @@ import pytest
 from fastapi import HTTPException
 from sqlalchemy import func, select
 
-from src.pharmaviyum.api.v1.pos import confirm_pos_transaction, void_pos_transaction
+from src.pharmaviyum.api.v1.pos import (\n    confirm_pos_transaction,\n    return_pos_transaction,\n    void_pos_transaction,\n)
 from src.pharmaviyum.api.v1.procurement import (
     GoodsReceiptCreate,
     GoodsReceiptItemCreate,
@@ -31,7 +31,7 @@ from src.pharmaviyum.models.dispensing import Dispensing
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.inventory_transaction import InventoryTransaction
 from src.pharmaviyum.models.order import Order
-from src.pharmaviyum.models.order_item import OrderItem
+from src.pharmaviyum.models.order_item import OrderItem\nfrom src.pharmaviyum.models.pos_return import POSReturn, POSReturnItem
 from src.pharmaviyum.models.patients.patient_purchase import PatientPurchase
 from src.pharmaviyum.models.patients.patient import Patient
 from src.pharmaviyum.models.pharmacy import Pharmacy
@@ -39,7 +39,7 @@ from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.models.product_batch import ProductBatch
 from src.pharmaviyum.models.supplier import Supplier
 from src.pharmaviyum.models.user import User
-from src.pharmaviyum.schemas.pos_schema import POSItem, POSTransactionCreate
+from src.pharmaviyum.schemas.pos_schema import (\n    POSItem,\n    POSReturnCreate,\n    POSReturnItemCreate,\n    POSTransactionCreate,\n)
 
 
 pytestmark = pytest.mark.integration
@@ -866,3 +866,192 @@ async def test_pos_void_restores_inventory_and_is_idempotent() -> None:
 
         await db.refresh(inventory)
         assert inventory.quantity == 5
+
+
+@pytest.mark.asyncio
+async def test_pos_partial_return_is_batch_accurate_and_idempotent() -> None:
+    """Partial returns restore only returned units and never exceed sold quantity."""
+    async with AsyncSessionLocal() as db:
+        suffix = os.urandom(6).hex()
+        user = User(
+            email=f"return-{suffix}@example.test",
+            username=f"return-{suffix}",
+            hashed_password="not-used-in-test",
+            is_active=True,
+            is_superuser=True,
+        )
+        pharmacy = Pharmacy(name=f"Return Pharmacy {suffix}", code=f"RET-{suffix}")
+        product = Product(
+            name=f"Return Product {suffix}",
+            sku=f"RET-{suffix}",
+            units_per_pack=1,
+            price=10.0,
+            is_active=True,
+        )
+        patient = Patient(
+            pharmacy_id=None,
+            first_name="Return",
+            last_name="Patient",
+            full_name="Return Patient",
+            phone=f"+38067{suffix[:7]}",
+            country="UA",
+            is_active=True,
+        )
+        db.add_all([user, pharmacy, product, patient])
+        await db.flush()
+        patient.pharmacy_id = pharmacy.id
+
+        batch = ProductBatch(
+            product_id=product.id,
+            batch_number=f"RET-{suffix}",
+            expiry_date=date.today() + timedelta(days=120),
+            received_quantity=5,
+            available_quantity=5,
+        )
+        db.add(batch)
+        await db.flush()
+        inventory = Inventory(
+            product_id=product.id,
+            pharmacy_id=pharmacy.id,
+            batch_id=batch.id,
+            lot_number=batch.batch_number,
+            quantity=5,
+            expires_at=None,
+        )
+        db.add(inventory)
+        await db.commit()
+
+        sale = await confirm_pos_transaction(
+            POSTransactionCreate(
+                pharmacy_id=pharmacy.id,
+                patient_id=patient.id,
+                payment_method="cash",
+                items=[POSItem(product_id=product.id, units=3)],
+            ),
+            db,
+            user,
+            "return-sale",
+        )
+        order_item = await db.scalar(
+            select(OrderItem).where(OrderItem.order_id == sale.order_id)
+        )
+        assert order_item is not None
+
+        first = await return_pos_transaction(
+            sale.order_id,
+            POSReturnCreate(
+                reason="Customer returned one unit",
+                refund_method="cash",
+                items=[
+                    POSReturnItemCreate(
+                        order_item_id=order_item.id,
+                        quantity_units=1,
+                    )
+                ],
+            ),
+            db,
+            user,
+            "return-1",
+        )
+        assert first.total_amount == 10.0
+        assert first.status == "completed"
+
+        await db.refresh(inventory)
+        await db.refresh(batch)
+        assert inventory.quantity == 3
+        assert batch.available_quantity == 3
+
+        repeated = await return_pos_transaction(
+            sale.order_id,
+            POSReturnCreate(
+                reason="Customer returned one unit",
+                refund_method="cash",
+                items=[
+                    POSReturnItemCreate(
+                        order_item_id=order_item.id,
+                        quantity_units=1,
+                    )
+                ],
+            ),
+            db,
+            user,
+            "return-1",
+        )
+        assert repeated.return_id == first.return_id
+
+        await db.refresh(inventory)
+        assert inventory.quantity == 3
+        assert (
+            await db.scalar(select(func.count(POSReturn.id)).where(POSReturn.order_id == sale.order_id))
+        ) == 1
+
+        second = await return_pos_transaction(
+            sale.order_id,
+            POSReturnCreate(
+                reason="Customer returned remaining units",
+                refund_method="cash",
+                items=[
+                    POSReturnItemCreate(
+                        order_item_id=order_item.id,
+                        quantity_units=2,
+                    )
+                ],
+            ),
+            db,
+            user,
+            "return-2",
+        )
+        assert second.total_amount == 20.0
+
+        await db.refresh(inventory)
+        await db.refresh(batch)
+        assert inventory.quantity == 5
+        assert batch.available_quantity == 5
+
+        order = await db.get(Order, sale.order_id)
+        assert order is not None
+        assert order.status == "completed"
+        assert order.payment_status == "paid"
+
+        with pytest.raises(HTTPException) as exc_info:
+            await return_pos_transaction(
+                sale.order_id,
+                POSReturnCreate(
+                    reason="Excess return",
+                    refund_method="cash",
+                    items=[
+                        POSReturnItemCreate(
+                            order_item_id=order_item.id,
+                            quantity_units=1,
+                        )
+                    ],
+                ),
+                db,
+                user,
+                "return-3",
+            )
+        assert exc_info.value.status_code == 409
+
+        assert (
+            await db.scalar(
+                select(func.sum(POSReturnItem.quantity_units))
+                .join(POSReturn, POSReturn.id == POSReturnItem.return_id)
+                .where(POSReturn.order_id == sale.order_id)
+            )
+        ) == 3
+        assert (
+            await db.scalar(
+                select(func.sum(InventoryTransaction.quantity_delta)).where(
+                    InventoryTransaction.order_id == sale.order_id,
+                    InventoryTransaction.transaction_type == "return",
+                )
+            )
+        ) == 3
+        assert (
+            await db.scalar(
+                select(func.count(PatientPurchase.id)).where(
+                    PatientPurchase.patient_id == patient.id,
+                    PatientPurchase.category == "pos_return",
+                )
+            )
+        ) == 2
