@@ -28,7 +28,6 @@ from src.pharmaviyum.api.v1.procurement import (
 from src.pharmaviyum.database import AsyncSessionLocal
 from src.pharmaviyum.models.audit_log import AuditLog
 from src.pharmaviyum.models.dispensing import Dispensing
-from src.pharmaviyum.models.expired_inventory import ExpiredInventory
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.inventory_transaction import InventoryTransaction
 from src.pharmaviyum.models.order import Order
