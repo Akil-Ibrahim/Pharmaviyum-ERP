@@ -1,6 +1,14 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from src.pharmaviyum.db.base import Base
@@ -8,7 +16,13 @@ from src.pharmaviyum.db.base import Base
 
 class Order(Base):
     __tablename__ = "orders"
-    __table_args__ = (UniqueConstraint("pharmacy_id", "idempotency_key", name="uq_orders_pharmacy_idempotency_key"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "pharmacy_id",
+            "idempotency_key",
+            name="uq_orders_pharmacy_idempotency_key",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False, index=True)
