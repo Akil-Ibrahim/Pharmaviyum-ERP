@@ -100,9 +100,7 @@ async def get_expired_pos_inventory(
 ) -> list[dict[str, object]]:
     """List stock that has been removed from usable inventory because it expired."""
     tenant = await require_pharmacy_tenant(pharmacy_id, current_user, db)
-    return await list_expired_inventory(
-        db, pharmacy_id=tenant.pharmacy_id, limit=limit
-    )
+    return await list_expired_inventory(db, pharmacy_id=tenant.pharmacy_id, limit=limit)
 
 
 @router.post("/transactions", response_model=POSTransactionResponse, status_code=201)
