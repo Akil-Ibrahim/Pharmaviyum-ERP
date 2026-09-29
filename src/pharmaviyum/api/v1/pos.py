@@ -306,11 +306,25 @@ async def confirm_pos_transaction(
         if batch is not None:
             inventory_rows = [row for row in inventory_rows if row.batch_id == batch.id]
 
+        batch_ids = [row.batch_id for row in inventory_rows if row.batch_id is not None]
+        batch_expiry_rows = (
+            await db.execute(
+                select(ProductBatch.id, ProductBatch.expiry_date).where(
+                    ProductBatch.id.in_(batch_ids)
+                )
+            )
+        ).all()
+        batch_expiry_by_id = {int(row[0]): row[1] for row in batch_expiry_rows}
+
         allocations = allocate_fefo(
             [
                 {
                     "id": row.batch_id or row.id,
-                    "expiry_date": row.expires_at.date() if row.expires_at is not None else None,
+                    "expiry_date": (
+                        batch_expiry_by_id.get(row.batch_id)
+                        if row.batch_id is not None
+                        else row.expires_at.date() if row.expires_at is not None else None
+                    ),
                     "quantity": row.quantity,
                 }
                 for row in inventory_rows
@@ -721,7 +735,7 @@ async def return_pos_transaction(
             status=existing_return.status,
             refund_method=existing_return.refund_method,
             total_amount=float(existing_return.total_amount),
-            item_count=len(existing_return.items),
+            item_count=int(await db.scalar(select(func.count(POSReturnItem.id)).where(POSReturnItem.return_id == existing_return.id)) or 0),
         )
 
     if order.status != "completed" or order.payment_status != "paid":
