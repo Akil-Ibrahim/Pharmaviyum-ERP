@@ -14,8 +14,13 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("orders", sa.Column("idempotency_key", sa.String(length=255), nullable=True))
-    op.add_column("orders", sa.Column("idempotency_request_hash", sa.String(length=64), nullable=True))
+    op.add_column(
+        "orders", sa.Column("idempotency_key", sa.String(length=255), nullable=True)
+    )
+    op.add_column(
+        "orders",
+        sa.Column("idempotency_request_hash", sa.String(length=64), nullable=True),
+    )
     op.create_index(
         "ix_orders_idempotency_key",
         "orders",
