@@ -13,7 +13,7 @@ from datetime import date, timedelta
 
 import pytest
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from src.pharmaviyum.api.v1.pos import confirm_pos_transaction
 from src.pharmaviyum.api.v1.procurement import (
@@ -655,3 +655,93 @@ async def test_pos_transaction_rolls_back_all_changes_on_late_failure() -> None:
             )
             is None
         )
+
+
+
+@pytest.mark.asyncio
+async def test_pos_transaction_idempotency_prevents_duplicate_sale() -> None:
+    """Retrying the same POS request must not create a second sale or consume stock twice."""
+    async with AsyncSessionLocal() as db:
+        suffix = os.urandom(6).hex()
+        user = User(
+            email=f"idem-{suffix}@example.test",
+            username=f"idem-{suffix}",
+            hashed_password="not-used-in-test",
+            is_active=True,
+            is_superuser=True,
+        )
+        pharmacy = Pharmacy(name=f"Idempotency Pharmacy {suffix}", code=f"IDEM-{suffix}")
+        product = Product(
+            name=f"Idempotency Product {suffix}",
+            sku=f"IDEM-{suffix}",
+            units_per_pack=1,
+            price=10.0,
+            is_active=True,
+        )
+        patient = Patient(
+            pharmacy_id=None,
+            first_name="Idempotency",
+            last_name="Patient",
+            full_name="Idempotency Patient",
+            phone=f"+38066{suffix[:7]}",
+            country="UA",
+            is_active=True,
+        )
+        db.add_all([user, pharmacy, product, patient])
+        await db.flush()
+        patient.pharmacy_id = pharmacy.id
+        batch = ProductBatch(
+            product_id=product.id,
+            batch_number=f"IDEM-{suffix}",
+            expiry_date=date.today() + timedelta(days=120),
+            received_quantity=5,
+            available_quantity=5,
+        )
+        db.add(batch)
+        await db.flush()
+        inventory = Inventory(
+            product_id=product.id,
+            pharmacy_id=pharmacy.id,
+            batch_id=batch.id,
+            lot_number=batch.batch_number,
+            quantity=5,
+            expires_at=datetime.utcnow() + timedelta(days=120),
+        )
+        db.add(inventory)
+        await db.commit()
+
+        request = POSTransactionCreate(
+            pharmacy_id=pharmacy.id,
+            patient_id=patient.id,
+            payment_method="cash",
+            items=[POSItem(product_id=product.id, units=2)],
+        )
+        first = await confirm_pos_transaction(request, db, user, "retry-key-1")
+        second = await confirm_pos_transaction(request, db, user, "retry-key-1")
+
+        assert second.order_id == first.order_id
+        assert second.receipt_number == first.receipt_number
+
+        await db.refresh(inventory)
+        await db.refresh(batch)
+        assert inventory.quantity == 3
+        assert batch.available_quantity == 3
+        assert (
+            await db.scalar(
+                select(func.count(Order.id)).where(Order.pharmacy_id == pharmacy.id)
+            )
+        ) == 1
+
+        with pytest.raises(HTTPException) as exc_info:
+            await confirm_pos_transaction(
+                POSTransactionCreate(
+                    pharmacy_id=pharmacy.id,
+                    patient_id=patient.id,
+                    payment_method="card",
+                    items=[POSItem(product_id=product.id, units=2)],
+                ),
+                db,
+                user,
+                "retry-key-1",
+            )
+        assert exc_info.value.status_code == 409
