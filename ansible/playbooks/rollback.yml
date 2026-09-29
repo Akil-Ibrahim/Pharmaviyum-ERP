@@ -19,13 +19,23 @@
         name: "{{ backend_image }}:{{ rollback_version }}"
         source: pull
 
-    - name: Switch backend image
-      ansible.builtin.command:
-        cmd: docker compose -f "{{ app_directory }}/docker-compose.yml" up -d --no-build backend
-      environment:
-        BACKEND_IMAGE: "{{ backend_image }}:{{ rollback_version }}"
-      register: rollback_result
-      changed_when: true
+    - name: Set rollback image in Compose environment
+      ansible.builtin.lineinfile:
+        path: "{{ app_directory }}/.env"
+        regexp: '^BACKEND_IMAGE='
+        line: "BACKEND_IMAGE={{ backend_image }}:{{ rollback_version }}"
+        owner: "{{ deploy_user }}"
+        mode: "0600"
+      register: rollback_env
+
+    - name: Start rollback backend
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_directory }}"
+        project_name: "{{ docker_compose_project }}"
+        services:
+          - backend
+        state: present
+        pull: missing
 
     - name: Wait for rollback health
       ansible.builtin.uri:
