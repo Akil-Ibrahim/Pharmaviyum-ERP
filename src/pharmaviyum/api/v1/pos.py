@@ -211,6 +211,11 @@ async def confirm_pos_transaction(
             CashShift.status == "open",
         )
     )
+    if data.payment_method == "cash" and active_shift is None:
+        raise HTTPException(
+            status_code=409,
+            detail="An open cash shift is required for cash POS sales",
+        )
 
     order = Order(
         patient_id=patient.id,
