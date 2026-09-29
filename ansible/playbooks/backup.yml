@@ -11,12 +11,16 @@
         owner: "{{ deploy_user }}"
         mode: "0750"
 
-    - name: Create compressed PostgreSQL backup
-      community.docker.docker_compose_v2_exec:
-        project_src: "{{ app_directory }}"
-        service: db
-        command: >-
-          sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" | gzip > /backups/pharmaviyum_{{ ansible_date_time.iso8601_basic_short }}.sql.gz'
+    - name: Create compressed PostgreSQL backup on host
+      ansible.builtin.shell: >-
+        docker compose
+        -f "{{ app_directory }}/docker-compose.yml"
+        exec -T db
+        sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+        | gzip >
+        "{{ app_directory }}/backups/pharmaviyum_{{ ansible_date_time.iso8601_basic_short }}.sql.gz"
+      args:
+        executable: /bin/bash
       register: backup_result
       changed_when: true
 
