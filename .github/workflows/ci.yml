@@ -13,7 +13,7 @@ env:
   POSTGRES_PASSWORD: postgres
   POSTGRES_DB: pharmaviyum_test
   IMAGE_NAME: pharmaviyum-crm
-  IMAGE_REPOSITORY: ghcr.io/akil-ibrahim/pharmaviyum-crm
+  IMAGE_REPOSITORY: ghcr.io/ibrahimengpy/pharmaviyum-crm
 
 permissions:
   contents: read
@@ -196,4 +196,4 @@ jobs:
           cache-to: type=gha,mode=max
 
 # Render production deployment is managed by the Render production Blueprint (`render.production.yaml`).
-# CI builds immutable GHCR images for both dev and main; Render deploys the configured branch after checks pass.
+# CI publishes an immutable GHCR image only on main; Render deploys the configured branch.
