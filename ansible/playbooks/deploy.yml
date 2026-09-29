@@ -31,8 +31,6 @@
       tags: [database, infrastructure]
     - role: app-backend
       tags: [backend, application]
-    - role: nginx
-      tags: [nginx, proxy]
 
 - name: Verify deployment
   hosts: pharmacy_servers
