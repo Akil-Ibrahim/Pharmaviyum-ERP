@@ -14,7 +14,7 @@ backend_log_level: info
 postgres_version: "16"
 postgres_db: pharmaviyum
 postgres_user: app_user
-postgres_data_dir: /opt/pharmaviyum/data/postgres
+postgresql_data_dir: /opt/pharmaviyum/data/postgres
 
 redis_image: "valkey/valkey:8-alpine"
 
