@@ -176,7 +176,7 @@ class AISettings(BaseSettings):
     halal: HalalSettings = Field(default_factory=HalalSettings)
     mcp: MCPSettings = Field(default_factory=MCPSettings)
 
-    environment: Literal["development", "staging", "production"] = "development"
+    environment: Literal["development", "staging", "testing", "production"] = "development"
     log_level: str = "INFO"
     enable_telemetry: bool = True
     use_cloud_llm: bool = False
@@ -186,7 +186,7 @@ class AISettings(BaseSettings):
     @field_validator("environment")
     @classmethod
     def validate_environment(cls, v: str) -> str:
-        allowed = {"development", "staging", "production"}
+        allowed = {"development", "staging", "testing", "production"}
         if v not in allowed:
             raise ValueError(f"environment must be one of {allowed}")
         return v
