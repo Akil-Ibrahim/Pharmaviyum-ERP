@@ -26,11 +26,14 @@ from src.pharmaviyum.models.patients.patient_purchase import PatientPurchase
 from src.pharmaviyum.models.prescription import Prescription
 from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.models.product_batch import ProductBatch
+from src.pharmaviyum.models.pos_return import POSReturn, POSReturnItem
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
 from src.pharmaviyum.schemas.pos_schema import (
     POSTransactionCreate,
     POSTransactionResponse,
+    POSReturnCreate,
+    POSReturnResponse,
 )
 
 router = APIRouter(prefix="/pos", tags=["POS"])
@@ -665,4 +668,282 @@ async def void_pos_transaction(
         inventory_updated=True,
         patient_history_updated=True,
         audit_created=True,
+    )
+
+
+@router.post(
+    "/transactions/{order_id}/return",
+    response_model=POSReturnResponse,
+    status_code=201,
+)
+async def return_pos_transaction(
+    order_id: int,
+    data: POSReturnCreate,
+    db: SessionDep,
+    current_user: CurrentUser,
+    idempotency_key: str = Header(
+        ..., alias="Idempotency-Key", min_length=1, max_length=255
+    ),
+) -> POSReturnResponse:
+    """Partially return sold units without mutating the original completed sale."""
+    idempotency_key = idempotency_key.strip()
+    if not idempotency_key:
+        raise HTTPException(status_code=400, detail="Idempotency-Key is required")
+
+    request_hash = hashlib.sha256(
+        json.dumps(
+            data.model_dump(mode="json"),
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+    order = await db.scalar(select(Order).where(Order.id == order_id))
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    tenant = await require_pharmacy_tenant(order.pharmacy_id, current_user, db)
+
+    existing_return = await db.scalar(
+        select(POSReturn).where(
+            POSReturn.pharmacy_id == tenant.pharmacy_id,
+            POSReturn.idempotency_key == idempotency_key,
+        )
+    )
+    if existing_return is not None:
+        if existing_return.request_hash != request_hash:
+            raise HTTPException(
+                status_code=409,
+                detail="Idempotency key was already used with a different return payload",
+            )
+        return POSReturnResponse(
+            return_id=existing_return.id,
+            order_id=existing_return.order_id,
+            status=existing_return.status,
+            refund_method=existing_return.refund_method,
+            total_amount=float(existing_return.total_amount),
+            item_count=len(existing_return.items),
+        )
+
+    if order.status != "completed" or order.payment_status != "paid":
+        raise HTTPException(
+            status_code=409,
+            detail="Only a completed paid POS sale can be partially returned",
+        )
+
+    if data.refund_method != order.payment_method:
+        raise HTTPException(
+            status_code=409,
+            detail="Refund method must match the original payment method",
+        )
+
+    requested_item_ids = [item.order_item_id for item in data.items]
+    if len(requested_item_ids) != len(set(requested_item_ids)):
+        raise HTTPException(status_code=400, detail="Each order item may appear only once")
+
+    order_items = (
+        await db.execute(
+            select(OrderItem)
+            .where(
+                OrderItem.order_id == order.id,
+                OrderItem.id.in_(requested_item_ids),
+            )
+            .with_for_update()
+        )
+    ).scalars().all()
+    order_items_by_id = {item.id: item for item in order_items}
+    if len(order_items_by_id) != len(requested_item_ids):
+        raise HTTPException(status_code=404, detail="One or more order items were not found")
+
+    returned_rows = (
+        await db.execute(
+            select(
+                POSReturnItem.order_item_id,
+                func.coalesce(func.sum(POSReturnItem.quantity_units), 0),
+            )
+            .join(POSReturn, POSReturn.id == POSReturnItem.return_id)
+            .where(
+                POSReturn.order_id == order.id,
+                POSReturn.status == "completed",
+                POSReturnItem.order_item_id.in_(requested_item_ids),
+            )
+            .group_by(POSReturnItem.order_item_id)
+        )
+    ).all()
+    returned_by_item = {int(row[0]): int(row[1]) for row in returned_rows}
+
+    for requested in data.items:
+        order_item = order_items_by_id[requested.order_item_id]
+        already_returned = returned_by_item.get(order_item.id, 0)
+        remaining = order_item.quantity_units - already_returned
+        if requested.quantity_units > remaining:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Return quantity for order item {order_item.id} exceeds "
+                    f"remaining quantity ({remaining})"
+                ),
+            )
+
+    now = datetime.utcnow()
+    active_shift = None
+    if order.cash_shift_id is not None:
+        active_shift = await db.scalar(
+            select(CashShift).where(CashShift.id == order.cash_shift_id)
+        )
+
+    return_record = POSReturn(
+        pharmacy_id=tenant.pharmacy_id,
+        order_id=order.id,
+        patient_id=order.patient_id,
+        cash_shift_id=order.cash_shift_id,
+        actor_id=current_user.id,
+        status="completed",
+        reason=data.reason,
+        refund_method=data.refund_method,
+        total_amount=0.0,
+        idempotency_key=idempotency_key,
+        request_hash=request_hash,
+        created_at=now,
+        completed_at=now,
+    )
+    db.add(return_record)
+    await db.flush()
+
+    total_refund = 0.0
+    for requested in data.items:
+        order_item = order_items_by_id[requested.order_item_id]
+        inventory = await db.scalar(
+            select(Inventory)
+            .where(
+                Inventory.pharmacy_id == tenant.pharmacy_id,
+                Inventory.product_id == order_item.product_id,
+                Inventory.batch_id == order_item.batch_id,
+            )
+            .with_for_update()
+        )
+        if inventory is None:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Inventory record for returned order item {order_item.id} no longer exists",
+            )
+
+        batch = (
+            await db.get(ProductBatch, order_item.batch_id, with_for_update=True)
+            if order_item.batch_id is not None
+            else None
+        )
+        inventory.quantity += requested.quantity_units
+        if batch is not None:
+            batch.available_quantity += requested.quantity_units
+
+        amount = round(order_item.unit_price * requested.quantity_units, 2)
+        total_refund = round(total_refund + amount, 2)
+        db.add(
+            POSReturnItem(
+                return_id=return_record.id,
+                order_item_id=order_item.id,
+                product_id=order_item.product_id,
+                batch_id=order_item.batch_id,
+                quantity_units=requested.quantity_units,
+                unit_price=order_item.unit_price,
+                amount=amount,
+            )
+        )
+        db.add(
+            InventoryTransaction(
+                pharmacy_id=tenant.pharmacy_id,
+                inventory_id=inventory.id,
+                product_id=order_item.product_id,
+                batch_id=order_item.batch_id,
+                order_id=order.id,
+                transaction_type="return",
+                quantity_delta=requested.quantity_units,
+                quantity_after=inventory.quantity,
+                actor_id=current_user.id,
+                created_at=now,
+            )
+        )
+        db.add(
+            PatientPurchase(
+                patient_id=order.patient_id,
+                batch_id=order_item.batch_id,
+                product_id=order_item.product_id,
+                receipt_number=f"{order.receipt_number or order.id}-RET-{return_record.id}",
+                category="pos_return",
+                quantity=-requested.quantity_units,
+                dispensed_packs=0,
+                dispensed_blisters=0,
+                dispensed_units=-requested.quantity_units,
+                unit_price=order_item.unit_price,
+                prescription_required=False,
+                purchased_at=now,
+            )
+        )
+
+    return_record.total_amount = total_refund
+    if active_shift is not None:
+        db.add(
+            CashTransaction(
+                cash_shift_id=active_shift.id,
+                pharmacy_id=tenant.pharmacy_id,
+                order_id=order.id,
+                actor_id=current_user.id,
+                transaction_type="refund",
+                payment_method=data.refund_method,
+                amount=-total_refund,
+                idempotency_key=f"return:{return_record.id}",
+                created_at=now,
+            )
+        )
+
+    db.add(
+        AuditLog(
+            actor_id=current_user.id,
+            actor_type="user",
+            action="return",
+            entity="order",
+            entity_id=order.id,
+            changes={
+                "pharmacy_id": tenant.pharmacy_id,
+                "return_id": return_record.id,
+                "reason": data.reason,
+                "total_refund": total_refund,
+                "item_count": len(data.items),
+            },
+        )
+    )
+
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        existing_return = await db.scalar(
+            select(POSReturn).where(
+                POSReturn.pharmacy_id == tenant.pharmacy_id,
+                POSReturn.idempotency_key == idempotency_key,
+            )
+        )
+        if existing_return is None:
+            raise
+        if existing_return.request_hash != request_hash:
+            raise HTTPException(
+                status_code=409,
+                detail="Idempotency key was already used with a different return payload",
+            )
+        return POSReturnResponse(
+            return_id=existing_return.id,
+            order_id=existing_return.order_id,
+            status=existing_return.status,
+            refund_method=existing_return.refund_method,
+            total_amount=float(existing_return.total_amount),
+            item_count=len(existing_return.items),
+        )
+
+    return POSReturnResponse(
+        return_id=return_record.id,
+        order_id=order.id,
+        status=return_record.status,
+        refund_method=return_record.refund_method,
+        total_amount=total_refund,
+        item_count=len(data.items),
     )
