@@ -1,33 +1,125 @@
 <p align="center">
-  <img src="assets/pharmaviyum.png" alt="Pharmaviyum CRM Banner" width="100%">
+  <img src="assets/pharmaviyum.png" alt="Pharmaviyum Pharmacy ERP/CRM" width="100%">
 </p>
 
-# Pharmaviyum CRM
+# Pharmaviyum — Pharmacy ERP/CRM
 
-![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.14.7-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue) ![React](https://img.shields.io/badge/React-19.3-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.x-646CFF)
+![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.14.7-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.142.2-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue) ![React](https://img.shields.io/badge/React-19.3-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.x-646CFF)
 
-> AI-powered CRM platform for pharmacies, designed to complement existing ERP systems with client-oriented workflows, order handling, analytics, and AI-assisted knowledge retrieval.
+> Pharmacy ERP/CRM platform with Mortarium AI for pharmacy operations, workflow, inventory, procurement, POS, and intelligent decision support.
 
 ## Overview
 
-Pharmaviyum CRM is a modular pharmacy CRM platform built around a FastAPI backend, a React 19 frontend, PostgreSQL with pgvector, Redis, and an AI/RAG layer.
+**Pharmaviyum** is a pharmacy-focused ERP/CRM platform with an integrated AI layer, **Mortarium**.
 
-The system is designed to centralize pharmacy workflows and client interactions without replacing the pharmacy's core ERP. The AI layer provides application-level orchestration, retrieval-augmented generation (RAG), dialogue memory, guardrails, tool access, and observability.
+The project evolved from a pharmacy CRM with an AI layer into a broader pharmacy ERP/CRM foundation covering operational workflows such as patients, prescriptions, products, POS, procurement, suppliers, receiving, inventory, batches, expiry control, FEFO dispensing, stock transfers, and auditability.
+
+The system is designed around real pharmacy workflows and can complement existing pharmacy ERP environments during gradual adoption rather than requiring an immediate replacement of existing systems.
 
 The repository is currently developed and reviewed through the `dev` branch.
 
-## Demo / NDA Notice
+## Core Pharmacy Workflow
 
-This repository is intended for technical evaluation and architectural review.
+Pharmaviyum is organized around connected pharmacy operations:
 
-- Demo data is synthetic.
-- No real client data is included.
-- Proprietary production integrations and business logic are not exposed here.
-- Access and redistribution are subject to the applicable NDA and author permission.
+```text
+Patients / Prescriptions
+        |
+        v
+Products / Drug Reference
+        |
+        v
+POS / Orders / Dispensing
+        |
+        v
+Inventory / Batches / FEFO
+        |
+        +------------------+
+        |                  |
+        v                  v
+Procurement          Stock Transfers
+        |                  |
+        v                  v
+Suppliers / Receiving  Pharmacy Network
+        |
+        v
+Expiry / Quarantine / Audit
+```
 
-### Legal Notice
+The domain is designed to keep pharmacy business processes connected instead of treating CRM, inventory, procurement, and POS as isolated features.
 
-This project and its contents are protected by applicable confidentiality and NDA obligations. The repository must not be copied, redistributed, or used outside the permitted evaluation scope without explicit written permission from the author.
+## Core Capabilities
+
+### Pharmacy Operations
+
+- Patient and customer workflows
+- Prescription and dispensing workflows
+- POS and order processing
+- Patient purchase history
+- Pharmacy and tenant context
+- Audit logging and transaction traceability
+
+### Inventory Management
+
+- Product and batch management
+- FEFO-aware stock handling
+- Inventory transactions
+- Expiry monitoring and control
+- Expired-stock quarantine
+- Storage locations
+- Temperature logging
+- Stock transfers between pharmacies
+
+### Procurement & Supply
+
+- Suppliers and supplier products
+- Purchase orders
+- Goods receiving
+- Batch-aware inventory receiving
+- Defectura / stock replenishment workflows
+- Procurement-to-inventory traceability
+
+### Product & Drug Reference
+
+Pharmaviyum separates the international drug reference layer from local pharmacy products.
+
+The intended relationship is:
+
+```text
+Drug Reference / INN / ATC
+            |
+            v
+     Medicinal Products
+            |
+            v
+     Local Products
+            |
+            v
+      Batches / FEFO / POS
+```
+
+Searching by an active ingredient or INN, such as **Omeprazole**, can provide a reference product and related generic products without mixing the reference/original and generic concepts into a single product record.
+
+### Mortarium AI
+
+**Mortarium** is the AI layer of Pharmaviyum.
+
+It is designed to work with authorized pharmacy application context rather than functioning as a generic chatbot.
+
+Current architectural areas include:
+
+- Retrieval-Augmented Generation (RAG)
+- Pharmacy-scoped retrieval
+- Source-aware answers and citations
+- Dialogue and conversation context
+- Guardrails and validation
+- MCP tools and resources
+- LangGraph orchestration
+- AI-assisted analytics and forecasting
+- Application observability
+- Access-controlled AI workflows
+
+The pharmacist remains the professional decision-maker. AI output is treated as decision support, not as an authoritative replacement for professional judgment.
 
 ## Architecture
 
@@ -40,49 +132,37 @@ This project and its contents are protected by applicable confidentiality and ND
                                     v
                          +----------------------+
                          |     FastAPI API      |
-                         |  Auth / Tenant / API |
+                         | Auth / Tenant / API |
                          +----------+-----------+
                                     |
              +----------------------+----------------------+
              |                      |                      |
              v                      v                      v
       +-------------+        +-------------+        +-------------+
-      | PostgreSQL  |        |    Redis    |        |  AI / RAG   |
-      | + pgvector  |        | cache/state |        | Agent/MCP    |
-      +-------------+        +-------------+        +------+------+ 
-                                                             |
-                                                     +-------+-------+
-                                                     | Ollama / LLM |
-                                                     +---------------+
+      | PostgreSQL  |        | Valkey/Redis |       | Mortarium   |
+      | + pgvector  |        | cache/state |        | AI / RAG    |
+      +-------------+        +-------------+        +------+------+
+                                                           |
+                                                  +--------+--------+
+                                                  | LLM / AI Tools  |
+                                                  +-----------------+
 
-                         Background ingestion
+                         Background processing
                                   |
                                   v
                            Celery worker
 ```
 
-The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is integrated into the backend and the development Docker Compose stack runs the API, PostgreSQL/pgvector, Redis, Ollama, and Celery ingestion worker.
+The main backend lives under `src/pharmaviyum`.
 
-## Core Capabilities
-
-- Pharmacy CRM workflows and client-oriented operations
-- User, patient, product, order, and audit-oriented domain functionality
-- Authentication and tenant/pharmacy context
-- FastAPI REST API with OpenAPI documentation
-- AI-assisted queries and streaming responses
-- Retrieval-augmented generation over application documents
-- Tenant-safe document retrieval and source citations
-- Dialogue memory, guardrails, caching, and model routing
-- MCP tool/resource integration
-- Background document ingestion through Celery
-- Application metrics and optional distributed tracing
+The application combines a FastAPI backend, PostgreSQL/pgvector, Redis-compatible caching/state infrastructure, a React frontend, background processing, and the Mortarium AI/RAG layer.
 
 ## Technology Stack
 
 ### Backend
 
 - Python 3.14.7
-- FastAPI 0.141.1
+- FastAPI 0.142.2
 - Uvicorn
 - Pydantic / Pydantic Settings
 - SQLAlchemy 2.0
@@ -94,43 +174,44 @@ The main backend lives under `src/pharmaviyum`. The AI/RAG functionality is inte
 
 - PostgreSQL 16
 - pgvector
-- Redis 7
+- Valkey / Redis-compatible infrastructure
 - Docker / Docker Compose
-- Ollama for local LLM execution
+- Celery
 
 ### AI / RAG
 
 - LangGraph
 - LangChain
-- LangChain Ollama integration
-- Ollama / configured LLM provider
-- PostgreSQL + pgvector for vector retrieval
-- MCP JSON-RPC tool layer
-- OpenTelemetry instrumentation
+- PostgreSQL + pgvector
+- MCP JSON-RPC tool/resource layer
+- OpenTelemetry
+- Configured LLM provider(s)
 
 ### Frontend
 
-- React 19.3
-- React DOM 19.3
-- TypeScript 6
-- Vite 8
-- TanStack Query 5
-- TanStack Router 1.x
-- Axios 1.x
-- Vitest 5
-- Playwright 1.x
+- React
+- TypeScript
+- Vite
+- TanStack Query
+- TanStack Router
+- Axios
+- Vitest
+- Playwright
 
-Dependency source of truth:
+### Dependency Source of Truth
 
-- Python: `pyproject.toml` and generated `uv.lock`
-- Compatibility installation: `requirements.txt`
-- Frontend: `frontend/package.json` and Bun lockfile when present
+Python dependency definitions are maintained in:
 
-## AI / RAG
+- `pyproject.toml`
+- `uv.lock`
+
+The lockfile is used for reproducible CI/development installation. Dependency changes should be made through the project configuration and lockfile rather than maintaining a second authoritative dependency list.
+
+## AI / RAG Architecture
 
 The AI layer is implemented under `src/pharmaviyum/ai` and exposed through the FastAPI application.
 
-The current RAG pipeline follows this flow:
+The RAG pipeline follows the general flow:
 
 ```text
 Query
@@ -145,13 +226,14 @@ Query
 Key design properties include:
 
 - retrieval scoped to the authenticated pharmacy/tenant context;
+- patient-specific access controls where applicable;
 - country and language carried through query context;
 - retrieved documents treated as untrusted input before generation;
 - stable source identifiers for citations;
-- explicit checkpoint/thread scope derived from authenticated context;
+- explicit conversation/checkpoint scope;
 - low-cardinality observability labels.
 
-The repository's detailed AI architecture is documented in [`docs/ai_architecture.md`](docs/ai_architecture.md).
+Detailed AI architecture is documented in [`docs/ai_architecture.md`](docs/ai_architecture.md).
 
 ## Project Structure
 
@@ -159,7 +241,7 @@ The repository's detailed AI architecture is documented in [`docs/ai_architectur
 .
 ├── src/pharmaviyum/       # Main FastAPI backend
 │   ├── api/               # API routes
-│   ├── ai/                # AI, RAG and MCP
+│   ├── ai/                # Mortarium AI, RAG and MCP
 │   ├── core/              # Core application infrastructure
 │   ├── domain/            # Domain models and business concepts
 │   └── ...
@@ -168,8 +250,9 @@ The repository's detailed AI architecture is documented in [`docs/ai_architectur
 ├── scripts/               # Development and operational scripts
 ├── docs/                  # Architecture, ADRs and engineering guides
 ├── tests/                 # Automated tests
-├── docker-compose.yml     # Main local backend/infrastructure stack
+├── docker-compose.yml     # Local development infrastructure
 ├── pyproject.toml         # Python project and tooling configuration
+├── uv.lock                # Locked Python dependencies
 └── README.md              # Project overview
 ```
 
@@ -180,7 +263,7 @@ The repository's detailed AI architecture is documented in [`docs/ai_architectur
 - Python 3.14.7
 - Docker and Docker Compose
 - Bun
-- Node.js 20.19+ or 22.12+ for the Vite 8 toolchain
+- Node.js compatible with the Vite 8 toolchain
 
 ### Backend
 
@@ -192,15 +275,7 @@ uv run alembic upgrade head
 uv run uvicorn src.pharmaviyum.main:app --reload --port 8000
 ```
 
-For compatibility environments that use pip:
-
-```bash
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn src.pharmaviyum.main:app --reload --port 8000
-```
-
-Local API documentation is available at:
+Local API documentation:
 
 - Swagger UI: `http://localhost:8000/docs`
 - OpenAPI JSON: `http://localhost:8000/openapi.json`
@@ -218,23 +293,33 @@ Frontend scripts include build, unit tests, E2E tests, linting, and OpenAPI clie
 
 ## Quality & CI
 
-The project uses automated quality gates for formatting, linting, type checking, security checks, and tests.
+GitHub Actions is the primary CI system.
 
-Python quality tooling includes:
+Quality gates cover:
+
+- Ruff
+- Black
+- isort
+- MyPy
+- pytest
+- security checks
+- build and integration verification where applicable
+
+Typical Python checks:
 
 ```bash
-ruff check .
-black --check .
-isort --check-only .
-mypy --explicit-package-bases src
-pytest
+uv run ruff check .
+uv run black --check .
+uv run isort --check-only .
+uv run mypy --explicit-package-bases src
+uv run pytest
 ```
 
-The repository's CI is treated as a required engineering gate. Changes should be kept small and focused, dependency upgrades should be validated incrementally, and documentation changes should not be mixed with unrelated implementation fixes.
+CI is treated as a required engineering gate. Changes should remain focused, dependency upgrades should be validated incrementally, and documentation changes should not be mixed with unrelated implementation changes.
 
 ## Testing
 
-Backend tests use `pytest` with automatic asyncio support:
+Backend tests:
 
 ```bash
 uv run pytest
@@ -257,55 +342,73 @@ bun run build
 
 ## Docker
 
-The primary local Docker Compose stack provides the backend and infrastructure services required for development:
+The local development stack provides the backend and supporting infrastructure required for development.
 
-- PostgreSQL 16 with pgvector
-- Redis 7
-- Ollama
+Typical services include:
+
+- PostgreSQL with pgvector
+- Redis-compatible cache/state service
 - FastAPI API
-- Celery ingestion worker
+- Celery background worker
+- AI/LLM services where configured
 
-The React frontend is developed separately from this Compose stack.
-
-Start the backend/infrastructure stack with:
+Start the development stack with:
 
 ```bash
 docker compose up --build
 ```
 
-For the frontend, use the development commands in the [Frontend](#frontend) section.
+The React frontend can be developed separately using the frontend commands above.
 
 ## Security & Data Handling
 
 Security is treated as a cross-cutting concern across the application.
 
 - Authentication and authorization are part of the application boundary.
-- Tenant/pharmacy isolation is enforced before AI retrieval and generation.
+- Pharmacy/tenant isolation is enforced before protected retrieval and AI operations.
+- Patient-specific data is subject to access control and filtering.
 - Retrieved documents are considered untrusted input.
 - AI output is not treated as an authoritative source of truth.
-- Observability avoids high-cardinality user, session, and tenant identifiers.
+- Audit and transaction records support operational traceability.
+- Observability avoids unnecessary high-cardinality identifiers.
 - Demo data is synthetic and does not represent real client records.
 
 ## Project Status
 
 **Current development branch:** `dev`
 
-The project is under active engineering development. Current work focuses on establishing a clean production-oriented architecture and maintaining CI quality gates across formatting, linting, type checking, tests, security, and deployment tooling.
+**Current stage:** Pharmacy ERP Foundation + Production Hardening
 
-The repository contains both application code and deployment infrastructure; documentation describes implemented repository behavior rather than unimplemented future infrastructure.
+The project is under active engineering development. Current work focuses on building a production-oriented pharmacy ERP/CRM foundation, connecting real pharmacy workflows, maintaining CI quality gates, and integrating the Mortarium AI layer without unnecessary architectural complexity.
+
+The development approach is **pilot-first**: where appropriate, Pharmaviyum can integrate alongside existing pharmacy ERP systems before broader replacement or migration decisions.
 
 ## Documentation
 
 Additional technical documentation is available under `docs/`, including:
 
-- [`docs/README.md`](docs/README.md) — documentation index and ownership rules
-- AI/RAG architecture and retrieval audit
+- [`docs/README.md`](docs/README.md) — documentation index
+- Pharmacy workflow documentation
+- AI/RAG architecture
 - Architecture Decision Records (ADRs)
-- Development, testing, and Codespaces guides
+- Development and testing guides
 - Operations and release runbooks
 - DevOps roadmap and engineering stages
 - WebSocket protocol documentation
-- Senior Python / AI / LLM interview and system-design material
+- AI / LLM system-design material
+
+## Demo / NDA Notice
+
+This repository is intended for technical evaluation and architectural review.
+
+- Demo data is synthetic.
+- No real client data is included.
+- Proprietary production integrations and business logic are not exposed here.
+- Access and redistribution are subject to the applicable NDA and author permission.
+
+### Legal Notice
+
+This project and its contents are protected by applicable confidentiality and NDA obligations. The repository must not be copied, redistributed, or used outside the permitted evaluation scope without explicit written permission from the author.
 
 ## License / NDA / Contact
 
