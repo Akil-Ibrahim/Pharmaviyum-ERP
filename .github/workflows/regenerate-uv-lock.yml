@@ -32,3 +32,5 @@ jobs:
           git add uv.lock
           git commit -m "chore: regenerate uv.lock"
           git push
+
+# trigger lock regeneration
