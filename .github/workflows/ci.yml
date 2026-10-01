@@ -156,7 +156,8 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-      - run: pip install -r requirements.txt
+      - run: pip install uv
+        run: uv sync --frozen
       - name: Validate golden dataset
         run: uv run pytest tests/test_evaluation.py -v -m unit
 
