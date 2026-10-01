@@ -93,5 +93,8 @@
     "vitest": "^4.1.11",
     "vitest-browser-react": "^2.3.0",
     "@tanstack/router-cli": "1.167.38"
+  },
+  "overrides": {
+    "baseline-browser-mapping": "2.11.26"
   }
 }
