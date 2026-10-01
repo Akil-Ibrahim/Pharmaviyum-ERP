@@ -11,6 +11,7 @@ import {
   Truck,
   Users,
   Wallet,
+  type LucideIcon,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/api-client'
 import { ConfigDrawer } from '@/components/config-drawer'
@@ -30,7 +31,7 @@ type PatientStatistics = {
   by_country: Record<string, number>
 }
 
-const previewDonuts = [
+const previewDonuts: { title: string; total: string; items: [string, number][] }[] = [
   {
     title: 'Sales by category',
     total: '$128K',
@@ -48,14 +49,14 @@ const previewDonuts = [
   },
 ]
 
-const pipelines = [
+const pipelines: { title: string; icon: LucideIcon; stages: [string, number][] }[] = [
   { title: 'Procurement', icon: Truck, stages: [['Ordered', 28], ['Shipped', 16], ['Received', 11], ['Stock', 8]] },
   { title: 'Prescriptions', icon: FileText, stages: [['Received', 54], ['Validated', 41], ['Dispensing', 29], ['Completed', 23]] },
   { title: 'Orders / POS', icon: Receipt, stages: [['Created', 36], ['Processing', 27], ['Paid', 22], ['Completed', 19]] },
   { title: 'Transfers', icon: Boxes, stages: [['Requested', 14], ['Approved', 10], ['In transit', 7], ['Received', 5]] },
 ]
 
-const statistics = [
+const statistics: [string, string, string, 'up' | 'down'][] = [
   ['Orders', '1,284', '+12.4%', 'up'],
   ['Prescriptions', '846', '92% completed', 'up'],
   ['Products', '4,821', '127 low stock', 'down'],
@@ -187,7 +188,7 @@ export function Dashboard() {
   )
 }
 
-function KpiCard({ label, value, detail, icon: Icon, trend }: { label: string; value: string; detail: string; icon: typeof Users; trend: string }) {
+function KpiCard({ label, value, detail, icon: Icon, trend }: { label: string; value: string; detail: string; icon: LucideIcon; trend: string }) {
   return (
     <div className='rounded-2xl border bg-card p-5 shadow-sm'>
       <div className='flex items-center justify-between'>
@@ -224,7 +225,7 @@ function DonutCard({ title, total, items }: { title: string; total: string; item
   )
 }
 
-function PipelineCard({ title, icon: Icon, stages }: { title: string; icon: typeof Truck; stages: [string, number][] }) {
+function PipelineCard({ title, icon: Icon, stages }: { title: string; icon: LucideIcon; stages: [string, number][] }) {
   return (
     <div className='rounded-2xl border bg-card p-5 shadow-sm'>
       <div className='mb-5 flex items-center gap-2'><Icon className='size-4 text-primary' /><h2 className='font-semibold'>{title}</h2></div>
