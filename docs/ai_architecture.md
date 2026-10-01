@@ -1,4 +1,4 @@
-# Pharmaviyum CRM — AI Architecture
+# Pharmaviyum ERP/CRM — AI Architecture
 
 ## Purpose
 
@@ -136,7 +136,7 @@ The repository does **not** use the removed `gateway/`, `infra/`, or `monitoring
 
 Use `.env.example` for local configuration and `.env.prod.example` as the production configuration reference.
 
-The project currently installs runtime dependencies from `requirements.txt`. `pyproject.toml` and `uv.lock` are also maintained and are the planned long-term dependency source of truth; do not introduce a new `requirements-ai.txt` file.
+The project currently installs runtime dependencies from `pyproject.toml + uv.lock`. `pyproject.toml` and `uv.lock` are also maintained and are the planned long-term dependency source of truth; do not introduce a new `requirements-ai.txt` file.
 
 ## Local startup
 
@@ -149,7 +149,7 @@ docker compose up --build
 Or start the API directly after installing dependencies:
 
 ```bash
-pip install -r requirements.txt
+uv sync --frozen
 alembic upgrade head
 uvicorn src.pharmaviyum.main:app --reload --port 8000
 ```
