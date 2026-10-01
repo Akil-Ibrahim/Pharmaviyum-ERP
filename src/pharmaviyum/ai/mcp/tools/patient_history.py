@@ -74,7 +74,7 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
             [
                 AllergyInfo(
                     allergen=a.allergen_name,
-                    type=cast(Literal["drug", "food", "environmental"], a.allergen_type),
+                    type=cast(\n                        Literal["drug", "food", "environmental"], a.allergen_type\n                    ),
                     severity=cast(Literal["mild", "moderate", "severe"], a.severity),
                     verified=a.is_verified,
                 )
