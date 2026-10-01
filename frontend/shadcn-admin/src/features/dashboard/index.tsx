@@ -3,8 +3,6 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Boxes,
-  CalendarClock,
-  ClipboardList,
   FileText,
   Pill,
   Receipt,
