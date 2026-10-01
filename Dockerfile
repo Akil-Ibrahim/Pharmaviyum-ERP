@@ -19,7 +19,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel uv
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project --no-editable --prefix /install
+RUN uv export --frozen --no-dev --no-emit-project --format requirements-txt > /tmp/requirements.txt \
+    && pip install --no-cache-dir --prefix=/install -r /tmp/requirements.txt
 
 FROM oven/bun:1 AS frontend-builder
 
