@@ -1,4 +1,4 @@
-# Environment Setup
+# Environment Setup — Pharmaviyum ERP/CRM
 
 ## 1. Local development
 
@@ -44,7 +44,7 @@ alembic/
 alembic.ini
 ```
 
-The API container runs `alembic upgrade head` during startup. To run it manually:
+The development API container runs `alembic upgrade head` before its reload server starts. Production runs migrations through Render's `preDeployCommand`. To run migrations manually:
 
 ```bash
 docker compose exec api alembic upgrade head
@@ -52,15 +52,13 @@ docker compose exec api alembic upgrade head
 
 ## 5. Production deployment
 
-Production is not started from an old `docker-compose.prod.yml` path.
+Production is not started from a `docker-compose.prod.yml` path. The hosted configuration is defined by `render.yaml` and `render.production.yaml`.
 
 The canonical release chain is:
 
 ```text
 GitHub Actions
-    -> tests / security / RAG evaluation
-    -> Docker image
-    -> CI validation
+    -> lint / type checks / tests / security / RAG evaluation
     -> Render staging (`dev`)
     -> PR
     -> Render production (`main`)
@@ -101,8 +99,8 @@ docker compose logs -f celery-worker
 ./scripts/test.sh all
 
 # Lint / type-check
-ruff check src/
-mypy --explicit-package-bases src
+uv run ruff check src/
+uv run mypy --explicit-package-bases src/pharmaviyum/
 ```
 
 ## 8. Security rules
