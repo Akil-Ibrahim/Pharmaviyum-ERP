@@ -1,0 +1,29 @@
+name: Temporary Format Fix
+
+on:
+  push:
+    branches: [feat/frontend-dashboard-ui]
+    paths-ignore: [.github/workflows/temporary-format-fix.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7
+        with: {python-version: '3.14.7'}
+      - uses: astral-sh/setup-uv@v7
+      - uses: oven-sh/setup-bun@v2
+      - run: uv run black src/ tests/
+      - working-directory: frontend/shadcn-admin
+        run: bunx prettier --write .
+      - run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src frontend/shadcn-admin
+          git diff --cached --quiet && exit 0
+          git commit -m 'chore(ci): apply formatter output'
+          git push
