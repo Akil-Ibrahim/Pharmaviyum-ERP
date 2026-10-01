@@ -142,7 +142,7 @@ jobs:
         run: |
           uv run bandit -r src/pharmaviyum/ -ll \
             --exclude src/pharmaviyum/ai/mortarium_rag/ingestion/deduplication.py,src/pharmaviyum/ai/mortarium_rag/ingestion/versioning.py,src/pharmaviyum/ai/mortarium_rag/vector_store.py
-          bandit -r \
+          uv run bandit -r \
             src/pharmaviyum/ai/mortarium_rag/ingestion/deduplication.py,\
             src/pharmaviyum/ai/mortarium_rag/ingestion/versioning.py,\
             src/pharmaviyum/ai/mortarium_rag/vector_store.py \
@@ -159,8 +159,9 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-      - run: pip install uv
-        run: uv sync --frozen
+      - run: |
+          pip install uv
+          uv sync --frozen
       - name: Validate golden dataset
         run: uv run pytest tests/test_evaluation.py -v -m unit
 
