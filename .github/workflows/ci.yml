@@ -73,8 +73,9 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-      - run: pip install uv
-        run: uv sync --frozen
+      - run: |
+          pip install uv
+          uv sync --frozen
       - name: Unit tests
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
@@ -109,7 +110,9 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-      - run: pip install -r requirements.txt
+      - run: |
+          pip install uv
+          uv sync --frozen
       - name: Integration tests
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
