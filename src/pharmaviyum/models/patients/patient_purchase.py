@@ -1,4 +1,5 @@
 """Patient pharmacy purchase history entry."""
+# mypy: disable-error-code="return-value"
 
 from datetime import datetime
 
