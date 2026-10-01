@@ -42,7 +42,7 @@ FastAPI API (`src/pharmaviyum`)
 
 ## RAG
 
-The current RAG pipeline is implemented in `src/pharmaviyum/ai/rag`.
+The current RAG implementation is under `src/pharmaviyum/ai/mortarium_rag/`.
 
 ### Retrieval guarantees
 
@@ -130,7 +130,7 @@ Development Docker Compose currently provides:
 
 Production release deployment is handled through GitHub Actions for CI, then Render for staging/production deployment.
 
-The repository does **not** use the removed `gateway/`, `infra/`, or `monitoring/` scaffolding as active deployment paths.
+The repository does not use a separate Kubernetes AI deployment; Mortarium remains an application-level AI layer.
 
 ## Configuration
 
