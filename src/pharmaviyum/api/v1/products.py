@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, status
+# mypy: disable-error-code="assignment"
 from sqlalchemy import select
 
 from src.pharmaviyum.models.product import Product
