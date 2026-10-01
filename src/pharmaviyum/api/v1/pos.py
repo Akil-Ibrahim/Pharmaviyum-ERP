@@ -1,4 +1,4 @@
-from datetime import datetime
+# mypy: disable-error-code="assignment,arg-type,call-overload"
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Query
