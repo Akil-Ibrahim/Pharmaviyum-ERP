@@ -43,7 +43,7 @@ export function EntityPage({ title, description, endpoint, columns = [], status 
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [endpoint])
+  // Data loading is an external synchronization; keep the imperative fetch isolated to the effect.\n  // eslint-disable-next-line react-hooks/set-state-in-effect\n  useEffect(() => { load() }, [endpoint])
 
   const visibleColumns = columns.length ? columns : rows[0] ? Object.keys(rows[0]).slice(0, 6) : []
   const filteredRows = useMemo(() => {
