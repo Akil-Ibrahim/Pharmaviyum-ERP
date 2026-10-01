@@ -1,0 +1,36 @@
+name: Regenerate uv.lock for security updates
+
+on:
+  push:
+    branches: [feat/frontend-dashboard-ui]
+    paths:
+      - pyproject.toml
+      - .github/workflows/regenerate-uv-lock.yml
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14.7'
+      - name: Install uv
+        run: pip install uv
+      - name: Regenerate lockfile
+        run: |
+          uv lock             --upgrade-package anyio             --upgrade-package black             --upgrade-package cryptography             --upgrade-package pyasn1             --upgrade-package pypdf             --upgrade-package urllib3             --upgrade-package virtualenv
+      - name: Commit updated lockfile
+        run: |
+          if git diff --quiet -- uv.lock; then
+            echo "uv.lock is already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add uv.lock
+          git commit -m "chore(deps): regenerate uv lockfile"
+          git push
