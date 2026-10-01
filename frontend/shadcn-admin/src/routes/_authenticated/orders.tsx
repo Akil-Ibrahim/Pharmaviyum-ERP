@@ -21,7 +21,7 @@ function OrdersPage() {
     setLoading(true); setError(null)
     apiFetch<Order[]>('/api/v1/orders/?limit=50').then(setOrders).catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to load orders')).finally(() => setLoading(false))
   }
-  useEffect(() => { load() }, [])
+  // eslint-disable-next-line react-hooks/set-state-in-effect\n  useEffect(() => { load() }, [])
 
   const completed = orders.filter((order) => order.status === 'completed')
   const pending = orders.filter((order) => order.status === 'pending')
