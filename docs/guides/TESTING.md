@@ -60,12 +60,12 @@ Not every test requires an external LLM. RAG, agent, security, and integration t
 The current runtime/test dependency file used by Docker and CI is:
 
 ```bash
-pip install -r requirements.txt
+uv sync --frozen
 ```
 
 Do **not** use or create the obsolete `requirements-ai.txt` file.
 
-The repository also maintains `pyproject.toml` and `uv.lock`; dependency management is being consolidated toward that toolchain, but the current CI/Docker path still installs `requirements.txt`.
+The repository also maintains `pyproject.toml` and `uv.lock`; dependency management is being consolidated toward that toolchain, but the current CI/Docker path still installs `pyproject.toml + uv.lock`.
 
 ## Local infrastructure
 
