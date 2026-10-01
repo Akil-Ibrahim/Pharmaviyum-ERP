@@ -50,6 +50,15 @@ The development API container runs `alembic upgrade head` before its reload serv
 docker compose exec api alembic upgrade head
 ```
 
+## 5. LLM deployment profiles
+
+The LLM provider depends on the deployment target:
+
+- **Render staging/production:** Gemini cloud models. Current profile: `gemini-3.5-flash` (main), `gemini-3.5-flash-lite` (fast), `gemini-2.5-pro` (complex/evaluation), and `gemini-embedding-001` (embeddings).
+- **Ansible/on-premises:** Ollama with **Qwen3.5 9B Q4_K_M** as the default Mortarium model.
+
+Do not treat the Render Gemini configuration as the on-premises default. Ansible is responsible for the local Ollama model runtime in pharmacy installations.
+
 ## 5. Production deployment
 
 Production is not started from a `docker-compose.prod.yml` path. The hosted configuration is defined by `render.yaml` and `render.production.yaml`.
