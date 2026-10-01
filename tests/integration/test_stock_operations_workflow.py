@@ -590,8 +590,7 @@ async def test_pos_transaction_rolls_back_all_changes_on_late_failure() -> None:
         assert inventory.quantity == 5
         assert batch.available_quantity == 5
         assert (
-            await db.scalar(select(Order).where(Order.patient_id == patient.id))
-            is None
+            await db.scalar(select(Order).where(Order.patient_id == patient.id)) is None
         )
         assert (
             await db.scalar(
