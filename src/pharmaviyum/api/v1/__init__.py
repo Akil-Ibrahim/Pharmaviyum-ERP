@@ -8,9 +8,9 @@ from .ingestion import router as ingestion_router
 from .monitoring import router as monitoring_router
 from .orders import router as orders_router
 from .patient_purchases import router as patient_purchases_router
-from .procurement import router as procurement_router
-from .pos import router as pos_router
 from .pharmacy_entities import router as pharmacy_entities_router
+from .pos import router as pos_router
+from .procurement import router as procurement_router
 from .products import router as products_router
 from .users import router as users_router
 

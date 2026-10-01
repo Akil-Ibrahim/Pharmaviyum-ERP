@@ -1,6 +1,8 @@
 """Persistent replenishment/defectura recommendations."""
 from datetime import datetime
+
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+
 from src.pharmaviyum.db.base import Base
 
 class DefecturaItem(Base):

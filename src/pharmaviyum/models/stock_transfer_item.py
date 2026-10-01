@@ -1,6 +1,8 @@
 """Batch-aware stock transfer lines."""
+
 from sqlalchemy import Column, ForeignKey, Integer
 from sqlalchemy.orm import relationship
+
 from src.pharmaviyum.db.base import Base
 
 class StockTransferItem(Base):

@@ -1,7 +1,9 @@
 """Goods receiving documents and their accounting status."""
 from datetime import datetime
+
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
+
 from src.pharmaviyum.db.base import Base
 
 class GoodsReceipt(Base):

@@ -1,6 +1,8 @@
 """Recorded temperature observations for pharmacy storage areas."""
 from datetime import datetime
+
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
+
 from src.pharmaviyum.db.base import Base
 
 class TemperatureLog(Base):

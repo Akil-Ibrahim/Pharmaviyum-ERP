@@ -1,7 +1,9 @@
 """Received product batch and quantity details."""
 from datetime import date
+
 from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
+
 from src.pharmaviyum.db.base import Base
 
 class GoodsReceiptItem(Base):

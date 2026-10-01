@@ -1,5 +1,7 @@
 from sqlalchemy import Column, Float, ForeignKey, Integer
+
 from sqlalchemy.orm import relationship
+
 from src.pharmaviyum.db.base import Base
 
 class OrderItem(Base):

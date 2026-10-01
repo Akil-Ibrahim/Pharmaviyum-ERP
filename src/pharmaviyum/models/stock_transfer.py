@@ -1,7 +1,9 @@
 """Inter-location stock transfer documents."""
 from datetime import datetime
+
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
+
 from src.pharmaviyum.db.base import Base
 
 class StockTransfer(Base):

@@ -5,10 +5,6 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import or_, select
 
 from src.pharmaviyum.models.audit_log import AuditLog
-from src.pharmaviyum.services.expired_inventory import (
-    list_expired_inventory,
-    quarantine_expired_inventory,
-)
 from src.pharmaviyum.models.dispensing import Dispensing
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.inventory_transaction import InventoryTransaction
@@ -24,6 +20,10 @@ from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
 from src.pharmaviyum.schemas.pos_schema import (
     POSTransactionCreate,
     POSTransactionResponse,
+)
+from src.pharmaviyum.services.expired_inventory import (
+    list_expired_inventory,
+    quarantine_expired_inventory,
 )
 
 router = APIRouter(prefix="/pos", tags=["POS"])
