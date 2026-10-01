@@ -1,4 +1,4 @@
-# DevOps & Production Engineering
+# DevOps & Production Engineering — Pharmaviyum ERP/CRM
 
 ## Purpose
 
@@ -13,15 +13,13 @@ The current delivery chain is:
 ```text
 GitHub Actions
     -> tests / lint / type checks / security / RAG evaluation
-    -> immutable Docker image
-    -> GHCR
     -> Render staging (`dev`)
     -> Render production (`main`)
 ```
 
-The current repository also contains an opt-in monitoring Compose stack for controlled deployments. Nginx/edge infrastructure, OpenTelemetry Collector, managed data services and multi-node orchestration are target capabilities, not assumptions about the current base deployment.
+The current repositorysitory also contains an opt-in monitoring Compose stack for controlled deployments. Nginx/edge infrastructure, OpenTelemetry Collector, managed data services and multi-node orchestration are target capabilities, not assumptions about the current base deployment.
 
-CI builds images tagged by commit SHA and publishes SBOM and provenance metadata. The release workflow deploys an immutable image to the staging Compose host and runs the migration container once before starting the API.
+CI builds images tagged by commit SHA and publishes SBOM and provenance metadata. Render owns hosted deployment from the configured branches. GitHub Actions remains the CI quality gate; do not describe a separate staging Compose-host release workflow unless it is actually implemented.
 
 ## Target production principles
 
@@ -186,7 +184,7 @@ Never place credentials in repository files, Docker images or build logs.
 
 ### Stage 7 — CI/CD & Release Engineering
 
-Keep the existing GitHub Actions → GHCR → Ansible flow and make releases safer.
+Keep GitHub Actions as the CI gate and Render Blueprints as the hosted deployment contract. Ansible remains a future/on-premises deployment capability, not the current hosted release path.
 
 Required capabilities:
 
