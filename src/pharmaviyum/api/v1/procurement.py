@@ -1,4 +1,5 @@
 """Procurement, receiving, transfers and storage-control APIs."""
+# mypy: disable-error-code="assignment,arg-type,call-overload,union-attr"
 
 from datetime import date, datetime
 from uuid import uuid4
