@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the production engineering roadmap for Pharmaviyum CRM. The target is a reliable, observable and secure platform for approximately 100 pharmacies with high visitor traffic and an AI/LLM workload.
+This document defines the production engineering roadmap for Pharmaviyum ERP/CRM. The target is a reliable, observable and secure platform for approximately 100 pharmacies with high visitor traffic and an AI/LLM workload.
 
 The project deliberately evolves the existing deployment model instead of introducing infrastructure for its own sake.
 
@@ -337,4 +337,4 @@ The exact topology remains subject to capacity measurements and deployment const
 - `render.yaml` / `render.production.yaml` — Render staging and production topology.
 - `docker-compose.monitoring.yml` — opt-in Prometheus/Grafana monitoring stack.
 - `.github/workflows/ci.yml` — CI quality, security, evaluation and image build gates.
-- `.github/workflows/release.yml` — staging deployment workflow.
+- Render Blueprints (`render.yaml`, `render.production.yaml`) — staging deployment workflow.
