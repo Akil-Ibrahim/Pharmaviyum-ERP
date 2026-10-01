@@ -13,7 +13,7 @@ The synthetic business model is:
 - approximately 2–4 staff active at a time per pharmacy;
 - approximately 120 customer visits per pharmacy per day on the working baseline;
 - mixed global, Southeast Asian/local and generic medicines plus medical and related goods;
-- ERP handles operational transactions, while Pharmaviyum CRM handles customer, staff and relationship workflows;
+- ERP handles operational transactions, while Pharmaviyum ERP/CRM handles customer, staff and relationship workflows;
 - AI is a smaller but latency-sensitive part of the workload.
 
 The customer mix is represented conceptually as prescription medicines, OTC medicines, medical goods, related products, and vitamins/supplements. The workload also needs to evolve toward doctor and medical-representative workflows as those API contracts become available.
