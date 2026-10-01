@@ -1,4 +1,4 @@
-# Production Engineering Standard
+# Production Engineering Standard — Pharmaviyum ERP/CRM
 
 This document defines the minimum operational contract for Pharmaviyum CRM. It is intentionally stricter than a development-only workflow.
 
@@ -79,4 +79,4 @@ For a production incident:
 
 Changes to production behavior must be made through reviewed commits/PRs. Direct edits to production infrastructure are emergency-only.
 
-The `dev` branch is the current implementation branch. Production deployment remains intentionally gated until the hosting target, secret management, immutable image registry, migration runner, and rollback mechanism are configured.
+The `dev` branch is the staging/implementation branch. Production uses `main` and Render's production Blueprint. Production readiness still depends on verified secrets, migrations, health checks, backups/restore, observability and rollback.
