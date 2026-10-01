@@ -2,7 +2,7 @@
 
 ## Purpose
 
-These guidelines define how AI coding assistants should reason about and modify Pharmaviyum CRM.
+These guidelines define how AI coding assistants should reason about and modify Pharmaviyum ERP/CRM.
 
 ## Engineering principles
 
