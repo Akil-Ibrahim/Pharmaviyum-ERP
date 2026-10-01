@@ -27,8 +27,8 @@ export const sidebarData: SidebarData = {
       title: 'Operations',
       items: [
         { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+        { title: 'POS', url: '/pos', icon: ClipboardList },
         { title: 'Patients', url: '/patients', icon: Users },
-        { title: 'Orders', url: '/orders', icon: ClipboardList },
         { title: 'Prescriptions', url: '/prescriptions', icon: FileText },
       ],
     },
