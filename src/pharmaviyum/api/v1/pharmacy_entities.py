@@ -1,6 +1,7 @@
 """Authenticated API for the pharmacy domain entities."""
 
-from datetime import datetime
+import calendar
+from datetime import date, datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -81,6 +82,54 @@ class ERPEventIn(BaseModel):
 
 class EntityOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
+
+class BatchOut(EntityOut):
+    id: int
+    product_id: int
+    batch_number: str
+    expiry_date: date
+    received_quantity: int
+    available_quantity: int
+    barcode: str | None
+    days_to_expiry: int
+    expiry_status: str
+    expiry_alert: str
+
+
+EXPIRY_CRITICAL_DAYS = 30
+EXPIRY_WARNING_DAYS = 90
+EXPIRY_ALERT_MONTHS = (12, 9, 3)
+
+
+def _add_months(value: date, months: int) -> date:
+    month_index = value.month - 1 + months
+    year = value.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(value.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def _batch_expiry_status(
+    expiry_date: date, today: date | None = None
+) -> tuple[int, str]:
+    current_date = today or date.today()
+    days_to_expiry = (expiry_date - current_date).days
+    if days_to_expiry <= EXPIRY_CRITICAL_DAYS:
+        return days_to_expiry, "red"
+    if days_to_expiry <= EXPIRY_WARNING_DAYS:
+        return days_to_expiry, "yellow"
+    return days_to_expiry, "green"
+
+
+def _batch_expiry_alert(expiry_date: date, today: date | None = None) -> str:
+    current_date = today or date.today()
+    if expiry_date < current_date:
+        return "expired"
+    for months in EXPIRY_ALERT_MONTHS[::-1]:
+        if expiry_date <= _add_months(current_date, months):
+            return f"{months}_months"
+    return "none"
 
 
 async def _list(session: AsyncSession, model: type[Any]) -> list[Any]:
@@ -255,14 +304,41 @@ async def list_batches(
     _: CurrentSuperuser,
     session: SessionDep,
     product_id: int | None = Query(default=None, gt=0),
-) -> list[ProductBatch]:
+    expiry_status: str | None = Query(default=None, pattern="^(red|yellow|green)$"),
+    expiry_alert: str | None = Query(
+        default=None, pattern="^(expired|3_months|9_months|12_months|none)$"
+    ),
+) -> list[BatchOut]:
     # ProductBatch currently has no pharmacy_id. Keep operational batch quantities
     # fail-closed until batch ownership is modeled explicitly.
     query = select(ProductBatch)
     if product_id is not None:
         query = query.where(ProductBatch.product_id == product_id)
     result = await session.execute(query.order_by(ProductBatch.id.desc()))
-    return list(result.scalars().all())
+    batches = list(result.scalars().all())
+    response: list[BatchOut] = []
+    for batch in batches:
+        days_to_expiry, expiry_status_value = _batch_expiry_status(batch.expiry_date)
+        alert = _batch_expiry_alert(batch.expiry_date)
+        if expiry_status is not None and expiry_status_value != expiry_status:
+            continue
+        if expiry_alert is not None and alert != expiry_alert:
+            continue
+        response.append(
+            BatchOut(
+                id=batch.id,
+                product_id=batch.product_id,
+                batch_number=batch.batch_number,
+                expiry_date=batch.expiry_date,
+                received_quantity=batch.received_quantity,
+                available_quantity=batch.available_quantity,
+                barcode=batch.barcode,
+                days_to_expiry=days_to_expiry,
+                expiry_status=expiry_status_value,
+                expiry_alert=alert,
+            )
+        )
+    return response
 
 
 @router.get("/prescriptions", response_model=None)
