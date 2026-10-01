@@ -1,6 +1,6 @@
-# RAG Architecture Audit
+# Mortarium RAG Architecture Audit
 
-Date: 2026-09-16  
+Date: 2026-10-01  
 Branch: `dev`
 
 ## Target runtime
