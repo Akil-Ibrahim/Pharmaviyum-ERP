@@ -35,7 +35,7 @@ dependencies = [
 
     # Cloud / security
     "boto3==1.40.30",
-    "PyJWT==2.14.0",
+    "PyJWT==2.15.0",
     "passlib[bcrypt]==1.7.4",
     "python-multipart==0.0.32",
 
