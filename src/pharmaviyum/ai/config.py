@@ -11,9 +11,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class OllamaSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="OLLAMA_")
     base_url: str = "http://localhost:11434"
-    fast_model: str = "qwen2.5:1.5b"
-    main_model: str = "qwen2.5:7b"
-    complex_model: str = "qwen2.5:72b"
+    fast_model: str = "qwen3.5:9b"
+    main_model: str = "qwen3.5:9b"
+    complex_model: str = "qwen3.5:9b"
     embedding_model: str = "mxbai-embed-large"
     reranker_model: str = "bge-reranker-v2-m3"
     timeout_seconds: float = 60.0
