@@ -5,6 +5,7 @@ from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 
 from src.pharmaviyum.db.base import Base
 
+
 class TemperatureLog(Base):
     __tablename__ = "temperature_logs"
     id = Column(Integer, primary_key=True, index=True)
