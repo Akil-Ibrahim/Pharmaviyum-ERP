@@ -22,7 +22,7 @@ This directory contains the current engineering documentation for Pharmaviyum ER
 
 ## Documentation ownership rules
 
-- Document the implemented repository, not historical or hypothetical infrastructure.
+- Document the implemented repository, not historical or hypothetical infrastructure. The current dependency contract is `pyproject.toml` + `uv.lock`; CI uses `uv sync --frozen` and project commands use `uv run`.
 - Keep one canonical procedure for each workflow; remove duplicate command guides.
 - Architectural decisions belong in `docs/adr/`.
 - Operational procedures belong in `docs/operations/`.
