@@ -278,7 +278,7 @@ _ALLOWED_STAGES = {
     "other",
 }
 _ALLOWED_QUERY_TYPES = {"hybrid_multi_query", "other"}
-_ALLOWED_MODELS = {"qwen2.5:7b", "other"}
+_ALLOWED_MODELS = {"qwen3.5:9b", "other"}
 # Only registered production MCP tools are exposed as Prometheus labels.
 # Test/dynamic tool names intentionally collapse to `other`.
 _ALLOWED_TOOLS = {
