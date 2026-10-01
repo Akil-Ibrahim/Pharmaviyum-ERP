@@ -1,6 +1,6 @@
 # GitHub Codespaces Guide
 
-This guide describes the current Codespaces workflow for Pharmaviyum CRM.
+This guide describes the current Codespaces workflow for Pharmaviyum ERP/CRM.
 
 ## 1. Create a Codespace
 
@@ -12,7 +12,7 @@ The post-create setup runs `.devcontainer/setup.sh`.
 
 The setup script currently:
 
-1. installs Python dependencies from `requirements.txt`;
+1. installs Python dependencies from `pyproject.toml + uv.lock`;
 2. starts PostgreSQL and Redis from `docker-compose.codespaces.yml`;
 3. waits for the services;
 4. runs `alembic upgrade head`;
@@ -119,7 +119,7 @@ Codespaces is a development environment. Production deployment is handled separa
 Reinstall the current dependency set:
 
 ```bash
-python -m pip install -r requirements.txt
+python -m uv sync --frozen
 ```
 
 ### PostgreSQL or Redis is unavailable
