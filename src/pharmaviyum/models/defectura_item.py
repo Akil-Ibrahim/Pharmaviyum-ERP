@@ -5,6 +5,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 
 from src.pharmaviyum.db.base import Base
 
+
 class DefecturaItem(Base):
     __tablename__ = "defectura_items"
     id = Column(Integer, primary_key=True, index=True)

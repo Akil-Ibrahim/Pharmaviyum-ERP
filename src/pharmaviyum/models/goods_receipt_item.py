@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 
 from src.pharmaviyum.db.base import Base
 
+
 class GoodsReceiptItem(Base):
     __tablename__ = "goods_receipt_items"
     id = Column(Integer, primary_key=True, index=True)

@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 
 from src.pharmaviyum.db.base import Base
 
+
 class PurchaseOrderItem(Base):
     __tablename__ = "purchase_order_items"
     id = Column(Integer, primary_key=True, index=True)

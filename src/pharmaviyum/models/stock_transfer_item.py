@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 
 from src.pharmaviyum.db.base import Base
 
+
 class StockTransferItem(Base):
     __tablename__ = "stock_transfer_items"
     id = Column(Integer, primary_key=True, index=True)

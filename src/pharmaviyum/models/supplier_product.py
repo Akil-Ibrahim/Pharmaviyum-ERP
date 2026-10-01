@@ -1,9 +1,19 @@
 """Supplier-specific purchasing terms for a product."""
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 
 from src.pharmaviyum.db.base import Base
+
 
 class SupplierProduct(Base):
     __tablename__ = "supplier_products"

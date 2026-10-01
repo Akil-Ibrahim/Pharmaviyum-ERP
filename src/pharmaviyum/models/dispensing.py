@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 
 from src.pharmaviyum.db.base import Base
 
+
 class Dispensing(Base):
     __tablename__ = "dispensings"
     id = Column(Integer, primary_key=True, index=True)

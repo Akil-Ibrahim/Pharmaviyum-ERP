@@ -4,6 +4,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 
 from src.pharmaviyum.db.base import Base
 
+
 class InventoryTransaction(Base):
     __tablename__ = "inventory_transactions"
     id = Column(Integer, primary_key=True, index=True)
