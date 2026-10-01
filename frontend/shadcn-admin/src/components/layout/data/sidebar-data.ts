@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   MapPin,
   Package,
-  Pill,
   Settings,
   ShieldCheck,
   Truck,
@@ -33,7 +32,7 @@ export const sidebarData: SidebarData = {
         { title: 'POS', url: '/pos', icon: ClipboardList },
         { title: 'Patients', url: '/patients', icon: Users },
         { title: 'Prescriptions', url: '/prescriptions', icon: FileText },
-        { title: 'Drug Reference', url: '/drug-reference', icon: Pill },
+        { title: 'Mortarium AI', url: '/mortarium-ai', icon: Bot },
         { title: 'Products', url: '/products', icon: Package },
         { title: 'Inventory', url: '/inventory', icon: Boxes },
         { title: 'Procurement', url: '/procurement', icon: Truck },
@@ -45,25 +44,14 @@ export const sidebarData: SidebarData = {
       title: 'Pharmacy',
       items: [
         { title: 'Suppliers', url: '/suppliers', icon: Truck },
-        { title: 'Pharmacies', url: '/pharmacies', icon: MapPin },
+        { title: 'Pharmacies / Locations', url: '/pharmacies', icon: MapPin },
       ],
-    },
-    {
-      title: 'Audit & Integrations',
-      items: [
-        { title: 'Audit Logs', url: '/audit-logs', icon: ShieldCheck },
-        { title: 'ERP Systems', url: '/erp-systems', icon: Boxes },
-        { title: 'Sync Events', url: '/sync-events', icon: ClipboardList },
-      ],
-    },
-    {
-      title: 'Mortarium AI',
-      items: [{ title: 'Mortarium AI', url: '/mortarium-ai', icon: Bot }],
     },
     {
       title: 'Administration',
       items: [
-        { title: 'Users', url: '/users', icon: Users },
+        { title: 'Users / Staff', url: '/users', icon: Users },
+        { title: 'Audit Logs', url: '/audit-logs', icon: ShieldCheck },
         {
           title: 'Settings',
           icon: Settings,
