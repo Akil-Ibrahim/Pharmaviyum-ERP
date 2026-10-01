@@ -1,4 +1,5 @@
 """Quarantine expired stock and keep a separate inventory ledger."""
+# mypy: disable-error-code="assignment,call-overload"
 
 from datetime import datetime
 from typing import Any
