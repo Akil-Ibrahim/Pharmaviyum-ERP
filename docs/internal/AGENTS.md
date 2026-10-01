@@ -1,4 +1,4 @@
-# AI Agent Instructions for Pharmaviyum-CRM
+# AI Agent Instructions for Pharmaviyum-ERP-CRM
 
 ## Purpose
 
@@ -44,7 +44,7 @@ docker compose up --build
 
 Canonical validation commands are documented in `docs/guides/TESTING.md` and `docs/guides/ENVIRONMENT_SETUP.md`.
 
-The current dependency installation path used by Docker and CI is `requirements.txt`. `pyproject.toml` and `uv.lock` are maintained as the longer-term dependency-management source of truth; do not invent a separate AI requirements file.
+The current dependency installation path used by Docker and CI is `pyproject.toml + uv.lock`. `pyproject.toml` and `uv.lock` are maintained as the longer-term dependency-management source of truth; do not invent a separate AI requirements file.
 
 ## Documentation rules
 
