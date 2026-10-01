@@ -22,6 +22,10 @@
 - Database migrations: Render `preDeployCommand`
 - Demo seed data: disabled.
 
+## LLM deployment profiles
+
+Render staging and production use the configured Gemini cloud profile. Ansible/on-premises installations use Ollama with Qwen3.5 9B Q4_K_M as the default Mortarium model. These are separate deployment profiles and should not be conflated.
+
 ## Release flow
 
 1. Implement and validate changes on `dev`.
