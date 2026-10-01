@@ -198,5 +198,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+# CI policy: dev and main run the same validation pipeline; only main publishes the immutable image. 
 # Render production deployment is managed by the Render production Blueprint (`render.production.yaml`).
 # CI builds immutable GHCR images for main; dev runs the same validation pipeline without publishing an image.
