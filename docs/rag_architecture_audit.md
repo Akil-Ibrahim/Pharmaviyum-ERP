@@ -3,15 +3,15 @@
 Date: 2026-10-01  
 Branch: `dev`
 
-## Target runtime
+## ## Target runtime
 
 `Authentication -> TenantContext -> RAG use case -> LangGraph -> Retrieve -> Grade/Rerank -> Compress -> Generate -> Guardrails -> Answer + Sources`
 
 Ingestion remains outside the query graph and is executed as a batch workflow. LangGraph is the orchestration layer, not the vector store or the whole RAG system.
 
-## Audit
+## Audit status
 
-| # | Component | Status | Current assessment |
+| # | Component | Status | Current assessment / evidence |
 |---|---|---|---|
 | 1 | Ingestion | HARDENED | Ingestion requires an authorized pharmacy tenant, stamps tenant/canonical metadata before chunking, and vector persistence fails closed. |
 | 2 | Document processing | OK | Preprocessing includes normalization, metadata extraction and optional PII redaction. |
@@ -31,9 +31,9 @@ Ingestion remains outside the query graph and is executed as a batch workflow. L
 | 16 | Output guardrails | OK | Shared post-processing plus dosage/disclaimer enforcement is present. |
 | 17 | Observability | PARTIAL | Latency/tokens/warnings and structured logging exist; end-to-end trace/tenant/user correlation still needs to be made invariant across retrieval, LLM and MCP calls. |
 | 18 | Evaluation | PARTIAL | Golden-dataset evaluation and RAG tests exist, but retrieval/security metrics need a dedicated regression suite. |
-| 19 | Feedback loop | MISSING | No first-class answer feedback -> evaluation dataset -> retraining/re-ranking improvement loop is enforced. |
+| 19 | Feedback loop | **MISSING** | No first-class pipeline currently enforces answer feedback → evaluation dataset → retrieval/generation improvement. |
 
-## Closed priority items
+## ## Closed priority items
 
 ### P0 — security invariants
 
@@ -48,10 +48,23 @@ Ingestion remains outside the query graph and is executed as a batch workflow. L
 2. Canonical metadata is validated before persistence and carries source/version/effective-date/access semantics.
 3. Stable citation IDs survive retrieval, compression and generation prompts and are materialized in `RAGResponse.citations`.
 
-## Remaining P2 work
+## ## Remaining P2 work
 
 1. Propagate trace/user/tenant IDs through RAG, LLM, vector store and MCP as an invariant.
 2. Add retrieval metrics: Recall@K, Precision@K, MRR/NDCG.
 3. Add generation metrics: faithfulness, answer relevance, citation correctness and hallucination rate.
 4. Expand adversarial tests: cross-tenant retrieval, prompt injection in retrieved documents, unauthorized MCP tool access.
 5. Introduce a controlled feedback loop from user/pharmacist feedback into the evaluation dataset.
+
+
+## Documentation contract
+
+This audit describes the current `dev` architecture, not a claim that every planned capability is production-complete. Status labels are implementation assessments for the audited code paths:
+
+- **CLOSED** — the audited requirement has an explicit implementation invariant.
+- **HARDENED** — validation and fail-closed behavior are present for the audited area.
+- **OK** — implemented for the current scope, with no P0/P1 gap identified in this audit.
+- **PARTIAL** — useful implementation exists, but a material hardening or regression gap remains.
+- **MISSING** — the capability is not yet implemented as a first-class enforced workflow.
+
+Production rollout still requires CI, security checks, migration verification, operational readiness, and deployment-specific validation.
