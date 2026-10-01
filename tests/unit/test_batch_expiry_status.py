@@ -44,9 +44,7 @@ def test_batch_expiry_status_boundaries(days: int, expected_status: str) -> None
         (date(2027, 9, 30), "none"),
     ],
 )
-def test_batch_expiry_alert_horizons(
-    expiry_date: date, expected_alert: str
-) -> None:
+def test_batch_expiry_alert_horizons(expiry_date: date, expected_alert: str) -> None:
     today = date(2026, 9, 29)
 
     assert _batch_expiry_alert(expiry_date, today) == expected_alert
