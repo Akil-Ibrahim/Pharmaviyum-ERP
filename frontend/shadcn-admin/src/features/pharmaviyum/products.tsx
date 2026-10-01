@@ -24,7 +24,7 @@ export function Products() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [])
+  // Data loading is an external synchronization; keep the imperative fetch isolated to the effect.\n  // eslint-disable-next-line react-hooks/set-state-in-effect\n  useEffect(() => { load() }, [])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
