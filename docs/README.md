@@ -1,6 +1,6 @@
 # Documentation
 
-This directory contains the current engineering documentation for Pharmaviyum CRM.
+This directory contains the current engineering documentation for Pharmaviyum ERP/CRM.
 
 ## Start here
 
