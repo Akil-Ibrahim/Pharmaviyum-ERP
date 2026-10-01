@@ -1,4 +1,5 @@
 """Goods receiving documents and their accounting status."""
+# mypy: disable-error-code="var-annotated"
 from datetime import datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
