@@ -13,9 +13,9 @@ from __future__ import annotations
 # Note: Local models (Ollama) have $0 API cost, but we track compute equivalence
 MODEL_PRICING: dict[str, dict[str, float]] = {
     # Open-source / Local (via Ollama) - API cost is 0, but tracked for comparison
-    "qwen2.5:1.5b": {"input": 0.0, "output": 0.0},
-    "qwen2.5:7b": {"input": 0.0, "output": 0.0},
-    "qwen2.5:72b": {"input": 0.0, "output": 0.0},
+    "qwen3.5:9b": {"input": 0.0, "output": 0.0},
+    
+    
     "mxbai-embed-large": {"input": 0.0, "output": 0.0},
     # Commercial APIs (Fallback / Enterprise)
     "gpt-4o": {"input": 0.005, "output": 0.015},
@@ -30,7 +30,7 @@ def calculate_llm_cost(model_name: str, input_tokens: int, output_tokens: int) -
     Calculate estimated cost for an LLM call.
 
     Args:
-        model_name: Name of the model used (e.g., "qwen2.5:7b", "gpt-4o")
+        model_name: Name of the model used (e.g., "qwen3.5:9b", "gpt-4o")
         input_tokens: Number of prompt tokens
         output_tokens: Number of completion tokens
 
