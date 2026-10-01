@@ -113,12 +113,12 @@ The pipeline currently includes:
 4. mypy type checking;
 5. unit tests;
 6. integration tests with PostgreSQL/Redis and pgvector where required;
-7. pip-audit;
+7. uv run pip-audit;
 8. Bandit;
 9. RAG evaluation / golden-dataset checks;
 10. Docker build/publish after the required checks succeed.
 
-Do not document a separate `.github/workflows/test.yml` workflow unless it is actually added to the repository.
+The canonical CI workflow is `.github/workflows/ci.yml`; do not document CircleCI or a legacy test workflow as active infrastructure.
 
 ## Debugging
 
