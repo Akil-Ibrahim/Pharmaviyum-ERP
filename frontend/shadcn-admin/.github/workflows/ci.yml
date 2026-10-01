@@ -1,47 +1,51 @@
-name: Continuous Integration
+name: Frontend CI
 
 on:
   push:
     branches:
+      - dev
       - main
-
+    paths:
+      - 'frontend/shadcn-admin/**'
+      - '.github/workflows/**'
   pull_request:
     branches:
+      - dev
       - main
+    paths:
+      - 'frontend/shadcn-admin/**'
+      - '.github/workflows/**'
 
 jobs:
   install-lint-build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/shadcn-admin
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 20
-
-      - name: Install pnpm
-        run: npm install -g pnpm
+          bun-version: '1'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install
 
       - name: Lint the code
-        run: pnpm lint
-
-      # - name: Analyze unused files and dependencies
-      #   run: pnpm knip
+        run: bun run lint
 
       - name: Run Prettier check
-        run: pnpm format:check
+        run: bun run format:check
 
       - name: Install browsers
-        run: pnpm test:browser:install
+        run: bun run test:browser:install
 
       - name: Run tests
-        run: pnpm test
+        run: bun run test
 
       - name: Build the project
-        run: pnpm build
+        run: bun run build
