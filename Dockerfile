@@ -19,8 +19,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel uv
 
 COPY pyproject.toml uv.lock ./
-RUN uv export --frozen --no-dev --no-emit-project --format requirements-txt > /tmp/requirements.txt && \
-    pip install --no-cache-dir --prefix=/install -r /tmp/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-project --no-editable
+
+COPY src/ ./src/
+COPY alembic/ ./alembic/
+COPY scripts/ ./scripts/
+COPY alembic.ini .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-editable
 
 FROM oven/bun:1 AS frontend-builder
 
@@ -52,11 +59,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=python-builder /install /usr/local
+COPY --from=python-builder /app/.venv /app/.venv
 COPY src/ ./src/
 COPY alembic/ ./alembic/
 COPY scripts/ ./scripts/
 COPY alembic.ini .
+ENV PATH="/app/.venv/bin:$PATH"
 COPY --from=frontend-builder /frontend/dist ./static
 
 RUN groupadd --system appgroup && \
