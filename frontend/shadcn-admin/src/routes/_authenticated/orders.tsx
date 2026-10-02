@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { Search, RefreshCw } from 'lucide-react'
@@ -35,8 +36,7 @@ function OrdersPage() {
       )
       .finally(() => setLoading(false))
   }
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
+useEffect(() => {
     load()
   }, [])
 

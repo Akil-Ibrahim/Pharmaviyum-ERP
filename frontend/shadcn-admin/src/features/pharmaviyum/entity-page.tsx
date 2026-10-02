@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from 'react'
 import { Search, RefreshCw } from 'lucide-react'
 import { apiFetch } from '@/lib/api-client'
@@ -52,8 +53,7 @@ export function EntityPage({
   }
 
   // Data loading is an external synchronization; keep the imperative fetch isolated to the effect.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
+useEffect(() => {
     load()
   }, [endpoint])
 

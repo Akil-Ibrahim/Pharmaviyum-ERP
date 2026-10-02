@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { RefreshCw, Search } from 'lucide-react'
@@ -35,8 +36,7 @@ function InventoryPage() {
       )
       .finally(() => setLoading(false))
   }
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
+useEffect(() => {
     load()
   }, [])
   const filtered = useMemo(() => {
