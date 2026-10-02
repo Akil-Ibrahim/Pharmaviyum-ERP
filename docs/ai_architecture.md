@@ -98,6 +98,12 @@ It provides a JSON-RPC 2.0 server and a registry for tools/resources. MCP author
 
 MCP is an internal application component; it is not a separate top-level deployment service.
 
+### Security boundaries
+
+Mortarium does not have unrestricted database, SQL, filesystem, shell, source-code, or deployment access. MCP tools are explicitly classified as read or write operations, and write operations require explicit pharmacist/user confirmation.
+
+See [Mortarium AI Security & Execution Boundaries](MORTARIUM_SECURITY.md) for the detailed security model.
+
 ## API surface
 
 AI endpoints are implemented under `src/pharmaviyum/api/v1/ai.py`.
@@ -172,3 +178,4 @@ uvicorn src.pharmaviyum.main:app --reload --port 8000
 3. Source citations use stable chunk identifiers.
 4. Production deployment has one canonical release path.
 5. Documentation describes implemented behavior, not planned infrastructure.
+6. Mortarium operates through explicit execution boundaries and does not receive unrestricted infrastructure authority.
