@@ -68,6 +68,7 @@ class MCPClient:
         trace_id: str | None = None,
         user_id: int | None = None,
         pharmacy_id: int | None = None,
+        write_confirmation: bool = False,
     ) -> ToolExecutionResult:
         """Call an MCP tool with retry while enforcing RBAC and tenant scope."""
         start = time.perf_counter()
@@ -113,6 +114,7 @@ class MCPClient:
                         user_role=user_role,
                         user_id=user_id,
                         pharmacy_id=pharmacy_id,
+                        write_confirmation=write_confirmation,
                     ),
                     timeout=self.timeout_seconds,
                 )

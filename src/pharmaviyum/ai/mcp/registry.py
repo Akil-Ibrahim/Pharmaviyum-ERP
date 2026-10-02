@@ -109,6 +109,7 @@ class MCPToolRegistry:
         user_role: UserRole,
         user_id: int | None = None,
         pharmacy_id: int | None = None,
+        write_confirmation: bool = False,
     ) -> Any:
         """Call a registered tool with RBAC and trusted tenant context."""
         from .tool_management import (
@@ -126,6 +127,11 @@ class MCPToolRegistry:
             raise ValueError(f"Unknown tool: {name}")
 
         metadata, func = self._tools[resolved_name]
+
+        if metadata.execution_class == "write" and not write_confirmation:
+            raise PermissionError(
+                f"Explicit pharmacist/user confirmation is required for write tool '{resolved_name}'"
+            )
 
         if metadata.deprecated:
             logger.warning(
@@ -162,6 +168,7 @@ class MCPToolRegistry:
                     user_id=user_id,
                     pharmacy_id=pharmacy_id,
                     user_role=user_role,
+                    write_confirmation=write_confirmation,
                 )
             )
             try:
