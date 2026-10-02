@@ -75,9 +75,7 @@ class MCPToolRegistry:
         def decorator(func: Callable[..., Awaitable[Any]]) -> Callable:
             schema = input_schema.model_json_schema()
             validate_tool_schema(schema)
-            validate_execution_policy(
-                execution_class, requires_pharmacist_confirmation
-            )
+            validate_execution_policy(execution_class, requires_pharmacist_confirmation)
             metadata = ToolMetadata(
                 name=name,
                 description=description,

@@ -13,9 +13,19 @@ from typing import Any, Literal
 ExecutionClass = Literal["read", "write"]
 
 _FORBIDDEN_SCHEMA_FIELDS = {
-    "sql", "raw_sql", "sql_query", "query_text", "statement",
-    "shell", "shell_command", "command", "script", "code", "source_code",
-    "file_path", "filesystem_path",
+    "sql",
+    "raw_sql",
+    "sql_query",
+    "query_text",
+    "statement",
+    "shell",
+    "shell_command",
+    "command",
+    "script",
+    "code",
+    "source_code",
+    "file_path",
+    "filesystem_path",
 }
 
 

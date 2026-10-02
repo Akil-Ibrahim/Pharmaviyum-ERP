@@ -2,7 +2,19 @@ import { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 
 type Theme = 'dark' | 'light' | 'system'
-export type ThemePreset = 'default' | 'blue' | 'green' | 'red' | 'rose' | 'orange' | 'yellow' | 'violet' | 'amber' | 'purple' | 'teal' | 'cyan'
+export type ThemePreset =
+  | 'default'
+  | 'blue'
+  | 'green'
+  | 'red'
+  | 'rose'
+  | 'orange'
+  | 'yellow'
+  | 'violet'
+  | 'amber'
+  | 'purple'
+  | 'teal'
+  | 'cyan'
 type ResolvedTheme = Exclude<Theme, 'system'>
 
 const DEFAULT_THEME = 'system'

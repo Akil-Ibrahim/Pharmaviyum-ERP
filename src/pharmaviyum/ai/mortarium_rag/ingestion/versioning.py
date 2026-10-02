@@ -121,7 +121,8 @@ class DocumentVersionManager:
                 WHERE metadata->>'source' = :source
                   AND (metadata->>'pharmacy_id')::int = :pharmacy_id
                   AND metadata->>'version_status' = 'active'
-            """)
+            """
+            )
             await session.execute(
                 archive_query, {"source": source, "pharmacy_id": pharmacy_id}
             )
@@ -137,7 +138,8 @@ class DocumentVersionManager:
                 WHERE metadata->>'source' = :source
                   AND (metadata->>'pharmacy_id')::int = :pharmacy_id
                   AND (metadata->>'version_number')::int = :target_version
-            """)
+            """
+            )
             result = await session.execute(
                 restore_query,
                 {

@@ -55,9 +55,16 @@ describe('UserAuthForm', () => {
   beforeEach(() => {
     vi.stubGlobal(
       'fetch',
-      vi.fn()
+      vi
+        .fn()
         .mockResolvedValueOnce(
-          new Response(JSON.stringify({ access_token: 'mock-access-token', token_type: 'bearer' }), { status: 200 })
+          new Response(
+            JSON.stringify({
+              access_token: 'mock-access-token',
+              token_type: 'bearer',
+            }),
+            { status: 200 }
+          )
         )
         .mockResolvedValue(
           new Response(

@@ -21,7 +21,20 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 const appearanceFormSchema = z.object({
   theme: z.enum(['light', 'dark']),
-  preset: z.enum(['default', 'blue', 'green', 'red', 'rose', 'orange', 'yellow', 'violet', 'amber', 'purple', 'teal', 'cyan']),
+  preset: z.enum([
+    'default',
+    'blue',
+    'green',
+    'red',
+    'rose',
+    'orange',
+    'yellow',
+    'violet',
+    'amber',
+    'purple',
+    'teal',
+    'cyan',
+  ]),
   font: z.enum(fonts),
 })
 
@@ -164,17 +177,44 @@ export function AppearanceForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Theme preset</FormLabel>
-              <FormDescription>Choose the accent palette for the Pharmaviyum admin interface.</FormDescription>
+              <FormDescription>
+                Choose the accent palette for the Pharmaviyum admin interface.
+              </FormDescription>
               <FormMessage />
-              <RadioGroup onValueChange={field.onChange} value={field.value} className='grid max-w-2xl grid-cols-2 gap-3 pt-2 sm:grid-cols-3'>
-                {(['default','blue','green','red','rose','orange','yellow','violet','amber','purple','teal','cyan'] as const).map((value) => (
+              <RadioGroup
+                onValueChange={field.onChange}
+                value={field.value}
+                className='grid max-w-2xl grid-cols-2 gap-3 pt-2 sm:grid-cols-3'
+              >
+                {(
+                  [
+                    'default',
+                    'blue',
+                    'green',
+                    'red',
+                    'rose',
+                    'orange',
+                    'yellow',
+                    'violet',
+                    'amber',
+                    'purple',
+                    'teal',
+                    'cyan',
+                  ] as const
+                ).map((value) => (
                   <FormItem key={value}>
                     <FormLabel className='[&:has([data-state=checked])>div]:border-primary'>
-                      <FormControl><RadioGroupItem value={value} className='sr-only' /></FormControl>
+                      <FormControl>
+                        <RadioGroupItem value={value} className='sr-only' />
+                      </FormControl>
                       <div className='rounded-lg border-2 border-muted bg-card p-3 hover:border-accent'>
                         <div className='flex items-center gap-2'>
-                          <span className={`h-4 w-4 rounded-full border border-border bg-theme-${value}`} />
-                          <span className='capitalize font-normal'>{value}</span>
+                          <span
+                            className={`h-4 w-4 rounded-full border border-border bg-theme-${value}`}
+                          />
+                          <span className='font-normal capitalize'>
+                            {value}
+                          </span>
                         </div>
                       </div>
                     </FormLabel>

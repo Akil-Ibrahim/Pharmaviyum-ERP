@@ -7,7 +7,14 @@ export const Route = createFileRoute('/_authenticated/users/')({
       title='Users'
       description='Administrative user accounts, roles, and account status.'
       endpoint='/api/v1/users/'
-      columns={['id', 'username', 'email', 'is_active', 'is_superuser', 'created_at']}
+      columns={[
+        'id',
+        'username',
+        'email',
+        'is_active',
+        'is_superuser',
+        'created_at',
+      ]}
     />
   ),
 })

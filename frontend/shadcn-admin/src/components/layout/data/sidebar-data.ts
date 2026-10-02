@@ -37,7 +37,11 @@ export const sidebarData: SidebarData = {
         { title: 'Inventory', url: '/inventory', icon: Boxes },
         { title: 'Procurement', url: '/procurement', icon: Truck },
         { title: 'Transfers', url: '/transfers', icon: ArrowLeftRight },
-        { title: 'Expiry Control', url: '/expiry-control', icon: CalendarClock },
+        {
+          title: 'Expiry Control',
+          url: '/expiry-control',
+          icon: CalendarClock,
+        },
       ],
     },
     {
@@ -58,9 +62,21 @@ export const sidebarData: SidebarData = {
           items: [
             { title: 'Profile', url: '/settings', icon: UserCog },
             { title: 'Account', url: '/settings/account', icon: UserCog },
-            { title: 'Appearance', url: '/settings/appearance', icon: Settings },
-            { title: 'Notifications', url: '/settings/notifications', icon: Bell },
-            { title: 'Developer Tools', url: '/settings/developer', icon: Settings },
+            {
+              title: 'Appearance',
+              url: '/settings/appearance',
+              icon: Settings,
+            },
+            {
+              title: 'Notifications',
+              url: '/settings/notifications',
+              icon: Bell,
+            },
+            {
+              title: 'Developer Tools',
+              url: '/settings/developer',
+              icon: Settings,
+            },
           ],
         },
       ],

@@ -126,12 +126,14 @@ class PgVectorStore:
         """Vector similarity search, always tenant scoped."""
         filter_clause, filter_params = self._build_filter_clause(filters)
         async with self.session_factory() as session:
-            query_sql = text(f"""  # nosec B608: table_name and filter keys are validated
+            query_sql = text(
+                f"""  # nosec B608: table_name and filter keys are validated
                 SELECT id, document_id, content, chunk_index, chunk_type, metadata, token_count,
                        1 - (embedding <=> :query_embedding::vector) AS score
                 FROM {self.table_name} {filter_clause}
                 ORDER BY embedding <=> :query_embedding::vector LIMIT :top_k
-            """)
+            """
+            )
             result = await session.execute(
                 query_sql,
                 {
@@ -158,13 +160,15 @@ class PgVectorStore:
         """Keyword search, always tenant scoped."""
         filter_clause, filter_params = self._build_filter_clause(filters)
         async with self.session_factory() as session:
-            query_sql = text(f"""  # nosec B608: table_name and filter keys are validated
+            query_sql = text(
+                f"""  # nosec B608: table_name and filter keys are validated
                 SELECT id, document_id, content, chunk_index, chunk_type, metadata, token_count,
                        ts_rank(to_tsvector('english', content), plainto_tsquery('english', :query)) AS score
                 FROM {self.table_name} {filter_clause}
                 AND to_tsvector('english', content) @@ plainto_tsquery('english', :query)
                 ORDER BY score DESC LIMIT :top_k
-            """)
+            """
+            )
             result = await session.execute(
                 query_sql,
                 {"query": query, "top_k": top_k, **filter_params},
