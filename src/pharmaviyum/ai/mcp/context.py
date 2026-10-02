@@ -19,6 +19,7 @@ class MCPAuthorizationContext:
     user_id: int
     pharmacy_id: int
     user_role: UserRole
+    write_confirmation: bool = False
 
 
 _current_context: ContextVar[MCPAuthorizationContext | None] = ContextVar(

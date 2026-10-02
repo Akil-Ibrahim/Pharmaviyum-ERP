@@ -121,7 +121,10 @@ class MCPServer:
             uri = params.get("uri")
             if not isinstance(uri, str):
                 raise ValueError("resources/read requires a string uri")
-            # Extract kwargs from URI (simplified)
+            # Resources are protected by the same authenticated MCP boundary.
+            from .context import require_mcp_context
+
+            require_mcp_context()
             content = await resource_registry.read_resource(uri)
             return {
                 "contents": [
