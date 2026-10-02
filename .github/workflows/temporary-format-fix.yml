@@ -19,6 +19,8 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: uv run black src/ tests/
       - working-directory: frontend/shadcn-admin
+        run: bun install --no-progress
+      - working-directory: frontend/shadcn-admin
         run: bunx prettier --write .
       - run: |
           git config user.name 'github-actions[bot]'
