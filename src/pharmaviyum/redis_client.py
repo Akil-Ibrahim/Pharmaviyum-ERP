@@ -1,4 +1,4 @@
-"""
+""" 
 Redis client configuration and connection management.
 Best Practice: Use connection pooling, bounded metrics, and proper error handling.
 """
@@ -13,6 +13,7 @@ import structlog
 from redis.asyncio import ConnectionPool, Redis
 from redis.exceptions import ConnectionError, TimeoutError
 
+from src.pharmaviyum.config import settings
 from src.pharmaviyum.observability.metrics import (
     REDIS_COMMAND_DURATION,
     REDIS_COMMAND_ERRORS_TOTAL,
@@ -22,7 +23,6 @@ from src.pharmaviyum.observability.metrics import (
     REDIS_CONNECTIONS_AVAILABLE,
     REDIS_CONNECTIONS_IN_USE,
 )
-from src.pharmaviyum.config import settings
 
 logger = structlog.get_logger()
 
