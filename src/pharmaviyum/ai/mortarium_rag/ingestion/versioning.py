@@ -53,8 +53,7 @@ class DocumentVersionManager:
         """Archive previous versions within one pharmacy tenant."""
         self._require_pharmacy_id(pharmacy_id)
         async with self.session_factory() as session:
-            query = text(
-                f"""  # nosec B608: table_name is validated as a SQL identifier
+            query = text(f"""  # nosec B608: table_name is validated as a SQL identifier
                 UPDATE {self.table_name}
                 SET metadata = jsonb_set(
                     metadata,
@@ -92,8 +91,7 @@ class DocumentVersionManager:
         """Get the next version within one pharmacy tenant."""
         self._require_pharmacy_id(pharmacy_id)
         async with self.session_factory() as session:
-            query = text(
-                f"""  # nosec B608: table_name is validated as a SQL identifier
+            query = text(f"""  # nosec B608: table_name is validated as a SQL identifier
                 SELECT COALESCE(
                     MAX((metadata->>'version_number')::int),
                     0
@@ -125,8 +123,7 @@ class DocumentVersionManager:
                 WHERE metadata->>'source' = :source
                   AND (metadata->>'pharmacy_id')::int = :pharmacy_id
                   AND metadata->>'version_status' = 'active'
-            """
-            )
+            """)
             await session.execute(
                 archive_query, {"source": source, "pharmacy_id": pharmacy_id}
             )
@@ -142,8 +139,7 @@ class DocumentVersionManager:
                 WHERE metadata->>'source' = :source
                   AND (metadata->>'pharmacy_id')::int = :pharmacy_id
                   AND (metadata->>'version_number')::int = :target_version
-            """
-            )
+            """)
             result = await session.execute(
                 restore_query,
                 {
@@ -163,8 +159,7 @@ class DocumentVersionManager:
         """Get version history within one pharmacy tenant."""
         self._require_pharmacy_id(pharmacy_id)
         async with self.session_factory() as session:
-            query = text(
-                f"""  # nosec B608: table_name is validated as a SQL identifier
+            query = text(f"""  # nosec B608: table_name is validated as a SQL identifier
                 SELECT
                     (metadata->>'version_number')::int as version,
                     metadata->>'version_status' as status,
