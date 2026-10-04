@@ -46,7 +46,7 @@ dependencies = [
     # Document / RAG ingestion
     "aiofiles==24.1.0",
     "beautifulsoup4==4.14.2",
-    "pypdf==6.16.1",
+    "pypdf==6.19.0",
     "python-docx==1.2.0",
     "pytesseract==0.3.13",
     "Pillow==12.3.0",
@@ -77,7 +77,7 @@ dev = [
     "pytest-asyncio==1.4.0",
     "pytest-cov==5.0.0",
     "ruff==0.12.10",
-    "black==25.9.0",
+    "black==26.3.1",
     "isort==6.0.1",
     "mypy==1.17.1",
     "pip-audit==2.9.0",
