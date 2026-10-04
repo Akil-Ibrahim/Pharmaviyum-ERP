@@ -52,30 +52,30 @@ class PatientService:
             payload["pharmacy_id"] = pharmacy_id
         patient = Patient(**payload, full_name=f"{data.first_name} {data.last_name}")
         patient = await self.repository.create(patient)
-        patient = await self.repository.get_by_id_with_relations(
+        reloaded_patient = await self.repository.get_by_id_with_relations(
             patient.id, pharmacy_id=pharmacy_id
         )
-        if patient is None:
+        if reloaded_patient is None:
             raise RuntimeError("Created patient could not be reloaded")
-        PATIENTS_CREATED_TOTAL.labels(country=patient.country).inc()
+        PATIENTS_CREATED_TOTAL.labels(country=reloaded_patient.country).inc()
         await event_bus.emit(
             Event(
                 event_type="patient.created",
                 data={
-                    "patient_id": patient.id,
-                    "full_name": patient.full_name,
-                    "phone": patient.phone,
-                    "country": patient.country,
+                    "patient_id": reloaded_patient.id,
+                    "full_name": reloaded_patient.full_name,
+                    "phone": reloaded_patient.phone,
+                    "country": reloaded_patient.country,
                     "created_by": created_by,
                 },
             )
         )
         logger.info(
             "Created patient %s",
-            patient.id,
-            extra={"patient_id": patient.id, "created_by": created_by},
+            reloaded_patient.id,
+            extra={"patient_id": reloaded_patient.id, "created_by": created_by},
         )
-        return patient
+        return reloaded_patient
 
     async def get_patient(
         self, id: int, use_cache: bool = True, pharmacy_id: int | None = None
@@ -130,145 +130,3 @@ class PatientService:
             limit=page_size,
             pharmacy_id=pharmacy_id,
         )
-
-    async def update_patient(
-        self,
-        id: int,
-        data: PatientUpdate,
-        updated_by: Optional[str] = None,
-        pharmacy_id: int | None = None,
-    ) -> Optional[Patient]:
-        patient = await self.get_patient(id, use_cache=False, pharmacy_id=pharmacy_id)
-        if not patient:
-            return None
-        update_data = data.model_dump(exclude_unset=True)
-        if "phone" in update_data and update_data["phone"] != patient.phone:
-            existing = await self.repository.get_by_phone(
-                update_data["phone"], pharmacy_id=pharmacy_id
-            )
-            if existing and existing.id != id:
-                raise ValueError(f"Phone {update_data['phone']} already in use")
-        if (
-            "email" in update_data
-            and update_data["email"] != patient.email
-            and update_data["email"]
-        ):
-            existing = await self.repository.get_by_email(
-                update_data["email"], pharmacy_id=pharmacy_id
-            )
-            if existing and existing.id != id:
-                raise ValueError(f"Email {update_data['email']} already in use")
-        for field, value in update_data.items():
-            setattr(patient, field, value)
-        if "first_name" in update_data or "last_name" in update_data:
-            patient.full_name = f"{patient.first_name} {patient.last_name}"
-        patient = await self.repository.update(patient)
-        patient = await self.repository.get_by_id_with_relations(
-            patient.id, pharmacy_id=pharmacy_id
-        )
-        if patient is None:
-            return None
-        await self._invalidate_patient_cache(id, patient.phone, pharmacy_id)
-        await event_bus.emit(
-            Event(
-                event_type="patient.updated",
-                data={
-                    "patient_id": patient.id,
-                    "updated_fields": list(update_data.keys()),
-                    "updated_by": updated_by,
-                },
-            )
-        )
-        return patient
-
-    async def delete_patient(
-        self,
-        id: int,
-        deleted_by: Optional[str] = None,
-        hard_delete: bool = False,
-        pharmacy_id: int | None = None,
-    ) -> bool:
-        if hard_delete and not await is_feature_enabled("patient_hard_delete"):
-            hard_delete = False
-        result = (
-            await self.repository.delete(id)
-            if hard_delete
-            else await self.repository.soft_delete(id, pharmacy_id=pharmacy_id)
-        )
-        if result:
-            await self._invalidate_patient_cache(id, pharmacy_id=pharmacy_id)
-            await event_bus.emit(
-                Event(
-                    event_type="patient.deleted",
-                    data={
-                        "patient_id": id,
-                        "hard_delete": hard_delete,
-                        "deleted_by": deleted_by,
-                    },
-                )
-            )
-        return result
-
-    async def get_ai_profile(
-        self, id: int, pharmacy_id: int | None = None
-    ) -> Optional[dict]:
-        if not await is_feature_enabled("ai_patient_profiles"):
-            return None
-        cache_key = f"patient:ai_profile:{pharmacy_id or 0}:{id}"
-        cached = await cache_service.get(cache_key)
-        if cached:
-            CACHE_HITS_TOTAL.labels(cache_type="ai_profile").inc()
-            return cached
-        CACHE_MISSES_TOTAL.labels(cache_type="ai_profile").inc()
-        profile = await self.repository.get_ai_profile(id, pharmacy_id=pharmacy_id)
-        if profile:
-            await cache_service.set(cache_key, profile, ttl=self.cache_ttl)
-        return profile
-
-    async def get_statistics(self, pharmacy_id: int | None = None) -> dict:
-        filters = {"pharmacy_id": pharmacy_id} if pharmacy_id is not None else {}
-        total = await self.repository.count(**filters)
-        active = await self.repository.count(is_active=True, **filters)
-        return {
-            "total": total,
-            "active": active,
-            "inactive": total - active,
-            "total_purchase_value": await self.repository.get_total_purchase_value(
-                pharmacy_id=pharmacy_id
-            ),
-            "total_loyalty_points": await self.repository.get_total_loyalty_points(
-                pharmacy_id=pharmacy_id
-            ),
-            "by_loyalty_tier": await self.repository.get_loyalty_tiers_stats(
-                pharmacy_id=pharmacy_id
-            ),
-            "by_country": await self.repository.get_country_stats(
-                pharmacy_id=pharmacy_id
-            ),
-        }
-
-    async def record_visit(
-        self, id: int, pharmacy_id: int | None = None
-    ) -> Optional[Patient]:
-        patient = await self.repository.record_visit(id, pharmacy_id=pharmacy_id)
-        if patient:
-            await self._invalidate_patient_cache(id, patient.phone, pharmacy_id)
-            await event_bus.emit(
-                Event(
-                    event_type="patient.visit_recorded",
-                    data={"patient_id": id},
-                )
-            )
-        return patient
-
-    async def _invalidate_patient_cache(
-        self,
-        patient_id: int,
-        phone: Optional[str] = None,
-        pharmacy_id: int | None = None,
-    ) -> None:
-        scope = pharmacy_id or 0
-        await cache_service.delete(f"patient:{scope}:{patient_id}")
-        await cache_service.delete(f"patient:ai_profile:{scope}:{patient_id}")
-        if phone:
-            await cache_service.delete(f"patient:phone:{scope}:{phone}")
