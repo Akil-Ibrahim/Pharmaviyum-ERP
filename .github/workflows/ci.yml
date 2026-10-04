@@ -81,7 +81,7 @@ jobs:
           PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
           REDIS_URL: redis://localhost:6379/15
           ENVIRONMENT: testing
-        run: pytest tests/unit/ -v -m unit --cov=src/pharmaviyum --cov-report=xml --cov-report=term-missing
+        run: uv run pytest tests/unit/ -v -m unit --cov=src/pharmaviyum --cov-report=xml --cov-report=term-missing
 
   test-integration:
     name: Integration Tests
@@ -117,7 +117,7 @@ jobs:
           PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
           REDIS_URL: redis://localhost:6379/15
           ENVIRONMENT: testing
-        run: pytest tests/integration/ -v -m integration --cov=src/pharmaviyum --cov-report=xml --cov-report=term-missing
+        run: uv run pytest tests/integration/ -v -m integration --cov=src/pharmaviyum --cov-report=xml --cov-report=term-missing
 
   security:
     name: Security Scan
@@ -160,7 +160,7 @@ jobs:
       - run: pip install uv
       - run: uv sync --frozen
       - name: Validate golden dataset
-        run: pytest tests/test_evaluation.py -v -m unit
+        run: uv run pytest tests/test_evaluation.py -v -m unit
 
   build:
     name: Build and Publish Immutable Image
