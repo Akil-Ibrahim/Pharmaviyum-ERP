@@ -148,7 +148,7 @@ async def list_procurement_suppliers(
     ]
 
 
-@router.post("/supplier-products", status_code=201)
+@router.post("/supplier-products", response_model=None, status_code=201)
 async def create_supplier_product(
     data: SupplierProductCreate,
     current_user: CurrentUser,
@@ -248,7 +248,7 @@ async def get_defectura(
     return result
 
 
-@router.post("/purchase-orders", status_code=201)
+@router.post("/purchase-orders", response_model=None, status_code=201)
 async def create_purchase_order(
     data: PurchaseOrderCreate, current_user: CurrentUser, db: SessionDep
 ) -> PurchaseOrder:
@@ -338,7 +338,7 @@ async def create_purchase_order(
     return order
 
 
-@router.post("/goods-receipts", status_code=201)
+@router.post("/goods-receipts", response_model=None, status_code=201)
 async def receive_goods(
     data: GoodsReceiptCreate, current_user: CurrentUser, db: SessionDep
 ) -> GoodsReceipt:
@@ -471,7 +471,7 @@ async def receive_goods(
     return receipt
 
 
-@router.post("/transfers", status_code=201)
+@router.post("/transfers", response_model=None, status_code=201)
 async def create_stock_transfer(
     data: StockTransferCreate, current_user: CurrentUser, db: SessionDep
 ) -> StockTransfer:
@@ -608,7 +608,7 @@ async def receive_stock_transfer(
     return transfer
 
 
-@router.post("/temperature", status_code=201)
+@router.post("/temperature", response_model=None, status_code=201)
 async def record_temperature(
     data: TemperatureLogCreate, current_user: CurrentUser, db: SessionDep
 ) -> TemperatureLog:
@@ -660,7 +660,7 @@ async def record_temperature(
     return log
 
 
-@router.get("/temperature")
+@router.get("/temperature", response_model=None)
 async def list_temperature_logs(
     current_user: CurrentUser,
     db: SessionDep,
