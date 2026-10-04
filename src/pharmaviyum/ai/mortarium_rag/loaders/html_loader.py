@@ -157,7 +157,7 @@ class HTMLLoader:
         if source.startswith(("http://", "https://")):
             try:
                 await self._validate_remote_url(source)
-            except (OSError, ValueError):
+            except OSError, ValueError:
                 return False
             return True
         path = Path(source)

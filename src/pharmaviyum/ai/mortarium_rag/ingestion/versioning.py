@@ -53,8 +53,7 @@ class DocumentVersionManager:
         """Archive previous versions within one pharmacy tenant."""
         self._require_pharmacy_id(pharmacy_id)
         async with self.session_factory() as session:
-            query = text(
-                f"""  # nosec B608: table_name is validated as a SQL identifier
+            query = text(f"""  # nosec B608: table_name is validated as a SQL identifier
                 UPDATE {self.table_name}
                 SET metadata = jsonb_set(
                     metadata,
@@ -69,8 +68,7 @@ class DocumentVersionManager:
                   AND (metadata->>'version_status' IS NULL
                        OR metadata->>'version_status' = 'active')
                   AND (metadata->>'version_number')::int < :new_version
-            """
-            )  # nosec B608: table_name is validated as a SQL identifier
+            """)  # nosec B608: table_name is validated as a SQL identifier
             result = await session.execute(
                 query,
                 {
@@ -92,8 +90,7 @@ class DocumentVersionManager:
         """Get the next version within one pharmacy tenant."""
         self._require_pharmacy_id(pharmacy_id)
         async with self.session_factory() as session:
-            query = text(
-                f"""  # nosec B608: table_name is validated as a SQL identifier
+            query = text(f"""  # nosec B608: table_name is validated as a SQL identifier
                 SELECT COALESCE(
                     MAX((metadata->>'version_number')::int),
                     0
@@ -101,8 +98,7 @@ class DocumentVersionManager:
                 FROM {self.table_name}
                 WHERE metadata->>'source' = :source
                   AND (metadata->>'pharmacy_id')::int = :pharmacy_id
-            """
-            )  # nosec B608: table_name is validated as a SQL identifier
+            """)  # nosec B608: table_name is validated as a SQL identifier
             result = await session.execute(
                 query, {"source": source, "pharmacy_id": pharmacy_id}
             )
@@ -163,8 +159,7 @@ class DocumentVersionManager:
         """Get version history within one pharmacy tenant."""
         self._require_pharmacy_id(pharmacy_id)
         async with self.session_factory() as session:
-            query = text(
-                f"""  # nosec B608: table_name is validated as a SQL identifier
+            query = text(f"""  # nosec B608: table_name is validated as a SQL identifier
                 SELECT
                     (metadata->>'version_number')::int as version,
                     metadata->>'version_status' as status,
@@ -177,8 +172,7 @@ class DocumentVersionManager:
                   AND metadata->>'version_number' IS NOT NULL
                 GROUP BY version, status
                 ORDER BY version DESC
-            """
-            )  # nosec B608: table_name is validated as a SQL identifier
+            """)  # nosec B608: table_name is validated as a SQL identifier
             result = await session.execute(
                 query, {"source": source, "pharmacy_id": pharmacy_id}
             )

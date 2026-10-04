@@ -16,12 +16,9 @@ from prometheus_client import (
 from src.pharmaviyum.core.config import settings
 from src.pharmaviyum.observability.metrics import (
     AI_REQUESTS_TOTAL,
-    DB_QUERY_DURATION,
     HTTP_REQUEST_DURATION,
     HTTP_REQUESTS_IN_FLIGHT,
     HTTP_REQUESTS_TOTAL,
-    WORKER_TASK_DURATION,
-    WORKER_TASKS_TOTAL,
 )
 
 HTTP_REQUESTS_IN_PROGRESS = HTTP_REQUESTS_IN_FLIGHT
@@ -45,6 +42,18 @@ DB_ERRORS_TOTAL = Counter(
     "db_errors_total",
     "Total number of database errors",
     ["error_type"],
+)
+
+HTTP_REQUEST_SIZE = Histogram(
+    "http_request_size_bytes",
+    "HTTP request size in bytes",
+    ["method", "endpoint"],
+)
+
+HTTP_RESPONSE_SIZE = Histogram(
+    "http_response_size_bytes",
+    "HTTP response size in bytes",
+    ["method", "endpoint"],
 )
 
 
@@ -264,8 +273,6 @@ def record_http_request(
     response_size: int = 0,
 ) -> None:
     """Record HTTP request metrics"""
-    status_str = str(status)
-
     route = endpoint
     status_class = f"{status // 100}xx"
     HTTP_REQUESTS_TOTAL.labels(

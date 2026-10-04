@@ -39,13 +39,13 @@ jobs:
           pip install uv
           uv sync --frozen
       - name: Ruff diagnostics
-        run: ruff check src/ tests/
+        run: uv run ruff check src/ tests/
       - name: Black diagnostics
-        run: black --check --diff src/ tests/
+        run: uv run black --check --diff src/ tests/
       - name: isort diagnostics
-        run: isort --check-only --diff --profile black src/ tests/
+        run: uv run isort --check-only --diff --profile black src/ tests/
       - name: mypy diagnostics
-        run: mypy --explicit-package-bases src/pharmaviyum/
+        run: uv run mypy --explicit-package-bases src/pharmaviyum/
 
   test-unit:
     name: Unit Tests
@@ -80,8 +80,8 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
           PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
           REDIS_URL: redis://localhost:6379/15
-          ENVIRONMENT: testing
-        run: pytest tests/unit/ -v -m unit --cov=src/pharmaviyum --cov-report=xml --cov-report=term-missing
+          ENVIRONMENT: development
+        run: uv run pytest tests/unit/ -v -m unit --cov=src/pharmaviyum --cov-report=xml --cov-report=term-missing
 
   test-integration:
     name: Integration Tests
@@ -116,8 +116,8 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
           PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
           REDIS_URL: redis://localhost:6379/15
-          ENVIRONMENT: testing
-        run: pytest tests/integration/ -v -m integration --cov=src/pharmaviyum --cov-report=xml --cov-report=term-missing
+          ENVIRONMENT: development
+        run: uv run pytest tests/integration/ -v -m integration --cov=src/pharmaviyum --cov-report=xml --cov-report=term-missing
 
   security:
     name: Security Scan
@@ -138,9 +138,9 @@ jobs:
         run: uv run pip-audit
       - name: Bandit diagnostics
         run: |
-          bandit -r src/pharmaviyum/ -ll \
+          uv run bandit -r src/pharmaviyum/ -ll \
             --exclude src/pharmaviyum/ai/mortarium_rag/ingestion/deduplication.py,src/pharmaviyum/ai/mortarium_rag/ingestion/versioning.py,src/pharmaviyum/ai/mortarium_rag/vector_store.py
-          bandit -r \
+          uv run bandit -r \
             src/pharmaviyum/ai/mortarium_rag/ingestion/deduplication.py,\
             src/pharmaviyum/ai/mortarium_rag/ingestion/versioning.py,\
             src/pharmaviyum/ai/mortarium_rag/vector_store.py \
@@ -160,7 +160,7 @@ jobs:
       - run: pip install uv
       - run: uv sync --frozen
       - name: Validate golden dataset
-        run: pytest tests/test_evaluation.py -v -m unit
+        run: uv run pytest tests/test_evaluation.py -v -m unit
 
   build:
     name: Build and Publish Immutable Image

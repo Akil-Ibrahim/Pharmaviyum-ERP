@@ -67,7 +67,7 @@ class I18n:
         # Interpolate variables
         try:
             return translation.format(**kwargs)
-        except (KeyError, IndexError):
+        except KeyError, IndexError:
             return translation
 
     def get_locale_from_request(self, request: Request) -> str:
