@@ -42,7 +42,7 @@ class PgVectorStore:
         """Initialize pgvector extension, table, and indexes."""
         async with self.session_factory() as session:
             await session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-            create_table_sql = f"""  # nosec B608: validated identifier and fixed SQL template
+            create_table_sql = f""" validated identifier and fixed SQL template
                 CREATE TABLE IF NOT EXISTS {self.table_name} (
                     id UUID PRIMARY KEY,
                     document_id UUID NOT NULL,
@@ -57,23 +57,23 @@ class PgVectorStore:
                 )
             """
             await session.execute(text(create_table_sql))
-            embedding_index_sql = f"""  # nosec B608: validated identifier and fixed SQL template
+            embedding_index_sql = f""" validated identifier and fixed SQL template
                 CREATE INDEX IF NOT EXISTS idx_{self.table_name}_embedding
                 ON {self.table_name} USING hnsw (embedding vector_cosine_ops)
                 WITH (m = 16, ef_construction = 200)
             """
             await session.execute(text(embedding_index_sql))
-            metadata_index_sql = f"""  # nosec B608: validated identifier and fixed SQL template
+            metadata_index_sql = f""" validated identifier and fixed SQL template
                 CREATE INDEX IF NOT EXISTS idx_{self.table_name}_metadata
                 ON {self.table_name} USING gin (metadata)
             """
             await session.execute(text(metadata_index_sql))
-            tenant_index_sql = f"""  # nosec B608: validated identifier and fixed SQL template
+            tenant_index_sql = f""" validated identifier and fixed SQL template
                 CREATE INDEX IF NOT EXISTS idx_{self.table_name}_pharmacy_id
                 ON {self.table_name} ((metadata ->> 'pharmacy_id'))
             """
             await session.execute(text(tenant_index_sql))
-            content_index_sql = f"""  # nosec B608: validated identifier and fixed SQL template
+            content_index_sql = f""" validated identifier and fixed SQL template
                 CREATE INDEX IF NOT EXISTS idx_{self.table_name}_content_fts
                 ON {self.table_name} USING gin (to_tsvector('english', content))
             """
@@ -104,7 +104,7 @@ class PgVectorStore:
             ]
             await session.execute(
                 text(
-                    f"""  # nosec B608: table_name is validated as a SQL identifier
+                    f""" table_name is validated as a SQL identifier
                 INSERT INTO {self.table_name}
                 (id, document_id, content, chunk_index, chunk_type, metadata, token_count, embedding)
                 VALUES (:id, :document_id, :content, :chunk_index, :chunk_type, :metadata, :token_count, :embedding)
@@ -129,7 +129,7 @@ class PgVectorStore:
         filter_clause, filter_params = self._build_filter_clause(filters)
         async with self.session_factory() as session:
             query_sql = text(
-                f"""  # nosec B608: table_name and filter keys are validated
+                f""" table_name and filter keys are validated
                 SELECT id, document_id, content, chunk_index, chunk_type, metadata, token_count,
                        1 - (embedding <=> :query_embedding::vector) AS score
                 FROM {self.table_name} {filter_clause}
@@ -163,7 +163,7 @@ class PgVectorStore:
         filter_clause, filter_params = self._build_filter_clause(filters)
         async with self.session_factory() as session:
             query_sql = text(
-                f"""  # nosec B608: table_name and filter keys are validated
+                f""" table_name and filter keys are validated
                 SELECT id, document_id, content, chunk_index, chunk_type, metadata, token_count,
                        ts_rank(to_tsvector('english', content), plainto_tsquery('english', :query)) AS score
                 FROM {self.table_name} {filter_clause}
