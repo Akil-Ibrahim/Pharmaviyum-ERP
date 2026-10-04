@@ -79,9 +79,7 @@ describe('SignUpForm', () => {
   it('creates an account and navigates to sign in on success', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({}), { status: 201 })
-      )
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({}), { status: 201 }))
     )
 
     await userEvent.fill(emailInput, 'a@b.com')
