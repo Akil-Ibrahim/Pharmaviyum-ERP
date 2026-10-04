@@ -80,7 +80,7 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
           PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
           REDIS_URL: redis://localhost:6379/15
-          ENVIRONMENT: testing
+          ENVIRONMENT: development
         run: uv run pytest tests/unit/ -v -m unit --cov=src/pharmaviyum --cov-report=xml --cov-report=term-missing
 
   test-integration:
@@ -116,7 +116,7 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
           PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
           REDIS_URL: redis://localhost:6379/15
-          ENVIRONMENT: testing
+          ENVIRONMENT: development
         run: uv run pytest tests/integration/ -v -m integration --cov=src/pharmaviyum --cov-report=xml --cov-report=term-missing
 
   security:
