@@ -16,17 +16,25 @@ TracerProvider: Any
 BatchSpanProcessor: Any
 ConsoleSpanExporter: Any
 Resource: Any
-FastAPIInstrumentor: Any
-SQLAlchemyInstrumentor: Any
-RedisInstrumentor: Any
-HTTPXClientInstrumentor: Any
+_FastAPIInstrumentor: Any
+_SQLAlchemyInstrumentor: Any
+_RedisInstrumentor: Any
+_HTTPXClientInstrumentor: Any
 
 try:
     from opentelemetry import trace
-    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-    from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
-    from opentelemetry.instrumentation.redis import RedisInstrumentor
-    from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+    from opentelemetry.instrumentation.fastapi import (
+        FastAPIInstrumentor as _FastAPIInstrumentor,  # type: ignore[import-not-found]
+    )
+    from opentelemetry.instrumentation.httpx import (
+        HTTPXClientInstrumentor as _HTTPXClientInstrumentor,
+    )
+    from opentelemetry.instrumentation.redis import (
+        RedisInstrumentor as _RedisInstrumentor,
+    )
+    from opentelemetry.instrumentation.sqlalchemy import (
+        SQLAlchemyInstrumentor as _SQLAlchemyInstrumentor,
+    )
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
@@ -36,10 +44,10 @@ except Exception:  # pragma: no cover - compatibility fallback for Python 3.14
     BatchSpanProcessor = None
     ConsoleSpanExporter = None
     Resource = None
-    FastAPIInstrumentor = None
-    SQLAlchemyInstrumentor = None
-    RedisInstrumentor = None
-    HTTPXClientInstrumentor = None
+    _FastAPIInstrumentor = None
+    _SQLAlchemyInstrumentor = None
+    _RedisInstrumentor = None
+    _HTTPXClientInstrumentor = None
 
 
 def _otlp_exporter_available() -> bool:
@@ -95,16 +103,16 @@ def setup_telemetry(app=None, engine=None) -> None:
 
         trace.set_tracer_provider(provider)
 
-        if app and FastAPIInstrumentor is not None:
-            FastAPIInstrumentor.instrument_app(app)
+        if app and _FastAPIInstrumentor is not None:
+            _FastAPIInstrumentor.instrument_app(app)
 
-        if engine and SQLAlchemyInstrumentor is not None:
-            SQLAlchemyInstrumentor().instrument(engine=engine)
+        if engine and _SQLAlchemyInstrumentor is not None:
+            _SQLAlchemyInstrumentor().instrument(engine=engine)
 
-        if RedisInstrumentor is not None:
-            RedisInstrumentor().instrument()
-        if HTTPXClientInstrumentor is not None:
-            HTTPXClientInstrumentor().instrument()
+        if _RedisInstrumentor is not None:
+            _RedisInstrumentor().instrument()
+        if _HTTPXClientInstrumentor is not None:
+            _HTTPXClientInstrumentor().instrument()
     except Exception:
         return
 
