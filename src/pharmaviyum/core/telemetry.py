@@ -7,6 +7,7 @@ so we degrade gracefully instead of crashing the application during startup.
 
 from __future__ import annotations
 
+from importlib import import_module
 from typing import Any
 
 from src.pharmaviyum.core.config import settings
@@ -23,13 +24,19 @@ HTTPXClientInstrumentor: Any
 
 try:
     from opentelemetry import trace
-    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
     from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
     from opentelemetry.instrumentation.redis import RedisInstrumentor
     from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+
+    try:
+        FastAPIInstrumentor = import_module(
+            "opentelemetry.instrumentation.fastapi"
+        ).FastAPIInstrumentor
+    except Exception:
+        FastAPIInstrumentor = None
 except Exception:  # pragma: no cover - compatibility fallback for Python 3.14
     trace = None
     TracerProvider = None
