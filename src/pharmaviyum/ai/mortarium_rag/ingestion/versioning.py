@@ -68,8 +68,7 @@ class DocumentVersionManager:
                   AND (metadata->>'version_status' IS NULL
                        OR metadata->>'version_status' = 'active')
                   AND (metadata->>'version_number')::int < :new_version
-            """
-            )  # nosec B608: table_name is validated as a SQL identifier
+            """)  # nosec B608: table_name is validated as a SQL identifier
             result = await session.execute(
                 query,
                 {
@@ -99,8 +98,7 @@ class DocumentVersionManager:
                 FROM {self.table_name}
                 WHERE metadata->>'source' = :source
                   AND (metadata->>'pharmacy_id')::int = :pharmacy_id
-            """
-            )  # nosec B608: table_name is validated as a SQL identifier
+            """)  # nosec B608: table_name is validated as a SQL identifier
             result = await session.execute(
                 query, {"source": source, "pharmacy_id": pharmacy_id}
             )
@@ -123,7 +121,8 @@ class DocumentVersionManager:
                 WHERE metadata->>'source' = :source
                   AND (metadata->>'pharmacy_id')::int = :pharmacy_id
                   AND metadata->>'version_status' = 'active'
-            """)
+            """
+            )
             await session.execute(
                 archive_query, {"source": source, "pharmacy_id": pharmacy_id}
             )
@@ -139,7 +138,8 @@ class DocumentVersionManager:
                 WHERE metadata->>'source' = :source
                   AND (metadata->>'pharmacy_id')::int = :pharmacy_id
                   AND (metadata->>'version_number')::int = :target_version
-            """)
+            """
+            )
             result = await session.execute(
                 restore_query,
                 {
@@ -172,8 +172,7 @@ class DocumentVersionManager:
                   AND metadata->>'version_number' IS NOT NULL
                 GROUP BY version, status
                 ORDER BY version DESC
-            """
-            )  # nosec B608: table_name is validated as a SQL identifier
+            """)  # nosec B608: table_name is validated as a SQL identifier
             result = await session.execute(
                 query, {"source": source, "pharmacy_id": pharmacy_id}
             )
