@@ -45,13 +45,11 @@ class TestCreatePatient:
         sample_patient_data: dict,
     ):
         """Test creation fails with duplicate phone"""
-        # Create first patient
         await authenticated_client.post(
             "/api/v1/patients/",
             json=sample_patient_data,
         )
 
-        # Try to create with same phone
         response = await authenticated_client.post(
             "/api/v1/patients/",
             json=sample_patient_data,
@@ -100,7 +98,6 @@ class TestListPatients:
         patient_factory,
     ):
         """Test listing patients with data"""
-        # Create 5 patients
         for _ in range(5):
             await patient_factory.create()
 
@@ -119,11 +116,9 @@ class TestListPatients:
         patient_factory,
     ):
         """Test pagination works correctly"""
-        # Create 15 patients
         for _ in range(15):
             await patient_factory.create()
 
-        # Get first page
         response = await authenticated_client.get(
             "/api/v1/patients/?page=1&page_size=10"
         )
@@ -139,16 +134,14 @@ class TestListPatients:
         patient_factory,
     ):
         """Test search functionality"""
-        # Create patients with specific names
         await patient_factory.create(first_name="Ibrahim", last_name="Ibrahim")
         await patient_factory.create(first_name="Другой", last_name="Пациент")
 
-        # Search for Ибрагим
-        response = await authenticated_client.get("/api/v1/patients/?search=Ибрагим")
+        response = await authenticated_client.get("/api/v1/patients/?search=Ibrahim")
 
         data = response.json()
         assert len(data) == 1
-        assert data[0]["first_name"] == "Ибрагим"
+        assert data[0]["first_name"] == "Ibrahim"
 
 
 class TestGetPatient:
@@ -242,7 +235,6 @@ class TestDeletePatient:
 
         assert response.status_code == 204
 
-        # Verify patient is marked as inactive
         get_response = await authenticated_client.get(f"/api/v1/patients/{patient.id}")
         data = get_response.json()
         assert data["is_active"] is False
@@ -259,7 +251,6 @@ class TestPatientStatistics:
         patient_factory,
     ):
         """Test statistics endpoint"""
-        # Create patients with different tiers
         await patient_factory.create(loyalty_tier="Bronze", loyalty_points=100)
         await patient_factory.create(loyalty_tier="Bronze", loyalty_points=200)
         await patient_factory.create(loyalty_tier="Gold", loyalty_points=500)
@@ -274,7 +265,7 @@ class TestPatientStatistics:
         assert response.status_code == 200
         data = response.json()
 
-        assert data["total"] == 3
+        assert data["total"] == 4
         assert data["active"] == 3
         assert data["inactive"] == 1
         assert data["total_loyalty_points"] == 800
