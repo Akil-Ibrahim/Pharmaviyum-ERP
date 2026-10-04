@@ -36,7 +36,7 @@ function OrdersPage() {
       )
       .finally(() => setLoading(false))
   }
-useEffect(() => {
+  useEffect(() => {
     load()
   }, [])
 
