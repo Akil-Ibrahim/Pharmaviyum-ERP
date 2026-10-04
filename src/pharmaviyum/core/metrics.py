@@ -14,55 +14,22 @@ from prometheus_client import (
 )
 
 from src.pharmaviyum.core.config import settings
-
-# ============================================================================
-# HTTP METRICS
-# ============================================================================
-
-HTTP_REQUESTS_TOTAL = Counter(
-    "http_requests_total",
-    "Total number of HTTP requests",
-    ["method", "endpoint", "status", "service"],
+from src.pharmaviyum.observability.metrics import (
+    AI_REQUESTS_TOTAL,
+    DB_QUERY_DURATION,
+    HTTP_REQUEST_DURATION,
+    HTTP_REQUESTS_IN_FLIGHT,
+    HTTP_REQUESTS_TOTAL,
+    WORKER_TASK_DURATION,
+    WORKER_TASKS_TOTAL,
 )
 
-HTTP_REQUEST_DURATION = Histogram(
-    "http_request_duration_seconds",
-    "HTTP request duration in seconds",
-    ["method", "endpoint", "status"],
-    buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
-)
-
-HTTP_REQUESTS_IN_PROGRESS = Gauge(
-    "http_requests_in_progress",
-    "Number of HTTP requests currently in progress",
-    ["method"],
-)
-
-HTTP_REQUEST_SIZE = Histogram(
-    "http_request_size_bytes",
-    "HTTP request size in bytes",
-    ["method", "endpoint"],
-    buckets=(100, 1000, 10000, 100000, 1000000),
-)
-
-HTTP_RESPONSE_SIZE = Histogram(
-    "http_response_size_bytes",
-    "HTTP response size in bytes",
-    ["method", "endpoint"],
-    buckets=(100, 1000, 10000, 100000, 1000000, 10000000),
-)
+HTTP_REQUESTS_IN_PROGRESS = HTTP_REQUESTS_IN_FLIGHT
 
 
 # ============================================================================
 # DATABASE METRICS
 # ============================================================================
-
-DB_QUERY_DURATION = Histogram(
-    "db_query_duration_seconds",
-    "Database query duration in seconds",
-    ["operation", "table"],
-    buckets=(0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0),
-)
 
 DB_CONNECTIONS_ACTIVE = Gauge(
     "db_connections_active",
@@ -107,12 +74,6 @@ CACHE_HIT_RATIO = Gauge(
 # ============================================================================
 # AI / RAG METRICS
 # ============================================================================
-
-AI_REQUESTS_TOTAL = Counter(
-    "ai_requests_total",
-    "Total number of AI requests",
-    ["task_type", "model", "status"],
-)
 
 AI_REQUEST_DURATION = Histogram(
     "ai_request_duration_seconds",
@@ -190,19 +151,6 @@ NOTIFICATIONS_SENT_TOTAL = Counter(
 # ============================================================================
 # BACKGROUND WORKER METRICS
 # ============================================================================
-
-WORKER_TASKS_TOTAL = Counter(
-    "worker_tasks_total",
-    "Total number of background tasks processed",
-    ["task_name", "queue", "status"],  # status: success/failed
-)
-
-WORKER_TASK_DURATION = Histogram(
-    "worker_task_duration_seconds",
-    "Background task duration in seconds",
-    ["task_name", "queue"],
-    buckets=(0.1, 0.5, 1.0, 5.0, 10.0, 30.0, 60.0, 300.0),
-)
 
 WORKER_QUEUE_LENGTH = Gauge(
     "worker_queue_length",
@@ -318,17 +266,18 @@ def record_http_request(
     """Record HTTP request metrics"""
     status_str = str(status)
 
+    route = endpoint
+    status_class = f"{status // 100}xx"
     HTTP_REQUESTS_TOTAL.labels(
         method=method,
-        endpoint=endpoint,
-        status=status_str,
-        service=settings.APP_NAME,
+        route=route,
+        status_class=status_class,
     ).inc()
 
     HTTP_REQUEST_DURATION.labels(
         method=method,
-        endpoint=endpoint,
-        status=status_str,
+        route=route,
+        status_class=status_class,
     ).observe(duration)
 
     if request_size > 0:
@@ -358,11 +307,7 @@ def record_ai_request(
     confidence: float = 0.0,
 ) -> None:
     """Record AI request metrics"""
-    AI_REQUESTS_TOTAL.labels(
-        task_type=task_type,
-        model=model,
-        status=status,
-    ).inc()
+    AI_REQUESTS_TOTAL.labels(status=status).inc()
 
     AI_REQUEST_DURATION.labels(
         task_type=task_type,
