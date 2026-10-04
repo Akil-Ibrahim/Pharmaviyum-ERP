@@ -88,6 +88,7 @@ class TestPatientServiceCreate:
             phone="+84123456789",
         )
         mock_repository.create.return_value = expected_patient
+        mock_repository.get_by_id_with_relations.return_value = expected_patient
 
         # Act
         result = await patient_service.create_patient(patient_data)
