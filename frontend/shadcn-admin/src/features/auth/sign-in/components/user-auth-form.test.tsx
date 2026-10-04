@@ -4,7 +4,7 @@ import { type Locator, userEvent } from 'vitest/browser'
 import { UserAuthForm } from './user-auth-form'
 
 const FORM_MESSAGES = {
-  emailEmpty: 'Please enter your email.',
+  usernameEmpty: 'Please enter your username or email.',
   passwordEmpty: 'Please enter your password.',
   passwordShort: 'Password must be at least 7 characters long.',
 } as const
@@ -82,7 +82,7 @@ describe('UserAuthForm', () => {
 
   describe('Rendering without redirectTo', () => {
     let screen: RenderResult
-    let emailInput: Locator
+    let usernameInput: Locator
     let passwordInput: Locator
     let signInButton: Locator
     let forgotPasswordLink: Locator
@@ -90,14 +90,14 @@ describe('UserAuthForm', () => {
     beforeEach(async () => {
       vi.clearAllMocks()
       screen = await render(<UserAuthForm />)
-      emailInput = screen.getByRole('textbox', { name: /^Email$/i })
+      usernameInput = screen.getByRole('textbox', { name: /^Login$/i })
       passwordInput = screen.getByLabelText(/^Password$/i)
       signInButton = screen.getByRole('button', { name: /^Sign in$/i })
       forgotPasswordLink = screen.getByText(/^Forgot password\?$/i)
     })
 
     it('renders fields, submit button, and forgot password link', async () => {
-      await expect.element(emailInput).toBeInTheDocument()
+      await expect.element(usernameInput).toBeInTheDocument()
       await expect.element(passwordInput).toBeInTheDocument()
       await expect.element(signInButton).toBeInTheDocument()
       await expect.element(forgotPasswordLink).toBeInTheDocument()
@@ -107,7 +107,7 @@ describe('UserAuthForm', () => {
       await userEvent.click(signInButton)
 
       await expect
-        .element(screen.getByText(FORM_MESSAGES.emailEmpty))
+        .element(screen.getByText(FORM_MESSAGES.usernameEmpty))
         .toBeInTheDocument()
       await expect
         .element(screen.getByText(FORM_MESSAGES.passwordEmpty))
@@ -115,7 +115,7 @@ describe('UserAuthForm', () => {
     })
 
     it('authenticates and navigates to default route on success', async () => {
-      await userEvent.fill(emailInput, 'a@b.com')
+      await userEvent.fill(usernameInput, 'a@b.com')
       await userEvent.fill(passwordInput, '1234567')
 
       await userEvent.click(signInButton)
@@ -145,7 +145,7 @@ describe('UserAuthForm', () => {
       <UserAuthForm redirectTo='/settings' />
     )
 
-    await userEvent.fill(getByRole('textbox', { name: /Email/i }), 'a@b.com')
+    await userEvent.fill(getByRole('textbox', { name: /Login/i }), 'a@b.com')
     await userEvent.fill(getByLabelText('Password'), '1234567')
 
     await userEvent.click(getByRole('button', { name: /Sign in/i }))
