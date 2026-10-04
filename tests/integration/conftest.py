@@ -20,7 +20,7 @@ from src.pharmaviyum.shared.core.database import get_session
 _phone_counter = count(100000000)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def test_engine():
     """Create an isolated engine against the CI PostgreSQL service."""
     from src.pharmaviyum.config import settings
@@ -88,14 +88,7 @@ async def authenticated_client(
     test_db.add(user)
     await test_db.flush()
 
-    token = create_access_token(
-        data={
-            "sub": str(user.id),
-            "email": user.email,
-            "role": "admin",
-            "is_active": True,
-        }
-    )
+    token = create_access_token(str(user.id))
     client.headers["Authorization"] = f"Bearer {token}"
     return client
 
@@ -150,7 +143,7 @@ def sample_patient_update_data():
     }
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def test_redis():
     """Use Redis DB 15 so CI tests stay isolated from other Redis databases."""
     from src.pharmaviyum.config import settings
