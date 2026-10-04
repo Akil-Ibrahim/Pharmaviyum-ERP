@@ -10,13 +10,22 @@ const FORM_MESSAGES = {
   passwordMismatch: "Passwords don't match.",
 } as const
 
-const toastPromise = vi.hoisted(() =>
-  vi.fn((p: Promise<unknown>, opts: { success?: () => unknown }) => {
-    p.then(() => opts.success?.())
-  })
-)
+const toastSuccess = vi.hoisted(() => vi.fn())
+const toastError = vi.hoisted(() => vi.fn())
 
-vi.mock('sonner', () => ({ toast: { promise: toastPromise } }))
+vi.mock('sonner', () => ({
+  toast: { success: toastSuccess, error: toastError },
+}))
+
+const navigate = vi.hoisted(() => vi.fn())
+
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>()
+  return {
+    ...actual,
+    useNavigate: () => navigate,
+  }
+})
 
 describe('SignUpForm', () => {
   let screen: RenderResult
@@ -33,10 +42,6 @@ describe('SignUpForm', () => {
     passwordInput = screen.getByLabelText(/^Password$/i)
     confirmPasswordInput = screen.getByLabelText(/^Confirm Password$/i)
     submitButton = screen.getByRole('button', { name: /^Create Account$/i })
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('renders fields and submit button', async () => {
@@ -71,18 +76,29 @@ describe('SignUpForm', () => {
       .toBeInTheDocument()
   })
 
-  it('disables submit while submitting and re-enables after timeout', async () => {
-    vi.useFakeTimers()
+  it('creates an account and navigates to sign in on success', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({}), { status: 201 })
+      )
+    )
 
     await userEvent.fill(emailInput, 'a@b.com')
     await userEvent.fill(passwordInput, '1234567')
     await userEvent.fill(confirmPasswordInput, '1234567')
 
     await userEvent.click(submitButton)
-    await expect.element(submitButton).toBeDisabled()
 
-    await vi.advanceTimersByTimeAsync(2000)
+    await vi.waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith({
+        to: '/sign-in',
+        replace: true,
+      })
+    )
+    expect(toastSuccess).toHaveBeenCalledWith(
+      'Account created. You can now sign in.'
+    )
     await expect.element(submitButton).toBeEnabled()
-    expect(toastPromise).toHaveBeenCalledOnce()
   })
 })
