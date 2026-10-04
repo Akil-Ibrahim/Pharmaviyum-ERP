@@ -71,6 +71,8 @@ dependencies = [
     "opentelemetry-instrumentation-httpx==0.65b0",
 ]
 
+# Security dependency floor is refreshed by regenerate-uv-lock.yml
+
 [dependency-groups]
 dev = [
     "pytest==9.1.1",
