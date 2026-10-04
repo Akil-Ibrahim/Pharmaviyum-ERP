@@ -45,7 +45,7 @@ async def get_current_user(
     user = None
     try:
         user_id = int(subject)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         user_id = None
 
     if user_id is not None:
