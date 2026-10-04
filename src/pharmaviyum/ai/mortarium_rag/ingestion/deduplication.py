@@ -87,8 +87,7 @@ class DocumentDeduplicator:
                 FROM {self.table_name}
                 WHERE metadata->>'content_hash' = ANY(:hashes)
                   AND (metadata->>'pharmacy_id')::int = :pharmacy_id
-            """
-            )  # nosec B608: table_name is validated as a SQL identifier
+            """)  # nosec B608: table_name is validated as a SQL identifier
             result = await session.execute(
                 query, {"hashes": content_hashes, "pharmacy_id": pharmacy_id}
             )
@@ -120,8 +119,7 @@ class DocumentDeduplicator:
                     COUNT(DISTINCT metadata->>'content_hash') as unique_hashes,
                     COUNT(*) - COUNT(DISTINCT metadata->>'content_hash') as potential_duplicates
                 FROM {self.table_name}
-            """
-            )  # nosec B608: table_name is validated as a SQL identifier
+            """)  # nosec B608: table_name is validated as a SQL identifier
             result = await session.execute(query)
             row = result.fetchone()
             return {
