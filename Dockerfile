@@ -22,9 +22,11 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project --no-editable
 
+COPY README.md ./README.md
 COPY src/ ./src/
 COPY alembic/ ./alembic/
 COPY scripts/ ./scripts/
+RUN chmod +x scripts/start.sh
 COPY alembic.ini .
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
@@ -76,8 +78,8 @@ USER appuser
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD curl -fsS "http://localhost:${PORT:-8000}/health" || exit 1
+    CMD curl -fsS "http://localhost:\${PORT:-8000}/health" || exit 1
 
 # Migrations and demo seeding are deployment concerns, not application startup.
 # Production release pipelines must run migrations exactly once before traffic.
-CMD ["sh", "-c", "exec uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "exec uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port \${PORT:-8000}"]
