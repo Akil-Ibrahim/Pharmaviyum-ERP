@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -20,6 +20,26 @@ def mock_mcp_client():
         )
     )
     return mock
+
+
+@pytest.fixture
+def mock_cache_service():
+    """Mock the patient service cache without requiring Redis."""
+    mock = MagicMock()
+    mock.get = AsyncMock(return_value=None)
+    mock.set = AsyncMock(return_value=True)
+    mock.delete = AsyncMock(return_value=True)
+    with patch("src.pharmaviyum.services.patient.cache_service", mock):
+        yield mock
+
+
+@pytest.fixture
+def mock_event_bus():
+    """Mock patient events without requiring the event bus backend."""
+    mock = MagicMock()
+    mock.emit = AsyncMock()
+    with patch("src.pharmaviyum.services.patient.event_bus", mock):
+        yield mock
 
 
 @pytest.fixture
