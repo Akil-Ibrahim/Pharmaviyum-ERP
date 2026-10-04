@@ -110,7 +110,7 @@ app.add_exception_handler(Exception, general_exception_handler)
 app.include_router(api_v1_router)
 
 
-@app.get("/", tags=["Root"])
+@app.get("/api-info", tags=["Root"])
 async def root() -> dict[str, str]:
     return {
         "message": "Pharmaviyum AI API is running",
