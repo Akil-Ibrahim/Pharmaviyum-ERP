@@ -36,7 +36,7 @@ export function Products() {
   }
 
   // Data loading is an external synchronization; keep the imperative fetch isolated to the effect.
-useEffect(() => {
+  useEffect(() => {
     load()
   }, [])
 
