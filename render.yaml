@@ -7,8 +7,7 @@ services:
     branch: dev
     plan: free
     autoDeployTrigger: checksPass
-    # Render staging runs migrations before the application process.
-    # Production uses Render's preDeployCommand in render.production.yaml.
+    # Both staging and production run Alembic migrations in their Docker startup contract.
     dockerCommand: >-
       sh -c 'alembic upgrade head &&
       if [ "${SEED_DEMO_DATA:-false}" = "true" ]; then
