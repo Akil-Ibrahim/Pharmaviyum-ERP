@@ -4,7 +4,10 @@ import pytest
 from pydantic import BaseModel
 
 from src.pharmaviyum.ai.mcp.registry import MCPToolRegistry
-from src.pharmaviyum.ai.mcp.security import validate_execution_policy, validate_tool_schema
+from src.pharmaviyum.ai.mcp.security import (
+    validate_execution_policy,
+    validate_tool_schema,
+)
 
 
 class SafeInput(BaseModel):
@@ -37,7 +40,9 @@ def test_forbids_arbitrary_command_schema():
 
 @pytest.mark.unit
 def test_write_tool_requires_confirmation_at_registration():
-    with pytest.raises(ValueError, match="must require explicit pharmacist/user confirmation"):
+    with pytest.raises(
+        ValueError, match="must require explicit pharmacist/user confirmation"
+    ):
         validate_execution_policy("write", False)
 
 
