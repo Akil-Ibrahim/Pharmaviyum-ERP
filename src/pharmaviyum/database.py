@@ -52,7 +52,7 @@ def _pool_metrics() -> None:
         )
         DB_POOL_CHECKED_OUT.set(pool.checkedout())
         DB_POOL_OVERFLOW.set(pool.overflow())
-    except (AttributeError, TypeError):
+    except AttributeError, TypeError:
         logger.debug("database_pool_metrics_unavailable", exc_info=True)
 
 
