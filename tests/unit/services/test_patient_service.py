@@ -235,7 +235,7 @@ class TestPatientServiceDelete:
 
         # Assert
         assert result is True
-        mock_repository.soft_delete.assert_called_once_with(1)
+        mock_repository.soft_delete.assert_called_once_with(1, pharmacy_id=None)
         mock_cache_service.delete.assert_called()
         mock_event_bus.emit.assert_called_once()
 
@@ -317,7 +317,7 @@ class TestPatientServiceVisit:
         result = await patient_service.record_visit(1)
 
         assert result is sample_patient
-        mock_repository.record_visit.assert_called_once_with(1)
+        mock_repository.record_visit.assert_called_once_with(1, pharmacy_id=None)
         mock_cache_service.delete.assert_called()
         mock_event_bus.emit.assert_called_once()
         event = mock_event_bus.emit.call_args.args[0]
