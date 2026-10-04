@@ -15,7 +15,6 @@ MODEL_PRICING: dict[str, dict[str, float]] = {
     # Open-source / Local (via Ollama) - API cost is 0, but tracked for comparison
     "qwen3.5:9b": {"input": 0.0, "output": 0.0},
     
-    
     "mxbai-embed-large": {"input": 0.0, "output": 0.0},
     # Commercial APIs (Fallback / Enterprise)
     "gpt-4o": {"input": 0.005, "output": 0.015},
