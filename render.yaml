@@ -7,9 +7,7 @@ services:
     branch: main
     plan: free
     autoDeployTrigger: checksPass
-    dockerCommand: >-
-      sh -c 'alembic upgrade head &&
-      exec uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port ${PORT:-8000}'
+    dockerCommand: sh ./scripts/start.sh
     healthCheckPath: /health
     envVars:
       - key: ENVIRONMENT
