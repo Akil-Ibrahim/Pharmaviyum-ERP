@@ -1,22 +1,19 @@
 services:
   - type: web
-    name: pharmaviyum-api
+    name: pharmaviyum
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    branch: dev
+    branch: main
     plan: free
     autoDeployTrigger: checksPass
-    # Both staging and production run Alembic migrations in their Docker startup contract.
     dockerCommand: >-
       sh -c 'alembic upgrade head &&
-      if [ "${SEED_DEMO_DATA:-false}" = "true" ]; then
-      python scripts/seed_database.py; fi &&
       exec uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port ${PORT:-8000}'
     healthCheckPath: /health
     envVars:
       - key: ENVIRONMENT
-        value: staging
+        value: production
       - key: SECRET_KEY
         generateValue: true
       - key: API_SECRET_KEY
@@ -24,7 +21,7 @@ services:
       - key: LOG_LEVEL
         value: INFO
       - key: SEED_DEMO_DATA
-        value: "true"
+        value: "false"
       - key: DATABASE_URL
         fromDatabase:
           name: pharmaviyum-postgres
