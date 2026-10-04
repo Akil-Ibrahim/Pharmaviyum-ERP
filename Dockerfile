@@ -22,6 +22,7 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project --no-editable
 
+COPY README.md ./README.md
 COPY src/ ./src/
 COPY alembic/ ./alembic/
 COPY scripts/ ./scripts/
