@@ -36,7 +36,7 @@ function InventoryPage() {
       )
       .finally(() => setLoading(false))
   }
-useEffect(() => {
+  useEffect(() => {
     load()
   }, [])
   const filtered = useMemo(() => {
