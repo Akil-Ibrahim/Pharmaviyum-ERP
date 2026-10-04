@@ -1,4 +1,4 @@
-""" 
+"""
 Redis client configuration and connection management.
 Best Practice: Use connection pooling, bounded metrics, and proper error handling.
 """
