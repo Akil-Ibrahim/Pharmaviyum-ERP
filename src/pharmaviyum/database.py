@@ -11,7 +11,7 @@ from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-from src.pharmaviyum.ai.observability.metrics import (
+from src.pharmaviyum.observability.metrics import (
     DB_CONNECTION_HOLD_DURATION,
     DB_POOL_CHECKED_OUT,
     DB_POOL_MAX_OVERFLOW,
