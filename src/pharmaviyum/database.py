@@ -11,6 +11,7 @@ from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
+from src.pharmaviyum.config import settings
 from src.pharmaviyum.observability.metrics import (
     DB_CONNECTION_HOLD_DURATION,
     DB_POOL_CHECKED_OUT,
@@ -22,7 +23,6 @@ from src.pharmaviyum.observability.metrics import (
     DB_QUERY_ERRORS_TOTAL,
     DB_QUERY_TOTAL,
 )
-from src.pharmaviyum.config import settings
 
 logger = structlog.get_logger()
 
