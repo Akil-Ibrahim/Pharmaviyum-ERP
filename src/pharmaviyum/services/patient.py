@@ -52,6 +52,11 @@ class PatientService:
             payload["pharmacy_id"] = pharmacy_id
         patient = Patient(**payload, full_name=f"{data.first_name} {data.last_name}")
         patient = await self.repository.create(patient)
+        patient = await self.repository.get_by_id_with_relations(
+            patient.id, pharmacy_id=pharmacy_id
+        )
+        if patient is None:
+            raise RuntimeError("Created patient could not be reloaded")
         PATIENTS_CREATED_TOTAL.labels(country=patient.country).inc()
         await event_bus.emit(
             Event(
@@ -158,6 +163,11 @@ class PatientService:
         if "first_name" in update_data or "last_name" in update_data:
             patient.full_name = f"{patient.first_name} {patient.last_name}"
         patient = await self.repository.update(patient)
+        patient = await self.repository.get_by_id_with_relations(
+            patient.id, pharmacy_id=pharmacy_id
+        )
+        if patient is None:
+            return None
         await self._invalidate_patient_cache(id, patient.phone, pharmacy_id)
         await event_bus.emit(
             Event(
