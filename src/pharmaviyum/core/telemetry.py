@@ -11,16 +11,6 @@ from typing import Any
 
 from src.pharmaviyum.core.config import settings
 
-trace: Any
-TracerProvider: Any
-BatchSpanProcessor: Any
-ConsoleSpanExporter: Any
-Resource: Any
-_FastAPIInstrumentor: Any
-_SQLAlchemyInstrumentor: Any
-_RedisInstrumentor: Any
-_HTTPXClientInstrumentor: Any
-
 try:
     from opentelemetry import trace
     from opentelemetry.instrumentation.fastapi import (
