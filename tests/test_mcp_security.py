@@ -54,7 +54,9 @@ def test_safe_read_schema_is_allowed():
 @pytest.mark.unit
 def test_registry_rejects_unconfirmed_write_tool():
     registry = MCPToolRegistry()
-    with pytest.raises(ValueError, match="must require explicit pharmacist/user confirmation"):
+    with pytest.raises(
+        ValueError, match="must require explicit pharmacist/user confirmation"
+    ):
         registry.tool(
             name="unsafe_write",
             description="Test write tool",
