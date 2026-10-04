@@ -52,25 +52,30 @@ class PatientService:
             payload["pharmacy_id"] = pharmacy_id
         patient = Patient(**payload, full_name=f"{data.first_name} {data.last_name}")
         patient = await self.repository.create(patient)
-        PATIENTS_CREATED_TOTAL.labels(country=patient.country).inc()
+        reloaded_patient = await self.repository.get_by_id_with_relations(
+            patient.id, pharmacy_id=pharmacy_id
+        )
+        if reloaded_patient is None:
+            raise RuntimeError("Created patient could not be reloaded")
+        PATIENTS_CREATED_TOTAL.labels(country=reloaded_patient.country).inc()
         await event_bus.emit(
             Event(
                 event_type="patient.created",
                 data={
-                    "patient_id": patient.id,
-                    "full_name": patient.full_name,
-                    "phone": patient.phone,
-                    "country": patient.country,
+                    "patient_id": reloaded_patient.id,
+                    "full_name": reloaded_patient.full_name,
+                    "phone": reloaded_patient.phone,
+                    "country": reloaded_patient.country,
                     "created_by": created_by,
                 },
             )
         )
         logger.info(
             "Created patient %s",
-            patient.id,
-            extra={"patient_id": patient.id, "created_by": created_by},
+            reloaded_patient.id,
+            extra={"patient_id": reloaded_patient.id, "created_by": created_by},
         )
-        return patient
+        return reloaded_patient
 
     async def get_patient(
         self, id: int, use_cache: bool = True, pharmacy_id: int | None = None
@@ -158,6 +163,11 @@ class PatientService:
         if "first_name" in update_data or "last_name" in update_data:
             patient.full_name = f"{patient.first_name} {patient.last_name}"
         patient = await self.repository.update(patient)
+        patient = await self.repository.get_by_id_with_relations(
+            patient.id, pharmacy_id=pharmacy_id
+        )
+        if patient is None:
+            return None
         await self._invalidate_patient_cache(id, patient.phone, pharmacy_id)
         await event_bus.emit(
             Event(

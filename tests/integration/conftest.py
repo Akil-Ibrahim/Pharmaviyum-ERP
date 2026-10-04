@@ -8,7 +8,12 @@ from itertools import count
 import pytest
 from httpx import ASGITransport, AsyncClient
 from redis import asyncio as aioredis
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from src.pharmaviyum.core.oauth2 import create_access_token
 from src.pharmaviyum.database import Base
@@ -20,8 +25,8 @@ from src.pharmaviyum.shared.core.database import get_session
 _phone_counter = count(100000000)
 
 
-@pytest.fixture(scope="session")
-async def test_engine():
+@pytest.fixture
+async def test_engine() -> AsyncGenerator[AsyncEngine, None]:
     """Create an isolated engine against the CI PostgreSQL service."""
     from src.pharmaviyum.config import settings
 
@@ -88,14 +93,7 @@ async def authenticated_client(
     test_db.add(user)
     await test_db.flush()
 
-    token = create_access_token(
-        data={
-            "sub": str(user.id),
-            "email": user.email,
-            "role": "admin",
-            "is_active": True,
-        }
-    )
+    token = create_access_token(str(user.id))
     client.headers["Authorization"] = f"Bearer {token}"
     return client
 
@@ -150,8 +148,8 @@ def sample_patient_update_data():
     }
 
 
-@pytest.fixture(scope="session")
-async def test_redis():
+@pytest.fixture
+async def test_redis() -> AsyncGenerator[aioredis.Redis, None]:
     """Use Redis DB 15 so CI tests stay isolated from other Redis databases."""
     from src.pharmaviyum.config import settings
 

@@ -11,18 +11,20 @@ def test_sensitive_stage2_routes_require_superuser() -> None:
         "/api/v1/erp/integrations/{integration_id}/events": {"GET", "POST"},
     }
 
+    routes_by_path = {}
     for route in router.routes:
-        methods = set(route.methods or ())
         expected_methods = protected_paths.get(route.path)
         if expected_methods is None:
             continue
-
-        assert expected_methods <= methods
+        routes_by_path.setdefault(route.path, set()).update(route.methods or ())
         dependency_names = {
             getattr(dependency.call, "__name__", "")
             for dependency in route.dependant.dependencies
         }
         assert "get_current_active_superuser" in dependency_names
+
+    for path, expected_methods in protected_paths.items():
+        assert expected_methods <= routes_by_path.get(path, set())
 
 
 @pytest.mark.unit

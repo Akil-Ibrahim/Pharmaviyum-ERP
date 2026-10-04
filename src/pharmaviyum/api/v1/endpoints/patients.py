@@ -19,7 +19,7 @@ from src.pharmaviyum.schemas.patient import (
 )
 from src.pharmaviyum.services.patient import PatientService
 
-router = APIRouter(prefix="/patients", tags=["Patients"])
+router = APIRouter(prefix="/api/v1/patients", tags=["Patients"])
 
 
 def get_patient_service(db: AsyncSession = Depends(get_db)) -> PatientService:

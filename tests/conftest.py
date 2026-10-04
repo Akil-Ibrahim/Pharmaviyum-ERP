@@ -8,6 +8,18 @@ import pytest
 
 
 @pytest.fixture
+def mock_evaluator_llm():
+    """Mock evaluator LLM with a safe default judgment."""
+    mock = MagicMock()
+    mock.ainvoke = AsyncMock(
+        return_value=MagicMock(
+            content='{"accuracy": 0.9, "safety": 0.95, "completeness": 0.85, "compliance": 0.95, "feedback": "Safe evaluation."}'
+        )
+    )
+    return mock
+
+
+@pytest.fixture
 def mock_mcp_client():
     """Mock MCP client for testing tool calls."""
     mock = AsyncMock()
