@@ -32,11 +32,10 @@ class TestCreatePatient:
         assert response.status_code == 201
         data = response.json()
 
-        assert data["success"] is True
-        assert data["data"]["first_name"] == sample_patient_data["first_name"]
-        assert data["data"]["last_name"] == sample_patient_data["last_name"]
-        assert data["data"]["phone"] == sample_patient_data["phone"]
-        assert "id" in data["data"]
+        assert data["first_name"] == sample_patient_data["first_name"]
+        assert data["last_name"] == sample_patient_data["last_name"]
+        assert data["phone"] == sample_patient_data["phone"]
+        assert "id" in data
 
     @pytest.mark.asyncio
     async def test_create_patient_duplicate_phone(
@@ -60,8 +59,7 @@ class TestCreatePatient:
 
         assert response.status_code == 409
         data = response.json()
-        assert data["success"] is False
-        assert "already exists" in data["errors"][0]["message"]
+        assert "already exists" in data["detail"]
 
     @pytest.mark.asyncio
     async def test_create_patient_unauthorized(
@@ -92,9 +90,7 @@ class TestListPatients:
         assert response.status_code == 200
         data = response.json()
 
-        assert data["success"] is True
-        assert data["data"]["items"] == []
-        assert data["data"]["pagination"]["total_items"] == 0
+        assert data == []
 
     @pytest.mark.asyncio
     async def test_list_patients_with_data(
@@ -113,9 +109,7 @@ class TestListPatients:
         assert response.status_code == 200
         data = response.json()
 
-        assert data["success"] is True
-        assert len(data["data"]["items"]) == 5
-        assert data["data"]["pagination"]["total_items"] == 5
+        assert len(data) == 5
 
     @pytest.mark.asyncio
     async def test_list_patients_pagination(
@@ -135,10 +129,7 @@ class TestListPatients:
         )
 
         data = response.json()
-        assert len(data["data"]["items"]) == 10
-        assert data["data"]["pagination"]["page"] == 1
-        assert data["data"]["pagination"]["total_pages"] == 2
-        assert data["data"]["pagination"]["has_next"] is True
+        assert len(data) == 10
 
     @pytest.mark.asyncio
     async def test_list_patients_search(
@@ -156,8 +147,8 @@ class TestListPatients:
         response = await authenticated_client.get("/api/v1/patients/?search=Ибрагим")
 
         data = response.json()
-        assert len(data["data"]["items"]) == 1
-        assert data["data"]["items"][0]["first_name"] == "Ибрагим"
+        assert len(data) == 1
+        assert data[0]["first_name"] == "Ибрагим"
 
 
 class TestGetPatient:
@@ -178,9 +169,8 @@ class TestGetPatient:
         assert response.status_code == 200
         data = response.json()
 
-        assert data["success"] is True
-        assert data["data"]["id"] == patient.id
-        assert data["data"]["full_name"] == patient.full_name
+        assert data["id"] == patient.id
+        assert data["full_name"] == patient.full_name
 
     @pytest.mark.asyncio
     async def test_get_patient_not_found(
@@ -192,7 +182,7 @@ class TestGetPatient:
 
         assert response.status_code == 404
         data = response.json()
-        assert data["success"] is False
+        assert data["detail"] == "Patient not found"
 
 
 class TestUpdatePatient:
@@ -217,11 +207,8 @@ class TestUpdatePatient:
         assert response.status_code == 200
         data = response.json()
 
-        assert data["success"] is True
-        assert data["data"]["first_name"] == sample_patient_update_data["first_name"]
-        assert (
-            data["data"]["loyalty_tier"] == sample_patient_update_data["loyalty_tier"]
-        )
+        assert data["first_name"] == sample_patient_update_data["first_name"]
+        assert data["loyalty_tier"] == sample_patient_update_data["loyalty_tier"]
 
     @pytest.mark.asyncio
     async def test_update_patient_not_found(
@@ -258,7 +245,7 @@ class TestDeletePatient:
         # Verify patient is marked as inactive
         get_response = await authenticated_client.get(f"/api/v1/patients/{patient.id}")
         data = get_response.json()
-        assert data["data"]["is_active"] is False
+        assert data["is_active"] is False
 
 
 class TestPatientStatistics:
@@ -287,13 +274,12 @@ class TestPatientStatistics:
         assert response.status_code == 200
         data = response.json()
 
-        assert data["success"] is True
-        assert data["data"]["total"] == 3
-        assert data["data"]["active"] == 3
-        assert data["data"]["inactive"] == 1
-        assert data["data"]["total_loyalty_points"] == 800
-        assert data["data"]["by_loyalty_tier"] == {"Bronze": 2, "Gold": 1}
-        assert "by_country" in data["data"]
+        assert data["total"] == 3
+        assert data["active"] == 3
+        assert data["inactive"] == 1
+        assert data["total_loyalty_points"] == 800
+        assert data["by_loyalty_tier"] == {"Bronze": 2, "Gold": 1}
+        assert "by_country" in data
 
     @pytest.mark.asyncio
     async def test_get_statistics_uses_persisted_purchase_lines(
@@ -332,5 +318,4 @@ class TestPatientStatistics:
         assert response.status_code == 200
         data = response.json()
 
-        assert data["success"] is True
-        assert data["data"]["total_purchase_value"] == 46.75
+        assert data["total_purchase_value"] == 46.75
