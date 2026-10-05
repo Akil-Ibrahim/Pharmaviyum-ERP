@@ -13,4 +13,4 @@ class StockTransferItem(Base):
     product_id = Column(Integer, ForeignKey("products.id", ondelete="RESTRICT"), nullable=False, index=True)
     batch_id = Column(Integer, ForeignKey("product_batches.id", ondelete="RESTRICT"), nullable=True, index=True)
     quantity = Column(Integer, nullable=False)
-    stock_transfer = relationship("StockTransfer", back_populates="items")
+    transfer = relationship("StockTransfer", back_populates="items")
