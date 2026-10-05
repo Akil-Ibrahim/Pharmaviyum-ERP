@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     )
     ADMIN_USER: str = "admin"
     ADMIN_EMAIL: str = "Admin"
-    ADMIN_PASSWORD: str = "admin"
+    ADMIN_PASSWORD: str = "Admin123!@#"
 
     # JWT
     JWT_ALGORITHM: str = "HS256"
