@@ -71,10 +71,12 @@ class MCPToolRegistry:
         requires_pharmacist_confirmation: bool = False,
     ) -> Callable:
         """Decorator to register a tool."""
+        # Validate the contract at decorator creation time so invalid tools
+        # fail closed even before a function is registered.
+        validate_tool_schema(input_schema.model_json_schema())
+        validate_execution_policy(execution_class, requires_pharmacist_confirmation)
 
         def decorator(func: Callable[..., Awaitable[Any]]) -> Callable:
-            validate_tool_schema(input_schema.model_json_schema())
-            validate_execution_policy(execution_class, requires_pharmacist_confirmation)
             metadata = ToolMetadata(
                 name=name,
                 description=description,
