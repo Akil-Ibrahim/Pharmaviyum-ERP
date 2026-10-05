@@ -50,7 +50,7 @@ export function UserAuthForm({
     setIsLoading(true)
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_URL ?? ''
+      const apiBaseUrl = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
       const response = await fetch(
         `${apiBaseUrl}/api/v1/auth/token`,
         {
@@ -92,7 +92,7 @@ export function UserAuthForm({
         throw new Error(
           me?.detail && typeof me.detail === 'string'
             ? me.detail
-            : 'Unable to load the authenticated user'
+            : `Authenticated user request failed (HTTP ${meResponse.status})`
         )
       }
 
@@ -103,7 +103,7 @@ export function UserAuthForm({
       toast.success(`Welcome back, ${data.username}!`)
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'Unable to sign in. Please try again.'
+        error instanceof Error ? error.message : 'Unable to sign in. Please check the API connection and try again.'
       )
     } finally {
       setIsLoading(false)
