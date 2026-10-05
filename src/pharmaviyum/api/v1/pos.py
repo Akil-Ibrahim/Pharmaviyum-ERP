@@ -205,7 +205,7 @@ async def confirm_pos_transaction(
                 Inventory.expires_at.asc().nulls_last(),
                 Inventory.id.asc(),
             )
-        inventory = await db.scalar(inventory_query.with_for_update())
+        inventory = await db.scalar(inventory_query.with_for_update(of=Inventory))
         if inventory is None:
             raise HTTPException(
                 status_code=409, detail="Product is not stocked in this pharmacy"
