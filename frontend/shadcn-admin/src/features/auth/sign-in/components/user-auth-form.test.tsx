@@ -83,7 +83,7 @@ describe('UserAuthForm', () => {
     beforeEach(async () => {
       vi.clearAllMocks()
       screen = await render(<UserAuthForm />)
-      emailInput = screen.getByRole('textbox', { name: /^Email$/i })
+      emailInput = screen.getByRole('textbox', { name: /^Login$/i })
       passwordInput = screen.getByLabelText(/^Password$/i)
       signInButton = screen.getByRole('button', { name: /^Sign in$/i })
       forgotPasswordLink = screen.getByText(/^Forgot password\?$/i)
@@ -131,6 +131,29 @@ describe('UserAuthForm', () => {
     })
   })
 
+  it('reports the HTTP status when authentication fails without JSON', async () => {
+    vi.clearAllMocks()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('<!doctype html><html>Not Found</html>', {
+          status: 404,
+          headers: { 'Content-Type': 'text/html' },
+        })
+      )
+    )
+
+    const screen = await render(<UserAuthForm />)
+    const loginInput = screen.getByRole('textbox', { name: /Login/i })
+    await userEvent.fill(loginInput, 'admin')
+    await userEvent.fill(screen.getByLabelText('Password'), 'admin')
+    await userEvent.click(screen.getByRole('button', { name: /Sign in/i }))
+
+    await expect
+      .element(screen.getByText('Authentication request failed (HTTP 404)'))
+      .toBeInTheDocument()
+  })
+
   it('navigates to redirectTo when provided', async () => {
     vi.clearAllMocks()
 
@@ -138,7 +161,7 @@ describe('UserAuthForm', () => {
       <UserAuthForm redirectTo='/settings' />
     )
 
-    await userEvent.fill(getByRole('textbox', { name: /Email/i }), 'a@b.com')
+    await userEvent.fill(getByRole('textbox', { name: /Login/i }), 'a@b.com')
     await userEvent.fill(getByLabelText('Password'), '1234567')
 
     await userEvent.click(getByRole('button', { name: /Sign in/i }))
