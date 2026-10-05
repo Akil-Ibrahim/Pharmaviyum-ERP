@@ -481,3 +481,5 @@ function DataTable({
     </div>
   )
 }
+
+// Clean consolidation branch: dashboard review checkpoint.
