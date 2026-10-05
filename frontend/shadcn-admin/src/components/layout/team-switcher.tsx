@@ -37,16 +37,18 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
               size='lg'
               className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
-              <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground'>
+              <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground'>
                 <activeTeam.logo className='size-4' />
               </div>
-              <div className='grid flex-1 text-start text-sm leading-tight'>
-                <span className='truncate font-semibold'>
+              <div className='grid flex-1 text-start leading-tight'>
+                <span className='pharmaviyum-brand truncate text-base font-bold text-black dark:text-white'>
                   {activeTeam.name}
                 </span>
-                <span className='truncate text-xs'>{activeTeam.plan}</span>
+                <span className='pharmacy-workflow truncate text-xs font-medium text-black dark:text-white'>
+                  {activeTeam.plan}
+                </span>
               </div>
-              <ChevronsUpDown className='ms-auto' />
+              <ChevronsUpDown className='ms-auto text-primary' />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -62,10 +64,10 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
               <DropdownMenuItem
                 key={team.name}
                 onClick={() => setActiveTeam(team)}
-                className='gap-2 p-2'
+                className='gap-2 p-2 font-semibold text-black dark:text-white'
               >
                 <div className='flex size-6 items-center justify-center rounded-sm border'>
-                  <team.logo className='size-4 shrink-0' />
+                  <team.logo className='size-4 shrink-0 text-primary' />
                 </div>
                 {team.name}
                 <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
@@ -74,7 +76,7 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem className='gap-2 p-2'>
               <div className='flex size-6 items-center justify-center rounded-md border bg-background'>
-                <Plus className='size-4' />
+                <Plus className='size-4 text-primary' />
               </div>
               <div className='font-medium text-muted-foreground'>Add team</div>
             </DropdownMenuItem>

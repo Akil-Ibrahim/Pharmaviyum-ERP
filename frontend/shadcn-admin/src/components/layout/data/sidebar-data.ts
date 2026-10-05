@@ -26,7 +26,7 @@ export const sidebarData: SidebarData = {
     email: 'admin@pharmaviyum.local',
     avatar: '/avatars/shadcn.jpg',
   },
-  teams: [{ name: 'Pharmaviyum', logo: ShieldCheck, plan: 'Pharmacy CRM' }],
+  teams: [{ name: 'Pharmaviyum', logo: ShieldCheck, plan: 'Pharmacy workflow' }],
   navGroups: [
     {
       title: 'Operations',
