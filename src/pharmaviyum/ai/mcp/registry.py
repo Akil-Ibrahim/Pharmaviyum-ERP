@@ -18,6 +18,8 @@ from pydantic import BaseModel
 
 from src.pharmaviyum.core.logging import logger
 
+from .security import ExecutionClass, validate_execution_policy, validate_tool_schema
+
 UserRole = Literal["patient", "pharmacist", "admin", "system"]
 
 
@@ -41,6 +43,8 @@ class ToolMetadata:
     version: str = "1.0.0"
     deprecated: bool = False
     deprecation_message: str | None = None
+    execution_class: ExecutionClass = "read"
+    requires_pharmacist_confirmation: bool = False
 
 
 class MCPToolRegistry:
@@ -63,8 +67,14 @@ class MCPToolRegistry:
         version: str = "1.0.0",
         deprecated: bool = False,
         deprecation_message: str | None = None,
+        execution_class: ExecutionClass = "read",
+        requires_pharmacist_confirmation: bool = False,
     ) -> Callable:
         """Decorator to register a tool."""
+        # Validate the contract at decorator creation time so invalid tools
+        # fail closed even before a function is registered.
+        validate_tool_schema(input_schema.model_json_schema())
+        validate_execution_policy(execution_class, requires_pharmacist_confirmation)
 
         def decorator(func: Callable[..., Awaitable[Any]]) -> Callable:
             metadata = ToolMetadata(
@@ -82,6 +92,8 @@ class MCPToolRegistry:
                 version=version,
                 deprecated=deprecated,
                 deprecation_message=deprecation_message,
+                execution_class=execution_class,
+                requires_pharmacist_confirmation=requires_pharmacist_confirmation,
             )
             self._tools[name] = (metadata, func)
             logger.info(f"Registered MCP tool: {name} v{version} ({category})")
