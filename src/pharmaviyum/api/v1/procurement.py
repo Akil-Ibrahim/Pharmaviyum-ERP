@@ -542,7 +542,7 @@ async def create_stock_transfer(
     return transfer
 
 
-@router.post("/transfers/{transfer_id}/receive")
+@router.post("/transfers/{transfer_id}/receive", response_model=None)
 async def receive_stock_transfer(
     transfer_id: int, current_user: CurrentUser, db: SessionDep
 ) -> StockTransfer:
