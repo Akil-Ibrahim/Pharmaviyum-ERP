@@ -31,6 +31,26 @@ def upgrade() -> None:
         op.create_index("ix_orders_id", "orders", ["id"])
         op.create_index("ix_orders_patient_id", "orders", ["patient_id"])
 
+    if not sa.inspect(bind).has_table("audit_logs"):
+        op.create_table(
+            "audit_logs",
+            sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
+            sa.Column("actor_id", sa.Integer(), nullable=True),
+            sa.Column("actor_type", sa.String(length=50), nullable=True),
+            sa.Column("action", sa.String(length=100), nullable=False),
+            sa.Column("entity", sa.String(length=100), nullable=False),
+            sa.Column("entity_id", sa.Integer(), nullable=True),
+            sa.Column("changes", sa.JSON(), nullable=True),
+            sa.Column("ip_address", sa.String(length=45), nullable=True),
+            sa.Column("user_agent", sa.String(length=512), nullable=True),
+            sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("CURRENT_TIMESTAMP")),
+        )
+        op.create_index("ix_audit_logs_id", "audit_logs", ["id"])
+        op.create_index("ix_audit_logs_actor_id", "audit_logs", ["actor_id"])
+        op.create_index("ix_audit_logs_action", "audit_logs", ["action"])
+        op.create_index("ix_audit_logs_entity", "audit_logs", ["entity"])
+        op.create_index("ix_audit_logs_entity_id", "audit_logs", ["entity_id"])
+
     op.add_column("orders", sa.Column("pharmacy_id", sa.Integer(), nullable=True))
     op.add_column("orders", sa.Column("pharmacist_id", sa.Integer(), nullable=True))
     op.add_column("orders", sa.Column("payment_method", sa.String(length=20), nullable=True))
