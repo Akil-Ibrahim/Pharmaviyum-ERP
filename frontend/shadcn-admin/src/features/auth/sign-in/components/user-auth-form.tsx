@@ -42,7 +42,7 @@ export function UserAuthForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       username: 'admin',
-      password: 'Admin123!@#',
+      password: 'admin',
     },
   })
 
