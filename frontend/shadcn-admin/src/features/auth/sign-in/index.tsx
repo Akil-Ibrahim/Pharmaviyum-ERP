@@ -18,9 +18,11 @@ export function SignIn() {
       <div className='w-full max-w-sm'>
         <Card className='gap-4'>
           <CardHeader>
-            <CardTitle className='text-lg tracking-tight'>Sign in</CardTitle>
+            <CardTitle className='text-lg tracking-tight'>
+              Sign in to Pharmaviyum
+            </CardTitle>
             <CardDescription>
-              Enter your credentials below to access Pharmaviyum.
+              Access your pharmacy workflow, inventory, prescriptions, and daily operations.
               <br className='max-sm:hidden' /> Don't have an account?{' '}
               <Link
                 to='/sign-up'
