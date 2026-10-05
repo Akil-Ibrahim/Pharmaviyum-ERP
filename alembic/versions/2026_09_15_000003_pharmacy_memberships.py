@@ -8,6 +8,27 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # Fresh CI/test databases may not have the legacy users table because the
+    # application model predates the current Alembic baseline. Create the
+    # canonical integer-backed users table before adding its foreign key.
+    bind = op.get_bind()
+    if not sa.inspect(bind).has_table("users"):
+        op.create_table(
+            "users",
+            sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
+            sa.Column("email", sa.String(length=255), nullable=False),
+            sa.Column("full_name", sa.String(length=200), nullable=True),
+            sa.Column("username", sa.String(length=100), nullable=False),
+            sa.Column("hashed_password", sa.String(length=255), nullable=False),
+            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
+            sa.Column("is_superuser", sa.Boolean(), nullable=False, server_default=sa.false()),
+            sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("CURRENT_TIMESTAMP")),
+            sa.UniqueConstraint("email", name="uq_users_email"),
+            sa.UniqueConstraint("username", name="uq_users_username"),
+        )
+        op.create_index("ix_users_id", "users", ["id"])
+        op.create_index("ix_users_email", "users", ["email"])
+
     op.create_table(
         "pharmacy_memberships",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
