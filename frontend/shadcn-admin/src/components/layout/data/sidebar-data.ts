@@ -4,7 +4,6 @@ import {
   BookOpenCheck,
   Bot,
   Boxes,
-  BriefcaseMedical,
   CalendarClock,
   ClipboardList,
   Code2,
