@@ -8,7 +8,7 @@ type ResolvedTheme = Exclude<Theme, 'system'>
 const DEFAULT_THEME = 'system'
 const THEME_COOKIE_NAME = 'vite-ui-theme'
 const PRESET_COOKIE_NAME = 'pharmaviyum-theme-preset'
-const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
+const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -32,7 +32,7 @@ const initialState: ThemeProviderState = {
   theme: DEFAULT_THEME,
   setTheme: () => null,
   resetTheme: () => null,
-  preset: 'default',
+  preset: 'blue',
   setPreset: () => null,
 }
 
@@ -45,13 +45,12 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [preset, _setPreset] = useState<ThemePreset>(
-    () => (getCookie(PRESET_COOKIE_NAME) as ThemePreset) || 'default'
+    () => (getCookie(PRESET_COOKIE_NAME) as ThemePreset) || 'blue'
   )
   const [theme, _setTheme] = useState<Theme>(
     () => (getCookie(storageKey) as Theme) || defaultTheme
   )
 
-  // Optimized: Memoize the resolved theme calculation to prevent unnecessary re-computations
   const resolvedTheme = useMemo((): ResolvedTheme => {
     if (theme === 'system') {
       return window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -79,9 +78,7 @@ export function ThemeProvider({
     }
 
     applyTheme(resolvedTheme)
-
     mediaQuery.addEventListener('change', handleChange)
-
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [theme, resolvedTheme, preset])
 
@@ -99,7 +96,7 @@ export function ThemeProvider({
     removeCookie(storageKey)
     removeCookie(PRESET_COOKIE_NAME)
     _setTheme(DEFAULT_THEME)
-    _setPreset('default')
+    _setPreset('blue')
   }
 
   const contextValue = {
@@ -122,8 +119,6 @@ export function ThemeProvider({
 // eslint-disable-next-line react-refresh/only-export-components
 export const useTheme = () => {
   const context = useContext(ThemeContext)
-
   if (!context) throw new Error('useTheme must be used within a ThemeProvider')
-
   return context
 }
