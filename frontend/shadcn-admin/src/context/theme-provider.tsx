@@ -45,7 +45,10 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [preset, _setPreset] = useState<ThemePreset>(
-    () => {\n      const savedPreset = getCookie(PRESET_COOKIE_NAME) as ThemePreset | null\n      return savedPreset === 'default' || !savedPreset ? 'blue' : savedPreset\n    }
+    () => {
+      const savedPreset = getCookie(PRESET_COOKIE_NAME) as ThemePreset | null
+      return savedPreset === 'default' || !savedPreset ? 'blue' : savedPreset
+    }
   )
   const [theme, _setTheme] = useState<Theme>(
     () => (getCookie(storageKey) as Theme) || defaultTheme
