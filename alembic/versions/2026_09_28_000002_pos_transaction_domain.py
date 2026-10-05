@@ -14,6 +14,23 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # The legacy application has an Order model, but clean Alembic databases
+    # do not have an orders migration. Bootstrap the canonical table before
+    # extending it with the POS transaction fields below.
+    bind = op.get_bind()
+    if not sa.inspect(bind).has_table("orders"):
+        op.create_table(
+            "orders",
+            sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
+            sa.Column("patient_id", sa.Integer(), nullable=False),
+            sa.Column("total_amount", sa.Float(), nullable=False, server_default="0"),
+            sa.Column("status", sa.String(length=50), nullable=False, server_default="pending"),
+            sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("CURRENT_TIMESTAMP")),
+            sa.ForeignKeyConstraint(["patient_id"], ["patients.id"], ondelete="CASCADE"),
+        )
+        op.create_index("ix_orders_id", "orders", ["id"])
+        op.create_index("ix_orders_patient_id", "orders", ["patient_id"])
+
     op.add_column("orders", sa.Column("pharmacy_id", sa.Integer(), nullable=True))
     op.add_column("orders", sa.Column("pharmacist_id", sa.Integer(), nullable=True))
     op.add_column("orders", sa.Column("payment_method", sa.String(length=20), nullable=True))
