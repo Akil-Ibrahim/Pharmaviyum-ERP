@@ -8,7 +8,7 @@ client = TestClient(app)
 def test_admin_fallback_login():
     response = client.post(
         "/api/v1/auth/token",
-        data={"username": "admin", "password": "Admin123!@#"},
+        data={"username": "admin", "password": "admin"},
     )
 
     assert response.status_code == 200, response.text
