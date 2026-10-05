@@ -20,7 +20,7 @@ export function SignIn() {
           <CardHeader>
             <CardTitle className='text-lg tracking-tight'>Sign in</CardTitle>
             <CardDescription>
-              Enter your login and password below to access Pharmaviyum CRM.
+              Enter your credentials below to access Pharmaviyum.
               <br className='max-sm:hidden' /> Don't have an account?{' '}
               <Link
                 to='/sign-up'
