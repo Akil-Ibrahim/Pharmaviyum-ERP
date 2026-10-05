@@ -72,7 +72,11 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
         tooltip={item.title}
       >
         <Link to={item.url} onClick={() => setOpenMobile(false)}>
-          {item.icon && <item.icon className='text-primary' />}
+          {item.icon && (
+            <span className='flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground [&>svg]:size-4'>
+              <item.icon />
+            </span>
+          )}
           <span className='font-semibold text-black dark:text-white'>{item.title}</span>
           {item.badge && <NavBadge>{item.badge}</NavBadge>}
         </Link>
@@ -98,7 +102,11 @@ function SidebarMenuCollapsible({
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
           <SidebarMenuButton tooltip={item.title}>
-            {item.icon && <item.icon className='text-primary' />}
+            {item.icon && (
+              <span className='flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground [&>svg]:size-4'>
+                <item.icon />
+              </span>
+            )}
             <span className='font-semibold text-black dark:text-white'>{item.title}</span>
             {item.badge && <NavBadge>{item.badge}</NavBadge>}
             <ChevronRight className='ms-auto text-primary transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 rtl:rotate-180' />
@@ -113,7 +121,11 @@ function SidebarMenuCollapsible({
                   isActive={checkIsActive(href, subItem)}
                 >
                   <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
-                    {subItem.icon && <subItem.icon className='text-primary' />}
+                    {subItem.icon && (
+                      <span className='flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground [&>svg]:size-3.5'>
+                        <subItem.icon />
+                      </span>
+                    )}
                     <span className='font-semibold text-black dark:text-white'>{subItem.title}</span>
                     {subItem.badge && <NavBadge>{subItem.badge}</NavBadge>}
                   </Link>
@@ -159,7 +171,11 @@ function SidebarMenuCollapsedDropdown({
                 to={sub.url}
                 className={`${checkIsActive(href, sub) ? 'bg-secondary' : ''}`}
               >
-                {sub.icon && <sub.icon className='text-primary' />}
+                {sub.icon && (
+                  <span className='flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground [&>svg]:size-3.5'>
+                    <sub.icon />
+                  </span>
+                )}
                 <span className='max-w-52 text-wrap font-semibold text-black dark:text-white'>{sub.title}</span>
                 {sub.badge && (
                   <span className='ms-auto text-xs'>{sub.badge}</span>
