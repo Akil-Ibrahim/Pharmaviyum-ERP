@@ -59,6 +59,13 @@ def setup_static_files(app: FastAPI):
     if avatars_path.exists():
         app.mount("/avatars", StaticFiles(directory=str(avatars_path)), name="avatars")
 
+    @app.get("/pharmaviyum-social-preview.png", include_in_schema=False)
+    async def pharmaviyum_social_preview():
+        preview_path = static_path / "images" / "pharmaviyum.png"
+        if preview_path.exists():
+            return FileResponse(str(preview_path), media_type="image/png")
+        return JSONResponse(status_code=404, content={"detail": "Not found"})
+
     @app.get("/favicon.ico", include_in_schema=False)
     async def favicon():
         favicon_path = static_path / "favicon.ico"
