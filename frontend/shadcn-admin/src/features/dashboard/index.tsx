@@ -162,7 +162,7 @@ export function Dashboard() {
               total={String(summary?.inventory.expiry_tracked ?? 0)}
               items={toPercentItems([
                 ['Red · ≤ 3 months / expired', summary?.inventory.expiry_red ?? 0],
-                ['Yellow · 3–12 months', summary?.inventory.expiry_yellow ?? 0],
+                ['Yellow · > 3–12 months', summary?.inventory.expiry_yellow ?? 0],
                 ['Green · > 12 months', summary?.inventory.expiry_green ?? 0],
               ])}
             />
@@ -639,7 +639,7 @@ function ExpiryBadge({ expiryDate }: { expiryDate: string | null }) {
         }
       : monthsUntilExpiry <= 12
         ? {
-            label: '3–12m',
+            label: '> 3–12m',
             className: 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400',
           }
         : {
