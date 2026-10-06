@@ -156,11 +156,6 @@ export function Dashboard() {
               items={toPercentItems(summary?.sales.by_category.map((item) => [item.category, item.revenue] as [string, number]) ?? [])}
             />
             <DonutCard
-              title='Original vs Generic'
-              total={formatAmount(summary?.original_vs_generic.reduce((sum, item) => sum + item.revenue, 0) ?? 0)}
-              items={toPercentItems(summary?.original_vs_generic.map((item) => [item.type, item.revenue] as [string, number]) ?? [])}
-            />
-            <DonutCard
               title='Expiry control'
               total={String(summary?.inventory.expiry_tracked ?? 0)}
               items={toPercentItems([
