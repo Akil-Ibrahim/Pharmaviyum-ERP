@@ -139,7 +139,7 @@ async def get_dashboard_summary(
         select(
             Product.id,
             Product.name,
-            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("units"),
+            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("packs"),
             func.coalesce(
                 func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
             ).label("revenue"),
@@ -408,7 +408,7 @@ async def get_dashboard_summary(
             {
                 "id": row.id,
                 "name": row.name,
-                "units": int(row.units or 0),
+                "packs": int(row.packs or 0),
                 "revenue": round(float(row.revenue or 0), 2),
                 "stock": int(row.stock or 0),
             }
