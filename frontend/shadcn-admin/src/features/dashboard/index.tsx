@@ -1,12 +1,8 @@
 import { useEffect, useState } from 'react'
 import {
-  ArrowDownRight,
   ArrowUpRight,
-  Boxes,
-  FileText,
   Pill,
   Receipt,
-  Truck,
   Users,
   Wallet,
   type LucideIcon,
@@ -42,53 +38,6 @@ type DashboardSummary = {
   }
 }
 
-const pipelines: {
-  title: string
-  icon: LucideIcon
-  stages: [string, number][]
-}[] = [
-  {
-    title: 'Procurement',
-    icon: Truck,
-    stages: [
-      ['Ordered', 28],
-      ['Shipped', 16],
-      ['Received', 11],
-      ['Stock', 8],
-    ],
-  },
-  {
-    title: 'Prescriptions',
-    icon: FileText,
-    stages: [
-      ['Received', 54],
-      ['Validated', 41],
-      ['Dispensing', 29],
-      ['Completed', 23],
-    ],
-  },
-  {
-    title: 'Orders / POS',
-    icon: Receipt,
-    stages: [
-      ['Created', 36],
-      ['Processing', 27],
-      ['Paid', 22],
-      ['Completed', 19],
-    ],
-  },
-  {
-    title: 'Transfers',
-    icon: Boxes,
-    stages: [
-      ['Requested', 14],
-      ['Approved', 10],
-      ['In transit', 7],
-      ['Received', 5],
-    ],
-  },
-]
-
 export function Dashboard() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
 
@@ -118,7 +67,7 @@ export function Dashboard() {
             </p>
           </div>
           <span className='w-fit rounded-full border bg-muted/40 px-3 py-1 text-xs text-muted-foreground'>
-            KPI live · operational metrics coming next
+            KPI live · synthetic operational data
           </span>
         </div>
 
@@ -230,15 +179,6 @@ function toPercentItems(items: [string, number][]): [string, number][] {
   const total = items.reduce((sum, [, value]) => sum + value, 0)
   if (!total) return []
   return items.map(([label, value]) => [label, Math.round((value / total) * 100)] as [string, number])
-}
-
-function LiveMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className='rounded-xl border bg-card p-4 shadow-sm'>
-      <p className='text-xs text-muted-foreground'>{label}</p>
-      <p className='mt-2 text-2xl font-semibold tracking-tight'>{value}</p>
-    </div>
-  )
 }
 
 function KpiCard({
