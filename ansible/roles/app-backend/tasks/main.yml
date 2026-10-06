@@ -61,7 +61,6 @@
     remove_orphans: true
     cleanup: true
   register: migration_result
-  changed_when: true
 
 - name: Start backend
   community.docker.docker_compose_v2:
