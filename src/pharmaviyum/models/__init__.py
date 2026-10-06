@@ -1,5 +1,10 @@
 """Pharmaviyum CRM database models."""
 
+from src.pharmaviyum.models.drug_catalog import (
+    DrugReference,
+    DrugReferenceIngredient,
+    MedicinalProduct,
+)
 from src.pharmaviyum.models.erp_sync import ERPIntegration, ERPSyncEvent
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.order import Order
@@ -35,4 +40,7 @@ __all__ = [
     "Order",
     "User",
     "PharmacyMembership",
+    "DrugReference",
+    "DrugReferenceIngredient",
+    "MedicinalProduct",
 ]
