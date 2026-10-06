@@ -38,6 +38,10 @@ type DashboardSummary = {
     critical_expiry: number
     warning_expiry: number
     extended_expiry: number
+    expiry_tracked: number
+    expiry_red: number
+    expiry_yellow: number
+    expiry_green: number
   }
 }
 
@@ -117,14 +121,48 @@ export function Dashboard() {
             />
             <DonutCard
               title='Expiry control'
-              total={String((summary?.inventory.expired ?? 0) + (summary?.inventory.critical_expiry ?? 0) + (summary?.inventory.warning_expiry ?? 0) + (summary?.inventory.extended_expiry ?? 0))}
+              total={String(summary?.inventory.expiry_tracked ?? 0)}
               items={toPercentItems([
-                ['Expired', summary?.inventory.expired ?? 0],
-                ['≤ 3 months', summary?.inventory.critical_expiry ?? 0],
-                ['≤ 9 months', summary?.inventory.warning_expiry ?? 0],
-                ['≤ 12 months', summary?.inventory.extended_expiry ?? 0],
+                ['Red · ≤ 3 months / expired', summary?.inventory.expiry_red ?? 0],
+                ['Yellow · 3–12 months', summary?.inventory.expiry_yellow ?? 0],
+                ['Green · > 12 months', summary?.inventory.expiry_green ?? 0],
               ])}
             />
+          </section>
+
+          <section>
+            <div className='mb-3'>
+              <h2 className='font-semibold'>Operational Health</h2>
+              <p className='text-xs text-muted-foreground'>Action-oriented ratios for daily pharmacy management.</p>
+            </div>
+            <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
+              <CircularMetricCard
+                label='Orders completion'
+                value={ratio(summary?.orders.completed_month ?? 0, summary?.orders.month ?? 0)}
+                detail='Completed / orders this month'
+              />
+              <CircularMetricCard
+                label='Stock health'
+                value={ratio(
+                  Math.max(0, (summary?.inventory.expiry_tracked ?? 0) - (summary?.inventory.low_stock ?? 0)),
+                  summary?.inventory.expiry_tracked ?? 0
+                )}
+                detail='Expiry-tracked records without low stock flag'
+              />
+              <CircularMetricCard
+                label='Expiry health'
+                value={ratio(summary?.inventory.expiry_green ?? 0, summary?.inventory.expiry_tracked ?? 0)}
+                detail='Expiry-tracked stock > 12 months'
+              />
+              <CircularMetricCard
+                label='Rx share'
+                value={ratio(
+                  summary?.sales.by_category.find((item) => item.category === 'Rx')?.revenue ?? 0,
+                  summary?.sales.by_category.reduce((sum, item) => sum + item.revenue, 0) ?? 0
+                )}
+                detail='Prescription sales share'
+              />
+            </div>
           </section>
 
           <section className='grid gap-4 xl:grid-cols-2'>
@@ -162,10 +200,9 @@ export function Dashboard() {
               title='Expiry Control'
               icon={Pill}
               stages={[
-                ['Expired', summary?.inventory.expired ?? 0],
-                ['≤ 3 months', summary?.inventory.critical_expiry ?? 0],
-                ['≤ 9 months', summary?.inventory.warning_expiry ?? 0],
-                ['≤ 12 months', summary?.inventory.extended_expiry ?? 0],
+                ['Red · ≤ 3m', summary?.inventory.expiry_red ?? 0],
+                ['Yellow · 3–12m', summary?.inventory.expiry_yellow ?? 0],
+                ['Green · > 12m', summary?.inventory.expiry_green ?? 0],
               ]}
             />
             <PipelineCard
@@ -241,6 +278,43 @@ function toPercentItems(items: [string, number][]): [string, number][] {
   const total = items.reduce((sum, [, value]) => sum + value, 0)
   if (!total) return []
   return items.map(([label, value]) => [label, Math.round((value / total) * 100)] as [string, number])
+}
+
+function ratio(numerator: number, denominator: number) {
+  if (!denominator) return 0
+  return Math.min(100, Math.round((numerator / denominator) * 100))
+}
+
+function CircularMetricCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string
+  value: number
+  detail: string
+}) {
+  const angle = Math.max(0, Math.min(100, value)) * 3.6
+  return (
+    <div className='rounded-2xl border bg-card p-5 shadow-sm'>
+      <div className='flex items-center gap-4'>
+        <div
+          className='relative grid size-24 shrink-0 place-items-center rounded-full'
+          style={{
+            background: `conic-gradient(hsl(var(--primary)) ${angle}deg, hsl(var(--muted)) ${angle}deg)`,
+          }}
+        >
+          <div className='grid size-18 place-items-center rounded-full bg-card'>
+            <span className='text-xl font-bold'>{value}%</span>
+          </div>
+        </div>
+        <div className='min-w-0'>
+          <p className='font-semibold'>{label}</p>
+          <p className='mt-1 text-xs leading-5 text-muted-foreground'>{detail}</p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function KpiCard({
