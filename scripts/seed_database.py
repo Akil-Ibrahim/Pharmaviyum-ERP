@@ -8,7 +8,8 @@ from sqlalchemy import delete, select
 
 from src.pharmaviyum.core.database import AsyncSessionLocal
 from src.pharmaviyum.models import Patient, Prescription, Product, ProductBatch
-from src.pharmaviyum.models.patients import PatientPurchase\nfrom src.pharmaviyum.models.patients.patient_condition import PatientCondition
+from src.pharmaviyum.models.patients import PatientPurchase
+from src.pharmaviyum.models.patients.patient_condition import PatientCondition
 
 random.seed(20260918)
 
@@ -676,6 +677,7 @@ async def seed_inventory(session) -> dict[str, tuple[Product, ProductBatch]]:
         else:
             for field in (
                 "name",
+                "description",
                 "dosage_strength",
                 "dosage_form",
                 "units_per_pack",
