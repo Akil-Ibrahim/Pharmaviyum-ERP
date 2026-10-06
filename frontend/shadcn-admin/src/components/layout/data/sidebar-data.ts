@@ -8,7 +8,6 @@ import {
   MapPin,
   Package,
   Settings,
-  ShieldCheck,
   Truck,
   UserCog,
   Users,
@@ -21,7 +20,13 @@ export const sidebarData: SidebarData = {
     email: 'admin@pharmaviyum.local',
     avatar: '/avatars/shadcn.jpg',
   },
-  teams: [{ name: 'Pharmaviyum', logo: ShieldCheck, plan: 'Pharmacy CRM' }],
+  teams: [
+    {
+      name: 'Pharmaviyum',
+      logo: '/images/pharmaviyum_logo.png',
+      plan: 'Pharmacy CRM',
+    },
+  ],
   navGroups: [
     {
       title: 'Operations',
