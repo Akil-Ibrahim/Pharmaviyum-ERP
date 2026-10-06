@@ -163,61 +163,6 @@ async def get_dashboard_summary(
         .limit(10)
     )
 
-    original_generic_query = (
-        select(
-            case(
-                (
-                    func.lower(func.coalesce(Product.description, "")).like(
-                        "%generic%"
-                    ),
-                    "Generic",
-                ),
-                (
-                    func.lower(func.coalesce(Product.description, "")).like(
-                        "%reference%"
-                    ),
-                    "Original",
-                ),
-                (
-                    func.lower(func.coalesce(Product.description, "")).like(
-                        "%original%"
-                    ),
-                    "Original",
-                ),
-                else_="Unclassified",
-            ).label("type"),
-            func.count(PatientPurchase.id).label("lines"),
-            func.coalesce(
-                func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
-            ).label("revenue"),
-        )
-        .join(PatientPurchase, PatientPurchase.product_id == Product.id)
-        .join(Patient, Patient.id == PatientPurchase.patient_id)
-        .group_by(
-            case(
-                (
-                    func.lower(func.coalesce(Product.description, "")).like(
-                        "%generic%"
-                    ),
-                    "Generic",
-                ),
-                (
-                    func.lower(func.coalesce(Product.description, "")).like(
-                        "%reference%"
-                    ),
-                    "Original",
-                ),
-                (
-                    func.lower(func.coalesce(Product.description, "")).like(
-                        "%original%"
-                    ),
-                    "Original",
-                ),
-                else_="Unclassified",
-            )
-        )
-    )
-
     patient_purchase_query = (
         select(
             Patient.id,
@@ -315,9 +260,6 @@ async def get_dashboard_summary(
     if scope is not None:
         sales_category_query = sales_category_query.where(Patient.pharmacy_id == scope)
         top_products_query = top_products_query.where(Patient.pharmacy_id == scope)
-        original_generic_query = original_generic_query.where(
-            Patient.pharmacy_id == scope
-        )
         patient_purchase_query = patient_purchase_query.where(
             Patient.pharmacy_id == scope
         )
@@ -330,7 +272,6 @@ async def get_dashboard_summary(
 
     sales_category = (await session.execute(sales_category_query)).all()
     top_products = (await session.execute(top_products_query)).all()
-    original_generic = (await session.execute(original_generic_query)).all()
     patient_purchases = (await session.execute(patient_purchase_query)).all()
 
     latest_condition_subquery = (
@@ -481,14 +422,6 @@ async def get_dashboard_summary(
                 for row in sales_category
             ],
         },
-        "original_vs_generic": [
-            {
-                "type": row.type,
-                "lines": int(row.lines or 0),
-                "revenue": round(float(row.revenue or 0), 2),
-            }
-            for row in original_generic
-        ],
         "top_products": [
             {
                 "id": row.id,
