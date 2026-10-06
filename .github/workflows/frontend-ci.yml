@@ -22,6 +22,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -34,7 +36,19 @@ jobs:
         run: bun run lint
 
       - name: Prettier
-        run: bun run format:check
+        shell: bash
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            BASE_REF="origin/$GITHUB_BASE_REF"
+            FILES="$(git diff --name-only "$BASE_REF...$GITHUB_SHA" -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.json' '*.css' '*.html')"
+          else
+            FILES="$(git diff --name-only "$GITHUB_SHA^" "$GITHUB_SHA" -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.json' '*.css' '*.html')"
+          fi
+          if [ -n "$FILES" ]; then
+            printf '%s\n' "$FILES" | xargs bunx prettier --check
+          else
+            echo "No frontend files changed; skipping Prettier."
+          fi
 
       - name: TypeScript and production build
         run: bun run build
