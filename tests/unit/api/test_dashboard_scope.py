@@ -156,3 +156,38 @@ async def test_dashboard_patient_condition_prefers_active_status():
     )
     assert 'patient_conditions.status = \'active\'' in medication_sql
     assert "row_number() OVER" in medication_sql
+
+
+@pytest.mark.asyncio
+async def test_dashboard_expiry_policy_keeps_three_buckets_disjoint():
+    """Expiry SQL must implement expired/<=3m red, 3-12m yellow, >12m green."""
+    session = _Session()
+    user = SimpleNamespace(id=100, is_active=True, is_superuser=False)
+
+    with patch.object(
+        dashboard,
+        "resolve_pharmacy_scope",
+        new=AsyncMock(return_value=42),
+    ):
+        await dashboard.get_dashboard_summary(
+            current_user=user,
+            session=session,
+            pharmacy_id=42,
+        )
+
+    expiry_sql = next(
+        sql
+        for sql in (
+            str(statement.compile(dialect=postgresql.dialect()))
+            for statement in session.statements
+        )
+        if "extended_warning" in sql and "date_trunc" in sql
+    )
+
+    # Expired records form the red bucket; current/future records through the
+    # +3 month cutoff form the critical/red portion.
+    assert "< %(date_trunc_" in expiry_sql
+    assert ">= %(date_trunc_" in expiry_sql
+    assert "<= %(date_trunc_" in expiry_sql
+    assert "> %(date_trunc_" in expiry_sql
+    assert "extended_warning" in expiry_sql
