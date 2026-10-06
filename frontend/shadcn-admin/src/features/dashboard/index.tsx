@@ -81,9 +81,12 @@ export function Dashboard() {
   }, [])
 
   useEffect(() => {
-    loadSummary()
+    const initialLoad = window.setTimeout(loadSummary, 0)
     const interval = window.setInterval(loadSummary, 30_000)
-    return () => window.clearInterval(interval)
+    return () => {
+      window.clearTimeout(initialLoad)
+      window.clearInterval(interval)
+    }
   }, [loadSummary])
 
   return (
