@@ -25,6 +25,15 @@ class _Result:
             critical=0,
             warning=0,
             extended_warning=0,
+            today_sales=0,
+            month_revenue=0,
+            month_orders=0,
+            month_completed_orders=0,
+            month_prescriptions=0,
+            active_patients=0,
+            retail_value=0,
+            items=0,
+            low_stock=0,
         )
 
 
@@ -95,13 +104,18 @@ async def test_dashboard_summary_applies_one_pharmacy_scope_to_all_aggregates():
     ]
     assert all(42 in params.values() for params in inventory_params)
 
-    # Scalar queries are also part of the captured session contract.
-    scalar_sql = [
-        str(call.args[0].compile(dialect=postgresql.dialect()))
-        for call in session.scalar.await_args_list
-    ]
-    assert any("patients.pharmacy_id" in sql for sql in scalar_sql)
-    assert any("inventory.pharmacy_id" in sql for sql in scalar_sql)
+    # KPI aggregates are captured as execute() statements so multiple
+    # metrics share one database round trip.
+    assert any(
+        "patients.pharmacy_id" in sql
+        for sql in sql_statements
+        if "today_sales" in sql or "month_orders" in sql
+    )
+    assert any(
+        "inventory.pharmacy_id" in sql
+        for sql in sql_statements
+        if "retail_value" in sql or "low_stock" in sql
+    )
 
 
 @pytest.mark.asyncio
@@ -125,11 +139,7 @@ async def test_dashboard_summary_keeps_superuser_global_scope_unfiltered():
         str(statement.compile(dialect=postgresql.dialect()))
         for statement in session.statements
     ]
-    scalar_sql = [
-        str(call.args[0].compile(dialect=postgresql.dialect()))
-        for call in session.scalar.await_args_list
-    ]
-    all_sql = sql_statements + scalar_sql
+    all_sql = sql_statements
     assert all("pharmacy_id" not in sql for sql in all_sql)
 
 
