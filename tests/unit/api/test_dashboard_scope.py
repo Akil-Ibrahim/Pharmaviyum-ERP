@@ -83,7 +83,11 @@ async def test_dashboard_summary_applies_one_pharmacy_scope_to_all_aggregates():
     inventory_queries = [sql for sql in sql_statements if "inventory" in sql]
     assert inventory_queries
     assert all("pharmacy_id = " in sql for sql in inventory_queries)
-    top_products_sql = next(sql for sql in sql_statements if "LIMIT" in sql and "patient_purchases.dispensed_packs" in sql)
+    top_products_sql = next(
+        sql
+        for sql in sql_statements
+        if "LIMIT" in sql and "patient_purchases.dispensed_packs" in sql
+    )
     assert "GROUP BY inventory.product_id" in top_products_sql
 
     # The resolved tenant value must be bound to the same SQL predicate rather
@@ -91,9 +95,7 @@ async def test_dashboard_summary_applies_one_pharmacy_scope_to_all_aggregates():
     patient_params = [
         statement.compile(dialect=postgresql.dialect()).params
         for statement in session.statements
-        if "patient_purchases" in str(
-            statement.compile(dialect=postgresql.dialect())
-        )
+        if "patient_purchases" in str(statement.compile(dialect=postgresql.dialect()))
     ]
     assert all(42 in params.values() for params in patient_params)
 
@@ -168,7 +170,7 @@ async def test_dashboard_patient_condition_prefers_active_status():
         )
         if "patient_conditions" in sql
     )
-    assert 'patient_conditions.status = \'active\'' in medication_sql
+    assert "patient_conditions.status = 'active'" in medication_sql
     assert "row_number() OVER" in medication_sql
     assert "LIMIT %(param_" in medication_sql
     assert "patients.pharmacy_id =" in medication_sql
