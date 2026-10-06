@@ -67,14 +67,17 @@ type DashboardSummary = {
 export function Dashboard() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [loadError, setLoadError] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const loadSummary = useCallback(() => {
+    setIsRefreshing(true)
     apiFetch<DashboardSummary>('/api/v1/dashboard/summary')
       .then((data) => {
         setSummary(data)
         setLoadError(false)
       })
       .catch(() => setLoadError(true))
+      .finally(() => setIsRefreshing(false))
   }, [])
 
   useEffect(() => {
@@ -103,7 +106,7 @@ export function Dashboard() {
             </p>
           </div>
           <span className='w-fit rounded-full border bg-muted/40 px-3 py-1 text-xs text-muted-foreground'>
-            KPI live · synthetic operational data
+            {isRefreshing ? 'Refreshing…' : 'KPI live'} · synthetic operational data
           </span>
         </div>
 
