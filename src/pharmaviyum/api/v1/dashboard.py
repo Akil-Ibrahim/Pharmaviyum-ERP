@@ -130,6 +130,11 @@ async def get_dashboard_summary(
         .scalar_subquery()
     )
 
+    if scope is not None:
+        inventory_stock_subquery = inventory_stock_subquery.where(
+            Inventory.pharmacy_id == scope
+        )
+
     top_products_query = (
         select(
             Product.id,
@@ -267,10 +272,12 @@ async def get_dashboard_summary(
                 (
                     Inventory.expires_at.is_not(None)
                     & (
-                        Inventory.expires_at > datetime.combine(warning_expiry, datetime.min.time())
+                        Inventory.expires_at
+                        > datetime.combine(warning_expiry, datetime.min.time())
                     )
                     & (
-                        Inventory.expires_at <= datetime.combine(extended_expiry, datetime.min.time())
+                        Inventory.expires_at
+                        <= datetime.combine(extended_expiry, datetime.min.time())
                     ),
                     1,
                 ),
@@ -282,7 +289,6 @@ async def get_dashboard_summary(
     if scope is not None:
         sales_category_query = sales_category_query.where(Patient.pharmacy_id == scope)
         top_products_query = top_products_query.where(Patient.pharmacy_id == scope)
-        inventory_stock_subquery = inventory_stock_subquery.where(Inventory.pharmacy_id == scope)
         original_generic_query = original_generic_query.where(
             Patient.pharmacy_id == scope
         )
