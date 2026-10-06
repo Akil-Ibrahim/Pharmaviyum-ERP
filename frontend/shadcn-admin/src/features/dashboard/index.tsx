@@ -34,6 +34,7 @@ type DashboardSummary = {
     patient_name: string
     condition: string | null
     medications: {
+      purchase_id: number
       product_id: number
       name: string
       dosage: string | null
@@ -564,7 +565,7 @@ function PatientCohortCard({
                         </thead>
                         <tbody>
                           {detail.medications.map((medication) => (
-                            <tr key={medication.product_id} className='border-b last:border-0'>
+                            <tr key={medication.purchase_id} className='border-b last:border-0'>
                               <td className='py-2 pr-3 font-medium'>{medication.name}</td>
                               <td className='py-2 pr-3 text-muted-foreground'>
                                 {medication.dosage ?? medication.form ?? '—'}
