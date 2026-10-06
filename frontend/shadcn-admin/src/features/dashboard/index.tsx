@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -65,11 +65,17 @@ type DashboardSummary = {
 export function Dashboard() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
 
-  useEffect(() => {
+  const loadSummary = useCallback(() => {
     apiFetch<DashboardSummary>('/api/v1/dashboard/summary')
       .then(setSummary)
       .catch(() => setSummary(null))
   }, [])
+
+  useEffect(() => {
+    loadSummary()
+    const interval = window.setInterval(loadSummary, 30_000)
+    return () => window.clearInterval(interval)
+  }, [loadSummary])
 
   return (
     <>
@@ -252,7 +258,7 @@ export function Dashboard() {
           <section className='grid gap-4 xl:grid-cols-2'>
             <DataTable
               title='Top Products'
-              columns={['Product', 'Units', 'Revenue', 'Stock']}
+              columns={['Product', 'Packs', 'Revenue', 'Stock']}
               rows={(summary?.top_products ?? []).map((item) => [
                 item.name,
                 item.units.toLocaleString(),
