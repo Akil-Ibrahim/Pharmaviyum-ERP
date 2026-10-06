@@ -128,7 +128,7 @@ export function Dashboard() {
               label='Sales'
               value={
                 summary
-                  ? formatCurrency(summary.sales.today)
+                  ? formatAmount(summary.sales.today)
                   : '—'
               }
               detail={summary ? 'Today · realized sales' : 'Awaiting API data'}
@@ -138,7 +138,7 @@ export function Dashboard() {
               label='Revenue'
               value={
                 summary
-                  ? formatCurrency(summary.revenue.month)
+                  ? formatAmount(summary.revenue.month)
                   : '—'
               }
               detail={summary ? 'This month · realized revenue' : 'Awaiting API data'}
@@ -149,12 +149,12 @@ export function Dashboard() {
           <section className='grid gap-4 xl:grid-cols-3'>
             <DonutCard
               title='Sales by category'
-              total={formatCurrency(summary?.sales.by_category.reduce((sum, item) => sum + item.revenue, 0) ?? 0)}
+              total={formatAmount(summary?.sales.by_category.reduce((sum, item) => sum + item.revenue, 0) ?? 0)}
               items={toPercentItems(summary?.sales.by_category.map((item) => [item.category, item.revenue] as [string, number]) ?? [])}
             />
             <DonutCard
               title='Original vs Generic'
-              total={formatCurrency(summary?.original_vs_generic.reduce((sum, item) => sum + item.revenue, 0) ?? 0)}
+              total={formatAmount(summary?.original_vs_generic.reduce((sum, item) => sum + item.revenue, 0) ?? 0)}
               items={toPercentItems(summary?.original_vs_generic.map((item) => [item.type, item.revenue] as [string, number]) ?? [])}
             />
             <DonutCard
@@ -277,7 +277,7 @@ export function Dashboard() {
               rows={(summary?.top_products ?? []).map((item) => [
                 item.name,
                 item.packs.toLocaleString(),
-                formatCurrency(item.revenue),
+                formatAmount(item.revenue),
                 item.stock.toLocaleString(),
               ])}
             />
@@ -304,7 +304,7 @@ export function Dashboard() {
   )
 }
 
-function formatCurrency(value: number) {
+function formatAmount(value: number) {
   return value.toLocaleString(undefined, {
     maximumFractionDigits: 0,
   })
@@ -465,7 +465,7 @@ function LiveStatCard({
         )}
       </div>
       <div className='mt-2 text-2xl font-semibold tracking-tight'>
-        {currency ? formatCurrency(value) : value.toLocaleString()}
+        {currency ? formatAmount(value) : value.toLocaleString()}
       </div>
       <div className='mt-1 text-xs text-muted-foreground'>{detail}</div>
     </div>
@@ -491,7 +491,7 @@ function PipelineCard({
         {stages.map(([label, value, currency], index) => (
           <div key={label} className='relative min-w-0'>
             <div className='rounded-xl bg-muted/50 p-3 text-center'>
-              <p className='text-lg font-bold'>{currency ? formatCurrency(value) : value.toLocaleString()}</p>
+              <p className='text-lg font-bold'>{currency ? formatAmount(value) : value.toLocaleString()}</p>
               <p className='truncate text-[11px] text-muted-foreground'>{label}</p>
             </div>
             {index < stages.length - 1 && (
@@ -553,7 +553,7 @@ function PatientCohortCard({
                       )}
                     </div>
                     <p className='mt-1 text-[11px] text-muted-foreground'>
-                      {patient.lines} medicines · {patient.packs} packs · {formatCurrency(patient.revenue)}
+                      {patient.lines} medicines · {patient.packs} packs · {formatAmount(patient.revenue)}
                     </p>
                   </div>
                   <span className='text-xs text-muted-foreground transition-transform group-open:rotate-180'>⌄</span>
@@ -592,7 +592,7 @@ function PatientCohortCard({
                               <td className='py-2 pr-3 whitespace-nowrap'>
                                 <ExpiryBadge expiryDate={medication.expiry_date} />
                               </td>
-                              <td className='py-2 text-right font-medium'>{formatCurrency(medication.amount)}</td>
+                              <td className='py-2 text-right font-medium'>{formatAmount(medication.amount)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -677,7 +677,7 @@ function MiniMetric({
     <div className='rounded-xl bg-muted/50 p-3'>
       <p className='text-[11px] text-muted-foreground'>{label}</p>
       <p className='mt-1 text-sm font-semibold'>
-        {currency ? formatCurrency(value) : value.toLocaleString()}
+        {currency ? formatAmount(value) : value.toLocaleString()}
       </p>
     </div>
   )
