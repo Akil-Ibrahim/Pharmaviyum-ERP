@@ -245,20 +245,20 @@ async def get_dashboard_summary(
     )
     expiry_query = select(
         func.count(Inventory.id).where(Inventory.expires_at.is_not(None)).label("tracked"),
-        func.sum(
-            case(
-                (
-                    Inventory.expires_at.is_not(None)
-                    & (
-                        func.date_trunc("month", Inventory.expires_at)
-                        < current_month_start
+        func.coalesce(
+            func.sum(
+                case(
+                    (
+                        Inventory.expires_at.is_not(None)
+                        & (func.date_trunc("month", Inventory.expires_at) < current_month_start),
+                        1,
                     ),
-                    1,
-                ),
-                else_=0,
-            )
+                    else_=0,
+                )
+            ), 0
         ).label("expired"),
-        func.sum(
+        func.coalesce(
+            func.sum(
             case(
                 (
                     Inventory.expires_at.is_not(None)
@@ -274,7 +274,7 @@ async def get_dashboard_summary(
                 ),
                 else_=0,
             )
-        ).label("critical"),
+        ), 0).label("critical"),
         func.sum(
             case(
                 (
@@ -291,7 +291,7 @@ async def get_dashboard_summary(
                 ),
                 else_=0,
             )
-        ).label("warning"),
+        ), 0).label("warning"),
         func.sum(
             case(
                 (
@@ -304,7 +304,7 @@ async def get_dashboard_summary(
                 ),
                 else_=0,
             )
-        ).label("extended_warning"),
+        ), 0).label("extended_warning"),
     )
 
     if scope is not None:
