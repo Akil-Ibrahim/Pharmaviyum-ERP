@@ -6,7 +6,6 @@ import {
   FileText,
   Pill,
   Receipt,
-  Truck,
   Users,
   Wallet,
   type LucideIcon,
