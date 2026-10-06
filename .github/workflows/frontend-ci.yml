@@ -2,9 +2,9 @@ name: Frontend CI
 
 on:
   push:
-    branches: [dev, main]
+    branches: [main]
   pull_request:
-    branches: [dev, main]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -21,20 +21,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v4.4.0
         with:
           fetch-depth: 0
-
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.4.2"
-
       - name: Install dependencies
         run: bun install --no-save
-
       - name: ESLint
         run: bun run lint
-
       - name: Prettier
         shell: bash
         run: |
@@ -46,10 +42,10 @@ jobs:
           fi
           if [ -n "$FILES" ]; then
             cd "$GITHUB_WORKSPACE"
-            printf '%s\n' "$FILES" | xargs bunx prettier --check
+            printf '%s
+' "$FILES" | xargs bunx prettier --check
           else
             echo "No frontend files changed; skipping Prettier."
           fi
-
       - name: TypeScript and production build
         run: bun run build
