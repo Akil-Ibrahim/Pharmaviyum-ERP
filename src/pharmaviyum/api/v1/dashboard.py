@@ -57,9 +57,7 @@ async def get_dashboard_summary(
     today_sales = await session.scalar(
         purchase_base.with_only_columns(
             func.coalesce(
-                func.sum(
-                    PatientPurchase.quantity * PatientPurchase.unit_price
-                ),
+                func.sum(PatientPurchase.quantity * PatientPurchase.unit_price),
                 0,
             )
         ).where(
@@ -108,8 +106,7 @@ async def get_dashboard_summary(
     inventory_query = select(
         func.coalesce(
             func.sum(
-                (Inventory.quantity - Inventory.reserved_quantity)
-                * Product.price
+                (Inventory.quantity - Inventory.reserved_quantity) * Product.price
             ),
             0,
         )
