@@ -129,19 +129,19 @@ async def get_dashboard_summary(
         )
     )
 
-    inventory_stock_subquery = (
+    inventory_stock_query = (
         select(
-            func.coalesce(func.sum(Inventory.quantity - Inventory.reserved_quantity), 0)
+            Inventory.product_id,
+            func.coalesce(
+                func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
+            ).label("stock"),
         )
-        .where(Inventory.product_id == Product.id)
-        .correlate(Product)
-        .scalar_subquery()
+        .group_by(Inventory.product_id)
     )
-
     if scope is not None:
-        inventory_stock_subquery = inventory_stock_subquery.where(
-            Inventory.pharmacy_id == scope
-        )
+        inventory_stock_query = inventory_stock_query.where(Inventory.pharmacy_id == scope)
+
+    inventory_stock_subquery = inventory_stock_query.subquery()
 
     top_products_query = (
         select(
@@ -151,11 +151,15 @@ async def get_dashboard_summary(
             func.coalesce(
                 func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
             ).label("revenue"),
-            inventory_stock_subquery.label("stock"),
+            func.coalesce(inventory_stock_subquery.c.stock, 0).label("stock"),
         )
         .join(PatientPurchase, PatientPurchase.product_id == Product.id)
         .join(Patient, Patient.id == PatientPurchase.patient_id)
-        .group_by(Product.id, Product.name)
+        .outerjoin(
+            inventory_stock_subquery,
+            inventory_stock_subquery.c.product_id == Product.id,
+        )
+        .group_by(Product.id, Product.name, inventory_stock_subquery.c.stock)
         .order_by(func.sum(PatientPurchase.dispensed_packs).desc())
         .limit(10)
     )
