@@ -476,7 +476,7 @@ function PipelineCard({
         <Icon className='size-4 text-primary' />
         <h2 className='font-semibold'>{title}</h2>
       </div>
-      <div className='grid grid-cols-4 gap-2'>
+      <div className='grid grid-cols-2 gap-2 sm:grid-cols-4'>
         {stages.map(([label, value, currency], index) => (
           <div key={label} className='relative min-w-0'>
             <div className='rounded-xl bg-muted/50 p-3 text-center'>
