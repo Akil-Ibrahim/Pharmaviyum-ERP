@@ -326,11 +326,29 @@ async def get_dashboard_summary(
     original_generic = (await session.execute(original_generic_query)).all()
     patient_purchases = (await session.execute(patient_purchase_query)).all()
 
+    latest_condition_subquery = (
+        select(
+            PatientCondition.patient_id,
+            PatientCondition.condition_name,
+            func.row_number()
+            .over(
+                partition_by=PatientCondition.patient_id,
+                order_by=(
+                    PatientCondition.status.asc(),
+                    PatientCondition.updated_at.desc(),
+                    PatientCondition.id.desc(),
+                ),
+            )
+            .label("condition_rank"),
+        )
+        .subquery()
+    )
+
     patient_medication_query = (
         select(
             Patient.id.label("patient_id"),
             Patient.full_name.label("patient_name"),
-            PatientCondition.condition_name.label("condition"),
+            latest_condition_subquery.c.condition_name.label("condition"),
             Product.id.label("product_id"),
             Product.name.label("product_name"),
             Product.dosage_strength,
@@ -360,7 +378,11 @@ async def get_dashboard_summary(
         .join(PatientPurchase, PatientPurchase.patient_id == Patient.id)
         .join(Product, Product.id == PatientPurchase.product_id)
         .outerjoin(ProductBatch, ProductBatch.id == PatientPurchase.batch_id)
-        .outerjoin(PatientCondition, PatientCondition.patient_id == Patient.id)
+        .outerjoin(
+            latest_condition_subquery,
+            (latest_condition_subquery.c.patient_id == Patient.id)
+            & (latest_condition_subquery.c.condition_rank == 1),
+        )
         .order_by(Patient.id, PatientPurchase.id)
     )
     if scope is not None:
