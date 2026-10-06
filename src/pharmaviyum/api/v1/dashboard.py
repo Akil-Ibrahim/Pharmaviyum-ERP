@@ -1,0 +1,187 @@
+"""Tenant-aware operational metrics for the pharmacy dashboard."""
+
+from datetime import date, datetime, timedelta
+
+from fastapi import APIRouter, Query
+from sqlalchemy import case, func, select
+
+from src.pharmaviyum.models.inventory import Inventory
+from src.pharmaviyum.models.order import Order
+from src.pharmaviyum.models.patients import Patient, PatientPurchase
+from src.pharmaviyum.models.prescription import Prescription
+from src.pharmaviyum.models.product import Product
+from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
+from src.pharmaviyum.modules.auth.tenant import resolve_pharmacy_scope
+
+router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
+
+
+@router.get("/summary")
+async def get_dashboard_summary(
+    current_user: CurrentUser,
+    session: SessionDep,
+    pharmacy_id: int | None = Query(default=None, gt=0),
+) -> dict:
+    """Return the minimum real operational metrics needed by the dashboard.
+
+    Revenue is sourced from PatientPurchase, the canonical realized-sales
+    ledger. Pending orders are deliberately excluded from revenue.
+    """
+
+    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, session)
+    now = datetime.utcnow()
+    today = now.date()
+    today_start = datetime.combine(today, datetime.min.time())
+    tomorrow_start = today_start + timedelta(days=1)
+    month_start = today_start.replace(day=1)
+    critical_expiry = today + timedelta(days=90)
+    warning_expiry = today + timedelta(days=270)
+
+    patient_scope = select(Patient.id)
+    if scope is not None:
+        patient_scope = patient_scope.where(Patient.pharmacy_id == scope)
+
+    purchase_base = select(PatientPurchase).join(
+        Patient, Patient.id == PatientPurchase.patient_id
+    )
+    order_base = select(Order).join(Patient, Patient.id == Order.patient_id)
+    prescription_base = select(Prescription).join(
+        Patient, Patient.id == Prescription.patient_id
+    )
+
+    if scope is not None:
+        purchase_base = purchase_base.where(Patient.pharmacy_id == scope)
+        order_base = order_base.where(Patient.pharmacy_id == scope)
+        prescription_base = prescription_base.where(Patient.pharmacy_id == scope)
+
+    today_sales = await session.scalar(
+        purchase_base.with_only_columns(
+            func.coalesce(
+                func.sum(
+                    PatientPurchase.quantity * PatientPurchase.unit_price
+                ),
+                0,
+            )
+        ).where(
+            PatientPurchase.purchased_at >= today_start,
+            PatientPurchase.purchased_at < tomorrow_start,
+        )
+    )
+
+    month_revenue = await session.scalar(
+        purchase_base.with_only_columns(
+            func.coalesce(
+                func.sum(
+                    PatientPurchase.quantity * PatientPurchase.unit_price
+                ),
+                0,
+            )
+        ).where(PatientPurchase.purchased_at >= month_start)
+    )
+
+    month_orders = await session.scalar(
+        order_base.with_only_columns(func.count(Order.id)).where(
+            Order.created_at >= month_start
+        )
+    )
+
+    month_completed_orders = await session.scalar(
+        order_base.with_only_columns(func.count(Order.id)).where(
+            Order.created_at >= month_start,
+            Order.status == "completed",
+        )
+    )
+
+    month_prescriptions = await session.scalar(
+        prescription_base.with_only_columns(func.count(Prescription.id)).where(
+            Prescription.created_at >= month_start
+        )
+    )
+
+    active_patients = await session.scalar(
+        select(func.count(Patient.id)).where(
+            Patient.is_active.is_(True),
+            Patient.id.in_(patient_scope),
+        )
+    )
+
+    inventory_query = select(
+        func.coalesce(
+            func.sum(
+                (Inventory.quantity - Inventory.reserved_quantity) * Product.price
+            ),
+            0,
+        )
+    ).join(Product, Product.id == Inventory.product_id)
+    low_stock_query = select(func.count(Inventory.id)).where(
+        Inventory.quantity - Inventory.reserved_quantity <= Inventory.reorder_level
+    )
+    expiry_query = select(
+        func.sum(case((Inventory.expires_at < now, 1), else_=0)).label("expired"),
+        func.sum(
+            case(
+                (
+                    Inventory.expires_at.is_not(None)
+                    & (Inventory.expires_at >= now)
+                    & (Inventory.expires_at <= datetime.combine(
+                        critical_expiry, datetime.min.time()
+                    )),
+                    1,
+                ),
+                else_=0,
+            )
+        ).label("critical"),
+        func.sum(
+            case(
+                (
+                    Inventory.expires_at.is_not(None)
+                    & (
+                        Inventory.expires_at
+                        > datetime.combine(critical_expiry, datetime.min.time())
+                    )
+                    & (
+                        Inventory.expires_at
+                        <= datetime.combine(warning_expiry, datetime.min.time())
+                    ),
+                    1,
+                ),
+                else_=0,
+            )
+        ).label("warning"),
+    )
+
+    if scope is not None:
+        inventory_query = inventory_query.where(Inventory.pharmacy_id == scope)
+        low_stock_query = low_stock_query.where(Inventory.pharmacy_id == scope)
+        expiry_query = expiry_query.where(Inventory.pharmacy_id == scope)
+
+    inventory_value = await session.scalar(inventory_query)
+    low_stock = await session.scalar(low_stock_query)
+    expiry = (await session.execute(expiry_query)).one()
+
+    return {
+        "as_of": now.isoformat(),
+        "patients": {
+            "active": int(active_patients or 0),
+        },
+        "sales": {
+            "today": round(float(today_sales or 0), 2),
+        },
+        "revenue": {
+            "month": round(float(month_revenue or 0), 2),
+        },
+        "orders": {
+            "month": int(month_orders or 0),
+            "completed_month": int(month_completed_orders or 0),
+        },
+        "prescriptions": {
+            "month": int(month_prescriptions or 0),
+        },
+        "inventory": {
+            "retail_value": round(float(inventory_value or 0), 2),
+            "low_stock": int(low_stock or 0),
+            "expired": int(expiry.expired or 0),
+            "critical_expiry": int(expiry.critical or 0),
+            "warning_expiry": int(expiry.warning or 0),
+        },
+    }
