@@ -9,10 +9,10 @@
 
 - name: Check PostgreSQL container
   ansible.builtin.command: docker ps --filter "name={{ docker_compose_project }}-db" --format "{{ '{{' }}.Names{{ '}}' }}"
-  register: postgres_container
+  register: postgresql_container
   changed_when: false
   failed_when: false
 
 - name: Show PostgreSQL status
   ansible.builtin.debug:
-    msg: "PostgreSQL container: {{ postgres_container.stdout | default('not running') }}"
+    msg: "PostgreSQL container: {{ postgresql_container.stdout | default('not running') }}"
