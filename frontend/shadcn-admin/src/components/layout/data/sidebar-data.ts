@@ -10,7 +10,6 @@ import {
   FileText,
   LayoutDashboard,
   ListChecks,
-  MapPin,
   PackageCheck,
   Palette,
   Pill,
