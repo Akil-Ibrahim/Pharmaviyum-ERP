@@ -1,119 +1,86 @@
-# Shadcn Admin Dashboard
+# Pharmaviyum — Pharmacy ERP/CRM
 
-Admin Dashboard UI crafted with Shadcn and Vite. Built with responsiveness and accessibility in mind.
+<p align="center">
+  <img src="public/images/pharmaviyum.png" alt="Pharmaviyum Pharmacy ERP/CRM" width="100%">
+</p>
 
-![alt text](public/images/shadcn-admin.png)
+> Pharmacy ERP/CRM platform with Mortarium AI for pharmacy operations, workflow, inventory, procurement, POS, and intelligent decision support.
 
-[![Sponsored by Clerk](https://img.shields.io/badge/Sponsored%20by-Clerk-5b6ee1?logo=clerk)](https://go.clerk.com/GttUAaK)
+## Overview
 
-I've been creating dashboard UIs at work and for my personal projects. I always wanted to make a reusable collection of dashboard UI for future projects; and here it is now. While I've created a few custom components, some of the code is directly adapted from ShadcnUI examples.
+**Pharmaviyum** is a pharmacy-focused ERP/CRM platform with an integrated AI layer, **Mortarium**.
 
-> This is not a starter project (template) though. I'll probably make one in the future.
+The project evolved from a pharmacy CRM with an AI layer into a broader pharmacy ERP/CRM foundation covering operational workflows such as patients, prescriptions, products, POS, procurement, suppliers, receiving, inventory, batches, expiry control, FEFO dispensing, stock transfers, and auditability.
 
-## Features
+The system is designed around real pharmacy workflows and can complement existing pharmacy ERP environments during gradual adoption rather than requiring an immediate replacement of existing systems.
 
-- Light/dark mode
-- Responsive
-- Accessible
-- With built-in Sidebar component
-- Global search command
-- 10+ pages
-- Extra custom components
-- RTL support
+## Frontend
 
-<details>
-<summary>Customized Components (click to expand)</summary>
+The frontend is the operational administration interface for Pharmaviyum.
 
-This project uses Shadcn UI components, but some have been slightly modified for better RTL (Right-to-Left) support and other improvements. These customized components differ from the original Shadcn UI versions.
+It provides the UI foundation for:
 
-If you want to update components using the Shadcn CLI (e.g., `npx shadcn@latest add <component>`), it's generally safe for non-customized components. For the listed customized ones, you may need to manually merge changes to preserve the project's modifications and avoid overwriting RTL support or other updates.
+- Dashboard and pharmacy KPIs
+- Patients and patient purchase history
+- Prescriptions and dispensing workflows
+- Products and drug reference
+- POS and orders
+- Inventory, batches, FEFO, and expiry control
+- Procurement and suppliers
+- Pharmacy locations and staff
+- Auditability and operational visibility
+- Mortarium AI decision-support workflows
 
-> If you don't require RTL support, you can safely update the 'RTL Updated Components' via the Shadcn CLI, as these changes are primarily for RTL compatibility. The 'Modified Components' may have other customizations to consider.
+## Technology Stack
 
-### Modified Components
+- React
+- TypeScript
+- Vite
+- TanStack Router
+- TanStack Query
+- Axios
+- Tailwind CSS
+- shadcn/ui
+- Lucide Icons
+- Vitest
+- Playwright
 
-- scroll-area
-- sonner
-- separator
-
-### RTL Updated Components
-
-- alert-dialog
-- calendar
-- command
-- dialog
-- dropdown-menu
-- select
-- table
-- sheet
-- sidebar
-- switch
-
-**Notes:**
-
-- **Modified Components**: These have general updates, potentially including RTL adjustments.
-- **RTL Updated Components**: These have specific changes for RTL language support (e.g., layout, positioning).
-- For implementation details, check the source files in `src/components/ui/`.
-- All other Shadcn UI components in the project are standard and can be safely updated via the CLI.
-
-</details>
-
-## Tech Stack
-
-**UI:** [ShadcnUI](https://ui.shadcn.com) (TailwindCSS + RadixUI)
-
-**Build Tool:** [Vite](https://vitejs.dev/)
-
-**Routing:** [TanStack Router](https://tanstack.com/router/latest)
-
-**Type Checking:** [TypeScript](https://www.typescriptlang.org/)
-
-**Linting/Formatting:** [ESLint](https://eslint.org/) & [Prettier](https://prettier.io/)
-
-**Icons:** [Lucide Icons](https://lucide.dev/icons/), [Tabler Icons](https://tabler.io/icons) (Brand icons only)
-
-**Auth (partial):** [Clerk](https://go.clerk.com/GttUAaK)
+The interface is designed with responsive layouts and accessibility in mind for both desktop and mobile pharmacy workflows.
 
 ## Run Locally
 
-Clone the project
+From the frontend directory:
 
 ```bash
-  git clone https://github.com/satnaing/shadcn-admin.git
+cd frontend/shadcn-admin
+bun install
+bun run dev
 ```
 
-Go to the project directory
+Production build:
 
 ```bash
-  cd shadcn-admin
+bun run build
 ```
 
-Install dependencies
+Tests:
 
 ```bash
-  pnpm install
+bun run test
+bun run test:e2e
 ```
 
-Start the server
+## Project Context
 
-```bash
-  pnpm run dev
-```
+Pharmaviyum is developed as a pharmacy ERP/CRM foundation with a production-oriented FastAPI backend and the Mortarium AI layer.
 
-## Sponsoring this project ❤️
+The frontend is one part of the broader platform and is intentionally kept aligned with real pharmacy workflows rather than being a generic admin template.
 
-If you find this project helpful or use this in your own work, consider [sponsoring me](https://github.com/sponsors/satnaing) to support development and maintenance. You can [buy me a coffee](https://buymeacoffee.com/satnaing) as well. Don’t worry, every penny helps. Thank you! 🙏
+## Demo / NDA Notice
 
-For questions or sponsorship inquiries, feel free to reach out at [satnaingdev@gmail.com](mailto:satnaingdev@gmail.com).
+- Demo data is synthetic.
+- No real client data is included.
+- Proprietary production integrations and business logic are not exposed here.
+- Usage and redistribution are subject to the applicable NDA and author permission.
 
-### Current Sponsor
-
-- [Clerk](https://go.clerk.com/GttUAaK) - authentication and user management for the modern web
-
-## Author
-
-Crafted with 🤍 by [@satnaing](https://github.com/satnaing)
-
-## License
-
-Licensed under the [MIT License](https://choosealicense.com/licenses/mit/)
+© 2026 Pharmaviyum. All rights reserved.
