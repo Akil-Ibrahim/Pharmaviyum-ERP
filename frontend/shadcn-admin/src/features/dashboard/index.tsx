@@ -29,6 +29,23 @@ type DashboardSummary = {
   original_vs_generic: { type: string; lines: number; revenue: number }[]
   top_products: { id: number; name: string; units: number; revenue: number; stock: number }[]
   patient_purchases: { patient_id: number; patient_name: string; lines: number; packs: number; revenue: number }[]
+  patient_medications: {
+    patient_id: number
+    patient_name: string
+    condition: string | null
+    medications: {
+      product_id: number
+      name: string
+      dosage: string | null
+      form: string | null
+      pack_size: number
+      packs: number
+      amount: number
+      prescription_required: boolean
+      type: string
+      expiry_date: string | null
+    }[]
+  }[]
   orders: { month: number; completed_month: number }
   prescriptions: { month: number }
   inventory: {
@@ -243,7 +260,7 @@ export function Dashboard() {
                 item.stock.toLocaleString(),
               ])}
             />
-            <PatientCohortCard patients={summary?.patient_purchases ?? []} />
+            <PatientCohortCard patients={summary?.patient_purchases ?? []} details={summary?.patient_medications ?? []} />
           </section>
 
           <section className='rounded-2xl border bg-muted/20 p-5'>
@@ -470,12 +487,15 @@ function PipelineCard({
 
 function PatientCohortCard({
   patients,
+  details,
 }: {
   patients: DashboardSummary['patient_purchases']
+  details: DashboardSummary['patient_medications']
 }) {
   const totalLines = patients.reduce((sum, patient) => sum + patient.lines, 0)
   const totalPacks = patients.reduce((sum, patient) => sum + patient.packs, 0)
   const totalRevenue = patients.reduce((sum, patient) => sum + patient.revenue, 0)
+  const detailByPatient = new Map(details.map((patient) => [patient.patient_id, patient]))
 
   return (
     <div className='rounded-2xl border bg-card p-5 shadow-sm'>
@@ -483,7 +503,7 @@ function PatientCohortCard({
         <div>
           <h2 className='font-semibold'>Patient Purchases · 20</h2>
           <p className='text-xs text-muted-foreground'>
-            Synthetic patient cohort · live ERP aggregates
+            Patient, condition, medicines, pack size, quantity, expiry and realized amount
           </p>
         </div>
         <span className='rounded-full border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground'>
@@ -497,27 +517,74 @@ function PatientCohortCard({
         <MiniMetric label='Revenue' value={totalRevenue} currency />
       </div>
 
-      <div className='max-h-[520px] overflow-auto pr-1'>
-        <table className='w-full text-sm'>
-          <thead className='sticky top-0 bg-card'>
-            <tr className='border-b text-left text-xs text-muted-foreground'>
-              <th className='pr-3 pb-3 font-medium'>Patient</th>
-              <th className='pr-3 pb-3 text-right font-medium'>Meds</th>
-              <th className='pr-3 pb-3 text-right font-medium'>Packs</th>
-              <th className='pb-3 text-right font-medium'>Revenue</th>
-            </tr>
-          </thead>
-          <tbody>
-            {patients.map((patient) => (
-              <tr key={patient.patient_id} className='border-b last:border-0'>
-                <td className='max-w-[150px] truncate py-3 pr-3'>{patient.patient_name}</td>
-                <td className='py-3 pr-3 text-right'>{patient.lines}</td>
-                <td className='py-3 pr-3 text-right'>{patient.packs}</td>
-                <td className='py-3 text-right'>{formatCurrency(patient.revenue)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className='max-h-[620px] overflow-auto pr-1'>
+        <div className='space-y-2'>
+          {patients.map((patient) => {
+            const detail = detailByPatient.get(patient.patient_id)
+            return (
+              <details key={patient.patient_id} className='group rounded-xl border bg-muted/20'>
+                <summary className='flex cursor-pointer list-none items-center gap-3 p-3 [&::-webkit-details-marker]:hidden'>
+                  <div className='min-w-0 flex-1'>
+                    <div className='flex items-center gap-2'>
+                      <span className='truncate text-sm font-medium'>{patient.patient_name}</span>
+                      {detail?.condition && (
+                        <span className='hidden rounded-full border bg-card px-2 py-0.5 text-[10px] text-muted-foreground sm:inline'>
+                          {detail.condition}
+                        </span>
+                      )}
+                    </div>
+                    <p className='mt-1 text-[11px] text-muted-foreground'>
+                      {patient.lines} medicines · {patient.packs} packs · {formatCurrency(patient.revenue)}
+                    </p>
+                  </div>
+                  <span className='text-xs text-muted-foreground transition-transform group-open:rotate-180'>⌄</span>
+                </summary>
+
+                {detail && (
+                  <div className='border-t px-3 pb-3'>
+                    <div className='mt-3 overflow-x-auto'>
+                      <table className='w-full min-w-[700px] text-xs'>
+                        <thead>
+                          <tr className='border-b text-left text-muted-foreground'>
+                            <th className='py-2 pr-3 font-medium'>Medicine</th>
+                            <th className='py-2 pr-3 font-medium'>Dosage</th>
+                            <th className='py-2 pr-3 text-right font-medium'>Pack</th>
+                            <th className='py-2 pr-3 text-right font-medium'>Packs</th>
+                            <th className='py-2 pr-3 font-medium'>Type</th>
+                            <th className='py-2 pr-3 font-medium'>Expiry</th>
+                            <th className='py-2 text-right font-medium'>Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detail.medications.map((medication) => (
+                            <tr key={medication.product_id} className='border-b last:border-0'>
+                              <td className='py-2 pr-3 font-medium'>{medication.name}</td>
+                              <td className='py-2 pr-3 text-muted-foreground'>
+                                {medication.dosage ?? medication.form ?? '—'}
+                              </td>
+                              <td className='py-2 pr-3 text-right'>{medication.pack_size || '—'}</td>
+                              <td className='py-2 pr-3 text-right'>{medication.packs}</td>
+                              <td className='py-2 pr-3'>
+                                <span className={medication.type === 'Generic' ? 'text-muted-foreground' : medication.type === 'Original' ? 'font-medium text-primary' : 'text-muted-foreground'}>
+                                  {medication.type}
+                                  {medication.prescription_required ? ' · Rx' : ' · OTC'}
+                                </span>
+                              </td>
+                              <td className='py-2 pr-3 whitespace-nowrap text-muted-foreground'>
+                                {formatExpiry(medication.expiry_date)}
+                              </td>
+                              <td className='py-2 text-right font-medium'>{formatCurrency(medication.amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </details>
+            )
+          })}
+        </div>
         {patients.length === 0 && (
           <p className='py-6 text-center text-xs text-muted-foreground'>
             No patient purchase data
@@ -526,6 +593,13 @@ function PatientCohortCard({
       </div>
     </div>
   )
+}
+
+function formatExpiry(value: string | null) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
 }
 
 function MiniMetric({
