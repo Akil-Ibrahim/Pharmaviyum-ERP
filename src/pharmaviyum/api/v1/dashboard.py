@@ -108,7 +108,8 @@ async def get_dashboard_summary(
     inventory_query = select(
         func.coalesce(
             func.sum(
-                (Inventory.quantity - Inventory.reserved_quantity) * Product.price
+                (Inventory.quantity - Inventory.reserved_quantity)
+                * Product.price
             ),
             0,
         )
@@ -123,9 +124,10 @@ async def get_dashboard_summary(
                 (
                     Inventory.expires_at.is_not(None)
                     & (Inventory.expires_at >= now)
-                    & (Inventory.expires_at <= datetime.combine(
-                        critical_expiry, datetime.min.time()
-                    )),
+                    & (
+                        Inventory.expires_at
+                        <= datetime.combine(critical_expiry, datetime.min.time())
+                    ),
                     1,
                 ),
                 else_=0,
