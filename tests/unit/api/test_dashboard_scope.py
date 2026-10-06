@@ -1,7 +1,8 @@
 """Regression tests for Dashboard tenant query scoping."""
 
-from types import SimpleNamespace
+from datetime import datetime
 import re
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
