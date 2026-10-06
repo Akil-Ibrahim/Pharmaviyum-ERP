@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import {
+  ArrowDownRight,
   ArrowUpRight,
+  Boxes,
+  FileText,
   Pill,
   Receipt,
+  Truck,
   Users,
   Wallet,
   type LucideIcon,
@@ -122,6 +126,64 @@ export function Dashboard() {
                 ['≤ 12 months', summary?.inventory.extended_expiry ?? 0],
               ])}
             />
+          </section>
+
+          <section className='grid gap-4 xl:grid-cols-2'>
+            <PipelineCard
+              title='Orders / POS'
+              icon={Receipt}
+              stages={[
+                ['Orders', summary?.orders.month ?? 0],
+                ['Completed', summary?.orders.completed_month ?? 0],
+                ['Patients', summary?.patients.active ?? 0],
+                ['Sales today', summary?.sales.today ?? 0],
+              ]}
+            />
+            <PipelineCard
+              title='Prescriptions'
+              icon={FileText}
+              stages={[
+                ['This month', summary?.prescriptions.month ?? 0],
+                ['Orders', summary?.orders.month ?? 0],
+                ['Completed', summary?.orders.completed_month ?? 0],
+                ['Revenue', summary?.revenue.month ?? 0],
+              ]}
+            />
+            <PipelineCard
+              title='Inventory'
+              icon={Boxes}
+              stages={[
+                ['Stock value', summary?.inventory.retail_value ?? 0],
+                ['Low stock', summary?.inventory.low_stock ?? 0],
+                ['Expired', summary?.inventory.expired ?? 0],
+                ['≤ 12 months', (summary?.inventory.critical_expiry ?? 0) + (summary?.inventory.warning_expiry ?? 0) + (summary?.inventory.extended_expiry ?? 0)],
+              ]}
+            />
+            <PipelineCard
+              title='Expiry Control'
+              icon={Pill}
+              stages={[
+                ['Expired', summary?.inventory.expired ?? 0],
+                ['≤ 3 months', summary?.inventory.critical_expiry ?? 0],
+                ['≤ 9 months', summary?.inventory.warning_expiry ?? 0],
+                ['≤ 12 months', summary?.inventory.extended_expiry ?? 0],
+              ]}
+            />
+          </section>
+
+          <section>
+            <div className='mb-3'>
+              <h2 className='font-semibold'>Operational Statistics</h2>
+              <p className='text-xs text-muted-foreground'>Live ERP signals for daily pharmacy management.</p>
+            </div>
+            <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3'>
+              <LiveStatCard label='Orders' value={summary?.orders.month ?? 0} detail='This month' direction='up' />
+              <LiveStatCard label='Completed orders' value={summary?.orders.completed_month ?? 0} detail='This month' direction='up' />
+              <LiveStatCard label='Prescriptions' value={summary?.prescriptions.month ?? 0} detail='This month' direction='up' />
+              <LiveStatCard label='Low stock' value={summary?.inventory.low_stock ?? 0} detail='Inventory items' direction='down' />
+              <LiveStatCard label='Expiring soon' value={(summary?.inventory.critical_expiry ?? 0) + (summary?.inventory.warning_expiry ?? 0) + (summary?.inventory.extended_expiry ?? 0)} detail='Within 12 months' direction='down' />
+              <LiveStatCard label='Inventory value' value={summary?.inventory.retail_value ?? 0} detail='Current retail value' direction='up' currency />
+            </div>
           </section>
 
           <section className='grid gap-4 xl:grid-cols-2'>
@@ -264,6 +326,69 @@ function DonutCard({
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function LiveStatCard({
+  label,
+  value,
+  detail,
+  direction,
+  currency = false,
+}: {
+  label: string
+  value: number
+  detail: string
+  direction: 'up' | 'down'
+  currency?: boolean
+}) {
+  return (
+    <div className='rounded-xl border bg-card p-4 shadow-sm'>
+      <div className='flex items-center justify-between'>
+        <span className='text-sm text-muted-foreground'>{label}</span>
+        {direction === 'up' ? (
+          <ArrowUpRight className='size-4 text-emerald-600' />
+        ) : (
+          <ArrowDownRight className='size-4 text-amber-600' />
+        )}
+      </div>
+      <div className='mt-2 text-2xl font-semibold tracking-tight'>
+        {currency ? formatCurrency(value) : value.toLocaleString()}
+      </div>
+      <div className='mt-1 text-xs text-muted-foreground'>{detail}</div>
+    </div>
+  )
+}
+
+function PipelineCard({
+  title,
+  icon: Icon,
+  stages,
+}: {
+  title: string
+  icon: LucideIcon
+  stages: [string, number][]
+}) {
+  return (
+    <div className='rounded-2xl border bg-card p-5 shadow-sm'>
+      <div className='mb-5 flex items-center gap-2'>
+        <Icon className='size-4 text-primary' />
+        <h2 className='font-semibold'>{title}</h2>
+      </div>
+      <div className='grid grid-cols-4 gap-2'>
+        {stages.map(([label, value], index) => (
+          <div key={label} className='relative min-w-0'>
+            <div className='rounded-xl bg-muted/50 p-3 text-center'>
+              <p className='text-lg font-bold'>{typeof value === 'number' && label !== 'Sales today' && label !== 'Revenue' && label !== 'Stock value' ? value.toLocaleString() : formatCurrency(value)}</p>
+              <p className='truncate text-[11px] text-muted-foreground'>{label}</p>
+            </div>
+            {index < stages.length - 1 && (
+              <span className='absolute top-1/2 -right-2 z-10 hidden -translate-y-1/2 text-muted-foreground sm:block'>→</span>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   )
