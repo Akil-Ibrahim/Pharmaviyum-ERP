@@ -632,7 +632,7 @@ async def seed_inventory(session) -> dict[str, tuple[Product, ProductBatch]]:
             product = Product(
                 name=spec["name"],
                 sku=spec["sku"],
-                description="Synthetic pharmacy demonstration product.",
+                description=spec.get("description", "Synthetic pharmacy demonstration product."),
                 dosage_strength=spec["dosage_strength"],
                 dosage_form=spec["dosage_form"],
                 units_per_pack=spec["units_per_pack"],
