@@ -489,14 +489,10 @@ async def get_dashboard_summary(
             "warning_expiry": int(expiry.warning or 0),
             "extended_expiry": int(expiry.extended_warning or 0),
             "expiry_red": int((expiry.expired or 0) + (expiry.critical or 0)),
-            "expiry_yellow": int((expiry.warning or 0) + (expiry.extended_warning or 0)),
-            "expiry_green": max(
-                0,
-                int(expiry.tracked or 0)
-                - int(expiry.expired or 0)
-                - int(expiry.critical or 0)
-                - int(expiry.warning or 0)
-                - int(expiry.extended_warning or 0),
-            ),
+            # The UI has exactly three mutually exclusive buckets:
+            # red = expired/<=3 months, yellow = >3-12 months,
+            # green = >12 months.
+            "expiry_yellow": int(expiry.warning or 0),
+            "expiry_green": int(expiry.extended_warning or 0),
         },
     }
