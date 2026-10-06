@@ -606,18 +606,22 @@ function ExpiryBadge({ expiryDate }: { expiryDate: string | null }) {
     return <span className='text-muted-foreground'>—</span>
   }
 
-  const days = Math.ceil(
-    (new Date(expiryDate).getTime() - new Date().setHours(0, 0, 0, 0)) /
-      (1000 * 60 * 60 * 24)
-  )
+  const expiry = new Date(expiryDate)
+  const today = new Date()
+  const expiryMonth = new Date(expiry.getFullYear(), expiry.getMonth(), 1)
+  const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const monthsUntilExpiry =
+    (expiryMonth.getFullYear() - currentMonth.getFullYear()) * 12 +
+    expiryMonth.getMonth() -
+    currentMonth.getMonth()
 
   const state =
-    days <= 90
+    monthsUntilExpiry <= 3
       ? {
-          label: days < 0 ? 'Expired' : '≤ 3m',
+          label: monthsUntilExpiry < 0 ? 'Expired' : '≤ 3m',
           className: 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400',
         }
-      : days <= 365
+      : monthsUntilExpiry <= 12
         ? {
             label: '3–12m',
             className: 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400',
