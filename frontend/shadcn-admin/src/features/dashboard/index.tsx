@@ -23,7 +23,7 @@ type DashboardSummary = {
   patients: { active: number }
   sales: {
     today: number
-    by_category: { category: string; lines: number; units: number; revenue: number }[]
+    by_category: { category: string; lines: number; packs: number; revenue: number }[]
   }
   revenue: { month: number }
   original_vs_generic: { type: string; lines: number; revenue: number }[]
