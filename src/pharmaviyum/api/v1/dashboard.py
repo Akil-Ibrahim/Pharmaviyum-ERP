@@ -36,9 +36,17 @@ async def get_dashboard_summary(
     today_start = datetime.combine(today, datetime.min.time())
     tomorrow_start = today_start + timedelta(days=1)
     month_start = today_start.replace(day=1)
-    critical_expiry = today + timedelta(days=90)
-    warning_expiry = today + timedelta(days=270)
-    extended_expiry = today + timedelta(days=365)
+    # Expiry policy is month-based in the dashboard UI:
+    # <= 3 months = red, 4-12 months = yellow, > 12 months = green.
+    current_month_start = today_start.replace(day=1)
+
+    def month_start_after(months: int) -> datetime:
+        total = current_month_start.year * 12 + current_month_start.month - 1 + months
+        year, month_index = divmod(total, 12)
+        return current_month_start.replace(year=year, month=month_index + 1)
+
+    red_cutoff_month = month_start_after(3)
+    yellow_cutoff_month = month_start_after(12)
 
     patient_scope = select(Patient.id)
     if scope is not None:
@@ -237,15 +245,30 @@ async def get_dashboard_summary(
     )
     expiry_query = select(
         func.count(Inventory.id).where(Inventory.expires_at.is_not(None)).label("tracked"),
-        func.sum(case((Inventory.expires_at < now, 1), else_=0)).label("expired"),
         func.sum(
             case(
                 (
                     Inventory.expires_at.is_not(None)
-                    & (Inventory.expires_at >= now)
                     & (
-                        Inventory.expires_at
-                        <= datetime.combine(critical_expiry, datetime.min.time())
+                        func.date_trunc("month", Inventory.expires_at)
+                        < current_month_start
+                    ),
+                    1,
+                ),
+                else_=0,
+            )
+        ).label("expired"),
+        func.sum(
+            case(
+                (
+                    Inventory.expires_at.is_not(None)
+                    & (
+                        func.date_trunc("month", Inventory.expires_at)
+                        >= current_month_start
+                    )
+                    & (
+                        func.date_trunc("month", Inventory.expires_at)
+                        <= red_cutoff_month
                     ),
                     1,
                 ),
@@ -257,12 +280,12 @@ async def get_dashboard_summary(
                 (
                     Inventory.expires_at.is_not(None)
                     & (
-                        Inventory.expires_at
-                        > datetime.combine(critical_expiry, datetime.min.time())
+                        func.date_trunc("month", Inventory.expires_at)
+                        > red_cutoff_month
                     )
                     & (
-                        Inventory.expires_at
-                        <= datetime.combine(warning_expiry, datetime.min.time())
+                        func.date_trunc("month", Inventory.expires_at)
+                        <= yellow_cutoff_month
                     ),
                     1,
                 ),
@@ -274,12 +297,8 @@ async def get_dashboard_summary(
                 (
                     Inventory.expires_at.is_not(None)
                     & (
-                        Inventory.expires_at
-                        > datetime.combine(warning_expiry, datetime.min.time())
-                    )
-                    & (
-                        Inventory.expires_at
-                        <= datetime.combine(extended_expiry, datetime.min.time())
+                        func.date_trunc("month", Inventory.expires_at)
+                        > yellow_cutoff_month
                     ),
                     1,
                 ),
