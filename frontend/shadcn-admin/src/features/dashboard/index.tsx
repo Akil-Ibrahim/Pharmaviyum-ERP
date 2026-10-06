@@ -218,7 +218,7 @@ export function Dashboard() {
                 ['Stock value', summary?.inventory.retail_value ?? 0],
                 ['Low stock', summary?.inventory.low_stock ?? 0],
                 ['Expired', summary?.inventory.expired ?? 0],
-                ['≤ 12 months', (summary?.inventory.critical_expiry ?? 0) + (summary?.inventory.warning_expiry ?? 0) + (summary?.inventory.extended_expiry ?? 0)],
+                ['≤ 12 months', (summary?.inventory.expiry_red ?? 0) + (summary?.inventory.expiry_yellow ?? 0)],
               ]}
             />
             <PipelineCard
@@ -252,7 +252,7 @@ export function Dashboard() {
               <LiveStatCard label='Completed orders' value={summary?.orders.completed_month ?? 0} detail='This month' direction='up' />
               <LiveStatCard label='Prescriptions' value={summary?.prescriptions.month ?? 0} detail='This month' direction='up' />
               <LiveStatCard label='Low stock' value={summary?.inventory.low_stock ?? 0} detail='Inventory items' direction='down' />
-              <LiveStatCard label='Expiring soon' value={(summary?.inventory.critical_expiry ?? 0) + (summary?.inventory.warning_expiry ?? 0) + (summary?.inventory.extended_expiry ?? 0)} detail='Within 12 months' direction='down' />
+              <LiveStatCard label='Expiring soon' value={(summary?.inventory.expiry_red ?? 0) + (summary?.inventory.expiry_yellow ?? 0)} detail='Expired or within 12 months' direction='down' />
               <LiveStatCard label='Inventory value' value={summary?.inventory.retail_value ?? 0} detail='Current retail value' direction='up' currency />
             </div>
           </section>
