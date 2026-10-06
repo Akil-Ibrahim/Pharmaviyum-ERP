@@ -26,7 +26,6 @@ type DashboardSummary = {
     by_category: { category: string; lines: number; packs: number; revenue: number }[]
   }
   revenue: { month: number }
-  original_vs_generic: { type: string; lines: number; revenue: number }[]
   top_products: { id: number; name: string; packs: number; revenue: number; stock: number }[]
   patient_purchases: { patient_id: number; patient_name: string; lines: number; packs: number; revenue: number }[]
   patient_medications: {
@@ -518,7 +517,7 @@ function PatientCohortCard({
     <div className='rounded-2xl border bg-card p-5 shadow-sm'>
       <div className='mb-4 flex items-start justify-between gap-3'>
         <div>
-          <h2 className='font-semibold'>Patient Purchases · 20</h2>
+          <h2 className='font-semibold'>Patient Purchases</h2>
           <p className='text-xs text-muted-foreground'>
             Patient, condition, medicines, pack size, quantity, expiry and realized amount
           </p>
