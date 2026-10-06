@@ -28,6 +28,7 @@ COPY alembic/ ./alembic/
 COPY scripts/ ./scripts/
 RUN chmod +x scripts/start.sh
 COPY alembic.ini .
+COPY README.md .
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 
