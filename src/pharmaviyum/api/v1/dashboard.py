@@ -211,6 +211,10 @@ async def get_dashboard_summary(
     )
 
     if scope is not None:
+        sales_category_query = sales_category_query.where(Patient.pharmacy_id == scope)
+        top_products_query = top_products_query.where(Patient.pharmacy_id == scope)
+        original_generic_query = original_generic_query.where(Patient.pharmacy_id == scope)
+        patient_purchase_query = patient_purchase_query.where(Patient.pharmacy_id == scope)
         inventory_query = inventory_query.where(Inventory.pharmacy_id == scope)
         low_stock_query = low_stock_query.where(Inventory.pharmacy_id == scope)
         expiry_query = expiry_query.where(Inventory.pharmacy_id == scope)
