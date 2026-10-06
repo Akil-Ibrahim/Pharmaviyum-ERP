@@ -82,8 +82,10 @@ async def get_dashboard_summary(
         func.coalesce(
             func.sum(
                 case(
-                    (PatientPurchase.purchased_at >= month_start,
-                     PatientPurchase.quantity * PatientPurchase.unit_price),
+                    (
+                        PatientPurchase.purchased_at >= month_start,
+                        PatientPurchase.quantity * PatientPurchase.unit_price,
+                    ),
                     else_=0,
                 )
             ),
@@ -437,18 +439,25 @@ async def get_dashboard_summary(
             }
         )
 
-    inventory_kpi_query = select(
-        func.coalesce(
-            func.sum(
-                (Inventory.quantity - Inventory.reserved_quantity) * Product.price
-            ),
-            0,
-        ).label("retail_value"),
-        func.count(Inventory.id).label("items"),
-        func.count(Inventory.id).filter(
-            Inventory.quantity - Inventory.reserved_quantity <= Inventory.reorder_level
-        ).label("low_stock"),
-    ).select_from(Inventory).join(Product, Product.id == Inventory.product_id)
+    inventory_kpi_query = (
+        select(
+            func.coalesce(
+                func.sum(
+                    (Inventory.quantity - Inventory.reserved_quantity) * Product.price
+                ),
+                0,
+            ).label("retail_value"),
+            func.count(Inventory.id).label("items"),
+            func.count(Inventory.id)
+            .filter(
+                Inventory.quantity - Inventory.reserved_quantity
+                <= Inventory.reorder_level
+            )
+            .label("low_stock"),
+        )
+        .select_from(Inventory)
+        .join(Product, Product.id == Inventory.product_id)
+    )
     if scope is not None:
         inventory_kpi_query = inventory_kpi_query.where(Inventory.pharmacy_id == scope)
 
