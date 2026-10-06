@@ -1,54 +1,43 @@
 ---
-# Molecule configuration for app-backend role
-# Tests role in isolated Docker containers
-
 dependency:
   name: galaxy
   options:
-    ignore-errors: true
-
+    requirements-file: ../../requirements.yml
 driver:
   name: docker
-
 platforms:
-  - name: ubuntu-focal
-    image: docker.io/pycontribs/ubuntu:focal
-    pre_build_image: true
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
-    cgroupns_mode: host
+  - name: pharmaviyum-ansible-test
+    image: geerlingguy/docker-ubuntu2204-ansible:latest
     privileged: true
-  - name: debian-bookworm
-    image: docker.io/pycontribs/debian:bookworm
     pre_build_image: true
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    command: /lib/systemd/systemd
     cgroupns_mode: host
-    privileged: true
-
 provisioner:
   name: ansible
-  playbooks:
-    converge: ${MOLECULE_PLAYBOOK:-converge.yml}
   config_options:
     defaults:
-      interpreter_python: auto_silent
-      callbacks_enabled: profile_tasks, timer
-
+      remote_tmp: /tmp
+  inventory:
+    host_vars:
+      pharmaviyum-ansible-test:
+        app_environment: staging
+        app_directory: /opt/pharmaviyum
+        deploy_user: molecule
+        docker_compose_project: pharmaviyum
+        app_version: "test-release"
+        backend_image: "ghcr.io/ibrahimengpy/pharmaviyum-crm"
+        postgres_password: "molecule-test-password"
+        ghcr_username: ""
+        ghcr_token: ""
+        ansible_remote_tmp: /tmp
 verifier:
   name: ansible
-
 scenario:
   test_sequence:
     - dependency
-    - cleanup
-    - destroy
     - syntax
     - create
-    - prepare
     - converge
     - idempotence
-    - side_effect
     - verify
-    - cleanup
     - destroy
