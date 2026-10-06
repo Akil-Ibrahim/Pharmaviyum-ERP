@@ -158,6 +158,8 @@ async def test_dashboard_patient_condition_prefers_active_status():
     )
     assert 'patient_conditions.status = \'active\'' in medication_sql
     assert "row_number() OVER" in medication_sql
+    assert "LIMIT %(param_" in medication_sql
+    assert "patients.pharmacy_id =" in medication_sql
 
 
 @pytest.mark.asyncio
