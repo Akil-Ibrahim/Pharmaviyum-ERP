@@ -446,7 +446,7 @@ function LiveStatCard({
   value,
   detail,
   direction,
-  currency = false,
+  amount = false,
 }: {
   label: string
   value: number
