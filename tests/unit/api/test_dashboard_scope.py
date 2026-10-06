@@ -69,11 +69,13 @@ async def test_dashboard_summary_applies_one_pharmacy_scope_to_all_aggregates():
     assert len(patient_queries) >= 4
     assert all("patients.pharmacy_id = " in sql for sql in patient_queries)
 
-    # Inventory aggregates must constrain Inventory directly. The top-products
-    # stock scalar subquery is also checked through this contract.
+    # Inventory aggregates must constrain Inventory directly. Top-products
+    # stock is pre-aggregated and joined rather than correlated per product.
     inventory_queries = [sql for sql in sql_statements if "inventory" in sql]
     assert inventory_queries
     assert all("pharmacy_id = " in sql for sql in inventory_queries)
+    top_products_sql = next(sql for sql in sql_statements if "LIMIT" in sql and "patient_purchases.dispensed_packs" in sql)
+    assert "GROUP BY inventory.product_id" in top_products_sql
 
     # The resolved tenant value must be bound to the same SQL predicate rather
     # than merely mentioning a pharmacy column.
