@@ -269,42 +269,6 @@ function DonutCard({
   )
 }
 
-function PipelineCard({
-  title,
-  icon: Icon,
-  stages,
-}: {
-  title: string
-  icon: LucideIcon
-  stages: [string, number][]
-}) {
-  return (
-    <div className='rounded-2xl border bg-card p-5 shadow-sm'>
-      <div className='mb-5 flex items-center gap-2'>
-        <Icon className='size-4 text-primary' />
-        <h2 className='font-semibold'>{title}</h2>
-      </div>
-      <div className='grid grid-cols-4 gap-2'>
-        {stages.map(([label, value], index) => (
-          <div key={label} className='relative min-w-0'>
-            <div className='rounded-xl bg-muted/50 p-3 text-center'>
-              <p className='text-lg font-bold'>{value}</p>
-              <p className='truncate text-[11px] text-muted-foreground'>
-                {label}
-              </p>
-            </div>
-            {index < stages.length - 1 && (
-              <span className='absolute top-1/2 -right-2 z-10 hidden -translate-y-1/2 text-muted-foreground sm:block'>
-                →
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 function DataTable({
   title,
   columns,
