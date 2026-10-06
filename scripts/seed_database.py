@@ -719,6 +719,13 @@ async def seed_patients() -> None:
         inventory = await seed_inventory(session)
         created = 0
 
+        # Reset synthetic inventory before rebuilding synthetic sales history.
+        # This keeps repeated SEED_DEMO_DATA runs deterministic instead of
+        # decrementing the same demo batches on every run.
+        for product, batch in inventory.values():
+            batch.available_quantity = batch.received_quantity
+            product.stock = batch.received_quantity
+
         for index, (first, last, category, city, country) in enumerate(CUSTOMERS, 1):
             external_id = f"demo-patient-{index:03d}"
             patient = await session.scalar(
@@ -784,16 +791,6 @@ async def seed_patients() -> None:
             for line_number, sku in enumerate(profile_skus, 1):
                 spec = next(item for item in PRODUCT_CATALOG if item["sku"] == sku)
                 product, batch = inventory[sku]
-                exists = await session.scalar(
-                    select(PatientPurchase).where(
-                        PatientPurchase.patient_id == patient.id,
-                        PatientPurchase.receipt_number == receipt,
-                        PatientPurchase.product_id == product.id,
-                    )
-                )
-                if exists:
-                    continue
-
                 packs = 1 + ((index + line_number) % 2)
                 session.add(
                     PatientPurchase(
