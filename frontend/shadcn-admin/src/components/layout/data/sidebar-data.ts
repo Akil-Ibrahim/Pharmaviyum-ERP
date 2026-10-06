@@ -36,7 +36,7 @@ export const sidebarData: SidebarData = {
   teams: [
     {
       name: 'Pharmaviyum',
-      logo: '/images/pharmaviyum_logo.png',
+      logo: '/images/pharmaviyum.png',
       plan: 'Pharmacy workflow',
     },
   ],
