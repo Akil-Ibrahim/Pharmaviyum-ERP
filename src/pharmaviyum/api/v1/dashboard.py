@@ -1,6 +1,6 @@
 """Tenant-aware operational metrics for the pharmacy dashboard."""
 
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Query
 from sqlalchemy import case, func, select
