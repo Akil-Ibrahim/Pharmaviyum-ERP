@@ -102,56 +102,113 @@ async def get_dashboard_summary(
         )
     )
 
-    sales_category_query = select(
-        case((PatientPurchase.prescription_required.is_(True), "Rx"), else_="OTC").label("category"),
-        func.count(PatientPurchase.id).label("lines"),
-        func.coalesce(func.sum(PatientPurchase.quantity), 0).label("units"),
-        func.coalesce(func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0).label("revenue"),
-    ).join(Patient, Patient.id == PatientPurchase.patient_id).group_by(
-        case((PatientPurchase.prescription_required.is_(True), "Rx"), else_="OTC")
-    )
-
-    top_products_query = select(
-        Product.id,
-        Product.name,
-        func.coalesce(func.sum(PatientPurchase.quantity), 0).label("units"),
-        func.coalesce(func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0).label("revenue"),
-        func.coalesce(func.sum(Inventory.quantity - Inventory.reserved_quantity), 0).label("stock"),
-    ).join(PatientPurchase, PatientPurchase.product_id == Product.id).outerjoin(
-        Inventory, Inventory.product_id == Product.id
-    ).join(Patient, Patient.id == PatientPurchase.patient_id).group_by(
-        Product.id, Product.name
-    ).order_by(func.sum(PatientPurchase.quantity).desc()).limit(10)
-
-    original_generic_query = select(
-        case(
-            (func.lower(func.coalesce(Product.description, "")).like("%generic%"), "Generic"),
-            (func.lower(func.coalesce(Product.description, "")).like("%reference%"), "Original"),
-            (func.lower(func.coalesce(Product.description, "")).like("%original%"), "Original"),
-            else_="Unclassified",
-        ).label("type"),
-        func.count(PatientPurchase.id).label("lines"),
-        func.coalesce(func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0).label("revenue"),
-    ).join(PatientPurchase, PatientPurchase.product_id == Product.id).join(
-        Patient, Patient.id == PatientPurchase.patient_id
-    ).group_by(
-        case(
-            (func.lower(func.coalesce(Product.description, "")).like("%generic%"), "Generic"),
-            (func.lower(func.coalesce(Product.description, "")).like("%reference%"), "Original"),
-            (func.lower(func.coalesce(Product.description, "")).like("%original%"), "Original"),
-            else_="Unclassified",
+    sales_category_query = (
+        select(
+            case(
+                (PatientPurchase.prescription_required.is_(True), "Rx"), else_="OTC"
+            ).label("category"),
+            func.count(PatientPurchase.id).label("lines"),
+            func.coalesce(func.sum(PatientPurchase.quantity), 0).label("units"),
+            func.coalesce(
+                func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
+            ).label("revenue"),
+        )
+        .join(Patient, Patient.id == PatientPurchase.patient_id)
+        .group_by(
+            case((PatientPurchase.prescription_required.is_(True), "Rx"), else_="OTC")
         )
     )
 
-    patient_purchase_query = select(
-        Patient.id,
-        Patient.full_name,
-        func.count(PatientPurchase.id).label("lines"),
-        func.coalesce(func.sum(PatientPurchase.quantity), 0).label("packs"),
-        func.coalesce(func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0).label("revenue"),
-    ).join(PatientPurchase, PatientPurchase.patient_id == Patient.id).group_by(
-        Patient.id, Patient.full_name
-    ).order_by(Patient.id).limit(20)
+    top_products_query = (
+        select(
+            Product.id,
+            Product.name,
+            func.coalesce(func.sum(PatientPurchase.quantity), 0).label("units"),
+            func.coalesce(
+                func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
+            ).label("revenue"),
+            func.coalesce(
+                func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
+            ).label("stock"),
+        )
+        .join(PatientPurchase, PatientPurchase.product_id == Product.id)
+        .outerjoin(Inventory, Inventory.product_id == Product.id)
+        .join(Patient, Patient.id == PatientPurchase.patient_id)
+        .group_by(Product.id, Product.name)
+        .order_by(func.sum(PatientPurchase.quantity).desc())
+        .limit(10)
+    )
+
+    original_generic_query = (
+        select(
+            case(
+                (
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%generic%"
+                    ),
+                    "Generic",
+                ),
+                (
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%reference%"
+                    ),
+                    "Original",
+                ),
+                (
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%original%"
+                    ),
+                    "Original",
+                ),
+                else_="Unclassified",
+            ).label("type"),
+            func.count(PatientPurchase.id).label("lines"),
+            func.coalesce(
+                func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
+            ).label("revenue"),
+        )
+        .join(PatientPurchase, PatientPurchase.product_id == Product.id)
+        .join(Patient, Patient.id == PatientPurchase.patient_id)
+        .group_by(
+            case(
+                (
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%generic%"
+                    ),
+                    "Generic",
+                ),
+                (
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%reference%"
+                    ),
+                    "Original",
+                ),
+                (
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%original%"
+                    ),
+                    "Original",
+                ),
+                else_="Unclassified",
+            )
+        )
+    )
+
+    patient_purchase_query = (
+        select(
+            Patient.id,
+            Patient.full_name,
+            func.count(PatientPurchase.id).label("lines"),
+            func.coalesce(func.sum(PatientPurchase.quantity), 0).label("packs"),
+            func.coalesce(
+                func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
+            ).label("revenue"),
+        )
+        .join(PatientPurchase, PatientPurchase.patient_id == Patient.id)
+        .group_by(Patient.id, Patient.full_name)
+        .order_by(Patient.id)
+        .limit(20)
+    )
 
     inventory_query = select(
         func.coalesce(
@@ -217,8 +274,12 @@ async def get_dashboard_summary(
     if scope is not None:
         sales_category_query = sales_category_query.where(Patient.pharmacy_id == scope)
         top_products_query = top_products_query.where(Patient.pharmacy_id == scope)
-        original_generic_query = original_generic_query.where(Patient.pharmacy_id == scope)
-        patient_purchase_query = patient_purchase_query.where(Patient.pharmacy_id == scope)
+        original_generic_query = original_generic_query.where(
+            Patient.pharmacy_id == scope
+        )
+        patient_purchase_query = patient_purchase_query.where(
+            Patient.pharmacy_id == scope
+        )
         inventory_query = inventory_query.where(Inventory.pharmacy_id == scope)
         low_stock_query = low_stock_query.where(Inventory.pharmacy_id == scope)
         expiry_query = expiry_query.where(Inventory.pharmacy_id == scope)
