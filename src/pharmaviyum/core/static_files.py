@@ -59,8 +59,8 @@ def setup_static_files(app: FastAPI):
     if avatars_path.exists():
         app.mount("/avatars", StaticFiles(directory=str(avatars_path)), name="avatars")
 
-    @app.get("/pharmaviyum-social-preview-v2.png", include_in_schema=False)
-    async def pharmaviyum_social_preview_v2():
+    @app.get("/pharmaviyum-social-preview-v3.png", include_in_schema=False)
+    async def pharmaviyum_social_preview_v3():
         preview_path = static_path / "images" / "pharmaviyum.png"
         if preview_path.exists():
             return FileResponse(
