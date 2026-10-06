@@ -239,7 +239,7 @@ export function Dashboard() {
               icon={Pill}
               stages={[
                 ['Red · ≤ 3m', summary?.inventory.expiry_red ?? 0],
-                ['Yellow · 3–12m', summary?.inventory.expiry_yellow ?? 0],
+                ['Yellow · > 3–12m', summary?.inventory.expiry_yellow ?? 0],
                 ['Green · > 12m', summary?.inventory.expiry_green ?? 0],
               ]}
             />
