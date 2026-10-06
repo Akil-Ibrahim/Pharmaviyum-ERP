@@ -2,7 +2,7 @@ name: Ansible
 
 on:
   pull_request:
-    branches: [dev, main]
+    branches: [main]
     paths:
       - "ansible/**"
       - ".github/workflows/ansible.yml"
@@ -23,8 +23,8 @@ jobs:
       run:
         working-directory: ansible
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v4.4.0
+      - uses: actions/setup-python@v5.6.0
         with:
           python-version: "3.14.7"
       - name: Install Ansible tooling
@@ -44,8 +44,8 @@ jobs:
       run:
         working-directory: ansible
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v4.4.0
+      - uses: actions/setup-python@v5.6.0
         with:
           python-version: "3.14.7"
       - name: Install Ansible tooling
