@@ -231,6 +231,7 @@ async def get_dashboard_summary(
             0,
         )
     ).join(Product, Product.id == Inventory.product_id)
+    inventory_items_query = select(func.count(Inventory.id))
     low_stock_query = select(func.count(Inventory.id)).where(
         Inventory.quantity - Inventory.reserved_quantity <= Inventory.reorder_level
     )
@@ -297,6 +298,7 @@ async def get_dashboard_summary(
             Patient.pharmacy_id == scope
         )
         inventory_query = inventory_query.where(Inventory.pharmacy_id == scope)
+        inventory_items_query = inventory_items_query.where(Inventory.pharmacy_id == scope)
         low_stock_query = low_stock_query.where(Inventory.pharmacy_id == scope)
         expiry_query = expiry_query.where(Inventory.pharmacy_id == scope)
 
@@ -376,6 +378,7 @@ async def get_dashboard_summary(
         )
 
     inventory_value = await session.scalar(inventory_query)
+    inventory_items = await session.scalar(inventory_items_query)
     low_stock = await session.scalar(low_stock_query)
     expiry = (await session.execute(expiry_query)).one()
 
@@ -437,6 +440,7 @@ async def get_dashboard_summary(
         },
         "inventory": {
             "retail_value": round(float(inventory_value or 0), 2),
+            "items": int(inventory_items or 0),
             "low_stock": int(low_stock or 0),
             "expiry_tracked": int(expiry.tracked or 0),
             "expired": int(expiry.expired or 0),
