@@ -16,6 +16,8 @@ EXCLUDED_PREFIXES = (
     "ready",
     "favicon.ico",
     "assets/",
+    "images/",
+    "avatars/",
 )
 
 
@@ -48,6 +50,14 @@ def setup_static_files(app: FastAPI):
     assets_path = static_path / "assets"
     if assets_path.exists():
         app.mount("/assets", StaticFiles(directory=str(assets_path)), name="assets")
+
+    images_path = static_path / "images"
+    if images_path.exists():
+        app.mount("/images", StaticFiles(directory=str(images_path)), name="images")
+
+    avatars_path = static_path / "avatars"
+    if avatars_path.exists():
+        app.mount("/avatars", StaticFiles(directory=str(avatars_path)), name="avatars")
 
     @app.get("/favicon.ico", include_in_schema=False)
     async def favicon():
