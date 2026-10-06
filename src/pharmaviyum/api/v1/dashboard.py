@@ -108,7 +108,7 @@ async def get_dashboard_summary(
                 (PatientPurchase.prescription_required.is_(True), "Rx"), else_="OTC"
             ).label("category"),
             func.count(PatientPurchase.id).label("lines"),
-            func.coalesce(func.sum(PatientPurchase.quantity), 0).label("units"),
+            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("units"),
             func.coalesce(
                 func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
             ).label("revenue"),
@@ -119,23 +119,31 @@ async def get_dashboard_summary(
         )
     )
 
+    inventory_stock_subquery = (
+        select(
+            func.coalesce(
+                func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
+            )
+        )
+        .where(Inventory.product_id == Product.id)
+        .correlate(Product)
+        .scalar_subquery()
+    )
+
     top_products_query = (
         select(
             Product.id,
             Product.name,
-            func.coalesce(func.sum(PatientPurchase.quantity), 0).label("units"),
+            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("units"),
             func.coalesce(
                 func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
             ).label("revenue"),
-            func.coalesce(
-                func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
-            ).label("stock"),
+            inventory_stock_subquery.label("stock"),
         )
         .join(PatientPurchase, PatientPurchase.product_id == Product.id)
-        .outerjoin(Inventory, Inventory.product_id == Product.id)
         .join(Patient, Patient.id == PatientPurchase.patient_id)
         .group_by(Product.id, Product.name)
-        .order_by(func.sum(PatientPurchase.quantity).desc())
+        .order_by(func.sum(PatientPurchase.dispensed_packs).desc())
         .limit(10)
     )
 
@@ -199,7 +207,7 @@ async def get_dashboard_summary(
             Patient.id,
             Patient.full_name,
             func.count(PatientPurchase.id).label("lines"),
-            func.coalesce(func.sum(PatientPurchase.quantity), 0).label("packs"),
+            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("packs"),
             func.coalesce(
                 func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
             ).label("revenue"),
@@ -274,6 +282,7 @@ async def get_dashboard_summary(
     if scope is not None:
         sales_category_query = sales_category_query.where(Patient.pharmacy_id == scope)
         top_products_query = top_products_query.where(Patient.pharmacy_id == scope)
+        inventory_stock_subquery = inventory_stock_subquery.where(Inventory.pharmacy_id == scope)
         original_generic_query = original_generic_query.where(
             Patient.pharmacy_id == scope
         )
