@@ -233,6 +233,7 @@ async def get_dashboard_summary(
         Inventory.quantity - Inventory.reserved_quantity <= Inventory.reorder_level
     )
     expiry_query = select(
+        func.count(Inventory.id).where(Inventory.expires_at.is_not(None)).label("tracked"),
         func.sum(case((Inventory.expires_at < now, 1), else_=0)).label("expired"),
         func.sum(
             case(
@@ -364,9 +365,20 @@ async def get_dashboard_summary(
         "inventory": {
             "retail_value": round(float(inventory_value or 0), 2),
             "low_stock": int(low_stock or 0),
+            "expiry_tracked": int(expiry.tracked or 0),
             "expired": int(expiry.expired or 0),
             "critical_expiry": int(expiry.critical or 0),
             "warning_expiry": int(expiry.warning or 0),
             "extended_expiry": int(expiry.extended_warning or 0),
+            "expiry_red": int((expiry.expired or 0) + (expiry.critical or 0)),
+            "expiry_yellow": int((expiry.warning or 0) + (expiry.extended_warning or 0)),
+            "expiry_green": max(
+                0,
+                int(expiry.tracked or 0)
+                - int(expiry.expired or 0)
+                - int(expiry.critical or 0)
+                - int(expiry.warning or 0)
+                - int(expiry.extended_warning or 0),
+            ),
         },
     }
