@@ -19,14 +19,20 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 
-type PatientStatistics = {
-  total: number
-  active: number
-  inactive: number
-  total_purchase_value: number
-  total_loyalty_points: number
-  by_loyalty_tier: Record<string, number>
-  by_country: Record<string, number>
+type DashboardSummary = {
+  as_of: string
+  patients: { active: number }
+  sales: { today: number }
+  revenue: { month: number }
+  orders: { month: number; completed_month: number }
+  prescriptions: { month: number }
+  inventory: {
+    retail_value: number
+    low_stock: number
+    expired: number
+    critical_expiry: number
+    warning_expiry: number
+  }
 }
 
 const previewDonuts: {
@@ -125,12 +131,12 @@ const statistics: [string, string, string, 'up' | 'down'][] = [
 const monthlyRevenue = [42, 49, 46, 61, 58, 72, 68, 81, 76, 89, 84, 96]
 
 export function Dashboard() {
-  const [patients, setPatients] = useState<PatientStatistics | null>(null)
+  const [summary, setSummary] = useState<DashboardSummary | null>(null)
 
   useEffect(() => {
-    apiFetch<PatientStatistics>('/api/v1/patients/statistics')
-      .then(setPatients)
-      .catch(() => setPatients(null))
+    apiFetch<DashboardSummary>('/api/v1/dashboard/summary')
+      .then(setSummary)
+      .catch(() => setSummary(null))
   }, [])
 
   return (
@@ -153,7 +159,7 @@ export function Dashboard() {
             </p>
           </div>
           <span className='w-fit rounded-full border bg-muted/40 px-3 py-1 text-xs text-muted-foreground'>
-            UI preview · backend metrics coming next
+            KPI live · operational metrics coming next
           </span>
         </div>
 
@@ -161,24 +167,29 @@ export function Dashboard() {
           <section className='grid gap-4 md:grid-cols-3'>
             <KpiCard
               label='Patients'
-              value={patients ? patients.total.toLocaleString() : '—'}
-              detail={patients ? 'Total patient profiles' : 'Awaiting API data'}
+              value={summary ? summary.patients.active.toLocaleString() : '—'}
+              detail={summary ? 'Active patient profiles' : 'Awaiting API data'}
               icon={Users}
-              trend='+8.2%'
             />
             <KpiCard
               label='Sales'
-              value='$128K'
-              detail='This month · preview'
+              value={
+                summary
+                  ? formatCurrency(summary.sales.today)
+                  : '—'
+              }
+              detail={summary ? 'Today · realized sales' : 'Awaiting API data'}
               icon={Receipt}
-              trend='+12.4%'
             />
             <KpiCard
               label='Revenue'
-              value='$96.4K'
-              detail='This month · preview'
+              value={
+                summary
+                  ? formatCurrency(summary.revenue.month)
+                  : '—'
+              }
+              detail={summary ? 'This month · realized revenue' : 'Awaiting API data'}
               icon={Wallet}
-              trend='+9.7%'
             />
           </section>
 
@@ -318,6 +329,14 @@ export function Dashboard() {
   )
 }
 
+function formatCurrency(value: number) {
+  return value.toLocaleString(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  })
+}
+
 function KpiCard({
   label,
   value,
@@ -329,7 +348,7 @@ function KpiCard({
   value: string
   detail: string
   icon: LucideIcon
-  trend: string
+  trend?: string
 }) {
   return (
     <div className='rounded-2xl border bg-card p-5 shadow-sm'>
@@ -337,10 +356,12 @@ function KpiCard({
         <div className='rounded-lg bg-primary/10 p-2 text-primary'>
           <Icon className='size-5' />
         </div>
-        <span className='flex items-center gap-1 text-xs font-medium text-emerald-600'>
-          <ArrowUpRight className='size-3.5' />
-          {trend}
-        </span>
+        {trend && (
+          <span className='flex items-center gap-1 text-xs font-medium text-emerald-600'>
+            <ArrowUpRight className='size-3.5' />
+            {trend}
+          </span>
+        )}
       </div>
       <p className='mt-4 text-sm text-muted-foreground'>{label}</p>
       <p className='mt-1 text-3xl font-bold tracking-tight'>{value}</p>
