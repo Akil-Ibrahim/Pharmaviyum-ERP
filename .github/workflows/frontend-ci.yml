@@ -45,6 +45,7 @@ jobs:
             FILES="$(git diff --name-only "$GITHUB_SHA^" "$GITHUB_SHA" -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.json' '*.css' '*.html')"
           fi
           if [ -n "$FILES" ]; then
+            cd "$GITHUB_WORKSPACE"
             printf '%s\n' "$FILES" | xargs bunx prettier --check
           else
             echo "No frontend files changed; skipping Prettier."
