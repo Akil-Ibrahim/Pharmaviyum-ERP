@@ -18,7 +18,7 @@ def upgrade() -> None:
     # the pharmacy-domain migration was corrected. Keep this migration
     # idempotent for both fresh and partially migrated PostgreSQL databases.
     op.execute("""
-        DO $
+        DO $pharmaviyum$
         BEGIN
             IF NOT EXISTS (
                 SELECT 1
@@ -30,7 +30,7 @@ def upgrade() -> None:
                 ADD CONSTRAINT ck_products_price_nonnegative CHECK (price >= 0);
             END IF;
         END
-        $;
+        $pharmaviyum$;
         """)
     op.execute("""
         DO $
