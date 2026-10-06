@@ -19,7 +19,7 @@ import {
 type TeamSwitcherProps = {
   teams: {
     name: string
-    logo: React.ElementType
+    logo: string
     plan: string
   }[]
 }
@@ -37,8 +37,12 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
               size='lg'
               className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
-              <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground'>
-                <activeTeam.logo className='size-4' />
+              <div className='flex aspect-square size-10 items-center justify-center overflow-hidden rounded-lg'>
+                <img
+                  src={activeTeam.logo}
+                  alt={`${activeTeam.name} logo`}
+                  className='size-8 object-contain'
+                />
               </div>
               <div className='grid flex-1 text-start leading-tight'>
                 <span className='pharmaviyum-brand truncate text-base font-bold text-black dark:text-white'>
@@ -66,8 +70,12 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
                 onClick={() => setActiveTeam(team)}
                 className='gap-2 p-2 font-semibold text-black dark:text-white'
               >
-                <div className='flex size-6 items-center justify-center rounded-sm border'>
-                  <team.logo className='size-4 shrink-0 text-primary' />
+                <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>
+                  <img
+                    src={team.logo}
+                    alt=''
+                    className='size-full object-contain'
+                  />
                 </div>
                 {team.name}
                 <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>

@@ -18,7 +18,6 @@ import {
   ServerCog,
   Settings,
   ShoppingCart,
-  ShieldCheck,
   Store,
   Stethoscope,
   Truck,
@@ -34,7 +33,13 @@ export const sidebarData: SidebarData = {
     email: 'admin@pharmaviyum.local',
     avatar: '/avatars/shadcn.jpg',
   },
-  teams: [{ name: 'Pharmaviyum', logo: ShieldCheck, plan: 'Pharmacy workflow' }],
+  teams: [
+    {
+      name: 'Pharmaviyum',
+      logo: '/images/pharmaviyum_logo.png',
+      plan: 'Pharmacy workflow',
+    },
+  ],
   navGroups: [
     {
       title: 'Operations',
