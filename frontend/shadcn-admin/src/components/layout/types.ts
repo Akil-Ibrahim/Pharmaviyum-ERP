@@ -8,7 +8,7 @@ type User = {
 
 type Team = {
   name: string
-  logo: string
+  logo: any
   plan: string
 }
 
