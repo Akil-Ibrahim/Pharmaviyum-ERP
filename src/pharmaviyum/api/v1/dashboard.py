@@ -10,6 +10,8 @@ from src.pharmaviyum.models.order import Order
 from src.pharmaviyum.models.patients import Patient, PatientPurchase
 from src.pharmaviyum.models.prescription import Prescription
 from src.pharmaviyum.models.product import Product
+from src.pharmaviyum.models.product_batch import ProductBatch
+from src.pharmaviyum.models.patients.patient_condition import PatientCondition
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import resolve_pharmacy_scope
 
@@ -303,6 +305,76 @@ async def get_dashboard_summary(
     original_generic = (await session.execute(original_generic_query)).all()
     patient_purchases = (await session.execute(patient_purchase_query)).all()
 
+    patient_medication_query = (
+        select(
+            Patient.id.label("patient_id"),
+            Patient.full_name.label("patient_name"),
+            PatientCondition.condition_name.label("condition"),
+            Product.id.label("product_id"),
+            Product.name.label("product_name"),
+            Product.dosage_strength,
+            Product.dosage_form,
+            Product.units_per_pack,
+            PatientPurchase.dispensed_packs,
+            PatientPurchase.unit_price,
+            PatientPurchase.quantity,
+            PatientPurchase.prescription_required,
+            ProductBatch.expiry_date,
+            case(
+                (
+                    func.lower(func.coalesce(Product.description, "")).like("%generic%"),
+                    "Generic",
+                ),
+                (
+                    func.lower(func.coalesce(Product.description, "")).like("%reference%"),
+                    "Original",
+                ),
+                (
+                    func.lower(func.coalesce(Product.description, "")).like("%original%"),
+                    "Original",
+                ),
+                else_="Unclassified",
+            ).label("product_type"),
+        )
+        .join(PatientPurchase, PatientPurchase.patient_id == Patient.id)
+        .join(Product, Product.id == PatientPurchase.product_id)
+        .outerjoin(ProductBatch, ProductBatch.id == PatientPurchase.batch_id)
+        .outerjoin(PatientCondition, PatientCondition.patient_id == Patient.id)
+        .order_by(Patient.id, PatientPurchase.id)
+    )
+    if scope is not None:
+        patient_medication_query = patient_medication_query.where(
+            Patient.pharmacy_id == scope
+        )
+    medication_rows = (await session.execute(patient_medication_query)).all()
+    patient_medications: dict[int, dict] = {}
+    for row in medication_rows:
+        patient = patient_medications.setdefault(
+            row.patient_id,
+            {
+                "patient_id": row.patient_id,
+                "patient_name": row.patient_name,
+                "condition": row.condition,
+                "medications": [],
+            },
+        )
+        if patient["condition"] is None and row.condition:
+            patient["condition"] = row.condition
+        patient["medications"].append(
+            {
+                "product_id": row.product_id,
+                "name": row.product_name,
+                "dosage": row.dosage_strength,
+                "form": row.dosage_form,
+                "pack_size": int(row.units_per_pack or 0),
+                "packs": int(row.dispensed_packs or 0),
+                "amount": round(float((row.quantity or 0) * (row.unit_price or 0)), 2),
+                "prescription_required": bool(row.prescription_required),
+                "type": row.product_type,
+                "expiry_date": row.expiry_date.isoformat() if row.expiry_date else None,
+            }
+        )
+
     inventory_value = await session.scalar(inventory_query)
     low_stock = await session.scalar(low_stock_query)
     expiry = (await session.execute(expiry_query)).one()
@@ -352,6 +424,7 @@ async def get_dashboard_summary(
             }
             for row in patient_purchases
         ],
+        "patient_medications": list(patient_medications.values())[:20],
         "revenue": {
             "month": round(float(month_revenue or 0), 2),
         },
