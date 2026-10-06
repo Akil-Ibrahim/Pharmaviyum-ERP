@@ -1,0 +1,40 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+concurrency:
+  group: pharmaviyum-frontend-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: frontend/shadcn-admin
+
+jobs:
+  validate:
+    name: Frontend Lint, Format and Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: ESLint
+        run: bun run lint
+
+      - name: Prettier
+        run: bun run format:check
+
+      - name: TypeScript and production build
+        run: bun run build
