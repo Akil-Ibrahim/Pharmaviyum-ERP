@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from src.pharmaviyum.core.database import AsyncSessionLocal
 from src.pharmaviyum.models import Patient, Prescription, Product, ProductBatch
-from src.pharmaviyum.models.patients import PatientPurchase
+from src.pharmaviyum.models.patients import PatientPurchase\nfrom src.pharmaviyum.models.patients.patient_condition import PatientCondition
 
 random.seed(20260918)
 
@@ -595,6 +595,29 @@ PRODUCT_CATALOG = [
 ]
 
 
+PATIENT_PROFILES = [
+("Hypertension","I10",["BRAND-NORVASC-5-90","GEN-AMLOD-SANDOZ-5-30","BRAND-LIPITOR-20-90","BRAND-NUROFEN-200-24","GEN-PAR-SANDOZ-500-20","BRAND-NEXIUM-20-30"]),
+("Type 2 diabetes","E11.9",["BRAND-GLUCOPHAGE-XR-500-60","GEN-MET-TEVA-500-60","BRAND-LIPITOR-20-90","GEN-AMLOD-SANDOZ-5-30","GEN-PAR-SANDOZ-500-20","BRAND-NEXIUM-20-30"]),
+("Hyperlipidemia","E78.5",["BRAND-LIPITOR-20-90","BRAND-CRESTOR-10-90","GEN-ATOR-TEVA-20-30","GEN-ROSU-SANDOZ-10-30","BRAND-NEXIUM-20-30","BRAND-PANADOL-500-24"]),
+("Asthma","J45.909",["BRAND-VENTOLIN-100-200","GEN-SALB-TEVA-100-200","BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-PANADOL-500-24","BRAND-NEXIUM-20-30"]),
+("Allergic rhinitis","J30.9",["BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-VENTOLIN-100-200","GEN-PAR-SANDOZ-500-20","BRAND-NEXIUM-20-30","BRAND-NUROFEN-200-24"]),
+("GERD","K21.9",["BRAND-NEXIUM-20-30","GEN-OME-SANDOZ-20-30","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20","BRAND-NUROFEN-200-24","BRAND-ZYRTEC-10-20"]),
+("Osteoarthritis","M19.90",["BRAND-VOLTAREN-1-50","GEN-DIC-TEVA-1-50","BRAND-NUROFEN-200-24","GEN-IBU-TEVA-200-20","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
+("Atopic dermatitis","L20.9",["BRAND-VOLTAREN-1-50","GEN-DIC-TEVA-1-50","BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
+("Coronary artery disease","I25.10",["BRAND-NORVASC-5-90","GEN-AMLOD-SANDOZ-5-30","BRAND-PLAVIX-75-28","BRAND-LIPITOR-20-90","GEN-ATOR-TEVA-20-30","BRAND-NEXIUM-20-30"]),
+("Chronic dyspepsia","K30",["BRAND-NEXIUM-20-30","GEN-OME-SANDOZ-20-30","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20","BRAND-ZYRTEC-10-20","BRAND-NUROFEN-200-24"]),
+("COPD","J44.9",["BRAND-VENTOLIN-100-200","GEN-SALB-TEVA-100-200","BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-PANADOL-500-24","BRAND-NEXIUM-20-30"]),
+("Chronic musculoskeletal pain","M79.18",["BRAND-VOLTAREN-1-50","GEN-DIC-TEVA-1-50","BRAND-NUROFEN-200-24","GEN-IBU-TEVA-200-20","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
+("Diabetic dyslipidemia","E11.69",["BRAND-GLUCOPHAGE-XR-500-60","GEN-MET-TEVA-500-60","BRAND-LIPITOR-20-90","GEN-ATOR-TEVA-20-30","BRAND-NORVASC-5-90","GEN-AMLOD-SANDOZ-5-30"]),
+("Hypertension with hyperlipidemia","I10",["BRAND-NORVASC-5-90","GEN-AMLOD-SANDOZ-5-30","BRAND-CRESTOR-10-90","GEN-ROSU-SANDOZ-10-30","BRAND-PANADOL-500-24","BRAND-NEXIUM-20-30"]),
+("Seasonal allergy","J30.2",["BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-NEXIUM-20-30","GEN-OME-SANDOZ-20-30","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
+("Chronic pain","G89.29",["BRAND-NUROFEN-200-24","GEN-IBU-TEVA-200-20","BRAND-VOLTAREN-1-50","GEN-DIC-TEVA-1-50","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
+("Atherosclerotic cardiovascular disease","I25.10",["BRAND-PLAVIX-75-28","BRAND-LIPITOR-20-90","BRAND-NORVASC-5-90","GEN-ATOR-TEVA-20-30","GEN-AMLOD-SANDOZ-5-30","BRAND-NEXIUM-20-30"]),
+("Respiratory allergy","J30.9",["BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-VENTOLIN-100-200","GEN-SALB-TEVA-100-200","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
+("Chronic gastritis","K29.70",["BRAND-NEXIUM-20-30","GEN-OME-SANDOZ-20-30","BRAND-NUROFEN-200-24","GEN-IBU-TEVA-200-20","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
+("Mixed cardiovascular risk","I10",["BRAND-NORVASC-5-90","BRAND-LIPITOR-20-90","BRAND-PLAVIX-75-28","GEN-AMLOD-SANDOZ-5-30","GEN-ATOR-TEVA-20-30","BRAND-NEXIUM-20-30"]),
+]
+
 def synthetic_barcode(index: int) -> str:
     return f"DEMO{index:04d}{20260918}"
 
@@ -696,67 +719,65 @@ async def seed_patients() -> None:
                 await session.flush()
                 created += 1
 
-            # Give every patient a varied pharmacy history. Product choice is
-            # intentionally not derived from a real patient's medical record.
-            for visit in range(1, 3 + index % 2):
-                receipt = f"DEMO-{index:03d}-{visit:02d}"
-                products = random.sample(PRODUCT_CATALOG, k=3)
-                for spec in products:
-                    product, batch = inventory[spec["sku"]]
-                    exists = await session.scalar(
-                        select(PatientPurchase).where(
-                            PatientPurchase.patient_id == patient.id,
-                            PatientPurchase.receipt_number == receipt,
-                            PatientPurchase.product_id == product.id,
-                        )
+            condition_name, icd10_code, profile_skus = PATIENT_PROFILES[index - 1]
+
+            existing_condition = await session.scalar(
+                select(PatientCondition).where(
+                    PatientCondition.patient_id == patient.id,
+                    PatientCondition.condition_name == condition_name,
+                )
+            )
+            if existing_condition is None:
+                session.add(
+                    PatientCondition(
+                        patient_id=patient.id,
+                        condition_name=condition_name,
+                        icd10_code=icd10_code,
+                        severity="moderate",
+                        status="active",
+                        diagnosis_date=date(2024 + (index % 3), 1 + (index % 12), 15),
+                        is_chronic=True,
+                        treatment_notes="Synthetic demonstration condition; not clinical guidance.",
                     )
-                    if exists:
-                        continue
+                )
 
-                    packs = random.randint(1, 2)
-                    if product.units_per_pack > 1 and product.blisters_per_pack:
-                        blisters = random.randint(1, product.blisters_per_pack * packs)
-                        units = min(
-                            product.units_per_pack * packs,
-                            blisters * product.units_per_blister,
-                        )
-                    else:
-                        blisters = 0
-                        units = product.units_per_pack * packs
-
-                    session.add(
-                        PatientPurchase(
-                            patient_id=patient.id,
-                            product_id=product.id,
-                            batch_id=batch.id,
-                            receipt_number=receipt,
-                            category=(
-                                "Prescription Medicine"
-                                if spec["rx"]
-                                else (
-                                    "OTC / Consumer Health"
-                                    if spec["dosage_form"]
-                                    in {
-                                        "tablet",
-                                        "film-coated tablet",
-                                    }
-                                    else "Consumer / Medical"
-                                )
-                            ),
-                            quantity=packs,
-                            dispensed_packs=packs,
-                            dispensed_blisters=blisters,
-                            dispensed_units=units,
-                            unit_price=spec["price"],
-                            prescription_required=spec["rx"],
-                            purchased_at=datetime.utcnow()
-                            - timedelta(days=random.randint(1, 120)),
-                        )
+            # Exactly six product lines per synthetic patient.
+            receipt = f"DEMO-{index:03d}-01"
+            for line_number, sku in enumerate(profile_skus, 1):
+                spec = next(item for item in PRODUCT_CATALOG if item["sku"] == sku)
+                product, batch = inventory[sku]
+                exists = await session.scalar(
+                    select(PatientPurchase).where(
+                        PatientPurchase.patient_id == patient.id,
+                        PatientPurchase.receipt_number == receipt,
+                        PatientPurchase.product_id == product.id,
                     )
-                    batch.available_quantity = max(0, batch.available_quantity - packs)
-                    product.stock = batch.available_quantity
+                )
+                if exists:
+                    continue
 
-            if index % 3 == 0:
+                packs = 1 + ((index + line_number) % 2)
+                session.add(
+                    PatientPurchase(
+                        patient_id=patient.id,
+                        product_id=product.id,
+                        batch_id=batch.id,
+                        receipt_number=receipt,
+                        category="Prescription Medicine" if spec["rx"] else "OTC / Consumer Health",
+                        quantity=packs,
+                        dispensed_packs=packs,
+                        dispensed_blisters=product.blisters_per_pack * packs,
+                        dispensed_units=product.units_per_pack * packs,
+                        unit_price=spec["price"],
+                        prescription_required=spec["rx"],
+                        purchased_at=datetime.utcnow() - timedelta(days=index % 5),
+                    )
+                )
+                batch.available_quantity = max(0, batch.available_quantity - packs)
+                product.stock = batch.available_quantity
+
+            # One active synthetic prescription for every second patient.
+            if index % 2 == 1:
                 prescription_number = f"DEMO-RX-{index:03d}"
                 existing_rx = await session.scalar(
                     select(Prescription).where(
@@ -764,26 +785,20 @@ async def seed_patients() -> None:
                     )
                 )
                 if existing_rx is None:
-                    rx_spec = next(spec for spec in PRODUCT_CATALOG if spec["rx"])
+                    rx_spec = next(
+                        spec for spec in PRODUCT_CATALOG
+                        if spec["sku"] == profile_skus[0] and spec["rx"]
+                    )
                     rx_product, _ = inventory[rx_spec["sku"]]
                     session.add(
                         Prescription(
                             patient_id=patient.id,
                             product_id=rx_product.id,
                             prescription_number=prescription_number,
-                            dosage=(
-                                (
-                                    f"{rx_product.dosage_strength}; follow prescriber directions"
-                                )
-                            ),
-                            instructions=(
-                                (
-                                    "Synthetic demonstration prescription. "
-                                    "Do not use as clinical guidance."
-                                )
-                            ),
+                            dosage=rx_product.dosage_strength or "follow prescriber directions",
+                            instructions="Synthetic demonstration prescription. Do not use as clinical guidance.",
                             status="active",
-                            issued_at=datetime.utcnow() - timedelta(days=30),
+                            issued_at=datetime.utcnow() - timedelta(days=20),
                             expires_at=datetime.utcnow() + timedelta(days=60),
                         )
                     )
