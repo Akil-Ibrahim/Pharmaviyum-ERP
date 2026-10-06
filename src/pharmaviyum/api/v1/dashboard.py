@@ -244,67 +244,81 @@ async def get_dashboard_summary(
         Inventory.quantity - Inventory.reserved_quantity <= Inventory.reorder_level
     )
     expiry_query = select(
-        func.count(Inventory.id).where(Inventory.expires_at.is_not(None)).label("tracked"),
+        func.count(Inventory.id)
+        .where(Inventory.expires_at.is_not(None))
+        .label("tracked"),
         func.coalesce(
             func.sum(
                 case(
                     (
                         Inventory.expires_at.is_not(None)
-                        & (func.date_trunc("month", Inventory.expires_at) < current_month_start),
+                        & (
+                            func.date_trunc("month", Inventory.expires_at)
+                            < current_month_start
+                        ),
                         1,
                     ),
                     else_=0,
                 )
-            ), 0
+            ),
+            0,
         ).label("expired"),
         func.coalesce(
             func.sum(
-            case(
-                (
-                    Inventory.expires_at.is_not(None)
-                    & (
-                        func.date_trunc("month", Inventory.expires_at)
-                        >= current_month_start
-                    )
-                    & (
-                        func.date_trunc("month", Inventory.expires_at)
-                        <= red_cutoff_month
+                case(
+                    (
+                        Inventory.expires_at.is_not(None)
+                        & (
+                            func.date_trunc("month", Inventory.expires_at)
+                            >= current_month_start
+                        )
+                        & (
+                            func.date_trunc("month", Inventory.expires_at)
+                            <= red_cutoff_month
+                        ),
+                        1,
                     ),
-                    1,
-                ),
-                else_=0,
-            )
-        ), 0).label("critical"),
-        func.sum(
-            case(
-                (
-                    Inventory.expires_at.is_not(None)
-                    & (
-                        func.date_trunc("month", Inventory.expires_at)
-                        > red_cutoff_month
-                    )
-                    & (
-                        func.date_trunc("month", Inventory.expires_at)
-                        <= yellow_cutoff_month
+                    else_=0,
+                )
+            ),
+            0,
+        ).label("critical"),
+        func.coalesce(
+            func.sum(
+                case(
+                    (
+                        Inventory.expires_at.is_not(None)
+                        & (
+                            func.date_trunc("month", Inventory.expires_at)
+                            > red_cutoff_month
+                        )
+                        & (
+                            func.date_trunc("month", Inventory.expires_at)
+                            <= yellow_cutoff_month
+                        ),
+                        1,
                     ),
-                    1,
-                ),
-                else_=0,
-            )
-        ), 0).label("warning"),
-        func.sum(
-            case(
-                (
-                    Inventory.expires_at.is_not(None)
-                    & (
-                        func.date_trunc("month", Inventory.expires_at)
-                        > yellow_cutoff_month
+                    else_=0,
+                )
+            ),
+            0,
+        ).label("warning"),
+        func.coalesce(
+            func.sum(
+                case(
+                    (
+                        Inventory.expires_at.is_not(None)
+                        & (
+                            func.date_trunc("month", Inventory.expires_at)
+                            > yellow_cutoff_month
+                        ),
+                        1,
                     ),
-                    1,
-                ),
-                else_=0,
-            )
-        ), 0).label("extended_warning"),
+                    else_=0,
+                )
+            ),
+            0,
+        ).label("extended_warning"),
     )
 
     if scope is not None:
