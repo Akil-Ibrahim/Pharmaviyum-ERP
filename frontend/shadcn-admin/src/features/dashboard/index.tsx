@@ -576,8 +576,8 @@ function PatientCohortCard({
                                   {medication.prescription_required ? ' · Rx' : ' · OTC'}
                                 </span>
                               </td>
-                              <td className='py-2 pr-3 whitespace-nowrap text-muted-foreground'>
-                                {formatExpiry(medication.expiry_date)}
+                              <td className='py-2 pr-3 whitespace-nowrap'>
+                                <ExpiryBadge expiryDate={medication.expiry_date} />
                               </td>
                               <td className='py-2 text-right font-medium'>{formatCurrency(medication.amount)}</td>
                             </tr>
@@ -597,6 +597,42 @@ function PatientCohortCard({
           </p>
         )}
       </div>
+    </div>
+  )
+}
+
+function ExpiryBadge({ expiryDate }: { expiryDate: string | null }) {
+  if (!expiryDate) {
+    return <span className='text-muted-foreground'>—</span>
+  }
+
+  const days = Math.ceil(
+    (new Date(expiryDate).getTime() - new Date().setHours(0, 0, 0, 0)) /
+      (1000 * 60 * 60 * 24)
+  )
+
+  const state =
+    days <= 90
+      ? {
+          label: days < 0 ? 'Expired' : '≤ 3m',
+          className: 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400',
+        }
+      : days <= 365
+        ? {
+            label: '3–12m',
+            className: 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400',
+          }
+        : {
+            label: '> 12m',
+            className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+          }
+
+  return (
+    <div className='flex items-center gap-2'>
+      <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${state.className}`}>
+        {state.label}
+      </span>
+      <span className='text-muted-foreground'>{formatExpiry(expiryDate)}</span>
     </div>
   )
 }
