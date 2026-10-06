@@ -703,7 +703,7 @@ async def seed_inventory(session) -> dict[str, tuple[Product, ProductBatch]]:
             batch = ProductBatch(
                 product_id=product.id,
                 batch_number=batch_number,
-                expiry_date=date(2029 + (index % 3), 6 + (index % 6), 1),
+                expiry_date=date(2028 + (index % 3), 6 + (index % 6), 1),
                 received_quantity=100,
                 available_quantity=100,
                 barcode=synthetic_barcode(index),
