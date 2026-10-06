@@ -608,6 +608,9 @@ function ExpiryBadge({ expiryDate }: { expiryDate: string | null }) {
   }
 
   const expiry = new Date(expiryDate)
+  if (Number.isNaN(expiry.getTime())) {
+    return <span className='text-muted-foreground'>Invalid expiry</span>
+  }
   const today = new Date()
   const expiryMonth = new Date(expiry.getFullYear(), expiry.getMonth(), 1)
   const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1)
