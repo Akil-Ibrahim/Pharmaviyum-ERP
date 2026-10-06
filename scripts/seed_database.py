@@ -695,6 +695,15 @@ async def seed_inventory(
                 setattr(product, field, spec.get(field))
 
         batch_number = f"DEMO-{product.sku}-L{index:02d}"
+        demo_expiry_date = (
+            date(2026, 9, 1)
+            if index % 12 == 0
+            else date(2026, 10 + (index % 3), 1)
+            if index % 12 in {1, 2, 3}
+            else date(2027, 1 + (index % 9), 1)
+            if index % 12 in {4, 5, 6, 7, 8}
+            else date(2028 + (index % 3), 6 + (index % 6), 1)
+        )
         batch = await session.scalar(
             select(ProductBatch).where(
                 ProductBatch.product_id == product.id,
@@ -705,21 +714,15 @@ async def seed_inventory(
             batch = ProductBatch(
                 product_id=product.id,
                 batch_number=batch_number,
-                expiry_date=(
-                    date(2026, 9, 1)
-                    if index % 12 == 0
-                    else date(2026, 10 + (index % 3), 1)
-                    if index % 12 in {1, 2, 3}
-                    else date(2027, 1 + (index % 9), 1)
-                    if index % 12 in {4, 5, 6, 7, 8}
-                    else date(2028 + (index % 3), 6 + (index % 6), 1)
-                ),
+                expiry_date=demo_expiry_date,
                 received_quantity=100,
                 available_quantity=100,
                 barcode=synthetic_barcode(index),
             )
             session.add(batch)
             await session.flush()
+        else:
+            batch.expiry_date = demo_expiry_date
         inventory_record = await session.scalar(
             select(Inventory).where(
                 Inventory.product_id == product.id,
