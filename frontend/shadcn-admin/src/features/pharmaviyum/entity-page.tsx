@@ -43,7 +43,7 @@ export function EntityPage({ title, description, endpoint, columns = [], status 
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [endpoint])
+  useEffect(() => { const timer = window.setTimeout(load, 0); return () => window.clearTimeout(timer) }, [endpoint])
 
   const visibleColumns = columns.length ? columns : rows[0] ? Object.keys(rows[0]).slice(0, 6) : []
   const filteredRows = useMemo(() => {
