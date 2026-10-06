@@ -16,14 +16,12 @@ TracerProvider: Any
 BatchSpanProcessor: Any
 ConsoleSpanExporter: Any
 Resource: Any
-FastAPIInstrumentor: Any
 SQLAlchemyInstrumentor: Any
 RedisInstrumentor: Any
 HTTPXClientInstrumentor: Any
 
 try:
     from opentelemetry import trace
-    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
     from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
     from opentelemetry.instrumentation.redis import RedisInstrumentor
     from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
@@ -36,7 +34,6 @@ except Exception:  # pragma: no cover - compatibility fallback for Python 3.14
     BatchSpanProcessor = None
     ConsoleSpanExporter = None
     Resource = None
-    FastAPIInstrumentor = None
     SQLAlchemyInstrumentor = None
     RedisInstrumentor = None
     HTTPXClientInstrumentor = None
@@ -94,9 +91,6 @@ def setup_telemetry(app=None, engine=None) -> None:
         )
 
         trace.set_tracer_provider(provider)
-
-        if app and FastAPIInstrumentor is not None:
-            FastAPIInstrumentor.instrument_app(app)
 
         if engine and SQLAlchemyInstrumentor is not None:
             SQLAlchemyInstrumentor().instrument(engine=engine)
