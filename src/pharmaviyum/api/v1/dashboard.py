@@ -319,9 +319,6 @@ async def get_dashboard_summary(
         patient_purchase_query = patient_purchase_query.where(
             Patient.pharmacy_id == scope
         )
-        inventory_query = inventory_query.where(Inventory.pharmacy_id == scope)
-        inventory_items_query = inventory_items_query.where(Inventory.pharmacy_id == scope)
-        low_stock_query = low_stock_query.where(Inventory.pharmacy_id == scope)
         expiry_query = expiry_query.where(Inventory.pharmacy_id == scope)
 
     sales_kpi = (await session.execute(sales_kpi_query)).one()
