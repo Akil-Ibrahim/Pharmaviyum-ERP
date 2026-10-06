@@ -12,6 +12,8 @@ platforms:
     pre_build_image: true
     command: /lib/systemd/systemd
     cgroupns_mode: host
+    tmpfs:
+      - /tmp:rw,exec,nosuid,nodev
 provisioner:
   name: ansible
   config_options:
