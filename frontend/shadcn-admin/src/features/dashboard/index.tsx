@@ -66,11 +66,15 @@ type DashboardSummary = {
 
 export function Dashboard() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
+  const [loadError, setLoadError] = useState(false)
 
   const loadSummary = useCallback(() => {
     apiFetch<DashboardSummary>('/api/v1/dashboard/summary')
-      .then(setSummary)
-      .catch(() => setSummary(null))
+      .then((data) => {
+        setSummary(data)
+        setLoadError(false)
+      })
+      .catch(() => setLoadError(true))
   }, [])
 
   useEffect(() => {
@@ -102,6 +106,12 @@ export function Dashboard() {
             KPI live · synthetic operational data
           </span>
         </div>
+
+        {loadError && (
+          <div className='rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive'>
+            Dashboard data is temporarily unavailable. Showing the last loaded values; retrying automatically.
+          </div>
+        )}
 
         <div className='space-y-6'>
           <section className='grid gap-4 md:grid-cols-3'>
