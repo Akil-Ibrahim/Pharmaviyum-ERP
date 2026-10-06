@@ -36,6 +36,7 @@ async def get_dashboard_summary(
     month_start = today_start.replace(day=1)
     critical_expiry = today + timedelta(days=90)
     warning_expiry = today + timedelta(days=270)
+    extended_expiry = today + timedelta(days=365)
 
     patient_scope = select(Patient.id)
     if scope is not None:
@@ -101,6 +102,125 @@ async def get_dashboard_summary(
         )
     )
 
+    sales_category_query = (
+        select(
+            case(
+                (PatientPurchase.prescription_required.is_(True), "Rx"), else_="OTC"
+            ).label("category"),
+            func.count(PatientPurchase.id).label("lines"),
+            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("units"),
+            func.coalesce(
+                func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
+            ).label("revenue"),
+        )
+        .join(Patient, Patient.id == PatientPurchase.patient_id)
+        .group_by(
+            case((PatientPurchase.prescription_required.is_(True), "Rx"), else_="OTC")
+        )
+    )
+
+    inventory_stock_subquery = (
+        select(
+            func.coalesce(func.sum(Inventory.quantity - Inventory.reserved_quantity), 0)
+        )
+        .where(Inventory.product_id == Product.id)
+        .correlate(Product)
+        .scalar_subquery()
+    )
+
+    if scope is not None:
+        inventory_stock_subquery = inventory_stock_subquery.where(
+            Inventory.pharmacy_id == scope
+        )
+
+    top_products_query = (
+        select(
+            Product.id,
+            Product.name,
+            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("units"),
+            func.coalesce(
+                func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
+            ).label("revenue"),
+            inventory_stock_subquery.label("stock"),
+        )
+        .join(PatientPurchase, PatientPurchase.product_id == Product.id)
+        .join(Patient, Patient.id == PatientPurchase.patient_id)
+        .group_by(Product.id, Product.name)
+        .order_by(func.sum(PatientPurchase.dispensed_packs).desc())
+        .limit(10)
+    )
+
+    original_generic_query = (
+        select(
+            case(
+                (
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%generic%"
+                    ),
+                    "Generic",
+                ),
+                (
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%reference%"
+                    ),
+                    "Original",
+                ),
+                (
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%original%"
+                    ),
+                    "Original",
+                ),
+                else_="Unclassified",
+            ).label("type"),
+            func.count(PatientPurchase.id).label("lines"),
+            func.coalesce(
+                func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
+            ).label("revenue"),
+        )
+        .join(PatientPurchase, PatientPurchase.product_id == Product.id)
+        .join(Patient, Patient.id == PatientPurchase.patient_id)
+        .group_by(
+            case(
+                (
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%generic%"
+                    ),
+                    "Generic",
+                ),
+                (
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%reference%"
+                    ),
+                    "Original",
+                ),
+                (
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%original%"
+                    ),
+                    "Original",
+                ),
+                else_="Unclassified",
+            )
+        )
+    )
+
+    patient_purchase_query = (
+        select(
+            Patient.id,
+            Patient.full_name,
+            func.count(PatientPurchase.id).label("lines"),
+            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("packs"),
+            func.coalesce(
+                func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
+            ).label("revenue"),
+        )
+        .join(PatientPurchase, PatientPurchase.patient_id == Patient.id)
+        .group_by(Patient.id, Patient.full_name)
+        .order_by(Patient.id)
+        .limit(20)
+    )
+
     inventory_query = select(
         func.coalesce(
             func.sum(
@@ -145,12 +265,42 @@ async def get_dashboard_summary(
                 else_=0,
             )
         ).label("warning"),
+        func.sum(
+            case(
+                (
+                    Inventory.expires_at.is_not(None)
+                    & (
+                        Inventory.expires_at
+                        > datetime.combine(warning_expiry, datetime.min.time())
+                    )
+                    & (
+                        Inventory.expires_at
+                        <= datetime.combine(extended_expiry, datetime.min.time())
+                    ),
+                    1,
+                ),
+                else_=0,
+            )
+        ).label("extended_warning"),
     )
 
     if scope is not None:
+        sales_category_query = sales_category_query.where(Patient.pharmacy_id == scope)
+        top_products_query = top_products_query.where(Patient.pharmacy_id == scope)
+        original_generic_query = original_generic_query.where(
+            Patient.pharmacy_id == scope
+        )
+        patient_purchase_query = patient_purchase_query.where(
+            Patient.pharmacy_id == scope
+        )
         inventory_query = inventory_query.where(Inventory.pharmacy_id == scope)
         low_stock_query = low_stock_query.where(Inventory.pharmacy_id == scope)
         expiry_query = expiry_query.where(Inventory.pharmacy_id == scope)
+
+    sales_category = (await session.execute(sales_category_query)).all()
+    top_products = (await session.execute(top_products_query)).all()
+    original_generic = (await session.execute(original_generic_query)).all()
+    patient_purchases = (await session.execute(patient_purchase_query)).all()
 
     inventory_value = await session.scalar(inventory_query)
     low_stock = await session.scalar(low_stock_query)
@@ -163,7 +313,44 @@ async def get_dashboard_summary(
         },
         "sales": {
             "today": round(float(today_sales or 0), 2),
+            "by_category": [
+                {
+                    "category": row.category,
+                    "lines": int(row.lines or 0),
+                    "units": int(row.units or 0),
+                    "revenue": round(float(row.revenue or 0), 2),
+                }
+                for row in sales_category
+            ],
         },
+        "original_vs_generic": [
+            {
+                "type": row.type,
+                "lines": int(row.lines or 0),
+                "revenue": round(float(row.revenue or 0), 2),
+            }
+            for row in original_generic
+        ],
+        "top_products": [
+            {
+                "id": row.id,
+                "name": row.name,
+                "units": int(row.units or 0),
+                "revenue": round(float(row.revenue or 0), 2),
+                "stock": int(row.stock or 0),
+            }
+            for row in top_products
+        ],
+        "patient_purchases": [
+            {
+                "patient_id": row.id,
+                "patient_name": row.full_name,
+                "lines": int(row.lines or 0),
+                "packs": int(row.packs or 0),
+                "revenue": round(float(row.revenue or 0), 2),
+            }
+            for row in patient_purchases
+        ],
         "revenue": {
             "month": round(float(month_revenue or 0), 2),
         },
@@ -180,5 +367,6 @@ async def get_dashboard_summary(
             "expired": int(expiry.expired or 0),
             "critical_expiry": int(expiry.critical or 0),
             "warning_expiry": int(expiry.warning or 0),
+            "extended_expiry": int(expiry.extended_warning or 0),
         },
     }
