@@ -37,18 +37,18 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
               size='lg'
               className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
-              <div className='flex aspect-square size-10 items-center justify-center overflow-hidden rounded-md'>
+              <div className='flex aspect-square size-10 items-center justify-end overflow-hidden rounded-md'>
                 <img
                   src={activeTeam.logo}
                   alt={`${activeTeam.name} logo`}
                   className='size-8 rounded-sm object-contain'
                 />
               </div>
-              <div className='grid flex-1 text-start leading-tight'>
-                <span className='pharmaviyum-brand truncate text-base font-bold text-black dark:text-white'>
+              <div className='grid min-w-0 flex-1 text-start leading-tight'>
+                <span className='pharmaviyum-brand block w-full truncate text-base font-bold text-black dark:text-white'>
                   {activeTeam.name}
                 </span>
-                <span className='pharmacy-workflow truncate text-xs font-medium text-black dark:text-white'>
+                <span className='pharmacy-workflow block w-full truncate text-xs font-medium text-black dark:text-white'>
                   {activeTeam.plan}
                 </span>
               </div>
