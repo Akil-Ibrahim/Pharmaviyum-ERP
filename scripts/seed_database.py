@@ -4,7 +4,7 @@ import asyncio
 import random
 from datetime import date, datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from src.pharmaviyum.core.database import AsyncSessionLocal
 from src.pharmaviyum.models import Patient, Prescription, Product, ProductBatch
@@ -718,6 +718,18 @@ async def seed_patients() -> None:
                 session.add(patient)
                 await session.flush()
                 created += 1
+
+            # Rebuild only the demo patient's synthetic history so repeated
+            # SEED_DEMO_DATA runs stay deterministic and do not double-count sales.
+            await session.execute(
+                delete(PatientPurchase).where(PatientPurchase.patient_id == patient.id)
+            )
+            await session.execute(
+                delete(Prescription).where(Prescription.patient_id == patient.id)
+            )
+            await session.execute(
+                delete(PatientCondition).where(PatientCondition.patient_id == patient.id)
+            )
 
             condition_name, icd10_code, profile_skus = PATIENT_PROFILES[index - 1]
 
