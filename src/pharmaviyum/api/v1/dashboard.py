@@ -201,8 +201,12 @@ async def get_dashboard_summary(
             case(
                 (
                     Inventory.expires_at.is_not(None)
-                    & (Inventory.expires_at > datetime.combine(warning_expiry, datetime.min.time()))
-                    & (Inventory.expires_at <= datetime.combine(extended_expiry, datetime.min.time())),
+                    & (
+                        Inventory.expires_at > datetime.combine(warning_expiry, datetime.min.time())
+                    )
+                    & (
+                        Inventory.expires_at <= datetime.combine(extended_expiry, datetime.min.time())
+                    ),
                     1,
                 ),
                 else_=0,
