@@ -50,6 +50,7 @@ type DashboardSummary = {
   prescriptions: { month: number }
   inventory: {
     retail_value: number
+    items: number
     low_stock: number
     expired: number
     critical_expiry: number
@@ -167,10 +168,10 @@ export function Dashboard() {
               <CircularMetricCard
                 label='Stock health'
                 value={ratio(
-                  Math.max(0, (summary?.inventory.expiry_tracked ?? 0) - (summary?.inventory.low_stock ?? 0)),
-                  summary?.inventory.expiry_tracked ?? 0
+                  Math.max(0, (summary?.inventory.items ?? 0) - (summary?.inventory.low_stock ?? 0)),
+                  summary?.inventory.items ?? 0
                 )}
-                detail='Expiry-tracked records without low stock flag'
+                detail='Inventory records without low stock flag'
               />
               <CircularMetricCard
                 label='Expiry health'
