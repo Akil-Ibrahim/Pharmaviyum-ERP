@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from .ai import router as ai_router
 from .auth import router as auth_router
+from .dashboard import router as dashboard_router
 from .endpoints.patients import router as patients_router
 from .ingestion import router as ingestion_router
 from .monitoring import router as monitoring_router
@@ -17,6 +18,7 @@ api_v1_router = APIRouter()
 
 api_v1_router.include_router(ai_router)
 api_v1_router.include_router(auth_router)
+api_v1_router.include_router(dashboard_router)
 api_v1_router.include_router(ingestion_router)
 api_v1_router.include_router(monitoring_router)
 api_v1_router.include_router(orders_router)
