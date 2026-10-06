@@ -176,20 +176,21 @@ async def test_dashboard_expiry_policy_keeps_three_buckets_disjoint():
             pharmacy_id=42,
         )
 
-    expiry_sql = next(
-        sql
-        for sql in (
-            str(statement.compile(dialect=postgresql.dialect()))
-            for statement in session.statements
-        )
-        if "extended_warning" in sql and "date_trunc" in sql
+    expiry_statement = next(
+        statement
+        for statement in session.statements
+        if "extended_warning" in str(statement) and "date_trunc" in str(statement)
     )
+    compiled = expiry_statement.compile(dialect=postgresql.dialect())
+    expiry_sql = str(compiled)
 
-    # Expired records form the red bucket; current/future records through the
-    # +3 month cutoff form the critical/red portion. Check the operators on
-    # the expiry-month expression without depending on SQLAlchemy bind names.
     assert re.search(r"date_trunc\([^)]*expires_at\)\s*<", expiry_sql)
     assert re.search(r"date_trunc\([^)]*expires_at\)\s*>= ", expiry_sql)
     assert re.search(r"date_trunc\([^)]*expires_at\)\s*<= ", expiry_sql)
     assert re.search(r"date_trunc\([^)]*expires_at\)\s*> ", expiry_sql)
     assert "extended_warning" in expiry_sql
+
+    cutoff_values = [
+        value for value in compiled.params.values() if isinstance(value, datetime)
+    ]
+    assert len(set(cutoff_values)) >= 3
