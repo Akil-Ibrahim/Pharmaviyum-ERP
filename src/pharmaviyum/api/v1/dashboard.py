@@ -121,9 +121,7 @@ async def get_dashboard_summary(
 
     inventory_stock_subquery = (
         select(
-            func.coalesce(
-                func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
-            )
+            func.coalesce(func.sum(Inventory.quantity - Inventory.reserved_quantity), 0)
         )
         .where(Inventory.product_id == Product.id)
         .correlate(Product)
