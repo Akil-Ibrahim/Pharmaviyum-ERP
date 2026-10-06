@@ -127,3 +127,32 @@ async def test_dashboard_summary_keeps_superuser_global_scope_unfiltered():
     ]
     all_sql = sql_statements + scalar_sql
     assert all("pharmacy_id" not in sql for sql in all_sql)
+
+
+@pytest.mark.asyncio
+async def test_dashboard_patient_condition_prefers_active_status():
+    """Dashboard must prefer an active condition over a stale inactive one."""
+    session = _Session()
+    user = SimpleNamespace(id=100, is_active=True, is_superuser=False)
+
+    with patch.object(
+        dashboard,
+        "resolve_pharmacy_scope",
+        new=AsyncMock(return_value=42),
+    ):
+        await dashboard.get_dashboard_summary(
+            current_user=user,
+            session=session,
+            pharmacy_id=42,
+        )
+
+    medication_sql = next(
+        sql
+        for sql in (
+            str(statement.compile(dialect=postgresql.dialect()))
+            for statement in session.statements
+        )
+        if "patient_conditions" in sql
+    )
+    assert 'patient_conditions.status = \'active\'' in medication_sql
+    assert "row_number() OVER" in medication_sql
