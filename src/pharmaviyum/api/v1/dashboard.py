@@ -110,7 +110,7 @@ async def get_dashboard_summary(
                 (PatientPurchase.prescription_required.is_(True), "Rx"), else_="OTC"
             ).label("category"),
             func.count(PatientPurchase.id).label("lines"),
-            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("units"),
+            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("packs"),
             func.coalesce(
                 func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
             ).label("revenue"),
@@ -390,7 +390,7 @@ async def get_dashboard_summary(
                 {
                     "category": row.category,
                     "lines": int(row.lines or 0),
-                    "units": int(row.units or 0),
+                    "packs": int(row.packs or 0),
                     "revenue": round(float(row.revenue or 0), 2),
                 }
                 for row in sales_category
