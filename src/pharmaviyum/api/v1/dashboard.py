@@ -348,7 +348,10 @@ async def get_dashboard_summary(
             .over(
                 partition_by=PatientCondition.patient_id,
                 order_by=(
-                    PatientCondition.status.asc(),
+                    case(
+                        (PatientCondition.status == "active", 0),
+                        else_=1,
+                    ),
                     PatientCondition.updated_at.desc(),
                     PatientCondition.id.desc(),
                 ),
