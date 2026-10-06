@@ -1,6 +1,7 @@
 """Regression tests for Dashboard tenant query scoping."""
 
 from types import SimpleNamespace
+import re
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -185,9 +186,10 @@ async def test_dashboard_expiry_policy_keeps_three_buckets_disjoint():
     )
 
     # Expired records form the red bucket; current/future records through the
-    # +3 month cutoff form the critical/red portion.
-    assert "< %(date_trunc_" in expiry_sql
-    assert ">= %(date_trunc_" in expiry_sql
-    assert "<= %(date_trunc_" in expiry_sql
-    assert "> %(date_trunc_" in expiry_sql
+    # +3 month cutoff form the critical/red portion. Check the operators on
+    # the expiry-month expression without depending on SQLAlchemy bind names.
+    assert re.search(r"date_trunc\([^)]*expires_at\)\s*<", expiry_sql)
+    assert re.search(r"date_trunc\([^)]*expires_at\)\s*>= ", expiry_sql)
+    assert re.search(r"date_trunc\([^)]*expires_at\)\s*<= ", expiry_sql)
+    assert re.search(r"date_trunc\([^)]*expires_at\)\s*> ", expiry_sql)
     assert "extended_warning" in expiry_sql
