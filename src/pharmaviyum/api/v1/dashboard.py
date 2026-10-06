@@ -110,7 +110,6 @@ async def get_dashboard_summary(
         func.count(Patient.id).filter(Patient.is_active.is_(True)).label("active_patients")
     ).where(Patient.id.in_(patient_scope))
 
-
     sales_category_query = (
         select(
             case(
