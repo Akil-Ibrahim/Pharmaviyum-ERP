@@ -69,9 +69,7 @@ async def get_dashboard_summary(
     month_revenue = await session.scalar(
         purchase_base.with_only_columns(
             func.coalesce(
-                func.sum(
-                    PatientPurchase.quantity * PatientPurchase.unit_price
-                ),
+                func.sum(PatientPurchase.quantity * PatientPurchase.unit_price),
                 0,
             )
         ).where(PatientPurchase.purchased_at >= month_start)
