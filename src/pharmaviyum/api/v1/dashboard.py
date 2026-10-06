@@ -361,6 +361,16 @@ async def get_dashboard_summary(
         .subquery()
     )
 
+    dashboard_patient_ids = (
+        select(Patient.id)
+        .join(PatientPurchase, PatientPurchase.patient_id == Patient.id)
+        .group_by(Patient.id)
+        .order_by(Patient.id)
+        .limit(20)
+    )
+    if scope is not None:
+        dashboard_patient_ids = dashboard_patient_ids.where(Patient.pharmacy_id == scope)
+
     patient_medication_query = (
         select(
             Patient.id.label("patient_id"),
@@ -403,10 +413,9 @@ async def get_dashboard_summary(
         )
         .order_by(Patient.id, PatientPurchase.id)
     )
-    if scope is not None:
-        patient_medication_query = patient_medication_query.where(
-            Patient.pharmacy_id == scope
-        )
+    patient_medication_query = patient_medication_query.where(
+        Patient.id.in_(dashboard_patient_ids)
+    )
     medication_rows = (await session.execute(patient_medication_query)).all()
     patient_medications: dict[int, dict] = {}
     for row in medication_rows:
