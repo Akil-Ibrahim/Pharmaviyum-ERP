@@ -21,7 +21,7 @@ export function Products() {
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to load products'))
       .finally(() => setLoading(false))
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => { const timer = window.setTimeout(load, 0); return () => window.clearTimeout(timer) }, [])
 
   const filtered = useMemo(() => {
     const q=query.trim().toLowerCase()
