@@ -1,61 +1,41 @@
-# Docker Compose for Pharmaviyum-CRM Backend
-# FastAPI + PostgreSQL + Redis stack
-
 services:
-  # PostgreSQL Database
   db:
-    image: postgres:15-alpine
-    container_name: pharmaviyum-db
+    image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-pharmaviyum}
       POSTGRES_USER: ${POSTGRES_USER:-app_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backups:/backups
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user} -d ${POSTGRES_DB:-pharmaviyum}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - pharmaviyum-network
+    networks: [pharmaviyum-network]
 
-  # Redis Cache
   redis:
-    image: redis:7-alpine
-    container_name: pharmaviyum-redis
+    image: ${REDIS_IMAGE:-valkey/valkey:8-alpine}
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: valkey-server --appendonly yes
     volumes:
       - redis_data:/data
-    ports:
-      - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - pharmaviyum-network
+    networks: [pharmaviyum-network]
 
-  # FastAPI Backend
   backend:
-    build:
-      context: ../../..
-      dockerfile: Dockerfile
-    container_name: pharmaviyum-backend
+    image: ${BACKEND_IMAGE}
     restart: unless-stopped
-    env_file:
-      - ./backend/.env
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-app_user}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-pharmaviyum}
-      - REDIS_URL=redis://redis:6379/0
-    volumes:
-      - ./logs:/app/logs
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      PGVECTOR_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-app_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-pharmaviyum}
+      REDIS_URL: redis://redis:6379/0
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
@@ -69,14 +49,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    networks:
-      - pharmaviyum-network
+    networks: [pharmaviyum-network]
 
 volumes:
   postgres_data:
-    driver: local
   redis_data:
-    driver: local
 
 networks:
   pharmaviyum-network:
