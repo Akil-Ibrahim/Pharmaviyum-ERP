@@ -82,8 +82,8 @@ async def test_dashboard_summary_applies_one_pharmacy_scope_to_all_aggregates():
 
     # Scalar queries are also part of the captured session contract.
     scalar_sql = [
-        str(statement.compile(dialect=postgresql.dialect()))
-        for statement in session.scalar.await_args_list
+        str(call.args[0].compile(dialect=postgresql.dialect()))
+        for call in session.scalar.await_args_list
     ]
     assert any("patients.pharmacy_id" in sql for sql in scalar_sql)
     assert any("inventory.pharmacy_id" in sql for sql in scalar_sql)
