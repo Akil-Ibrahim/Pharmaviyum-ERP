@@ -94,20 +94,24 @@ async def get_dashboard_summary(
     )
 
     order_kpi_query = order_base.with_only_columns(
-        func.count(Order.id).filter(Order.created_at >= month_start).label("month_orders"),
-        func.count(Order.id).filter(
-            (Order.created_at >= month_start) & (Order.status == "completed")
-        ).label("month_completed_orders"),
+        func.count(Order.id)
+        .filter(Order.created_at >= month_start)
+        .label("month_orders"),
+        func.count(Order.id)
+        .filter((Order.created_at >= month_start) & (Order.status == "completed"))
+        .label("month_completed_orders"),
     )
 
     prescription_kpi_query = prescription_base.with_only_columns(
-        func.count(Prescription.id).filter(
-            Prescription.created_at >= month_start
-        ).label("month_prescriptions")
+        func.count(Prescription.id)
+        .filter(Prescription.created_at >= month_start)
+        .label("month_prescriptions")
     )
 
     patient_kpi_query = select(
-        func.count(Patient.id).filter(Patient.is_active.is_(True)).label("active_patients")
+        func.count(Patient.id)
+        .filter(Patient.is_active.is_(True))
+        .label("active_patients")
     ).where(Patient.id.in_(patient_scope))
 
     sales_category_query = (
@@ -127,17 +131,16 @@ async def get_dashboard_summary(
         )
     )
 
-    inventory_stock_query = (
-        select(
-            Inventory.product_id,
-            func.coalesce(
-                func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
-            ).label("stock"),
-        )
-        .group_by(Inventory.product_id)
-    )
+    inventory_stock_query = select(
+        Inventory.product_id,
+        func.coalesce(
+            func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
+        ).label("stock"),
+    ).group_by(Inventory.product_id)
     if scope is not None:
-        inventory_stock_query = inventory_stock_query.where(Inventory.pharmacy_id == scope)
+        inventory_stock_query = inventory_stock_query.where(
+            Inventory.pharmacy_id == scope
+        )
 
     inventory_stock_subquery = inventory_stock_query.subquery()
 
