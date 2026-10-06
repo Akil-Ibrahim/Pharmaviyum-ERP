@@ -1,5 +1,4 @@
-"""
-FastAPI dependencies for authentication.
+"""FastAPI dependencies for authentication.
 
 Provides reusable dependency functions for:
 - Getting current user from JWT token
