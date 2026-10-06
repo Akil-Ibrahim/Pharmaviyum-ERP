@@ -98,3 +98,32 @@ async def test_dashboard_summary_applies_one_pharmacy_scope_to_all_aggregates():
     ]
     assert any("patients.pharmacy_id" in sql for sql in scalar_sql)
     assert any("inventory.pharmacy_id" in sql for sql in scalar_sql)
+
+
+@pytest.mark.asyncio
+async def test_dashboard_summary_keeps_superuser_global_scope_unfiltered():
+    """A superuser global scope must not add a pharmacy filter."""
+    session = _Session()
+    user = SimpleNamespace(id=1, is_active=True, is_superuser=True)
+
+    with patch.object(
+        dashboard,
+        "resolve_pharmacy_scope",
+        new=AsyncMock(return_value=None),
+    ):
+        await dashboard.get_dashboard_summary(
+            current_user=user,
+            session=session,
+            pharmacy_id=None,
+        )
+
+    sql_statements = [
+        str(statement.compile(dialect=postgresql.dialect()))
+        for statement in session.statements
+    ]
+    scalar_sql = [
+        str(call.args[0].compile(dialect=postgresql.dialect()))
+        for call in session.scalar.await_args_list
+    ]
+    all_sql = sql_statements + scalar_sql
+    assert all("pharmacy_id" not in sql for sql in all_sql)
