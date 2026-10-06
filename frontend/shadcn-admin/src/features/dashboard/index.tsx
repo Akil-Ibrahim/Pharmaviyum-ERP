@@ -27,7 +27,7 @@ type DashboardSummary = {
   }
   revenue: { month: number }
   original_vs_generic: { type: string; lines: number; revenue: number }[]
-  top_products: { id: number; name: string; units: number; revenue: number; stock: number }[]
+  top_products: { id: number; name: string; packs: number; revenue: number; stock: number }[]
   patient_purchases: { patient_id: number; patient_name: string; lines: number; packs: number; revenue: number }[]
   patient_medications: {
     patient_id: number
@@ -261,7 +261,7 @@ export function Dashboard() {
               columns={['Product', 'Packs', 'Revenue', 'Stock']}
               rows={(summary?.top_products ?? []).map((item) => [
                 item.name,
-                item.units.toLocaleString(),
+                item.packs.toLocaleString(),
                 formatCurrency(item.revenue),
                 item.stock.toLocaleString(),
               ])}
