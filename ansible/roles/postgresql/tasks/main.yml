@@ -1,17 +1,20 @@
 ---
-# =============================================================================
-# PostgreSQL Role - Database setup (managed via Docker Compose)
-# =============================================================================
-
-- name: PostgreSQL is managed by Docker Compose
-  ansible.builtin.debug:
-    msg: "PostgreSQL will be started via Docker Compose - no system installation needed"
-
 - name: Ensure PostgreSQL data directory exists
   ansible.builtin.file:
-    path: "{{ postgres_data_dir | default('/var/lib/postgresql/data') }}"
+    path: "{{ postgresql_data_dir | default('/var/lib/postgresql/data') }}"
     state: directory
     owner: "{{ deploy_user }}"
     mode: "0750"
-  when: postgres_data_dir is defined
-  tags: [postgresql, setup]
+  when: postgresql_data_dir is defined
+
+- name: Check PostgreSQL container
+  ansible.builtin.command: >-
+    docker ps --filter "name={{ docker_compose_project }}-db"
+    --format "{{ '{{' }}.Names{{ '}}' }}"
+  register: postgresql_container
+  changed_when: false
+  failed_when: false
+
+- name: Show PostgreSQL status
+  ansible.builtin.debug:
+    msg: "PostgreSQL container: {{ postgresql_container.stdout | default('not running') }}"

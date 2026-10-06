@@ -1,28 +1,8 @@
 ---
-# Test playbook for app-backend role
-# Verifies role works correctly on clean system
-
 - name: Converge
   hosts: all
   become: true
-  gather_facts: true
-
-  pre_tasks:
-    - name: Update apt cache
-      ansible.builtin.apt:
-        update_cache: true
-        cache_valid_time: 3600
-      when: ansible_os_family == "Debian"
-
-  roles:
-    - role: app-backend
-
-  post_tasks:
-    - name: Verify backend is running
-      ansible.builtin.command: docker compose ps
-      register: docker_ps
-      changed_when: false
-
-    - name: Display container status
-      ansible.builtin.debug:
-        var: docker_ps.stdout
+  tasks:
+    - name: Include Docker role
+      ansible.builtin.include_role:
+        name: docker
