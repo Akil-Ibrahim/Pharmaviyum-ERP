@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from sqlalchemy import delete, select
 
 from src.pharmaviyum.core.database import AsyncSessionLocal
-from src.pharmaviyum.models import Patient, Prescription, Product, ProductBatch
+from src.pharmaviyum.models import Inventory, Patient, Pharmacy, Prescription, Product, ProductBatch
 from src.pharmaviyum.models.patients import PatientPurchase
 from src.pharmaviyum.models.patients.patient_condition import PatientCondition
 
@@ -647,7 +647,9 @@ def synthetic_barcode(index: int) -> str:
     return f"DEMO{index:04d}{20260918}"
 
 
-async def seed_inventory(session) -> dict[str, tuple[Product, ProductBatch]]:
+async def seed_inventory(
+    session, pharmacy: Pharmacy
+) -> dict[str, tuple[Product, ProductBatch, Inventory]]:
     inventory = {}
     for index, spec in enumerate(PRODUCT_CATALOG, 1):
         product = await session.scalar(
@@ -710,20 +712,63 @@ async def seed_inventory(session) -> dict[str, tuple[Product, ProductBatch]]:
             )
             session.add(batch)
             await session.flush()
-        inventory[product.sku] = (product, batch)
+        inventory_record = await session.scalar(
+            select(Inventory).where(
+                Inventory.product_id == product.id,
+                Inventory.pharmacy_id == pharmacy.id,
+                Inventory.lot_number == batch.batch_number,
+            )
+        )
+        if inventory_record is None:
+            inventory_record = Inventory(
+                product_id=product.id,
+                pharmacy_id=pharmacy.id,
+                quantity=batch.available_quantity,
+                reserved_quantity=0,
+                reorder_level=10,
+                lot_number=batch.batch_number,
+                expires_at=datetime.combine(batch.expiry_date, datetime.min.time()),
+            )
+            session.add(inventory_record)
+            await session.flush()
+        else:
+            inventory_record.quantity = batch.available_quantity
+            inventory_record.reserved_quantity = 0
+            inventory_record.lot_number = batch.batch_number
+            inventory_record.expires_at = datetime.combine(
+                batch.expiry_date, datetime.min.time()
+            )
+
+        inventory[product.sku] = (product, batch, inventory_record)
     return inventory
 
 
 async def seed_patients() -> None:
     async with AsyncSessionLocal() as session:
-        inventory = await seed_inventory(session)
+        pharmacy = await session.scalar(
+            select(Pharmacy)
+            .where(Pharmacy.is_active.is_(True))
+            .order_by(Pharmacy.id.asc())
+        )
+        if pharmacy is None:
+            raise RuntimeError(
+                "SEED_DEMO_DATA requires at least one active pharmacy. "
+                "Create a pharmacy before seeding synthetic data."
+            )
+
+        inventory = await seed_inventory(session, pharmacy)
         created = 0
 
         # Reset synthetic inventory before rebuilding synthetic sales history.
         # This keeps repeated SEED_DEMO_DATA runs deterministic instead of
         # decrementing the same demo batches on every run.
-        for product, batch in inventory.values():
+        for product, batch, inventory_record in inventory.values():
             batch.available_quantity = batch.received_quantity
+            inventory_record.quantity = batch.received_quantity
+            inventory_record.reserved_quantity = 0
+            inventory_record.expires_at = datetime.combine(
+                batch.expiry_date, datetime.min.time()
+            )
             product.stock = batch.received_quantity
 
         for index, (first, last, category, city, country) in enumerate(CUSTOMERS, 1):
@@ -790,7 +835,7 @@ async def seed_patients() -> None:
             receipt = f"DEMO-{index:03d}-01"
             for line_number, sku in enumerate(profile_skus, 1):
                 spec = next(item for item in PRODUCT_CATALOG if item["sku"] == sku)
-                product, batch = inventory[sku]
+                product, batch, inventory_record = inventory[sku]
                 packs = 1 + ((index + line_number) % 2)
                 session.add(
                     PatientPurchase(
@@ -809,6 +854,7 @@ async def seed_patients() -> None:
                     )
                 )
                 batch.available_quantity = max(0, batch.available_quantity - packs)
+                inventory_record.quantity = batch.available_quantity
                 product.stock = batch.available_quantity
 
             # One active synthetic prescription for every second patient.
