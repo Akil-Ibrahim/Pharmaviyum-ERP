@@ -365,6 +365,7 @@ async def get_dashboard_summary(
         select(
             Patient.id.label("patient_id"),
             Patient.full_name.label("patient_name"),
+            PatientPurchase.id.label("purchase_id"),
             latest_condition_subquery.c.condition_name.label("condition"),
             Product.id.label("product_id"),
             Product.name.label("product_name"),
@@ -422,6 +423,7 @@ async def get_dashboard_summary(
             patient["condition"] = row.condition
         patient["medications"].append(
             {
+                "purchase_id": row.purchase_id,
                 "product_id": row.product_id,
                 "name": row.product_name,
                 "dosage": row.dosage_strength,
