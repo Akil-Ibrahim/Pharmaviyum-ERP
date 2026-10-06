@@ -62,23 +62,34 @@ async def test_dashboard_summary_applies_one_pharmacy_scope_to_all_aggregates():
         for statement in session.statements
     ]
 
-    # The five execute-based Dashboard aggregates must all carry the
-    # patient/pharmacy boundary or direct inventory pharmacy boundary.
-    patient_queries = [
-        sql
-        for sql in sql_statements
-        if "patient_purchases" in sql
-    ]
+    # Patient-backed aggregates must constrain the joined Patient table.
+    patient_queries = [sql for sql in sql_statements if "patient_purchases" in sql]
     assert len(patient_queries) >= 4
-    assert all("patients.pharmacy_id" in sql for sql in patient_queries)
+    assert all("patients.pharmacy_id = " in sql for sql in patient_queries)
 
-    inventory_queries = [
-        sql
-        for sql in sql_statements
-        if "inventory" in sql
-    ]
+    # Inventory aggregates must constrain Inventory directly. The top-products
+    # stock scalar subquery is also checked through this contract.
+    inventory_queries = [sql for sql in sql_statements if "inventory" in sql]
     assert inventory_queries
-    assert all("inventory.pharmacy_id" in sql for sql in inventory_queries)
+    assert all("inventory.pharmacy_id = " in sql for sql in inventory_queries)
+
+    # The resolved tenant value must be bound to the same SQL predicate rather
+    # than merely mentioning a pharmacy column.
+    patient_params = [
+        statement.compile(dialect=postgresql.dialect()).params
+        for statement in session.statements
+        if "patient_purchases" in str(
+            statement.compile(dialect=postgresql.dialect())
+        )
+    ]
+    assert all(42 in params.values() for params in patient_params)
+
+    inventory_params = [
+        statement.compile(dialect=postgresql.dialect()).params
+        for statement in session.statements
+        if "inventory" in str(statement.compile(dialect=postgresql.dialect()))
+    ]
+    assert all(42 in params.values() for params in inventory_params)
 
     # Scalar queries are also part of the captured session contract.
     scalar_sql = [
