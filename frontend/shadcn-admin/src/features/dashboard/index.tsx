@@ -266,7 +266,7 @@ export function Dashboard() {
               <LiveStatCard label='Prescriptions' value={summary?.prescriptions.month ?? 0} detail='This month' direction='up' />
               <LiveStatCard label='Low stock' value={summary?.inventory.low_stock ?? 0} detail='Inventory items' direction='down' />
               <LiveStatCard label='Expiry attention' value={(summary?.inventory.expiry_red ?? 0) + (summary?.inventory.expiry_yellow ?? 0)} detail='Expired or within 12 months' direction='down' />
-              <LiveStatCard label='Inventory value' value={summary?.inventory.retail_value ?? 0} detail='Current retail value' direction='up' currency />
+              <LiveStatCard label='Inventory value' value={summary?.inventory.retail_value ?? 0} detail='Current retail value' direction='up' amount />
             </div>
           </section>
 
@@ -452,7 +452,7 @@ function LiveStatCard({
   value: number
   detail: string
   direction: 'up' | 'down'
-  currency?: boolean
+  amount?: boolean
 }) {
   return (
     <div className='rounded-xl border bg-card p-4 shadow-sm'>
@@ -465,7 +465,7 @@ function LiveStatCard({
         )}
       </div>
       <div className='mt-2 text-2xl font-semibold tracking-tight'>
-        {currency ? formatAmount(value) : value.toLocaleString()}
+        {amount ? formatAmount(value) : value.toLocaleString()}
       </div>
       <div className='mt-1 text-xs text-muted-foreground'>{detail}</div>
     </div>
@@ -488,10 +488,10 @@ function PipelineCard({
         <h2 className='font-semibold'>{title}</h2>
       </div>
       <div className='grid grid-cols-2 gap-2 sm:grid-cols-4'>
-        {stages.map(([label, value, currency], index) => (
+        {stages.map(([label, value, amount], index) => (
           <div key={label} className='relative min-w-0'>
             <div className='rounded-xl bg-muted/50 p-3 text-center'>
-              <p className='text-lg font-bold'>{currency ? formatAmount(value) : value.toLocaleString()}</p>
+              <p className='text-lg font-bold'>{amount ? formatAmount(value) : value.toLocaleString()}</p>
               <p className='truncate text-[11px] text-muted-foreground'>{label}</p>
             </div>
             {index < stages.length - 1 && (
@@ -533,7 +533,7 @@ function PatientCohortCard({
       <div className='mb-4 grid grid-cols-3 gap-2'>
         <MiniMetric label='Medicines' value={totalLines} />
         <MiniMetric label='Packs' value={totalPacks} />
-        <MiniMetric label='Revenue' value={totalRevenue} currency />
+        <MiniMetric label='Revenue' value={totalRevenue} amount />
       </div>
 
       <div className='max-h-[620px] overflow-auto pr-1'>
@@ -667,17 +667,17 @@ function formatExpiry(value: string | null) {
 function MiniMetric({
   label,
   value,
-  currency = false,
+  amount = false,
 }: {
   label: string
   value: number
-  currency?: boolean
+  amount?: boolean
 }) {
   return (
     <div className='rounded-xl bg-muted/50 p-3'>
       <p className='text-[11px] text-muted-foreground'>{label}</p>
       <p className='mt-1 text-sm font-semibold'>
-        {currency ? formatAmount(value) : value.toLocaleString()}
+        {amount ? formatAmount(value) : value.toLocaleString()}
       </p>
     </div>
   )
