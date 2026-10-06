@@ -37,11 +37,11 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
               size='lg'
               className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
-              <div className='flex aspect-square size-10 items-center justify-center overflow-hidden rounded-lg'>
+              <div className='flex aspect-square size-10 items-center justify-center overflow-hidden rounded-xl'>
                 <img
                   src={activeTeam.logo}
                   alt={`${activeTeam.name} logo`}
-                  className='size-8 object-contain'
+                  className='size-8 rounded-xl object-contain'
                 />
               </div>
               <div className='grid flex-1 text-start leading-tight'>
@@ -74,7 +74,7 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
                   <img
                     src={team.logo}
                     alt=''
-                    className='size-full object-contain'
+                    className='size-full rounded-sm object-contain'
                   />
                 </div>
                 {team.name}
