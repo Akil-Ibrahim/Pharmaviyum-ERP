@@ -8,7 +8,9 @@
   when: postgresql_data_dir is defined
 
 - name: Check PostgreSQL container
-  ansible.builtin.command: docker ps --filter "name={{ docker_compose_project }}-db" --format "{{ '{{' }}.Names{{ '}}' }}"
+  ansible.builtin.command: >-
+    docker ps --filter "name={{ docker_compose_project }}-db"
+    --format "{{ '{{' }}.Names{{ '}}' }}"
   register: postgresql_container
   changed_when: false
   failed_when: false
