@@ -196,16 +196,7 @@ export function Dashboard() {
                 item.stock.toLocaleString(),
               ])}
             />
-            <DataTable
-              title='Patient Purchases'
-              columns={['Patient', 'Lines', 'Packs', 'Revenue']}
-              rows={(summary?.patient_purchases ?? []).slice(0, 10).map((item) => [
-                item.patient_name,
-                item.lines.toLocaleString(),
-                item.packs.toLocaleString(),
-                formatCurrency(item.revenue),
-              ])}
-            />
+            <PatientCohortCard patients={summary?.patient_purchases ?? []} />
           </section>
 
           <section className='rounded-2xl border bg-muted/20 p-5'>
@@ -389,6 +380,85 @@ function PipelineCard({
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function PatientCohortCard({
+  patients,
+}: {
+  patients: DashboardSummary['patient_purchases']
+}) {
+  const totalLines = patients.reduce((sum, patient) => sum + patient.lines, 0)
+  const totalPacks = patients.reduce((sum, patient) => sum + patient.packs, 0)
+  const totalRevenue = patients.reduce((sum, patient) => sum + patient.revenue, 0)
+
+  return (
+    <div className='rounded-2xl border bg-card p-5 shadow-sm'>
+      <div className='mb-4 flex items-start justify-between gap-3'>
+        <div>
+          <h2 className='font-semibold'>Patient Purchases · 20</h2>
+          <p className='text-xs text-muted-foreground'>
+            Synthetic patient cohort · live ERP aggregates
+          </p>
+        </div>
+        <span className='rounded-full border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground'>
+          {patients.length} patients
+        </span>
+      </div>
+
+      <div className='mb-4 grid grid-cols-3 gap-2'>
+        <MiniMetric label='Medicines' value={totalLines} />
+        <MiniMetric label='Packs' value={totalPacks} />
+        <MiniMetric label='Revenue' value={totalRevenue} currency />
+      </div>
+
+      <div className='max-h-[520px] overflow-auto pr-1'>
+        <table className='w-full text-sm'>
+          <thead className='sticky top-0 bg-card'>
+            <tr className='border-b text-left text-xs text-muted-foreground'>
+              <th className='pr-3 pb-3 font-medium'>Patient</th>
+              <th className='pr-3 pb-3 text-right font-medium'>Meds</th>
+              <th className='pr-3 pb-3 text-right font-medium'>Packs</th>
+              <th className='pb-3 text-right font-medium'>Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            {patients.map((patient) => (
+              <tr key={patient.patient_id} className='border-b last:border-0'>
+                <td className='max-w-[150px] truncate py-3 pr-3'>{patient.patient_name}</td>
+                <td className='py-3 pr-3 text-right'>{patient.lines}</td>
+                <td className='py-3 pr-3 text-right'>{patient.packs}</td>
+                <td className='py-3 text-right'>{formatCurrency(patient.revenue)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {patients.length === 0 && (
+          <p className='py-6 text-center text-xs text-muted-foreground'>
+            No patient purchase data
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function MiniMetric({
+  label,
+  value,
+  currency = false,
+}: {
+  label: string
+  value: number
+  currency?: boolean
+}) {
+  return (
+    <div className='rounded-xl bg-muted/50 p-3'>
+      <p className='text-[11px] text-muted-foreground'>{label}</p>
+      <p className='mt-1 text-sm font-semibold'>
+        {currency ? formatCurrency(value) : value.toLocaleString()}
+      </p>
     </div>
   )
 }
