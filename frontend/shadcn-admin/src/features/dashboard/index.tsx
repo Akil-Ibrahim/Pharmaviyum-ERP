@@ -145,7 +145,7 @@ export function Dashboard() {
                 ['This month', summary?.prescriptions.month ?? 0],
                 ['Orders', summary?.orders.month ?? 0],
                 ['Completed', summary?.orders.completed_month ?? 0],
-                ['Revenue', summary?.revenue.month ?? 0],
+                ['Revenue', summary?.revenue.month ?? 0, true],
               ]}
             />
             <PipelineCard
@@ -166,6 +166,16 @@ export function Dashboard() {
                 ['≤ 3 months', summary?.inventory.critical_expiry ?? 0],
                 ['≤ 9 months', summary?.inventory.warning_expiry ?? 0],
                 ['≤ 12 months', summary?.inventory.extended_expiry ?? 0],
+              ]}
+            />
+            <PipelineCard
+              title='Patient Cohort'
+              icon={Users}
+              stages={[
+                ['Patients', summary?.patient_purchases.length ?? 0],
+                ['Medicines', summary?.patient_purchases.reduce((sum, item) => sum + item.lines, 0) ?? 0],
+                ['Packs', summary?.patient_purchases.reduce((sum, item) => sum + item.packs, 0) ?? 0],
+                ['Revenue', summary?.patient_purchases.reduce((sum, item) => sum + item.revenue, 0) ?? 0, true],
               ]}
             />
           </section>
@@ -359,7 +369,7 @@ function PipelineCard({
 }: {
   title: string
   icon: LucideIcon
-  stages: [string, number][]
+  stages: [string, number, boolean?][]
 }) {
   return (
     <div className='rounded-2xl border bg-card p-5 shadow-sm'>
@@ -368,10 +378,10 @@ function PipelineCard({
         <h2 className='font-semibold'>{title}</h2>
       </div>
       <div className='grid grid-cols-4 gap-2'>
-        {stages.map(([label, value], index) => (
+        {stages.map(([label, value, currency], index) => (
           <div key={label} className='relative min-w-0'>
             <div className='rounded-xl bg-muted/50 p-3 text-center'>
-              <p className='text-lg font-bold'>{typeof value === 'number' && label !== 'Sales today' && label !== 'Revenue' && label !== 'Stock value' ? value.toLocaleString() : formatCurrency(value)}</p>
+              <p className='text-lg font-bold'>{currency ? formatCurrency(value) : value.toLocaleString()}</p>
               <p className='truncate text-[11px] text-muted-foreground'>{label}</p>
             </div>
             {index < stages.length - 1 && (
