@@ -22,8 +22,14 @@ import { ThemeSwitch } from '@/components/theme-switch'
 type DashboardSummary = {
   as_of: string
   patients: { active: number }
-  sales: { today: number }
+  sales: {
+    today: number
+    by_category: { category: string; lines: number; units: number; revenue: number }[]
+  }
   revenue: { month: number }
+  original_vs_generic: { type: string; lines: number; revenue: number }[]
+  top_products: { id: number; name: string; units: number; revenue: number; stock: number }[]
+  patient_purchases: { patient_id: number; patient_name: string; lines: number; packs: number; revenue: number }[]
   orders: { month: number; completed_month: number }
   prescriptions: { month: number }
   inventory: {
@@ -32,45 +38,9 @@ type DashboardSummary = {
     expired: number
     critical_expiry: number
     warning_expiry: number
+    extended_expiry: number
   }
 }
-
-const previewDonuts: {
-  title: string
-  total: string
-  items: [string, number][]
-}[] = [
-  {
-    title: 'Sales by category',
-    total: '$128K',
-    items: [
-      ['Prescription', 42],
-      ['OTC', 31],
-      ['Supplements', 17],
-      ['Devices', 10],
-    ],
-  },
-  {
-    title: 'Inventory status',
-    total: '4,821',
-    items: [
-      ['Good', 68],
-      ['Warning', 19],
-      ['Critical', 9],
-      ['Expired', 4],
-    ],
-  },
-  {
-    title: 'Order status',
-    total: '1,284',
-    items: [
-      ['Completed', 74],
-      ['Processing', 13],
-      ['Pending', 8],
-      ['Cancelled', 5],
-    ],
-  },
-]
 
 const pipelines: {
   title: string
@@ -118,17 +88,6 @@ const pipelines: {
     ],
   },
 ]
-
-const statistics: [string, string, string, 'up' | 'down'][] = [
-  ['Orders', '1,284', '+12.4%', 'up'],
-  ['Prescriptions', '846', '92% completed', 'up'],
-  ['Products', '4,821', '127 low stock', 'down'],
-  ['Inventory value', '$284K', '94% healthy stock', 'up'],
-  ['Expiring soon', '86', '12 critical', 'down'],
-  ['Transfers', '42', '8 pending', 'down'],
-]
-
-const monthlyRevenue = [42, 49, 46, 61, 58, 72, 68, 81, 76, 89, 84, 96]
 
 export function Dashboard() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
@@ -194,117 +153,48 @@ export function Dashboard() {
           </section>
 
           <section className='grid gap-4 xl:grid-cols-3'>
-            {previewDonuts.map((donut) => (
-              <DonutCard key={donut.title} {...donut} />
-            ))}
-          </section>
-
-          <section className='grid gap-4 xl:grid-cols-2'>
-            {pipelines.map((pipeline) => (
-              <PipelineCard key={pipeline.title} {...pipeline} />
-            ))}
-          </section>
-
-          <section className='rounded-2xl border bg-card p-5 shadow-sm'>
-            <div className='mb-5 flex items-center justify-between'>
-              <div>
-                <h2 className='font-semibold'>Sales & Revenue</h2>
-                <p className='text-xs text-muted-foreground'>
-                  Monthly performance · preview data
-                </p>
-              </div>
-              <div className='rounded-lg border bg-muted/30 p-1 text-xs'>
-                <span className='rounded-md bg-background px-2 py-1 font-medium shadow-sm'>
-                  12M
-                </span>
-                <span className='px-2 py-1 text-muted-foreground'>90D</span>
-                <span className='px-2 py-1 text-muted-foreground'>30D</span>
-              </div>
-            </div>
-            <div className='flex h-56 items-end gap-2'>
-              {monthlyRevenue.map((height, index) => (
-                <div key={index} className='flex h-full flex-1 items-end'>
-                  <div
-                    className='w-full rounded-t-md bg-primary/80 transition-all hover:bg-primary'
-                    style={{ height: height + '%' }}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className='mt-3 flex justify-between text-[11px] text-muted-foreground'>
-              {[
-                'Jan',
-                'Feb',
-                'Mar',
-                'Apr',
-                'May',
-                'Jun',
-                'Jul',
-                'Aug',
-                'Sep',
-                'Oct',
-                'Nov',
-                'Dec',
-              ].map((month) => (
-                <span key={month}>{month}</span>
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <div className='mb-3'>
-              <h2 className='font-semibold'>Operational Statistics</h2>
-              <p className='text-xs text-muted-foreground'>
-                Compact operational signals for daily pharmacy management.
-              </p>
-            </div>
-            <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3'>
-              {statistics.map(([label, value, detail, direction]) => (
-                <div
-                  key={label}
-                  className='rounded-xl border bg-card p-4 shadow-sm'
-                >
-                  <div className='flex items-center justify-between'>
-                    <span className='text-sm text-muted-foreground'>
-                      {label}
-                    </span>
-                    {direction === 'up' ? (
-                      <ArrowUpRight className='size-4 text-emerald-600' />
-                    ) : (
-                      <ArrowDownRight className='size-4 text-amber-600' />
-                    )}
-                  </div>
-                  <div className='mt-2 text-2xl font-semibold tracking-tight'>
-                    {value}
-                  </div>
-                  <div className='mt-1 text-xs text-muted-foreground'>
-                    {detail}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <DonutCard
+              title='Sales by category'
+              total={formatCurrency(summary?.sales.by_category.reduce((sum, item) => sum + item.revenue, 0) ?? 0)}
+              items={toPercentItems(summary?.sales.by_category.map((item) => [item.category, item.revenue] as [string, number]) ?? [])}
+            />
+            <DonutCard
+              title='Original vs Generic'
+              total={formatCurrency(summary?.original_vs_generic.reduce((sum, item) => sum + item.revenue, 0) ?? 0)}
+              items={toPercentItems(summary?.original_vs_generic.map((item) => [item.type, item.revenue] as [string, number]) ?? [])}
+            />
+            <DonutCard
+              title='Expiry control'
+              total={String((summary?.inventory.expired ?? 0) + (summary?.inventory.critical_expiry ?? 0) + (summary?.inventory.warning_expiry ?? 0) + (summary?.inventory.extended_expiry ?? 0))}
+              items={toPercentItems([
+                ['Expired', summary?.inventory.expired ?? 0],
+                ['≤ 3 months', summary?.inventory.critical_expiry ?? 0],
+                ['≤ 9 months', summary?.inventory.warning_expiry ?? 0],
+                ['≤ 12 months', summary?.inventory.extended_expiry ?? 0],
+              ])}
+            />
           </section>
 
           <section className='grid gap-4 xl:grid-cols-2'>
             <DataTable
               title='Top Products'
               columns={['Product', 'Units', 'Revenue', 'Stock']}
-              rows={[
-                ['Omeprazole 20 mg', '486', '$12.4K', '124'],
-                ['Paracetamol 500 mg', '421', '$8.7K', '318'],
-                ['Amoxicillin 500 mg', '286', '$7.9K', '96'],
-                ['Ibuprofen 400 mg', '254', '$6.8K', '142'],
-              ]}
+              rows={(summary?.top_products ?? []).map((item) => [
+                item.name,
+                item.units.toLocaleString(),
+                formatCurrency(item.revenue),
+                item.stock.toLocaleString(),
+              ])}
             />
             <DataTable
-              title='Operational Alerts'
-              columns={['Alert', 'Count', 'Priority', 'Status']}
-              rows={[
-                ['Critical expiry', '12', 'High', 'Review'],
-                ['Low stock', '127', 'Medium', 'Monitor'],
-                ['Pending receiving', '11', 'Medium', 'Process'],
-                ['Pending transfers', '8', 'Low', 'Review'],
-              ]}
+              title='Patient Purchases'
+              columns={['Patient', 'Lines', 'Packs', 'Revenue']}
+              rows={(summary?.patient_purchases ?? []).slice(0, 10).map((item) => [
+                item.patient_name,
+                item.lines.toLocaleString(),
+                item.packs.toLocaleString(),
+                formatCurrency(item.revenue),
+              ])}
             />
           </section>
 
@@ -316,9 +206,8 @@ export function Dashboard() {
               <div>
                 <h2 className='font-semibold'>Mortarium AI</h2>
                 <p className='mt-1 text-sm text-muted-foreground'>
-                  AI usage, RAG queries, validation, and safety events will be
-                  connected to this dashboard after the backend metrics layer is
-                  implemented.
+                  Mortarium AI metrics remain isolated from operational KPI calculations.
+                  The dashboard uses ERP records for business metrics and keeps AI telemetry separate.
                 </p>
               </div>
             </div>
@@ -335,6 +224,21 @@ function formatCurrency(value: number) {
     currency: 'USD',
     maximumFractionDigits: 0,
   })
+}
+
+function toPercentItems(items: [string, number][]): [string, number][] {
+  const total = items.reduce((sum, [, value]) => sum + value, 0)
+  if (!total) return []
+  return items.map(([label, value]) => [label, Math.round((value / total) * 100)] as [string, number])
+}
+
+function LiveMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className='rounded-xl border bg-card p-4 shadow-sm'>
+      <p className='text-xs text-muted-foreground'>{label}</p>
+      <p className='mt-2 text-2xl font-semibold tracking-tight'>{value}</p>
+    </div>
+  )
 }
 
 function KpiCard({
@@ -397,7 +301,7 @@ function DonutCard({
     <div className='rounded-2xl border bg-card p-5 shadow-sm'>
       <div className='mb-4'>
         <h2 className='font-semibold'>{title}</h2>
-        <p className='text-xs text-muted-foreground'>Preview distribution</p>
+        <p className='text-xs text-muted-foreground'>Live ERP aggregation</p>
       </div>
       <div className='flex items-center gap-5'>
         <div
@@ -409,6 +313,7 @@ function DonutCard({
           </div>
         </div>
         <div className='min-w-0 flex-1 space-y-2'>
+          {items.length === 0 && <span className='text-xs text-muted-foreground'>No operational data</span>}
           {items.map(([label, value]) => (
             <div
               key={label}
@@ -473,7 +378,7 @@ function DataTable({
     <div className='rounded-2xl border bg-card p-5 shadow-sm'>
       <div className='mb-4'>
         <h2 className='font-semibold'>{title}</h2>
-        <p className='text-xs text-muted-foreground'>Preview data</p>
+        <p className='text-xs text-muted-foreground'>Live ERP aggregation</p>
       </div>
       <div className='overflow-x-auto'>
         <table className='w-full text-sm'>
