@@ -184,7 +184,7 @@ async def get_dashboard_summary(
 
     expiry_query = select(
         func.count(Inventory.id)
-        .where(Inventory.expires_at.is_not(None))
+        .filter(Inventory.expires_at.is_not(None))
         .label("tracked"),
         func.coalesce(
             func.sum(
