@@ -1,7 +1,6 @@
 ---
-# PostgreSQL Default Variables
-
-postgres_data_dir: /var/lib/postgresql/data
-postgres_port: 5432
-postgres_user: app_user
-postgres_db: pharmaviyum
+# PostgreSQL defaults
+postgresql_data_dir: /var/lib/postgresql/data
+postgresql_port: 5432
+postgresql_user: app_user
+postgresql_db: pharmaviyum

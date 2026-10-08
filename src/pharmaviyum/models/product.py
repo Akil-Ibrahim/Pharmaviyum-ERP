@@ -1,9 +1,18 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, Integer, String
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.pharmaviyum.db.base import Base
+from src.pharmaviyum.models.drug_catalog import MedicinalProduct
 
 if False:  # pragma: no cover
     from src.pharmaviyum.models.product_batch import ProductBatch
@@ -49,6 +58,11 @@ class Product(Base):
     )
     gtin: Mapped[str | None] = mapped_column(String(14), nullable=True, index=True)
     barcode: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+
+    medicinal_product_id: Mapped[int | None] = mapped_column(
+        ForeignKey("medicinal_products.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    medicinal_product: Mapped[MedicinalProduct | None] = relationship()
 
     price: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     # Legacy aggregate stock. Per-pharmacy stock is authoritative in Inventory.

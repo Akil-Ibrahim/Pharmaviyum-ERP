@@ -1,33 +1,26 @@
 ---
-# Global variables for Pharmaviyum-CRM Ansible deployment
-# All values can be overridden per host/group in inventory
+app_name: pharmaviyum
+app_version: "{{ lookup('env', 'PHARMAVIYUM_APP_VERSION') }}"
+app_environment: production
 
-# Application configuration
-app_name: pharmaviyum-crm
-app_version: "1.0.0"
-app_environment: production  # options: production, staging, demo
+container_registry: ghcr.io
+backend_image: "ghcr.io/ibrahimengpy/pharmaviyum-crm"
 
-# Docker settings
-docker_version: "24.0"
-docker_compose_version: "v2.20.0"
-
-# PostgreSQL configuration
-postgres_version: "15"
-postgres_db: pharmaviyum
-postgres_user: app_user
-postgres_password: "{{ vault_postgres_password }}"  # encrypted via ansible-vault
-postgres_data_dir: /opt/pharmaviyum/data/postgres
-
-# FastAPI backend settings
 backend_port: 8000
-backend_workers: 2  # conservative for pharmacy PCs with limited RAM
+backend_workers: 2
 backend_log_level: info
 
-# Nginx reverse proxy settings
-nginx_domain: localhost  # override per deployment
-nginx_ssl_enabled: false  # enable for production with valid cert
+postgres_version: "16"
+postgres_db: pharmaviyum
+postgres_user: app_user
+postgres_password: "{{ lookup('env', 'PHARMAVIYUM_POSTGRES_PASSWORD') }}"
+postgresql_data_dir: /opt/pharmaviyum/data/postgres
 
-# Backup configuration
+redis_image: "valkey/valkey:8-alpine"
+
+ghcr_username: "{{ lookup('env', 'PHARMAVIYUM_GHCR_USERNAME') }}"
+ghcr_token: "{{ lookup('env', 'PHARMAVIYUM_GHCR_TOKEN') }}"
+
 backup_enabled: true
-backup_schedule: "0 2 * * *"  # daily at 2 AM
+backup_schedule: "0 2 * * *"
 backup_retention_days: 7
