@@ -322,7 +322,7 @@ export function Dashboard() {
                   <div key={item.id} className='flex flex-wrap items-center gap-3 rounded-xl bg-muted/30 p-3'>
                     <div className='min-w-0 flex-1'>
                       <p className='truncate text-sm font-medium'>{item.name}</p>
-                      <p className='text-xs text-muted-foreground'>{item.available_packs} packs available · reorder level {item.reorder_level} · {item.packs_30d} packs / 30d</p>
+                      <p className='text-xs text-muted-foreground'>{item.available_packs} packs available · reorder level {item.reorder_level} units · {item.packs_30d} packs / 30d</p>
                     </div>
                     <div className='text-right'>
                       <p className='text-sm font-semibold'>{item.days_on_hand == null ? 'No demand' : item.days_on_hand + 'd'}</p>
