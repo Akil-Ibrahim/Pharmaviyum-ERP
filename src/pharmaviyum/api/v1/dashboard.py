@@ -15,7 +15,7 @@ from src.pharmaviyum.models.patients.patient_condition import PatientCondition
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import resolve_pharmacy_scope
 
-router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
+router = APIRouter(prefix="/api/v1/dashboard", tags=["Dashboard"])
 
 
 @router.get("/summary")
