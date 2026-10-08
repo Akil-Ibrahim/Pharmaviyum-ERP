@@ -409,9 +409,9 @@ async def get_dashboard_summary(
     expiry = (await session.execute(expiry_query)).one()
 
     attention_query = select(
-        func.count(Inventory.id).filter(
-            (Inventory.quantity - Inventory.reserved_quantity) <= 0
-        ).label("stockout_items"),
+        func.count(func.distinct(Inventory.product_id))
+        .filter((Inventory.quantity - Inventory.reserved_quantity) <= 0)
+        .label("stockout_items"),
         func.coalesce(
             func.sum(
                 case(
@@ -435,10 +435,13 @@ async def get_dashboard_summary(
             PatientPurchase.product_id.label("product_id"),
             func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("recent_packs"),
         )
+        .join(Patient, Patient.id == PatientPurchase.patient_id)
         .where(PatientPurchase.purchased_at >= slow_moving_cutoff)
         .group_by(PatientPurchase.product_id)
-        .subquery()
     )
+    if scope is not None:
+        recent_sales = recent_sales.where(Patient.pharmacy_id == scope)
+    recent_sales = recent_sales.subquery()
 
     slow_moving_query = select(
         Product.id,
