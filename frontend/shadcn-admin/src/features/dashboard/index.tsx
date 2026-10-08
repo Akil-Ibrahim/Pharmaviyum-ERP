@@ -37,6 +37,9 @@ type DashboardSummary = {
     retail_value: number
     items: number
     low_stock: number
+    days_on_hand: number | null
+    demand_30d_packs: number
+    expired_value: number
     expired: number
     critical_expiry: number
     warning_expiry: number
@@ -209,6 +212,35 @@ export function Dashboard() {
 
           <section>
             <div className='mb-3'>
+              <h2 className='font-semibold'>Inventory Control</h2>
+              <p className='text-xs text-muted-foreground'>Runway and stock exposure based on realized dispensing.</p>
+            </div>
+            <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
+              <OperationalMetric
+                label='Days on hand'
+                value={summary?.inventory.days_on_hand == null ? '—' : summary.inventory.days_on_hand + 'd'}
+                detail={summary ? 'Available stock ÷ 30-day pack demand' : 'Awaiting API data'}
+              />
+              <OperationalMetric
+                label='30-day demand'
+                value={summary ? summary.inventory.demand_30d_packs.toLocaleString() : '—'}
+                detail='Dispensed packs in the last 30 days'
+              />
+              <OperationalMetric
+                label='Expired stock value'
+                value={summary ? formatAmount(summary.inventory.expired_value) : '—'}
+                detail='Available stock already past expiry'
+              />
+              <OperationalMetric
+                label='Low-stock products'
+                value={summary ? summary.inventory.low_stock.toLocaleString() : '—'}
+                detail='At or below configured reorder level'
+              />
+            </div>
+          </section>
+
+          <section>
+            <div className='mb-3'>
               <h2 className='font-semibold'>Inventory Attention</h2>
               <p className='text-xs text-muted-foreground'>Exceptions that can affect availability, working capital, or expiry losses.</p>
             </div>
@@ -307,6 +339,24 @@ function toPercentItems(items: [string, number][]): [string, number][] {
 function ratio(numerator: number, denominator: number) {
   if (!denominator) return 0
   return Math.min(100, Math.round((numerator / denominator) * 100))
+}
+
+function OperationalMetric({
+  label,
+  value,
+  detail,
+}: {
+  label: string
+  value: string
+  detail: string
+}) {
+  return (
+    <div className='rounded-2xl border bg-card p-5 shadow-sm'>
+      <p className='text-sm text-muted-foreground'>{label}</p>
+      <p className='mt-2 text-2xl font-bold tracking-tight'>{value}</p>
+      <p className='mt-1 text-xs text-muted-foreground'>{detail}</p>
+    </div>
+  )
 }
 
 function CircularMetricCard({
