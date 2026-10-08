@@ -155,6 +155,11 @@ export function Dashboard() {
               items={toPercentItems(summary?.sales.by_category.map((item) => [item.category, item.revenue] as [string, number]) ?? [])}
             />
             <DonutCard
+              title='Original vs Generic'
+              total={String(summary?.patient_medications.length ?? 0)}
+              items={toPercentItems(originalGenericDistribution(summary?.patient_medications ?? []))}
+            />
+            <DonutCard
               title='Expiry control'
               total={String(summary?.inventory.expiry_tracked ?? 0)}
               items={toPercentItems([
@@ -222,32 +227,23 @@ export function Dashboard() {
               ]}
             />
             <PipelineCard
-              title='Inventory'
+              title='Procurement / Stock'
               icon={Boxes}
               stages={[
                 ['Stock value', summary?.inventory.retail_value ?? 0],
+                ['Items', summary?.inventory.items ?? 0],
                 ['Low stock', summary?.inventory.low_stock ?? 0],
-                ['Expired', summary?.inventory.expired ?? 0],
-                ['Expired / ≤ 12m', (summary?.inventory.expiry_red ?? 0) + (summary?.inventory.expiry_yellow ?? 0)],
+                ['Expiry attention', (summary?.inventory.expiry_red ?? 0) + (summary?.inventory.expiry_yellow ?? 0)],
               ]}
             />
             <PipelineCard
-              title='Expiry Control'
+              title='Transfers / Availability'
               icon={Pill}
               stages={[
-                ['Red · ≤ 3m', summary?.inventory.expiry_red ?? 0],
-                ['Yellow · > 3–12m', summary?.inventory.expiry_yellow ?? 0],
-                ['Green · > 12m', summary?.inventory.expiry_green ?? 0],
-              ]}
-            />
-            <PipelineCard
-              title='Patient Cohort'
-              icon={Users}
-              stages={[
-                ['Patients', summary?.patient_purchases.length ?? 0],
-                ['Medicines', summary?.patient_purchases.reduce((sum, item) => sum + item.lines, 0) ?? 0],
-                ['Packs', summary?.patient_purchases.reduce((sum, item) => sum + item.packs, 0) ?? 0],
-                ['Revenue', summary?.patient_purchases.reduce((sum, item) => sum + item.revenue, 0) ?? 0, true],
+                ['Patients', summary?.patients.active ?? 0],
+                ['Products', summary?.top_products.length ?? 0],
+                ['Packs sold', summary?.patient_purchases.reduce((sum, item) => sum + item.packs, 0) ?? 0],
+                ['Revenue', summary?.revenue.month ?? 0, true],
               ]}
             />
           </section>
@@ -305,6 +301,23 @@ function formatAmount(value: number) {
   return value.toLocaleString(undefined, {
     maximumFractionDigits: 0,
   })
+}
+
+function originalGenericDistribution(
+  patients: DashboardSummary['patient_medications']
+): [string, number][] {
+  let original = 0
+  let generic = 0
+  for (const patient of patients) {
+    for (const medication of patient.medications) {
+      if (medication.type === 'Original') original += medication.packs
+      if (medication.type === 'Generic') generic += medication.packs
+    }
+  }
+  return [
+    ['Original', original],
+    ['Generic', generic],
+  ]
 }
 
 function toPercentItems(items: [string, number][]): [string, number][] {
