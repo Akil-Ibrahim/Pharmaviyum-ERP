@@ -37,7 +37,7 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
               size='lg'
               className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
-              <div className='flex aspect-square size-10 items-center justify-end overflow-hidden rounded-md'>
+              <div className='flex aspect-square size-10 items-center justify-start overflow-hidden rounded-md'>
                 <img
                   src={activeTeam.logo}
                   alt={`${activeTeam.name} logo`}
