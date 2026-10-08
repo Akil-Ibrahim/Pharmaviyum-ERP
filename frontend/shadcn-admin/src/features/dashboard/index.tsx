@@ -113,10 +113,10 @@ export function Dashboard() {
               icon={Receipt}
             />
             <KpiCard
-              label='Active patients'
-              value={summary ? summary.patients.active.toLocaleString() : '—'}
-              detail={summary ? 'Current patient profiles' : 'Awaiting API data'}
-              icon={Users}
+              label='Revenue this month'
+              value={summary ? formatAmount(summary.revenue.month) : '—'}
+              detail={summary ? 'Realized revenue · current month' : 'Awaiting API data'}
+              icon={Pill}
             />
             <KpiCard
               label='Stockouts'
@@ -163,9 +163,9 @@ export function Dashboard() {
                 detail='Inventory records above reorder level'
               />
               <CircularMetricCard
-                label='Expiry health'
+                label='Expiry coverage'
                 value={ratio(summary?.inventory.expiry_green ?? 0, summary?.inventory.expiry_tracked ?? 0)}
-                detail='Tracked stock > 12 months'
+                detail='Tracked records with > 12 months remaining'
               />
               <CircularMetricCard
                 label='Rx share'
