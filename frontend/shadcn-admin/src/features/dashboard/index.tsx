@@ -45,6 +45,7 @@ type DashboardSummary = {
       expiry_date: string | null
     }[]
   }[]
+  reorder_attention: { id: number; name: string; available_packs: number; reorder_level: number; packs_30d: number; days_on_hand: number | null; stock_value: number }[]
   attention: {
     stockout_items: number
     near_expiry_value: number
@@ -305,6 +306,32 @@ export function Dashboard() {
                 ))}
                 {summary && summary.attention.slow_moving.length === 0 && (
                   <p className='py-4 text-center text-xs text-muted-foreground'>No slow-moving stock detected.</p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div className='mb-3'>
+              <h2 className='font-semibold'>Procurement Attention</h2>
+              <p className='text-xs text-muted-foreground'>Products at or below their configured reorder level, prioritized by available stock.</p>
+            </div>
+            <div className='rounded-2xl border bg-card p-5 shadow-sm'>
+              <div className='space-y-2'>
+                {(summary?.reorder_attention ?? []).map((item) => (
+                  <div key={item.id} className='flex flex-wrap items-center gap-3 rounded-xl bg-muted/30 p-3'>
+                    <div className='min-w-0 flex-1'>
+                      <p className='truncate text-sm font-medium'>{item.name}</p>
+                      <p className='text-xs text-muted-foreground'>{item.available_packs} packs available · reorder level {item.reorder_level} · {item.packs_30d} packs / 30d</p>
+                    </div>
+                    <div className='text-right'>
+                      <p className='text-sm font-semibold'>{item.days_on_hand == null ? 'No demand' : item.days_on_hand + 'd'}</p>
+                      <p className='text-[11px] text-muted-foreground'>{formatAmount(item.stock_value)} stock value</p>
+                    </div>
+                  </div>
+                ))}
+                {summary && summary.reorder_attention.length === 0 && (
+                  <p className='py-4 text-center text-xs text-muted-foreground'>No products currently require procurement attention.</p>
                 )}
               </div>
             </div>
