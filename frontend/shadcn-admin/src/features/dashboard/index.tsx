@@ -155,8 +155,8 @@ export function Dashboard() {
               items={toPercentItems(summary?.sales.by_category.map((item) => [item.category, item.revenue] as [string, number]) ?? [])}
             />
             <DonutCard
-              title='Original vs Generic'
-              total={String(summary?.patient_medications.length ?? 0)}
+              title='Original vs Generic · patient purchases'
+              total={String(summary?.patient_medications.reduce((sum, patient) => sum + patient.medications.reduce((packs, medication) => packs + medication.packs, 0), 0) ?? 0)}
               items={toPercentItems(originalGenericDistribution(summary?.patient_medications ?? []))}
             />
             <DonutCard
