@@ -48,6 +48,13 @@ type DashboardSummary = {
   }[]
   orders: { month: number; completed_month: number }
   prescriptions: { month: number }
+  attention: {
+    stockout_items: number
+    near_expiry_value: number
+    slow_moving_items: number
+    slow_moving_stock_value: number
+    slow_moving: { id: number; name: string; packs_90d: number; stock: number; stock_value: number }[]
+  }
   inventory: {
     retail_value: number
     items: number
@@ -250,6 +257,58 @@ export function Dashboard() {
 
           <section>
             <div className='mb-3'>
+              <h2 className='font-semibold'>Inventory Attention</h2>
+              <p className='text-xs text-muted-foreground'>Exceptions that can affect availability, working capital, or expiry losses.</p>
+            </div>
+            <div className='grid gap-4 xl:grid-cols-3'>
+              <AttentionCard
+                title='Stockouts'
+                value={summary?.attention.stockout_items ?? 0}
+                detail='Products with zero available stock'
+                tone='critical'
+              />
+              <AttentionCard
+                title='Near-expiry value'
+                value={summary?.attention.near_expiry_value ?? 0}
+                detail='Stock value expiring within 12 months'
+                tone='warning'
+                amount
+              />
+              <AttentionCard
+                title='Slow-moving stock'
+                value={summary?.attention.slow_moving_stock_value ?? 0}
+                detail={summary ? `${summary.attention.slow_moving_items} products with no sales in 90 days` : 'Awaiting API data'}
+                tone='warning'
+                amount
+              />
+            </div>
+            <div className='mt-4 rounded-2xl border bg-card p-5 shadow-sm'>
+              <div className='mb-4 flex items-center justify-between gap-3'>
+                <div>
+                  <h3 className='font-semibold'>Slow-moving products</h3>
+                  <p className='text-xs text-muted-foreground'>Highest inventory value with no sales in the last 90 days.</p>
+                </div>
+                <span className='rounded-full border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground'>90 days</span>
+              </div>
+              <div className='space-y-2'>
+                {(summary?.attention.slow_moving ?? []).map((item) => (
+                  <div key={item.id} className='flex items-center gap-3 rounded-xl bg-muted/30 p-3'>
+                    <div className='min-w-0 flex-1'>
+                      <p className='truncate text-sm font-medium'>{item.name}</p>
+                      <p className='text-xs text-muted-foreground'>{item.stock.toLocaleString()} units · {item.packs_90d} packs sold</p>
+                    </div>
+                    <span className='text-sm font-semibold'>{formatAmount(item.stock_value)}</span>
+                  </div>
+                ))}
+                {summary && summary.attention.slow_moving.length === 0 && (
+                  <p className='py-4 text-center text-xs text-muted-foreground'>No slow-moving stock detected.</p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div className='mb-3'>
               <h2 className='font-semibold'>Operational Statistics</h2>
               <p className='text-xs text-muted-foreground'>Live ERP signals for daily pharmacy management.</p>
             </div>
@@ -447,6 +506,33 @@ function DonutCard({
           ))}
         </div>
       </div>
+    </div>
+  )
+}
+
+function AttentionCard({
+  title,
+  value,
+  detail,
+  tone,
+  amount = false,
+}: {
+  title: string
+  value: number
+  detail: string
+  tone: 'critical' | 'warning'
+  amount?: boolean
+}) {
+  return (
+    <div className='rounded-2xl border bg-card p-5 shadow-sm'>
+      <div className='flex items-center justify-between'>
+        <span className='text-sm font-medium'>{title}</span>
+        <span className={tone === 'critical' ? 'rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-400' : 'rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400'}>
+          Attention
+        </span>
+      </div>
+      <p className='mt-4 text-3xl font-bold tracking-tight'>{amount ? formatAmount(value) : value.toLocaleString()}</p>
+      <p className='mt-1 text-xs text-muted-foreground'>{detail}</p>
     </div>
   )
 }
