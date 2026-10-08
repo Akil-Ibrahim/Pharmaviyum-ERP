@@ -26,6 +26,25 @@ type DashboardSummary = {
   top_products: { id: number; name: string; packs: number; revenue: number; stock: number }[]
   orders: { month: number; completed_month: number }
   prescriptions: { month: number }
+  patient_purchases: { patient_id: number; patient_name: string; lines: number; packs: number; revenue: number }[]
+  patient_medications: {
+    patient_id: number
+    patient_name: string
+    condition: string | null
+    medications: {
+      purchase_id: number
+      product_id: number
+      name: string
+      dosage: string | null
+      form: string | null
+      pack_size: number
+      packs: number
+      amount: number
+      prescription_required: boolean
+      type: 'Generic' | 'Original' | 'Unclassified'
+      expiry_date: string | null
+    }[]
+  }[]
   attention: {
     stockout_items: number
     near_expiry_value: number
@@ -304,6 +323,14 @@ export function Dashboard() {
             />
           </section>
 
+          <section>
+            <div className='mb-3'>
+              <h2 className='font-semibold'>Patient Overview</h2>
+              <p className='text-xs text-muted-foreground'>20 patients with recent dispensing activity, their key metrics, conditions, and medications.</p>
+            </div>
+            <PatientOverview summary={summary} />
+          </section>
+
           <section className='rounded-2xl border bg-muted/20 p-5'>
             <div className='flex items-start gap-3'>
               <div className='rounded-lg bg-primary/10 p-2 text-primary'>
@@ -322,6 +349,100 @@ export function Dashboard() {
       </Main>
     </>
   )
+}
+
+function PatientOverview({ summary }: { summary: DashboardSummary | null }) {
+  const metrics = new Map((summary?.patient_purchases ?? []).map((item) => [item.patient_id, item]))
+  const patients = summary?.patient_medications ?? []
+
+  if (!summary) {
+    return <div className='rounded-2xl border bg-card p-5 text-sm text-muted-foreground'>Awaiting patient data…</div>
+  }
+
+  if (patients.length === 0) {
+    return <div className='rounded-2xl border bg-card p-5 text-sm text-muted-foreground'>No patient dispensing data available.</div>
+  }
+
+  return (
+    <div className='rounded-2xl border bg-card shadow-sm'>
+      <div className='overflow-x-auto'>
+        <table className='w-full min-w-[980px] text-sm'>
+          <thead>
+            <tr className='border-b text-left text-xs text-muted-foreground'>
+              <th className='px-5 py-3 font-medium'>Patient</th>
+              <th className='px-4 py-3 font-medium'>Condition</th>
+              <th className='px-4 py-3 font-medium'>Dispensing</th>
+              <th className='px-4 py-3 font-medium'>Packs</th>
+              <th className='px-4 py-3 font-medium'>Revenue</th>
+              <th className='px-5 py-3 font-medium'>Medications</th>
+            </tr>
+          </thead>
+          <tbody>
+            {patients.slice(0, 20).map((patient) => {
+              const metric = metrics.get(patient.patient_id)
+              const medicationCount = patient.medications.length
+              const rxCount = patient.medications.filter((medication) => medication.prescription_required).length
+              return (
+                <tr key={patient.patient_id} className='border-b align-top last:border-0'>
+                  <td className='px-5 py-4'>
+                    <div className='font-medium'>{patient.patient_name}</div>
+                    <div className='text-xs text-muted-foreground'>#{patient.patient_id}</div>
+                  </td>
+                  <td className='px-4 py-4'>
+                    <span className='rounded-full border bg-muted/40 px-2 py-1 text-xs'>
+                      {patient.condition ?? 'Not recorded'}
+                    </span>
+                  </td>
+                  <td className='px-4 py-4 whitespace-nowrap'>
+                    <div className='font-medium'>{metric?.lines ?? medicationCount} lines</div>
+                    <div className='text-xs text-muted-foreground'>{rxCount} Rx · {medicationCount - rxCount} OTC</div>
+                  </td>
+                  <td className='px-4 py-4 font-medium whitespace-nowrap'>{metric?.packs ?? 0}</td>
+                  <td className='px-4 py-4 font-medium whitespace-nowrap'>{formatAmount(metric?.revenue ?? 0)}</td>
+                  <td className='px-5 py-4'>
+                    <details className='group'>
+                      <summary className='cursor-pointer list-none font-medium text-primary'>
+                        <span className='group-open:hidden'>{medicationCount} medications · view details</span>
+                        <span className='hidden group-open:inline'>Hide medication details</span>
+                      </summary>
+                      <div className='mt-3 space-y-2'>
+                        {patient.medications.map((medication) => (
+                          <div key={medication.purchase_id} className='rounded-xl bg-muted/30 p-3'>
+                            <div className='flex flex-wrap items-start justify-between gap-2'>
+                              <div className='min-w-0'>
+                                <div className='font-medium'>{medication.name}</div>
+                                <div className='text-xs text-muted-foreground'>
+                                  {[medication.dosage, medication.form].filter(Boolean).join(' · ') || 'Dosage not recorded'} · pack {medication.pack_size}
+                                </div>
+                              </div>
+                              <span className='rounded-full border px-2 py-0.5 text-[10px]'>
+                                {medication.prescription_required ? 'Rx' : 'OTC'} · {medication.type}
+                              </span>
+                            </div>
+                            <div className='mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground'>
+                              <span>{medication.packs} packs</span>
+                              <span>{formatAmount(medication.amount)} revenue</span>
+                              <span>{medication.expiry_date ? 'Expiry ' + formatExpiry(medication.expiry_date) : 'Expiry not recorded'}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function formatExpiry(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(date)
 }
 
 function formatAmount(value: number) {
