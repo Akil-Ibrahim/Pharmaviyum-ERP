@@ -408,6 +408,80 @@ async def get_dashboard_summary(
     inventory_kpi = (await session.execute(inventory_kpi_query)).one()
     expiry = (await session.execute(expiry_query)).one()
 
+    # Inventory runway: compare current available stock with the last 30 days
+    # of realized dispensing. We intentionally do not calculate inventory
+    # turnover here because Product has no cost-of-goods field yet.
+    demand_30d_query = (
+        select(
+            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label(
+                "packs_30d"
+            )
+        )
+        .join(Patient, Patient.id == PatientPurchase.patient_id)
+        .where(PatientPurchase.purchased_at >= now - timedelta(days=30))
+    )
+    if scope is not None:
+        demand_30d_query = demand_30d_query.where(Patient.pharmacy_id == scope)
+
+    demand_30d = (await session.execute(demand_30d_query)).scalar_one() or 0
+    total_available_units = (
+        await session.execute(
+            select(
+                func.coalesce(
+                    func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
+                )
+            ).where(
+                Inventory.pharmacy_id == scope if scope is not None else True
+            )
+        )
+    ).scalar_one() or 0
+
+    expired_value_query = (
+        select(
+            func.coalesce(
+                func.sum(
+                    (Inventory.quantity - Inventory.reserved_quantity) * Product.price
+                ),
+                0,
+            )
+        )
+        .select_from(Inventory)
+        .join(Product, Product.id == Inventory.product_id)
+        .where(
+            Inventory.expires_at.is_not(None),
+            Inventory.expires_at < today_start,
+            (Inventory.quantity - Inventory.reserved_quantity) > 0,
+        )
+    )
+    if scope is not None:
+        expired_value_query = expired_value_query.where(Inventory.pharmacy_id == scope)
+    expired_value = (await session.execute(expired_value_query)).scalar_one() or 0
+
+    # Aggregate packs rather than raw units so runway is comparable with
+    # dispensed_packs. Products without a valid pack size are ignored.
+    available_packs_query = (
+        select(
+            func.coalesce(
+                func.sum(
+                    (Inventory.quantity - Inventory.reserved_quantity)
+                    / func.nullif(Product.units_per_pack, 0)
+                ),
+                0,
+            )
+        )
+        .select_from(Inventory)
+        .join(Product, Product.id == Inventory.product_id)
+    )
+    if scope is not None:
+        available_packs_query = available_packs_query.where(
+            Inventory.pharmacy_id == scope
+        )
+    available_packs = float(
+        (await session.execute(available_packs_query)).scalar_one() or 0
+    )
+    daily_packs = float(demand_30d) / 30.0
+    days_on_hand = round(available_packs / daily_packs, 1) if daily_packs > 0 else None
+
     attention_query = select(
         func.count(func.distinct(Inventory.product_id))
         .filter((Inventory.quantity - Inventory.reserved_quantity) <= 0)
@@ -534,6 +608,9 @@ async def get_dashboard_summary(
             "retail_value": round(float(inventory_kpi.retail_value or 0), 2),
             "items": int(inventory_kpi.items or 0),
             "low_stock": int(inventory_kpi.low_stock or 0),
+            "days_on_hand": days_on_hand,
+            "demand_30d_packs": int(demand_30d),
+            "expired_value": round(float(expired_value), 2),
             "expiry_tracked": int(expiry.tracked or 0),
             "expired": int(expiry.expired or 0),
             "critical_expiry": int(expiry.critical or 0),
