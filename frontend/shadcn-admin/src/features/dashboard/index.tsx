@@ -5,7 +5,6 @@ import {
   FileText,
   Pill,
   Receipt,
-  Users,
   type LucideIcon,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/api-client'
