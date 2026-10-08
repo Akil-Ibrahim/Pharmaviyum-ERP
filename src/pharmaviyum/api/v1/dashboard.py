@@ -127,9 +127,7 @@ async def get_dashboard_summary(
             ).label("revenue"),
         )
         .join(Patient, Patient.id == PatientPurchase.patient_id)
-        .group_by(
-            case((PatientPurchase.prescription_required.is_(True), "Rx"), else_="OTC")
-        )
+        .group_by("category")
     )
 
     inventory_stock_query = select(
