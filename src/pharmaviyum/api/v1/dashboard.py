@@ -517,6 +517,61 @@ async def get_dashboard_summary(
         recent_sales = recent_sales.where(Patient.pharmacy_id == scope)
     recent_sales = recent_sales.subquery()
 
+    # Procurement attention: products approaching their configured reorder level.
+    # We use realized 30-day dispensing to estimate runway, without inventing supplier lead times.
+    product_demand_30d = (
+        select(
+            PatientPurchase.product_id.label("product_id"),
+            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("packs_30d"),
+        )
+        .join(Patient, Patient.id == PatientPurchase.patient_id)
+        .where(PatientPurchase.purchased_at >= now - timedelta(days=30))
+        .group_by(PatientPurchase.product_id)
+    )
+    if scope is not None:
+        product_demand_30d = product_demand_30d.where(Patient.pharmacy_id == scope)
+    product_demand_30d = product_demand_30d.subquery()
+
+    reorder_attention_query = (
+        select(
+            Product.id,
+            Product.name,
+            Product.units_per_pack,
+            Inventory.reorder_level,
+            func.coalesce(
+                func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
+            ).label("available_units"),
+            func.coalesce(product_demand_30d.c.packs_30d, 0).label("packs_30d"),
+            func.coalesce(
+                func.sum(
+                    (Inventory.quantity - Inventory.reserved_quantity) * Product.price
+                ),
+                0,
+            ).label("stock_value"),
+        )
+        .select_from(Product)
+        .join(Inventory, Inventory.product_id == Product.id)
+        .outerjoin(product_demand_30d, product_demand_30d.c.product_id == Product.id)
+        .group_by(
+            Product.id,
+            Product.name,
+            Product.units_per_pack,
+            Inventory.reorder_level,
+            product_demand_30d.c.packs_30d,
+        )
+        .having(
+            func.sum(Inventory.quantity - Inventory.reserved_quantity)
+            <= Inventory.reorder_level
+        )
+        .order_by(
+            func.sum(Inventory.quantity - Inventory.reserved_quantity).asc(),
+            product_demand_30d.c.packs_30d.desc(),
+        )
+        .limit(5)
+    )
+    if scope is not None:
+        reorder_attention_query = reorder_attention_query.where(Inventory.pharmacy_id == scope)
+
     slow_moving_query = select(
         Product.id,
         Product.name,
@@ -588,6 +643,26 @@ async def get_dashboard_summary(
         "prescriptions": {
             "month": int(prescription_kpi.month_prescriptions or 0),
         },
+        "reorder_attention": [
+            {
+                "id": row.id,
+                "name": row.name,
+                "available_packs": round(float(row.available_units or 0) / float(row.units_per_pack or 1), 1),
+                "reorder_level": int(row.reorder_level or 0),
+                "packs_30d": int(row.packs_30d or 0),
+                "days_on_hand": (
+                    round(
+                        (float(row.available_units or 0) / float(row.units_per_pack or 1))
+                        / (float(row.packs_30d or 0) / 30.0),
+                        1,
+                    )
+                    if row.packs_30d
+                    else None
+                ),
+                "stock_value": round(float(row.stock_value or 0), 2),
+            }
+            for row in (await session.execute(reorder_attention_query)).all()
+        ],
         "attention": {
             "stockout_items": int(attention.stockout_items or 0),
             "near_expiry_value": round(float(attention.near_expiry_value or 0), 2),
