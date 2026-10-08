@@ -7,7 +7,6 @@ import {
   Pill,
   Receipt,
   Users,
-  Wallet,
   type LucideIcon,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/api-client'
@@ -27,25 +26,6 @@ type DashboardSummary = {
   }
   revenue: { month: number }
   top_products: { id: number; name: string; packs: number; revenue: number; stock: number }[]
-  patient_purchases: { patient_id: number; patient_name: string; lines: number; packs: number; revenue: number }[]
-  patient_medications: {
-    patient_id: number
-    patient_name: string
-    condition: string | null
-    medications: {
-      purchase_id: number
-      product_id: number
-      name: string
-      dosage: string | null
-      form: string | null
-      pack_size: number
-      packs: number
-      amount: number
-      prescription_required: boolean
-      type: string
-      expiry_date: string | null
-    }[]
-  }[]
   orders: { month: number; completed_month: number }
   prescriptions: { month: number }
   attention: {
@@ -128,129 +108,51 @@ export function Dashboard() {
         <div className='space-y-6'>
           <section className='grid gap-4 md:grid-cols-3'>
             <KpiCard
-              label='Patients'
-              value={summary ? summary.patients.active.toLocaleString() : '—'}
-              detail={summary ? 'Active patient profiles' : 'Awaiting API data'}
-              icon={Users}
-            />
-            <KpiCard
-              label='Sales'
-              value={
-                summary
-                  ? formatAmount(summary.sales.today)
-                  : '—'
-              }
-              detail={summary ? 'Today · realized sales' : 'Awaiting API data'}
+              label='Sales today'
+              value={summary ? formatAmount(summary.sales.today) : '—'}
+              detail={summary ? 'Realized dispensing / POS sales' : 'Awaiting API data'}
               icon={Receipt}
             />
             <KpiCard
-              label='Revenue'
-              value={
-                summary
-                  ? formatAmount(summary.revenue.month)
-                  : '—'
-              }
-              detail={summary ? 'This month · realized revenue' : 'Awaiting API data'}
-              icon={Wallet}
+              label='Active patients'
+              value={summary ? summary.patients.active.toLocaleString() : '—'}
+              detail={summary ? 'Current patient profiles' : 'Awaiting API data'}
+              icon={Users}
+            />
+            <KpiCard
+              label='Stockouts'
+              value={summary ? summary.attention.stockout_items.toLocaleString() : '—'}
+              detail={summary ? 'Products with no available stock' : 'Awaiting API data'}
+              icon={Boxes}
             />
           </section>
 
           <section className='grid gap-4 xl:grid-cols-3'>
-            <DonutCard
-              title='Sales by category'
-              total={formatAmount(summary?.sales.by_category.reduce((sum, item) => sum + item.revenue, 0) ?? 0)}
-              items={toPercentItems(summary?.sales.by_category.map((item) => [item.category, item.revenue] as [string, number]) ?? [])}
-            />
-            <DonutCard
-              title='Original vs Generic · patient purchases'
-              total={String(summary?.patient_medications.reduce((sum, patient) => sum + patient.medications.reduce((packs, medication) => packs + medication.packs, 0), 0) ?? 0)}
-              items={toPercentItems(originalGenericDistribution(summary?.patient_medications ?? []))}
-            />
-            <DonutCard
-              title='Expiry control'
-              total={String(summary?.inventory.expiry_tracked ?? 0)}
-              items={toPercentItems([
-                ['Red · ≤ 3 months / expired', summary?.inventory.expiry_red ?? 0],
-                ['Yellow · > 3–12 months', summary?.inventory.expiry_yellow ?? 0],
-                ['Green · > 12 months', summary?.inventory.expiry_green ?? 0],
-              ])}
-            />
-          </section>
-
-          <section>
-            <div className='mb-3'>
-              <h2 className='font-semibold'>Operational Health</h2>
-              <p className='text-xs text-muted-foreground'>Action-oriented ratios for daily pharmacy management.</p>
-            </div>
-            <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
-              <CircularMetricCard
-                label='Orders completion'
-                value={ratio(summary?.orders.completed_month ?? 0, summary?.orders.month ?? 0)}
-                detail='Completed / orders this month'
-              />
-              <CircularMetricCard
-                label='Stock health'
-                value={ratio(
-                  Math.max(0, (summary?.inventory.items ?? 0) - (summary?.inventory.low_stock ?? 0)),
-                  summary?.inventory.items ?? 0
-                )}
-                detail='Inventory records without low stock flag'
-              />
-              <CircularMetricCard
-                label='Expiry health'
-                value={ratio(summary?.inventory.expiry_green ?? 0, summary?.inventory.expiry_tracked ?? 0)}
-                detail='Expiry-tracked stock > 12 months'
-              />
-              <CircularMetricCard
-                label='Rx share'
-                value={ratio(
-                  summary?.sales.by_category.find((item) => item.category === 'Rx')?.revenue ?? 0,
-                  summary?.sales.by_category.reduce((sum, item) => sum + item.revenue, 0) ?? 0
-                )}
-                detail='Prescription sales share'
-              />
-            </div>
-          </section>
-
-          <section className='grid gap-4 xl:grid-cols-2'>
             <PipelineCard
-              title='Orders / POS'
+              title='Dispensing / POS'
               icon={Receipt}
               stages={[
                 ['Orders', summary?.orders.month ?? 0],
                 ['Completed', summary?.orders.completed_month ?? 0],
-                ['Patients', summary?.patients.active ?? 0],
-                ['Sales today', summary?.sales.today ?? 0],
+                ['Sales today', summary?.sales.today ?? 0, true],
               ]}
             />
             <PipelineCard
               title='Prescriptions'
               icon={FileText}
               stages={[
-                ['This month', summary?.prescriptions.month ?? 0],
+                ['Rx this month', summary?.prescriptions.month ?? 0],
                 ['Orders', summary?.orders.month ?? 0],
-                ['Completed', summary?.orders.completed_month ?? 0],
-                ['Revenue', summary?.revenue.month ?? 0, true],
+                ['Completion', ratio(summary?.orders.completed_month ?? 0, summary?.orders.month ?? 0)],
               ]}
             />
             <PipelineCard
-              title='Procurement / Stock'
+              title='Inventory control'
               icon={Boxes}
               stages={[
-                ['Stock value', summary?.inventory.retail_value ?? 0],
-                ['Items', summary?.inventory.items ?? 0],
+                ['Stock value', summary?.inventory.retail_value ?? 0, true],
                 ['Low stock', summary?.inventory.low_stock ?? 0],
-                ['Expiry attention', (summary?.inventory.expiry_red ?? 0) + (summary?.inventory.expiry_yellow ?? 0)],
-              ]}
-            />
-            <PipelineCard
-              title='Transfers / Availability'
-              icon={Pill}
-              stages={[
-                ['Patients', summary?.patients.active ?? 0],
-                ['Products', summary?.top_products.length ?? 0],
-                ['Packs sold', summary?.patient_purchases.reduce((sum, item) => sum + item.packs, 0) ?? 0],
-                ['Revenue', summary?.revenue.month ?? 0, true],
+                ['Expiry risk', (summary?.inventory.expiry_red ?? 0) + (summary?.inventory.expiry_yellow ?? 0)],
               ]}
             />
           </section>
@@ -308,24 +210,9 @@ export function Dashboard() {
           </section>
 
           <section>
-            <div className='mb-3'>
-              <h2 className='font-semibold'>Operational Statistics</h2>
-              <p className='text-xs text-muted-foreground'>Live ERP signals for daily pharmacy management.</p>
-            </div>
-            <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3'>
-              <LiveStatCard label='Orders' value={summary?.orders.month ?? 0} detail='This month' direction='up' />
-              <LiveStatCard label='Completed orders' value={summary?.orders.completed_month ?? 0} detail='This month' direction='up' />
-              <LiveStatCard label='Prescriptions' value={summary?.prescriptions.month ?? 0} detail='This month' direction='up' />
-              <LiveStatCard label='Low stock' value={summary?.inventory.low_stock ?? 0} detail='Inventory items' direction='down' />
-              <LiveStatCard label='Expiry attention' value={(summary?.inventory.expiry_red ?? 0) + (summary?.inventory.expiry_yellow ?? 0)} detail='Expired or within 12 months' direction='down' />
-              <LiveStatCard label='Inventory value' value={summary?.inventory.retail_value ?? 0} detail='Current retail value' direction='up' amount />
-            </div>
-          </section>
-
-          <section className='grid gap-4 xl:grid-cols-2'>
             <DataTable
-              title='Top Products'
-              columns={['Product', 'Packs', 'Revenue', 'Stock']}
+              title='Top dispensed products'
+              columns={['Product', 'Packs', 'Revenue', 'Available stock']}
               rows={(summary?.top_products ?? []).map((item) => [
                 item.name,
                 item.packs.toLocaleString(),
@@ -333,7 +220,6 @@ export function Dashboard() {
                 item.stock.toLocaleString(),
               ])}
             />
-            <PatientCohortCard patients={summary?.patient_purchases ?? []} details={summary?.patient_medications ?? []} />
           </section>
 
           <section className='rounded-2xl border bg-muted/20 p-5'>
@@ -360,23 +246,6 @@ function formatAmount(value: number) {
   return value.toLocaleString(undefined, {
     maximumFractionDigits: 0,
   })
-}
-
-function originalGenericDistribution(
-  patients: DashboardSummary['patient_medications']
-): [string, number][] {
-  let original = 0
-  let generic = 0
-  for (const patient of patients) {
-    for (const medication of patient.medications) {
-      if (medication.type === 'Original') original += medication.packs
-      if (medication.type === 'Generic') generic += medication.packs
-    }
-  }
-  return [
-    ['Original', original],
-    ['Generic', generic],
-  ]
 }
 
 function toPercentItems(items: [string, number][]): [string, number][] {
