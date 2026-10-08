@@ -47,6 +47,7 @@ async def get_dashboard_summary(
 
     red_cutoff_month = month_start_after(3)
     yellow_cutoff_month = month_start_after(12)
+    slow_moving_cutoff = now - timedelta(days=90)
 
     patient_scope = select(Patient.id)
     if scope is not None:
@@ -407,6 +408,65 @@ async def get_dashboard_summary(
     inventory_kpi = (await session.execute(inventory_kpi_query)).one()
     expiry = (await session.execute(expiry_query)).one()
 
+    attention_query = select(
+        func.count(Inventory.id).filter(
+            (Inventory.quantity - Inventory.reserved_quantity) <= 0
+        ).label("stockout_items"),
+        func.coalesce(
+            func.sum(
+                case(
+                    (
+                        Inventory.expires_at.is_not(None)
+                        & (Inventory.expires_at >= today_start)
+                        & (func.date_trunc("month", Inventory.expires_at) <= yellow_cutoff_month),
+                        (Inventory.quantity - Inventory.reserved_quantity) * Product.price,
+                    ),
+                    else_=0,
+                )
+            ),
+            0,
+        ).label("near_expiry_value"),
+    ).select_from(Inventory).join(Product, Product.id == Inventory.product_id)
+    if scope is not None:
+        attention_query = attention_query.where(Inventory.pharmacy_id == scope)
+
+    slow_moving_query = select(
+        Product.id,
+        Product.name,
+        func.coalesce(
+            func.sum(
+                case(
+                    (PatientPurchase.purchased_at >= slow_moving_cutoff, PatientPurchase.dispensed_packs),
+                    else_=0,
+                )
+            ),
+            0,
+        ).label("recent_packs"),
+        func.coalesce(
+            func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
+        ).label("stock"),
+        func.coalesce(
+            func.sum((Inventory.quantity - Inventory.reserved_quantity) * Product.price), 0
+        ).label("stock_value"),
+    ).select_from(Product).join(Inventory, Inventory.product_id == Product.id).outerjoin(
+        PatientPurchase, PatientPurchase.product_id == Product.id
+    ).group_by(Product.id, Product.name).having(
+        func.coalesce(
+            func.sum(
+                case(
+                    (PatientPurchase.purchased_at >= slow_moving_cutoff, PatientPurchase.dispensed_packs),
+                    else_=0,
+                )
+            ),
+            0,
+        ) == 0
+    ).order_by(func.sum((Inventory.quantity - Inventory.reserved_quantity) * Product.price).desc()).limit(5)
+    if scope is not None:
+        slow_moving_query = slow_moving_query.where(Inventory.pharmacy_id == scope)
+
+    attention = (await session.execute(attention_query)).one()
+    slow_moving = (await session.execute(slow_moving_query)).all()
+
     return {
         "as_of": now.isoformat(),
         "patients": {
@@ -454,6 +514,22 @@ async def get_dashboard_summary(
         },
         "prescriptions": {
             "month": int(prescription_kpi.month_prescriptions or 0),
+        },
+        "attention": {
+            "stockout_items": int(attention.stockout_items or 0),
+            "near_expiry_value": round(float(attention.near_expiry_value or 0), 2),
+            "slow_moving_items": len(slow_moving),
+            "slow_moving_stock_value": round(sum(float(row.stock_value or 0) for row in slow_moving), 2),
+            "slow_moving": [
+                {
+                    "id": row.id,
+                    "name": row.name,
+                    "packs_90d": int(row.recent_packs or 0),
+                    "stock": int(row.stock or 0),
+                    "stock_value": round(float(row.stock_value or 0), 2),
+                }
+                for row in slow_moving
+            ],
         },
         "inventory": {
             "retail_value": round(float(inventory_kpi.retail_value or 0), 2),
