@@ -430,37 +430,33 @@ async def get_dashboard_summary(
     if scope is not None:
         attention_query = attention_query.where(Inventory.pharmacy_id == scope)
 
+    recent_sales = (
+        select(
+            PatientPurchase.product_id.label("product_id"),
+            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("recent_packs"),
+        )
+        .where(PatientPurchase.purchased_at >= slow_moving_cutoff)
+        .group_by(PatientPurchase.product_id)
+        .subquery()
+    )
+
     slow_moving_query = select(
         Product.id,
         Product.name,
-        func.coalesce(
-            func.sum(
-                case(
-                    (PatientPurchase.purchased_at >= slow_moving_cutoff, PatientPurchase.dispensed_packs),
-                    else_=0,
-                )
-            ),
-            0,
-        ).label("recent_packs"),
-        func.coalesce(
-            func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
-        ).label("stock"),
+        func.coalesce(recent_sales.c.recent_packs, 0).label("recent_packs"),
+        func.coalesce(func.sum(Inventory.quantity - Inventory.reserved_quantity), 0).label("stock"),
         func.coalesce(
             func.sum((Inventory.quantity - Inventory.reserved_quantity) * Product.price), 0
         ).label("stock_value"),
-    ).select_from(Product).join(Inventory, Inventory.product_id == Product.id).outerjoin(
-        PatientPurchase, PatientPurchase.product_id == Product.id
-    ).group_by(Product.id, Product.name).having(
-        func.coalesce(
-            func.sum(
-                case(
-                    (PatientPurchase.purchased_at >= slow_moving_cutoff, PatientPurchase.dispensed_packs),
-                    else_=0,
-                )
-            ),
-            0,
-        ) == 0
-    ).order_by(func.sum((Inventory.quantity - Inventory.reserved_quantity) * Product.price).desc()).limit(5)
+    ).select_from(Product).join(
+        Inventory, Inventory.product_id == Product.id
+    ).outerjoin(
+        recent_sales, recent_sales.c.product_id == Product.id
+    ).group_by(Product.id, Product.name, recent_sales.c.recent_packs).having(
+        func.coalesce(recent_sales.c.recent_packs, 0) == 0
+    ).order_by(
+        func.sum((Inventory.quantity - Inventory.reserved_quantity) * Product.price).desc()
+    ).limit(5)
     if scope is not None:
         slow_moving_query = slow_moving_query.where(Inventory.pharmacy_id == scope)
 
