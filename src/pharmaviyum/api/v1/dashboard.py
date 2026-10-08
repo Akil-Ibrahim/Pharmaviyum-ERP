@@ -537,7 +537,7 @@ async def get_dashboard_summary(
             Product.id,
             Product.name,
             Product.units_per_pack,
-            Inventory.reorder_level,
+            func.max(Inventory.reorder_level).label("reorder_level"),
             func.coalesce(
                 func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
             ).label("available_units"),
@@ -556,12 +556,11 @@ async def get_dashboard_summary(
             Product.id,
             Product.name,
             Product.units_per_pack,
-            Inventory.reorder_level,
             product_demand_30d.c.packs_30d,
         )
         .having(
             func.sum(Inventory.quantity - Inventory.reserved_quantity)
-            <= Inventory.reorder_level
+            <= func.max(Inventory.reorder_level)
         )
         .order_by(
             func.sum(Inventory.quantity - Inventory.reserved_quantity).asc(),
