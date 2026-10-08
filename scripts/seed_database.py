@@ -808,6 +808,10 @@ async def seed_patients() -> None:
                 await session.flush()
                 created += 1
 
+            # Keep demo patients attached to the active pharmacy so tenant-scoped
+            # dashboard and patient queries see the seeded demonstration data.
+            patient.pharmacy_id = pharmacy.id
+
             # Rebuild only the demo patient's synthetic history so repeated
             # SEED_DEMO_DATA runs stay deterministic and do not double-count sales.
             await session.execute(
