@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { apiFetch } from '@/lib/api-client'
 
 type Pharmacy = { id: number; name: string; code?: string; is_active?: boolean }
-type Patient = { id: number; full_name: string; phone: string; pharmacy_id?: number | null; is_active: boolean }
+type Patient = { id: number; full_name: string; phone: string; is_active: boolean }
 type PosProduct = {
   id: number
   name: string
@@ -45,6 +45,7 @@ export function Pos() {
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([])
   const [pharmacyId, setPharmacyId] = useState('')
   const [patients, setPatients] = useState<Patient[]>([])
+  const [patientsLoading, setPatientsLoading] = useState(false)
   const [patientId, setPatientId] = useState('')
   const [products, setProducts] = useState<PosProduct[]>([])
   const [query, setQuery] = useState('')
@@ -58,18 +59,33 @@ export function Pos() {
   const loadSetup = useCallback(() => {
     setLoading(true)
     setError(null)
-    Promise.all([
-      apiFetch<Pharmacy[]>('/api/v1/pharmacies'),
-      apiFetch<Patient[]>('/api/v1/patients/?page=1&page_size=100'),
-    ]).then(([pharmacyRows, patientRows]) => {
-      const activePharmacies = pharmacyRows.filter((item) => item.is_active !== false)
-      setPharmacies(activePharmacies)
-      setPharmacyId((current) => current || (activePharmacies[0] ? String(activePharmacies[0].id) : ''))
-      setPatients(patientRows.filter((item) => item.is_active))
-    }).catch((err: unknown) => {
-      setError(err instanceof Error ? err.message : 'Unable to load POS setup data')
-    }).finally(() => setLoading(false))
+    apiFetch<Pharmacy[]>('/api/v1/pharmacies')
+      .then((pharmacyRows) => {
+        const activePharmacies = pharmacyRows.filter((item) => item.is_active !== false)
+        setPharmacies(activePharmacies)
+        setPharmacyId((current) => current || (activePharmacies[0] ? String(activePharmacies[0].id) : ''))
+      }).catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Unable to load pharmacy setup data')
+      }).finally(() => setLoading(false))
   }, [])
+
+  const loadPatients = useCallback(() => {
+    if (!pharmacyId) {
+      setPatients([])
+      setPatientId('')
+      return
+    }
+    setPatientsLoading(true)
+    apiFetch<Patient[]>(`/api/v1/patients/?page=1&page_size=100&pharmacy_id=${encodeURIComponent(pharmacyId)}&is_active=true`)
+      .then((rows) => {
+        setPatients(rows.filter((patient) => patient.is_active))
+        setPatientId('')
+      }).catch((err: unknown) => {
+        setPatients([])
+        setPatientId('')
+        setError(err instanceof Error ? err.message : 'Unable to load patients for this pharmacy')
+      }).finally(() => setPatientsLoading(false))
+  }, [pharmacyId])
 
   const loadCatalog = useCallback(() => {
     if (!pharmacyId) {
@@ -77,13 +93,19 @@ export function Pos() {
       return
     }
     setError(null)
-    apiFetch<PosProduct[]>(`/api/v1/pos/catalog?pharmacy_id=${encodeURIComponent(pharmacyId)}`)
+    const params = new URLSearchParams({ pharmacy_id: pharmacyId })
+    if (query.trim()) params.set('q', query.trim())
+    apiFetch<PosProduct[]>(`/api/v1/pos/catalog?${params.toString()}`)
       .then(setProducts)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to load pharmacy stock'))
-  }, [pharmacyId])
+  }, [pharmacyId, query])
 
   useEffect(() => { loadSetup() }, [loadSetup])
-  useEffect(() => { loadCatalog() }, [loadCatalog])
+  useEffect(() => { loadPatients() }, [loadPatients])
+  useEffect(() => {
+    const timer = window.setTimeout(loadCatalog, 200)
+    return () => window.clearTimeout(timer)
+  }, [loadCatalog])
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -200,7 +222,7 @@ export function Pos() {
                 <CardTitle>Find a medicine or product</CardTitle>
                 <div className='w-full sm:max-w-xs'>
                   <label className='sr-only' htmlFor='pos-pharmacy'>Pharmacy</label>
-                  <select id='pos-pharmacy' value={pharmacyId} onChange={(event) => { setPharmacyId(event.target.value); setCart([]); setReceipt(null) }}
+                  <select id='pos-pharmacy' value={pharmacyId} onChange={(event) => { setPharmacyId(event.target.value); setPatientId(''); setCart([]); setReceipt(null) }}
                     className='h-10 w-full rounded-md border bg-background px-3 text-sm' disabled={loading || pharmacies.length === 0}>
                     {pharmacies.length === 0 && <option value=''>No pharmacy available</option>}
                     {pharmacies.map((pharmacy) => <option key={pharmacy.id} value={pharmacy.id}>{pharmacy.name}</option>)}
@@ -258,8 +280,8 @@ export function Pos() {
             <div className='space-y-2'>
               <label htmlFor='pos-patient' className='flex items-center gap-2 text-sm font-medium'><UserRound className='size-4'/> Patient / customer</label>
               <select id='pos-patient' value={patientId} onChange={(event) => setPatientId(event.target.value)}
-                className='h-10 w-full rounded-md border bg-background px-3 text-sm'>
-                <option value=''>Select a patient…</option>
+                className='h-10 w-full rounded-md border bg-background px-3 text-sm' disabled={!pharmacyId || patientsLoading}>
+                <option value=''>{patientsLoading ? 'Loading patients…' : 'Select a patient…'}</option>
                 {patients.map((patient) => <option key={patient.id} value={patient.id}>{patient.full_name} · {patient.phone}</option>)}
               </select>
               <p className='text-xs text-muted-foreground'>Select a patient to keep purchase history and validate prescriptions.</p>
