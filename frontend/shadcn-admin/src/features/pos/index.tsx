@@ -48,6 +48,7 @@ export function Pos() {
   const [patients, setPatients] = useState<Patient[]>([])
   const [patientsLoading, setPatientsLoading] = useState(false)
   const [patientId, setPatientId] = useState('')
+  const [patientSearch, setPatientSearch] = useState('')
   const [products, setProducts] = useState<PosProduct[]>([])
   const [query, setQuery] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
@@ -78,16 +79,21 @@ export function Pos() {
       return
     }
     setPatientsLoading(true)
-    apiFetch<Patient[]>(`/api/v1/patients/?page=1&page_size=100&pharmacy_id=${encodeURIComponent(pharmacyId)}&is_active=true`)
+    const params = new URLSearchParams({
+      page: '1',
+      page_size: '100',
+      pharmacy_id: pharmacyId,
+      is_active: 'true',
+    })
+    if (patientSearch.trim()) params.set('search', patientSearch.trim())
+    apiFetch<Patient[]>(`/api/v1/patients/?${params.toString()}`)
       .then((rows) => {
         setPatients(rows.filter((patient) => patient.is_active))
-        setPatientId('')
       }).catch((err: unknown) => {
         setPatients([])
-        setPatientId('')
         setError(err instanceof Error ? err.message : 'Unable to load patients for this pharmacy')
       }).finally(() => setPatientsLoading(false))
-  }, [pharmacyId])
+  }, [pharmacyId, patientSearch])
 
   const loadCatalog = useCallback(() => {
     if (!pharmacyId) {
@@ -103,7 +109,10 @@ export function Pos() {
   }, [pharmacyId, query])
 
   useEffect(() => { loadSetup() }, [loadSetup])
-  useEffect(() => { loadPatients() }, [loadPatients])
+  useEffect(() => {
+    const timer = window.setTimeout(loadPatients, 200)
+    return () => window.clearTimeout(timer)
+  }, [loadPatients])
   useEffect(() => {
     const timer = window.setTimeout(loadCatalog, 200)
     return () => window.clearTimeout(timer)
@@ -237,7 +246,7 @@ export function Pos() {
                 <CardTitle>Find a medicine or product</CardTitle>
                 <div className='w-full sm:max-w-xs'>
                   <label className='sr-only' htmlFor='pos-pharmacy'>Pharmacy</label>
-                  <select id='pos-pharmacy' value={pharmacyId} onChange={(event) => { setPharmacyId(event.target.value); setPatientId(''); setCart([]); setReceipt(null) }}
+                  <select id='pos-pharmacy' value={pharmacyId} onChange={(event) => { setPharmacyId(event.target.value); setPatientId(''); setPatientSearch(''); setCart([]); setReceipt(null) }}
                     className='h-10 w-full rounded-md border bg-background px-3 text-sm' disabled={loading || pharmacies.length === 0}>
                     {pharmacies.length === 0 && <option value=''>No pharmacy available</option>}
                     {pharmacies.map((pharmacy) => <option key={pharmacy.id} value={pharmacy.id}>{pharmacy.name}</option>)}
@@ -294,6 +303,12 @@ export function Pos() {
           <CardContent className='space-y-4'>
             <div className='space-y-2'>
               <label htmlFor='pos-patient' className='flex items-center gap-2 text-sm font-medium'><UserRound className='size-4'/> Patient / customer</label>
+              <Input
+                value={patientSearch}
+                onChange={(event) => { setPatientSearch(event.target.value); setPatientId('') }}
+                placeholder='Search patient by name or phone…'
+                aria-label='Search patients by name or phone'
+              />
               <select id='pos-patient' value={patientId} onChange={(event) => setPatientId(event.target.value)}
                 className='h-10 w-full rounded-md border bg-background px-3 text-sm' disabled={!pharmacyId || patientsLoading}>
                 <option value=''>{patientsLoading ? 'Loading patients…' : 'Select a patient…'}</option>
