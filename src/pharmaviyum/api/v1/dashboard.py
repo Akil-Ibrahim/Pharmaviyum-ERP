@@ -275,26 +275,23 @@ async def get_dashboard_summary(
     top_products = (await session.execute(top_products_query)).all()
     patient_purchases = (await session.execute(patient_purchase_query)).all()
 
-    latest_condition_subquery = (
-        select(
-            PatientCondition.patient_id,
-            PatientCondition.condition_name,
-            func.row_number()
-            .over(
-                partition_by=PatientCondition.patient_id,
-                order_by=(
-                    case(
-                        (PatientCondition.status == "active", 0),
-                        else_=1,
-                    ),
-                    PatientCondition.updated_at.desc(),
-                    PatientCondition.id.desc(),
+    latest_condition_subquery = select(
+        PatientCondition.patient_id,
+        PatientCondition.condition_name,
+        func.row_number()
+        .over(
+            partition_by=PatientCondition.patient_id,
+            order_by=(
+                case(
+                    (PatientCondition.status == "active", 0),
+                    else_=1,
                 ),
-            )
-            .label("condition_rank"),
+                PatientCondition.updated_at.desc(),
+                PatientCondition.id.desc(),
+            ),
         )
-        .subquery()
-    )
+        .label("condition_rank"),
+    ).subquery()
 
     dashboard_patient_ids = (
         select(Patient.id)
@@ -304,7 +301,9 @@ async def get_dashboard_summary(
         .limit(20)
     )
     if scope is not None:
-        dashboard_patient_ids = dashboard_patient_ids.where(Patient.pharmacy_id == scope)
+        dashboard_patient_ids = dashboard_patient_ids.where(
+            Patient.pharmacy_id == scope
+        )
 
     patient_medication_query = (
         select(
@@ -324,15 +323,21 @@ async def get_dashboard_summary(
             ProductBatch.expiry_date,
             case(
                 (
-                    func.lower(func.coalesce(Product.description, "")).like("%generic%"),
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%generic%"
+                    ),
                     "Generic",
                 ),
                 (
-                    func.lower(func.coalesce(Product.description, "")).like("%reference%"),
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%reference%"
+                    ),
                     "Original",
                 ),
                 (
-                    func.lower(func.coalesce(Product.description, "")).like("%original%"),
+                    func.lower(func.coalesce(Product.description, "")).like(
+                        "%original%"
+                    ),
                     "Original",
                 ),
                 else_="Unclassified",
@@ -466,34 +471,46 @@ async def get_dashboard_summary(
         (await session.execute(available_packs_query)).scalar_one() or 0
     )
     daily_packs = float(demand_30d) / 30.0
-    days_on_hand = round(available_packs / daily_packs, 1) if daily_packs > 0 else None
+    days_on_hand = (
+        round(available_packs / daily_packs, 1) if daily_packs > 0 else None
+    )
 
-    attention_query = select(
-        func.count(func.distinct(Inventory.product_id))
-        .filter((Inventory.quantity - Inventory.reserved_quantity) <= 0)
-        .label("stockout_items"),
-        func.coalesce(
-            func.sum(
-                case(
-                    (
-                        Inventory.expires_at.is_not(None)
-                        & (Inventory.expires_at >= today_start)
-                        & (func.date_trunc("month", Inventory.expires_at) <= yellow_cutoff_month),
-                        (Inventory.quantity - Inventory.reserved_quantity) * Product.price,
-                    ),
-                    else_=0,
-                )
-            ),
-            0,
-        ).label("near_expiry_value"),
-    ).select_from(Inventory).join(Product, Product.id == Inventory.product_id)
+    attention_query = (
+        select(
+            func.count(func.distinct(Inventory.product_id))
+            .filter((Inventory.quantity - Inventory.reserved_quantity) <= 0)
+            .label("stockout_items"),
+            func.coalesce(
+                func.sum(
+                    case(
+                        (
+                            Inventory.expires_at.is_not(None)
+                            & (Inventory.expires_at >= today_start)
+                            & (
+                                func.date_trunc("month", Inventory.expires_at)
+                                <= yellow_cutoff_month
+                            ),
+                            (Inventory.quantity - Inventory.reserved_quantity)
+                            * Product.price,
+                        ),
+                        else_=0,
+                    )
+                ),
+                0,
+            ).label("near_expiry_value"),
+        )
+        .select_from(Inventory)
+        .join(Product, Product.id == Inventory.product_id)
+    )
     if scope is not None:
         attention_query = attention_query.where(Inventory.pharmacy_id == scope)
 
     recent_sales = (
         select(
             PatientPurchase.product_id.label("product_id"),
-            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("recent_packs"),
+            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label(
+                "recent_packs"
+            ),
         )
         .join(Patient, Patient.id == PatientPurchase.patient_id)
         .where(PatientPurchase.purchased_at >= slow_moving_cutoff)
@@ -508,7 +525,9 @@ async def get_dashboard_summary(
     product_demand_30d = (
         select(
             PatientPurchase.product_id.label("product_id"),
-            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("packs_30d"),
+            func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label(
+                "packs_30d"
+            ),
         )
         .join(Patient, Patient.id == PatientPurchase.patient_id)
         .where(PatientPurchase.purchased_at >= now - timedelta(days=30))
