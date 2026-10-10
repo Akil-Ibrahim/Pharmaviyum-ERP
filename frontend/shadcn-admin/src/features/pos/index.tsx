@@ -208,7 +208,18 @@ export function Pos() {
             <p className='font-semibold'>Sale recorded successfully</p>
             <p className='text-sm text-muted-foreground'>{receipt.receipt_number} · {receipt.patient_name} · {receipt.payment_method}</p>
             <p className='mt-1 text-lg font-bold'>{money(receipt.total_amount)}</p>
-            <p className='text-xs text-muted-foreground'>Stock deductions, patient purchase history and audit event were committed together.</p>
+            <div className='mt-3 space-y-2 border-t pt-3'>
+              {receipt.items.map((item, index) => (
+                <div key={`${item.product_name}-${index}`} className='flex items-start justify-between gap-3 text-sm'>
+                  <div className='min-w-0'>
+                    <p className='font-medium'>{item.product_name}</p>
+                    <p className='text-xs text-muted-foreground'>{item.quantity} × {money(item.unit_price)}{item.batch_number ? ` · Lot ${item.batch_number}` : ''}</p>
+                  </div>
+                  <span className='shrink-0 font-medium'>{money(item.line_total)}</span>
+                </div>
+              ))}
+            </div>
+            <p className='mt-3 text-xs text-muted-foreground'>Stock deductions, patient purchase history, inventory movement ledger and audit event were committed together.</p>
           </div></div>
           <Button variant='outline' size='sm' onClick={() => setReceipt(null)}>Dismiss</Button>
         </CardContent>
