@@ -6,6 +6,8 @@ from uuid import uuid4
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import or_, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.models.audit_log import AuditLog
 from src.pharmaviyum.models.inventory import Inventory
@@ -32,7 +34,89 @@ class CheckoutRequest(BaseModel):
     pharmacy_id: int = Field(gt=0)
     patient_id: int = Field(gt=0)
     payment_method: str = Field(pattern="^(cash|card|mobile|other)$")
+    idempotency_key: str = Field(min_length=16, max_length=64)
     items: list[CheckoutLine] = Field(min_length=1, max_length=100)
+
+
+async def _existing_checkout_response(
+    session: SessionDep,
+    idempotency_key: str,
+    patient_id: int,
+    payment_method: str,
+    requested: dict[int, int],
+) -> dict | None:
+    """Return a prior receipt for an identical retry; reject key reuse for another sale."""
+    order = await session.scalar(
+        select(Order).where(Order.idempotency_key == idempotency_key)
+    )
+    if order is None:
+        return None
+    if order.patient_id != patient_id or order.payment_method != payment_method:
+        raise HTTPException(
+            status_code=409,
+            detail="This checkout key was already used for a different sale.",
+        )
+
+    result = await session.execute(
+        select(PatientPurchase)
+        .options(
+            selectinload(PatientPurchase.product),
+            selectinload(PatientPurchase.batch),
+        )
+        .where(PatientPurchase.receipt_number == order.receipt_number)
+    )
+    purchases = list(result.scalars().all())
+    stored: dict[int, int] = {}
+    for purchase in purchases:
+        if purchase.product_id is not None:
+            stored[purchase.product_id] = (
+                stored.get(purchase.product_id, 0) + purchase.quantity
+            )
+    if stored != requested:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "This checkout key belongs to a different cart. Retry the original "
+                "checkout to confirm its result before starting another sale."
+            ),
+        )
+
+    patient = await session.get(Patient, order.patient_id)
+    if patient is None:
+        raise HTTPException(
+            status_code=409,
+            detail="The patient for the previous receipt is no longer available.",
+        )
+    items = [
+        {
+            "product_id": purchase.product_id,
+            "product_name": purchase.product_name or "Unavailable product",
+            "batch_number": purchase.batch_number,
+            "expiry_date": (
+                purchase.expiry_date.isoformat() if purchase.expiry_date else None
+            ),
+            "quantity": purchase.quantity,
+            "unit_price": purchase.unit_price,
+            "line_total": purchase.total_amount,
+        }
+        for purchase in purchases
+    ]
+    return {
+        "order_id": order.id,
+        "receipt_number": order.receipt_number,
+        "status": order.status,
+        "patient_id": patient.id,
+        "patient_name": patient.full_name,
+        "payment_method": order.payment_method,
+        "total_amount": round(float(order.total_amount), 2),
+        "items": items,
+        "created_at": (
+            order.created_at.isoformat()
+            if order.created_at
+            else datetime.utcnow().isoformat()
+        ),
+        "idempotent_replay": True,
+    }
 
 
 @router.get("/catalog")
@@ -154,6 +238,16 @@ async def checkout(
         requested[line.product_id] = (
             requested.get(line.product_id, 0) + line.quantity
         )
+
+    prior_receipt = await _existing_checkout_response(
+        session,
+        data.idempotency_key,
+        patient.id,
+        data.payment_method,
+        requested,
+    )
+    if prior_receipt is not None:
+        return prior_receipt
 
     receipt_number = f"POS-{datetime.utcnow():%Y%m%d}-{uuid4().hex[:10].upper()}"
     allocations: list[dict] = []
@@ -293,6 +387,7 @@ async def checkout(
             status="completed",
             receipt_number=receipt_number,
             payment_method=data.payment_method,
+            idempotency_key=data.idempotency_key,
         )
         session.add(order)
         await session.flush()
@@ -380,7 +475,20 @@ async def checkout(
                 if order.created_at
                 else datetime.utcnow().isoformat()
             ),
+            "idempotent_replay": False,
         }
+    except IntegrityError:
+        await session.rollback()
+        prior_receipt = await _existing_checkout_response(
+            session,
+            data.idempotency_key,
+            data.patient_id,
+            data.payment_method,
+            requested,
+        )
+        if prior_receipt is not None:
+            return prior_receipt
+        raise
     except HTTPException:
         await session.rollback()
         raise
