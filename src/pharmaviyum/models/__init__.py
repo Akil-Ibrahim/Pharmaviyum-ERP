@@ -7,6 +7,7 @@ from src.pharmaviyum.models.drug_catalog import (
 )
 from src.pharmaviyum.models.erp_sync import ERPIntegration, ERPSyncEvent
 from src.pharmaviyum.models.inventory import Inventory
+from src.pharmaviyum.models.inventory_transaction import InventoryTransaction
 from src.pharmaviyum.models.order import Order
 from src.pharmaviyum.models.patients.consultation import Consultation
 from src.pharmaviyum.models.patients.patient import Patient
@@ -33,6 +34,7 @@ __all__ = [
     "Product",
     "ProductBatch",
     "Inventory",
+    "InventoryTransaction",
     "Pharmacy",
     "Supplier",
     "ERPIntegration",
