@@ -21,7 +21,8 @@ class ProductCreate(BaseModel):
     barcode: str | None = Field(default=None, max_length=64)
     price: float = Field(default=0.0, ge=0)
     stock: int = Field(default=0, ge=0)
-    prescription_required: bool = False
+    # Unknown classification is prescription-only until explicitly reviewed.
+    prescription_required: bool = True
     medicinal_product_id: int | None = Field(default=None, gt=0)
 
 
@@ -66,7 +67,7 @@ class ProductResponse(BaseModel):
     barcode: str | None = None
     price: float
     stock: int
-    prescription_required: bool = False
+    prescription_required: bool = True
     medicinal_product_id: int | None = None
     is_active: bool
     created_at: datetime
