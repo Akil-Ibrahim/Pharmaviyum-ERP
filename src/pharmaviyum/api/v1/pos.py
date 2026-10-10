@@ -269,6 +269,19 @@ async def checkout(
                     status_code=404, detail=f"Product {product_id} not found"
                 )
 
+            # A concurrent request with the same key may have completed while
+            # this request waited for the product row lock.
+            prior_receipt = await _existing_checkout_response(
+                session,
+                data.idempotency_key,
+                patient.id,
+                data.payment_method,
+                requested,
+            )
+            if prior_receipt is not None:
+                await session.rollback()
+                return prior_receipt
+
             if product.prescription_required:
                 now = datetime.utcnow()
                 prescription = await session.scalar(
