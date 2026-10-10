@@ -5,6 +5,14 @@ on:
     branches: [dev, fix/admin-login-bootstrap, chore/python-3.15-upgrade]
     paths:
       - pyproject.toml
+      - uv.lock
+      - .github/workflows/regenerate-uv-lock.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/regenerate-uv-lock.yml
   workflow_dispatch:
 
 permissions:
