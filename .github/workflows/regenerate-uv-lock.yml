@@ -2,7 +2,7 @@ name: Regenerate uv.lock
 
 on:
   push:
-    branches: [dev, fix/admin-login-bootstrap]
+    branches: [dev, fix/admin-login-bootstrap, chore/python-3.15-upgrade]
     paths:
       - pyproject.toml
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@v7
         with:
-          python-version: '3.14.7'
+          python-version: '3.15.0'
       - name: Install uv
         run: pip install uv
       - name: Refresh security-sensitive dependencies
