@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import {
   CheckCircle2, Minus, Package, Plus, RefreshCw, Search,
   ShieldAlert, ShoppingCart, Trash2, UserRound, XCircle,
@@ -55,7 +55,7 @@ export function Pos() {
   const [error, setError] = useState<string | null>(null)
   const [receipt, setReceipt] = useState<Receipt | null>(null)
 
-  const loadSetup = () => {
+  const loadSetup = useCallback(() => {
     setLoading(true)
     setError(null)
     Promise.all([
@@ -69,9 +69,9 @@ export function Pos() {
     }).catch((err: unknown) => {
       setError(err instanceof Error ? err.message : 'Unable to load POS setup data')
     }).finally(() => setLoading(false))
-  }
+  }, [])
 
-  const loadCatalog = () => {
+  const loadCatalog = useCallback(() => {
     if (!pharmacyId) {
       setProducts([])
       return
@@ -80,10 +80,10 @@ export function Pos() {
     apiFetch<PosProduct[]>(`/api/v1/pos/catalog?pharmacy_id=${encodeURIComponent(pharmacyId)}`)
       .then(setProducts)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to load pharmacy stock'))
-  }
+  }, [pharmacyId])
 
-  useEffect(() => { loadSetup() }, [])
-  useEffect(() => { loadCatalog() }, [pharmacyId])
+  useEffect(() => { loadSetup() }, [loadSetup])
+  useEffect(() => { loadCatalog() }, [loadCatalog])
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
