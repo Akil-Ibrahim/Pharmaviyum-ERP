@@ -23,6 +23,17 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 
+def _verify_password(password: str, hashed_password: str) -> bool:
+    """Verify a bcrypt password without turning invalid input into HTTP 500."""
+    password_to_check = password[:72] if len(password) > 72 else password
+    try:
+        return pwd_context.verify(password_to_check, hashed_password)
+    except ValueError:
+        # bcrypt rejects passwords longer than 72 bytes. Authentication input
+        # that cannot be verified must fail closed rather than crash the API.
+        return False
+
+
 class RegistrationRequest(BaseModel):
     email: str
     password: str
@@ -132,12 +143,7 @@ async def token(
     else:
         user = await _get_user_by_username_or_email(db, username_or_email)
         if user:
-            password_to_check = (
-                form_data.password[:72]
-                if len(form_data.password) > 72
-                else form_data.password
-            )
-            if not pwd_context.verify(password_to_check, user.hashed_password):
+            if not _verify_password(form_data.password, user.hashed_password):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid credentials",
