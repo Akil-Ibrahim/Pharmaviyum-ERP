@@ -23,6 +23,9 @@ class Order(Base):
         String(64), unique=True, nullable=True, index=True
     )
     payment_method: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    idempotency_key: Mapped[str | None] = mapped_column(
+        String(64), unique=True, nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     patient: Mapped["Patient"] = relationship("Patient", backref="orders")
