@@ -135,7 +135,7 @@ jobs:
           pip install uv
           uv sync --frozen
       - name: pip-audit diagnostics
-        run: uv run pip-audit
+        run: uv run pip-audit --skip-editable
       - name: Bandit diagnostics
         run: |
           uv run bandit -r src/pharmaviyum/ -ll             --exclude src/pharmaviyum/ai/mortarium_rag/ingestion/deduplication.py,src/pharmaviyum/ai/mortarium_rag/ingestion/versioning.py,src/pharmaviyum/ai/mortarium_rag/vector_store.py
