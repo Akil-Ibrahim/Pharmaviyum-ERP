@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { apiFetch } from '@/lib/api-client'
 
-type Product = { id: number; name: string; sku: string; description: string | null; price: number; stock: number; is_active: boolean }
+type Product = { id: number; name: string; sku: string; description: string | null; price: number; stock: number; is_active: boolean; prescription_required: boolean }
 
 export function Products() {
   const [products, setProducts] = useState<Product[]>([])
@@ -20,6 +20,22 @@ export function Products() {
       .then(setProducts)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to load products'))
       .finally(() => setLoading(false))
+  }
+
+  async function togglePrescriptionRequirement(product: Product) {
+    const prescriptionRequired = !product.prescription_required
+    if (!prescriptionRequired && !window.confirm(
+      `Confirm that "${product.name}" is legally classified as OTC in your pharmacy market?`,
+    )) return
+    try {
+      const updated = await apiFetch<Product>(`/api/v1/products/${product.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ prescription_required: prescriptionRequired }),
+      })
+      setProducts((current) => current.map((item) => item.id === updated.id ? updated : item))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to update dispensing classification')
+    }
   }
   useEffect(() => { const timer = window.setTimeout(load, 0); return () => window.clearTimeout(timer) }, [])
 
@@ -43,7 +59,7 @@ export function Products() {
       {loading && <p className='text-sm text-muted-foreground'>Loading products...</p>}
       {error && <p className='text-sm text-destructive'>{error}</p>}
       {!loading&&!error&&filtered.length===0&&<p className='text-sm text-muted-foreground'>No products match the current search.</p>}
-      {!loading&&!error&&filtered.length>0&&<div className='overflow-x-auto rounded-md border'><table className='w-full text-sm'><thead><tr className='border-b bg-muted/40 text-left text-muted-foreground'><th className='p-3'>Product</th><th className='p-3'>SKU</th><th className='p-3 text-right'>Price</th><th className='p-3 text-right'>Stock</th><th className='p-3'>Status</th></tr></thead><tbody>{filtered.map((p)=><tr key={p.id} className='border-b last:border-0 hover:bg-muted/30'><td className='p-3 font-medium'>{p.name}</td><td className='p-3 text-muted-foreground'>{p.sku}</td><td className='p-3 text-right'>{p.price.toFixed(2)}</td><td className='p-3 text-right'>{p.stock}</td><td className='p-3'><Badge variant='outline' className={p.is_active?'bg-green-500/15 text-green-700 dark:text-green-300':'bg-muted text-muted-foreground'}>{p.is_active?'Active':'Inactive'}</Badge></td></tr>)}</tbody></table></div>}
+      {!loading&&!error&&filtered.length>0&&<div className='overflow-x-auto rounded-md border'><table className='w-full text-sm'><thead><tr className='border-b bg-muted/40 text-left text-muted-foreground'><th className='p-3'>Product</th><th className='p-3'>SKU</th><th className='p-3 text-right'>Price</th><th className='p-3 text-right'>Stock</th><th className='p-3'>Dispensing rule</th><th className='p-3'>Status</th></tr></thead><tbody>{filtered.map((p)=><tr key={p.id} className='border-b last:border-0 hover:bg-muted/30'><td className='p-3 font-medium'>{p.name}</td><td className='p-3 text-muted-foreground'>{p.sku}</td><td className='p-3 text-right'>{p.price.toFixed(2)}</td><td className='p-3 text-right'>{p.stock}</td><td className='p-3'><div className='flex flex-wrap items-center gap-2'><Badge variant={p.prescription_required?'destructive':'secondary'}>{p.prescription_required?'Prescription required':'OTC'}</Badge><Button variant='outline' size='sm' onClick={() => void togglePrescriptionRequirement(p)}>{p.prescription_required?'Mark OTC':'Mark Rx-only'}</Button></div></td><td className='p-3'><Badge variant='outline' className={p.is_active?'bg-green-500/15 text-green-700 dark:text-green-300':'bg-muted text-muted-foreground'}>{p.is_active?'Active':'Inactive'}</Badge></td></tr>)}</tbody></table></div>}
     </CardContent></Card>
   </div>
 }
