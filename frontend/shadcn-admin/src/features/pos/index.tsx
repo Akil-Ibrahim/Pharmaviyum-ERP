@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import {
-  Barcode, CheckCircle2, Minus, Package, Plus, RefreshCw, Search,
+  CheckCircle2, Minus, Package, Plus, RefreshCw, Search,
   ShieldAlert, ShoppingCart, Trash2, UserRound, XCircle,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -97,7 +97,6 @@ export function Pos() {
 
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0)
-  const selectedPatient = patients.find((patient) => String(patient.id) === patientId)
 
   const addToCart = (product: PosProduct) => {
     if (product.available_quantity < 1) return
