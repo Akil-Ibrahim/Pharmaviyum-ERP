@@ -19,8 +19,30 @@ from src.pharmaviyum.modules.auth.deps import CurrentUser
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Prefer bcrypt-sha256 for new hashes: unlike raw bcrypt, it safely accepts
+# passwords longer than bcrypt's 72-byte input limit. Keep bcrypt enabled to
+# verify existing hashes created by earlier versions.
+pwd_context = CryptContext(
+    schemes=["bcrypt_sha256", "bcrypt"],
+    deprecated="bcrypt",
+)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
+
+
+def _hash_password(password: str) -> str:
+    """Hash a password without truncating user-supplied characters or bytes."""
+    return pwd_context.hash(password)
+
+
+def _verify_password(password: str, hashed_password: str) -> bool:
+    """Verify new hashes and retain compatibility with legacy bcrypt hashes."""
+    if pwd_context.identify(hashed_password) == "bcrypt":
+        # Old code truncated by characters, which can exceed 72 bytes for
+        # multibyte UTF-8. Safely normalize only the legacy bcrypt path.
+        password_bytes = password.encode("utf-8")
+        if len(password_bytes) > 72:
+            password = password_bytes[:72].decode("utf-8", errors="ignore")
+    return pwd_context.verify(password, hashed_password)
 
 
 class RegistrationRequest(BaseModel):
@@ -78,11 +100,10 @@ async def register(
             detail="User already exists",
         )
 
-    password_to_hash = password[:72]
     user = User(
         email=email,
         username=username,
-        hashed_password=pwd_context.hash(password_to_hash),
+        hashed_password=_hash_password(password),
         is_active=True,
         is_superuser=False,
     )
@@ -116,13 +137,13 @@ async def token(
             admin = User(
                 email=admin_email,
                 username=admin_user,
-                hashed_password=pwd_context.hash(admin_pass[:72]),
+                hashed_password=_hash_password(admin_pass),
                 is_active=True,
                 is_superuser=True,
             )
             db.add(admin)
         else:
-            admin.hashed_password = pwd_context.hash(admin_pass[:72])
+            admin.hashed_password = _hash_password(admin_pass)
             admin.is_active = True
             admin.is_superuser = True
 
@@ -132,12 +153,7 @@ async def token(
     else:
         user = await _get_user_by_username_or_email(db, username_or_email)
         if user:
-            password_to_check = (
-                form_data.password[:72]
-                if len(form_data.password) > 72
-                else form_data.password
-            )
-            if not pwd_context.verify(password_to_check, user.hashed_password):
+            if not _verify_password(form_data.password, user.hashed_password):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid credentials",
