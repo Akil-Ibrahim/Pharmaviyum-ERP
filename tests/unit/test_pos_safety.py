@@ -1,5 +1,6 @@
 import pytest
 
+from src.pharmaviyum.models.inventory_transaction import InventoryTransaction
 from src.pharmaviyum.schemas.product_schema import ProductCreate
 
 
@@ -17,3 +18,12 @@ def test_confirmed_otc_product_can_be_explicitly_classified() -> None:
         prescription_required=False,
     )
     assert product.prescription_required is False
+
+@pytest.mark.unit
+def test_inventory_transaction_ledger_rejects_zero_quantity_delta() -> None:
+    constraint_names = {
+        constraint.name
+        for constraint in InventoryTransaction.__table__.constraints
+        if constraint.name
+    }
+    assert "ck_inventory_transactions_nonzero_delta" in constraint_names
