@@ -9,6 +9,7 @@ from sqlalchemy import or_, select
 
 from src.pharmaviyum.models.audit_log import AuditLog
 from src.pharmaviyum.models.inventory import Inventory
+from src.pharmaviyum.models.inventory_transaction import InventoryTransaction
 from src.pharmaviyum.models.order import Order
 from src.pharmaviyum.models.patients.patient import Patient
 from src.pharmaviyum.models.patients.patient_purchase import PatientPurchase
@@ -266,6 +267,7 @@ async def checkout(
                     {
                         "product": product,
                         "batch": batch,
+                        "inventory": stock,
                         "quantity": quantity,
                         "unit_price": float(product.price),
                         "line_total": line_total,
@@ -296,6 +298,7 @@ async def checkout(
         receipt_lines = []
         for allocation in allocations:
             product, batch = allocation["product"], allocation["batch"]
+            inventory = allocation["inventory"]
             quantity = allocation["quantity"]
             session.add(
                 PatientPurchase(
@@ -311,6 +314,20 @@ async def checkout(
                     unit_price=allocation["unit_price"],
                     prescription_required=product.prescription_required,
                     purchased_at=datetime.utcnow(),
+                )
+            )
+            session.add(
+                InventoryTransaction(
+                    pharmacy_id=scope,
+                    product_id=product.id,
+                    inventory_id=inventory.id,
+                    batch_id=batch.id if batch else None,
+                    transaction_type="sale",
+                    quantity_delta=-quantity,
+                    reference_type="order",
+                    reference_id=order.id,
+                    receipt_number=receipt_number,
+                    created_by=current_user.id,
                 )
             )
             receipt_lines.append(
