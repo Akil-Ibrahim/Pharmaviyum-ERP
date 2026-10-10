@@ -26,6 +26,9 @@ api_v1_router.include_router(orders_router)
 api_v1_router.include_router(patient_purchases_router)
 api_v1_router.include_router(pharmacy_entities_router)
 api_v1_router.include_router(products_router)
+# Keep the versioned product URL used by the admin frontend while preserving
+# the legacy unversioned product routes for existing integrations.
+api_v1_router.include_router(products_router, prefix="/api/v1")
 api_v1_router.include_router(users_router)
 api_v1_router.include_router(pos_router)
 
