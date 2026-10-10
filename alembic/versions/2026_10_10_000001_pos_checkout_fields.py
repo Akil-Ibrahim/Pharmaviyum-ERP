@@ -22,6 +22,16 @@ def upgrade() -> None:
         op.create_index("ix_orders_receipt_number", "orders", ["receipt_number"], unique=True)
     if "payment_method" not in order_columns:
         op.add_column("orders", sa.Column("payment_method", sa.String(20), nullable=True))
+        order_columns.add("payment_method")
+    if "idempotency_key" not in order_columns:
+        op.add_column("orders", sa.Column("idempotency_key", sa.String(64), nullable=True))
+        order_columns.add("idempotency_key")
+
+    order_indexes = {i["name"] for i in sa.inspect(bind).get_indexes("orders")}
+    if "ix_orders_receipt_number" not in order_indexes:
+        op.create_index("ix_orders_receipt_number", "orders", ["receipt_number"], unique=True)
+    if "ix_orders_idempotency_key" not in order_indexes:
+        op.create_index("ix_orders_idempotency_key", "orders", ["idempotency_key"], unique=True)
 
     product_columns = {c["name"] for c in sa.inspect(bind).get_columns("products")}
     if "prescription_required" not in product_columns:
@@ -39,8 +49,14 @@ def downgrade() -> None:
     if "prescription_required" in product_columns:
         op.drop_column("products", "prescription_required")
     order_columns = {c["name"] for c in sa.inspect(bind).get_columns("orders")}
+    order_indexes = {i["name"] for i in sa.inspect(bind).get_indexes("orders")}
+    if "idempotency_key" in order_columns:
+        if "ix_orders_idempotency_key" in order_indexes:
+            op.drop_index("ix_orders_idempotency_key", table_name="orders")
+        op.drop_column("orders", "idempotency_key")
     if "payment_method" in order_columns:
         op.drop_column("orders", "payment_method")
     if "receipt_number" in order_columns:
-        op.drop_index("ix_orders_receipt_number", table_name="orders")
+        if "ix_orders_receipt_number" in order_indexes:
+            op.drop_index("ix_orders_receipt_number", table_name="orders")
         op.drop_column("orders", "receipt_number")
