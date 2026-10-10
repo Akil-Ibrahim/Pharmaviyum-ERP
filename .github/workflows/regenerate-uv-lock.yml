@@ -31,6 +31,7 @@ jobs:
           python-version: '3.15.0'
       - name: Install uv
         run: pip install uv
+      # Re-resolve all dependencies after Python/package compatibility updates.
       - name: Refresh dependency lock
         run: uv lock --upgrade
       - name: Commit updated lockfile
