@@ -28,9 +28,9 @@ def upgrade() -> None:
         op.add_column("products", sa.Column(
             "prescription_required", sa.Boolean(), nullable=False, server_default=sa.true()
         ))
-    # Existing products have no trustworthy Rx/OTC flag. Fail closed; a pharmacist
-    # must explicitly mark confirmed OTC products as prescription_required=false.
-    op.execute(sa.text("UPDATE products SET prescription_required = TRUE"))
+        # Existing products have no trustworthy Rx/OTC flag. Fail closed; an
+        # authorized admin must explicitly mark confirmed OTC products as false.
+        op.execute(sa.text("UPDATE products SET prescription_required = TRUE"))
 
 
 def downgrade() -> None:
