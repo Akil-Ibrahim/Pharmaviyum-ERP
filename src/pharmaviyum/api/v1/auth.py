@@ -137,7 +137,16 @@ async def token(
                 if len(form_data.password) > 72
                 else form_data.password
             )
-            if not pwd_context.verify(password_to_check, user.hashed_password):
+            try:
+                password_is_valid = pwd_context.verify(
+                    password_to_check, user.hashed_password
+                )
+            except ValueError:
+                # bcrypt rejects passwords longer than 72 bytes. Treat malformed
+                # or overlong input as an authentication failure, not an HTTP 500.
+                password_is_valid = False
+
+            if not password_is_valid:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid credentials",
