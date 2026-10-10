@@ -422,18 +422,6 @@ async def get_dashboard_summary(
         demand_30d_query = demand_30d_query.where(Patient.pharmacy_id == scope)
 
     demand_30d = (await session.execute(demand_30d_query)).scalar_one() or 0
-    total_available_units = (
-        await session.execute(
-            select(
-                func.coalesce(
-                    func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
-                )
-            ).where(
-                Inventory.pharmacy_id == scope if scope is not None else True
-            )
-        )
-    ).scalar_one() or 0
-
     expired_value_query = (
         select(
             func.coalesce(
