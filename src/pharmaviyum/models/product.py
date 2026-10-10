@@ -1,13 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import (
-    Boolean,
-    CheckConstraint,
-    DateTime,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
+    Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -44,7 +38,8 @@ class Product(Base):
     regulatory_id: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
     gtin: Mapped[str | None] = mapped_column(String(14), nullable=True, index=True)
     barcode: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
-    prescription_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Fail closed until a pharmacist explicitly classifies a product as OTC.
+    prescription_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     medicinal_product_id: Mapped[int | None] = mapped_column(
         ForeignKey("medicinal_products.id", ondelete="SET NULL"), nullable=True, index=True
