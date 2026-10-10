@@ -22,15 +22,8 @@ jobs:
           python-version: '3.15.0'
       - name: Install uv
         run: pip install uv
-      - name: Refresh security-sensitive dependencies
-        run: |
-          uv lock --upgrade-package anyio \
-            --upgrade-package black \
-            --upgrade-package cryptography \
-            --upgrade-package pyasn1 \
-            --upgrade-package pypdf \
-            --upgrade-package urllib3 \
-            --upgrade-package virtualenv
+      - name: Refresh dependency lock
+        run: uv lock --upgrade
       - name: Commit updated lockfile
         run: |
           if git diff --quiet -- uv.lock; then
