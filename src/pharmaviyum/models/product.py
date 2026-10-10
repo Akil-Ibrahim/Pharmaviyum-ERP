@@ -23,17 +23,9 @@ class Product(Base):
     __table_args__ = (
         CheckConstraint("price >= 0", name="ck_products_price_nonnegative"),
         CheckConstraint("stock >= 0", name="ck_products_stock_nonnegative"),
-        CheckConstraint(
-            "units_per_pack > 0", name="ck_products_units_per_pack_positive"
-        ),
-        CheckConstraint(
-            "units_per_blister >= 0",
-            name="ck_products_units_per_blister_nonnegative",
-        ),
-        CheckConstraint(
-            "blisters_per_pack >= 0",
-            name="ck_products_blisters_per_pack_nonnegative",
-        ),
+        CheckConstraint("units_per_pack > 0", name="ck_products_units_per_pack_positive"),
+        CheckConstraint("units_per_blister >= 0", name="ck_products_units_per_blister_nonnegative"),
+        CheckConstraint("blisters_per_pack >= 0", name="ck_products_blisters_per_pack_nonnegative"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -43,21 +35,16 @@ class Product(Base):
     dosage_strength: Mapped[str | None] = mapped_column(String(100), nullable=True)
     dosage_form: Mapped[str | None] = mapped_column(String(50), nullable=True)
     units_per_pack: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    package_type: Mapped[str] = mapped_column(
-        String(50), nullable=False, default="pack"
-    )
+    package_type: Mapped[str] = mapped_column(String(50), nullable=False, default="pack")
     blisters_per_pack: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     units_per_blister: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     manufacturer: Mapped[str | None] = mapped_column(String(200), nullable=True)
-    inn_name: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, index=True
-    )
+    inn_name: Mapped[str | None] = mapped_column(String(200), nullable=True, index=True)
     atc_code: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
-    regulatory_id: Mapped[str | None] = mapped_column(
-        String(50), nullable=True, index=True
-    )
+    regulatory_id: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
     gtin: Mapped[str | None] = mapped_column(String(14), nullable=True, index=True)
     barcode: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    prescription_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     medicinal_product_id: Mapped[int | None] = mapped_column(
         ForeignKey("medicinal_products.id", ondelete="SET NULL"), nullable=True, index=True
