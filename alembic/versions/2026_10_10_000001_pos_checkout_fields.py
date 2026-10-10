@@ -26,8 +26,11 @@ def upgrade() -> None:
     product_columns = {c["name"] for c in sa.inspect(bind).get_columns("products")}
     if "prescription_required" not in product_columns:
         op.add_column("products", sa.Column(
-            "prescription_required", sa.Boolean(), nullable=False, server_default=sa.false()
+            "prescription_required", sa.Boolean(), nullable=False, server_default=sa.true()
         ))
+    # Existing products have no trustworthy Rx/OTC flag. Fail closed; a pharmacist
+    # must explicitly mark confirmed OTC products as prescription_required=false.
+    op.execute(sa.text("UPDATE products SET prescription_required = TRUE"))
 
 
 def downgrade() -> None:
