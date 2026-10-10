@@ -19,6 +19,10 @@ class Order(Base):
     )
     total_amount: Mapped[float] = mapped_column(Float, default=0.0)
     status: Mapped[str] = mapped_column(String(50), default="pending")
+    receipt_number: Mapped[str | None] = mapped_column(
+        String(64), unique=True, nullable=True, index=True
+    )
+    payment_method: Mapped[str | None] = mapped_column(String(20), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     patient: Mapped["Patient"] = relationship("Patient", backref="orders")
