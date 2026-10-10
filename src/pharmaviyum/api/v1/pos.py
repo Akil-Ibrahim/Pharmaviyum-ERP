@@ -51,7 +51,6 @@ async def catalog(
             Product.inn_name.ilike(term), Product.manufacturer.ilike(term),
         ))
     products = list((await session.execute(query.order_by(Product.name).limit(100))).scalars().all())
-    now = datetime.utcnow()
     rows: list[dict] = []
     for product in products:
         stock_rows = list((await session.execute(select(Inventory).where(
