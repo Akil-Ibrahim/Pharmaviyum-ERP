@@ -20,8 +20,8 @@ class ProductCreate(BaseModel):
     gtin: str | None = Field(default=None, min_length=8, max_length=14)
     barcode: str | None = Field(default=None, max_length=64)
     price: float = Field(default=0.0, ge=0)
-    # Kept for backward compatibility; per-pharmacy stock belongs to Inventory.
     stock: int = Field(default=0, ge=0)
+    prescription_required: bool = False
     medicinal_product_id: int | None = Field(default=None, gt=0)
 
 
@@ -42,6 +42,7 @@ class ProductUpdate(BaseModel):
     barcode: str | None = Field(default=None, max_length=64)
     price: float | None = Field(default=None, ge=0)
     stock: int | None = Field(default=None, ge=0)
+    prescription_required: bool | None = None
     medicinal_product_id: int | None = Field(default=None, gt=0)
     is_active: bool | None = None
 
@@ -65,6 +66,7 @@ class ProductResponse(BaseModel):
     barcode: str | None = None
     price: float
     stock: int
+    prescription_required: bool = False
     medicinal_product_id: int | None = None
     is_active: bool
     created_at: datetime
