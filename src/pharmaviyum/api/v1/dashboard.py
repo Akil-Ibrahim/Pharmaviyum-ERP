@@ -555,25 +555,37 @@ async def get_dashboard_summary(
         .limit(5)
     )
     if scope is not None:
-        reorder_attention_query = reorder_attention_query.where(Inventory.pharmacy_id == scope)
+        reorder_attention_query = reorder_attention_query.where(
+            Inventory.pharmacy_id == scope
+        )
 
-    slow_moving_query = select(
-        Product.id,
-        Product.name,
-        func.coalesce(recent_sales.c.recent_packs, 0).label("recent_packs"),
-        func.coalesce(func.sum(Inventory.quantity - Inventory.reserved_quantity), 0).label("stock"),
-        func.coalesce(
-            func.sum((Inventory.quantity - Inventory.reserved_quantity) * Product.price), 0
-        ).label("stock_value"),
-    ).select_from(Product).join(
-        Inventory, Inventory.product_id == Product.id
-    ).outerjoin(
-        recent_sales, recent_sales.c.product_id == Product.id
-    ).group_by(Product.id, Product.name, recent_sales.c.recent_packs).having(
-        func.coalesce(recent_sales.c.recent_packs, 0) == 0
-    ).order_by(
-        func.sum((Inventory.quantity - Inventory.reserved_quantity) * Product.price).desc()
-    ).limit(5)
+    slow_moving_query = (
+        select(
+            Product.id,
+            Product.name,
+            func.coalesce(recent_sales.c.recent_packs, 0).label("recent_packs"),
+            func.coalesce(
+                func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
+            ).label("stock"),
+            func.coalesce(
+                func.sum(
+                    (Inventory.quantity - Inventory.reserved_quantity) * Product.price
+                ),
+                0,
+            ).label("stock_value"),
+        )
+        .select_from(Product)
+        .join(Inventory, Inventory.product_id == Product.id)
+        .outerjoin(recent_sales, recent_sales.c.product_id == Product.id)
+        .group_by(Product.id, Product.name, recent_sales.c.recent_packs)
+        .having(func.coalesce(recent_sales.c.recent_packs, 0) == 0)
+        .order_by(
+            func.sum(
+                (Inventory.quantity - Inventory.reserved_quantity) * Product.price
+            ).desc()
+        )
+        .limit(5)
+    )
     if scope is not None:
         slow_moving_query = slow_moving_query.where(Inventory.pharmacy_id == scope)
 
@@ -632,12 +644,17 @@ async def get_dashboard_summary(
             {
                 "id": row.id,
                 "name": row.name,
-                "available_packs": round(float(row.available_units or 0) / float(row.units_per_pack or 1), 1),
+                "available_packs": round(
+                    float(row.available_units or 0) / float(row.units_per_pack or 1), 1
+                ),
                 "reorder_level": int(row.reorder_level or 0),
                 "packs_30d": int(row.packs_30d or 0),
                 "days_on_hand": (
                     round(
-                        (float(row.available_units or 0) / float(row.units_per_pack or 1))
+                        (
+                            float(row.available_units or 0)
+                            / float(row.units_per_pack or 1)
+                        )
                         / (float(row.packs_30d or 0) / 30.0),
                         1,
                     )
@@ -652,7 +669,9 @@ async def get_dashboard_summary(
             "stockout_items": int(attention.stockout_items or 0),
             "near_expiry_value": round(float(attention.near_expiry_value or 0), 2),
             "slow_moving_items": len(slow_moving),
-            "slow_moving_stock_value": round(sum(float(row.stock_value or 0) for row in slow_moving), 2),
+            "slow_moving_stock_value": round(
+                sum(float(row.stock_value or 0) for row in slow_moving), 2
+            ),
             "slow_moving": [
                 {
                     "id": row.id,
