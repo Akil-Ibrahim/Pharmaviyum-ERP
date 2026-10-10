@@ -17,7 +17,7 @@ from src.pharmaviyum.models.product_batch import ProductBatch
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import resolve_pharmacy_scope
 
-router = APIRouter(prefix="/pos", tags=["Point of Sale"])
+router = APIRouter(prefix="/api/v1/pos", tags=["Point of Sale"])
 
 
 class CheckoutLine(BaseModel):
@@ -93,7 +93,7 @@ async def checkout(data: CheckoutRequest, current_user: CurrentUser, session: Se
         Patient.id == data.patient_id,
         Patient.is_active.is_(True),
     ).with_for_update())
-    if patient is None or patient.pharmacy_id not in (None, scope):
+    if patient is None or patient.pharmacy_id != scope:
         raise HTTPException(status_code=404, detail="Active patient not found in this pharmacy")
 
     requested: dict[int, int] = {}
