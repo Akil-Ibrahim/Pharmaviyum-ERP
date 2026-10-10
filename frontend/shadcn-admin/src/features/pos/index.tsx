@@ -30,6 +30,7 @@ type PosProduct = {
 type CartItem = PosProduct & { quantity: number }
 type Receipt = {
   order_id: number
+  idempotent_replay?: boolean
   receipt_number: string
   patient_name: string
   payment_method: string
@@ -51,6 +52,7 @@ export function Pos() {
   const [query, setQuery] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
   const [paymentMethod, setPaymentMethod] = useState('cash')
+  const [checkoutKey, setCheckoutKey] = useState(() => crypto.randomUUID())
   const [loading, setLoading] = useState(true)
   const [checkingOut, setCheckingOut] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -169,10 +171,12 @@ export function Pos() {
           pharmacy_id: Number(pharmacyId),
           patient_id: Number(patientId),
           payment_method: paymentMethod,
+          idempotency_key: checkoutKey,
           items: cart.map(({ id, quantity }) => ({ product_id: id, quantity })),
         }),
       })
       setReceipt(result)
+      setCheckoutKey(crypto.randomUUID())
       setCart([])
       setQuery('')
       loadCatalog()
@@ -205,7 +209,7 @@ export function Pos() {
       {receipt && <Card className='border-emerald-500/40'>
         <CardContent className='flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between'>
           <div className='flex gap-3'><CheckCircle2 className='mt-0.5 size-5 text-emerald-600'/><div>
-            <p className='font-semibold'>Sale recorded successfully</p>
+            <p className='font-semibold'>{receipt.idempotent_replay ? 'Previous receipt recovered safely' : 'Sale recorded successfully'}</p>
             <p className='text-sm text-muted-foreground'>{receipt.receipt_number} · {receipt.patient_name} · {receipt.payment_method}</p>
             <p className='mt-1 text-lg font-bold'>{money(receipt.total_amount)}</p>
             <div className='mt-3 space-y-2 border-t pt-3'>
