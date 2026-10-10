@@ -2,7 +2,7 @@ name: Regenerate uv.lock
 
 on:
   push:
-    branches: [dev, fix/admin-login-bootstrap, chore/python-3.15-upgrade, fix/python315-native-dependency-compat]
+    branches: [dev, fix/admin-login-bootstrap, chore/python-3.15-upgrade, fix/python315-native-dependency-compat, fix/ci-unused-dashboard-variable-starlette-security]
     paths:
       - pyproject.toml
       - uv.lock
