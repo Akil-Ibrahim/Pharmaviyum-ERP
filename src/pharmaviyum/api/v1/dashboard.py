@@ -471,9 +471,7 @@ async def get_dashboard_summary(
         (await session.execute(available_packs_query)).scalar_one() or 0
     )
     daily_packs = float(demand_30d) / 30.0
-    days_on_hand = (
-        round(available_packs / daily_packs, 1) if daily_packs > 0 else None
-    )
+    days_on_hand = round(available_packs / daily_packs, 1) if daily_packs > 0 else None
 
     attention_query = (
         select(
