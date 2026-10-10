@@ -2,13 +2,13 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, fix/ci-unused-dashboard-variable-starlette-security]
+    branches: [main, fix/ci-unused-dashboard-variable-starlette-security, test/python315-compatibility]
   pull_request:
     branches: [main]
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: '3.14.7'
+  PYTHON_VERSION: '3.15'
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: postgres
   POSTGRES_DB: pharmaviyum_test
