@@ -2,7 +2,7 @@ name: Regenerate uv.lock
 
 on:
   push:
-    branches: [dev, fix/admin-login-bootstrap, chore/python-3.15-upgrade, fix/python315-native-dependency-compat, fix/ci-unused-dashboard-variable-starlette-security]
+    branches: [dev, fix/admin-login-bootstrap, chore/python-3.15-upgrade, fix/python315-native-dependency-compat, fix/ci-unused-dashboard-variable-starlette-security, test/python315-compatibility]
     paths:
       - pyproject.toml
       - uv.lock
@@ -28,7 +28,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
       - uses: actions/setup-python@v7
         with:
-          python-version: '3.14.7'
+          python-version: ${{ (github.event.pull_request.head.ref || github.ref_name) == 'test/python315-compatibility' && '3.15' || '3.14.7' }}
       - name: Install uv
         run: pip install uv
       # Re-resolve all dependencies after Python/package compatibility updates.
