@@ -28,7 +28,7 @@ export function Products() {
       `Confirm that "${product.name}" is legally classified as OTC in your pharmacy market?`,
     )) return
     try {
-      const updated = await apiFetch<Product>(`/api/v1/products/${product.id}`, {
+      const updated = await apiFetch<Product>(`/products/${product.id}`, {
         method: 'PUT',
         body: JSON.stringify({ prescription_required: prescriptionRequired }),
       })
