@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/ci-unused-dashboard-variable-starlette-security]
   pull_request:
     branches: [main]
   workflow_dispatch:
