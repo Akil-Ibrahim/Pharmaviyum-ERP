@@ -2,7 +2,7 @@
 # PHARMAVIYUM AI - Production Dockerfile
 # ============================================================================
 
-FROM python:3.14.7-slim AS python-builder
+FROM python:3.15.0-slim AS python-builder
 
 WORKDIR /app
 
@@ -42,7 +42,7 @@ RUN bun install
 COPY frontend/shadcn-admin/ ./
 RUN bun run build
 
-FROM python:3.14.7-slim AS production
+FROM python:3.15.0-slim AS production
 
 LABEL maintainer="Pharmaviyum Team"
 LABEL description="Enterprise AI/LLM layer for pharmaceutical CRM"
