@@ -57,6 +57,8 @@ async def catalog(
                 Product.barcode.ilike(term),
                 Product.gtin.ilike(term),
                 Product.inn_name.ilike(term),
+                Product.dosage_strength.ilike(term),
+                Product.dosage_form.ilike(term),
                 Product.manufacturer.ilike(term),
             )
         )
