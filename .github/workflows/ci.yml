@@ -1,5 +1,7 @@
 name: CI/CD Pipeline
 
+# Python 3.15 compatibility experiment: isolated branch only; never deploy this branch.
+
 on:
   push:
     branches: [main, fix/ci-unused-dashboard-variable-starlette-security, test/python315-compatibility]
