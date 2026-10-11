@@ -23,9 +23,14 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 
+def _bcrypt_password(password: str) -> str:
+    """Limit a password to bcrypt's 72-byte input limit without splitting UTF-8."""
+    return password.encode("utf-8")[:72].decode("utf-8", errors="ignore")
+
+
 def _verify_password(password: str, hashed_password: str) -> bool:
     """Verify a bcrypt password without turning invalid input into HTTP 500."""
-    password_to_check = password[:72] if len(password) > 72 else password
+    password_to_check = _bcrypt_password(password)
     try:
         return pwd_context.verify(password_to_check, hashed_password)
     except ValueError:
@@ -89,7 +94,7 @@ async def register(
             detail="User already exists",
         )
 
-    password_to_hash = password[:72]
+    password_to_hash = _bcrypt_password(password)
     user = User(
         email=email,
         username=username,
@@ -127,13 +132,13 @@ async def token(
             admin = User(
                 email=admin_email,
                 username=admin_user,
-                hashed_password=pwd_context.hash(admin_pass[:72]),
+                hashed_password=pwd_context.hash(_bcrypt_password(admin_pass)),
                 is_active=True,
                 is_superuser=True,
             )
             db.add(admin)
         else:
-            admin.hashed_password = pwd_context.hash(admin_pass[:72])
+            admin.hashed_password = pwd_context.hash(_bcrypt_password(admin_pass))
             admin.is_active = True
             admin.is_superuser = True
 
