@@ -1,22 +1,19 @@
-"""
-Quick compatibility check for Python 3.14.
+"""Quick compatibility check for the project's supported Python version.
 
-Run this before building Docker image to catch issues early:
-    python check_python314_compat.py
+Run after installing dependencies with `uv sync --frozen`.
 """
 
 import sys
 
 
-def check():
+def check() -> bool:
     print(f"Python version: {sys.version}")
 
     if sys.version_info < (3, 14):
         print(
-            f"⚠️  Warning: Expected Python 3.14, got "
+            "⚠️  Warning: Expected Python 3.14, got "
             f"{sys.version_info.major}.{sys.version_info.minor}"
         )
-        print("   Some features may not work as expected.")
         return False
 
     print("✅ Python 3.14 detected")
@@ -29,25 +26,24 @@ def check():
         "celery",
         "langchain_core",
     ]
-
     missing = []
-    for pkg in critical_packages:
+
+    for package in critical_packages:
         try:
-            __import__(pkg)
-            print(f"✅ {pkg} available")
+            __import__(package)
+            print(f"✅ {package} available")
         except ImportError:
-            missing.append(pkg)
-            print(f"❌ {pkg} NOT available")
+            missing.append(package)
+            print(f"❌ {package} NOT available")
 
     if missing:
         print(f"\n⚠️  Missing packages: {', '.join(missing)}")
-        print("   Run: pip install -r requirements.txt")
+        print("   Run: uv sync --frozen")
         return False
 
-    print("\n✅ All critical packages available for Python 3.14")
+    print("\n✅ All critical packages are available for Python 3.14")
     return True
 
 
 if __name__ == "__main__":
-    success = check()
-    sys.exit(0 if success else 1)
+    sys.exit(0 if check() else 1)

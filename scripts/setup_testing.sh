@@ -94,18 +94,8 @@ EOF
 
 echo "✅ .coveragerc created"
 
-# 3. Update requirements with testing dependencies
-cat >> requirements.txt << 'EOF'
-# Testing dependencies
-pytest==8.3.3
-pytest-asyncio==0.24.0
-pytest-cov==5.0.0
-pytest-mock==3.14.0
-factory-boy==3.3.1
-faker==30.8.2
-EOF
-
-echo "✅ requirements.txt updated with test dependencies"
+# 3. Test dependencies are managed in pyproject.toml [dependency-groups].dev.
+echo "✅ Test dependencies are managed through uv and pyproject.toml."
 
 # 4. Create test directories
 mkdir -p tests/{unit/{services,repositories},integration/endpoints,factories,mocks}
@@ -485,11 +475,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.14.7'
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip uv
+          uv sync --frozen
       - name: Lint with Ruff
         run: ruff check .
   test-unit:
@@ -516,10 +506,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.14.7'
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip uv
+          uv sync --frozen
       - name: Run unit tests with coverage
         run: |
           pytest -m unit --cov=src/pharmaviyum --cov-report=term-missing
@@ -547,10 +538,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.14.7'
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip uv
+          uv sync --frozen
       - name: Run integration tests
         run: |
           pytest -m integration
@@ -583,8 +575,8 @@ tests/
 
 ## How to Run Tests
 ```bash
-# Install test dependencies
-pip install -r requirements.txt
+# Install project and test dependencies
+uv sync --frozen
 
 # Run all tests with coverage
 pytest --cov=src/pharmaviyum --cov-report=term-missing
@@ -617,7 +609,7 @@ The GitHub Actions workflow defined in `.github/workflows/ci.yml` will automatic
 ## Troubleshooting
 - **Database errors**: Ensure Docker Compose services are running (`docker-compose up -d postgres redis`).
 - **Redis errors**: Verify Redis is accessible on port `6379`.
-- **Import errors**: Re‑install dependencies (`pip install -r requirements.txt`).
+- **Import errors**: Re‑install dependencies (`uv sync --frozen`).
 EOF
 
 echo "✅ Documentation created"
