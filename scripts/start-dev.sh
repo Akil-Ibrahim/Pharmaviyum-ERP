@@ -26,6 +26,7 @@ fi
 echo "🚀 Starting FastAPI backend on http://localhost:8000..."
 uv run uvicorn src.pharmaviyum.main:app --reload --port 8000 &
 BACKEND_PID=$!
+FRONTEND_PID=""
 
 cleanup() {
   kill "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
