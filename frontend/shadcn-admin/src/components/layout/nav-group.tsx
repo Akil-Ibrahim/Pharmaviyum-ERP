@@ -38,7 +38,9 @@ export function NavGroup({ title, items }: NavGroupProps) {
   const href = useLocation({ select: (location) => location.href })
   return (
     <SidebarGroup>
-      <SidebarGroupLabel className='px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80'>
+      <SidebarGroupLabel
+      className='px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80'
+    >
       {title}
     </SidebarGroupLabel>
       <SidebarMenu>
