@@ -8,10 +8,10 @@ from sqlalchemy import case, func, select
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.order import Order
 from src.pharmaviyum.models.patients import Patient, PatientPurchase
+from src.pharmaviyum.models.patients.patient_condition import PatientCondition
 from src.pharmaviyum.models.prescription import Prescription
 from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.models.product_batch import ProductBatch
-from src.pharmaviyum.models.patients.patient_condition import PatientCondition
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import resolve_pharmacy_scope
 
