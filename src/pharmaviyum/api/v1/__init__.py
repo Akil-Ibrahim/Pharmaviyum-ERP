@@ -6,10 +6,10 @@ from .ai import router as ai_router
 from .auth import router as auth_router
 from .dashboard import router as dashboard_router
 from .drug_catalog import router as drug_catalog_router
+from .endpoints import patients_router
 from .ingestion import router as ingestion_router
 from .monitoring import router as monitoring_router
 from .orders import router as orders_router
-from .endpoints import patients_router
 from .patient_purchases import router as patient_purchases_router
 from .pharmacy_entities import router as pharmacy_entities_router
 from .products import router as products_router
