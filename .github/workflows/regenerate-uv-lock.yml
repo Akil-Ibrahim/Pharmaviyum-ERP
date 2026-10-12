@@ -31,7 +31,7 @@ jobs:
           python-version: '3.14.7'
       - name: Install uv
         run: pip install uv
-      # Re-resolve all dependencies after Python/package compatibility updates.
+      # Resolve the manifest, including newly constrained transitive security dependencies.
       - name: Refresh dependency lock
         run: uv lock
       - name: Commit updated lockfile
