@@ -1,48 +1,38 @@
 .pharmaviyum-dashboard {
-  --pharmacy-blue-soft: color-mix(in oklab, var(--primary) 7%, var(--background));
+  --pharmacy-blue-soft: color-mix(in oklab, var(--primary) 5%, var(--background));
   --pharmacy-blue-border: color-mix(in oklab, var(--primary) 18%, var(--border));
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
+  color: var(--foreground);
 }
 
 .pharmacy-dashboard-hero {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border-color: var(--pharmacy-blue-border);
-  background:
-    radial-gradient(ellipse at 100% 0%, color-mix(in oklab, var(--primary) 15%, transparent), transparent 48%),
-    linear-gradient(135deg, var(--pharmacy-blue-soft), var(--card) 68%);
-  box-shadow: 0 12px 32px -26px color-mix(in oklab, var(--primary) 50%, transparent);
+  border-color: var(--border);
+  border-radius: 0.9rem;
+  background: linear-gradient(115deg, var(--pharmacy-blue-soft), var(--card) 66%);
 }
 
 .pharmacy-dashboard-hero::after {
   position: absolute;
   z-index: -1;
-  right: -2.5rem;
-  bottom: -4.5rem;
-  width: 13rem;
-  height: 13rem;
-  border: 1px solid color-mix(in oklab, var(--primary) 13%, transparent);
+  right: -3rem;
+  bottom: -5rem;
+  width: 14rem;
+  height: 14rem;
+  border: 1px solid color-mix(in oklab, var(--primary) 12%, transparent);
   border-radius: 50%;
   content: "";
-  box-shadow: 0 0 0 1.75rem color-mix(in oklab, var(--primary) 4%, transparent),
-    0 0 0 3.5rem color-mix(in oklab, var(--primary) 3%, transparent);
+  box-shadow: 0 0 0 1.5rem color-mix(in oklab, var(--primary) 4%, transparent),
+    0 0 0 3rem color-mix(in oklab, var(--primary) 2%, transparent);
   pointer-events: none;
 }
 
-.pharmaviyum-dashboard section > .rounded-2xl.border,
-.pharmaviyum-dashboard section > div.rounded-2xl.border {
-  border-color: color-mix(in oklab, var(--border) 82%, var(--primary));
-  box-shadow: 0 4px 18px -16px color-mix(in oklab, var(--foreground) 28%, transparent);
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-}
-
-.pharmaviyum-dashboard section > .rounded-2xl.border:hover,
-.pharmaviyum-dashboard section > div.rounded-2xl.border:hover {
-  border-color: var(--pharmacy-blue-border);
-  box-shadow: 0 12px 28px -24px color-mix(in oklab, var(--primary) 55%, transparent);
+.pharmaviyum-dashboard h1 {
+  letter-spacing: -0.035em;
 }
 
 .pharmaviyum-dashboard h2,
@@ -50,18 +40,64 @@
   letter-spacing: -0.015em;
 }
 
+.pharmaviyum-dashboard .space-y-6 > section {
+  min-width: 0;
+}
+
+.pharmaviyum-dashboard .space-y-6 > section > .rounded-2xl.border,
+.pharmaviyum-dashboard .space-y-6 > section > div.rounded-2xl.border,
+.pharmaviyum-dashboard .space-y-6 > section > div.grid > div.rounded-2xl.border {
+  border-color: var(--border);
+  border-radius: 0.85rem;
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 3%, transparent);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.pharmaviyum-dashboard .space-y-6 > section > .rounded-2xl.border:hover,
+.pharmaviyum-dashboard .space-y-6 > section > div.rounded-2xl.border:hover,
+.pharmaviyum-dashboard .space-y-6 > section > div.grid > div.rounded-2xl.border:hover {
+  border-color: var(--pharmacy-blue-border);
+  box-shadow: 0 5px 16px -12px color-mix(in oklab, var(--primary) 32%, transparent);
+}
+
+/* KPI scorecard: compact, high-contrast, and number-first. */
+.pharmaviyum-dashboard .space-y-6 > section:first-child > div.rounded-2xl.border {
+  position: relative;
+  overflow: hidden;
+  border-top: 2px solid color-mix(in oklab, var(--primary) 70%, var(--border));
+  background: linear-gradient(180deg, var(--pharmacy-blue-soft), var(--card) 54%);
+  box-shadow: 0 2px 5px -4px color-mix(in oklab, var(--foreground) 16%, transparent);
+}
+
+.pharmaviyum-dashboard .space-y-6 > section:first-child > div.rounded-2xl.border > div:first-child > div {
+  border: 1px solid color-mix(in oklab, var(--primary) 12%, transparent);
+  border-radius: 0.65rem;
+}
+
+.pharmaviyum-dashboard .space-y-6 > section:first-child > div.rounded-2xl.border > p:nth-of-type(2) {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+}
+
+/* Section headings should read like an operations console, not marketing cards. */
 .pharmaviyum-dashboard section > div.mb-3 {
-  padding-inline: 0.15rem;
+  padding-inline: 0.1rem;
 }
 
 .pharmaviyum-dashboard section > div.mb-3 h2 {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
 }
 
 .pharmaviyum-dashboard section > div.mb-3 p {
-  margin-top: 0.25rem;
-  line-height: 1.5;
+  margin-top: 0.2rem;
+  line-height: 1.45;
+  font-size: 0.75rem;
+}
+
+/* Tables: quiet headers, predictable numeric alignment, clear row scanning. */
+.pharmaviyum-dashboard table {
+  font-variant-numeric: tabular-nums;
 }
 
 .pharmaviyum-dashboard table thead {
@@ -70,9 +106,9 @@
 
 .pharmaviyum-dashboard table th {
   white-space: nowrap;
-  letter-spacing: 0.035em;
+  letter-spacing: 0.045em;
   text-transform: uppercase;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
 }
 
 .pharmaviyum-dashboard table tbody tr {
@@ -83,35 +119,62 @@
   background: color-mix(in oklab, var(--primary) 4%, transparent);
 }
 
+.pharmaviyum-dashboard .overflow-x-auto {
+  scrollbar-color: color-mix(in oklab, var(--primary) 28%, var(--muted)) transparent;
+  scrollbar-width: thin;
+}
+
+.pharmaviyum-dashboard details > summary {
+  border-radius: 0.35rem;
+}
+
+.pharmaviyum-dashboard details[open] > summary {
+  margin-bottom: 0.25rem;
+}
+
+.pharmaviyum-dashboard button,
+.pharmaviyum-dashboard summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pharmaviyum-dashboard button:focus-visible,
+.pharmaviyum-dashboard summary:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 3px;
+}
+
+@media (min-width: 640px) {
+  .pharmacy-dashboard-hero {
+    padding-bottom: 2.75rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .pharmacy-dashboard-hero {
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .pharmacy-dashboard-hero h1 {
+    font-size: clamp(1.55rem, 7vw, 1.9rem);
+    line-height: 1.15;
+  }
+
+  .pharmacy-dashboard-hero > p {
+    position: static;
+    margin-top: 0.25rem;
+  }
+
+  .pharmaviyum-dashboard table th,
+  .pharmaviyum-dashboard table td {
+    padding-inline: 0.75rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pharmaviyum-dashboard *,
   .pharmacy-dashboard-hero::after {
     transition: none !important;
     animation: none !important;
   }
-}
-
-@media (min-width: 640px) {
-  .pharmacy-dashboard-hero {
-    padding-bottom: 3.5rem;
-  }
-}
-
-/* The first row is the primary operational scorecard. */
-.pharmaviyum-dashboard > section:first-of-type > div.rounded-2xl.border {
-  position: relative;
-  overflow: hidden;
-  border-top: 3px solid color-mix(in oklab, var(--primary) 72%, var(--border));
-  background:
-    linear-gradient(180deg, color-mix(in oklab, var(--primary) 3%, var(--card)), var(--card) 58%);
-}
-
-.pharmaviyum-dashboard > section:first-of-type > div.rounded-2xl.border > div:first-child > div {
-  border: 1px solid color-mix(in oklab, var(--primary) 12%, transparent);
-  border-radius: 0.8rem;
-}
-
-.pharmaviyum-dashboard > section:first-of-type > div.rounded-2xl.border > p:nth-of-type(2) {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.035em;
 }

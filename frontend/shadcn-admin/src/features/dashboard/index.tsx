@@ -127,21 +127,21 @@ export function Dashboard() {
 
       <Main>
         <div className='pharmaviyum-dashboard'>
-          <div className='pharmacy-dashboard-hero mb-7 flex flex-col gap-5 rounded-2xl border p-5 sm:flex-row sm:items-end sm:justify-between sm:p-7'>
+          <div className='pharmacy-dashboard-hero mb-5 flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5'>
             <div className='max-w-2xl'>
-              <div className='mb-3 inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 text-xs font-semibold text-primary'>
+              <div className='mb-2 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-primary'>
                 <Activity className='size-3.5' />
-                PHARMACY OPERATIONS CENTER
+                Operations / Overview
               </div>
-              <h1 className='text-3xl font-bold tracking-tight sm:text-4xl'>
-                Pharmacy overview
+              <h1 className='text-2xl font-bold tracking-tight sm:text-3xl'>
+                Pharmacy operations
               </h1>
-              <p className='mt-2 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base'>
-                A live operational view of dispensing, stock availability, expiry exposure and the actions that need attention.
+              <p className='mt-1.5 max-w-xl text-sm leading-5 text-muted-foreground'>
+                Sales, stock availability, expiry risk and procurement priorities across your pharmacy.
               </p>
             </div>
             <div className='flex flex-wrap items-center gap-3'>
-              <span className='inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground'>
+              <span className='inline-flex items-center gap-2 rounded-md border bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground'>
                 <span className={loadError ? 'size-2 rounded-full bg-destructive' : summary ? 'size-2 rounded-full bg-emerald-500' : 'size-2 rounded-full bg-amber-500'} />
                 {loadError ? 'Connection issue' : isRefreshing ? 'Syncing ERP data' : summary ? 'ERP connected' : 'Waiting for data'}
               </span>
@@ -149,13 +149,13 @@ export function Dashboard() {
                 type='button'
                 onClick={loadSummary}
                 disabled={isRefreshing}
-                className='inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60'
+                className='inline-flex items-center gap-2 rounded-md bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60'
               >
                 <RefreshCw className={isRefreshing ? 'size-4 animate-spin' : 'size-4'} />
                 Refresh data
               </button>
             </div>
-            <p className='text-xs text-muted-foreground sm:absolute sm:bottom-3 sm:left-7'>
+            <p className='text-xs text-muted-foreground sm:absolute sm:bottom-2 sm:left-5'>
               {lastUpdated
                 ? 'Last successful sync ' + lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 : 'Operational indicators load from your ERP records'}
