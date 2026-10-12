@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
+import './dashboard.css'
 import {
   ArrowUpRight,
   Boxes,
   FileText,
   Pill,
   Receipt,
+  RefreshCw,
+  Activity,
   type LucideIcon,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/api-client'
@@ -106,18 +109,35 @@ export function Dashboard() {
       </Header>
 
       <Main>
-        <div className='mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between'>
-          <div>
-            <h1 className='text-2xl font-bold tracking-tight'>
-              Pharmacy Dashboard
+        <div className='pharmaviyum-dashboard'>
+        <div className='pharmacy-dashboard-hero mb-7 flex flex-col gap-5 rounded-2xl border p-5 sm:flex-row sm:items-end sm:justify-between sm:p-7'>
+          <div className='max-w-2xl'>
+            <div className='mb-3 inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 text-xs font-semibold text-primary'>
+              <Activity className='size-3.5' />
+              PHARMACY OPERATIONS CENTER
+            </div>
+            <h1 className='text-3xl font-bold tracking-tight sm:text-4xl'>
+              Pharmacy overview
             </h1>
-            <p className='text-muted-foreground'>
-              Pharmacy operations, performance, and workflow overview.
+            <p className='mt-2 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base'>
+              A real-time view of dispensing, stock availability, expiry exposure and operational priorities.
             </p>
           </div>
-          <span className='w-fit rounded-full border bg-muted/40 px-3 py-1 text-xs text-muted-foreground'>
-            {isRefreshing ? 'Refreshing…' : 'KPI live'} · refreshes every 30s
-          </span>
+          <div className='flex flex-wrap items-center gap-3'>
+            <span className='inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground'>
+              <span className={loadError ? 'size-2 rounded-full bg-destructive' : 'size-2 rounded-full bg-emerald-500'} />
+              {loadError ? 'Connection issue' : isRefreshing ? 'Syncing ERP data' : 'ERP data monitor'}
+            </span>
+            <button
+              type='button'
+              onClick={loadSummary}
+              disabled={isRefreshing}
+              className='inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60'
+            >
+              <RefreshCw className={isRefreshing ? 'size-4 animate-spin' : 'size-4'} />
+              Refresh data
+            </button>
+          </div>
         </div>
 
         {loadError && (
@@ -372,6 +392,7 @@ export function Dashboard() {
               </div>
             </div>
           </section>
+        </div>
         </div>
       </Main>
     </>
