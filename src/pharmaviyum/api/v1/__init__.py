@@ -3,8 +3,8 @@
 from fastapi import APIRouter
 
 from .ai import router as ai_router
-from .dashboard import router as dashboard_router
 from .auth import router as auth_router
+from .dashboard import router as dashboard_router
 from .drug_catalog import router as drug_catalog_router
 from .ingestion import router as ingestion_router
 from .monitoring import router as monitoring_router
