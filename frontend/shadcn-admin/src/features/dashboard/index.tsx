@@ -118,310 +118,310 @@ export function Dashboard() {
 
       <Main>
         <div className='pharmaviyum-dashboard'>
-        <div className='pharmacy-dashboard-hero mb-7 flex flex-col gap-5 rounded-2xl border p-5 sm:flex-row sm:items-end sm:justify-between sm:p-7'>
-          <div className='max-w-2xl'>
-            <div className='mb-3 inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 text-xs font-semibold text-primary'>
-              <Activity className='size-3.5' />
-              PHARMACY OPERATIONS CENTER
+          <div className='pharmacy-dashboard-hero mb-7 flex flex-col gap-5 rounded-2xl border p-5 sm:flex-row sm:items-end sm:justify-between sm:p-7'>
+            <div className='max-w-2xl'>
+              <div className='mb-3 inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 text-xs font-semibold text-primary'>
+                <Activity className='size-3.5' />
+                PHARMACY OPERATIONS CENTER
+              </div>
+              <h1 className='text-3xl font-bold tracking-tight sm:text-4xl'>
+                Pharmacy overview
+              </h1>
+              <p className='mt-2 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base'>
+                A real-time view of dispensing, stock availability, expiry exposure and operational priorities.
+              </p>
             </div>
-            <h1 className='text-3xl font-bold tracking-tight sm:text-4xl'>
-              Pharmacy overview
-            </h1>
-            <p className='mt-2 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base'>
-              A real-time view of dispensing, stock availability, expiry exposure and operational priorities.
+            <div className='flex flex-wrap items-center gap-3'>
+              <span className='inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground'>
+                <span className={loadError ? 'size-2 rounded-full bg-destructive' : 'size-2 rounded-full bg-emerald-500'} />
+                {loadError ? 'Connection issue' : isRefreshing ? 'Syncing ERP data' : 'ERP connected'}
+              </span>
+              <button
+                type='button'
+                onClick={loadSummary}
+                disabled={isRefreshing}
+                className='inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60'
+              >
+                <RefreshCw className={isRefreshing ? 'size-4 animate-spin' : 'size-4'} />
+                Refresh data
+              </button>
+            </div>
+            <p className='text-xs text-muted-foreground sm:absolute sm:bottom-3 sm:left-7'>
+              {lastUpdated
+                ? 'Last successful sync ' + lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : 'Operational indicators load from your ERP records'}
             </p>
           </div>
-          <div className='flex flex-wrap items-center gap-3'>
-            <span className='inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground'>
-              <span className={loadError ? 'size-2 rounded-full bg-destructive' : 'size-2 rounded-full bg-emerald-500'} />
-              {loadError ? 'Connection issue' : isRefreshing ? 'Syncing ERP data' : 'ERP connected'}
-            </span>
-            <button
-              type='button'
-              onClick={loadSummary}
-              disabled={isRefreshing}
-              className='inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60'
-            >
-              <RefreshCw className={isRefreshing ? 'size-4 animate-spin' : 'size-4'} />
-              Refresh data
-            </button>
-          </div>
-          <p className='text-xs text-muted-foreground sm:absolute sm:bottom-3 sm:left-7'>
-            {lastUpdated
-              ? 'Last successful sync ' + lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-              : 'Operational indicators load from your ERP records'}
-          </p>
-        </div>
 
-        {loadError && (
-          <div className='flex flex-col gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between'>
-            <div>
-              <p className='font-semibold text-destructive'>
-                {summary ? 'Showing the last successfully loaded data' : 'Dashboard data could not be loaded'}
-              </p>
-              <p className='mt-1 text-muted-foreground'>
-                Check the API connection or your session, then retry. Data is not being replaced with demo values.
-              </p>
-            </div>
-            <button
-              type='button'
-              onClick={loadSummary}
-              disabled={isRefreshing}
-              className='inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border bg-background px-3 py-2 text-xs font-semibold transition hover:bg-muted disabled:opacity-60'
-            >
-              <RefreshCw className={isRefreshing ? 'size-3.5 animate-spin' : 'size-3.5'} />
-              Retry connection
-            </button>
-          </div>
-        )}
-
-        <div className='space-y-6'>
-          <section className='grid gap-4 md:grid-cols-3'>
-            <KpiCard
-              label='Sales today'
-              value={summary ? formatAmount(summary.sales.today) : '—'}
-              detail={summary ? 'Realized dispensing / POS sales' : 'Awaiting API data'}
-              icon={Receipt}
-            />
-            <KpiCard
-              label='Revenue this month'
-              value={summary ? formatAmount(summary.revenue.month) : '—'}
-              detail={summary ? 'Realized revenue · current month' : 'Awaiting API data'}
-              icon={Pill}
-            />
-            <KpiCard
-              label='Stockouts'
-              value={summary ? summary.attention.stockout_items.toLocaleString() : '—'}
-              detail={summary ? 'Products with no available stock' : 'Awaiting API data'}
-              icon={Boxes}
-            />
-          </section>
-
-          <section className='grid gap-4 xl:grid-cols-2'>
-            <DonutCard
-              title='Sales mix'
-              total={formatAmount(summary?.sales.by_category.reduce((sum, item) => sum + item.revenue, 0) ?? 0)}
-              items={toPercentItems(summary?.sales.by_category.map((item) => [item.category, item.revenue] as [string, number]) ?? [])}
-            />
-            <DonutCard
-              title='Expiry control'
-              total={String(summary?.inventory.expiry_tracked ?? 0)}
-              items={toPercentItems([
-                ['Red · expired / ≤ 3 months', summary?.inventory.expiry_red ?? 0],
-                ['Yellow · > 3–12 months', summary?.inventory.expiry_yellow ?? 0],
-                ['Green · > 12 months', summary?.inventory.expiry_green ?? 0],
-              ])}
-            />
-          </section>
-
-          <section>
-            <div className='mb-3'>
-              <h2 className='font-semibold'>Operational Health</h2>
-              <p className='text-xs text-muted-foreground'>At-a-glance signals for daily pharmacy management.</p>
-            </div>
-            <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
-              <CircularMetricCard
-                label='Order completion'
-                value={ratio(summary?.orders.completed_month ?? 0, summary?.orders.month ?? 0)}
-                detail='Completed / orders this month'
-              />
-              <CircularMetricCard
-                label='Availability health'
-                value={ratio(
-                  Math.max(0, (summary?.inventory.items ?? 0) - (summary?.inventory.low_stock ?? 0)),
-                  summary?.inventory.items ?? 0
-                )}
-                detail='Inventory records above reorder level'
-              />
-              <CircularMetricCard
-                label='Expiry coverage'
-                value={ratio(summary?.inventory.expiry_green ?? 0, summary?.inventory.expiry_tracked ?? 0)}
-                detail='Tracked records with > 12 months remaining'
-              />
-              <CircularMetricCard
-                label='Rx share'
-                value={ratio(
-                  summary?.sales.by_category.find((item) => item.category === 'Rx')?.revenue ?? 0,
-                  summary?.sales.by_category.reduce((sum, item) => sum + item.revenue, 0) ?? 0
-                )}
-                detail='Prescription sales share'
-              />
-            </div>
-          </section>
-
-          <section className='grid gap-4 xl:grid-cols-3'>
-            <PipelineCard
-              title='Dispensing / POS'
-              icon={Receipt}
-              stages={[
-                ['Orders', summary?.orders.month ?? 0],
-                ['Completed', summary?.orders.completed_month ?? 0],
-                ['Sales today', summary?.sales.today ?? 0, true],
-              ]}
-            />
-            <PipelineCard
-              title='Prescriptions'
-              icon={FileText}
-              stages={[
-                ['Rx this month', summary?.prescriptions.month ?? 0],
-                ['Orders', summary?.orders.month ?? 0],
-                ['Completion', ratio(summary?.orders.completed_month ?? 0, summary?.orders.month ?? 0)],
-              ]}
-            />
-            <PipelineCard
-              title='Inventory control'
-              icon={Boxes}
-              stages={[
-                ['Stock value', summary?.inventory.retail_value ?? 0, true],
-                ['Low stock', summary?.inventory.low_stock ?? 0],
-                ['Expiry risk', (summary?.inventory.expiry_red ?? 0) + (summary?.inventory.expiry_yellow ?? 0)],
-              ]}
-            />
-          </section>
-
-          <section>
-            <div className='mb-3'>
-              <h2 className='font-semibold'>Inventory Control</h2>
-              <p className='text-xs text-muted-foreground'>Runway and stock exposure based on realized dispensing.</p>
-            </div>
-            <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
-              <OperationalMetric
-                label='Days on hand'
-                value={summary?.inventory.days_on_hand == null ? '—' : summary.inventory.days_on_hand + 'd'}
-                detail={summary ? 'Available stock ÷ 30-day pack demand' : 'Awaiting API data'}
-              />
-              <OperationalMetric
-                label='30-day demand'
-                value={summary ? summary.inventory.demand_30d_packs.toLocaleString() : '—'}
-                detail='Dispensed packs in the last 30 days'
-              />
-              <OperationalMetric
-                label='Expired stock value'
-                value={summary ? formatAmount(summary.inventory.expired_value) : '—'}
-                detail='Available stock already past expiry'
-              />
-              <OperationalMetric
-                label='Low-stock products'
-                value={summary ? summary.inventory.low_stock.toLocaleString() : '—'}
-                detail='At or below configured reorder level'
-              />
-            </div>
-          </section>
-
-          <section>
-            <div className='mb-3'>
-              <h2 className='font-semibold'>Inventory Attention</h2>
-              <p className='text-xs text-muted-foreground'>Exceptions that can affect availability, working capital, or expiry losses.</p>
-            </div>
-            <div className='grid gap-4 xl:grid-cols-3'>
-              <AttentionCard
-                title='Stockouts'
-                value={summary?.attention.stockout_items ?? 0}
-                detail='Products with zero available stock'
-                tone='critical'
-              />
-              <AttentionCard
-                title='Near-expiry value'
-                value={summary?.attention.near_expiry_value ?? 0}
-                detail='Stock value expiring within 12 months'
-                tone='warning'
-                amount
-              />
-              <AttentionCard
-                title='Slow-moving stock'
-                value={summary?.attention.slow_moving_stock_value ?? 0}
-                detail={summary ? `${summary.attention.slow_moving_items} products with no sales in 90 days` : 'Awaiting API data'}
-                tone='warning'
-                amount
-              />
-            </div>
-            <div className='mt-4 rounded-2xl border bg-card p-5 shadow-sm'>
-              <div className='mb-4 flex items-center justify-between gap-3'>
-                <div>
-                  <h3 className='font-semibold'>Slow-moving products</h3>
-                  <p className='text-xs text-muted-foreground'>Highest inventory value with no sales in the last 90 days.</p>
-                </div>
-                <span className='rounded-full border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground'>90 days</span>
-              </div>
-              <div className='space-y-2'>
-                {(summary?.attention.slow_moving ?? []).map((item) => (
-                  <div key={item.id} className='flex items-center gap-3 rounded-xl bg-muted/30 p-3'>
-                    <div className='min-w-0 flex-1'>
-                      <p className='truncate text-sm font-medium'>{item.name}</p>
-                      <p className='text-xs text-muted-foreground'>{item.stock.toLocaleString()} units · {item.packs_90d} packs sold</p>
-                    </div>
-                    <span className='text-sm font-semibold'>{formatAmount(item.stock_value)}</span>
-                  </div>
-                ))}
-                {summary && summary.attention.slow_moving.length === 0 && (
-                  <p className='py-4 text-center text-xs text-muted-foreground'>No slow-moving stock detected.</p>
-                )}
-              </div>
-            </div>
-          </section>
-
-          <section>
-            <div className='mb-3'>
-              <h2 className='font-semibold'>Procurement Attention</h2>
-              <p className='text-xs text-muted-foreground'>Products at or below their configured reorder level, prioritized by available stock.</p>
-            </div>
-            <div className='rounded-2xl border bg-card p-5 shadow-sm'>
-              <div className='space-y-2'>
-                {(summary?.reorder_attention ?? []).map((item) => (
-                  <div key={item.id} className='flex flex-wrap items-center gap-3 rounded-xl bg-muted/30 p-3'>
-                    <div className='min-w-0 flex-1'>
-                      <p className='truncate text-sm font-medium'>{item.name}</p>
-                      <p className='text-xs text-muted-foreground'>{item.available_packs} packs available · reorder level {item.reorder_level} units · {item.packs_30d} packs / 30d</p>
-                    </div>
-                    <div className='text-right'>
-                      <p className='text-sm font-semibold'>{item.days_on_hand == null ? 'No demand' : item.days_on_hand + 'd'}</p>
-                      <p className='text-[11px] text-muted-foreground'>{formatAmount(item.stock_value)} stock value</p>
-                    </div>
-                  </div>
-                ))}
-                {summary && summary.reorder_attention.length === 0 && (
-                  <p className='py-4 text-center text-xs text-muted-foreground'>No products currently require procurement attention.</p>
-                )}
-              </div>
-            </div>
-          </section>
-
-          <section>
-            <DataTable
-              title='Top dispensed products'
-              columns={['Product', 'Packs', 'Revenue', 'Available stock']}
-              rows={(summary?.top_products ?? []).map((item) => [
-                item.name,
-                item.packs.toLocaleString(),
-                formatAmount(item.revenue),
-                item.stock.toLocaleString(),
-              ])}
-            />
-          </section>
-
-          <section>
-            <div className='mb-3'>
-              <h2 className='font-semibold'>Patient Overview</h2>
-              <p className='text-xs text-muted-foreground'>20 patients with recent dispensing activity, their key metrics, conditions, and medications.</p>
-            </div>
-            <PatientOverview summary={summary} />
-          </section>
-
-          <section className='rounded-2xl border bg-muted/20 p-5'>
-            <div className='flex items-start gap-3'>
-              <div className='rounded-lg bg-primary/10 p-2 text-primary'>
-                <Pill className='size-5' />
-              </div>
+          {loadError && (
+            <div className='flex flex-col gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between'>
               <div>
-                <h2 className='font-semibold'>Mortarium AI</h2>
-                <p className='mt-1 text-sm text-muted-foreground'>
-                  Mortarium AI metrics remain isolated from operational KPI calculations.
-                  The dashboard uses ERP records for business metrics and keeps AI telemetry separate.
+                <p className='font-semibold text-destructive'>
+                  {summary ? 'Showing the last successfully loaded data' : 'Dashboard data could not be loaded'}
+                </p>
+                <p className='mt-1 text-muted-foreground'>
+                  Check the API connection or your session, then retry. Data is not being replaced with demo values.
                 </p>
               </div>
+              <button
+                type='button'
+                onClick={loadSummary}
+                disabled={isRefreshing}
+                className='inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border bg-background px-3 py-2 text-xs font-semibold transition hover:bg-muted disabled:opacity-60'
+              >
+                <RefreshCw className={isRefreshing ? 'size-3.5 animate-spin' : 'size-3.5'} />
+                Retry connection
+              </button>
             </div>
-          </section>
-        </div>
+          )}
+
+          <div className='space-y-6'>
+            <section className='grid gap-4 md:grid-cols-3'>
+              <KpiCard
+                label='Sales today'
+                value={summary ? formatAmount(summary.sales.today) : '—'}
+                detail={summary ? 'Realized dispensing / POS sales' : 'Awaiting API data'}
+                icon={Receipt}
+              />
+              <KpiCard
+                label='Revenue this month'
+                value={summary ? formatAmount(summary.revenue.month) : '—'}
+                detail={summary ? 'Realized revenue · current month' : 'Awaiting API data'}
+                icon={Pill}
+              />
+              <KpiCard
+                label='Stockouts'
+                value={summary ? summary.attention.stockout_items.toLocaleString() : '—'}
+                detail={summary ? 'Products with no available stock' : 'Awaiting API data'}
+                icon={Boxes}
+              />
+            </section>
+
+            <section className='grid gap-4 xl:grid-cols-2'>
+              <DonutCard
+                title='Sales mix'
+                total={formatAmount(summary?.sales.by_category.reduce((sum, item) => sum + item.revenue, 0) ?? 0)}
+                items={toPercentItems(summary?.sales.by_category.map((item) => [item.category, item.revenue] as [string, number]) ?? [])}
+              />
+              <DonutCard
+                title='Expiry control'
+                total={String(summary?.inventory.expiry_tracked ?? 0)}
+                items={toPercentItems([
+                  ['Red · expired / ≤ 3 months', summary?.inventory.expiry_red ?? 0],
+                  ['Yellow · > 3–12 months', summary?.inventory.expiry_yellow ?? 0],
+                  ['Green · > 12 months', summary?.inventory.expiry_green ?? 0],
+                ])}
+              />
+            </section>
+
+            <section>
+              <div className='mb-3'>
+                <h2 className='font-semibold'>Operational Health</h2>
+                <p className='text-xs text-muted-foreground'>At-a-glance signals for daily pharmacy management.</p>
+              </div>
+              <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
+                <CircularMetricCard
+                  label='Order completion'
+                  value={ratio(summary?.orders.completed_month ?? 0, summary?.orders.month ?? 0)}
+                  detail='Completed / orders this month'
+                />
+                <CircularMetricCard
+                  label='Availability health'
+                  value={ratio(
+                    Math.max(0, (summary?.inventory.items ?? 0) - (summary?.inventory.low_stock ?? 0)),
+                    summary?.inventory.items ?? 0
+                  )}
+                  detail='Inventory records above reorder level'
+                />
+                <CircularMetricCard
+                  label='Expiry coverage'
+                  value={ratio(summary?.inventory.expiry_green ?? 0, summary?.inventory.expiry_tracked ?? 0)}
+                  detail='Tracked records with > 12 months remaining'
+                />
+                <CircularMetricCard
+                  label='Rx share'
+                  value={ratio(
+                    summary?.sales.by_category.find((item) => item.category === 'Rx')?.revenue ?? 0,
+                    summary?.sales.by_category.reduce((sum, item) => sum + item.revenue, 0) ?? 0
+                  )}
+                  detail='Prescription sales share'
+                />
+              </div>
+            </section>
+
+            <section className='grid gap-4 xl:grid-cols-3'>
+              <PipelineCard
+                title='Dispensing / POS'
+                icon={Receipt}
+                stages={[
+                  ['Orders', summary?.orders.month ?? 0],
+                  ['Completed', summary?.orders.completed_month ?? 0],
+                  ['Sales today', summary?.sales.today ?? 0, true],
+                ]}
+              />
+              <PipelineCard
+                title='Prescriptions'
+                icon={FileText}
+                stages={[
+                  ['Rx this month', summary?.prescriptions.month ?? 0],
+                  ['Orders', summary?.orders.month ?? 0],
+                  ['Completion', ratio(summary?.orders.completed_month ?? 0, summary?.orders.month ?? 0)],
+                ]}
+              />
+              <PipelineCard
+                title='Inventory control'
+                icon={Boxes}
+                stages={[
+                  ['Stock value', summary?.inventory.retail_value ?? 0, true],
+                  ['Low stock', summary?.inventory.low_stock ?? 0],
+                  ['Expiry risk', (summary?.inventory.expiry_red ?? 0) + (summary?.inventory.expiry_yellow ?? 0)],
+                ]}
+              />
+            </section>
+
+            <section>
+              <div className='mb-3'>
+                <h2 className='font-semibold'>Inventory Control</h2>
+                <p className='text-xs text-muted-foreground'>Runway and stock exposure based on realized dispensing.</p>
+              </div>
+              <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
+                <OperationalMetric
+                  label='Days on hand'
+                  value={summary?.inventory.days_on_hand == null ? '—' : summary.inventory.days_on_hand + 'd'}
+                  detail={summary ? 'Available stock ÷ 30-day pack demand' : 'Awaiting API data'}
+                />
+                <OperationalMetric
+                  label='30-day demand'
+                  value={summary ? summary.inventory.demand_30d_packs.toLocaleString() : '—'}
+                  detail='Dispensed packs in the last 30 days'
+                />
+                <OperationalMetric
+                  label='Expired stock value'
+                  value={summary ? formatAmount(summary.inventory.expired_value) : '—'}
+                  detail='Available stock already past expiry'
+                />
+                <OperationalMetric
+                  label='Low-stock products'
+                  value={summary ? summary.inventory.low_stock.toLocaleString() : '—'}
+                  detail='At or below configured reorder level'
+                />
+              </div>
+            </section>
+
+            <section>
+              <div className='mb-3'>
+                <h2 className='font-semibold'>Inventory Attention</h2>
+                <p className='text-xs text-muted-foreground'>Exceptions that can affect availability, working capital, or expiry losses.</p>
+              </div>
+              <div className='grid gap-4 xl:grid-cols-3'>
+                <AttentionCard
+                  title='Stockouts'
+                  value={summary?.attention.stockout_items ?? 0}
+                  detail='Products with zero available stock'
+                  tone='critical'
+                />
+                <AttentionCard
+                  title='Near-expiry value'
+                  value={summary?.attention.near_expiry_value ?? 0}
+                  detail='Stock value expiring within 12 months'
+                  tone='warning'
+                  amount
+                />
+                <AttentionCard
+                  title='Slow-moving stock'
+                  value={summary?.attention.slow_moving_stock_value ?? 0}
+                  detail={summary ? `${summary.attention.slow_moving_items} products with no sales in 90 days` : 'Awaiting API data'}
+                  tone='warning'
+                  amount
+                />
+              </div>
+              <div className='mt-4 rounded-2xl border bg-card p-5 shadow-sm'>
+                <div className='mb-4 flex items-center justify-between gap-3'>
+                  <div>
+                    <h3 className='font-semibold'>Slow-moving products</h3>
+                    <p className='text-xs text-muted-foreground'>Highest inventory value with no sales in the last 90 days.</p>
+                  </div>
+                  <span className='rounded-full border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground'>90 days</span>
+                </div>
+                <div className='space-y-2'>
+                  {(summary?.attention.slow_moving ?? []).map((item) => (
+                    <div key={item.id} className='flex items-center gap-3 rounded-xl bg-muted/30 p-3'>
+                      <div className='min-w-0 flex-1'>
+                        <p className='truncate text-sm font-medium'>{item.name}</p>
+                        <p className='text-xs text-muted-foreground'>{item.stock.toLocaleString()} units · {item.packs_90d} packs sold</p>
+                      </div>
+                      <span className='text-sm font-semibold'>{formatAmount(item.stock_value)}</span>
+                    </div>
+                  ))}
+                  {summary && summary.attention.slow_moving.length === 0 && (
+                    <p className='py-4 text-center text-xs text-muted-foreground'>No slow-moving stock detected.</p>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <div className='mb-3'>
+                <h2 className='font-semibold'>Procurement Attention</h2>
+                <p className='text-xs text-muted-foreground'>Products at or below their configured reorder level, prioritized by available stock.</p>
+              </div>
+              <div className='rounded-2xl border bg-card p-5 shadow-sm'>
+                <div className='space-y-2'>
+                  {(summary?.reorder_attention ?? []).map((item) => (
+                    <div key={item.id} className='flex flex-wrap items-center gap-3 rounded-xl bg-muted/30 p-3'>
+                      <div className='min-w-0 flex-1'>
+                        <p className='truncate text-sm font-medium'>{item.name}</p>
+                        <p className='text-xs text-muted-foreground'>{item.available_packs} packs available · reorder level {item.reorder_level} units · {item.packs_30d} packs / 30d</p>
+                      </div>
+                      <div className='text-right'>
+                        <p className='text-sm font-semibold'>{item.days_on_hand == null ? 'No demand' : item.days_on_hand + 'd'}</p>
+                        <p className='text-[11px] text-muted-foreground'>{formatAmount(item.stock_value)} stock value</p>
+                      </div>
+                    </div>
+                  ))}
+                  {summary && summary.reorder_attention.length === 0 && (
+                    <p className='py-4 text-center text-xs text-muted-foreground'>No products currently require procurement attention.</p>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <DataTable
+                title='Top dispensed products'
+                columns={['Product', 'Packs', 'Revenue', 'Available stock']}
+                rows={(summary?.top_products ?? []).map((item) => [
+                  item.name,
+                  item.packs.toLocaleString(),
+                  formatAmount(item.revenue),
+                  item.stock.toLocaleString(),
+                ])}
+              />
+            </section>
+
+            <section>
+              <div className='mb-3'>
+                <h2 className='font-semibold'>Patient Overview</h2>
+                <p className='text-xs text-muted-foreground'>20 patients with recent dispensing activity, their key metrics, conditions, and medications.</p>
+              </div>
+              <PatientOverview summary={summary} />
+            </section>
+
+            <section className='rounded-2xl border bg-muted/20 p-5'>
+              <div className='flex items-start gap-3'>
+                <div className='rounded-lg bg-primary/10 p-2 text-primary'>
+                  <Pill className='size-5' />
+                </div>
+                <div>
+                  <h2 className='font-semibold'>Mortarium AI</h2>
+                  <p className='mt-1 text-sm text-muted-foreground'>
+                    Mortarium AI metrics remain isolated from operational KPI calculations.
+                    The dashboard uses ERP records for business metrics and keeps AI telemetry separate.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
       </Main>
     </>
