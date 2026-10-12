@@ -509,6 +509,7 @@ jobs:
           python-version: '3.14.7'
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip uv
           uv sync --frozen
       - name: Run unit tests with coverage
         run: |
@@ -540,6 +541,7 @@ jobs:
           python-version: '3.14.7'
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip uv
           uv sync --frozen
       - name: Run integration tests
         run: |
