@@ -38,7 +38,11 @@ export function NavGroup({ title, items }: NavGroupProps) {
   const href = useLocation({ select: (location) => location.href })
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>{title}</SidebarGroupLabel>
+      <SidebarGroupLabel
+        className='px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80'
+      >
+        {title}
+      </SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
           const key = `${item.title}-${item.url}`
@@ -64,16 +68,24 @@ function NavBadge({ children }: { children: ReactNode }) {
 
 function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
   const { setOpenMobile } = useSidebar()
+  const isActive = checkIsActive(href, item)
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         asChild
-        isActive={checkIsActive(href, item)}
+        isActive={isActive}
         tooltip={item.title}
       >
         <Link to={item.url} onClick={() => setOpenMobile(false)}>
           {item.icon && (
-            <span className='flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground [&>svg]:size-4'>
+            <span
+              className={[
+                'flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 [&>svg]:size-[18px]',
+                isActive
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-primary/10 text-primary group-hover:bg-primary/15',
+              ].join(' ')}
+            >
               <item.icon />
             </span>
           )}
@@ -93,6 +105,7 @@ function SidebarMenuCollapsible({
   href: string
 }) {
   const { setOpenMobile } = useSidebar()
+  const isActive = checkIsActive(href, item, true)
   return (
     <Collapsible
       asChild
@@ -101,9 +114,16 @@ function SidebarMenuCollapsible({
     >
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
-          <SidebarMenuButton tooltip={item.title}>
+          <SidebarMenuButton tooltip={item.title} isActive={isActive}>
             {item.icon && (
-              <span className='flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground [&>svg]:size-4'>
+              <span
+                className={[
+                  'flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 [&>svg]:size-[18px]',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-primary/10 text-primary group-hover:bg-primary/15',
+                ].join(' ')}
+              >
                 <item.icon />
               </span>
             )}
@@ -122,7 +142,14 @@ function SidebarMenuCollapsible({
                 >
                   <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
                     {subItem.icon && (
-                      <span className='flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground [&>svg]:size-3.5'>
+                      <span
+                        className={[
+                          'flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 [&>svg]:size-4',
+                          checkIsActive(href, subItem)
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'bg-primary/10 text-primary group-hover:bg-primary/15',
+                        ].join(' ')}
+                      >
                         <subItem.icon />
                       </span>
                     )}
@@ -146,16 +173,28 @@ function SidebarMenuCollapsedDropdown({
   item: NavCollapsible
   href: string
 }) {
+  const isActive = checkIsActive(href, item, true)
+
   return (
     <SidebarMenuItem>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <SidebarMenuButton
-            tooltip={item.title}
-            isActive={checkIsActive(href, item)}
-          >
-            {item.icon && <item.icon className='text-primary' />}
-            <span className='font-semibold text-black dark:text-white'>{item.title}</span>
+          <SidebarMenuButton tooltip={item.title} isActive={isActive}>
+            {item.icon && (
+              <span
+                className={[
+                  'flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 [&>svg]:size-[18px]',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-primary/10 text-primary group-hover:bg-primary/15',
+                ].join(' ')}
+              >
+                <item.icon />
+              </span>
+            )}
+            <span className='font-semibold text-black dark:text-white'>
+              {item.title}
+            </span>
             {item.badge && <NavBadge>{item.badge}</NavBadge>}
             <ChevronRight className='ms-auto text-primary transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90' />
           </SidebarMenuButton>
@@ -165,30 +204,42 @@ function SidebarMenuCollapsedDropdown({
             {item.title} {item.badge ? `(${item.badge})` : ''}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {item.items.map((sub) => (
-            <DropdownMenuItem key={`${sub.title}-${sub.url}`} asChild>
-              <Link
-                to={sub.url}
-                className={`${checkIsActive(href, sub) ? 'bg-secondary' : ''}`}
-              >
-                {sub.icon && (
-                  <span className='flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground [&>svg]:size-3.5'>
-                    <sub.icon />
+          {item.items.map((sub) => {
+            const isSubActive = checkIsActive(href, sub)
+
+            return (
+              <DropdownMenuItem key={`${sub.title}-${sub.url}`} asChild>
+                <Link
+                  to={sub.url}
+                  className={isSubActive ? 'bg-secondary' : ''}
+                >
+                  {sub.icon && (
+                    <span
+                      className={[
+                        'flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 [&>svg]:size-4',
+                        isSubActive
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'bg-primary/10 text-primary',
+                      ].join(' ')}
+                    >
+                      <sub.icon />
+                    </span>
+                  )}
+                  <span className='max-w-52 text-wrap font-semibold text-black dark:text-white'>
+                    {sub.title}
                   </span>
-                )}
-                <span className='max-w-52 text-wrap font-semibold text-black dark:text-white'>{sub.title}</span>
-                {sub.badge && (
-                  <span className='ms-auto text-xs'>{sub.badge}</span>
-                )}
-              </Link>
-            </DropdownMenuItem>
-          ))}
+                  {sub.badge && (
+                    <span className='ms-auto text-xs'>{sub.badge}</span>
+                  )}
+                </Link>
+              </DropdownMenuItem>
+            )
+          })}
         </DropdownMenuContent>
       </DropdownMenu>
     </SidebarMenuItem>
   )
 }
-
 function checkIsActive(href: string, item: NavItem, mainNav = false) {
   return (
     href === item.url || // /endpint?search=param
