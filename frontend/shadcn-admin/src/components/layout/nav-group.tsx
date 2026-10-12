@@ -37,13 +37,11 @@ export function NavGroup({ title, items }: NavGroupProps) {
   const { state, isMobile } = useSidebar()
   const href = useLocation({ select: (location) => location.href })
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel
-        className='px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80'
-      >
+    <SidebarGroup className='px-2 py-1.5'>
+      <SidebarGroupLabel className='h-7 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/75'>
         {title}
       </SidebarGroupLabel>
-      <SidebarMenu>
+      <SidebarMenu className='gap-1'>
         {items.map((item) => {
           const key = `${item.title}-${item.url}`
 
@@ -63,7 +61,37 @@ export function NavGroup({ title, items }: NavGroupProps) {
 }
 
 function NavBadge({ children }: { children: ReactNode }) {
-  return <Badge className='rounded-full px-1 py-0 text-xs'>{children}</Badge>
+  return (
+    <Badge className='ms-auto rounded-md border border-primary/15 bg-primary/10 px-1.5 py-0 text-[10px] font-bold text-primary shadow-none'>
+      {children}
+    </Badge>
+  )
+}
+
+function NavIcon({
+  icon: Icon,
+  active = false,
+  size = 'md',
+}: {
+  icon?: React.ElementType
+  active?: boolean
+  size?: 'sm' | 'md'
+}) {
+  if (!Icon) return null
+
+  return (
+    <span
+      className={[
+        'flex shrink-0 items-center justify-center rounded-lg transition-colors duration-150',
+        size === 'sm' ? 'size-7 [&>svg]:size-4' : 'size-8 [&>svg]:size-[18px]',
+        active
+          ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+          : 'bg-transparent text-muted-foreground group-hover/menu-button:bg-primary/10 group-hover/menu-button:text-primary',
+      ].join(' ')}
+    >
+      <Icon />
+    </span>
+  )
 }
 
 function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
@@ -75,21 +103,18 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
         asChild
         isActive={isActive}
         tooltip={item.title}
+        className={[
+          'relative h-10 gap-2.5 rounded-xl px-2.5 transition-all duration-150',
+          isActive
+            ? 'bg-primary/10 text-foreground shadow-none hover:bg-primary/15 before:absolute before:inset-y-2 before:start-0 before:w-[3px] before:rounded-full before:bg-primary'
+            : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+        ].join(' ')}
       >
         <Link to={item.url} onClick={() => setOpenMobile(false)}>
-          {item.icon && (
-            <span
-              className={[
-                'flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 [&>svg]:size-[18px]',
-                isActive
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-primary/10 text-primary group-hover:bg-primary/15',
-              ].join(' ')}
-            >
-              <item.icon />
-            </span>
-          )}
-          <span className='font-semibold text-black dark:text-white'>{item.title}</span>
+          <NavIcon icon={item.icon} active={isActive} />
+          <span className='min-w-0 truncate text-[13px] font-semibold text-foreground'>
+            {item.title}
+          </span>
           {item.badge && <NavBadge>{item.badge}</NavBadge>}
         </Link>
       </SidebarMenuButton>
@@ -114,51 +139,51 @@ function SidebarMenuCollapsible({
     >
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
-          <SidebarMenuButton tooltip={item.title} isActive={isActive}>
-            {item.icon && (
-              <span
-                className={[
-                  'flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 [&>svg]:size-[18px]',
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-primary/10 text-primary group-hover:bg-primary/15',
-                ].join(' ')}
-              >
-                <item.icon />
-              </span>
-            )}
-            <span className='font-semibold text-black dark:text-white'>{item.title}</span>
+          <SidebarMenuButton
+            tooltip={item.title}
+            isActive={isActive}
+            className={[
+              'h-10 gap-2.5 rounded-xl px-2.5 transition-all duration-150',
+              isActive
+                ? 'bg-primary/10 text-foreground hover:bg-primary/15'
+                : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+            ].join(' ')}
+          >
+            <NavIcon icon={item.icon} active={isActive} />
+            <span className='min-w-0 truncate text-[13px] font-semibold text-foreground'>
+              {item.title}
+            </span>
             {item.badge && <NavBadge>{item.badge}</NavBadge>}
-            <ChevronRight className='ms-auto text-primary transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 rtl:rotate-180' />
+            <ChevronRight className='ms-auto size-4 text-muted-foreground/70 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 rtl:rotate-180' />
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent className='CollapsibleContent'>
-          <SidebarMenuSub>
-            {item.items.map((subItem) => (
-              <SidebarMenuSubItem key={subItem.title}>
-                <SidebarMenuSubButton
-                  asChild
-                  isActive={checkIsActive(href, subItem)}
-                >
-                  <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
-                    {subItem.icon && (
-                      <span
-                        className={[
-                          'flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 [&>svg]:size-4',
-                          checkIsActive(href, subItem)
-                            ? 'bg-primary text-primary-foreground shadow-sm'
-                            : 'bg-primary/10 text-primary group-hover:bg-primary/15',
-                        ].join(' ')}
-                      >
-                        <subItem.icon />
+          <SidebarMenuSub className='ms-5 mt-1 gap-1 border-sidebar-border/80 ps-3 py-1'>
+            {item.items.map((subItem) => {
+              const isSubActive = checkIsActive(href, subItem)
+              return (
+                <SidebarMenuSubItem key={subItem.title}>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isSubActive}
+                    className={[
+                      'h-9 gap-2 rounded-lg px-2.5 transition-colors',
+                      isSubActive
+                        ? 'bg-primary/10 font-semibold text-foreground'
+                        : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+                    ].join(' ')}
+                  >
+                    <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
+                      <NavIcon icon={subItem.icon} active={isSubActive} size='sm' />
+                      <span className='min-w-0 truncate text-[12px] font-medium'>
+                        {subItem.title}
                       </span>
-                    )}
-                    <span className='font-semibold text-black dark:text-white'>{subItem.title}</span>
-                    {subItem.badge && <NavBadge>{subItem.badge}</NavBadge>}
-                  </Link>
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-            ))}
+                      {subItem.badge && <NavBadge>{subItem.badge}</NavBadge>}
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              )
+            })}
           </SidebarMenuSub>
         </CollapsibleContent>
       </SidebarMenuItem>
@@ -179,28 +204,26 @@ function SidebarMenuCollapsedDropdown({
     <SidebarMenuItem>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <SidebarMenuButton tooltip={item.title} isActive={isActive}>
-            {item.icon && (
-              <span
-                className={[
-                  'flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 [&>svg]:size-[18px]',
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-primary/10 text-primary group-hover:bg-primary/15',
-                ].join(' ')}
-              >
-                <item.icon />
-              </span>
-            )}
-            <span className='font-semibold text-black dark:text-white'>
+          <SidebarMenuButton
+            tooltip={item.title}
+            isActive={isActive}
+            className={[
+              'h-10 gap-2.5 rounded-xl px-2.5 transition-all duration-150',
+              isActive
+                ? 'bg-primary/10 text-foreground hover:bg-primary/15'
+                : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+            ].join(' ')}
+          >
+            <NavIcon icon={item.icon} active={isActive} />
+            <span className='min-w-0 truncate text-[13px] font-semibold text-foreground'>
               {item.title}
             </span>
             {item.badge && <NavBadge>{item.badge}</NavBadge>}
-            <ChevronRight className='ms-auto text-primary transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90' />
+            <ChevronRight className='ms-auto size-4 text-muted-foreground/70' />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
-        <DropdownMenuContent side='right' align='start' sideOffset={4}>
-          <DropdownMenuLabel>
+        <DropdownMenuContent side='right' align='start' sideOffset={8} className='min-w-52 rounded-xl p-1.5 shadow-lg'>
+          <DropdownMenuLabel className='px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground'>
             {item.title} {item.badge ? `(${item.badge})` : ''}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -208,29 +231,17 @@ function SidebarMenuCollapsedDropdown({
             const isSubActive = checkIsActive(href, sub)
 
             return (
-              <DropdownMenuItem key={`${sub.title}-${sub.url}`} asChild>
-                <Link
-                  to={sub.url}
-                  className={isSubActive ? 'bg-secondary' : ''}
-                >
-                  {sub.icon && (
-                    <span
-                      className={[
-                        'flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 [&>svg]:size-4',
-                        isSubActive
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'bg-primary/10 text-primary',
-                      ].join(' ')}
-                    >
-                      <sub.icon />
-                    </span>
-                  )}
-                  <span className='max-w-52 text-wrap font-semibold text-black dark:text-white'>
+              <DropdownMenuItem
+                key={`${sub.title}-${sub.url}`}
+                asChild
+                className={isSubActive ? 'rounded-lg bg-primary/10 text-foreground' : 'rounded-lg'}
+              >
+                <Link to={sub.url} className='gap-2.5'>
+                  <NavIcon icon={sub.icon} active={isSubActive} size='sm' />
+                  <span className='max-w-52 truncate text-[13px] font-medium'>
                     {sub.title}
                   </span>
-                  {sub.badge && (
-                    <span className='ms-auto text-xs'>{sub.badge}</span>
-                  )}
+                  {sub.badge && <span className='ms-auto text-xs'>{sub.badge}</span>}
                 </Link>
               </DropdownMenuItem>
             )
@@ -240,11 +251,12 @@ function SidebarMenuCollapsedDropdown({
     </SidebarMenuItem>
   )
 }
+
 function checkIsActive(href: string, item: NavItem, mainNav = false) {
   return (
-    href === item.url || // /endpint?search=param
-    href.split('?')[0] === item.url || // endpoint
-    !!item?.items?.filter((i) => i.url === href).length || // if child nav is active
+    href === item.url ||
+    href.split('?')[0] === item.url ||
+    !!item?.items?.filter((i) => i.url === href).length ||
     (mainNav &&
       href.split('/')[1] !== '' &&
       href.split('/')[1] === item?.url?.split('/')[1])
