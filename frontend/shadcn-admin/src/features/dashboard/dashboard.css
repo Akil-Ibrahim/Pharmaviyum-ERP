@@ -90,3 +90,9 @@
     animation: none !important;
   }
 }
+
+@media (min-width: 640px) {
+  .pharmacy-dashboard-hero {
+    padding-bottom: 3.5rem;
+  }
+}
