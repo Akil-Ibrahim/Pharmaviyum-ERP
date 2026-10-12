@@ -503,7 +503,7 @@ async def get_dashboard_summary(
     if scope is not None:
         attention_query = attention_query.where(Inventory.pharmacy_id == scope)
 
-    recent_sales = (
+    recent_sales_query = (
         select(
             PatientPurchase.product_id.label("product_id"),
             func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label(
@@ -515,12 +515,12 @@ async def get_dashboard_summary(
         .group_by(PatientPurchase.product_id)
     )
     if scope is not None:
-        recent_sales = recent_sales.where(Patient.pharmacy_id == scope)
-    recent_sales = recent_sales.subquery()
+        recent_sales_query = recent_sales_query.where(Patient.pharmacy_id == scope)
+    recent_sales = recent_sales_query.subquery()
 
     # Procurement attention: products approaching their configured reorder level.
     # We use realized 30-day dispensing to estimate runway, without inventing supplier lead times.
-    product_demand_30d = (
+    product_demand_30d_query = (
         select(
             PatientPurchase.product_id.label("product_id"),
             func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label(
@@ -532,8 +532,8 @@ async def get_dashboard_summary(
         .group_by(PatientPurchase.product_id)
     )
     if scope is not None:
-        product_demand_30d = product_demand_30d.where(Patient.pharmacy_id == scope)
-    product_demand_30d = product_demand_30d.subquery()
+        product_demand_30d_query = product_demand_30d_query.where(Patient.pharmacy_id == scope)
+    product_demand_30d = product_demand_30d_query.subquery()
 
     reorder_attention_query = (
         select(
