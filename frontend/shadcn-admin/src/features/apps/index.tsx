@@ -109,7 +109,7 @@ export function Apps() {
               value={searchTerm}
               onChange={handleSearch}
             />
-            <Select value={appType} onValueChange={handleTypeChange}>
+            <Select value={appType} onValueChange={(value) => handleTypeChange(value as AppType)}>
               <SelectTrigger className='w-36'>
                 <SelectValue>{appText.get(appType)}</SelectValue>
               </SelectTrigger>
@@ -121,7 +121,7 @@ export function Apps() {
             </Select>
           </div>
 
-          <Select value={sort} onValueChange={handleSortChange}>
+          <Select value={sort} onValueChange={(value) => handleSortChange(value as 'asc' | 'desc')}>
             <SelectTrigger className='w-16'>
               <SelectValue>
                 <SlidersHorizontal size={18} />
