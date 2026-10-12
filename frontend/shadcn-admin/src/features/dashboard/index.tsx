@@ -128,13 +128,13 @@ export function Dashboard() {
                 Pharmacy overview
               </h1>
               <p className='mt-2 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base'>
-                A real-time view of dispensing, stock availability, expiry exposure and operational priorities.
+                A live operational view of dispensing, stock availability, expiry exposure and the actions that need attention.
               </p>
             </div>
             <div className='flex flex-wrap items-center gap-3'>
               <span className='inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground'>
-                <span className={loadError ? 'size-2 rounded-full bg-destructive' : 'size-2 rounded-full bg-emerald-500'} />
-                {loadError ? 'Connection issue' : isRefreshing ? 'Syncing ERP data' : 'ERP connected'}
+                <span className={loadError ? 'size-2 rounded-full bg-destructive' : summary ? 'size-2 rounded-full bg-emerald-500' : 'size-2 rounded-full bg-amber-500'} />
+                {loadError ? 'Connection issue' : isRefreshing ? 'Syncing ERP data' : summary ? 'ERP connected' : 'Waiting for data'}
               </span>
               <button
                 type='button'
