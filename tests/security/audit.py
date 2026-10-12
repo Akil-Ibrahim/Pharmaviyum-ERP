@@ -229,32 +229,30 @@ class SecurityAuditor:
         """Check for known vulnerable dependencies"""
         print("📦 Checking dependencies...")
 
-        requirements_file = self.root_dir / "requirements.txt"
-        if requirements_file.exists():
+        pyproject_file = self.root_dir / "pyproject.toml"
+        if pyproject_file.exists():
             try:
-                with open(requirements_file, "r", encoding="utf-8") as f:
-                    for line_num, line in enumerate(f, 1):
-                        line = line.strip()
+                import tomllib
 
-                        # Check for outdated packages (basic check)
-                        if (
-                            "==" not in line
-                            and ">=" not in line
-                            and line
-                            and not line.startswith("#")
-                        ):
-                            self.issues.append(
-                                SecurityIssue(
-                                    severity="LOW",
-                                    category="Dependency Management",
-                                    file="requirements.txt",
-                                    line=line_num,
-                                    description=f"Unpinned dependency: {line}",
-                                    recommendation="Pin dependencies to specific versions",
-                                )
+                with open(pyproject_file, "rb") as f:
+                    project_config = tomllib.load(f)
+
+                dependencies = project_config.get("project", {}).get("dependencies", [])
+                for line_num, dependency in enumerate(dependencies, 1):
+                    # Treat exact pins and explicit lower bounds as constrained.
+                    if "==" not in dependency and ">=" not in dependency:
+                        self.issues.append(
+                            SecurityIssue(
+                                severity="LOW",
+                                category="Dependency Management",
+                                file="pyproject.toml",
+                                line=line_num,
+                                description=f"Dependency lacks an explicit version constraint: {dependency}",
+                                recommendation="Add a compatible version constraint and refresh uv.lock",
                             )
+                        )
             except Exception as e:
-                print(f"  ⚠️  Error checking dependencies: {e}")
+                print(f"  ⚠️  Error checking pyproject.toml dependencies: {e}")
 
     def _check_docker_config(self):
         """Check Docker configuration for security issues"""
