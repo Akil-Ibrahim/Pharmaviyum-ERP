@@ -38,7 +38,9 @@ export function NavGroup({ title, items }: NavGroupProps) {
   const href = useLocation({ select: (location) => location.href })
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>{title}</SidebarGroupLabel>
+      <SidebarGroupLabel className='px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80'>
+      {title}
+    </SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
           const key = `${item.title}-${item.url}`
@@ -64,16 +66,24 @@ function NavBadge({ children }: { children: ReactNode }) {
 
 function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
   const { setOpenMobile } = useSidebar()
+  const isActive = checkIsActive(href, item)
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         asChild
-        isActive={checkIsActive(href, item)}
+        isActive={isActive}
         tooltip={item.title}
       >
         <Link to={item.url} onClick={() => setOpenMobile(false)}>
           {item.icon && (
-            <span className='flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground [&>svg]:size-4'>
+            <span
+              className={[
+                'flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 [&>svg]:size-[18px]',
+                isActive
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-primary/10 text-primary group-hover:bg-primary/15',
+              ].join(' ')}
+            >
               <item.icon />
             </span>
           )}
@@ -103,7 +113,7 @@ function SidebarMenuCollapsible({
         <CollapsibleTrigger asChild>
           <SidebarMenuButton tooltip={item.title}>
             {item.icon && (
-              <span className='flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground [&>svg]:size-4'>
+              <span className='flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors duration-200 [&>svg]:size-[18px] group-hover:bg-primary/15'>
                 <item.icon />
               </span>
             )}
@@ -122,7 +132,14 @@ function SidebarMenuCollapsible({
                 >
                   <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
                     {subItem.icon && (
-                      <span className='flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground [&>svg]:size-3.5'>
+                      <span
+                        className={[
+                          'flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 [&>svg]:size-4',
+                          checkIsActive(href, subItem)
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'bg-primary/10 text-primary group-hover:bg-primary/15',
+                        ].join(' ')}
+                      >
                         <subItem.icon />
                       </span>
                     )}
@@ -172,7 +189,7 @@ function SidebarMenuCollapsedDropdown({
                 className={`${checkIsActive(href, sub) ? 'bg-secondary' : ''}`}
               >
                 {sub.icon && (
-                  <span className='flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground [&>svg]:size-3.5'>
+                  <span className='flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors duration-200 [&>svg]:size-4'>
                     <sub.icon />
                   </span>
                 )}
