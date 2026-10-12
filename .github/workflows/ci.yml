@@ -13,7 +13,7 @@ env:
   POSTGRES_PASSWORD: postgres
   POSTGRES_DB: pharmaviyum_test
   IMAGE_NAME: pharmaviyum-crm
-  IMAGE_REPOSITORY: ghcr.io/ibrahimengpy/pharmaviyum-crm
+  IMAGE_REPOSITORY: ghcr.io/akil-ibrahim/pharmaviyum-crm
 
 permissions:
   contents: read
