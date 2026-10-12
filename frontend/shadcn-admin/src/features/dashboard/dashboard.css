@@ -97,8 +97,8 @@
   }
 }
 
-/* The first row is the primary operational scorecard. */
-.pharmaviyum-dashboard > section:first-of-type > div.rounded-2xl.border {
+/* Keep the primary operational scorecard visually distinct. */
+.pharmaviyum-dashboard .space-y-6 > section:first-of-type > div.rounded-2xl.border {
   position: relative;
   overflow: hidden;
   border-top: 3px solid color-mix(in oklab, var(--primary) 72%, var(--border));
@@ -106,12 +106,73 @@
     linear-gradient(180deg, color-mix(in oklab, var(--primary) 3%, var(--card)), var(--card) 58%);
 }
 
-.pharmaviyum-dashboard > section:first-of-type > div.rounded-2xl.border > div:first-child > div {
+.pharmaviyum-dashboard .space-y-6 > section:first-of-type > div.rounded-2xl.border > div:first-child > div {
   border: 1px solid color-mix(in oklab, var(--primary) 12%, transparent);
   border-radius: 0.8rem;
 }
 
-.pharmaviyum-dashboard > section:first-of-type > div.rounded-2xl.border > p:nth-of-type(2) {
+.pharmaviyum-dashboard .space-y-6 > section:first-of-type > div.rounded-2xl.border > p:nth-of-type(2) {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.035em;
+}
+
+/* Operational data should remain easy to scan on touch and keyboard devices. */
+.pharmaviyum-dashboard button,
+.pharmaviyum-dashboard summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pharmaviyum-dashboard button:focus-visible,
+.pharmaviyum-dashboard summary:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 3px;
+}
+
+.pharmaviyum-dashboard summary {
+  border-radius: 0.35rem;
+}
+
+.pharmaviyum-dashboard details[open] > summary {
+  margin-bottom: 0.25rem;
+}
+
+.pharmaviyum-dashboard .overflow-x-auto {
+  scrollbar-color: color-mix(in oklab, var(--primary) 28%, var(--muted)) transparent;
+  scrollbar-width: thin;
+}
+
+.pharmaviyum-dashboard table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.pharmaviyum-dashboard .pharmacy-dashboard-hero > p {
+  z-index: 1;
+}
+
+@media (max-width: 639px) {
+  .pharmacy-dashboard-hero {
+    gap: 1rem;
+    padding: 1.125rem;
+  }
+
+  .pharmacy-dashboard-hero h1 {
+    font-size: clamp(1.65rem, 7vw, 2rem);
+    line-height: 1.15;
+  }
+
+  .pharmacy-dashboard-hero > p {
+    position: static;
+    margin-top: 0;
+  }
+
+  .pharmaviyum-dashboard table th,
+  .pharmaviyum-dashboard table td {
+    padding-inline: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pharmaviyum-dashboard table tbody tr {
+    transition: none;
+  }
 }
