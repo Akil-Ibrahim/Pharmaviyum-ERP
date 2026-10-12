@@ -33,7 +33,7 @@ jobs:
         run: pip install uv
       # Re-resolve all dependencies after Python/package compatibility updates.
       - name: Refresh dependency lock
-        run: uv lock --upgrade
+        run: uv lock
       - name: Commit updated lockfile
         run: |
           if git diff --quiet -- uv.lock; then
