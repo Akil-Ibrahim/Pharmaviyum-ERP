@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import './dashboard.css'
 import {
+  Activity,
   ArrowUpRight,
   Boxes,
   FileText,
   Pill,
   Receipt,
   RefreshCw,
-  Activity,
   type LucideIcon,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/api-client'
@@ -78,16 +78,24 @@ export function Dashboard() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const requestInFlight = useRef(false)
 
   const loadSummary = useCallback(() => {
+    if (requestInFlight.current) return
+    requestInFlight.current = true
     setIsRefreshing(true)
     apiFetch<DashboardSummary>('/api/v1/dashboard/summary')
       .then((data) => {
         setSummary(data)
         setLoadError(false)
+        setLastUpdated(new Date())
       })
       .catch(() => setLoadError(true))
-      .finally(() => setIsRefreshing(false))
+      .finally(() => {
+        requestInFlight.current = false
+        setIsRefreshing(false)
+      })
   }, [])
 
   useEffect(() => {
@@ -126,7 +134,7 @@ export function Dashboard() {
           <div className='flex flex-wrap items-center gap-3'>
             <span className='inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground'>
               <span className={loadError ? 'size-2 rounded-full bg-destructive' : 'size-2 rounded-full bg-emerald-500'} />
-              {loadError ? 'Connection issue' : isRefreshing ? 'Syncing ERP data' : 'ERP data monitor'}
+              {loadError ? 'Connection issue' : isRefreshing ? 'Syncing ERP data' : 'ERP connected'}
             </span>
             <button
               type='button'
@@ -138,11 +146,32 @@ export function Dashboard() {
               Refresh data
             </button>
           </div>
+          <p className='text-xs text-muted-foreground sm:absolute sm:bottom-3 sm:left-7'>
+            {lastUpdated
+              ? 'Last successful sync ' + lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              : 'Operational indicators load from your ERP records'}
+          </p>
         </div>
 
         {loadError && (
-          <div className='rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive'>
-            Dashboard data is temporarily unavailable. Showing the last loaded values; retrying automatically.
+          <div className='flex flex-col gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between'>
+            <div>
+              <p className='font-semibold text-destructive'>
+                {summary ? 'Showing the last successfully loaded data' : 'Dashboard data could not be loaded'}
+              </p>
+              <p className='mt-1 text-muted-foreground'>
+                Check the API connection or your session, then retry. Data is not being replaced with demo values.
+              </p>
+            </div>
+            <button
+              type='button'
+              onClick={loadSummary}
+              disabled={isRefreshing}
+              className='inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border bg-background px-3 py-2 text-xs font-semibold transition hover:bg-muted disabled:opacity-60'
+            >
+              <RefreshCw className={isRefreshing ? 'size-3.5 animate-spin' : 'size-3.5'} />
+              Retry connection
+            </button>
           </div>
         )}
 
