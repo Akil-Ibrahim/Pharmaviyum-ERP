@@ -96,3 +96,22 @@
     padding-bottom: 3.5rem;
   }
 }
+
+/* The first row is the primary operational scorecard. */
+.pharmaviyum-dashboard > section:first-of-type > div.rounded-2xl.border {
+  position: relative;
+  overflow: hidden;
+  border-top: 3px solid color-mix(in oklab, var(--primary) 72%, var(--border));
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--primary) 3%, var(--card)), var(--card) 58%);
+}
+
+.pharmaviyum-dashboard > section:first-of-type > div.rounded-2xl.border > div:first-child > div {
+  border: 1px solid color-mix(in oklab, var(--primary) 12%, transparent);
+  border-radius: 0.8rem;
+}
+
+.pharmaviyum-dashboard > section:first-of-type > div.rounded-2xl.border > p:nth-of-type(2) {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.035em;
+}
