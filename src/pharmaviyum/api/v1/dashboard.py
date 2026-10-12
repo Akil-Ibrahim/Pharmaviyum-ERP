@@ -532,7 +532,9 @@ async def get_dashboard_summary(
         .group_by(PatientPurchase.product_id)
     )
     if scope is not None:
-        product_demand_30d_query = product_demand_30d_query.where(Patient.pharmacy_id == scope)
+        product_demand_30d_query = product_demand_30d_query.where(
+            Patient.pharmacy_id == scope
+        )
     product_demand_30d = product_demand_30d_query.subquery()
 
     reorder_attention_query = (
