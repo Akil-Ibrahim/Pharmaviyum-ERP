@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { type ElementType, type ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import {
@@ -73,7 +73,7 @@ function NavIcon({
   active = false,
   size = 'md',
 }: {
-  icon?: React.ElementType
+  icon?: ElementType
   active?: boolean
   size?: 'sm' | 'md'
 }) {
