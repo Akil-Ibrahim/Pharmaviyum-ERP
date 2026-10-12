@@ -4,6 +4,7 @@ import {
   Bell,
   ChevronsUpDown,
   LogOut,
+  Settings,
 } from 'lucide-react'
 import useDialogState from '@/hooks/use-dialog-state'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -83,7 +84,6 @@ export function NavUser({ user }: NavUserProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
                   <Link to='/settings/account'>
@@ -93,8 +93,8 @@ export function NavUser({ user }: NavUserProps) {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to='/settings'>
-                    <BadgeCheck />
-                    Account settings
+                    <Settings />
+                    Settings
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
