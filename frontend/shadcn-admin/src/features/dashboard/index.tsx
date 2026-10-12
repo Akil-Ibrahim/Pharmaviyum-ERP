@@ -77,6 +77,7 @@ type DashboardSummary = {
 export function Dashboard() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [loadError, setLoadError] = useState(false)
+  const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const requestInFlight = useRef(false)
@@ -89,9 +90,17 @@ export function Dashboard() {
       .then((data) => {
         setSummary(data)
         setLoadError(false)
+        setLoadErrorMessage(null)
         setLastUpdated(new Date())
       })
-      .catch(() => setLoadError(true))
+      .catch((error: unknown) => {
+        setLoadError(true)
+        setLoadErrorMessage(
+          error instanceof Error && error.message.trim()
+            ? error.message.slice(0, 160)
+            : 'Unable to reach the dashboard API. Check your connection and session.'
+        )
+      })
       .finally(() => {
         requestInFlight.current = false
         setIsRefreshing(false)
@@ -160,7 +169,7 @@ export function Dashboard() {
                   {summary ? 'Showing the last successfully loaded data' : 'Dashboard data could not be loaded'}
                 </p>
                 <p className='mt-1 text-muted-foreground'>
-                  Check the API connection or your session, then retry. Data is not being replaced with demo values.
+                  {loadErrorMessage ?? 'Check the API connection or your session, then retry.'} Data is not being replaced with demo values.
                 </p>
               </div>
               <button
