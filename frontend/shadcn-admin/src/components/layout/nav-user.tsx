@@ -38,7 +38,7 @@ export function NavUser({ user }: NavUserProps) {
   const [open, setOpen] = useDialogState()
   const initials = user.name
     .trim()
-    .split(/\\s+/)
+    .split(/\s+/)
     .slice(0, 2)
     .map((part) => part[0])
     .join('')
