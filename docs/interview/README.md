@@ -338,7 +338,8 @@ Python dependency sources are separated by purpose:
 
 - `pyproject.toml` — project metadata and dependency/tool configuration;
 - `uv.lock` — generated, reproducible dependency resolution;
-- `requirements.txt` — compatibility installation requirements.
+- `pyproject.toml` — project metadata and declared runtime/development dependencies.
+- `uv.lock` — exact resolved dependency versions for reproducible installs with `uv sync --frozen`.
 
 Frontend dependencies are defined in `frontend/package.json` and managed with Bun's lockfile when present.
 
