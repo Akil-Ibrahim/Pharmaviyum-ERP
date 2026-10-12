@@ -115,11 +115,12 @@ async def get_dashboard_summary(
         .label("active_patients")
     ).where(Patient.id.in_(patient_scope))
 
+    sales_category_expression = case(
+        (PatientPurchase.prescription_required.is_(True), "Rx"), else_="OTC"
+    )
     sales_category_query = (
         select(
-            case(
-                (PatientPurchase.prescription_required.is_(True), "Rx"), else_="OTC"
-            ).label("category"),
+            sales_category_expression.label("category"),
             func.count(PatientPurchase.id).label("lines"),
             func.coalesce(func.sum(PatientPurchase.dispensed_packs), 0).label("packs"),
             func.coalesce(
@@ -127,7 +128,7 @@ async def get_dashboard_summary(
             ).label("revenue"),
         )
         .join(Patient, Patient.id == PatientPurchase.patient_id)
-        .group_by("category")
+        .group_by(sales_category_expression)
     )
 
     inventory_stock_query = select(

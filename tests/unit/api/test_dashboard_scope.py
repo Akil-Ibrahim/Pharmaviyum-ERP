@@ -78,6 +78,17 @@ async def test_dashboard_summary_applies_one_pharmacy_scope_to_all_aggregates():
     assert len(patient_queries) >= 4
     assert all("patients.pharmacy_id = " in sql for sql in patient_queries)
 
+    # PostgreSQL can resolve GROUP BY "category" to an underlying column
+    # instead of the SELECT alias. Group by the full CASE expression to keep
+    # prescription_required valid in the aggregate query.
+    sales_category_sql = next(
+        sql
+        for sql in patient_queries
+        if "AS category" in sql and "prescription_required" in sql
+    )
+    assert "GROUP BY CASE WHEN" in sales_category_sql
+    assert "GROUP BY category" not in sales_category_sql
+
     # Inventory aggregates must constrain Inventory directly. Top-products
     # stock is pre-aggregated and joined rather than correlated per product.
     inventory_queries = [sql for sql in sql_statements if "inventory" in sql]
