@@ -104,7 +104,6 @@ class _FakeLLM:
                     "assessment, so this result cannot establish whether dispensing "
                     "ibuprofen is appropriate [src-{CHUNK_ID}]. This is synthetic "
                     "test data, not clinical guidance."
-
                 )
             )
         raise AssertionError(
@@ -132,19 +131,10 @@ async def test_mortarium_rag_runs_end_to_end_for_one_synthetic_patient():
     )
 
     result = await rag.run(
-        "You are assisting a licensed pharmacist during a medication review. "
-        "Using only the retrieved patient record and reliable, cited clinical "
-        "sources, review the synthetic patient's medication list before "
-        "dispensing ibuprofen. Identify potential medication-safety concerns "
-        "that are actually supported by the available evidence; do not infer "
-        "an interaction when the retrieved evidence does not establish one. "
-        "List the missing information the pharmacist must verify (including "
-        "dose and schedule, indication, allergies, kidney function, relevant "
-        "history, and current symptoms). Distinguish documented facts from "
-        "unknowns, cite every factual clinical claim with the exact retrieved "
-        "source ID, and state clearly when the evidence is insufficient. "
-        "Do not diagnose, invent patient details, or make the final dispensing "
-        "decision. This is a synthetic test patient.",
+        "Review this synthetic patient's medication list before dispensing "
+        "ibuprofen. Use only retrieved evidence, cite source IDs, flag supported "
+        "safety concerns and missing information, and state when evidence is "
+        "insufficient. Do not invent facts or make the dispensing decision.",
         context=context,
         thread_id="synthetic-patient-smoke-test",
     )
