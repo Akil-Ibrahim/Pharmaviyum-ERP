@@ -809,7 +809,7 @@ function toPercentItems(items: [string, number][]): [string, number][] {
     const exact = (value / total) * 100
     return { label, value: Math.floor(exact), remainder: exact - Math.floor(exact), index }
   })
-  let remaining = 100 - shares.reduce((sum, item) => sum + item.value, 0)
+  const remaining = 100 - shares.reduce((sum, item) => sum + item.value, 0)
   const byRemainder = [...shares].sort((a, b) => b.remainder - a.remainder)
   for (let i = 0; i < remaining; i += 1) {
     byRemainder[i % byRemainder.length].value += 1
