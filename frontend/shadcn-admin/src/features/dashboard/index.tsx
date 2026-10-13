@@ -6,6 +6,7 @@ import {
   ArrowUpRight,
   Boxes,
   Clock3,
+  ClipboardList,
   FileText,
   Pill,
   PackageSearch,
@@ -212,7 +213,7 @@ export function Dashboard() {
             <section aria-label='Operational priorities' className='pharmacy-priority-panel rounded-xl border bg-card'>
               <div className='flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 sm:px-5'>
                 <div className='flex items-start gap-3'>
-                  <div className='rounded-lg bg-primary/10 p-2 text-primary'><ClipboardListIcon /></div>
+                  <div className='rounded-lg bg-primary/10 p-2 text-primary'><ClipboardList className='size-5' /></div>
                   <div>
                     <h2 className='font-semibold'>Today’s priority queue</h2>
                     <p className='mt-0.5 text-xs text-muted-foreground'>Actionable exceptions from current pharmacy records</p>
@@ -489,10 +490,6 @@ export function Dashboard() {
       </Main>
     </>
   )
-}
-
-function ClipboardListIcon() {
-  return <FileText className='size-5' aria-hidden='true' />
 }
 
 function PriorityItem({
