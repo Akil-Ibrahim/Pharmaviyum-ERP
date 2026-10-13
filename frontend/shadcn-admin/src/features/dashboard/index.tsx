@@ -2,10 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import './dashboard.css'
 import {
   Activity,
+  AlertTriangle,
   ArrowUpRight,
   Boxes,
+  Clock3,
   FileText,
   Pill,
+  PackageSearch,
   Receipt,
   RefreshCw,
   type LucideIcon,
@@ -206,7 +209,49 @@ export function Dashboard() {
               />
             </section>
 
-            <section className='grid gap-4 xl:grid-cols-2'>
+            <section aria-label='Operational priorities' className='pharmacy-priority-panel rounded-xl border bg-card'>
+              <div className='flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 sm:px-5'>
+                <div className='flex items-start gap-3'>
+                  <div className='rounded-lg bg-primary/10 p-2 text-primary'><ClipboardListIcon /></div>
+                  <div>
+                    <h2 className='font-semibold'>Today’s priority queue</h2>
+                    <p className='mt-0.5 text-xs text-muted-foreground'>Actionable exceptions from current pharmacy records</p>
+                  </div>
+                </div>
+                <span className='rounded-md border bg-muted/30 px-2.5 py-1 text-[11px] font-medium text-muted-foreground'>Live operational data</span>
+              </div>
+              <div className='grid divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0'>
+                <PriorityItem
+                  icon={PackageSearch}
+                  tone='warning'
+                  label='Replenishment'
+                  value={summary ? summary.inventory.low_stock.toLocaleString() : '—'}
+                  detail={summary ? `${summary.reorder_attention.length} products need review` : 'Waiting for inventory data'}
+                  href='#procurement-attention'
+                  action='Review stock'
+                />
+                <PriorityItem
+                  icon={Clock3}
+                  tone='critical'
+                  label='Expiry exposure'
+                  value={summary ? (summary.inventory.expiry_red + summary.inventory.expiry_yellow).toLocaleString() : '—'}
+                  detail={summary ? `${summary.inventory.expired} expired records · ${summary.inventory.critical_expiry} critical` : 'Waiting for batch data'}
+                  href='#expiry-control'
+                  action='Review expiry'
+                />
+                <PriorityItem
+                  icon={AlertTriangle}
+                  tone='warning'
+                  label='Slow-moving stock'
+                  value={summary ? summary.attention.slow_moving_items.toLocaleString() : '—'}
+                  detail={summary ? `${formatAmount(summary.attention.slow_moving_stock_value)} tied up in stock` : 'Waiting for stock movement data'}
+                  href='#slow-moving-stock'
+                  action='Inspect products'
+                />
+              </div>
+            </section>
+
+            <section id='expiry-control' className='grid gap-4 xl:grid-cols-3'>
               <DonutCard
                 title='Sales mix'
                 total={formatAmount(summary?.sales.by_category.reduce((sum, item) => sum + item.revenue, 0) ?? 0)}
@@ -219,6 +264,15 @@ export function Dashboard() {
                   ['Red · expired / ≤ 3 months', summary?.inventory.expiry_red ?? 0],
                   ['Yellow · > 3–12 months', summary?.inventory.expiry_yellow ?? 0],
                   ['Green · > 12 months', summary?.inventory.expiry_green ?? 0],
+                ])}
+              />
+              <DonutCard
+                title='Stock availability'
+                total={String(summary?.inventory.items ?? 0)}
+                items={toPercentItems([
+                  ['Healthy stock', Math.max(0, (summary?.inventory.items ?? 0) - (summary?.inventory.low_stock ?? 0))],
+                  ['Low stock', Math.max(0, (summary?.inventory.low_stock ?? 0) - (summary?.attention.stockout_items ?? 0))],
+                  ['Stockout', summary?.attention.stockout_items ?? 0],
                 ])}
               />
             </section>
@@ -318,7 +372,7 @@ export function Dashboard() {
             </section>
 
             <section>
-              <div className='mb-3'>
+              <div id='inventory-attention' className='mb-3'>
                 <h2 className='font-semibold'>Inventory Attention</h2>
                 <p className='text-xs text-muted-foreground'>Exceptions that can affect availability, working capital, or expiry losses.</p>
               </div>
@@ -344,7 +398,7 @@ export function Dashboard() {
                   amount
                 />
               </div>
-              <div className='mt-4 rounded-2xl border bg-card p-5 shadow-sm'>
+              <div id='slow-moving-stock' className='mt-4 rounded-2xl border bg-card p-5 shadow-sm'>
                 <div className='mb-4 flex items-center justify-between gap-3'>
                   <div>
                     <h3 className='font-semibold'>Slow-moving products</h3>
@@ -370,7 +424,7 @@ export function Dashboard() {
             </section>
 
             <section>
-              <div className='mb-3'>
+              <div id='procurement-attention' className='mb-3'>
                 <h2 className='font-semibold'>Procurement Attention</h2>
                 <p className='text-xs text-muted-foreground'>Products at or below their configured reorder level, prioritized by available stock.</p>
               </div>
@@ -434,6 +488,42 @@ export function Dashboard() {
         </div>
       </Main>
     </>
+  )
+}
+
+function ClipboardListIcon() {
+  return <FileText className='size-5' aria-hidden='true' />
+}
+
+function PriorityItem({
+  icon: Icon,
+  tone,
+  label,
+  value,
+  detail,
+  href,
+  action,
+}: {
+  icon: LucideIcon
+  tone: 'critical' | 'warning'
+  label: string
+  value: string
+  detail: string
+  href: string
+  action: string
+}) {
+  return (
+    <div className='min-w-0 p-4 sm:p-5'>
+      <div className='flex items-center gap-2'>
+        <Icon className={tone === 'critical' ? 'size-4 text-red-600 dark:text-red-400' : 'size-4 text-amber-600 dark:text-amber-400'} />
+        <span className='text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground'>{label}</span>
+      </div>
+      <p className='mt-3 text-3xl font-bold tracking-tight tabular-nums'>{value}</p>
+      <p className='mt-1 min-h-8 text-xs leading-5 text-muted-foreground'>{detail}</p>
+      <a href={href} className='mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline'>
+        {action}<ArrowUpRight className='size-3.5' aria-hidden='true' />
+      </a>
+    </div>
   )
 }
 
