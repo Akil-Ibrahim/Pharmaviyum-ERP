@@ -298,8 +298,8 @@ export function Dashboard() {
                   label='Expiry exposure'
                   value={summary ? (summary.inventory.expiry_red + summary.inventory.expiry_yellow).toLocaleString() : '—'}
                   detail={summary ? `${summary.inventory.expired} expired records · ${summary.inventory.critical_expiry} critical` : 'Waiting for batch data'}
-                  href='#expiry-control'
-                  action='Review expiry'
+                  href='#inventory-attention'
+                  action='Review exposure'
                 />
                 <PriorityItem
                   icon={AlertTriangle}
