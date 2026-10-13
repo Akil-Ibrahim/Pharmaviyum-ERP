@@ -16,15 +16,6 @@ import zipfile
 from pathlib import Path
 
 import httpx
-from sqlalchemy import select
-
-from src.pharmaviyum.database import AsyncSessionLocal
-from src.pharmaviyum.models.drug_catalog import (
-    DrugReference,
-    DrugReferenceIngredient,
-    MedicinalProduct,
-)
-
 RXNORM_URL = (
     "https://download.nlm.nih.gov/umls/kss/rxnorm/"
     "RxNorm_full_prescribe_current.zip"
@@ -163,6 +154,15 @@ def parse_rxnorm_archive(
 
 
 async def import_catalog(archive_path: Path) -> tuple[int, int]:
+    from sqlalchemy import select
+
+    from src.pharmaviyum.database import AsyncSessionLocal
+    from src.pharmaviyum.models.drug_catalog import (
+        DrugReference,
+        DrugReferenceIngredient,
+        MedicinalProduct,
+    )
+
     ingredient_terms, products = parse_rxnorm_archive(archive_path)
     added_references = 0
     added_products = 0
