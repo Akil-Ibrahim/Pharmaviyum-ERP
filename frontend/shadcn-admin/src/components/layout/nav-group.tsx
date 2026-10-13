@@ -252,13 +252,26 @@ function SidebarMenuCollapsedDropdown({
   )
 }
 
+function isPathActive(href: string, url?: string) {
+  if (!url) return false
+
+  const currentPath = href.split(/[?#]/)[0].replace(/\\/$/, '') || '/'
+  const targetPath = url.split(/[?#]/)[0].replace(/\\/$/, '') || '/'
+
+  return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`)
+}
+
 function checkIsActive(href: string, item: NavItem, mainNav = false) {
+  const isItemActive = isPathActive(href, item.url)
+  const isChildActive = !!item.items?.some((child) =>
+    isPathActive(href, child.url)
+  )
+
   return (
-    href === item.url ||
-    href.split('?')[0] === item.url ||
-    !!item?.items?.filter((i) => i.url === href).length ||
+    isItemActive ||
+    isChildActive ||
     (mainNav &&
       href.split('/')[1] !== '' &&
-      href.split('/')[1] === item?.url?.split('/')[1])
+      href.split('/')[1] === item.url?.split('/')[1])
   )
 }
