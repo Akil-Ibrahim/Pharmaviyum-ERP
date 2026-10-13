@@ -12,7 +12,7 @@ from __future__ import annotations
 import asyncio
 import re
 import tempfile
-import urllib.request
+import httpx
 import zipfile
 from pathlib import Path
 
@@ -195,11 +195,14 @@ async def import_catalog(archive_path: Path) -> tuple[int, int]:
 async def main() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = Path(temp_dir) / "rxnorm.zip"
-        request = urllib.request.Request(
-            RXNORM_URL, headers={"User-Agent": "Pharmaviyum-DrugCatalog/1.0"}
+        response = httpx.get(
+            RXNORM_URL,
+            headers={"User-Agent": "Pharmaviyum-DrugCatalog/1.0"},
+            timeout=120,
+            follow_redirects=True,
         )
-        with urllib.request.urlopen(request, timeout=120) as response:
-            archive_path.write_bytes(response.read())
+        response.raise_for_status()
+        archive_path.write_bytes(response.content)
         references, products = await import_catalog(archive_path)
     print(
         f"RxNorm import complete: {references} new references, "
