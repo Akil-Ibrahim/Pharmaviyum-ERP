@@ -1,4 +1,4 @@
-import { type ElementType, type ReactNode } from 'react'
+import { useEffect, useState, type ElementType, type ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import {
@@ -131,10 +131,17 @@ function SidebarMenuCollapsible({
 }) {
   const { setOpenMobile } = useSidebar()
   const isActive = checkIsActive(href, item, true)
+  const [open, setOpen] = useState(isActive)
+
+  useEffect(() => {
+    if (isActive) setOpen(true)
+  }, [isActive])
+
   return (
     <Collapsible
       asChild
-      defaultOpen={checkIsActive(href, item, true)}
+      open={open}
+      onOpenChange={setOpen}
       className='group/collapsible'
     >
       <SidebarMenuItem>
