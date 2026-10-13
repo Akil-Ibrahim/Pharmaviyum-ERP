@@ -12,10 +12,10 @@ from __future__ import annotations
 import asyncio
 import re
 import tempfile
-import httpx
 import zipfile
 from pathlib import Path
 
+import httpx
 from sqlalchemy import select
 
 from src.pharmaviyum.database import AsyncSessionLocal
@@ -34,9 +34,20 @@ INGREDIENT_TERMS = {"IN", "PIN"}
 INGREDIENT_RELATIONS = {"has_ingredient", "has_precise_ingredient"}
 STRENGTH_RE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:MG|MCG|G|ML|%|UNIT)\b", re.I)
 ROUTE_TERMS = {
-    "oral", "topical", "intravenous", "intramuscular", "subcutaneous",
-    "ophthalmic", "otic", "nasal", "inhalation", "rectal", "vaginal",
-    "transdermal", "buccal", "sublingual",
+    "oral",
+    "topical",
+    "intravenous",
+    "intramuscular",
+    "subcutaneous",
+    "ophthalmic",
+    "otic",
+    "nasal",
+    "inhalation",
+    "rectal",
+    "vaginal",
+    "transdermal",
+    "buccal",
+    "sublingual",
 }
 
 
@@ -60,12 +71,14 @@ def parse_rxnorm_archive(
         )
         if not conso_name or not rel_name:
             raise ValueError("RxNorm archive is missing RXNCONSO.RRF or RXNREL.RRF")
+
         with tempfile.TemporaryDirectory() as temp_dir:
             conso_path = Path(temp_dir) / "RXNCONSO.RRF"
             rel_path = Path(temp_dir) / "RXNREL.RRF"
             conso_path.write_bytes(archive.read(conso_name))
             rel_path.write_bytes(archive.read(rel_name))
             concepts: dict[str, tuple[str, str]] = {}
+
             for row in _rrf_rows(conso_path):
                 if (
                     len(row) < 17
@@ -87,6 +100,7 @@ def parse_rxnorm_archive(
                 if tty in INGREDIENT_TERMS
             }
             product_ingredients: dict[str, set[str]] = {}
+
             for row in _rrf_rows(rel_path):
                 if len(row) < 8 or row[7] not in INGREDIENT_RELATIONS:
                     continue
@@ -110,6 +124,7 @@ def parse_rxnorm_archive(
                 # Do not silently misrepresent combination medicines.
                 if tty not in PRODUCT_TERMS or len(linked) != 1:
                     continue
+
                 ingredient_id = next(iter(linked))
                 strength_match = STRENGTH_RE.search(term)
                 words = term.split()
@@ -117,26 +132,33 @@ def parse_rxnorm_archive(
                     (word.lower() for word in words if word.lower() in ROUTE_TERMS),
                     "",
                 )
-                brand_name = (
-                    term[: strength_match.start()].strip()
-                    if tty == "SBD" and strength_match
-                    else term if tty == "SBD" else ""
-                )
+                brand_name = ""
+                if tty == "SBD":
+                    brand_name = (
+                        term[: strength_match.start()].strip()
+                        if strength_match
+                        else term
+                    )
                 dosage_form = (
-                    term[strength_match.end():].strip()
+                    term[strength_match.end() :].strip()
                     if strength_match
                     else term
                 )
-                products.append({
-                    "rxcui": rxcui,
-                    "term": term,
-                    "brand_name": brand_name,
-                    "tty": tty,
-                    "ingredient_id": ingredient_id,
-                    "strength": strength_match.group(0) if strength_match else "",
-                    "route": route,
-                    "dosage_form": dosage_form,
-                })
+                products.append(
+                    {
+                        "rxcui": rxcui,
+                        "term": term,
+                        "brand_name": brand_name,
+                        "tty": tty,
+                        "ingredient_id": ingredient_id,
+                        "strength": (
+                            strength_match.group(0) if strength_match else ""
+                        ),
+                        "route": route,
+                        "dosage_form": dosage_form,
+                    }
+                )
+
             return ingredients, products
 
 
@@ -144,9 +166,12 @@ async def import_catalog(archive_path: Path) -> tuple[int, int]:
     ingredient_terms, products = parse_rxnorm_archive(archive_path)
     added_references = 0
     added_products = 0
+
     async with AsyncSessionLocal() as session:
         existing_refs = (await session.execute(select(DrugReference))).scalars().all()
-        reference_ids = {item.inn_name.casefold(): item.id for item in existing_refs}
+        reference_ids = {
+            item.inn_name.casefold(): item.id for item in existing_refs
+        }
         existing_products = (
             await session.execute(select(MedicinalProduct.regulatory_id))
         ).scalars().all()
@@ -175,6 +200,7 @@ async def import_catalog(archive_path: Path) -> tuple[int, int]:
             reference_id = reference_ids.get(ingredient_name.casefold())
             if reference_id is None:
                 continue
+
             session.add(
                 MedicinalProduct(
                     drug_reference_id=reference_id,
@@ -188,7 +214,9 @@ async def import_catalog(archive_path: Path) -> tuple[int, int]:
             )
             existing_codes.add(code)
             added_products += 1
+
         await session.commit()
+
     return added_references, added_products
 
 
@@ -204,6 +232,7 @@ async def main() -> None:
         response.raise_for_status()
         archive_path.write_bytes(response.content)
         references, products = await import_catalog(archive_path)
+
     print(
         f"RxNorm import complete: {references} new references, "
         f"{products} new products."
