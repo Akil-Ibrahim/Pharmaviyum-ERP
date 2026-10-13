@@ -26,7 +26,11 @@ RXNORM_URL = (
 PRODUCT_TERMS = {"SCD", "SBD"}
 INGREDIENT_TERMS = {"IN", "PIN"}
 INGREDIENT_RELATIONS = {"has_ingredient", "has_precise_ingredient"}
-STRENGTH_RE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:MG|MCG|G|ML|%|UNIT)\b", re.I)
+STRENGTH_RE = re.compile(
+    r"\b\d+(?:\.\d+)?\s*(?:MG|MCG|G|ML|%|UNIT)"
+    r"(?:\s*/\s*\d+(?:\.\d+)?\s*(?:MG|MCG|G|ML|%|UNIT))?\b",
+    re.I,
+)
 ROUTE_TERMS = {
     "oral",
     "topical",
