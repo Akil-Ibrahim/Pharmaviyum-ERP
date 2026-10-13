@@ -9,6 +9,7 @@ It never creates sellable POS inventory, prices, batches, or expiry dates.
 """
 from __future__ import annotations
 
+import argparse
 import asyncio
 import re
 import tempfile
@@ -16,6 +17,7 @@ import zipfile
 from pathlib import Path
 
 import httpx
+
 RXNORM_URL = (
     "https://download.nlm.nih.gov/umls/kss/rxnorm/"
     "RxNorm_full_prescribe_current.zip"
@@ -221,23 +223,44 @@ async def import_catalog(archive_path: Path) -> tuple[int, int]:
 
 
 async def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Download and validate the archive without writing to the database.",
+    )
+    args = parser.parse_args()
+
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = Path(temp_dir) / "rxnorm.zip"
-        response = httpx.get(
+        headers = {"User-Agent": "Pharmaviyum-DrugCatalog/1.0"}
+        with httpx.stream(
+            "GET",
             RXNORM_URL,
-            headers={"User-Agent": "Pharmaviyum-DrugCatalog/1.0"},
+            headers=headers,
             timeout=120,
             follow_redirects=True,
-        )
-        response.raise_for_status()
-        archive_path.write_bytes(response.content)
-        references, products = await import_catalog(archive_path)
+        ) as response:
+            response.raise_for_status()
+            with archive_path.open("wb") as archive_file:
+                for chunk in response.iter_bytes():
+                    archive_file.write(chunk)
+
+        if args.dry_run:
+            references, products = parse_rxnorm_archive(archive_path)
+            print(
+                f"RxNorm dry run: {len(references)} ingredient concepts and "
+                f"{len(products)} single-ingredient products parsed; "
+                "database unchanged."
+            )
+            return
+
+        references_added, products_added = await import_catalog(archive_path)
 
     print(
-        f"RxNorm import complete: {references} new references, "
-        f"{products} new products."
+        f"RxNorm import complete: {references_added} new references, "
+        f"{products_added} new products."
     )
-
 
 if __name__ == "__main__":
     asyncio.run(main())
