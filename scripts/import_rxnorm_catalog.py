@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import re
+import shutil
 import tempfile
 import zipfile
 from pathlib import Path
@@ -68,8 +69,10 @@ def parse_rxnorm_archive(
         with tempfile.TemporaryDirectory() as temp_dir:
             conso_path = Path(temp_dir) / "RXNCONSO.RRF"
             rel_path = Path(temp_dir) / "RXNREL.RRF"
-            conso_path.write_bytes(archive.read(conso_name))
-            rel_path.write_bytes(archive.read(rel_name))
+            with archive.open(conso_name) as source, conso_path.open("wb") as target:
+                shutil.copyfileobj(source, target)
+            with archive.open(rel_name) as source, rel_path.open("wb") as target:
+                shutil.copyfileobj(source, target)
             concepts: dict[str, tuple[str, str]] = {}
 
             for row in _rrf_rows(conso_path):
