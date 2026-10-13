@@ -14,10 +14,16 @@ The importer downloads the current prescribable RxNorm archive from the U.S. Nat
 
 ## Run
 
-After the database has been migrated and the API environment has database access:
+First validate the downloaded archive without changing the database:
+
+```bash
+uv run python scripts/import_rxnorm_catalog.py --dry-run
+```
+
+After the database has been migrated and the API environment has database access, run the import:
 
 ```bash
 uv run python scripts/import_rxnorm_catalog.py
 ```
 
-The importer is idempotent by canonical ingredient name and RxNorm concept identifier stored in `regulatory_id`. It prints the count of new reference and product rows. Review the logs and record counts before using the data operationally.
+The importer streams the archive to a temporary file, checks the archive structure, and is idempotent by canonical ingredient name and RxNorm concept identifier stored in `regulatory_id`. It prints the count of new reference and product rows. Review the logs and record counts before using the data operationally. The dry run reports parsed counts and never writes to the database.
