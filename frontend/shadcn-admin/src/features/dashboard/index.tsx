@@ -251,7 +251,7 @@ export function Dashboard() {
             </div>
           )}
 
-          <div className='space-y-6'>
+          <div className='space-y-5'>
             <section className='grid gap-4 md:grid-cols-3'>
               <KpiCard
                 label='Sales today'
