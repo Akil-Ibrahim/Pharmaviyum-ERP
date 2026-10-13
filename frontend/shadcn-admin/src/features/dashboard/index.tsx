@@ -3,7 +3,6 @@ import './dashboard.css'
 import {
   Activity,
   AlertTriangle,
-  ArrowUpRight,
   Bot,
   Boxes,
   Clock3,
@@ -273,48 +272,6 @@ export function Dashboard() {
               />
             </section>
 
-            <section aria-label='Operational priorities' className='pharmacy-priority-panel rounded-xl border bg-card'>
-              <div className='flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 sm:px-5'>
-                <div className='flex items-start gap-3'>
-                  <div className='rounded-lg bg-primary/10 p-2 text-primary'><ClipboardList className='size-5' /></div>
-                  <div>
-                    <h2 className='font-semibold'>Today’s priority queue</h2>
-                    <p className='mt-0.5 text-xs text-muted-foreground'>Actionable exceptions from current pharmacy records</p>
-                  </div>
-                </div>
-                <span className='rounded-md border bg-muted/30 px-2.5 py-1 text-[11px] font-medium text-muted-foreground'>Live operational data</span>
-              </div>
-              <div className='grid divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0'>
-                <PriorityItem
-                  icon={PackageSearch}
-                  tone='warning'
-                  label='Replenishment'
-                  value={summary ? summary.inventory.low_stock.toLocaleString() : '—'}
-                  detail={summary ? `${summary.reorder_attention.length} products need review` : 'Waiting for inventory data'}
-                  href='#procurement-attention'
-                  action='Review stock'
-                />
-                <PriorityItem
-                  icon={Clock3}
-                  tone='critical'
-                  label='Expiry exposure'
-                  value={summary ? (summary.inventory.expiry_red + summary.inventory.expiry_yellow).toLocaleString() : '—'}
-                  detail={summary ? `${summary.inventory.expired} expired records · ${summary.inventory.critical_expiry} critical` : 'Waiting for batch data'}
-                  href='#inventory-attention'
-                  action='Review exposure'
-                />
-                <PriorityItem
-                  icon={AlertTriangle}
-                  tone='warning'
-                  label='Slow-moving stock'
-                  value={summary ? summary.attention.slow_moving_items.toLocaleString() : '—'}
-                  detail={summary ? `${formatAmount(summary.attention.slow_moving_stock_value)} tied up in stock` : 'Waiting for stock movement data'}
-                  href='#slow-moving-stock'
-                  action='Inspect products'
-                />
-              </div>
-            </section>
-
             <section>
               <div className='mb-3'>
                 <h2 className='font-semibold'>Operational Health</h2>
@@ -383,6 +340,42 @@ export function Dashboard() {
                   ['Medication lines', summary?.patient_medications.reduce((total, patient) => total + patient.medications.length, 0) ?? 0],
                 ]}
               />
+            </section>
+
+            <section aria-label='Operational priorities' className='pharmacy-priority-panel rounded-xl border bg-card'>
+              <div className='flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 sm:px-5'>
+                <div className='flex items-start gap-3'>
+                  <div className='rounded-lg bg-primary/10 p-2 text-primary'><ClipboardList className='size-5' /></div>
+                  <div>
+                    <h2 className='font-semibold'>Today’s priority queue</h2>
+                    <p className='mt-0.5 text-xs text-muted-foreground'>Actionable exceptions from current pharmacy records</p>
+                  </div>
+                </div>
+                <span className='rounded-md border bg-muted/30 px-2.5 py-1 text-[11px] font-medium text-muted-foreground'>Live operational data</span>
+              </div>
+              <div className='grid divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0'>
+                <PriorityItem
+                  icon={PackageSearch}
+                  tone='warning'
+                  label='Replenishment'
+                  value={summary ? summary.inventory.low_stock.toLocaleString() : '—'}
+                  detail={summary ? `${summary.reorder_attention.length} products need review` : 'Waiting for inventory data'}
+                />
+                <PriorityItem
+                  icon={Clock3}
+                  tone='critical'
+                  label='Expiry exposure'
+                  value={summary ? (summary.inventory.expiry_red + summary.inventory.expiry_yellow).toLocaleString() : '—'}
+                  detail={summary ? `${summary.inventory.expired} expired records · ${summary.inventory.critical_expiry} critical` : 'Waiting for batch data'}
+                />
+                <PriorityItem
+                  icon={AlertTriangle}
+                  tone='warning'
+                  label='Slow-moving stock'
+                  value={summary ? summary.attention.slow_moving_items.toLocaleString() : '—'}
+                  detail={summary ? `${formatAmount(summary.attention.slow_moving_stock_value)} tied up in stock` : 'Waiting for stock movement data'}
+                />
+              </div>
             </section>
 
             <section className='overflow-hidden rounded-2xl border bg-card shadow-sm'>
@@ -520,16 +513,12 @@ function PriorityItem({
   label,
   value,
   detail,
-  href,
-  action,
 }: {
   icon: LucideIcon
   tone: 'critical' | 'warning'
   label: string
   value: string
   detail: string
-  href: string
-  action: string
 }) {
   return (
     <div className='min-w-0 p-4 sm:p-5'>
@@ -539,9 +528,7 @@ function PriorityItem({
       </div>
       <p className='mt-3 text-3xl font-bold tracking-tight tabular-nums'>{value}</p>
       <p className='mt-1 min-h-8 text-xs leading-5 text-muted-foreground'>{detail}</p>
-      <a href={href} className='mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline'>
-        {action}<ArrowUpRight className='size-3.5' aria-hidden='true' />
-      </a>
+
     </div>
   )
 }
@@ -574,15 +561,15 @@ function CircularMetricCard({
 }) {
   const angle = Math.max(0, Math.min(100, value)) * 3.6
   return (
-    <div className='rounded-2xl border bg-card p-5 shadow-sm'>
-      <div className='flex items-center gap-4'>
+    <div className='rounded-xl border bg-card p-3 sm:p-4'>
+      <div className='flex items-center gap-3'>
         <div
-          className='relative grid size-24 shrink-0 place-items-center rounded-full'
+          className='relative grid size-20 shrink-0 place-items-center rounded-full'
           style={{
             background: `conic-gradient(hsl(var(--primary)) ${angle}deg, hsl(var(--muted)) ${angle}deg)`,
           }}
         >
-          <div className='grid size-18 place-items-center rounded-full bg-card'>
+          <div className='grid size-14 place-items-center rounded-full bg-card'>
             <span className='text-xl font-bold'>{value}%</span>
           </div>
         </div>
