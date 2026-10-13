@@ -49,6 +49,7 @@ export const sidebarData: SidebarData = {
         { title: 'POS', url: '/pos', icon: ReceiptText },
         { title: 'Drug Reference', url: '/drug-reference', icon: BookOpenCheck },
         { title: 'Patients', url: '/patients', icon: UserRound },
+        { title: 'Products', url: '/products', icon: Pill },
         { title: 'Orders', url: '/orders', icon: ClipboardList },
         { title: 'Prescriptions', url: '/prescriptions', icon: FileText },
       ],
@@ -56,7 +57,6 @@ export const sidebarData: SidebarData = {
     {
       title: 'Pharmacy',
       items: [
-        { title: 'Products', url: '/products', icon: Pill },
         { title: 'Inventory', url: '/inventory', icon: Boxes },
         { title: 'Procurement', url: '/procurement', icon: ShoppingCart },
         { title: 'Transfers', url: '/transfers', icon: ArrowLeftRight },
