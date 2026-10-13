@@ -59,6 +59,9 @@ class MedicinalProduct(Base):
     package_description: Mapped[str | None] = mapped_column(String(200), nullable=True)
     gtin: Mapped[str | None] = mapped_column(String(14), nullable=True, index=True)
     regulatory_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    authorization_country: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
