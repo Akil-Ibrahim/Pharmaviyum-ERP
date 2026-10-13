@@ -313,7 +313,7 @@ export function Dashboard() {
               </div>
             </section>
 
-            <section className='grid gap-4 xl:grid-cols-3'>
+            <section className='grid gap-4 xl:grid-cols-4'>
               <PipelineCard
                 title='Dispensing / POS'
                 icon={Receipt}
@@ -339,6 +339,15 @@ export function Dashboard() {
                   ['Stock value', summary?.inventory.retail_value ?? 0, true],
                   ['Low stock', summary?.inventory.low_stock ?? 0],
                   ['Expiry risk', (summary?.inventory.expiry_red ?? 0) + (summary?.inventory.expiry_yellow ?? 0)],
+                ]}
+              />
+              <PipelineCard
+                title='Patient activity'
+                icon={Activity}
+                stages={[
+                  ['Active patients', summary?.patients.active ?? 0],
+                  ['Recent patients', summary?.patient_medications.length ?? 0],
+                  ['Medication lines', summary?.patient_medications.reduce((total, patient) => total + patient.medications.length, 0) ?? 0],
                 ]}
               />
             </section>
