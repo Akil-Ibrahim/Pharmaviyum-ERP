@@ -97,6 +97,7 @@ class LangGraphRAG:
         success = False
         try:
             question = state["question"]
+            input_warnings: list[str] = []
             ctx = state["context"]
             ctx_dict = {"language": ctx.language, "country": ctx.country}
             if self.guardrails is not None:
@@ -122,6 +123,9 @@ class LangGraphRAG:
                     question = (
                         getattr(guardrail_result, "sanitized_input", None) or question
                     )
+                    input_warnings = list(
+                        getattr(guardrail_result, "warnings", None) or []
+                    )
             variations = await self.transformer.generate_multi_query(
                 query=question, num_variations=2, context=ctx_dict
             )
@@ -137,7 +141,11 @@ class LangGraphRAG:
             if not queries:
                 queries = [question]
             success = True
-            return {"transformed_queries": queries, "rewrite_count": 0, "warnings": list(getattr(guardrail_result, "warnings", None) or [])}
+            return {
+                "transformed_queries": queries,
+                "rewrite_count": 0,
+                "warnings": input_warnings,
+            }
         finally:
             record_ai_stage(
                 "query_transform",
