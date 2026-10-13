@@ -89,7 +89,9 @@ class _FakeLLM:
             )
         if "Hypothetical answer:" in prompt_text:
             # Used only to create a retrieval query, never presented as evidence.
-            return SimpleNamespace(content="Retrieve the patient's documented medication list.")
+            return SimpleNamespace(
+                content="Retrieve the patient's documented medication list."
+            )
         if "Every factual claim supported by evidence MUST include" in prompt_text:
             return SimpleNamespace(
                 content=(
@@ -100,7 +102,9 @@ class _FakeLLM:
                     "whether the combination is appropriate."
                 )
             )
-        raise AssertionError(f"Unexpected LLM prompt in smoke test: {prompt_text[:120]}")
+        raise AssertionError(
+            f"Unexpected LLM prompt in smoke test: {prompt_text[:120]}"
+        )
 
 
 @pytest.mark.asyncio
@@ -132,9 +136,14 @@ async def test_mortarium_rag_runs_end_to_end_for_one_synthetic_patient():
     assert "atorvastatin 20 mg" in result.answer
     assert f"[src-{CHUNK_ID}]" in result.answer
     assert any(source.chunk.id == CHUNK_ID for source in result.sources)
-    assert any(citation.citation_id == f"src-{CHUNK_ID}" for citation in result.citations)
+    assert any(
+        citation.citation_id == f"src-{CHUNK_ID}" for citation in result.citations
+    )
     assert retriever.filters_seen
-    assert all(filters.get("pharmacy_id") == PHARMACY_ID for filters in retriever.filters_seen)
+    assert all(
+        filters.get("pharmacy_id") == PHARMACY_ID
+        for filters in retriever.filters_seen
+    )
     assert any(
         filters.get("access_level") == "patient"
         and filters.get("patient_id") == PATIENT_ID
