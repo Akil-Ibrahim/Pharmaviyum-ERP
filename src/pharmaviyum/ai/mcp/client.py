@@ -75,10 +75,15 @@ class MCPClient:
         # The authenticated request context is the only authority for identity.
         context = get_authorization_context()
         if context is None:
+            error = (
+                "MCP tool not authorized: trusted tenant context is required"
+                if any(value is not None for value in (user_role, user_id, pharmacy_id))
+                else "MCP authorization and tenant context are required"
+            )
             return ToolExecutionResult(
                 tool_name=tool_name,
                 success=False,
-                error="MCP authorization and tenant context are required",
+                error=error,
                 latency_ms=(time.perf_counter() - start) * 1000,
             )
         if (
