@@ -341,6 +341,10 @@ export function Dashboard() {
                   ['Medication lines', summary?.patient_medications.reduce((total, patient) => total + patient.medications.length, 0) ?? 0],
                 ]}
               />
+              <details className='mt-3 rounded-lg border bg-card'>
+                <summary className='cursor-pointer px-4 py-3 text-sm font-semibold text-primary'>Recent patient dispensing · up to 20 patients</summary>
+                <div className='border-t p-3 sm:p-4'><PatientOverview summary={summary} /></div>
+              </details>
             </section>
 
             <section aria-label='Operational priorities' className='pharmacy-priority-panel rounded-xl border bg-card'>
@@ -532,6 +536,37 @@ function PriorityItem({
 
     </div>
   )
+}
+
+function PatientOverview({ summary }: { summary: DashboardSummary | null }) {
+  const metrics = new Map((summary?.patient_purchases ?? []).map((item) => [item.patient_id, item]))
+  const patients = summary?.patient_medications ?? []
+  if (!summary) return <p className='py-3 text-sm text-muted-foreground'>Awaiting patient data…</p>
+  if (patients.length === 0) return <p className='py-3 text-sm text-muted-foreground'>No patient dispensing data available.</p>
+  return (
+    <div className='overflow-x-auto'>
+      <table className='w-full min-w-[760px] text-sm'>
+        <thead><tr className='border-b text-left text-xs text-muted-foreground'><th className='px-3 py-2 font-medium'>Patient</th><th className='px-3 py-2 font-medium'>Condition</th><th className='px-3 py-2 font-medium'>Lines / packs</th><th className='px-3 py-2 font-medium'>Revenue</th><th className='px-3 py-2 font-medium'>Medication details</th></tr></thead>
+        <tbody>{patients.slice(0, 20).map((patient) => {
+          const metric = metrics.get(patient.patient_id)
+          const rxCount = patient.medications.filter((medication) => medication.prescription_required).length
+          return <tr key={patient.patient_id} className='border-b align-top last:border-0'>
+            <td className='px-3 py-3'><p className='font-medium'>{patient.patient_name}</p><p className='text-xs text-muted-foreground'>#{patient.patient_id}</p></td>
+            <td className='px-3 py-3'>{patient.condition ?? 'Not recorded'}</td>
+            <td className='px-3 py-3 whitespace-nowrap'><p>{metric?.lines ?? patient.medications.length} lines · {metric?.packs ?? 0} packs</p><p className='text-xs text-muted-foreground'>{rxCount} Rx · {patient.medications.length - rxCount} OTC</p></td>
+            <td className='px-3 py-3 font-medium whitespace-nowrap'>{formatAmount(metric?.revenue ?? 0)}</td>
+            <td className='px-3 py-3'><details><summary className='cursor-pointer text-primary'>{patient.medications.length} medications · view</summary><div className='mt-2 space-y-2'>{patient.medications.map((medication) => <div key={medication.purchase_id} className='rounded-md bg-muted/30 p-2.5'><p className='font-medium'>{medication.name}</p><p className='text-xs text-muted-foreground'>{[medication.dosage, medication.form].filter(Boolean).join(' · ') || 'Dosage not recorded'} · pack {medication.pack_size}</p><p className='mt-1 text-xs text-muted-foreground'>{medication.packs} packs · {formatAmount(medication.amount)} · {medication.prescription_required ? 'Rx' : 'OTC'} · {medication.type} · {medication.expiry_date ? 'Expiry ' + formatExpiry(medication.expiry_date) : 'Expiry not recorded'}</p></div>)}</div></details></td>
+          </tr>
+        })}</tbody>
+      </table>
+    </div>
+  )
+}
+
+function formatExpiry(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(date)
 }
 
 function formatAmount(value: number) {
