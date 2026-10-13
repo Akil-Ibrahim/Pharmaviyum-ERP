@@ -7,8 +7,8 @@ Pharmaviyum has separate **Drug Reference**, **Medicinal Product**, and local **
 The importer downloads the current prescribable RxNorm archive from the U.S. National Library of Medicine and loads single-ingredient clinical and branded drug concepts into `drug_references`, `drug_reference_ingredients`, and `medicinal_products`.
 
 - Source: https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html
-- The NLM documents the Current Prescribable Content subset as available without a license.
-- RxNorm is a useful normalized clinical-drug vocabulary, not a complete worldwide trade-name or regulatory-registration database. Country-specific brand names, approvals, package sizes, GTINs, and Rx/OTC status must be sourced and validated per market.
+- The NLM provides the Current Prescribable Content subset without licensing restrictions. NLM requests this attribution in products that use RxNorm: “This product uses publicly available data courtesy of the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.”
+- RxNorm Current Prescribable Content is US-centric: NLM describes it as an approximation of prescription drugs marketed in the United States, with some frequently prescribed OTC drugs, and says it excludes drugs exclusively marketed outside the US. Treat it as a country-neutral data model's initial reference seed, not a complete global medicine list. Country-specific brand names, approvals, package sizes, GTINs, and Rx/OTC status must be sourced and validated per market.
 - Combination products are intentionally skipped until the data model supports linking one medicinal product to multiple active ingredients.
 - Importing reference data does **not** create sellable products, prices, inventory, batches, expiry dates, or dispensing eligibility.
 
