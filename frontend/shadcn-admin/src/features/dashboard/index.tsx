@@ -4,6 +4,7 @@ import {
   Activity,
   AlertTriangle,
   ArrowUpRight,
+  Bot,
   Boxes,
   Clock3,
   ClipboardList,
@@ -12,6 +13,8 @@ import {
   PackageSearch,
   Receipt,
   RefreshCw,
+  Send,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/api-client'
@@ -84,6 +87,12 @@ export function Dashboard() {
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [aiPharmacies, setAiPharmacies] = useState<{ id: number; name: string }[]>([])
+  const [aiPharmacyId, setAiPharmacyId] = useState<number | undefined>()
+  const [aiQuery, setAiQuery] = useState('')
+  const [aiAnswer, setAiAnswer] = useState('')
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
   const requestInFlight = useRef(false)
 
   const loadSummary = useCallback(() => {
@@ -119,6 +128,55 @@ export function Dashboard() {
       window.clearInterval(interval)
     }
   }, [loadSummary])
+
+  useEffect(() => {
+    let cancelled = false
+    apiFetch<{ pharmacies: { id: number; name: string }[] }>('/api/v1/ai/context')
+      .then(({ pharmacies }) => {
+        if (cancelled) return
+        setAiPharmacies(pharmacies)
+        setAiPharmacyId((current) => current ?? pharmacies[0]?.id)
+        setAiError(null)
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return
+        setAiError(
+          error instanceof Error && error.message.trim()
+            ? error.message.slice(0, 160)
+            : 'Mortarium context is currently unavailable.'
+        )
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  async function askMortarium(prompt: string) {
+    if (!prompt.trim() || !aiPharmacyId || aiLoading) return
+    setAiLoading(true)
+    setAiError(null)
+    try {
+      const result = await apiFetch<{ answer: string }>('/api/v1/ai/query', {
+        method: 'POST',
+        body: JSON.stringify({
+          query: prompt.trim(),
+          pharmacy_id: aiPharmacyId,
+          language: 'en',
+          country: 'VN',
+        }),
+      })
+      setAiAnswer(result.answer)
+      setAiQuery('')
+    } catch (error) {
+      setAiError(
+        error instanceof Error && error.message.trim()
+          ? error.message.slice(0, 200)
+          : 'Mortarium could not complete the request. Please retry.'
+      )
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   return (
     <>
@@ -480,17 +538,119 @@ export function Dashboard() {
               <PatientOverview summary={summary} />
             </section>
 
-            <section className='rounded-2xl border bg-muted/20 p-5'>
-              <div className='flex items-start gap-3'>
-                <div className='rounded-lg bg-primary/10 p-2 text-primary'>
-                  <Pill className='size-5' />
+            <section className='overflow-hidden rounded-2xl border bg-card shadow-sm'>
+              <div className='flex flex-col gap-4 border-b bg-gradient-to-r from-primary/[0.07] via-card to-card p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5'>
+                <div className='flex items-start gap-3'>
+                  <div className='rounded-xl border border-primary/15 bg-primary/10 p-2.5 text-primary'>
+                    <Bot className='size-5' />
+                  </div>
+                  <div>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <h2 className='font-semibold'>Mortarium AI</h2>
+                      <span className='inline-flex items-center gap-1 rounded-full border bg-background/80 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground'>
+                        <Sparkles className='size-3' /> Decision support
+                      </span>
+                    </div>
+                    <p className='mt-1 max-w-2xl text-sm leading-5 text-muted-foreground'>
+                      Ask questions about stock, expiry exposure, sales and dispensing activity. Answers come from the existing authenticated Mortarium service.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className='font-semibold'>Mortarium AI</h2>
-                  <p className='mt-1 text-sm text-muted-foreground'>
-                    Mortarium AI metrics remain isolated from operational KPI calculations.
-                    The dashboard uses ERP records for business metrics and keeps AI telemetry separate.
+                <label className='flex min-w-0 flex-col gap-1 text-xs font-medium text-muted-foreground sm:w-64'>
+                  Pharmacy context
+                  <select
+                    value={aiPharmacyId ?? ''}
+                    onChange={(event) => {
+                      setAiPharmacyId(event.target.value ? Number(event.target.value) : undefined)
+                      setAiAnswer('')
+                      setAiError(null)
+                    }}
+                    disabled={aiPharmacies.length === 0 || aiLoading}
+                    className='h-9 w-full rounded-md border bg-background px-2.5 text-sm font-normal text-foreground disabled:opacity-60'
+                  >
+                    {aiPharmacies.length === 0 && <option value=''>Loading authorized pharmacies…</option>}
+                    {aiPharmacies.map((pharmacy) => (
+                      <option key={pharmacy.id} value={pharmacy.id}>{pharmacy.name}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className='grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(260px,0.75fr)]'>
+                <div className='min-w-0'>
+                  <form
+                    className='flex gap-2'
+                    onSubmit={(event) => {
+                      event.preventDefault()
+                      void askMortarium(aiQuery)
+                    }}
+                  >
+                    <input
+                      value={aiQuery}
+                      onChange={(event) => setAiQuery(event.target.value)}
+                      placeholder='Ask about inventory, sales or expiry…'
+                      aria-label='Ask Mortarium AI'
+                      className='min-w-0 flex-1 rounded-lg border bg-background px-3 py-2.5 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary/40'
+                    />
+                    <button
+                      type='submit'
+                      disabled={!aiPharmacyId || aiLoading || !aiQuery.trim()}
+                      className='inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
+                    >
+                      {aiLoading ? <RefreshCw className='size-4 animate-spin' /> : <Send className='size-4' />}
+                      <span className='hidden sm:inline'>{aiLoading ? 'Analyzing' : 'Ask AI'}</span>
+                    </button>
+                  </form>
+
+                  {aiError && (
+                    <p role='alert' className='mt-3 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-xs leading-5 text-destructive'>
+                      {aiError}
+                    </p>
+                  )}
+
+                  {aiLoading && (
+                    <div className='mt-4 flex items-center gap-2 text-sm text-muted-foreground' role='status'>
+                      <RefreshCw className='size-4 animate-spin' /> Mortarium is analyzing the request…
+                    </div>
+                  )}
+
+                  {aiAnswer && !aiLoading && (
+                    <div className='mt-4 rounded-xl border bg-muted/20 p-4'>
+                      <div className='mb-2 flex items-center gap-2 text-xs font-semibold text-primary'>
+                        <Bot className='size-4' /> Mortarium response
+                      </div>
+                      <p className='whitespace-pre-wrap text-sm leading-6'>{aiAnswer}</p>
+                    </div>
+                  )}
+
+                  {!aiAnswer && !aiError && !aiLoading && (
+                    <p className='mt-3 text-xs leading-5 text-muted-foreground'>
+                      Recommendations are generated on request. No AI forecasts or recommendations are fabricated for this dashboard.
+                    </p>
+                  )}
+                </div>
+
+                <div className='grid content-start gap-2 sm:grid-cols-2 lg:grid-cols-1'>
+                  <p className='mb-1 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:col-span-2 lg:col-span-1'>
+                    Suggested questions
                   </p>
+                  {[
+                    'Which products need replenishment first?',
+                    'Which batches have the highest expiry risk?',
+                    'Summarize this month’s realized sales.',
+                    'What stock is moving slowly?',
+                  ].map((prompt) => (
+                    <button
+                      key={prompt}
+                      type='button'
+                      onClick={() => void askMortarium(prompt)}
+                      disabled={!aiPharmacyId || aiLoading}
+                      className='flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2.5 text-left text-xs leading-5 transition hover:border-primary/30 hover:bg-primary/[0.03] disabled:cursor-not-allowed disabled:opacity-50'
+                    >
+                      <span>{prompt}</span>
+                      <ArrowUpRight className='size-3.5 shrink-0 text-muted-foreground' />
+                    </button>
+                  ))}
                 </div>
               </div>
             </section>
