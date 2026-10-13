@@ -230,7 +230,10 @@ export function Pos() {
                   <Badge variant='outline'>NLM RxNorm</Badge>
                 </div>
                 <p className='text-xs text-muted-foreground'>
-                  Clinical reference records support medicine identification. They do not confirm local registration, Rx/OTC status, package barcode, price, or availability.
+                  Clinical reference records support medicine identification. They do not confirm local registration, Rx/OTC status, package barcode, price, or availability. RxNorm Current Prescribable Content is US-centric, not a complete global catalog.
+                </p>
+                <p className='text-xs text-muted-foreground'>
+                  Data courtesy of the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services. NLM is not responsible for Pharmaviyum and does not endorse or recommend it.
                 </p>
                 {referenceLoading && <p className='text-sm text-muted-foreground'>Searching the reference catalog…</p>}
                 {referenceError && (
