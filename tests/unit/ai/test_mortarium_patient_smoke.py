@@ -148,7 +148,7 @@ class _FakeLLM:
                     "10 mg, ibuprofen 200 mg OTC, and omeprazole 20 mg "
                     f"[src-{PATIENT_CHUNK_ID}]. The fixture does not verify dose "
                     "schedule, indication, allergies, kidney function, or current "
-                    "symptoms [src-{PATIENT_CHUNK_ID}]. Verify the complete "
+                    f"symptoms [src-{PATIENT_CHUNK_ID}]. Verify the complete "
                     "medication list and relevant patient factors before deciding "
                     f"whether to dispense [src-{GUIDELINE_CHUNK_ID}]. This test "
                     "checklist is synthetic and is not clinical evidence."
@@ -201,3 +201,10 @@ async def test_synthetic_patient_medication_review_runs_through_langgraph() -> N
     assert patient_filters
     assert all(filters.get("patient_id") == PATIENT_ID for filters in patient_filters)
     assert "synthetic" in response.answer.lower()
+    # Every citation rendered in the answer must resolve to a retrieved source.
+    import re
+
+    answer_citations = set(re.findall(r"\\[(src-[0-9a-fA-F-]{36})\\]", response.answer))
+    retrieved_citations = {f"src-{source.chunk.id}" for source in response.sources}
+    assert answer_citations
+    assert answer_citations <= retrieved_citations
