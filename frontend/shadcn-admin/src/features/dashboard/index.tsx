@@ -315,43 +315,13 @@ export function Dashboard() {
               </div>
             </section>
 
-            <section id='expiry-control' className='grid gap-4 xl:grid-cols-3'>
-              <DonutCard
-                title='Sales mix'
-                total={formatAmount(summary?.sales.by_category.reduce((sum, item) => sum + item.revenue, 0) ?? 0)}
-                items={toPercentItems(summary?.sales.by_category.map((item) => [item.category, item.revenue] as [string, number]) ?? [])}
-              />
-              <DonutCard
-                title='Expiry control'
-                total={String(summary?.inventory.expiry_tracked ?? 0)}
-                items={toPercentItems([
-                  ['Red · expired / ≤ 3 months', summary?.inventory.expiry_red ?? 0],
-                  ['Yellow · > 3–12 months', summary?.inventory.expiry_yellow ?? 0],
-                  ['Green · > 12 months', summary?.inventory.expiry_green ?? 0],
-                ])}
-              />
-              <DonutCard
-                title='Stock availability'
-                total={String(summary?.inventory.items ?? 0)}
-                items={toPercentItems([
-                  ['Healthy stock', Math.max(0, (summary?.inventory.items ?? 0) - (summary?.inventory.low_stock ?? 0))],
-                  ['Low stock', Math.max(0, (summary?.inventory.low_stock ?? 0) - (summary?.attention.stockout_items ?? 0))],
-                  ['Stockout', summary?.attention.stockout_items ?? 0],
-                ])}
-              />
-            </section>
-
             <section>
               <div className='mb-3'>
                 <h2 className='font-semibold'>Operational Health</h2>
                 <p className='text-xs text-muted-foreground'>At-a-glance signals for daily pharmacy management.</p>
               </div>
               <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
-                <CircularMetricCard
-                  label='Order completion'
-                  value={ratio(summary?.orders.completed_month ?? 0, summary?.orders.month ?? 0)}
-                  detail='Completed / orders this month'
-                />
+
                 <CircularMetricCard
                   label='Availability health'
                   value={ratio(
@@ -376,7 +346,7 @@ export function Dashboard() {
               </div>
             </section>
 
-            <section className='grid gap-4 xl:grid-cols-4'>
+            <section className='grid gap-3 xl:grid-cols-4'>
               <PipelineCard
                 title='Dispensing / POS'
                 icon={Receipt}
@@ -413,134 +383,6 @@ export function Dashboard() {
                   ['Medication lines', summary?.patient_medications.reduce((total, patient) => total + patient.medications.length, 0) ?? 0],
                 ]}
               />
-            </section>
-
-            <section>
-              <div className='mb-3'>
-                <h2 className='font-semibold'>Inventory Control</h2>
-                <p className='text-xs text-muted-foreground'>Runway and stock exposure based on realized dispensing.</p>
-              </div>
-              <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
-                <OperationalMetric
-                  label='Days on hand'
-                  value={summary?.inventory.days_on_hand == null ? '—' : summary.inventory.days_on_hand + 'd'}
-                  detail={summary ? 'Available stock ÷ 30-day pack demand' : 'Awaiting API data'}
-                />
-                <OperationalMetric
-                  label='30-day demand'
-                  value={summary ? summary.inventory.demand_30d_packs.toLocaleString() : '—'}
-                  detail='Dispensed packs in the last 30 days'
-                />
-                <OperationalMetric
-                  label='Expired stock value'
-                  value={summary ? formatAmount(summary.inventory.expired_value) : '—'}
-                  detail='Available stock already past expiry'
-                />
-                <OperationalMetric
-                  label='Low-stock products'
-                  value={summary ? summary.inventory.low_stock.toLocaleString() : '—'}
-                  detail='At or below configured reorder level'
-                />
-              </div>
-            </section>
-
-            <section>
-              <div id='inventory-attention' className='mb-3'>
-                <h2 className='font-semibold'>Inventory Attention</h2>
-                <p className='text-xs text-muted-foreground'>Exceptions that can affect availability, working capital, or expiry losses.</p>
-              </div>
-              <div className='grid gap-4 xl:grid-cols-3'>
-                <AttentionCard
-                  title='Stockouts'
-                  value={summary?.attention.stockout_items ?? 0}
-                  detail='Products with zero available stock'
-                  tone='critical'
-                />
-                <AttentionCard
-                  title='Near-expiry value'
-                  value={summary?.attention.near_expiry_value ?? 0}
-                  detail='Stock value expiring within 12 months'
-                  tone='warning'
-                  amount
-                />
-                <AttentionCard
-                  title='Slow-moving stock'
-                  value={summary?.attention.slow_moving_stock_value ?? 0}
-                  detail={summary ? `${summary.attention.slow_moving_items} products with no sales in 90 days` : 'Awaiting API data'}
-                  tone='warning'
-                  amount
-                />
-              </div>
-              <div id='slow-moving-stock' className='mt-4 rounded-2xl border bg-card p-5 shadow-sm'>
-                <div className='mb-4 flex items-center justify-between gap-3'>
-                  <div>
-                    <h3 className='font-semibold'>Slow-moving products</h3>
-                    <p className='text-xs text-muted-foreground'>Highest inventory value with no sales in the last 90 days.</p>
-                  </div>
-                  <span className='rounded-full border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground'>90 days</span>
-                </div>
-                <div className='space-y-2'>
-                  {(summary?.attention.slow_moving ?? []).map((item) => (
-                    <div key={item.id} className='flex items-center gap-3 rounded-xl bg-muted/30 p-3'>
-                      <div className='min-w-0 flex-1'>
-                        <p className='truncate text-sm font-medium'>{item.name}</p>
-                        <p className='text-xs text-muted-foreground'>{item.stock.toLocaleString()} units · {item.packs_90d} packs sold</p>
-                      </div>
-                      <span className='text-sm font-semibold'>{formatAmount(item.stock_value)}</span>
-                    </div>
-                  ))}
-                  {summary && summary.attention.slow_moving.length === 0 && (
-                    <p className='py-4 text-center text-xs text-muted-foreground'>No slow-moving stock detected.</p>
-                  )}
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <div id='procurement-attention' className='mb-3'>
-                <h2 className='font-semibold'>Procurement Attention</h2>
-                <p className='text-xs text-muted-foreground'>Products at or below their configured reorder level, prioritized by available stock.</p>
-              </div>
-              <div className='rounded-2xl border bg-card p-5 shadow-sm'>
-                <div className='space-y-2'>
-                  {(summary?.reorder_attention ?? []).map((item) => (
-                    <div key={item.id} className='flex flex-wrap items-center gap-3 rounded-xl bg-muted/30 p-3'>
-                      <div className='min-w-0 flex-1'>
-                        <p className='truncate text-sm font-medium'>{item.name}</p>
-                        <p className='text-xs text-muted-foreground'>{item.available_packs} packs available · reorder level {item.reorder_level} units · {item.packs_30d} packs / 30d</p>
-                      </div>
-                      <div className='text-right'>
-                        <p className='text-sm font-semibold'>{item.days_on_hand == null ? 'No demand' : item.days_on_hand + 'd'}</p>
-                        <p className='text-[11px] text-muted-foreground'>{formatAmount(item.stock_value)} stock value</p>
-                      </div>
-                    </div>
-                  ))}
-                  {summary && summary.reorder_attention.length === 0 && (
-                    <p className='py-4 text-center text-xs text-muted-foreground'>No products currently require procurement attention.</p>
-                  )}
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <DataTable
-                title='Top dispensed products'
-                columns={['Product', 'Packs', 'Revenue', 'Available stock']}
-                rows={(summary?.top_products ?? []).map((item) => [
-                  item.name,
-                  item.packs.toLocaleString(),
-                  formatAmount(item.revenue),
-                  item.stock.toLocaleString(),
-                ])}
-              />
-            </section>
-
-            <section>
-              <div className='mb-3'>
-                <h2 className='font-semibold'>Patient Overview</h2>
-                <p className='text-xs text-muted-foreground'>Up to 20 patients with recent dispensing activity, key metrics, conditions, and medication details.</p>
-              </div>
-              <PatientOverview summary={summary} />
             </section>
 
             <section className='overflow-hidden rounded-2xl border bg-card shadow-sm'>
@@ -704,94 +546,6 @@ function PriorityItem({
   )
 }
 
-function PatientOverview({ summary }: { summary: DashboardSummary | null }) {
-  const metrics = new Map((summary?.patient_purchases ?? []).map((item) => [item.patient_id, item]))
-  const patients = summary?.patient_medications ?? []
-
-  if (!summary) {
-    return <div className='rounded-2xl border bg-card p-5 text-sm text-muted-foreground'>Awaiting patient data…</div>
-  }
-
-  if (patients.length === 0) {
-    return <div className='rounded-2xl border bg-card p-5 text-sm text-muted-foreground'>No patient dispensing data available.</div>
-  }
-
-  return (
-    <div className='rounded-2xl border bg-card shadow-sm'>
-      <div className='overflow-x-auto'>
-        <table className='w-full min-w-[980px] text-sm'>
-          <thead>
-            <tr className='border-b text-left text-xs text-muted-foreground'>
-              <th className='px-5 py-3 font-medium'>Patient</th>
-              <th className='px-4 py-3 font-medium'>Condition</th>
-              <th className='px-4 py-3 font-medium'>Dispensing</th>
-              <th className='px-4 py-3 font-medium'>Packs</th>
-              <th className='px-4 py-3 font-medium'>Revenue</th>
-              <th className='px-5 py-3 font-medium'>Medications</th>
-            </tr>
-          </thead>
-          <tbody>
-            {patients.slice(0, 20).map((patient) => {
-              const metric = metrics.get(patient.patient_id)
-              const medicationCount = patient.medications.length
-              const rxCount = patient.medications.filter((medication) => medication.prescription_required).length
-              return (
-                <tr key={patient.patient_id} className='border-b align-top last:border-0'>
-                  <td className='px-5 py-4'>
-                    <div className='font-medium'>{patient.patient_name}</div>
-                    <div className='text-xs text-muted-foreground'>#{patient.patient_id}</div>
-                  </td>
-                  <td className='px-4 py-4'>
-                    <span className='rounded-full border bg-muted/40 px-2 py-1 text-xs'>
-                      {patient.condition ?? 'Not recorded'}
-                    </span>
-                  </td>
-                  <td className='px-4 py-4 whitespace-nowrap'>
-                    <div className='font-medium'>{metric?.lines ?? medicationCount} lines</div>
-                    <div className='text-xs text-muted-foreground'>{rxCount} Rx · {medicationCount - rxCount} OTC</div>
-                  </td>
-                  <td className='px-4 py-4 font-medium whitespace-nowrap'>{metric?.packs ?? 0}</td>
-                  <td className='px-4 py-4 font-medium whitespace-nowrap'>{formatAmount(metric?.revenue ?? 0)}</td>
-                  <td className='px-5 py-4'>
-                    <details className='group'>
-                      <summary className='cursor-pointer list-none font-medium text-primary'>
-                        <span className='group-open:hidden'>{medicationCount} medications · view details</span>
-                        <span className='hidden group-open:inline'>Hide medication details</span>
-                      </summary>
-                      <div className='mt-3 space-y-2'>
-                        {patient.medications.map((medication) => (
-                          <div key={medication.purchase_id} className='rounded-xl bg-muted/30 p-3'>
-                            <div className='flex flex-wrap items-start justify-between gap-2'>
-                              <div className='min-w-0'>
-                                <div className='font-medium'>{medication.name}</div>
-                                <div className='text-xs text-muted-foreground'>
-                                  {[medication.dosage, medication.form].filter(Boolean).join(' · ') || 'Dosage not recorded'} · pack {medication.pack_size}
-                                </div>
-                              </div>
-                              <span className='rounded-full border px-2 py-0.5 text-[10px]'>
-                                {medication.prescription_required ? 'Rx' : 'OTC'} · {medication.type}
-                              </span>
-                            </div>
-                            <div className='mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground'>
-                              <span>{medication.packs} packs</span>
-                              <span>{formatAmount(medication.amount)} revenue</span>
-                              <span>{medication.expiry_date ? 'Expiry ' + formatExpiry(medication.expiry_date) : 'Expiry not recorded'}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </details>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
 function formatExpiry(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
@@ -804,46 +558,9 @@ function formatAmount(value: number) {
   })
 }
 
-function toPercentItems(items: [string, number][]): [string, number][] {
-  const normalized = items.map(([label, value]) => [label, Math.max(0, value)] as [string, number])
-  const total = normalized.reduce((sum, [, value]) => sum + value, 0)
-  if (!total) return []
-
-  const shares = normalized.map(([label, value], index) => {
-    const exact = (value / total) * 100
-    return { label, value: Math.floor(exact), remainder: exact - Math.floor(exact), index }
-  })
-  const remaining = 100 - shares.reduce((sum, item) => sum + item.value, 0)
-  const byRemainder = [...shares].sort((a, b) => b.remainder - a.remainder)
-  for (let i = 0; i < remaining; i += 1) {
-    byRemainder[i % byRemainder.length].value += 1
-  }
-  return shares
-    .sort((a, b) => a.index - b.index)
-    .map(({ label, value }) => [label, value] as [string, number])
-}
-
 function ratio(numerator: number, denominator: number) {
   if (!denominator) return 0
   return Math.min(100, Math.round((numerator / denominator) * 100))
-}
-
-function OperationalMetric({
-  label,
-  value,
-  detail,
-}: {
-  label: string
-  value: string
-  detail: string
-}) {
-  return (
-    <div className='rounded-2xl border bg-card p-5 shadow-sm'>
-      <p className='text-sm text-muted-foreground'>{label}</p>
-      <p className='mt-2 text-2xl font-bold tracking-tight'>{value}</p>
-      <p className='mt-1 text-xs text-muted-foreground'>{detail}</p>
-    </div>
-  )
 }
 
 function CircularMetricCard({
@@ -911,88 +628,6 @@ function KpiCard({
   )
 }
 
-function DonutCard({
-  title,
-  total,
-  items,
-}: {
-  title: string
-  total: string
-  items: [string, number][]
-}) {
-  const palette = [
-    'hsl(var(--primary))',
-    'hsl(var(--chart-2))',
-    'hsl(var(--chart-3))',
-    'hsl(var(--chart-4))',
-  ]
-  const stops = items.reduce<string[]>((acc, [, value], index) => {
-    const start = items
-      .slice(0, index)
-      .reduce((sum, [, current]) => sum + current, 0)
-    acc.push(palette[index] + ' ' + start + '% ' + (start + value) + '%')
-    return acc
-  }, [])
-
-  return (
-    <div className='rounded-2xl border bg-card p-5 shadow-sm'>
-      <div className='mb-4'>
-        <h2 className='font-semibold'>{title}</h2>
-        <p className='text-xs text-muted-foreground'>Live ERP aggregation</p>
-      </div>
-      <div className='flex items-center gap-5'>
-        <div
-          className='relative grid size-28 shrink-0 place-items-center rounded-full'
-          style={{ background: 'conic-gradient(' + stops.join(', ') + ')' }}
-        >
-          <div className='grid size-18 place-items-center rounded-full bg-card'>
-            <span className='text-sm font-bold'>{total}</span>
-          </div>
-        </div>
-        <div className='min-w-0 flex-1 space-y-2'>
-          {items.length === 0 && <span className='text-xs text-muted-foreground'>No operational data</span>}
-          {items.map(([label, value]) => (
-            <div
-              key={label}
-              className='flex items-center justify-between gap-3 text-xs'
-            >
-              <span className='truncate text-muted-foreground'>{label}</span>
-              <span className='font-medium'>{value}%</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function AttentionCard({
-  title,
-  value,
-  detail,
-  tone,
-  amount = false,
-}: {
-  title: string
-  value: number
-  detail: string
-  tone: 'critical' | 'warning'
-  amount?: boolean
-}) {
-  return (
-    <div className='rounded-2xl border bg-card p-5 shadow-sm'>
-      <div className='flex items-center justify-between'>
-        <span className='text-sm font-medium'>{title}</span>
-        <span className={tone === 'critical' ? 'rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-400' : 'rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400'}>
-          Attention
-        </span>
-      </div>
-      <p className='mt-4 text-3xl font-bold tracking-tight'>{amount ? formatAmount(value) : value.toLocaleString()}</p>
-      <p className='mt-1 text-xs text-muted-foreground'>{detail}</p>
-    </div>
-  )
-}
-
 function PipelineCard({
   title,
   icon: Icon,
@@ -1025,45 +660,3 @@ function PipelineCard({
   )
 }
 
-function DataTable({
-  title,
-  columns,
-  rows,
-}: {
-  title: string
-  columns: string[]
-  rows: string[][]
-}) {
-  return (
-    <div className='rounded-2xl border bg-card p-5 shadow-sm'>
-      <div className='mb-4'>
-        <h2 className='font-semibold'>{title}</h2>
-        <p className='text-xs text-muted-foreground'>Live ERP aggregation</p>
-      </div>
-      <div className='overflow-x-auto'>
-        <table className='w-full text-sm'>
-          <thead>
-            <tr className='border-b text-left text-xs text-muted-foreground'>
-              {columns.map((column) => (
-                <th key={column} className='pr-4 pb-3 font-medium'>
-                  {column}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr key={index} className='border-b last:border-0'>
-                {row.map((cell, cellIndex) => (
-                  <td key={cellIndex} className='py-3 pr-4'>
-                    {cell}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
