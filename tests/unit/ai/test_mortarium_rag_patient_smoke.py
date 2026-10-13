@@ -20,9 +20,10 @@ CHUNK_ID = UUID("a0b1c2d3-e4f5-4678-9012-abcdef123456")
 DOCUMENT_ID = UUID("b0b1c2d3-e4f5-4678-9012-abcdef123456")
 PATIENT_RECORD = (
     "Synthetic patient Alex Morgan, patient ID 1001. "
-    "Current medication list: metformin 500 mg tablets, one tablet twice daily; "
-    "atorvastatin 20 mg tablets, one tablet nightly. "
-    "This record lists medicines only and does not contain a clinical interaction assessment."
+    "Medication list for this test: metformin 500 mg, lisinopril 10 mg, "
+    "ibuprofen 200 mg OTC, and omeprazole 20 mg. "
+    "Dose schedule, indication, allergies, kidney function, and current symptoms "
+    "are not verified. This record contains no clinical interaction assessment."
 )
 
 
@@ -80,7 +81,7 @@ class _FakeLLM:
         prompt_text = str(prompt)
         if "Reply with only YES or NO." in prompt_text:
             return SimpleNamespace(content="YES")
-        if "Generate 2 variations" in prompt_text:
+        if "Generate 2 different ways" in prompt_text:
             return SimpleNamespace(
                 content=(
                     "List the medications recorded for synthetic patient 1001.\n"
@@ -95,11 +96,15 @@ class _FakeLLM:
         if "Every factual claim supported by evidence MUST include" in prompt_text:
             return SimpleNamespace(
                 content=(
-                    "The synthetic record lists metformin 500 mg, one tablet twice "
-                    "daily, and atorvastatin 20 mg, one tablet nightly "
-                    f"[src-{CHUNK_ID}]. The record does not include a clinical "
-                    "interaction assessment, so this RAG result cannot establish "
-                    "whether the combination is appropriate."
+                    "The synthetic record lists metformin 500 mg, lisinopril "
+                    "10 mg, ibuprofen 200 mg OTC, and omeprazole 20 mg "
+                    f"[src-{CHUNK_ID}]. The fixture does not verify dose schedule, "
+                    "indication, allergies, kidney function, or current symptoms "
+                    f"[src-{CHUNK_ID}]. The record contains no clinical interaction "
+                    "assessment, so this result cannot establish whether dispensing "
+                    "ibuprofen is appropriate [src-{CHUNK_ID}]. This is synthetic "
+                    "test data, not clinical guidance."
+
                 )
             )
         raise AssertionError(
@@ -127,13 +132,17 @@ async def test_mortarium_rag_runs_end_to_end_for_one_synthetic_patient():
     )
 
     result = await rag.run(
-        "Which medications are recorded for patient 1001?",
+        "Review this patient's medication list before dispensing ibuprofen. "
+        "What must the pharmacist verify, and what information is missing?",
         context=context,
         thread_id="synthetic-patient-smoke-test",
     )
 
     assert "metformin 500 mg" in result.answer
-    assert "atorvastatin 20 mg" in result.answer
+    assert "lisinopril 10 mg" in result.answer
+    assert "ibuprofen 200 mg" in result.answer
+    assert "omeprazole 20 mg" in result.answer
+    assert "atorvastatin 20 mg" not in result.answer
     assert f"[src-{CHUNK_ID}]" in result.answer
     assert any(source.chunk.id == CHUNK_ID for source in result.sources)
     assert any(
@@ -150,3 +159,5 @@ async def test_mortarium_rag_runs_end_to_end_for_one_synthetic_patient():
         for filters in retriever.filters_seen
     )
     assert result.model_used == llm.model_name
+    assert "verify" in result.answer.lower()
+    assert "synthetic" in result.answer.lower()
