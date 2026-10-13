@@ -1,29 +1,33 @@
-# International drug catalog import
+# International and European drug catalog
 
-Pharmaviyum has separate **Drug Reference**, **Medicinal Product**, and local **Product / inventory** entities. The international reference catalog is not pharmacy stock.
+Pharmaviyum separates **Drug Reference**, **Medicinal Product**, and local **Product / inventory** entities. Regulatory reference rows are not pharmacy stock.
 
-## Initial source: NLM RxNorm Current Prescribable Content
+## European source: EMA Article 57
 
-The importer downloads the current prescribable RxNorm archive from the U.S. National Library of Medicine and loads single-ingredient clinical and branded drug concepts into `drug_references`, `drug_reference_ingredients`, and `medicinal_products`.
+The EMA publishes an official XLSX dataset of medicines with valid marketing authorisations in the European Economic Area (EEA). It includes product name, active substance, route of administration, country of authorisation, and marketing authorisation holder. Source: https://www.ema.europa.eu/en/human-regulatory-overview/post-authorisation/data-medicines-iso-idmp-standards-post-authorisation/public-data-article-57-database
+
+This is European regulatory reference data, not a complete retail pack/barcode catalogue. It does not itself provide pharmacy prices, batches, expiry dates, stock availability, or a reliable Rx/OTC classification. The importer stores authorisation country separately and skips rows with multiple active substances until the schema supports multiple ingredients.
+
+Validate the downloaded file without database writes:
+
+```bash
+uv run python scripts/import_ema_catalog.py --dry-run
+```
+
+After the migration has been applied in a test environment, import:
+
+```bash
+uv run python scripts/import_ema_catalog.py
+```
+
+## US source: NLM RxNorm Current Prescribable Content
+
+The importer `scripts/import_rxnorm_catalog.py` loads single-ingredient clinical and branded drug concepts from the U.S. National Library of Medicine.
 
 - Source: https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html
-- The NLM provides the Current Prescribable Content subset without licensing restrictions. NLM requests this attribution in products that use RxNorm: “This product uses publicly available data courtesy of the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.”
-- RxNorm Current Prescribable Content is US-centric: NLM describes it as an approximation of prescription drugs marketed in the United States, with some frequently prescribed OTC drugs, and says it excludes drugs exclusively marketed outside the US. Treat it as a country-neutral data model's initial reference seed, not a complete global medicine list. Country-specific brand names, approvals, package sizes, GTINs, and Rx/OTC status must be sourced and validated per market.
-- Combination products are intentionally skipped until the data model supports linking one medicinal product to multiple active ingredients.
-- Importing reference data does **not** create sellable products, prices, inventory, batches, expiry dates, or dispensing eligibility.
+- Required attribution: “This product uses publicly available data courtesy of the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.”
+- RxNorm is US-centric and excludes drugs exclusively marketed outside the US. It is not a complete global medicine list.
 
-## Run
+## Safety and data boundaries
 
-First validate the downloaded archive without changing the database:
-
-```bash
-uv run python scripts/import_rxnorm_catalog.py --dry-run
-```
-
-After the database has been migrated and the API environment has database access, run the import:
-
-```bash
-uv run python scripts/import_rxnorm_catalog.py
-```
-
-The importer streams the archive to a temporary file, checks the archive structure, and is idempotent by canonical ingredient name and RxNorm concept identifier stored in `regulatory_id`. It prints the count of new reference and product rows. Review the logs and record counts before using the data operationally. The dry run reports parsed counts and never writes to the database.
+Neither import creates sellable products, prices, pharmacy inventory, batches, expiry dates, or dispensing eligibility. Do not infer local market authorisation, Rx/OTC status, or availability from a reference match alone.
