@@ -1,4 +1,5 @@
 """Tests for parsing the official RxNorm reference archive."""
+
 from pathlib import Path
 from zipfile import ZipFile
 
