@@ -34,7 +34,11 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
             _conso_row("200", "SCD", "ibuprofen 200 MG Oral Tablet"),
             _conso_row("201", "SBD", "Advil 200 MG Oral Tablet"),
             _conso_row("300", "IN", "acetaminophen"),
-            _conso_row("400", "SCD", "ibuprofen 200 MG / acetaminophen 325 MG Oral Tablet"),
+            _conso_row(
+                "400",
+                "SCD",
+                "ibuprofen 200 MG / acetaminophen 325 MG Oral Tablet",
+            ),
         ]
     )
     rel = "".join(
@@ -59,3 +63,4 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
     assert generic["dosage_form"] == "Oral Tablet"
     assert generic["ingredient_id"] == "100"
     assert brand["tty"] == "SBD"
+    assert brand["brand_name"] == "Advil"
