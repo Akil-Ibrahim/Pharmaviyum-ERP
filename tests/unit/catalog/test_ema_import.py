@@ -42,21 +42,40 @@ def _xlsx(path: Path, rows: list[list[str]]) -> None:
         archive.writestr("xl/worksheets/sheet1.xml", sheet)
 
 
-def test_parse_ema_single_ingredient_and_country(tmp_path: Path) -> None:
+def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> None:
     path = tmp_path / "ema.xlsx"
     _xlsx(path, [
-        ["Product name", "Active substance", "Route of administration",
-         "Country of authorisation", "Name of marketing authorisation holder"],
-        ["ExampleMed", "ibuprofen", "Oral use", "Germany", "Example GmbH"],
-        ["Combination", "ingredient A; ingredient B", "Oral use", "France", "Example SAS"],
+        ["Name of medicinal product", "Active substance", "Strength",
+         "Pharmaceutical form", "Route of administration",
+         "Country where authorised", "Name of marketing authorisation holder"],
+        ["ExampleMed", "ibuprofen", "200 mg", "Tablet", "Oral use",
+         "Germany", "Example GmbH"],
+        ["Combination", "ingredient A; ingredient B", "200 mg + 325 mg",
+         "Tablet", "Oral use", "France", "Example SAS"],
     ])
     assert parse_ema_xlsx(path) == [{
         "product_name": "ExampleMed",
         "ingredient": "ibuprofen",
+        "strength": "200 mg",
+        "dosage_form": "Tablet",
         "route": "Oral use",
         "country": "Germany",
         "holder": "Example GmbH",
     }]
+
+
+def test_parse_common_alternate_headers(tmp_path: Path) -> None:
+    path = tmp_path / "alternate.xlsx"
+    _xlsx(path, [
+        ["Product name", "Active substance(s)", "Country of authorisation"],
+        ["ExampleMed", "ibuprofen", "Germany"],
+    ])
+    rows = parse_ema_xlsx(path)
+    assert len(rows) == 1
+    assert rows[0]["product_name"] == "ExampleMed"
+    assert rows[0]["country"] == "Germany"
+    assert rows[0]["strength"] == ""
+    assert rows[0]["dosage_form"] == ""
 
 
 def test_missing_required_columns_fails_clearly(tmp_path: Path) -> None:
