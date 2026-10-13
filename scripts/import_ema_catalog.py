@@ -1,8 +1,9 @@
 """Import EMA Article 57 European Economic Area medicine data.
 
 The official EMA XLSX is regulatory reference data, not pharmacy stock.
-This standard-library parser skips multi-ingredient rows until the catalog
-schema can represent multiple active substances.
+This parser supports the EMA's "Name of medicinal product" and "Country where
+authorised" header wording as well as common variants. Multi-ingredient rows
+are skipped until the schema can represent multiple active substances.
 """
 from __future__ import annotations
 
@@ -22,7 +23,7 @@ NS = {
     "m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
     "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
 }
-SEPARATOR_RE = re.compile(r"\s*[;\n]\s*")
+SEPARATOR_RE = re.compile(r"\\s*[;\\n]\\s*")
 
 
 def _column_index(cell_ref: str) -> int:
@@ -42,11 +43,15 @@ def _cell_value(cell: ET.Element, shared: list[str]) -> str:
         return shared[int(value.text or "0")]
     if cell_type == "inlineStr":
         return "".join(node.text or "" for node in cell.findall(".//m:t", NS))
-    return value.text or "" if value is not None else ""
+    return (value.text or "") if value is not None else ""
+
+
+def _normalize_header(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
 
 
 def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
-    """Parse EMA Article 57 rows using workbook headers, not fixed column order."""
+    """Parse EMA Article 57 rows by header names rather than fixed column order."""
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
         shared: list[str] = []
@@ -91,23 +96,31 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
             if cells:
                 rows.append([cells.get(i, "") for i in range(max(cells) + 1)])
 
-    def normalize(value: str) -> str:
-        return re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
-
     header_index = next(
         (
             i for i, row in enumerate(rows)
-            if any("product name" in normalize(value) for value in row)
-            and any("active substance" in normalize(value) for value in row)
+            if any(
+                _normalize_header(value) in {
+                    "product name",
+                    "name of medicinal product",
+                    "medicinal product name",
+                }
+                or (
+                    "product" in _normalize_header(value)
+                    and "name" in _normalize_header(value)
+                )
+                for value in row
+            )
+            and any("active substance" in _normalize_header(value) for value in row)
         ),
         None,
     )
     if header_index is None:
         raise ValueError(
-            "Could not identify EMA product-name and active-substance columns"
+            "Could not identify EMA medicinal-product-name and active-substance columns"
         )
 
-    headers = [normalize(value) for value in rows[header_index]]
+    headers = [_normalize_header(value) for value in rows[header_index]]
 
     def find_column(*needles: str) -> int | None:
         return next(
@@ -118,16 +131,30 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
             None,
         )
 
-    product_col = find_column("product", "name")
+    product_col = next(
+        (
+            i for i, header in enumerate(headers)
+            if header in {"product name", "name of medicinal product", "medicinal product name"}
+            or ("product" in header and "name" in header)
+        ),
+        None,
+    )
     ingredient_col = find_column("active", "substance")
     route_col = find_column("route", "administration")
+    strength_col = find_column("strength")
+    form_col = find_column("pharmaceutical", "form") or find_column("dosage", "form")
     country_col = (
         find_column("country", "authorisation")
         or find_column("country", "authorization")
+        or find_column("country", "where", "authorised")
+        or find_column("country", "where", "authorized")
+        or find_column("country")
     )
     holder_col = (
         find_column("marketing", "authorisation", "holder")
         or find_column("marketing", "authorization", "holder")
+        or find_column("authorisation", "holder")
+        or find_column("authorization", "holder")
     )
     if product_col is None or ingredient_col is None or country_col is None:
         raise ValueError(f"EMA workbook is missing required columns: {headers!r}")
@@ -152,6 +179,8 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
         parsed.append({
             "product_name": product_name,
             "ingredient": ingredients[0],
+            "strength": value(strength_col),
+            "dosage_form": value(form_col),
             "route": value(route_col),
             "country": country,
             "holder": value(holder_col),
@@ -224,6 +253,8 @@ async def import_catalog(path: Path) -> tuple[int, int]:
                 brand_name=row["product_name"],
                 product_type="brand",
                 manufacturer=row["holder"] or None,
+                strength=row["strength"] or None,
+                dosage_form=row["dosage_form"] or None,
                 route=row["route"] or None,
                 authorization_country=row["country"],
                 regulatory_id=code,
