@@ -3,7 +3,7 @@
   --pharmacy-blue-border: color-mix(in oklab, var(--primary) 18%, var(--border));
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   color: var(--foreground);
 }
 
@@ -40,28 +40,28 @@
   letter-spacing: -0.015em;
 }
 
-.pharmaviyum-dashboard .space-y-6 > section {
+.pharmaviyum-dashboard .space-y-5 > section {
   min-width: 0;
 }
 
-.pharmaviyum-dashboard .space-y-6 > section > .rounded-2xl.border,
-.pharmaviyum-dashboard .space-y-6 > section > div.rounded-2xl.border,
-.pharmaviyum-dashboard .space-y-6 > section > div.grid > div.rounded-2xl.border {
+.pharmaviyum-dashboard .space-y-5 > section > .rounded-2xl.border,
+.pharmaviyum-dashboard .space-y-5 > section > div.rounded-2xl.border,
+.pharmaviyum-dashboard .space-y-5 > section > div.grid > div.rounded-2xl.border {
   border-color: var(--border);
   border-radius: 0.85rem;
   box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 3%, transparent);
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
-.pharmaviyum-dashboard .space-y-6 > section > .rounded-2xl.border:hover,
-.pharmaviyum-dashboard .space-y-6 > section > div.rounded-2xl.border:hover,
-.pharmaviyum-dashboard .space-y-6 > section > div.grid > div.rounded-2xl.border:hover {
+.pharmaviyum-dashboard .space-y-5 > section > .rounded-2xl.border:hover,
+.pharmaviyum-dashboard .space-y-5 > section > div.rounded-2xl.border:hover,
+.pharmaviyum-dashboard .space-y-5 > section > div.grid > div.rounded-2xl.border:hover {
   border-color: var(--pharmacy-blue-border);
   box-shadow: 0 5px 16px -12px color-mix(in oklab, var(--primary) 32%, transparent);
 }
 
 /* KPI scorecard: compact, high-contrast, and number-first. */
-.pharmaviyum-dashboard .space-y-6 > section:first-child > div.rounded-2xl.border {
+.pharmaviyum-dashboard .space-y-5 > section:first-child > div.rounded-2xl.border {
   position: relative;
   overflow: hidden;
   border-top: 2px solid color-mix(in oklab, var(--primary) 70%, var(--border));
@@ -69,12 +69,12 @@
   box-shadow: 0 2px 5px -4px color-mix(in oklab, var(--foreground) 16%, transparent);
 }
 
-.pharmaviyum-dashboard .space-y-6 > section:first-child > div.rounded-2xl.border > div:first-child > div {
+.pharmaviyum-dashboard .space-y-5 > section:first-child > div.rounded-2xl.border > div:first-child > div {
   border: 1px solid color-mix(in oklab, var(--primary) 12%, transparent);
   border-radius: 0.65rem;
 }
 
-.pharmaviyum-dashboard .space-y-6 > section:first-child > div.rounded-2xl.border > p:nth-of-type(2) {
+.pharmaviyum-dashboard .space-y-5 > section:first-child > div.rounded-2xl.border > p:nth-of-type(2) {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
 }
@@ -145,7 +145,7 @@
 
 @media (min-width: 640px) {
   .pharmacy-dashboard-hero {
-    padding-bottom: 2.75rem;
+    padding-bottom: 2.25rem;
   }
 }
 
@@ -200,27 +200,6 @@
 
 .pharmacy-priority-panel > div:last-child > div:hover {
   background: color-mix(in oklab, var(--primary) 3%, var(--card));
-}
-
-.pharmacy-priority-panel a {
-  min-height: 1.5rem;
-  text-underline-offset: 3px;
-}
-
-.pharmaviyum-dashboard #expiry-control,
-.pharmaviyum-dashboard #procurement-attention,
-.pharmaviyum-dashboard #slow-moving-stock {
-  scroll-margin-top: 1.5rem;
-}
-
-.pharmaviyum-dashboard #expiry-control > div {
-  min-width: 0;
-}
-
-@media (min-width: 1280px) {
-  .pharmaviyum-dashboard #expiry-control > div {
-    padding: 1.15rem;
-  }
 }
 
 @media (max-width: 639px) {
