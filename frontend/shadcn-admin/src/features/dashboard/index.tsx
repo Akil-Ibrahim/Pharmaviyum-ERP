@@ -604,6 +604,7 @@ export function Dashboard() {
                     />
                     <button
                       type='submit'
+                      aria-label={aiLoading ? 'Mortarium is analyzing the question' : 'Ask Mortarium AI'}
                       disabled={!aiPharmacyId || aiLoading || !aiQuery.trim()}
                       className='inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
                     >
@@ -625,7 +626,7 @@ export function Dashboard() {
                   )}
 
                   {aiAnswer && !aiLoading && (
-                    <div className='mt-4 rounded-xl border bg-muted/20 p-4'>
+                    <div aria-live='polite' className='mt-4 rounded-xl border bg-muted/20 p-4'>
                       <div className='mb-2 flex items-center gap-2 text-xs font-semibold text-primary'>
                         <Bot className='size-4' /> Mortarium response
                       </div>
