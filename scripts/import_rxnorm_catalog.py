@@ -178,21 +178,39 @@ async def import_catalog(archive_path: Path) -> tuple[int, int]:
             await session.execute(select(MedicinalProduct.regulatory_id))
         ).scalars().all()
         existing_codes = {code for code in existing_products if code}
+        existing_ingredients = (
+            await session.execute(
+                select(
+                    DrugReferenceIngredient.drug_reference_id,
+                    DrugReferenceIngredient.ingredient_name,
+                )
+            )
+        ).all()
+        ingredient_pairs = {
+            (reference_id, name.casefold())
+            for reference_id, name in existing_ingredients
+        }
 
         for name in ingredient_terms.values():
             key = name.casefold()
-            if key not in reference_ids:
+            reference_id = reference_ids.get(key)
+            if reference_id is None:
                 reference = DrugReference(inn_name=name, atc_code=None)
                 session.add(reference)
                 await session.flush()
-                reference_ids[key] = reference.id
+                reference_id = reference.id
+                reference_ids[key] = reference_id
+                added_references += 1
+
+            ingredient_pair = (reference_id, key)
+            if ingredient_pair not in ingredient_pairs:
                 session.add(
                     DrugReferenceIngredient(
-                        drug_reference_id=reference.id,
+                        drug_reference_id=reference_id,
                         ingredient_name=name,
                     )
                 )
-                added_references += 1
+                ingredient_pairs.add(ingredient_pair)
 
         for product in products:
             code = f"RxNorm:{product['rxcui']}"
