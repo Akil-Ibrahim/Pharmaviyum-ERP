@@ -46,12 +46,18 @@ def _rrf_rows(path: Path):
             yield line.rstrip("\n").split("|")
 
 
-def parse_rxnorm_archive(archive_path: Path) -> tuple[dict[str, str], list[dict[str, str]]]:
+def parse_rxnorm_archive(
+    archive_path: Path,
+) -> tuple[dict[str, str], list[dict[str, str]]]:
     """Return canonical ingredient names and single-ingredient clinical products."""
     with zipfile.ZipFile(archive_path) as archive:
         names = set(archive.namelist())
-        conso_name = next((name for name in names if name.endswith("RXNCONSO.RRF")), None)
-        rel_name = next((name for name in names if name.endswith("RXNREL.RRF")), None)
+        conso_name = next(
+            (name for name in names if name.endswith("RXNCONSO.RRF")), None
+        )
+        rel_name = next(
+            (name for name in names if name.endswith("RXNREL.RRF")), None
+        )
         if not conso_name or not rel_name:
             raise ValueError("RxNorm archive is missing RXNCONSO.RRF or RXNREL.RRF")
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -61,16 +67,23 @@ def parse_rxnorm_archive(archive_path: Path) -> tuple[dict[str, str], list[dict[
             rel_path.write_bytes(archive.read(rel_name))
             concepts: dict[str, tuple[str, str]] = {}
             for row in _rrf_rows(conso_path):
-                if len(row) < 17 or row[11] != "RXNORM" or row[16] not in {"", "N"}:
+                if (
+                    len(row) < 17
+                    or row[11] != "RXNORM"
+                    or row[16] not in {"", "N"}
+                ):
                     continue
                 rxcui, tty, term = row[0], row[12], row[14]
                 if tty in INGREDIENT_TERMS | PRODUCT_TERMS and term:
                     # Keep the preferred English name when duplicate atoms exist.
-                    if row[1] == "ENG" and (rxcui not in concepts or row[6] == "Y"):
+                    if row[1] == "ENG" and (
+                        rxcui not in concepts or row[6] == "Y"
+                    ):
                         concepts[rxcui] = (tty, term)
 
             ingredients = {
-                rxcui: term for rxcui, (tty, term) in concepts.items()
+                rxcui: term
+                for rxcui, (tty, term) in concepts.items()
                 if tty in INGREDIENT_TERMS
             }
             product_ingredients: dict[str, set[str]] = {}
@@ -78,9 +91,17 @@ def parse_rxnorm_archive(archive_path: Path) -> tuple[dict[str, str], list[dict[
                 if len(row) < 8 or row[7] not in INGREDIENT_RELATIONS:
                     continue
                 left, right = row[0], row[4]
-                if left in concepts and concepts[left][0] in PRODUCT_TERMS and right in ingredients:
+                if (
+                    left in concepts
+                    and concepts[left][0] in PRODUCT_TERMS
+                    and right in ingredients
+                ):
                     product_ingredients.setdefault(left, set()).add(right)
-                elif right in concepts and concepts[right][0] in PRODUCT_TERMS and left in ingredients:
+                elif (
+                    right in concepts
+                    and concepts[right][0] in PRODUCT_TERMS
+                    and left in ingredients
+                ):
                     product_ingredients.setdefault(right, set()).add(left)
 
             products: list[dict[str, str]] = []
@@ -92,7 +113,15 @@ def parse_rxnorm_archive(archive_path: Path) -> tuple[dict[str, str], list[dict[
                 ingredient_id = next(iter(linked))
                 strength_match = STRENGTH_RE.search(term)
                 words = term.split()
-                route = next((word.lower() for word in words if word.lower() in ROUTE_TERMS), "")
+                route = next(
+                    (word.lower() for word in words if word.lower() in ROUTE_TERMS),
+                    "",
+                )
+                brand_name = (
+                    term[: strength_match.start()].strip()
+                    if tty == "SBD" and strength_match
+                    else term if tty == "SBD" else ""
+                )
                 dosage_form = (
                     term[strength_match.end():].strip()
                     if strength_match
@@ -101,6 +130,7 @@ def parse_rxnorm_archive(archive_path: Path) -> tuple[dict[str, str], list[dict[
                 products.append({
                     "rxcui": rxcui,
                     "term": term,
+                    "brand_name": brand_name,
                     "tty": tty,
                     "ingredient_id": ingredient_id,
                     "strength": strength_match.group(0) if strength_match else "",
@@ -148,7 +178,7 @@ async def import_catalog(archive_path: Path) -> tuple[int, int]:
             session.add(
                 MedicinalProduct(
                     drug_reference_id=reference_id,
-                    brand_name=product["term"] if product["tty"] == "SBD" else None,
+                    brand_name=product["brand_name"] or None,
                     product_type="brand" if product["tty"] == "SBD" else "generic",
                     strength=product["strength"] or None,
                     dosage_form=product["dosage_form"] or None,
@@ -171,7 +201,10 @@ async def main() -> None:
         with urllib.request.urlopen(request, timeout=120) as response:
             archive_path.write_bytes(response.read())
         references, products = await import_catalog(archive_path)
-    print(f"RxNorm import complete: {references} new references, {products} new products.")
+    print(
+        f"RxNorm import complete: {references} new references, "
+        f"{products} new products."
+    )
 
 
 if __name__ == "__main__":
