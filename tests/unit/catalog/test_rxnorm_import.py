@@ -34,6 +34,7 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
             _conso_row("200", "SCD", "ibuprofen 200 MG Oral Tablet"),
             _conso_row("201", "SBD", "Advil 200 MG Oral Tablet"),
             _conso_row("300", "IN", "acetaminophen"),
+            _conso_row("301", "SCD", "acetaminophen 160 MG/5 ML Oral Suspension"),
             _conso_row(
                 "400",
                 "SCD",
@@ -45,6 +46,7 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
         [
             _rel_row("200", "100"),
             _rel_row("201", "100"),
+            _rel_row("301", "300"),
             _rel_row("400", "100"),
             _rel_row("400", "300"),
         ]
@@ -56,7 +58,7 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
     ingredients, products = parse_rxnorm_archive(archive_path)
 
     assert ingredients == {"100": "ibuprofen", "300": "acetaminophen"}
-    assert {product["rxcui"] for product in products} == {"200", "201"}
+    assert {product["rxcui"] for product in products} == {"200", "201", "301"}
     generic = next(product for product in products if product["rxcui"] == "200")
     brand = next(product for product in products if product["rxcui"] == "201")
     assert generic["strength"] == "200 MG"
@@ -64,3 +66,6 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
     assert generic["ingredient_id"] == "100"
     assert brand["tty"] == "SBD"
     assert brand["brand_name"] == "Advil"
+    liquid = next(product for product in products if product["rxcui"] == "301")
+    assert liquid["strength"] == "160 MG/5 ML"
+    assert liquid["dosage_form"] == "Oral Suspension"
