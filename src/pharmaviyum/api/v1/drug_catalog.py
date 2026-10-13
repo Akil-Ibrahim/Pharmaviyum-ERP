@@ -40,6 +40,8 @@ async def search_drug_catalog(
                 DrugReferenceIngredient.ingredient_name.ilike(term),
                 MedicinalProduct.brand_name.ilike(term),
                 MedicinalProduct.manufacturer.ilike(term),
+                MedicinalProduct.dosage_form.ilike(term),
+                MedicinalProduct.package_description.ilike(term),
                 MedicinalProduct.gtin.ilike(term),
                 MedicinalProduct.regulatory_id.ilike(term),
             )
