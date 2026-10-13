@@ -1,4 +1,4 @@
-"""Regression tests for core Mortarium RAG contracts."""
+""""Regression tests for core Mortarium RAG contracts."""
 
 from types import SimpleNamespace
 
@@ -94,9 +94,7 @@ def test_answer_citation_validation_fails_closed(answer):
     source_id = "a0b1c2d3-e4f5-4678-9012-abcdef123456"
     sources = [SimpleNamespace(chunk=SimpleNamespace(id=source_id))]
 
-    validated_answer, warning = LangGraphRAG._validate_answer_citations(
-        answer, sources
-    )
+    validated_answer, warning = LangGraphRAG._validate_answer_citations(answer, sources)
 
     assert "lacks verifiable citations" in validated_answer
     assert warning == "citation_validation_failed"
