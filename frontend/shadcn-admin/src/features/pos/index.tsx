@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Barcode, Minus, Plus, Search, ShoppingCart, Trash2, UserRound } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { apiFetch } from '@/lib/api-client'
 
 type PosProduct = {
   id: number
@@ -19,6 +20,23 @@ type PosProduct = {
   kind: 'Reference Product' | 'Generic Product'
 }
 
+type DrugCatalogResult = {
+  medicinal_product_id: number
+  drug_reference_id: number
+  inn_name: string
+  atc_code: string | null
+  ingredient_names: string[]
+  brand_name: string | null
+  product_type: string
+  manufacturer: string | null
+  strength: string | null
+  dosage_form: string | null
+  route: string | null
+  package_description: string | null
+  gtin: string | null
+  regulatory_id: string | null
+}
+
 type CartItem = PosProduct & { quantity: number }
 
 const catalog: PosProduct[] = [
@@ -31,6 +49,42 @@ const catalog: PosProduct[] = [
 export function Pos() {
   const [query, setQuery] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
+  const [referenceResults, setReferenceResults] = useState<DrugCatalogResult[]>([])
+  const [referenceLoading, setReferenceLoading] = useState(false)
+  const [referenceError, setReferenceError] = useState(false)
+
+  useEffect(() => {
+    const term = query.trim()
+    if (term.length < 2) {
+      setReferenceResults([])
+      setReferenceLoading(false)
+      setReferenceError(false)
+      return
+    }
+
+    let cancelled = false
+    setReferenceLoading(true)
+    setReferenceError(false)
+    apiFetch<DrugCatalogResult[]>(
+      `/api/v1/drug-catalog/search?q=${encodeURIComponent(term)}&limit=8`,
+    )
+      .then((items) => {
+        if (!cancelled) setReferenceResults(items)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setReferenceResults([])
+          setReferenceError(true)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setReferenceLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [query])
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -85,6 +139,7 @@ export function Pos() {
             </div>
           </CardHeader>
           <CardContent className='space-y-3'>
+            <p className='text-sm font-medium'>Local products</p>
             {results.map((product) => (
               <button key={product.id} type='button' onClick={() => addToCart(product)} className='w-full rounded-lg border p-4 text-left transition-colors hover:bg-muted/50'>
                 <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
@@ -103,7 +158,32 @@ export function Pos() {
                 </div>
               </button>
             ))}
-            {results.length === 0 && <p className='py-8 text-center text-sm text-muted-foreground'>No products found.</p>}
+            {results.length === 0 && <p className='py-3 text-sm text-muted-foreground'>No local products match this search.</p>}
+
+            {query.trim().length >= 2 && (
+              <div className='space-y-3 border-t pt-4'>
+                <div className='flex flex-wrap items-center justify-between gap-2'>
+                  <p className='font-medium'>International drug reference</p>
+                  <Badge variant='outline'>NLM RxNorm</Badge>
+                </div>
+                <p className='text-xs text-muted-foreground'>Reference records help identify medicines. They are not sellable stock until linked to a local product with price, inventory, and a valid batch.</p>
+                {referenceLoading && <p className='text-sm text-muted-foreground'>Searching the reference catalog…</p>}
+                {referenceError && <p className='text-sm text-destructive'>The reference catalog could not be reached. Check the API connection and whether the catalog import has been run.</p>}
+                {!referenceLoading && !referenceError && referenceResults.map((item) => (
+                  <div key={item.medicinal_product_id} className='rounded-lg border p-3'>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <p className='font-medium'>{item.brand_name || [item.inn_name, item.strength].filter(Boolean).join(' ')}</p>
+                      <Badge variant='secondary'>{item.product_type === 'brand' ? 'Brand' : 'Generic'}</Badge>
+                      <Badge variant='outline'>Reference only</Badge>
+                    </div>
+                    <p className='mt-1 text-sm text-muted-foreground'>INN: {item.inn_name}{item.strength ? ` · ${item.strength}` : ''}{item.dosage_form ? ` · ${item.dosage_form}` : ''}</p>
+                    {item.manufacturer && <p className='text-sm text-muted-foreground'>{item.manufacturer}</p>}
+                    {item.regulatory_id && <p className='text-xs text-muted-foreground'>{item.regulatory_id}</p>}
+                  </div>
+                ))}
+                {!referenceLoading && !referenceError && referenceResults.length === 0 && <p className='text-sm text-muted-foreground'>No reference matches. The database may not be populated yet.</p>}
+              </div>
+            )}
           </CardContent>
         </Card>
 
