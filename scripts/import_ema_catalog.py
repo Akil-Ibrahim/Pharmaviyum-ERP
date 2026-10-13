@@ -90,7 +90,7 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
         rows: list[list[str]] = []
         for row in root.findall(".//m:sheetData/m:row", NS):
             cells = {
-                _column_index(cell.attrib.get("r", "A1")): _cell_value(cell, shared).strip()
+                _column_index(cell.attrib.get("r", "A1")): _cell_value(\n                    cell, shared\n                ).strip()
                 for cell in row.findall("m:c", NS)
             }
             if cells:
@@ -134,7 +134,7 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
     product_col = next(
         (
             i for i, header in enumerate(headers)
-            if header in {"product name", "name of medicinal product", "medicinal product name"}
+            if header in {\n                "product name",\n                "name of medicinal product",\n                "medicinal product name",\n            }
             or ("product" in header and "name" in header)
         ),
         None,
@@ -213,7 +213,7 @@ async def import_catalog(path: Path) -> tuple[int, int]:
     async with AsyncSessionLocal() as session:
         references = (await session.execute(select(DrugReference))).scalars().all()
         reference_ids = {item.inn_name.casefold(): item.id for item in references}
-        codes = (await session.execute(select(MedicinalProduct.regulatory_id))).scalars().all()
+        codes = (\n            await session.execute(select(MedicinalProduct.regulatory_id))\n        ).scalars().all()
         existing_codes = {code for code in codes if code}
         ingredient_rows = (
             await session.execute(
