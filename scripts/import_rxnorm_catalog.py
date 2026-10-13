@@ -93,6 +93,11 @@ def parse_rxnorm_archive(archive_path: Path) -> tuple[dict[str, str], list[dict[
                 strength_match = STRENGTH_RE.search(term)
                 words = term.split()
                 route = next((word.lower() for word in words if word.lower() in ROUTE_TERMS), "")
+                dosage_form = (
+                    term[strength_match.end():].strip()
+                    if strength_match
+                    else term
+                )
                 products.append({
                     "rxcui": rxcui,
                     "term": term,
@@ -100,7 +105,7 @@ def parse_rxnorm_archive(archive_path: Path) -> tuple[dict[str, str], list[dict[
                     "ingredient_id": ingredient_id,
                     "strength": strength_match.group(0) if strength_match else "",
                     "route": route,
-                    "dosage_form": term.split(" ", 1)[1] if " " in term else "",
+                    "dosage_form": dosage_form,
                 })
             return ingredients, products
 
