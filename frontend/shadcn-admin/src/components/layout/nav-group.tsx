@@ -167,15 +167,15 @@ function SidebarMenuCollapsible({
                     asChild
                     isActive={isSubActive}
                     className={[
-                      'h-9 gap-2 rounded-lg px-2.5 transition-colors',
+                      'h-10 gap-2.5 rounded-xl px-2.5 transition-colors',
                       isSubActive
                         ? 'bg-primary/10 font-semibold text-foreground'
                         : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
                     ].join(' ')}
                   >
                     <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
-                      <NavIcon icon={subItem.icon} active={isSubActive} size='sm' />
-                      <span className='min-w-0 truncate text-[12px] font-medium'>
+                      <NavIcon icon={subItem.icon} active={isSubActive} />
+                      <span className='min-w-0 truncate text-[13px] font-semibold text-foreground'>
                         {subItem.title}
                       </span>
                       {subItem.badge && <NavBadge>{subItem.badge}</NavBadge>}
@@ -237,8 +237,8 @@ function SidebarMenuCollapsedDropdown({
                 className={isSubActive ? 'rounded-lg bg-primary/10 text-foreground' : 'rounded-lg'}
               >
                 <Link to={sub.url} className='gap-2.5'>
-                  <NavIcon icon={sub.icon} active={isSubActive} size='sm' />
-                  <span className='max-w-52 truncate text-[13px] font-medium'>
+                  <NavIcon icon={sub.icon} active={isSubActive} />
+                  <span className='max-w-52 truncate text-[13px] font-semibold text-foreground'>
                     {sub.title}
                   </span>
                   {sub.badge && <span className='ms-auto text-xs'>{sub.badge}</span>}
