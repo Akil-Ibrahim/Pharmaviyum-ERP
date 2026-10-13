@@ -202,12 +202,6 @@
   background: color-mix(in oklab, var(--primary) 3%, var(--card));
 }
 
-.pharmacy-priority-panel a {
-  min-height: 1.5rem;
-  text-underline-offset: 3px;
-}
-
-
 @media (max-width: 639px) {
   .pharmacy-priority-panel > div:last-child > div + div {
     border-top: 1px solid var(--border);
