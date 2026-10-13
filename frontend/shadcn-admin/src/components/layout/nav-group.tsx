@@ -267,6 +267,7 @@ function isPathActive(href: string, url?: string) {
 
   return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`)
 }
+
 function checkIsActive(href: string, item: NavItem, mainNav = false) {
   const isItemActive = isPathActive(href, item.url)
   const isChildActive = !!item.items?.some((child) =>
