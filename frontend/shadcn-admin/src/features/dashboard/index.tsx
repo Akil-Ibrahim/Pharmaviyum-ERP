@@ -2,12 +2,19 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import './dashboard.css'
 import {
   Activity,
+  AlertTriangle,
   ArrowUpRight,
+  Bot,
   Boxes,
+  Clock3,
+  ClipboardList,
   FileText,
   Pill,
+  PackageSearch,
   Receipt,
   RefreshCw,
+  Send,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/api-client'
@@ -80,6 +87,13 @@ export function Dashboard() {
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [aiPharmacies, setAiPharmacies] = useState<{ id: number; name: string }[]>([])
+  const [aiContextLoading, setAiContextLoading] = useState(true)
+  const [aiPharmacyId, setAiPharmacyId] = useState<number | undefined>()
+  const [aiQuery, setAiQuery] = useState('')
+  const [aiAnswer, setAiAnswer] = useState('')
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
   const requestInFlight = useRef(false)
 
   const loadSummary = useCallback(() => {
@@ -115,6 +129,59 @@ export function Dashboard() {
       window.clearInterval(interval)
     }
   }, [loadSummary])
+
+  useEffect(() => {
+    let cancelled = false
+    apiFetch<{ pharmacies: { id: number; name: string }[] }>('/api/v1/ai/context')
+      .then(({ pharmacies }) => {
+        if (cancelled) return
+        setAiPharmacies(pharmacies)
+        setAiPharmacyId((current) => current ?? pharmacies[0]?.id)
+        setAiContextLoading(false)
+        setAiError(null)
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return
+        setAiContextLoading(false)
+        setAiError(
+          error instanceof Error && error.message.trim()
+            ? error.message.slice(0, 160)
+            : 'Mortarium context is currently unavailable.'
+        )
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  async function askMortarium(prompt: string) {
+    const question = prompt.trim()
+    if (!question || question.length > 2000 || !aiPharmacyId || aiLoading) return
+    setAiLoading(true)
+    setAiAnswer('')
+    setAiError(null)
+    try {
+      const result = await apiFetch<{ answer: string }>('/api/v1/ai/query', {
+        method: 'POST',
+        body: JSON.stringify({
+          query: question,
+          pharmacy_id: aiPharmacyId,
+          language: 'en',
+          country: 'VN',
+        }),
+      })
+      setAiAnswer(result.answer)
+      setAiQuery('')
+    } catch (error) {
+      setAiError(
+        error instanceof Error && error.message.trim()
+          ? error.message.slice(0, 200)
+          : 'Mortarium could not complete the request. Please retry.'
+      )
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   return (
     <>
@@ -206,7 +273,49 @@ export function Dashboard() {
               />
             </section>
 
-            <section className='grid gap-4 xl:grid-cols-2'>
+            <section aria-label='Operational priorities' className='pharmacy-priority-panel rounded-xl border bg-card'>
+              <div className='flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 sm:px-5'>
+                <div className='flex items-start gap-3'>
+                  <div className='rounded-lg bg-primary/10 p-2 text-primary'><ClipboardList className='size-5' /></div>
+                  <div>
+                    <h2 className='font-semibold'>Today’s priority queue</h2>
+                    <p className='mt-0.5 text-xs text-muted-foreground'>Actionable exceptions from current pharmacy records</p>
+                  </div>
+                </div>
+                <span className='rounded-md border bg-muted/30 px-2.5 py-1 text-[11px] font-medium text-muted-foreground'>Live operational data</span>
+              </div>
+              <div className='grid divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0'>
+                <PriorityItem
+                  icon={PackageSearch}
+                  tone='warning'
+                  label='Replenishment'
+                  value={summary ? summary.inventory.low_stock.toLocaleString() : '—'}
+                  detail={summary ? `${summary.reorder_attention.length} products need review` : 'Waiting for inventory data'}
+                  href='#procurement-attention'
+                  action='Review stock'
+                />
+                <PriorityItem
+                  icon={Clock3}
+                  tone='critical'
+                  label='Expiry exposure'
+                  value={summary ? (summary.inventory.expiry_red + summary.inventory.expiry_yellow).toLocaleString() : '—'}
+                  detail={summary ? `${summary.inventory.expired} expired records · ${summary.inventory.critical_expiry} critical` : 'Waiting for batch data'}
+                  href='#inventory-attention'
+                  action='Review exposure'
+                />
+                <PriorityItem
+                  icon={AlertTriangle}
+                  tone='warning'
+                  label='Slow-moving stock'
+                  value={summary ? summary.attention.slow_moving_items.toLocaleString() : '—'}
+                  detail={summary ? `${formatAmount(summary.attention.slow_moving_stock_value)} tied up in stock` : 'Waiting for stock movement data'}
+                  href='#slow-moving-stock'
+                  action='Inspect products'
+                />
+              </div>
+            </section>
+
+            <section id='expiry-control' className='grid gap-4 xl:grid-cols-3'>
               <DonutCard
                 title='Sales mix'
                 total={formatAmount(summary?.sales.by_category.reduce((sum, item) => sum + item.revenue, 0) ?? 0)}
@@ -219,6 +328,15 @@ export function Dashboard() {
                   ['Red · expired / ≤ 3 months', summary?.inventory.expiry_red ?? 0],
                   ['Yellow · > 3–12 months', summary?.inventory.expiry_yellow ?? 0],
                   ['Green · > 12 months', summary?.inventory.expiry_green ?? 0],
+                ])}
+              />
+              <DonutCard
+                title='Stock availability'
+                total={String(summary?.inventory.items ?? 0)}
+                items={toPercentItems([
+                  ['Healthy stock', Math.max(0, (summary?.inventory.items ?? 0) - (summary?.inventory.low_stock ?? 0))],
+                  ['Low stock', Math.max(0, (summary?.inventory.low_stock ?? 0) - (summary?.attention.stockout_items ?? 0))],
+                  ['Stockout', summary?.attention.stockout_items ?? 0],
                 ])}
               />
             </section>
@@ -258,7 +376,7 @@ export function Dashboard() {
               </div>
             </section>
 
-            <section className='grid gap-4 xl:grid-cols-3'>
+            <section className='grid gap-4 xl:grid-cols-4'>
               <PipelineCard
                 title='Dispensing / POS'
                 icon={Receipt}
@@ -284,6 +402,15 @@ export function Dashboard() {
                   ['Stock value', summary?.inventory.retail_value ?? 0, true],
                   ['Low stock', summary?.inventory.low_stock ?? 0],
                   ['Expiry risk', (summary?.inventory.expiry_red ?? 0) + (summary?.inventory.expiry_yellow ?? 0)],
+                ]}
+              />
+              <PipelineCard
+                title='Patient activity'
+                icon={Activity}
+                stages={[
+                  ['Active patients', summary?.patients.active ?? 0],
+                  ['Recent patients', summary?.patient_medications.length ?? 0],
+                  ['Medication lines', summary?.patient_medications.reduce((total, patient) => total + patient.medications.length, 0) ?? 0],
                 ]}
               />
             </section>
@@ -318,7 +445,7 @@ export function Dashboard() {
             </section>
 
             <section>
-              <div className='mb-3'>
+              <div id='inventory-attention' className='mb-3'>
                 <h2 className='font-semibold'>Inventory Attention</h2>
                 <p className='text-xs text-muted-foreground'>Exceptions that can affect availability, working capital, or expiry losses.</p>
               </div>
@@ -344,7 +471,7 @@ export function Dashboard() {
                   amount
                 />
               </div>
-              <div className='mt-4 rounded-2xl border bg-card p-5 shadow-sm'>
+              <div id='slow-moving-stock' className='mt-4 rounded-2xl border bg-card p-5 shadow-sm'>
                 <div className='mb-4 flex items-center justify-between gap-3'>
                   <div>
                     <h3 className='font-semibold'>Slow-moving products</h3>
@@ -370,7 +497,7 @@ export function Dashboard() {
             </section>
 
             <section>
-              <div className='mb-3'>
+              <div id='procurement-attention' className='mb-3'>
                 <h2 className='font-semibold'>Procurement Attention</h2>
                 <p className='text-xs text-muted-foreground'>Products at or below their configured reorder level, prioritized by available stock.</p>
               </div>
@@ -411,22 +538,130 @@ export function Dashboard() {
             <section>
               <div className='mb-3'>
                 <h2 className='font-semibold'>Patient Overview</h2>
-                <p className='text-xs text-muted-foreground'>20 patients with recent dispensing activity, their key metrics, conditions, and medications.</p>
+                <p className='text-xs text-muted-foreground'>Up to 20 patients with recent dispensing activity, key metrics, conditions, and medication details.</p>
               </div>
               <PatientOverview summary={summary} />
             </section>
 
-            <section className='rounded-2xl border bg-muted/20 p-5'>
-              <div className='flex items-start gap-3'>
-                <div className='rounded-lg bg-primary/10 p-2 text-primary'>
-                  <Pill className='size-5' />
+            <section className='overflow-hidden rounded-2xl border bg-card shadow-sm'>
+              <div className='flex flex-col gap-4 border-b bg-gradient-to-r from-primary/[0.07] via-card to-card p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5'>
+                <div className='flex items-start gap-3'>
+                  <div className='rounded-xl border border-primary/15 bg-primary/10 p-2.5 text-primary'>
+                    <Bot className='size-5' />
+                  </div>
+                  <div>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <h2 className='font-semibold'>Mortarium AI</h2>
+                      <span className='inline-flex items-center gap-1 rounded-full border bg-background/80 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground'>
+                        <Sparkles className='size-3' /> Decision support
+                      </span>
+                    </div>
+                    <p className='mt-1 max-w-2xl text-sm leading-5 text-muted-foreground'>
+                      Ask questions about stock, expiry exposure, sales and dispensing activity. Answers come from the existing authenticated Mortarium service.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className='font-semibold'>Mortarium AI</h2>
-                  <p className='mt-1 text-sm text-muted-foreground'>
-                    Mortarium AI metrics remain isolated from operational KPI calculations.
-                    The dashboard uses ERP records for business metrics and keeps AI telemetry separate.
+                <label className='flex min-w-0 flex-col gap-1 text-xs font-medium text-muted-foreground sm:w-64'>
+                  Pharmacy context
+                  <select
+                    value={aiPharmacyId ?? ''}
+                    onChange={(event) => {
+                      setAiPharmacyId(event.target.value ? Number(event.target.value) : undefined)
+                      setAiAnswer('')
+                      setAiError(null)
+                    }}
+                    disabled={aiPharmacies.length === 0 || aiLoading}
+                    className='h-9 w-full rounded-md border bg-background px-2.5 text-sm font-normal text-foreground disabled:opacity-60'
+                  >
+                    {aiPharmacies.length === 0 && (
+                      <option value=''>
+                        {aiContextLoading ? 'Loading authorized pharmacies…' : 'No authorized pharmacy available'}
+                      </option>
+                    )}
+                    {aiPharmacies.map((pharmacy) => (
+                      <option key={pharmacy.id} value={pharmacy.id}>{pharmacy.name}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className='grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(260px,0.75fr)]'>
+                <div className='min-w-0'>
+                  <form
+                    className='flex gap-2'
+                    onSubmit={(event) => {
+                      event.preventDefault()
+                      void askMortarium(aiQuery)
+                    }}
+                  >
+                    <input
+                      value={aiQuery}
+                      onChange={(event) => setAiQuery(event.target.value)}
+                      maxLength={2000}
+                      placeholder='Ask about inventory, sales or expiry…'
+                      aria-label='Ask Mortarium AI'
+                      className='min-w-0 flex-1 rounded-lg border bg-background px-3 py-2.5 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary/40'
+                    />
+                    <button
+                      type='submit'
+                      aria-label={aiLoading ? 'Mortarium is analyzing the question' : 'Ask Mortarium AI'}
+                      disabled={!aiPharmacyId || aiLoading || !aiQuery.trim()}
+                      className='inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
+                    >
+                      {aiLoading ? <RefreshCw className='size-4 animate-spin' /> : <Send className='size-4' />}
+                      <span className='hidden sm:inline'>{aiLoading ? 'Analyzing' : 'Ask AI'}</span>
+                    </button>
+                  </form>
+
+                  {aiError && (
+                    <p role='alert' className='mt-3 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-xs leading-5 text-destructive'>
+                      {aiError}
+                    </p>
+                  )}
+
+                  {aiLoading && (
+                    <div className='mt-4 flex items-center gap-2 text-sm text-muted-foreground' role='status'>
+                      <RefreshCw className='size-4 animate-spin' /> Mortarium is analyzing the request…
+                    </div>
+                  )}
+
+                  {aiAnswer && !aiLoading && (
+                    <div aria-live='polite' className='mt-4 rounded-xl border bg-muted/20 p-4'>
+                      <div className='mb-2 flex items-center gap-2 text-xs font-semibold text-primary'>
+                        <Bot className='size-4' /> Mortarium response
+                      </div>
+                      <p className='whitespace-pre-wrap text-sm leading-6'>{aiAnswer}</p>
+                    </div>
+                  )}
+
+                  {!aiAnswer && !aiError && !aiLoading && (
+                    <p className='mt-3 text-xs leading-5 text-muted-foreground'>
+                      Recommendations are generated on request. No AI forecasts or recommendations are fabricated for this dashboard.
+                    </p>
+                  )}
+                </div>
+
+                <div className='grid content-start gap-2 sm:grid-cols-2 lg:grid-cols-1'>
+                  <p className='mb-1 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:col-span-2 lg:col-span-1'>
+                    Suggested questions
                   </p>
+                  {[
+                    'Which products need replenishment first?',
+                    'Which batches have the highest expiry risk?',
+                    'Summarize this month’s realized sales.',
+                    'What stock is moving slowly?',
+                  ].map((prompt) => (
+                    <button
+                      key={prompt}
+                      type='button'
+                      onClick={() => void askMortarium(prompt)}
+                      disabled={!aiPharmacyId || aiLoading}
+                      className='flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2.5 text-left text-xs leading-5 transition hover:border-primary/30 hover:bg-primary/[0.03] disabled:cursor-not-allowed disabled:opacity-50'
+                    >
+                      <span>{prompt}</span>
+                      <ArrowUpRight className='size-3.5 shrink-0 text-muted-foreground' />
+                    </button>
+                  ))}
                 </div>
               </div>
             </section>
@@ -434,6 +669,38 @@ export function Dashboard() {
         </div>
       </Main>
     </>
+  )
+}
+
+function PriorityItem({
+  icon: Icon,
+  tone,
+  label,
+  value,
+  detail,
+  href,
+  action,
+}: {
+  icon: LucideIcon
+  tone: 'critical' | 'warning'
+  label: string
+  value: string
+  detail: string
+  href: string
+  action: string
+}) {
+  return (
+    <div className='min-w-0 p-4 sm:p-5'>
+      <div className='flex items-center gap-2'>
+        <Icon className={tone === 'critical' ? 'size-4 text-red-600 dark:text-red-400' : 'size-4 text-amber-600 dark:text-amber-400'} />
+        <span className='text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground'>{label}</span>
+      </div>
+      <p className='mt-3 text-3xl font-bold tracking-tight tabular-nums'>{value}</p>
+      <p className='mt-1 min-h-8 text-xs leading-5 text-muted-foreground'>{detail}</p>
+      <a href={href} className='mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline'>
+        {action}<ArrowUpRight className='size-3.5' aria-hidden='true' />
+      </a>
+    </div>
   )
 }
 
@@ -538,9 +805,22 @@ function formatAmount(value: number) {
 }
 
 function toPercentItems(items: [string, number][]): [string, number][] {
-  const total = items.reduce((sum, [, value]) => sum + value, 0)
+  const normalized = items.map(([label, value]) => [label, Math.max(0, value)] as [string, number])
+  const total = normalized.reduce((sum, [, value]) => sum + value, 0)
   if (!total) return []
-  return items.map(([label, value]) => [label, Math.round((value / total) * 100)] as [string, number])
+
+  const shares = normalized.map(([label, value], index) => {
+    const exact = (value / total) * 100
+    return { label, value: Math.floor(exact), remainder: exact - Math.floor(exact), index }
+  })
+  const remaining = 100 - shares.reduce((sum, item) => sum + item.value, 0)
+  const byRemainder = [...shares].sort((a, b) => b.remainder - a.remainder)
+  for (let i = 0; i < remaining; i += 1) {
+    byRemainder[i % byRemainder.length].value += 1
+  }
+  return shares
+    .sort((a, b) => a.index - b.index)
+    .map(({ label, value }) => [label, value] as [string, number])
 }
 
 function ratio(numerator: number, denominator: number) {
