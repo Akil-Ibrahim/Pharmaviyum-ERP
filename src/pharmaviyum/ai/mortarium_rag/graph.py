@@ -137,7 +137,7 @@ class LangGraphRAG:
             if not queries:
                 queries = [question]
             success = True
-            return {"transformed_queries": queries, "rewrite_count": 0, "warnings": []}
+            return {"transformed_queries": queries, "rewrite_count": 0, "warnings": list(getattr(guardrail_result, "warnings", None) or [])}
         finally:
             record_ai_stage(
                 "query_transform",
@@ -348,7 +348,7 @@ class LangGraphRAG:
                         )
                         warnings.append("output_blocked_by_guardrails")
                     else:
-                        answer = getattr(result, "sanitized_output", None) or answer
+                        answer = getattr(result, "validated_output", None) or answer
                         warnings.extend(getattr(result, "warnings", None) or [])
             success = True
             return {"answer": answer, "warnings": warnings}
