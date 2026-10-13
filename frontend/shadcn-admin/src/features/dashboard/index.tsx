@@ -536,7 +536,7 @@ export function Dashboard() {
             <section>
               <div className='mb-3'>
                 <h2 className='font-semibold'>Patient Overview</h2>
-                <p className='text-xs text-muted-foreground'>20 patients with recent dispensing activity, their key metrics, conditions, and medications.</p>
+                <p className='text-xs text-muted-foreground'>Up to 20 patients with recent dispensing activity, key metrics, conditions, and medication details.</p>
               </div>
               <PatientOverview summary={summary} />
             </section>
@@ -801,9 +801,22 @@ function formatAmount(value: number) {
 }
 
 function toPercentItems(items: [string, number][]): [string, number][] {
-  const total = items.reduce((sum, [, value]) => sum + value, 0)
+  const normalized = items.map(([label, value]) => [label, Math.max(0, value)] as [string, number])
+  const total = normalized.reduce((sum, [, value]) => sum + value, 0)
   if (!total) return []
-  return items.map(([label, value]) => [label, Math.round((value / total) * 100)] as [string, number])
+
+  const shares = normalized.map(([label, value], index) => {
+    const exact = (value / total) * 100
+    return { label, value: Math.floor(exact), remainder: exact - Math.floor(exact), index }
+  })
+  let remaining = 100 - shares.reduce((sum, item) => sum + item.value, 0)
+  const byRemainder = [...shares].sort((a, b) => b.remainder - a.remainder)
+  for (let i = 0; i < remaining; i += 1) {
+    byRemainder[i % byRemainder.length].value += 1
+  }
+  return shares
+    .sort((a, b) => a.index - b.index)
+    .map(({ label, value }) => [label, value] as [string, number])
 }
 
 function ratio(numerator: number, denominator: number) {
