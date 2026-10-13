@@ -155,14 +155,16 @@ export function Dashboard() {
   }, [])
 
   async function askMortarium(prompt: string) {
-    if (!prompt.trim() || !aiPharmacyId || aiLoading) return
+    const question = prompt.trim()
+    if (!question || question.length > 2000 || !aiPharmacyId || aiLoading) return
     setAiLoading(true)
+    setAiAnswer('')
     setAiError(null)
     try {
       const result = await apiFetch<{ answer: string }>('/api/v1/ai/query', {
         method: 'POST',
         body: JSON.stringify({
-          query: prompt.trim(),
+          query: question,
           pharmacy_id: aiPharmacyId,
           language: 'en',
           country: 'VN',
@@ -595,6 +597,7 @@ export function Dashboard() {
                     <input
                       value={aiQuery}
                       onChange={(event) => setAiQuery(event.target.value)}
+                      maxLength={2000}
                       placeholder='Ask about inventory, sales or expiry…'
                       aria-label='Ask Mortarium AI'
                       className='min-w-0 flex-1 rounded-lg border bg-background px-3 py-2.5 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary/40'
