@@ -88,6 +88,7 @@ export function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [aiPharmacies, setAiPharmacies] = useState<{ id: number; name: string }[]>([])
+  const [aiContextLoading, setAiContextLoading] = useState(true)
   const [aiPharmacyId, setAiPharmacyId] = useState<number | undefined>()
   const [aiQuery, setAiQuery] = useState('')
   const [aiAnswer, setAiAnswer] = useState('')
@@ -136,10 +137,12 @@ export function Dashboard() {
         if (cancelled) return
         setAiPharmacies(pharmacies)
         setAiPharmacyId((current) => current ?? pharmacies[0]?.id)
+        setAiContextLoading(false)
         setAiError(null)
       })
       .catch((error: unknown) => {
         if (cancelled) return
+        setAiContextLoading(false)
         setAiError(
           error instanceof Error && error.message.trim()
             ? error.message.slice(0, 160)
@@ -568,7 +571,11 @@ export function Dashboard() {
                     disabled={aiPharmacies.length === 0 || aiLoading}
                     className='h-9 w-full rounded-md border bg-background px-2.5 text-sm font-normal text-foreground disabled:opacity-60'
                   >
-                    {aiPharmacies.length === 0 && <option value=''>Loading authorized pharmacies…</option>}
+                    {aiPharmacies.length === 0 && (
+                      <option value=''>
+                        {aiContextLoading ? 'Loading authorized pharmacies…' : 'No authorized pharmacy available'}
+                      </option>
+                    )}
                     {aiPharmacies.map((pharmacy) => (
                       <option key={pharmacy.id} value={pharmacy.id}>{pharmacy.name}</option>
                     ))}
