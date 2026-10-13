@@ -13,7 +13,6 @@ from src.pharmaviyum.ai.mortarium_rag.schemas import (
     RetrievalResult,
 )
 
-
 PATIENT_ID = 1001
 PHARMACY_ID = 7
 CHUNK_ID = UUID("a0b1c2d3-e4f5-4678-9012-abcdef123456")
@@ -84,7 +83,7 @@ class _FakeLLM:
         if "Generate 2 different ways" in prompt_text:
             return SimpleNamespace(
                 content=(
-                    "List the medications recorded for synthetic patient 1001.\n"
+                    "List the medications recorded for synthetic patient 1001.\\n"
                     "Summarize the active medication list for patient 1001."
                 )
             )
@@ -102,8 +101,8 @@ class _FakeLLM:
                     "indication, allergies, kidney function, or current symptoms "
                     f"[src-{CHUNK_ID}]. The record contains no clinical interaction "
                     "assessment, so this result cannot establish whether dispensing "
-                    "ibuprofen is appropriate [src-{CHUNK_ID}]. This is synthetic "
-                    "test data, not clinical guidance."
+                    "ibuprofen is appropriate "
+                    f"[src-{CHUNK_ID}]. This is synthetic test data, not clinical guidance."
                 )
             )
         raise AssertionError(
@@ -151,8 +150,7 @@ async def test_mortarium_rag_runs_end_to_end_for_one_synthetic_patient():
     )
     assert retriever.filters_seen
     assert all(
-        filters.get("pharmacy_id") == PHARMACY_ID
-        for filters in retriever.filters_seen
+        filters.get("pharmacy_id") == PHARMACY_ID for filters in retriever.filters_seen
     )
     assert any(
         filters.get("access_level") == "patient"
