@@ -18,3 +18,4 @@ class DrugCatalogResult(BaseModel):
     package_description: str | None
     gtin: str | None
     regulatory_id: str | None
+    authorization_country: str | None = None
