@@ -255,12 +255,11 @@ function SidebarMenuCollapsedDropdown({
 function isPathActive(href: string, url?: string) {
   if (!url) return false
 
-  const currentPath = href.split(/[?#]/)[0].replace(/\\/$/, '') || '/'
-  const targetPath = url.split(/[?#]/)[0].replace(/\\/$/, '') || '/'
+  const currentPath = href.split(/[?#]/)[0].replace(/\/+$/, '') || '/'
+  const targetPath = url.split(/[?#]/)[0].replace(/\/+$/, '') || '/'
 
   return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`)
 }
-
 function checkIsActive(href: string, item: NavItem, mainNav = false) {
   const isItemActive = isPathActive(href, item.url)
   const isChildActive = !!item.items?.some((child) =>
