@@ -178,3 +178,54 @@
     animation: none !important;
   }
 }
+
+/* Pharmacy workbench: make the next operational action visible before analytics. */
+.pharmacy-priority-panel {
+  overflow: hidden;
+  border-color: var(--pharmacy-blue-border);
+  box-shadow: 0 2px 8px -6px color-mix(in oklab, var(--primary) 28%, transparent);
+}
+
+.pharmacy-priority-panel > div:first-child {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--primary) 5%, var(--card)),
+    var(--card) 72%
+  );
+}
+
+.pharmacy-priority-panel > div:last-child > div {
+  transition: background-color 150ms ease;
+}
+
+.pharmacy-priority-panel > div:last-child > div:hover {
+  background: color-mix(in oklab, var(--primary) 3%, var(--card));
+}
+
+.pharmacy-priority-panel a {
+  min-height: 1.5rem;
+  text-underline-offset: 3px;
+}
+
+.pharmaviyum-dashboard #expiry-control,
+.pharmaviyum-dashboard #procurement-attention,
+.pharmaviyum-dashboard #slow-moving-stock {
+  scroll-margin-top: 1.5rem;
+}
+
+.pharmaviyum-dashboard #expiry-control > div {
+  min-width: 0;
+}
+
+@media (min-width: 1280px) {
+  .pharmaviyum-dashboard #expiry-control > div {
+    padding: 1.15rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .pharmacy-priority-panel > div:last-child > div + div {
+    border-top: 1px solid var(--border);
+  }
+}
+
