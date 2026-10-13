@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import time
 from typing import Any, Literal
 from uuid import uuid4
@@ -422,13 +423,18 @@ class LangGraphRAG:
             }
             final: RAGState = await self.graph.ainvoke(initial, config=config)
             sources = final.get("graded") or []
+            answer = final.get("answer") or ""
+            warnings = list(final.get("warnings") or [])
+            answer, citation_warning = self._validate_answer_citations(answer, sources)
+            if citation_warning:
+                warnings.append(citation_warning)
             record_ai_request(True)
             success = True
             return RAGResponse(
-                answer=final.get("answer") or "",
+                answer=answer,
                 sources=sources,
                 confidence=float(final.get("confidence") or 0.0),
-                warnings=final.get("warnings") or [],
+                warnings=warnings,
                 model_used=final.get("model_used") or "unknown",
                 latency_ms=float(final.get("latency_ms") or 0.0),
                 tokens_used=int(final.get("tokens_used") or 0),
@@ -440,6 +446,24 @@ class LangGraphRAG:
             record_ai_stage(
                 "rag_pipeline", (time.perf_counter() - started) * 1000, success=success
             )
+
+    @staticmethod
+    def _validate_answer_citations(
+        answer: str, sources: list[RetrievalResult]
+    ) -> tuple[str, str | None]:
+        """Fail closed when a sourced answer has missing or fabricated citations."""
+        if not sources:
+            return answer, None
+        allowed = {f"src-{source.chunk.id}" for source in sources}
+        cited = re.findall(r"\[(src-[^\]\s]+)\]", answer)
+        if cited and all(citation in allowed for citation in cited):
+            return answer, None
+        return (
+            "I can't provide a reliable answer because the response lacks "
+            "verifiable citations to the retrieved evidence. Please review the "
+            "source records with a pharmacist.",
+            "citation_validation_failed",
+        )
 
     @staticmethod
     def _thread_id(thread_id: str | None, context: QueryContext) -> str:
