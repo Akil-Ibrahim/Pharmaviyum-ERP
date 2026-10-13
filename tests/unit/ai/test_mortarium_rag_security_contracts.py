@@ -30,9 +30,7 @@ def test_retrieval_accepts_positive_integer_tenant_scope():
 
 def test_metadata_requires_positive_pharmacy_id():
     with pytest.raises(ValueError):
-        CanonicalMetadata.model_validate(
-            {"pharmacy_id": 0, "source": "approved-sop"}
-        )
+        CanonicalMetadata.model_validate({"pharmacy_id": 0, "source": "approved-sop"})
 
 
 def test_patient_scoped_metadata_requires_patient_id():
@@ -49,9 +47,7 @@ def test_patient_scoped_metadata_requires_patient_id():
 def test_filter_builder_rejects_untrusted_sql_identifier():
     store = PgVectorStore(session_factory=lambda: None)
     with pytest.raises(ValueError, match="Invalid metadata filter key"):
-        store._build_filter_clause(
-            {"pharmacy_id": 7, "country') OR TRUE --": "VN"}
-        )
+        store._build_filter_clause({"pharmacy_id": 7, "country') OR TRUE --": "VN"})
 
 
 def test_query_filter_sets_keep_patient_records_explicitly_scoped():
