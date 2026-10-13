@@ -3,6 +3,7 @@ import './dashboard.css'
 import {
   Activity,
   AlertTriangle,
+  ArrowUpRight,
   Bot,
   Boxes,
   Clock3,
@@ -531,12 +532,6 @@ function PriorityItem({
 
     </div>
   )
-}
-
-function formatExpiry(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(date)
 }
 
 function formatAmount(value: number) {
