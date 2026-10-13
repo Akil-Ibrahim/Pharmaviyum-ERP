@@ -69,3 +69,34 @@ async def test_guardrails_node_uses_validated_output_contract():
 
     assert result["answer"] == "validated answer with disclaimer"
     assert "disclaimer_appended" in result["warnings"]
+
+
+def test_answer_citation_validation_accepts_only_retrieved_source_ids():
+    source_id = "a0b1c2d3-e4f5-4678-9012-abcdef123456"
+    sources = [SimpleNamespace(chunk=SimpleNamespace(id=source_id))]
+
+    answer, warning = LangGraphRAG._validate_answer_citations(
+        f"Supported statement [src-{source_id}].", sources
+    )
+
+    assert answer == f"Supported statement [src-{source_id}]."
+    assert warning is None
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        "A clinical claim without a citation.",
+        "A claim with a fabricated citation [src-not-a-real-source].",
+    ],
+)
+def test_answer_citation_validation_fails_closed(answer):
+    source_id = "a0b1c2d3-e4f5-4678-9012-abcdef123456"
+    sources = [SimpleNamespace(chunk=SimpleNamespace(id=source_id))]
+
+    validated_answer, warning = LangGraphRAG._validate_answer_citations(
+        answer, sources
+    )
+
+    assert "lacks verifiable citations" in validated_answer
+    assert warning == "citation_validation_failed"
