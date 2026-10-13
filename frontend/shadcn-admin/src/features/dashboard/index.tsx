@@ -341,7 +341,7 @@ export function Dashboard() {
                   ['Medication lines', summary?.patient_medications.reduce((total, patient) => total + patient.medications.length, 0) ?? 0],
                 ]}
               />
-              <details className='mt-3 rounded-lg border bg-card'>
+              <details className='col-span-full mt-3 rounded-lg border bg-card'>
                 <summary className='cursor-pointer px-4 py-3 text-sm font-semibold text-primary'>Recent patient dispensing · up to 20 patients</summary>
                 <div className='border-t p-3 sm:p-4'><PatientOverview summary={summary} /></div>
               </details>
