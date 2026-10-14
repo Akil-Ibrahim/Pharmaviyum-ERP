@@ -161,8 +161,22 @@ async def verify_prescription(
         # Keep the item collection empty until a normalized prescription-line model exists.
         items: list[Any] = []
 
-        # Determine country (default VN)
-        country = patient.country if patient else "VN"
+        # Jurisdiction must come from the patient/tenant's configured market.
+        # Never infer Vietnamese rules when the market is missing or unsupported.
+        country = (
+            patient.country.strip().upper()
+            if patient and patient.country
+            else None
+        )
+        if any(
+            check in input.checks for check in ("expiry", "quantity_limits")
+        ):
+            jurisdiction_check = _check_jurisdiction(country)
+            checks.append(jurisdiction_check)
+            if not jurisdiction_check.passed:
+                overall_warnings.append(
+                    jurisdiction_check.details or "Unsupported jurisdiction"
+                )
 
         # CHECK 1: Expiry
         if "expiry" in input.checks:
@@ -228,11 +242,51 @@ async def verify_prescription(
 # ============================================================================
 
 
-async def _check_expiry(prescription, country: str) -> PrescriptionCheck:
-    """Check if prescription is still valid (not expired)."""
+def _check_jurisdiction(country: str | None) -> PrescriptionCheck:
+    """Fail closed when no validated prescription rules exist for the market."""
+    configured = bool(
+        country
+        and country in PRESCRIPTION_VALIDITY
+        and country in CONTROLLED_LIMITS
+        and country in CONTROLLED_PRESCRIPTION_VALIDITY
+    )
+    return PrescriptionCheck(
+        check_type="jurisdiction",
+        passed=configured,
+        details=(
+            f"Regulatory rules configured for {country}"
+            if configured
+            else (
+                f"No validated prescription rules configured for jurisdiction "
+                f"{country or '(missing)'}; legal validity cannot be confirmed"
+            )
+        ),
+        warnings=(
+            []
+            if configured
+            else ["Do not dispense based on this verification; confirm local rules"]
+        ),
+    )
+
+
+async def _check_expiry(
+    prescription, country: str | None
+) -> PrescriptionCheck:
+    """Check expiry without inventing a default validity period."""
     if not prescription.date_expires:
-        # No expiry date — use default validity
-        validity_days = PRESCRIPTION_VALIDITY.get(country, 30)
+        validity_days = PRESCRIPTION_VALIDITY.get(country or "")
+        if validity_days is None:
+            return PrescriptionCheck(
+                check_type="expiry",
+                passed=False,
+                details=(
+                    "Prescription has no explicit expiry date and no configured "
+                    f"validity period for jurisdiction {country or '(missing)'}"
+                ),
+                warnings=[
+                    "Prescription validity cannot be confirmed without local rules"
+                ],
+            )
         expiry = prescription.date_issued + timedelta(days=validity_days)
     else:
         expiry = prescription.date_expires
@@ -269,12 +323,25 @@ async def _check_prescriber_license(prescription) -> PrescriptionCheck:
     )
 
 
-async def _check_quantity_limits(item, country: str) -> PrescriptionCheck:
-    """Check if quantity is within legal limits for controlled substances."""
+async def _check_quantity_limits(
+    item, country: str | None
+) -> PrescriptionCheck:
+    """Check quantity only when market-specific rules are configured."""
     drug_name = item.medication_name
     quantity = item.quantity_prescribed
 
-    limits = CONTROLLED_LIMITS.get(country, {})
+    if not country or country not in CONTROLLED_LIMITS:
+        return PrescriptionCheck(
+            check_type="quantity_limits",
+            passed=False,
+            details=(
+                f"Cannot verify {drug_name} quantity: no configured controlled-"
+                f"substance rules for jurisdiction {country or '(missing)'}"
+            ),
+            warnings=["Local controlled-substance rules must be verified"],
+        )
+
+    limits = CONTROLLED_LIMITS[country]
 
     if drug_name not in limits:
         # Not a controlled substance — pass
