@@ -13,7 +13,6 @@ import {
   ListChecks,
   PackageCheck,
   Palette,
-  Pill,
   ReceiptText,
   RefreshCw,
   ServerCog,
@@ -71,9 +70,11 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'ERP Systems',
-          url: '/erp-systems',
           icon: ServerCog,
-          items: [{ title: 'Sync Events', url: '/sync-events', icon: RefreshCw }],
+          items: [
+            { title: 'ERP Overview', url: '/erp-systems', icon: ServerCog },
+            { title: 'Sync Events', url: '/sync-events', icon: RefreshCw },
+          ],
         },
       ],
     },
