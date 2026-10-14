@@ -107,6 +107,15 @@ class TestGoldenDataset:
             assert case.language is not None
             assert case.expected_safety_level is not None
 
+    def test_regulatory_cases_declare_jurisdiction_and_global_case_does_not(self):
+        """Country-specific rules must be explicit, not inferred from language."""
+        from src.pharmaviyum.ai.evaluation.datasets import GOLDEN_DATASET
+
+        cases = {case.id: case for case in GOLDEN_DATASET}
+        assert cases["eval_003"].context["country"] == "VN"
+        assert "country" not in cases["eval_007"].context
+        assert cases["eval_007"].language == "en"
+
 
 @pytest.mark.unit
 class TestBenchmarkRunner:

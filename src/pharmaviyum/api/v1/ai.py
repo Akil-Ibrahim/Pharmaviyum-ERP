@@ -41,8 +41,11 @@ class QueryRequest(BaseModel):
         default=None, description="Patient ID for history lookup"
     )
     pharmacy_id: int = Field(..., gt=0, description="Authorized pharmacy tenant")
-    country: str = Field(default="VN", description="Country code")
-    language: str = Field(default="vi", description="Language code")
+    country: str | None = Field(
+        default=None,
+        description="Explicit market jurisdiction; omit when not known",
+    )
+    language: str = Field(default="en", description="Response language code")
     halal_filter: bool = Field(
         default=False, description="Enable strict halal compliance check"
     )

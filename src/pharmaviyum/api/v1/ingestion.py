@@ -30,8 +30,10 @@ class IngestURLRequest(BaseModel):
     source: str = Field(..., description="File path or URL")
     source_type: str = Field(..., description="pdf, html, or docx")
     pharmacy_id: int = Field(..., gt=0)
-    country: str = Field(default="VN")
-    language: str = Field(default="vi")
+    country: str | None = Field(
+        default=None, description="Market jurisdiction when known"
+    )
+    language: str = Field(default="en", description="Document language")
 
 
 async def _authorize_ingestion_tenant(
@@ -51,8 +53,8 @@ async def upload_and_ingest_document(
     session: SessionDep,
     pharmacy_id: int = Form(..., gt=0),
     file: UploadFile = File(..., description="PDF, DOCX, or HTML file"),
-    country: str = Form(default="VN"),
-    language: str = Form(default="vi"),
+    country: str | None = Form(default=None),
+    language: str = Form(default="en"),
     extract_tables: bool = Form(default=True),
     ocr_enabled: bool = Form(default=True),
     redis: Redis = Depends(get_redis_client),
