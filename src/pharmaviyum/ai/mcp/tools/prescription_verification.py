@@ -161,13 +161,10 @@ async def verify_prescription(
         # Keep the item collection empty until a normalized prescription-line model exists.
         items: list[Any] = []
 
-        # Jurisdiction must come from the patient/tenant's configured market.
-        # Never infer Vietnamese rules when the market is missing or unsupported.
-        country = (
-            patient.country.strip().upper()
-            if patient and patient.country
-            else None
-        )
+        # A patient's residence is not the pharmacy's legal jurisdiction.
+        # The Pharmacy model does not yet store a trusted market profile, so
+        # regulatory checks must fail closed rather than infer a country.
+        country = None
         if any(
             check in input.checks for check in ("expiry", "quantity_limits")
         ):
