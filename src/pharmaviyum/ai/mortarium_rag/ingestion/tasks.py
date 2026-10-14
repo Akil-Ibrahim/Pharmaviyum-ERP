@@ -68,8 +68,9 @@ def _require_pharmacy_id(config: dict[str, Any]) -> int:
 def _stamp_tenant_metadata(documents: list, config: dict[str, Any]) -> list:
     """Stamp tenant and canonical source metadata before chunking."""
     pharmacy_id = _require_pharmacy_id(config)
-    country = config.get("country", "VN")
-    language = config.get("language", "vi")
+    # Country is optional metadata; never label a document Vietnamese by default.
+    country = config.get("country")
+    language = config.get("language", "en")
     access_level = config.get("access_level", "pharmacy")
     if access_level == "patient":
         raise ValueError(

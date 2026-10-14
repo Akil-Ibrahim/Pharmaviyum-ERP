@@ -21,8 +21,8 @@ class CanonicalMetadata(BaseModel):
     effective_to: datetime | None = None
     access_level: Literal["public", "pharmacy", "patient"] = "pharmacy"
     patient_id: int | None = Field(default=None, gt=0)
-    country: str = Field(default="VN", min_length=2, max_length=8)
-    language: str = Field(default="vi", min_length=2, max_length=8)
+    country: str | None = Field(default=None, min_length=2, max_length=8)
+    language: str = Field(default="en", min_length=2, max_length=8)
     category: str | None = None
     doc_type: str | None = None
 
@@ -53,8 +53,8 @@ class Document(BaseModel):
         "patient_record",
     ]
     metadata: dict[str, Any] = Field(default_factory=dict)
-    country: str = "VN"
-    language: str = "vi"
+    country: str | None = None
+    language: str = "en"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

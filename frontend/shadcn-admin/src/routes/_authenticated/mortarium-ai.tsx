@@ -40,7 +40,7 @@ function MortariumAI() {
     setLoading(true)
     setQuery('')
     try {
-      const result = await apiFetch<{ answer: string }>('/api/v1/ai/query', { method: 'POST', body: JSON.stringify({ query: text.trim(), pharmacy_id: pharmacyId, language, country: 'VN' }) })
+      const result = await apiFetch<{ answer: string }>('/api/v1/ai/query', { method: 'POST', body: JSON.stringify({ query: text.trim(), pharmacy_id: pharmacyId, language }) })
       setAnswer(result.answer)
     } catch (error) {
       setAnswer(error instanceof Error ? error.message : 'AI processing failed')
