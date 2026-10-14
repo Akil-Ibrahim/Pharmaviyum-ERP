@@ -1,6 +1,6 @@
 from pathlib import Path
-from zipfile import ZipFile
 from xml.sax.saxutils import escape
+from zipfile import ZipFile
 
 import pytest
 
