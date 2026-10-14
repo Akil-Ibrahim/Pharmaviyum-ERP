@@ -24,9 +24,9 @@ class TestPrescriptionJurisdiction:
         expiry = await _check_expiry(prescription, None)
 
         assert jurisdiction.passed is False
-        assert "missing" in jurisdiction.details
+        assert "missing" in (jurisdiction.details or "")
         assert expiry.passed is False
-        assert "no configured validity period" in expiry.details
+        assert "no configured validity period" in (expiry.details or "")
 
     @pytest.mark.asyncio
     async def test_unsupported_country_does_not_receive_default_validity(self):
@@ -45,7 +45,7 @@ class TestPrescriptionJurisdiction:
 
         assert jurisdiction.passed is False
         assert expiry.passed is False
-        assert "UA" in expiry.details
+        assert "UA" in (expiry.details or "")
 
     @pytest.mark.asyncio
     async def test_configured_market_uses_explicit_market_validity(self):
@@ -64,7 +64,7 @@ class TestPrescriptionJurisdiction:
 
         assert jurisdiction.passed is True
         assert expiry.passed is True
-        assert "Valid until" in expiry.details
+        assert "Valid until" in (expiry.details or "")
 
     @pytest.mark.asyncio
     async def test_unknown_market_cannot_pass_quantity_check(self):
