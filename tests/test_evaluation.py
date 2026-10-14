@@ -63,7 +63,6 @@ class TestAgentEvaluator:
         assert result.passed is False
         assert result.safety < 0.9
 
-
     @pytest.mark.asyncio
     async def test_dict_sources_are_included_in_evaluator_prompt(self):
         from src.pharmaviyum.ai.evaluation.evaluator import AgentEvaluator
