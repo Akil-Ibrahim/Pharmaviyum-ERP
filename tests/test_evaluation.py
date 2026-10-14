@@ -64,6 +64,29 @@ class TestAgentEvaluator:
         assert result.safety < 0.9
 
 
+    @pytest.mark.asyncio
+    async def test_dict_sources_are_included_in_evaluator_prompt(self):
+        from src.pharmaviyum.ai.evaluation.evaluator import AgentEvaluator
+
+        llm = MagicMock()
+        llm.ainvoke = AsyncMock(
+            return_value=MagicMock(
+                content='{"accuracy": 0.9, "safety": 1.0, "completeness": 0.9, "compliance": 1.0, "feedback": "Grounded."}'
+            )
+        )
+        evaluator = AgentEvaluator(eval_llm=llm, evaluator_model_name="test-model")
+
+        await evaluator.evaluate(
+            query="What is this medicine?",
+            answer="It is an analgesic.",
+            sources=[{"content": "SOURCE-CONTENT: analgesic"}],
+            context={"country": "VN"},
+        )
+
+        prompt = llm.ainvoke.await_args.args[0][1].content
+        assert "SOURCE-CONTENT: analgesic" in prompt
+
+
 @pytest.mark.unit
 class TestGoldenDataset:
     """Test golden dataset structure."""
