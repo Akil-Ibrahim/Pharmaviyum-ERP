@@ -7,6 +7,7 @@ Tests cover:
 - Golden dataset
 """
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -127,7 +128,7 @@ class TestBenchmarkRunner:
         )
         runner = BenchmarkRunner(harness, evaluator, [case])
 
-        await runner._evaluate_case(case, __import__("asyncio").Semaphore(1))
+        await runner._evaluate_case(case, asyncio.Semaphore(1))
 
         evaluator.evaluate.assert_awaited_once_with(
             query="What is it?",
