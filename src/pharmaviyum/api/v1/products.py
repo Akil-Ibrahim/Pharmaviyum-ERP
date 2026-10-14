@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
@@ -23,6 +23,36 @@ async def create_product(
     await db.commit()
     await db.refresh(product)
     return product
+
+
+@router.get("/search", response_model=list[ProductResponse])
+async def search_products(
+    db: SessionDep,
+    _: CurrentUser,
+    q: str = Query(..., min_length=2, max_length=100),
+    limit: int = Query(20, ge=1, le=100),
+) -> list[Product]:
+    """Search actual sellable pharmacy products; never searches reference-only drugs."""
+    term = f"%{q.strip()}%"
+    statement = (
+        select(Product)
+        .where(
+            Product.is_active.is_(True),
+            or_(
+                Product.name.ilike(term),
+                Product.sku.ilike(term),
+                Product.inn_name.ilike(term),
+                Product.manufacturer.ilike(term),
+                Product.regulatory_id.ilike(term),
+                Product.gtin.ilike(term),
+                Product.barcode.ilike(term),
+            ),
+        )
+        .order_by(Product.name.asc(), Product.id.asc())
+        .limit(limit)
+    )
+    result = await db.execute(statement)
+    return list(result.scalars().all())
 
 
 @router.get("/{product_id}", response_model=ProductResponse)

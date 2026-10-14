@@ -19,8 +19,12 @@ async def search_drug_catalog(
     _: CurrentUser,
     q: str = Query(..., min_length=2, max_length=100),
     limit: int = Query(20, ge=1, le=100),
+    country: str | None = Query(None, min_length=2, max_length=100),
 ) -> list[DrugCatalogResult]:
-    term = f"%{q.strip()}%"
+    term_text = q.strip()
+    if len(term_text) < 2:
+        return []
+    term = f"%{term_text}%"
     stmt = (
         select(MedicinalProduct)
         .join(MedicinalProduct.drug_reference)
@@ -40,13 +44,16 @@ async def search_drug_catalog(
                 DrugReferenceIngredient.ingredient_name.ilike(term),
                 MedicinalProduct.brand_name.ilike(term),
                 MedicinalProduct.manufacturer.ilike(term),
+                MedicinalProduct.dosage_form.ilike(term),
+                MedicinalProduct.package_description.ilike(term),
                 MedicinalProduct.gtin.ilike(term),
                 MedicinalProduct.regulatory_id.ilike(term),
             )
         )
-        .distinct()
-        .limit(limit)
     )
+    if country:
+        stmt = stmt.where(MedicinalProduct.authorization_country.ilike(country.strip()))
+    stmt = stmt.distinct().order_by(MedicinalProduct.brand_name.asc()).limit(limit)
     result = await db.execute(stmt)
     products = result.scalars().unique().all()
 
@@ -69,6 +76,7 @@ async def search_drug_catalog(
             package_description=product.package_description,
             gtin=product.gtin,
             regulatory_id=product.regulatory_id,
+            authorization_country=product.authorization_country,
         )
         for product in products
     ]
