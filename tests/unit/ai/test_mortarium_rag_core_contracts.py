@@ -1,4 +1,4 @@
-""""Regression tests for core Mortarium RAG contracts."""
+"""Regression tests for core Mortarium RAG contracts."""
 
 from types import SimpleNamespace
 
