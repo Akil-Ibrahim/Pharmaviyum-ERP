@@ -141,8 +141,8 @@ class QueryContext(BaseModel):
     pharmacy_id: int
     patient_id: int | None = None
     prescription_id: int | None = None
-    country: str = "VN"
-    language: str = "vi"
+    country: str | None = None
+    language: str = "en"
     category: str | None = None
     halal_filter: bool = False
     force_fresh: bool = False
