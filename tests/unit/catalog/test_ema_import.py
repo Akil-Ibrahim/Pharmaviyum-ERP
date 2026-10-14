@@ -46,33 +46,83 @@ def _xlsx(path: Path, rows: list[list[str]]) -> None:
 
 def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> None:
     path = tmp_path / "ema.xlsx"
-    _xlsx(path, [
-        ["Name of medicinal product", "Active substance", "Strength",
-         "Pharmaceutical form", "Route of administration",
-         "Country where authorised", "Name of marketing authorisation holder"],
-        ["ExampleMed", "ibuprofen", "200 mg", "Tablet", "Oral use",
-         "Germany", "Example GmbH"],
-        ["Combination", "ingredient A; ingredient B", "200 mg + 325 mg",
-         "Tablet", "Oral use", "France", "Example SAS"],
-    ])
-    assert parse_ema_xlsx(path) == [{
-        "product_name": "ExampleMed",
-        "ingredient": "ibuprofen",
-        "strength": "200 mg",
-        "dosage_form": "Tablet",
-        "route": "Oral use",
-        "country": "Germany",
-        "holder": "Example GmbH",
-    }]
+    rows = [
+        [
+            "Name of medicinal product",
+            "Active substance",
+            "Strength",
+            "Pharmaceutical form",
+            "Route of administration",
+            "Country where authorised",
+            "Name of marketing authorisation holder",
+        ],
+        [
+            "ExampleMed",
+            "ibuprofen",
+            "200 mg",
+            "Tablet",
+            "Oral use",
+            "Germany",
+            "Example GmbH",
+        ],
+        [
+            "Combination semicolon",
+            "ingredient A; ingredient B",
+            "200 mg + 325 mg",
+            "Tablet",
+            "Oral use",
+            "France",
+            "Example SAS",
+        ],
+        [
+            "Combination slash",
+            "ingredient A / ingredient B",
+            "200 mg + 325 mg",
+            "Tablet",
+            "Oral use",
+            "France",
+            "Example SAS",
+        ],
+        [
+            "Combination plus",
+            "ingredient A + ingredient B",
+            "200 mg + 325 mg",
+            "Tablet",
+            "Oral use",
+            "France",
+            "Example SAS",
+        ],
+    ]
+    _xlsx(path, rows)
+
+    assert parse_ema_xlsx(path) == [
+        {
+            "product_name": "ExampleMed",
+            "ingredient": "ibuprofen",
+            "strength": "200 mg",
+            "dosage_form": "Tablet",
+            "route": "Oral use",
+            "country": "Germany",
+            "holder": "Example GmbH",
+        }
+    ]
 
 
 def test_parse_common_alternate_headers(tmp_path: Path) -> None:
     path = tmp_path / "alternate.xlsx"
-    _xlsx(path, [
-        ["Product name", "Active substance(s)", "Country of authorisation"],
-        ["ExampleMed", "ibuprofen", "Germany"],
-    ])
+    _xlsx(
+        path,
+        [
+            [
+                "Product name",
+                "Active substance(s)",
+                "Country of authorisation",
+            ],
+            ["ExampleMed", "ibuprofen", "Germany"],
+        ],
+    )
     rows = parse_ema_xlsx(path)
+
     assert len(rows) == 1
     assert rows[0]["product_name"] == "ExampleMed"
     assert rows[0]["country"] == "Germany"
@@ -83,5 +133,6 @@ def test_parse_common_alternate_headers(tmp_path: Path) -> None:
 def test_missing_required_columns_fails_clearly(tmp_path: Path) -> None:
     path = tmp_path / "bad.xlsx"
     _xlsx(path, [["Product", "Substance"], ["X", "Y"]])
+
     with pytest.raises(ValueError, match="Could not identify"):
         parse_ema_xlsx(path)
