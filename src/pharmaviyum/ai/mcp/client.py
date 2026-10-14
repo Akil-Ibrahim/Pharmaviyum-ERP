@@ -72,18 +72,34 @@ class MCPClient:
         """Call an MCP tool with retry while enforcing RBAC and tenant scope."""
         start = time.perf_counter()
 
-        if user_role is None or user_id is None or pharmacy_id is None:
-            context = get_authorization_context()
-            if context is None:
-                return ToolExecutionResult(
-                    tool_name=tool_name,
-                    success=False,
-                    error="MCP authorization and tenant context are required",
-                    latency_ms=(time.perf_counter() - start) * 1000,
-                )
-            user_role = context.user_role
-            user_id = context.user_id
-            pharmacy_id = context.pharmacy_id
+        # The authenticated request context is the only authority for identity.
+        context = get_authorization_context()
+        if context is None:
+            error = (
+                "MCP tool not authorized: trusted tenant context is required"
+                if any(value is not None for value in (user_role, user_id, pharmacy_id))
+                else "MCP authorization and tenant context are required"
+            )
+            return ToolExecutionResult(
+                tool_name=tool_name,
+                success=False,
+                error=error,
+                latency_ms=(time.perf_counter() - start) * 1000,
+            )
+        if (
+            (user_role is not None and user_role != context.user_role)
+            or (user_id is not None and user_id != context.user_id)
+            or (pharmacy_id is not None and pharmacy_id != context.pharmacy_id)
+        ):
+            return ToolExecutionResult(
+                tool_name=tool_name,
+                success=False,
+                error="MCP authorization context mismatch",
+                latency_ms=(time.perf_counter() - start) * 1000,
+            )
+        user_role = context.user_role
+        user_id = context.user_id
+        pharmacy_id = context.pharmacy_id
 
         if self.enable_circuit_breaker and self._is_circuit_open(tool_name):
             logger.warning("Circuit breaker open for tool: %s", tool_name)

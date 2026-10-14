@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import time
 from typing import Any, Literal
 from uuid import uuid4
@@ -97,6 +98,7 @@ class LangGraphRAG:
         success = False
         try:
             question = state["question"]
+            input_warnings: list[str] = []
             ctx = state["context"]
             ctx_dict = {"language": ctx.language, "country": ctx.country}
             if self.guardrails is not None:
@@ -122,6 +124,9 @@ class LangGraphRAG:
                     question = (
                         getattr(guardrail_result, "sanitized_input", None) or question
                     )
+                    input_warnings = list(
+                        getattr(guardrail_result, "warnings", None) or []
+                    )
             variations = await self.transformer.generate_multi_query(
                 query=question, num_variations=2, context=ctx_dict
             )
@@ -137,7 +142,11 @@ class LangGraphRAG:
             if not queries:
                 queries = [question]
             success = True
-            return {"transformed_queries": queries, "rewrite_count": 0, "warnings": []}
+            return {
+                "transformed_queries": queries,
+                "rewrite_count": 0,
+                "warnings": input_warnings,
+            }
         finally:
             record_ai_stage(
                 "query_transform",
@@ -348,7 +357,7 @@ class LangGraphRAG:
                         )
                         warnings.append("output_blocked_by_guardrails")
                     else:
-                        answer = getattr(result, "sanitized_output", None) or answer
+                        answer = getattr(result, "validated_output", None) or answer
                         warnings.extend(getattr(result, "warnings", None) or [])
             success = True
             return {"answer": answer, "warnings": warnings}
@@ -414,13 +423,18 @@ class LangGraphRAG:
             }
             final: RAGState = await self.graph.ainvoke(initial, config=config)
             sources = final.get("graded") or []
+            answer = final.get("answer") or ""
+            warnings = list(final.get("warnings") or [])
+            answer, citation_warning = self._validate_answer_citations(answer, sources)
+            if citation_warning:
+                warnings.append(citation_warning)
             record_ai_request(True)
             success = True
             return RAGResponse(
-                answer=final.get("answer") or "",
+                answer=answer,
                 sources=sources,
                 confidence=float(final.get("confidence") or 0.0),
-                warnings=final.get("warnings") or [],
+                warnings=warnings,
                 model_used=final.get("model_used") or "unknown",
                 latency_ms=float(final.get("latency_ms") or 0.0),
                 tokens_used=int(final.get("tokens_used") or 0),
@@ -432,6 +446,24 @@ class LangGraphRAG:
             record_ai_stage(
                 "rag_pipeline", (time.perf_counter() - started) * 1000, success=success
             )
+
+    @staticmethod
+    def _validate_answer_citations(
+        answer: str, sources: list[RetrievalResult]
+    ) -> tuple[str, str | None]:
+        """Fail closed when a sourced answer has missing or fabricated citations."""
+        if not sources:
+            return answer, None
+        allowed = {f"src-{source.chunk.id}" for source in sources}
+        cited = re.findall(r"\[(src-[^\]\s]+)\]", answer)
+        if cited and all(citation in allowed for citation in cited):
+            return answer, None
+        return (
+            "I can't provide a reliable answer because the response lacks "
+            "verifiable citations to the retrieved evidence. Please review the "
+            "source records with a pharmacist.",
+            "citation_validation_failed",
+        )
 
     @staticmethod
     def _thread_id(thread_id: str | None, context: QueryContext) -> str:

@@ -165,7 +165,7 @@ class PgVectorStore:
         """Keyword search, always tenant scoped."""
         filter_clause, filter_params = self._build_filter_clause(filters)
         async with self.session_factory() as session:
-            query_sql = text(f""" table_name and filter keys are validated
+            query_sql = text(f"""
                 SELECT id, document_id, content, chunk_index, chunk_type, metadata, token_count,
                        ts_rank(to_tsvector('english', content), plainto_tsquery('english', :query)) AS score
                 FROM {self.table_name} {filter_clause}
