@@ -23,7 +23,7 @@ NS = {
     "m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
     "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
 }
-SEPARATOR_RE = re.compile(r"\s*[;\n]\s*")
+SEPARATOR_RE = re.compile(r"(?:\s*[;+\n]\s*|\s+/\s+)")
 
 
 def _column_index(cell_ref: str) -> int:
