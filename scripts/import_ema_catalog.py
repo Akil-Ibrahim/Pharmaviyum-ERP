@@ -197,7 +197,15 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
 def _regulatory_id(row: dict[str, str]) -> str:
     identity = "|".join(
         row[key].casefold().strip()
-        for key in ("product_name", "ingredient", "country")
+        for key in (
+            "product_name",
+            "ingredient",
+            "strength",
+            "dosage_form",
+            "route",
+            "country",
+            "holder",
+        )
     )
     digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:24]
     return f"EMA57:{digest}"
