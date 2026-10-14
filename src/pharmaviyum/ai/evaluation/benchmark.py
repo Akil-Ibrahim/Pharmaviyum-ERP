@@ -29,7 +29,7 @@ class BenchmarkResult:
     failed_cases: int
     avg_latency_ms: float
     safety_violations: int
-    tool_call_accuracy: float  # % of cases whose observed tool set exactly matches expectation
+    tool_call_accuracy: float  # % of cases with an exact tool-set match
     detailed_results: list[dict[str, Any]] = field(default_factory=list)
 
     @property
