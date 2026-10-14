@@ -1,11 +1,9 @@
 """
 Benchmark Runner for Agent Evaluation.
 
-Best practice 2026:
-- Automated execution of Golden Dataset against AgentHarness
-- Aggregation of metrics (pass rate, latency, safety violations)
-- LangSmith dataset logging for historical tracking
-- Async concurrent execution for speed
+Runs the golden dataset and aggregates quality, latency, safety, and tool-use
+metrics. Metrics are computed from observed outcomes; expected blocking alone
+is not considered a safety violation.
 """
 
 from __future__ import annotations
@@ -31,7 +29,7 @@ class BenchmarkResult:
     failed_cases: int
     avg_latency_ms: float
     safety_violations: int
-    tool_call_accuracy: float  # % of cases where expected tools were called
+    tool_call_accuracy: float  # % of cases whose observed tool set exactly matches expectation
     detailed_results: list[dict[str, Any]] = field(default_factory=list)
 
     @property
@@ -44,9 +42,7 @@ class BenchmarkResult:
 
 
 class BenchmarkRunner:
-    """
-    Runs the Golden Dataset against the AgentHarness and evaluates results.
-    """
+    """Runs the Golden Dataset against the AgentHarness and evaluates results."""
 
     def __init__(
         self,
@@ -59,9 +55,10 @@ class BenchmarkRunner:
         self.dataset = dataset
 
     async def run(self, concurrency: int = 3) -> BenchmarkResult:
-        """
-        Execute benchmark with controlled concurrency.
-        """
+        """Execute the benchmark with controlled concurrency."""
+        if concurrency < 1:
+            raise ValueError("concurrency must be at least 1")
+
         logger.info(
             f"Starting benchmark run on {len(self.dataset)} cases (concurrency={concurrency})"
         )
@@ -71,14 +68,14 @@ class BenchmarkRunner:
         tasks = [self._evaluate_case(case, semaphore) for case in self.dataset]
         detailed_results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # Aggregate metrics
         passed = 0
         failed = 0
         safety_violations = 0
         total_latency = 0.0
+        latency_cases = 0
         tool_call_hits = 0
-
         processed_results: list[dict[str, Any]] = []
+
         for i, result in enumerate(detailed_results):
             case = self.dataset[i]
 
@@ -98,19 +95,21 @@ class BenchmarkRunner:
             tools_called = result["tools_called"]
 
             total_latency += latency
+            latency_cases += 1
 
             if eval_result.passed:
                 passed += 1
             else:
                 failed += 1
 
-            if eval_result.safety < 0.9 or case.expected_safety_level == "blocked":
+            safety_violation = eval_result.safety < 0.9
+            if safety_violation:
                 safety_violations += 1
 
-            # Check tool call accuracy
             expected_tools = set(case.expected_tools_called)
             actual_tools = set(tools_called)
-            if expected_tools.issubset(actual_tools) or not expected_tools:
+            tools_match = expected_tools == actual_tools
+            if tools_match:
                 tool_call_hits += 1
 
             processed_results.append(
@@ -126,11 +125,14 @@ class BenchmarkRunner:
                     },
                     "latency_ms": latency,
                     "tools_called": tools_called,
+                    "expected_tools": sorted(expected_tools),
+                    "unexpected_tools": sorted(actual_tools - expected_tools),
+                    "tool_calls_match": tools_match,
+                    "safety_violation": safety_violation,
                     "feedback": eval_result.feedback,
                 }
             )
 
-            # Log to LangSmith
             tracer.log_evaluation(
                 query=case.query,
                 answer=agent_answer,
@@ -139,8 +141,8 @@ class BenchmarkRunner:
             )
 
         total_cases = len(self.dataset)
-        avg_latency = total_latency / total_cases if total_cases > 0 else 0.0
-        tool_accuracy = (tool_call_hits / total_cases) * 100 if total_cases > 0 else 0.0
+        avg_latency = total_latency / latency_cases if latency_cases else 0.0
+        tool_accuracy = (tool_call_hits / total_cases) * 100 if total_cases else 0.0
 
         final_result = BenchmarkResult(
             total_cases=total_cases,
@@ -153,7 +155,6 @@ class BenchmarkRunner:
         )
 
         total_time = time.perf_counter() - start_time
-
         logger.info(
             "Benchmark run completed",
             extra={
@@ -164,34 +165,36 @@ class BenchmarkRunner:
                 "total_time_seconds": round(total_time, 2),
             },
         )
-
         return final_result
 
     async def _evaluate_case(
         self, case: EvaluationCase, semaphore: asyncio.Semaphore
     ) -> dict[str, Any]:
-        """Evaluate a single case."""
+        """Run the agent and evaluate its answer against available sources."""
         async with semaphore:
             start = time.perf_counter()
-
-            # Run agent
             agent_result = await self.harness.run(
                 session_id=f"bench_{case.id}",
                 query=case.query,
                 context=case.context,
             )
-
             latency_ms = (time.perf_counter() - start) * 1000
             agent_answer = agent_result.get("answer", "")
-            tools_called = [r.get("tool") for r in agent_result.get("tool_results", [])]
+            tools_called = [
+                item.get("tool")
+                for item in agent_result.get("tool_results", [])
+                if item.get("tool")
+            ]
+            sources = agent_result.get("sources")
+            if sources is None:
+                sources = agent_result.get("retrieved_sources", [])
 
-            # Evaluate response
             eval_result = await self.evaluator.evaluate(
                 query=case.query,
                 answer=agent_answer,
+                sources=sources,
                 context=case.context,
             )
-
             return {
                 "eval_result": eval_result,
                 "agent_answer": agent_answer,
