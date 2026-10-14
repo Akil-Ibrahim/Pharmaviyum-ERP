@@ -105,7 +105,7 @@ class AgentEvaluator:
         # Format sources for the judge
         sources_text = "No external sources provided."
         if sources:
-            sources_text = "\\n".join(
+            sources_text = "\n".join(
                 f"[{i + 1}] {_source_content(source)[:300]}..."
                 for i, source in enumerate(sources[:5])
             )
