@@ -19,7 +19,7 @@ def _xlsx(path: Path, rows: list[list[str]]) -> None:
                 letters = chr(65 + remainder) + letters
             cells.append(
                 f'<c r="{letters}{row_idx}" t="inlineStr">'
-                f'<is><t>{escape(value)}</t></is></c>'
+                f"<is><t>{escape(value)}</t></is></c>"
             )
         sheet_rows.append(f'<row r="{row_idx}">{"".join(cells)}</row>')
     sheet = (
@@ -32,7 +32,7 @@ def _xlsx(path: Path, rows: list[list[str]]) -> None:
         '<sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>'
     )
     rels = (
-        '<Relationships '
+        "<Relationships "
         'xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
         '<Relationship Id="rId1" '
         'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/'
