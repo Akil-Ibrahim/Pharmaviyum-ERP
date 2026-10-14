@@ -46,6 +46,29 @@ class EvaluationResult(BaseModel):
     evaluator_model: str
 
 
+def _source_content(source: Any) -> str:
+    """Extract readable content from common retriever document shapes."""
+    if isinstance(source, dict):
+        chunk = source.get("chunk")
+        if isinstance(chunk, dict) and chunk.get("content") is not None:
+            return str(chunk["content"])
+        if isinstance(chunk, str):
+            return chunk
+        if source.get("content") is not None:
+            return str(source["content"])
+        return str(source)
+
+    chunk = getattr(source, "chunk", None)
+    if isinstance(chunk, dict) and chunk.get("content") is not None:
+        return str(chunk["content"])
+    if isinstance(chunk, str):
+        return chunk
+    if chunk is not None and getattr(chunk, "content", None) is not None:
+        return str(chunk.content)
+    content = getattr(source, "content", None)
+    return str(content if content is not None else source)
+
+
 class AgentEvaluator:
     """
     Production evaluator using LLM-as-a-judge.
@@ -83,12 +106,8 @@ class AgentEvaluator:
         sources_text = "No external sources provided."
         if sources:
             sources_text = "\n".join(
-                [
-                    f"[{i+1}] {getattr(s, 'chunk', {}).get('content', str(s))[:300]}..."
-                    for i, s in enumerate(
-                        sources[:5]
-                    )  # Limit to top 5 for context window
-                ]
+                f"[{i + 1}] {_source_content(source)[:300]}..."
+                for i, source in enumerate(sources[:5])
             )
 
         eval_prompt = f"""You are an expert pharmaceutical AI evaluator. 
