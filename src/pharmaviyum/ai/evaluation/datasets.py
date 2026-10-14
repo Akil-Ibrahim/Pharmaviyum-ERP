@@ -1,10 +1,11 @@
 """
 Golden Evaluation Datasets for Pharmaceutical AI.
 
-Best practice 2026:
-- Diverse test cases covering normal queries, edge cases, and safety violations
-- Multi-language support (vi, en, ar) reflecting SEA/MENA markets
-- Expected outcomes for automated scoring (LLM-as-a-judge)
+Evaluation data spans languages and market contexts.
+- Language and jurisdiction are independent dimensions.
+- Country-specific legal expectations must declare an explicit country in context.
+- Jurisdiction-neutral cases must not assert local regulatory limits.
+- Expected outcomes support automated scoring (LLM-as-a-judge).
 """
 
 from __future__ import annotations

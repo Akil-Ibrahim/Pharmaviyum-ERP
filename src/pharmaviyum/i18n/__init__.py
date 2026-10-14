@@ -1,4 +1,4 @@
-"""i18n: Vietnamese, English, Thai, Indonesian."""
+"""Internationalization entry point; available locales are configured in core."""
 
 from .core import i18n, translate
 

@@ -1,15 +1,16 @@
 """
 MCP Tool: Prescription Verification.
 
-Validates prescriptions against SEA regulatory requirements:
+Validates prescriptions against explicitly configured market regulations:
 - Expiry check
 - Prescriber license verification
 - Quantity limits (controlled substances)
 - Duplicate dispensing prevention
 - Drug availability check
 
-Best practice 2026:
-- Country-specific regulations (VN/TH/ID)
+Implementation note:
+- The currently implemented country rules cover selected SEA markets (VN/TH/ID);
+  this is not a complete global regulatory database.
 - Controlled substance tracking (narcotics, psychotropics)
 - Audit trail for compliance
 - Async DB queries with selectinload
@@ -84,7 +85,7 @@ CONTROLLED_PRESCRIPTION_VALIDITY: dict[str, int] = {
 @registry.tool(
     name="verify_prescription",
     description=(
-        "Verify prescription validity against SEA regulatory requirements. "
+        "Verify prescription validity against configured country-specific regulatory rules. "
         "Checks: expiry date, prescriber license, quantity limits for "
         "controlled substances, duplicate dispensing prevention. "
         "Critical for legal compliance and patient safety."
@@ -94,7 +95,7 @@ CONTROLLED_PRESCRIPTION_VALIDITY: dict[str, int] = {
     category="regulatory",
     latency_estimate_ms=120,
     requires_db=True,
-    tags=["prescription", "regulatory", "compliance", "sea", "safety"],
+    tags=["prescription", "regulatory", "compliance", "safety"],
 )
 async def verify_prescription(
     input: PrescriptionVerifyRequest,
