@@ -119,14 +119,14 @@ function pharmacistJourney() {
   const roll = Math.random() * 100;
 
   if (roll < 24) {
-    read('/api/v1/products/?limit=50', 'pos_product_listing');
+    read('/products/?limit=50', 'pos_product_listing');
   } else if (roll < 44) {
     const term = encodeURIComponent(__ENV.PRODUCT_SEARCH_TERM || 'paracetamol');
-    read(`/api/v1/products/search?q=${term}&limit=20`, 'pos_product_search');
+    read(`/products/search?q=${term}&limit=20`, 'pos_product_search');
   } else if (roll < 60) {
     const term = encodeURIComponent(__ENV.DRUG_CATALOG_TERM || 'amoxicillin');
     read(
-      `/api/v1/drug-catalog/search?q=${term}&limit=20`,
+      `/drug-catalog/search?q=${term}&limit=20`,
       'drug_reference_search',
       { trend: drugCatalogLatency },
     );
@@ -165,7 +165,7 @@ function managerJourney() {
       trend: dashboardLatency,
     });
   } else if (roll < 75) {
-    read('/api/v1/products/?limit=100', 'product_catalog');
+    read('/products/?limit=100', 'product_catalog');
   } else if (roll < 90) {
     read(`/api/v1/patients/?page=1&page_size=50&pharmacy_id=${pharmacyId}`, 'patient_list');
   } else {
@@ -192,7 +192,7 @@ export function pharmacyAdminWorkload() {
     ['/api/v1/suppliers', 'supplier_list'],
     ['/api/v1/erp/integrations', 'erp_integrations'],
     ['/api/v1/sync-events', 'erp_sync_events'],
-    ['/api/v1/patient-purchases/?limit=50', 'dispensing_sales_ledger'],
+    ['/patient-purchases/?limit=50', 'dispensing_sales_ledger'],
   ];
   const [path, endpoint] = paths[Math.floor(Math.random() * paths.length)];
   read(path, endpoint, { superuser: true, workload: 'pharmacy_admin' });
