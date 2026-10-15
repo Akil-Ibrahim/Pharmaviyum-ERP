@@ -52,6 +52,10 @@ The current k6 thresholds are initial engineering gates, not final SLOs. Recalib
 
 See `docs/devops/STAGE_1_LOAD_TESTING.md` for execution, variables, measurement requirements and exit criteria.
 
+The offline synthetic RAG orchestration benchmark and its limitations are
+documented in
+[`STAGE_1_AI_RAG_OFFLINE_RESULTS.md`](./STAGE_1_AI_RAG_OFFLINE_RESULTS.md).
+
 ### Stage 2 — Observability
 
 Build a unified telemetry layer around OpenTelemetry.

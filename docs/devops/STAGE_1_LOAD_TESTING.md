@@ -164,6 +164,11 @@ Record actual measurements for each run:
 - Redis CPU, memory and command latency;
 - application/container CPU, memory, restarts and network throughput;
 - Mortarium latency, errors/timeouts, provider rate limits and cost when enabled;
+- for RAG quality runs, Recall@k, Precision@k, MRR/nDCG@k, groundedness,
+  citation precision/recall and tenant-isolation violations on a fixed,
+  versioned evaluation set;
+- token usage and provider cost per query and per successful answer when real
+  provider calls are enabled;
 - before/after data invariants for the disposable test database.
 
 Current thresholds are **provisional engineering gates**, not achieved SLOs:
@@ -177,6 +182,11 @@ Current thresholds are **provisional engineering gates**, not achieved SLOs:
 - Mortarium p95 below 20 seconds when enabled.
 
 Do not report a run as passed solely because k6 exited successfully. Check thresholds, failed checks, route validity, database/Redis/container metrics and business-data invariants.
+
+An offline, test-double-only Mortarium orchestration run is documented in
+[`STAGE_1_AI_RAG_OFFLINE_RESULTS.md`](./STAGE_1_AI_RAG_OFFLINE_RESULTS.md).
+Its latency and throughput are not live-provider or production-capacity
+measurements. Keep such results separate from real-model and pgvector load runs.
 
 ## Execution sequence
 
