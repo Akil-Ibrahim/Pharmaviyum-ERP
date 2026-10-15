@@ -49,7 +49,7 @@ if (writesEnabled) {
 const dashboardLatency = new Trend('dashboard_summary_latency', true);
 const drugCatalogLatency = new Trend('drug_catalog_search_latency', true);
 const aiLatency = new Trend('mortarium_query_latency', true);
-const transactionLatency = new Trend('synthetic_inventory_transaction_latency', true);
+const transactionLatency = new Trend('synthetic_transaction_lifecycle_latency', true);
 const failedChecks = new Counter('pharmaviyum_failed_checks');
 
 const scenarios = {
@@ -113,7 +113,7 @@ export const options = {
       : {}),
     dashboard_summary_latency: ['p(95)<1500'],
     drug_catalog_search_latency: ['p(95)<1000'],
-    ...(writesEnabled ? { synthetic_inventory_transaction_latency: ['p(95)<2000'] } : {}),
+    ...(writesEnabled ? { synthetic_transaction_lifecycle_latency: ['p(95)<2000'] } : {}),
     ...(aiEnabled
       ? {
           'http_req_duration{workload:mortarium_ai}': ['p(95)<20000'],
@@ -200,7 +200,7 @@ function pharmacistJourney() {
       trend: dashboardLatency,
     });
   } else if (orderId > 0) {
-    read(`/orders/${orderId}`, 'order_detail');
+    read(`/api/v1/orders/${orderId}`, 'order_detail');
   } else if (patientId > 0) {
     read(`/api/v1/patients/${patientId}?pharmacy_id=${pharmacyId}`, 'patient_profile');
   } else {
@@ -301,7 +301,7 @@ export function pharmacyTransactionWorkload() {
   // Also exercise the real order create -> cancel lifecycle. Canceled orders
   // remain in the database, so this workload requires a disposable staging DB.
   const orderResponse = http.post(
-    `${baseUrl}/orders/?pharmacy_id=${pharmacyId}`,
+    `${baseUrl}/api/v1/orders/?pharmacy_id=${pharmacyId}`,
     JSON.stringify({ patient_id: patientId, total_amount: 12.34 }),
     {
       headers: headers(true),
@@ -333,7 +333,7 @@ export function pharmacyTransactionWorkload() {
   }
 
   const cancelResponse = http.patch(
-    `${baseUrl}/orders/${createdOrderId}/status?pharmacy_id=${pharmacyId}`,
+    `${baseUrl}/api/v1/orders/${createdOrderId}/status?pharmacy_id=${pharmacyId}`,
     JSON.stringify({ status: 'cancelled' }),
     {
       headers: headers(true),
