@@ -10,7 +10,7 @@ This is a test plan, not evidence of production capacity. The VU counts and thre
 
 ### Pharmacist / POS workflow
 
-The current API supports product and medicinal-reference lookup, inventory reads, patient search/profile, and dashboard metrics. The workload exercises:
+The current API supports product and medicinal-reference lookup, inventory reads, patient search/profile, and dashboard metrics. The route prefixes are not fully uniform in the current router: product and drug-catalog handlers are mounted at `/products` and `/drug-catalog`, while dashboard, patient, inventory and Mortarium routes use `/api/v1`. This test follows the route declarations currently registered by the FastAPI application instead of assuming every route has the same prefix. Route-prefix normalization should be handled as a separate API compatibility change. The workload exercises:
 
 - Sellable product listing and search used by POS;
 - international drug-catalog search (INN, ATC, ingredient, brand and product metadata);
