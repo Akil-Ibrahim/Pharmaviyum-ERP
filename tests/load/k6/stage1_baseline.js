@@ -10,7 +10,9 @@ const patientId = Number(__ENV.PATIENT_ID || 0);
 const productId = Number(__ENV.PRODUCT_ID || 0);
 const orderId = Number(__ENV.ORDER_ID || 0);
 const aiEnabled = __ENV.ENABLE_AI === 'true';
+const writesEnabled = __ENV.ENABLE_WRITES === 'true';
 const aiVus = Number(__ENV.AI_VUS || 2);
+const writeVus = Number(__ENV.WRITE_VUS || 2);
 const peakVus = Number(__ENV.PEAK_VUS || 20);
 const duration = __ENV.TEST_DURATION || '6m';
 
@@ -26,10 +28,25 @@ if (!Number.isInteger(peakVus) || peakVus < 1 || peakVus > 400) {
 if (aiEnabled && (!Number.isInteger(aiVus) || aiVus < 1 || aiVus > 20)) {
   throw new Error('AI_VUS must be an integer from 1 to 20.');
 }
+if (writesEnabled) {
+  if (__ENV.CONFIRM_SYNTHETIC_WRITES !== 'YES') {
+    throw new Error('Writes are opt-in. Set CONFIRM_SYNTHETIC_WRITES=YES after verifying disposable staging data.');
+  }
+  if (!superuserToken) {
+    throw new Error('ENABLE_WRITES=true requires a dedicated staging SUPERUSER_TOKEN.');
+  }
+  if (!Number.isInteger(productId) || productId < 1) {
+    throw new Error('ENABLE_WRITES=true requires PRODUCT_ID for an existing synthetic product.');
+  }
+  if (!Number.isInteger(writeVus) || writeVus < 1 || writeVus > 20) {
+    throw new Error('WRITE_VUS must be an integer from 1 to 20.');
+  }
+}
 
 const dashboardLatency = new Trend('dashboard_summary_latency', true);
 const drugCatalogLatency = new Trend('drug_catalog_search_latency', true);
 const aiLatency = new Trend('mortarium_query_latency', true);
+const transactionLatency = new Trend('synthetic_inventory_transaction_latency', true);
 const failedChecks = new Counter('pharmaviyum_failed_checks');
 
 const scenarios = {
@@ -59,6 +76,17 @@ if (superuserToken) {
   };
 }
 
+if (writesEnabled) {
+  scenarios.pharmacy_transaction_workload = {
+    executor: 'constant-vus',
+    exec: 'pharmacyTransactionWorkload',
+    vus: writeVus,
+    duration: __ENV.WRITE_DURATION || '2m',
+    startTime: '1m',
+    gracefulStop: '30s',
+  };
+}
+
 if (aiEnabled) {
   scenarios.mortarium_ai_workload = {
     executor: 'constant-vus',
@@ -77,8 +105,12 @@ export const options = {
     // Keep AI provider latency separate from the interactive ERP API SLO.
     'http_req_duration{workload:pharmacy_erp}': ['p(95)<1500', 'p(99)<3000'],
     'http_req_duration{workload:pharmacy_admin}': ['p(95)<2000', 'p(99)<4000'],
+    ...(writesEnabled
+      ? { 'http_req_duration{workload:pharmacy_transaction}': ['p(95)<2000', 'p(99)<4000'] }
+      : {}),
     dashboard_summary_latency: ['p(95)<1500'],
     drug_catalog_search_latency: ['p(95)<1000'],
+    ...(writesEnabled ? { synthetic_inventory_transaction_latency: ['p(95)<2000'] } : {}),
     ...(aiEnabled
       ? {
           'http_req_duration{workload:mortarium_ai}': ['p(95)<20000'],
@@ -112,6 +144,24 @@ function read(path, endpoint, options = {}) {
 }
 
 export function setup() {
+  const target = baseUrl.toLowerCase();
+  const knownProductionTarget =
+    target.includes('pharmaviyum.onrender.com') ||
+    target.includes('pharmaviyum-api.onrender.com') ||
+    target.includes('production') ||
+    target.includes('prod.') ||
+    target.includes('live.');
+  if (knownProductionTarget) {
+    throw new Error(`Refusing load test against production-like target: ${baseUrl}`);
+  }
+  const isLocal =
+    target.startsWith('http://localhost') ||
+    target.startsWith('http://127.0.0.1') ||
+    target.startsWith('http://0.0.0.0');
+  if (!isLocal && (__ENV.ALLOW_REMOTE_TARGET !== 'true' || __ENV.LOAD_TEST_ENV !== 'staging')) {
+    throw new Error('Remote load tests require ALLOW_REMOTE_TARGET=true and LOAD_TEST_ENV=staging.');
+  }
+
   const health = http.get(`${baseUrl}/health`, { tags: { endpoint: 'health' } });
   if (health.status !== 200) {
     throw new Error(`Health preflight failed with HTTP ${health.status}; target=${baseUrl}`);
@@ -121,8 +171,7 @@ export function setup() {
 
 function pharmacistJourney() {
   // POS support today is represented by real product/catalog lookup APIs.
-  // There is no dedicated checkout transaction API in the current API router,
-  // so this test deliberately does not invent or simulate a checkout endpoint.
+  // No verified checkout/dispense API exists in the current router.
   const roll = Math.random() * 100;
 
   if (roll < 24) {
@@ -132,11 +181,9 @@ function pharmacistJourney() {
     read(`/products/search?q=${term}&limit=20`, 'pos_product_search');
   } else if (roll < 60) {
     const term = encodeURIComponent(__ENV.DRUG_CATALOG_TERM || 'amoxicillin');
-    read(
-      `/drug-catalog/search?q=${term}&limit=20`,
-      'drug_reference_search',
-      { trend: drugCatalogLatency },
-    );
+    read(`/drug-catalog/search?q=${term}&limit=20`, 'drug_reference_search', {
+      trend: drugCatalogLatency,
+    });
   } else if (roll < 73) {
     const inventoryPath =
       productId > 0
@@ -144,28 +191,17 @@ function pharmacistJourney() {
         : `/api/v1/inventory?pharmacy_id=${pharmacyId}`;
     read(inventoryPath, 'inventory_by_pharmacy');
   } else if (roll < 85) {
-    read(
-      `/api/v1/patients/?page=1&page_size=50&pharmacy_id=${pharmacyId}`,
-      'patient_list',
-    );
+    read(`/api/v1/patients/?page=1&page_size=50&pharmacy_id=${pharmacyId}`, 'patient_list');
   } else if (roll < 94) {
-    read(
-      `/api/v1/dashboard/summary?pharmacy_id=${pharmacyId}`,
-      'dashboard_summary',
-      { trend: dashboardLatency },
-    );
+    read(`/api/v1/dashboard/summary?pharmacy_id=${pharmacyId}`, 'dashboard_summary', {
+      trend: dashboardLatency,
+    });
   } else if (orderId > 0) {
     read(`/orders/${orderId}`, 'order_detail');
   } else if (patientId > 0) {
-    read(
-      `/api/v1/patients/${patientId}?pharmacy_id=${pharmacyId}`,
-      'patient_profile',
-    );
+    read(`/api/v1/patients/${patientId}?pharmacy_id=${pharmacyId}`, 'patient_profile');
   } else {
-    read(
-      `/api/v1/patients/statistics?pharmacy_id=${pharmacyId}`,
-      'patient_statistics',
-    );
+    read(`/api/v1/patients/statistics?pharmacy_id=${pharmacyId}`, 'patient_statistics');
   }
 }
 
@@ -187,18 +223,12 @@ function managerJourney() {
 }
 
 export function pharmacyErpWorkload() {
-  const roleRoll = Math.random() * 100;
-  if (roleRoll < 78) {
-    pharmacistJourney();
-  } else {
-    managerJourney();
-  }
-  // Model human think time instead of issuing requests continuously.
+  if (Math.random() * 100 < 78) pharmacistJourney();
+  else managerJourney();
   sleep(1 + Math.random() * 2.5);
 }
 
 export function pharmacyAdminWorkload() {
-  // These endpoints are restricted to privileged users in the current API.
   const paths = [
     ['/api/v1/batches', 'batch_list'],
     ['/api/v1/prescriptions', 'prescription_list'],
@@ -210,6 +240,63 @@ export function pharmacyAdminWorkload() {
   const [path, endpoint] = paths[Math.floor(Math.random() * paths.length)];
   read(path, endpoint, { superuser: true, workload: 'pharmacy_admin' });
   sleep(1 + Math.random() * 3);
+}
+
+export function pharmacyTransactionWorkload() {
+  // Verified write API: create a uniquely named inventory lot, then delete only
+  // the record returned by that successful create. Requires disposable test data.
+  const lotPrefix = (__ENV.TEST_LOT_PREFIX || 'k6-synthetic').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40);
+  const lotNumber = `${lotPrefix}-${__VU}-${__ITER}-${Date.now()}`;
+  const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  const payload = JSON.stringify({
+    product_id: productId,
+    pharmacy_id: pharmacyId,
+    quantity: 1,
+    reserved_quantity: 0,
+    reorder_level: 0,
+    lot_number: lotNumber,
+    expires_at: expiresAt,
+  });
+  const started = Date.now();
+  const createResponse = http.post(`${baseUrl}/api/v1/inventory`, payload, {
+    headers: headers(true),
+    tags: { endpoint: 'synthetic_inventory_create', workload: 'pharmacy_transaction' },
+    timeout: '30s',
+  });
+  const createdOk = check(createResponse, {
+    'synthetic inventory create returns HTTP 201': (r) => r.status === 201,
+  });
+  if (!createdOk) {
+    failedChecks.add(1, { endpoint: 'synthetic_inventory_create' });
+    transactionLatency.add(Date.now() - started);
+    sleep(1 + Math.random() * 2);
+    return;
+  }
+
+  let created;
+  try {
+    created = createResponse.json();
+  } catch (_) {
+    created = null;
+  }
+  const inventoryId = Number(created && created.id);
+  if (!Number.isInteger(inventoryId) || inventoryId < 1) {
+    failedChecks.add(1, { endpoint: 'synthetic_inventory_create_missing_id' });
+    transactionLatency.add(Date.now() - started);
+    throw new Error('Inventory create returned 201 without a usable record ID; manual staging cleanup may be required.');
+  }
+
+  const deleteResponse = http.del(`${baseUrl}/api/v1/inventory/${inventoryId}`, null, {
+    headers: headers(true),
+    tags: { endpoint: 'synthetic_inventory_cleanup', workload: 'pharmacy_transaction' },
+    timeout: '30s',
+  });
+  const deletedOk = check(deleteResponse, {
+    'synthetic inventory cleanup returns HTTP 204': (r) => r.status === 204,
+  });
+  if (!deletedOk) failedChecks.add(1, { endpoint: 'synthetic_inventory_cleanup' });
+  transactionLatency.add(Date.now() - started);
+  sleep(1 + Math.random() * 2);
 }
 
 export function mortariumAiWorkload() {
