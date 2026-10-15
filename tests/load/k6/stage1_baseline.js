@@ -23,8 +23,8 @@ if (!Number.isInteger(pharmacyId) || pharmacyId < 1) {
 if (!Number.isInteger(peakVus) || peakVus < 1 || peakVus > 400) {
   throw new Error('PEAK_VUS must be an integer from 1 to 400.');
 }
-if (aiEnabled && !Number.isInteger(aiVus)) {
-  throw new Error('AI_VUS must be an integer.');
+if (aiEnabled && (!Number.isInteger(aiVus) || aiVus < 1 || aiVus > 20)) {
+  throw new Error('AI_VUS must be an integer from 1 to 20.');
 }
 
 const dashboardLatency = new Trend('dashboard_summary_latency', true);
@@ -149,7 +149,10 @@ function pharmacistJourney() {
       'patient_profile',
     );
   } else {
-    read('/api/v1/patients/statistics', 'patient_statistics');
+    read(
+      `/api/v1/patients/statistics?pharmacy_id=${pharmacyId}`,
+      'patient_statistics',
+    );
   }
 }
 
