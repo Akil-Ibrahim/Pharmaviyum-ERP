@@ -135,9 +135,9 @@ class PgVectorStore:
             # nosec B608: table_name and filter keys are validated
             query_sql = text(f"""
                 SELECT id, document_id, content, chunk_index, chunk_type, metadata, token_count,
-                       1 - (embedding <=> :query_embedding::vector) AS score
+                       1 - (embedding <=> CAST(:query_embedding AS vector)) AS score
                 FROM {self.table_name} {filter_clause}
-                ORDER BY embedding <=> :query_embedding::vector LIMIT :top_k
+                ORDER BY embedding <=> CAST(:query_embedding AS vector) LIMIT :top_k
             """)
             result = await session.execute(
                 query_sql,

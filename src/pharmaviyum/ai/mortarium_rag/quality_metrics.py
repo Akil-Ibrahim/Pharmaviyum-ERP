@@ -10,6 +10,8 @@ Best practice 2026:
 
 from __future__ import annotations
 
+import math
+from collections.abc import Hashable, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -25,9 +27,11 @@ class RetrievalMetrics:
     recall_at_k: dict[int, float] = field(default_factory=dict)
     precision_at_k: dict[int, float] = field(default_factory=dict)
     mrr: float = 0.0  # Mean Reciprocal Rank
-    ndcg: float = 0.0  # Normalized Discounted Cumulative Gain
+    ndcg: float | None = None  # NDCG at the largest requested k
     avg_latency_ms: float = 0.0
     samples_evaluated: int = 0
+    ndcg_at_k: dict[int, float] = field(default_factory=dict)
+    latency_percentiles_ms: dict[int, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -71,57 +75,111 @@ class EmbeddingQualityEvaluator:
 
     @staticmethod
     def evaluate_retrieval(
-        query_embeddings: list[list[float]],
-        relevant_doc_ids: list[list[int]],  # Ground truth
-        retrieved_doc_ids: list[list[int]],  # Model predictions
-        k_values: list[int] = [1, 5, 10],
+        query_embeddings: Sequence[Sequence[float]],
+        relevant_doc_ids: Sequence[Sequence[Hashable]],
+        retrieved_doc_ids: Sequence[Sequence[Hashable]],
+        k_values: Sequence[int] = (1, 5, 10),
+        latency_ms: Sequence[float] | None = None,
     ) -> RetrievalMetrics:
         """
         Evaluate retrieval quality against ground truth.
 
         Args:
-            query_embeddings: Query vectors
-            relevant_doc_ids: For each query, list of relevant doc IDs
-            retrieved_doc_ids: For each query, ranked list of retrieved doc IDs
+            query_embeddings: Retained for API compatibility; ranking scores are
+                evaluated from document IDs and do not use embedding values.
+            relevant_doc_ids: For each query, the set of relevant document IDs.
+            retrieved_doc_ids: For each query, ranked document IDs.
             k_values: k values for recall/precision@k
+            latency_ms: Optional measured end-to-end retrieval latency per query.
+
+        Queries with no labeled relevant documents are excluded because recall
+        and NDCG are undefined for them. Report such queries separately as
+        no-answer/abstention cases.
         """
         metrics = RetrievalMetrics()
-        n_queries = len(query_embeddings)
+        n_queries = len(relevant_doc_ids)
+        if len(query_embeddings) != n_queries or len(retrieved_doc_ids) != n_queries:
+            raise ValueError(
+                "query_embeddings, relevant_doc_ids, and retrieved_doc_ids "
+                "must have the same number of queries"
+            )
+        if latency_ms is not None and len(latency_ms) != n_queries:
+            raise ValueError("latency_ms must contain one value per query")
+        if latency_ms is not None and any(
+            not math.isfinite(value) or value < 0 for value in latency_ms
+        ):
+            raise ValueError("latency_ms must contain finite non-negative values")
 
-        if n_queries == 0:
+        ks = tuple(k_values)
+        if any(not isinstance(k, int) or isinstance(k, bool) or k <= 0 for k in ks):
+            raise ValueError("k_values must contain positive integers")
+        if len(set(ks)) != len(ks):
+            raise ValueError("k_values must not contain duplicates")
+
+        if not n_queries:
             return metrics
 
-        recalls: dict[int, list[float]] = {k: [] for k in k_values}
-        precisions: dict[int, list[float]] = {k: [] for k in k_values}
+        recalls: dict[int, list[float]] = {k: [] for k in ks}
+        precisions: dict[int, list[float]] = {k: [] for k in ks}
+        ndcgs: dict[int, list[float]] = {k: [] for k in ks}
         reciprocal_ranks: list[float] = []
 
         for i in range(n_queries):
             relevant = set(relevant_doc_ids[i])
-            retrieved = retrieved_doc_ids[i]
-
             if not relevant:
                 continue
 
-            # Recall@k and Precision@k
-            for k in k_values:
+            retrieved = list(retrieved_doc_ids[i])
+            first_relevant_rank = next(
+                (
+                    rank
+                    for rank, doc_id in enumerate(retrieved, 1)
+                    if doc_id in relevant
+                ),
+                None,
+            )
+            reciprocal_ranks.append(
+                1.0 / first_relevant_rank if first_relevant_rank is not None else 0.0
+            )
+
+            for k in ks:
                 top_k = retrieved[:k]
                 hits = len(set(top_k) & relevant)
                 recalls[k].append(hits / len(relevant))
-                precisions[k].append(hits / k if k > 0 else 0.0)
+                precisions[k].append(hits / k)
 
-            # MRR: reciprocal rank of first relevant hit
-            rr = 0.0
-            for rank, doc_id in enumerate(retrieved, 1):
-                if doc_id in relevant:
-                    rr = 1.0 / rank
-                    break
-            reciprocal_ranks.append(rr)
+                dcg = sum(
+                    1.0 / math.log2(rank + 1)
+                    for rank, doc_id in enumerate(top_k, 1)
+                    if doc_id in relevant
+                )
+                ideal_hits = min(len(relevant), k)
+                idcg = sum(
+                    1.0 / math.log2(rank + 1) for rank in range(1, ideal_hits + 1)
+                )
+                ndcgs[k].append(dcg / idcg if idcg else 0.0)
 
-        # Aggregate
-        metrics.recall_at_k = {k: float(np.mean(recalls[k])) for k in k_values}
-        metrics.precision_at_k = {k: float(np.mean(precisions[k])) for k in k_values}
+        if reciprocal_ranks:
+            metrics.recall_at_k = {
+                k: float(np.mean(values)) for k, values in recalls.items()
+            }
+            metrics.precision_at_k = {
+                k: float(np.mean(values)) for k, values in precisions.items()
+            }
+            metrics.ndcg_at_k = {
+                k: float(np.mean(values)) for k, values in ndcgs.items()
+            }
         metrics.mrr = float(np.mean(reciprocal_ranks)) if reciprocal_ranks else 0.0
-        metrics.samples_evaluated = n_queries
+        metrics.ndcg = metrics.ndcg_at_k[max(ks)] if ks and metrics.ndcg_at_k else None
+        metrics.samples_evaluated = len(reciprocal_ranks)
+
+        if latency_ms is not None:
+            if latency_ms:
+                metrics.avg_latency_ms = float(np.mean(latency_ms))
+                metrics.latency_percentiles_ms = {
+                    percentile: float(np.percentile(latency_ms, percentile))
+                    for percentile in (50, 95, 99)
+                }
 
         return metrics
 

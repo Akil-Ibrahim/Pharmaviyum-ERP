@@ -134,6 +134,50 @@ Metrics are defined in
 Only report a metric as measured when the run actually collected it; distinguish
 unavailable values from zero.
 
+The reusable RAG retrieval evaluator in
+[`quality_metrics.py`](../../src/pharmaviyum/ai/mortarium_rag/quality_metrics.py)
+computes Recall@k, Precision@k, MRR and NDCG@k from human-labeled relevant
+chunk IDs and ranked retrieved chunk IDs. It can also report mean retrieval
+latency and p50/p95/p99 when measured per-query latency is supplied. Queries
+without relevance labels are excluded; when no labeled queries remain, quality
+metrics are reported as unavailable rather than as zero.
+
+### Real pgvector integration smoke test (2026-10-15)
+
+A separate smoke test ran against the configured PostgreSQL/pgvector instance
+using a disposable schema, then removed that schema:
+
+| Measurement | Result |
+|---|---:|
+| Synthetic queries | 3 |
+| Chunks inserted | 9 |
+| Query concurrency | 1 |
+| Recall@1 / @2 / @3 | 1.00 / 1.00 / 1.00 |
+| Precision@1 / @2 / @3 | 1.00 / 0.50 / 0.33 |
+| MRR | 1.00 |
+| NDCG@1 / @2 / @3 | 1.00 / 1.00 / 1.00 |
+| Cross-tenant hits | 0 |
+| Mean pgvector query latency | 8.120 ms |
+| Individual pgvector query latencies | 18.694 / 3.411 / 2.257 ms |
+
+This validates the real database query, tenant filter and metric calculation,
+not semantic retrieval quality: the corpus was synthetic, relevance was known
+in advance, and vectors were deliberately constructed (orthogonal basis vectors)
+to make relevant chunks rank first. The nine temporary chunks were isolated in
+a throwaway schema and the schema was dropped after the run. Ollama was
+unreachable in the test environment, so no real embedding model, LLM,
+end-to-end RAG graph, or provider cost was measured. Do not treat these fixture
+metrics as representative RAG quality or capacity.
+
+The smoke test also exposed and led to a fix for PostgreSQL vector-cast syntax
+in `vector_store.py`: the query now uses `CAST(:query_embedding AS vector)` so
+SQLAlchemy binds the embedding parameter correctly.
+
+The reusable evaluator now reports Recall@k, Precision@k, MRR and NDCG@k,
+plus mean and p50/p95/p99 latency when supplied per-query timings. Focused
+validation after these changes: 25 tests passed, including metric, vector-store
+contract and tenant-isolation tests; Ruff checks passed.
+
 ## Suggested CV wording
 
 > Benchmarked the Mortarium LangGraph RAG orchestration with 100 synthetic

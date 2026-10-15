@@ -46,6 +46,22 @@ async def test_bm25_search_builds_valid_select_sql():
 
 
 @pytest.mark.asyncio
+async def test_vector_search_uses_parseable_vector_cast_bind():
+    session = _FakeSession()
+    store = PgVectorStore(session_factory=lambda: session, dimensions=2)
+
+    results = await store.vector_search(
+        [0.5, 0.5],
+        filters={"pharmacy_id": 7},
+    )
+
+    assert "CAST(:query_embedding AS vector)" in str(session.statement)
+    assert ":query_embedding::vector" not in str(session.statement)
+    assert session.params["query_embedding"] == "[0.5,0.5]"
+    assert results == []
+
+
+@pytest.mark.asyncio
 async def test_guardrails_node_uses_validated_output_contract():
     class _Guardrails:
         async def post_process(self, answer, question, sources):
