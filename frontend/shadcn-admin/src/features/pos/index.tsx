@@ -70,7 +70,7 @@ export function Pos() {
     setReferenceError(false)
 
     apiFetch<LocalProduct[]>(
-      `/api/v1/products/search?q=${encodeURIComponent(term)}&limit=20`,
+      `/products/search?q=${encodeURIComponent(term)}&limit=20`,
     )
       .then((items) => {
         if (!cancelled) setLocalResults(items)
@@ -86,7 +86,7 @@ export function Pos() {
       })
 
     apiFetch<DrugCatalogResult[]>(
-      `/api/v1/drug-catalog/search?q=${encodeURIComponent(term)}&limit=8`,
+      `/drug-catalog/search?q=${encodeURIComponent(term)}&limit=8`,
     )
       .then((items) => {
         if (!cancelled) setReferenceResults(items)
