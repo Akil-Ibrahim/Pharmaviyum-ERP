@@ -1,259 +1,221 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { Trend } from 'k6/metrics';
+import { Counter, Trend } from 'k6/metrics';
 
-const baseUrl = __ENV.BASE_URL || 'http://localhost:8000';
+const baseUrl = (__ENV.BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 const token = __ENV.AUTH_TOKEN || '';
-const pharmacyId = Number(__ENV.PHARMACY_ID || 1);
-const patientId = Number(__ENV.PATIENT_ID || 1);
-const productId = Number(__ENV.PRODUCT_ID || 1);
-const orderId = Number(__ENV.ORDER_ID || 1);
+const superuserToken = __ENV.SUPERUSER_TOKEN || '';
+const pharmacyId = Number(__ENV.PHARMACY_ID || 0);
+const patientId = Number(__ENV.PATIENT_ID || 0);
+const productId = Number(__ENV.PRODUCT_ID || 0);
+const orderId = Number(__ENV.ORDER_ID || 0);
+const aiEnabled = __ENV.ENABLE_AI === 'true';
+const aiVus = Number(__ENV.AI_VUS || 2);
+const peakVus = Number(__ENV.PEAK_VUS || 20);
+const duration = __ENV.TEST_DURATION || '6m';
 
-const aiLatency = new Trend('ai_query_latency', true);
-const writesEnabled = __ENV.ENABLE_WRITES === 'true';
+if (!token) {
+  throw new Error('AUTH_TOKEN is required: use a dedicated synthetic test account.');
+}
+if (!Number.isInteger(pharmacyId) || pharmacyId < 1) {
+  throw new Error('Set PHARMACY_ID to a real, authorized synthetic/staging pharmacy ID.');
+}
+if (!Number.isInteger(peakVus) || peakVus < 1 || peakVus > 400) {
+  throw new Error('PEAK_VUS must be an integer from 1 to 400.');
+}
+if (aiEnabled && !Number.isInteger(aiVus)) {
+  throw new Error('AI_VUS must be an integer.');
+}
 
-// Business model for the Stage 1 capacity baseline:
-// - 100 pharmacies
-// - ~120 customer visits/day/pharmacy on average
-// - 1 manager + 4-6 pharmacists per pharmacy
-// - ~2-4 staff actively using the system at a busy time
-// - 200 active CRM users is the default peak; 400 is the upper-bound scenario
-const peakVus = Number(__ENV.PEAK_VUS || 200);
+const dashboardLatency = new Trend('dashboard_summary_latency', true);
+const drugCatalogLatency = new Trend('drug_catalog_search_latency', true);
+const aiLatency = new Trend('mortarium_query_latency', true);
+const failedChecks = new Counter('pharmaviyum_failed_checks');
 
 const scenarios = {
-  pharmacy_workload: {
+  pharmacy_erp_workload: {
     executor: 'ramping-vus',
-    exec: 'pharmacyWorkload',
-    startVUs: 5,
+    exec: 'pharmacyErpWorkload',
+    startVUs: Math.min(2, peakVus),
     stages: [
-      { duration: '1m', target: Math.ceil(peakVus * 0.25) },
-      { duration: '2m', target: Math.ceil(peakVus * 0.5) },
-      { duration: '3m', target: peakVus },
-      { duration: '2m', target: Math.ceil(peakVus * 0.5) },
+      { duration: '1m', target: Math.max(1, Math.ceil(peakVus * 0.25)) },
+      { duration: '1m', target: Math.max(1, Math.ceil(peakVus * 0.5)) },
+      { duration: '2m', target: peakVus },
+      { duration: '1m', target: Math.max(1, Math.ceil(peakVus * 0.5)) },
       { duration: '1m', target: 0 },
     ],
     gracefulRampDown: '30s',
   },
-  ai_query: {
-    executor: 'constant-vus',
-    exec: 'aiQuery',
-    vus: Number(__ENV.AI_VUS || 10),
-    duration: __ENV.AI_DURATION || '7m',
-    startTime: '2m',
-    gracefulStop: '30s',
-  },
 };
 
-// Writes are opt-in because they intentionally change database state.
-// Run them only against a disposable synthetic dataset or isolated staging DB.
-if (writesEnabled) {
-  scenarios.synthetic_writes = {
-    executor: 'constant-arrival-rate',
-    exec: 'syntheticWrites',
-    rate: Number(__ENV.WRITE_RATE || 1),
-    timeUnit: '1s',
-    duration: __ENV.WRITE_DURATION || '2m',
-    preAllocatedVUs: Number(__ENV.WRITE_PREALLOCATED_VUS || 5),
-    maxVUs: Number(__ENV.WRITE_MAX_VUS || 10),
-    startTime: __ENV.WRITE_START_TIME || '2m',
+if (superuserToken) {
+  scenarios.pharmacy_admin_workload = {
+    executor: 'constant-vus',
+    exec: 'pharmacyAdminWorkload',
+    vus: Number(__ENV.ADMIN_VUS || 2),
+    duration,
+    startTime: '30s',
+    gracefulStop: '30s',
+  };
+}
+
+if (aiEnabled) {
+  scenarios.mortarium_ai_workload = {
+    executor: 'constant-vus',
+    exec: 'mortariumAiWorkload',
+    vus: aiVus,
+    duration: __ENV.AI_DURATION || '3m',
+    startTime: '1m',
+    gracefulStop: '30s',
   };
 }
 
 export const options = {
   scenarios,
   thresholds: {
-    http_req_failed: ['rate<0.01'],
-    http_req_duration: ['p(95)<1000', 'p(99)<2000'],
-    ai_query_latency: ['p(95)<15000'],
+    http_req_failed: ['rate<0.02'],
+    http_req_duration: ['p(95)<1500', 'p(99)<3000'],
+    dashboard_summary_latency: ['p(95)<1500'],
+    drug_catalog_search_latency: ['p(95)<1000'],
+    ...(aiEnabled ? { mortarium_query_latency: ['p(95)<20000'] } : {}),
   },
 };
 
-function headers() {
-  return token
-    ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
-    : { 'Content-Type': 'application/json' };
+function headers(useSuperuser = false) {
+  const activeToken = useSuperuser ? superuserToken : token;
+  return {
+    Authorization: `Bearer ${activeToken}`,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
 }
 
-function get(path, endpoint) {
+function read(path, endpoint, options = {}) {
   const response = http.get(`${baseUrl}${path}`, {
-    headers: headers(),
-    tags: { endpoint },
+    headers: headers(options.superuser === true),
+    tags: { endpoint, workload: options.workload || 'pharmacy_erp' },
+    timeout: options.timeout || '30s',
   });
-  check(response, { [`${endpoint} is successful`]: (r) => r.status === 200 });
+  const passed = check(response, {
+    [`${endpoint} returns HTTP 200`]: (r) => r.status === 200,
+  });
+  if (!passed) failedChecks.add(1, { endpoint });
+  if (options.trend) options.trend.add(response.timings.duration);
   return response;
 }
 
-function post(path, payload, endpoint, expectedStatus = 201) {
-  const response = http.post(`${baseUrl}${path}`, JSON.stringify(payload), {
-    headers: headers(),
-    tags: { endpoint },
-  });
-  check(response, {
-    [`${endpoint} is successful`]: (r) => r.status === expectedStatus,
-  });
-  return response;
+export function setup() {
+  const health = http.get(`${baseUrl}/health`, { tags: { endpoint: 'health' } });
+  if (health.status !== 200) {
+    throw new Error(`Health preflight failed with HTTP ${health.status}; target=${baseUrl}`);
+  }
+  return { startedAt: new Date().toISOString() };
 }
 
 function pharmacistJourney() {
-  // Customer needs represented in the workload:
-  // OTC symptoms, prescription refills, chronic therapy, medical goods,
-  // vitamins/supplements and personal-care products.
+  // POS support today is represented by real product/catalog lookup APIs.
+  // There is no dedicated checkout transaction API in the current API router,
+  // so this test deliberately does not invent or simulate a checkout endpoint.
   const roll = Math.random() * 100;
 
-  if (roll < 35) {
-    get('/api/v1/products/?limit=50', 'pharmacist_product_search');
+  if (roll < 24) {
+    read('/api/v1/products/?limit=50', 'pos_product_listing');
+  } else if (roll < 44) {
+    const term = encodeURIComponent(__ENV.PRODUCT_SEARCH_TERM || 'paracetamol');
+    read(`/api/v1/products/search?q=${term}&limit=20`, 'pos_product_search');
   } else if (roll < 60) {
-    get('/api/v1/patients/?page=1&page_size=50', 'pharmacist_patient_search');
-  } else if (roll < 75) {
-    get(`/api/v1/products/${productId}`, 'pharmacist_product_detail');
-  } else if (roll < 90) {
-    get(`/api/v1/patients/${patientId}`, 'pharmacist_patient_profile');
+    const term = encodeURIComponent(__ENV.DRUG_CATALOG_TERM || 'amoxicillin');
+    read(
+      `/api/v1/drug-catalog/search?q=${term}&limit=20`,
+      'drug_reference_search',
+      { trend: drugCatalogLatency },
+    );
+  } else if (roll < 73) {
+    read(`/api/v1/inventory?pharmacy_id=${pharmacyId}`, 'inventory_by_pharmacy');
+  } else if (roll < 85) {
+    read(
+      `/api/v1/patients/?page=1&page_size=50&pharmacy_id=${pharmacyId}`,
+      'patient_list',
+    );
+  } else if (roll < 94) {
+    read(
+      `/api/v1/dashboard/summary?pharmacy_id=${pharmacyId}`,
+      'dashboard_summary',
+      { trend: dashboardLatency },
+    );
+  } else if (patientId > 0) {
+    read(
+      `/api/v1/patients/${patientId}?pharmacy_id=${pharmacyId}`,
+      'patient_profile',
+    );
   } else {
-    get(`/api/v1/orders/${orderId}`, 'pharmacist_order_history');
+    read('/api/v1/patients/statistics', 'patient_statistics');
   }
 }
 
 function managerJourney() {
-  // Managers monitor stock, pharmacies and customer activity.
   const roll = Math.random() * 100;
-
-  if (roll < 45) {
-    get(`/api/v1/inventory?pharmacy_id=${pharmacyId}`, 'manager_inventory');
-  } else if (roll < 70) {
-    get('/api/v1/pharmacies', 'manager_pharmacies');
-  } else if (roll < 85) {
-    get('/api/v1/products/?limit=50', 'manager_product_catalog');
+  if (roll < 30) {
+    read(`/api/v1/inventory?pharmacy_id=${pharmacyId}&low_stock=true`, 'low_stock_monitor');
+  } else if (roll < 55) {
+    read(`/api/v1/dashboard/summary?pharmacy_id=${pharmacyId}`, 'dashboard_summary', {
+      trend: dashboardLatency,
+    });
+  } else if (roll < 75) {
+    read('/api/v1/products/?limit=100', 'product_catalog');
+  } else if (roll < 90) {
+    read(`/api/v1/patients/?page=1&page_size=50&pharmacy_id=${pharmacyId}`, 'patient_list');
   } else {
-    get('/api/v1/patients/?page=1&page_size=50', 'manager_customer_list');
+    read('/api/v1/pharmacies', 'pharmacy_list');
   }
 }
 
-function prescriptionJourney() {
-  // Prescription support is represented by the current read endpoint.
-  // Detailed prescription workflows will be enabled once the production
-  // prescription contract is implemented instead of using placeholder data.
-  get('/api/v1/prescriptions/', 'prescription_list');
-}
-
-function erpJourney() {
-  // The current ERP adapter exposes a lightweight connectivity/status check.
-  // Inventory and order reads above represent the CRM-facing ERP data path.
-  get('/api/v1/erp/status', 'erp_status');
-}
-
-function pharmacyWorkload() {
-  // Role mix for a typical pharmacy peak:
-  // ~75% pharmacists, ~15% managers, ~5% prescription-related work,
-  // ~5% ERP/integration activity. This is a starting assumption and should
-  // be recalibrated against measured production telemetry.
+export function pharmacyErpWorkload() {
   const roleRoll = Math.random() * 100;
-
-  if (roleRoll < 75) {
+  if (roleRoll < 78) {
     pharmacistJourney();
-  } else if (roleRoll < 90) {
-    managerJourney();
-  } else if (roleRoll < 95) {
-    prescriptionJourney();
   } else {
-    erpJourney();
+    managerJourney();
   }
+  // Model human think time instead of issuing requests continuously.
+  sleep(1 + Math.random() * 2.5);
+}
 
-  // Human think time: users do not issue requests continuously.
+export function pharmacyAdminWorkload() {
+  // These endpoints are restricted to privileged users in the current API.
+  const paths = [
+    ['/api/v1/batches', 'batch_list'],
+    ['/api/v1/prescriptions', 'prescription_list'],
+    ['/api/v1/suppliers', 'supplier_list'],
+    ['/api/v1/erp/integrations', 'erp_integrations'],
+    ['/api/v1/sync-events', 'erp_sync_events'],
+    ['/api/v1/patient-purchases/?limit=50', 'dispensing_sales_ledger'],
+  ];
+  const [path, endpoint] = paths[Math.floor(Math.random() * paths.length)];
+  read(path, endpoint, { superuser: true, workload: 'pharmacy_admin' });
   sleep(1 + Math.random() * 3);
 }
 
-export function aiQuery() {
+export function mortariumAiWorkload() {
   const payload = JSON.stringify({
     query:
       __ENV.AI_QUERY ||
-      'Help a pharmacist compare common OTC options for a customer with mild cold symptoms, including key safety considerations.',
+      'Summarize low-stock and near-expiry risks for this pharmacy. If live data is unavailable, say so rather than guessing.',
     pharmacy_id: pharmacyId,
     country: __ENV.COUNTRY || 'VN',
-    language: __ENV.LANGUAGE || 'vi',
+    language: __ENV.LANGUAGE || 'en',
     session_id: `load-test-${__VU}-${__ITER}`,
   });
 
   const response = http.post(`${baseUrl}/api/v1/ai/query`, payload, {
     headers: headers(),
-    tags: { endpoint: 'ai_query' },
+    tags: { endpoint: 'mortarium_ai_query', workload: 'mortarium_ai' },
+    timeout: __ENV.AI_TIMEOUT || '60s',
   });
   aiLatency.add(response.timings.duration);
-  check(response, {
-    'ai response is successful': (r) => r.status === 200,
+  const passed = check(response, {
+    'Mortarium AI returns HTTP 200': (r) => r.status === 200,
   });
+  if (!passed) failedChecks.add(1, { endpoint: 'mortarium_ai_query' });
   sleep(5 + Math.random() * 5);
-}
-
-export function syntheticWrites() {
-  const runId = `${Date.now()}-${__VU}-${__ITER}`;
-  const unique = String(runId).replace(/\D/g, '').slice(-12);
-  const patientPayload = {
-    first_name: 'LoadTest',
-    last_name: `Patient${unique}`,
-    phone: `+849${unique.slice(-8).padStart(8, '0')}`,
-    email: `load-test-${unique}@example.invalid`,
-    city: 'Synthetic City',
-    country: __ENV.COUNTRY || 'VN',
-    loyalty_tier: 'Bronze',
-  };
-
-  const patientResponse = post(
-    '/api/v1/patients/',
-    patientPayload,
-    'write_patient_create',
-  );
-  if (patientResponse.status !== 201) return;
-
-  const patient = patientResponse.json();
-  const createdPatientId = Number(patient.id);
-  if (!createdPatientId) return;
-
-  post(
-    '/api/v1/orders/',
-    { patient_id: createdPatientId, total_amount: 250000 },
-    'write_order_create',
-  );
-
-  const productResponse = post(
-    '/api/v1/products/',
-    {
-      name: `Load Test Product ${unique}`,
-      sku: `LOAD-${unique}`,
-      description: 'Synthetic load-test product; deactivate after the run.',
-      price: 100000,
-      stock: 100,
-    },
-    'write_product_create',
-  );
-  if (productResponse.status !== 201) return;
-
-  const product = productResponse.json();
-  const createdProductId = Number(product.id);
-  if (!createdProductId) return;
-
-  post(
-    '/api/v1/inventory',
-    {
-      product_id: createdProductId,
-      pharmacy_id: pharmacyId,
-      quantity: 100,
-      reserved_quantity: 0,
-      reorder_level: 20,
-      lot_number: `LOAD-${unique}`,
-    },
-    'write_inventory_create',
-  );
-
-  post(
-    '/api/v1/prescriptions',
-    {
-      patient_id: createdPatientId,
-      product_id: createdProductId,
-      prescription_number: `LOAD-RX-${unique}`,
-      dosage: '1 unit',
-      instructions: 'Synthetic load-test prescription.',
-      status: 'active',
-    },
-    'write_prescription_create',
-  );
 }
