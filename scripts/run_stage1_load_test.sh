@@ -50,11 +50,15 @@ if [[ "${ENABLE_WRITES:-false}" == "true" ]]; then
     echo "ENABLE_WRITES=true requires PRODUCT_ID for an existing synthetic product." >&2
     exit 2
   fi
+  if [[ ! "${PATIENT_ID:-}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "ENABLE_WRITES=true requires PATIENT_ID for an existing synthetic patient." >&2
+    exit 2
+  fi
   if [[ ! "${WRITE_VUS:-2}" =~ ^([1-9]|1[0-9]|20)$ ]]; then
     echo "WRITE_VUS must be an integer from 1 to 20." >&2
     exit 2
   fi
-  echo "Synthetic inventory create/delete transaction workload is enabled."
+  echo "Synthetic inventory create/delete and order create/cancel workloads are enabled."
 fi
 
 command -v k6 >/dev/null 2>&1 || {
