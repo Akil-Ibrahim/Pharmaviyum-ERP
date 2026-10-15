@@ -33,6 +33,20 @@ The order API currently does not model product lines, payment capture, receipt l
 
 AI is disabled by default because calls can incur provider costs or rate limits. Enable it only in a separate, cost-controlled run with a deterministic prompt containing no patient data. AI latency has separate thresholds so it does not distort the interactive ERP API latency target.
 
+## Route mapping note
+
+The current FastAPI application does not use one uniform prefix for every router. The k6 script follows the paths produced by the currently mounted backend routers, not inferred URL naming conventions:
+
+- Product listing/search: `/products/`, `/products/search`;
+- Drug Reference search: `/drug-catalog/search`;
+- Orders: `/orders/`, `/orders/{order_id}`, `/orders/{order_id}/status`;
+- Patient endpoints: `/api/v1/patients/...`;
+- Inventory, batches, suppliers and ERP integration entities: `/api/v1/...`;
+- Dashboard: `/api/v1/dashboard/summary`;
+- Patient purchases ledger: `/patient-purchases/`.
+
+The frontend currently references `/api/v1/products` and `/api/v1/drug-catalog`, while their routers are mounted without that prefix in the backend router aggregation. Treat this as a separate API/frontend contract discrepancy to verify before declaring the user-facing POS flow healthy; this load-test change does not silently alter route mounting.
+
 ## Explicit API coverage gaps
 
 The current backend does not expose a verified end-to-end transactional API contract for all of the following workflows:
