@@ -53,6 +53,7 @@ The primary scenario ramps through 25%, 50%, peak, 50% and zero over six minutes
 - The baseline is read-only; there is no write scenario in this version.
 - `AUTH_TOKEN` must belong to a dedicated synthetic test user with access to `PHARMACY_ID`.
 - `PHARMACY_ID` is required; do not assume that ID 1 exists or is authorized.
+- `PRODUCT_ID`, `PATIENT_ID` and `ORDER_ID` are optional IDs for synthetic records; when set, the scenario includes product-scoped inventory, patient profile or order-detail reads. Use only records belonging to the test environment.
 - `SUPERUSER_TOKEN` is optional and enables the privileged read workload.
 - Remote targets require both `ALLOW_REMOTE_TARGET=true` and `LOAD_TEST_ENV=staging`.
 - Known production Render hosts and production-like URLs are rejected by the runner.
