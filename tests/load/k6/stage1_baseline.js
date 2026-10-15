@@ -3,6 +3,17 @@ import { check, sleep } from 'k6';
 import { Trend } from 'k6/metrics';
 
 const baseUrl = (__ENV.BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
+
+// Keep the safety checks inside the k6 script too, so direct `k6 run` calls
+// cannot silently bypass the guarded shell runner.
+const normalizedBaseUrl = baseUrl.toLowerCase();
+if (/prod|production|live|pharmaviyum\\.onrender\\.com|pharmaviyum-api\\.onrender\\.com/.test(normalizedBaseUrl)) {
+  throw new Error(`Refusing to run load tests against a production-like target: ${baseUrl}`);
+}
+const isLocalTarget = /^https?:\\/\\/(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)(:[0-9]+)?(\\/|$)/i.test(baseUrl);
+if (!isLocalTarget && (__ENV.ALLOW_REMOTE_TARGET !== 'true' || __ENV.LOAD_TEST_ENV !== 'staging')) {
+  throw new Error('Remote targets require ALLOW_REMOTE_TARGET=true and LOAD_TEST_ENV=staging.');
+}
 const token = __ENV.AUTH_TOKEN || '';
 const superuserToken = __ENV.SUPERUSER_TOKEN || '';
 const pharmacyId = Number(__ENV.PHARMACY_ID || 0);
