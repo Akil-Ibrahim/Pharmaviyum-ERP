@@ -872,8 +872,17 @@ async def seed_patients() -> None:
                 inventory_record.quantity = batch.available_quantity
                 product.stock = batch.available_quantity
 
-            # One active synthetic prescription for every second patient.
-            if index % 2 == 1:
+            rx_spec = next(
+                (
+                    spec
+                    for sku in profile_skus
+                    for spec in PRODUCT_CATALOG
+                    if spec["sku"] == sku and spec["rx"]
+                ),
+                None,
+            )
+            # Add prescriptions only when the profile includes an Rx product.
+            if index % 2 == 1 and rx_spec is not None:
                 prescription_number = f"DEMO-RX-{index:03d}"
                 existing_rx = await session.scalar(
                     select(Prescription).where(
@@ -881,11 +890,7 @@ async def seed_patients() -> None:
                     )
                 )
                 if existing_rx is None:
-                    rx_spec = next(
-                        spec for spec in PRODUCT_CATALOG
-                        if spec["sku"] == profile_skus[0] and spec["rx"]
-                    )
-                    rx_product, _ = inventory[rx_spec["sku"]]
+                    rx_product = inventory[rx_spec["sku"]][0]
                     session.add(
                         Prescription(
                             patient_id=patient.id,
