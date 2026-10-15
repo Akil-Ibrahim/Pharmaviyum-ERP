@@ -165,9 +165,7 @@ async def verify_prescription(
         # The Pharmacy model does not yet store a trusted market profile, so
         # regulatory checks must fail closed rather than infer a country.
         country = None
-        if any(
-            check in input.checks for check in ("expiry", "quantity_limits")
-        ):
+        if any(check in input.checks for check in ("expiry", "quantity_limits")):
             jurisdiction_check = _check_jurisdiction(country)
             checks.append(jurisdiction_check)
             if not jurisdiction_check.passed:
@@ -266,9 +264,7 @@ def _check_jurisdiction(country: str | None) -> PrescriptionCheck:
     )
 
 
-async def _check_expiry(
-    prescription, country: str | None
-) -> PrescriptionCheck:
+async def _check_expiry(prescription, country: str | None) -> PrescriptionCheck:
     """Check expiry without inventing a default validity period."""
     if not prescription.date_expires:
         validity_days = PRESCRIPTION_VALIDITY.get(country or "")
@@ -320,9 +316,7 @@ async def _check_prescriber_license(prescription) -> PrescriptionCheck:
     )
 
 
-async def _check_quantity_limits(
-    item, country: str | None
-) -> PrescriptionCheck:
+async def _check_quantity_limits(item, country: str | None) -> PrescriptionCheck:
     """Check quantity only when market-specific rules are configured."""
     drug_name = item.medication_name
     quantity = item.quantity_prescribed
