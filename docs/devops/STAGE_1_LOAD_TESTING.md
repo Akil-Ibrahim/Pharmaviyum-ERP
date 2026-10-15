@@ -1,166 +1,205 @@
-# Stage 1 — Capacity & Load Testing
+# Pharmaviyum ERP/CRM — Integrated Load, Stress and Transaction Testing
 
-## Goal
+## Purpose and status
 
-Establish a reproducible production-capacity baseline before changing infrastructure.
+This suite combines read-heavy pharmacy operations with an explicitly opt-in synthetic transaction workload. It is intended for local development or an isolated staging environment containing synthetic data only.
 
-The synthetic business model is:
+The test plan and thresholds are engineering targets, not evidence of achieved capacity. The k6 workload must be executed and its output reviewed before any pass/capacity claim is made.
 
-- 100 pharmacies;
-- 2–3 checkout stations per pharmacy;
-- 1 manager per pharmacy;
-- approximately 4–6 pharmacists per pharmacy in the roster;
-- approximately 2–4 staff active at a time per pharmacy;
-- approximately 120 customer visits per pharmacy per day on the working baseline;
-- mixed global, Southeast Asian/local and generic medicines plus medical and related goods;
-- ERP handles operational transactions, while Pharmaviyum ERP/CRM handles customer, staff and relationship workflows;
-- AI is a smaller but latency-sensitive part of the workload.
+## Coverage map
 
-The customer mix is represented conceptually as prescription medicines, OTC medicines, medical goods, related products, and vitamins/supplements. The workload also needs to evolve toward doctor and medical-representative workflows as those API contracts become available.
+### Read-heavy mixed workload
 
-These are **synthetic engineering assumptions**, not measured production statistics. They are deliberately explicit so they can be changed when real customer data is available.
+- POS product listing and product search;
+- international Drug Reference search;
+- pharmacy-scoped inventory and low-stock monitoring;
+- patients, patient profile/statistics, and optional order detail;
+- Dashboard summary;
+- privileged batches, prescriptions, suppliers, ERP integrations, sync events and patient-purchases ledger;
+- optional Mortarium AI query with its own latency/error metrics.
 
-## Role-based workload
+### Opt-in synthetic transaction workload
 
-The current k6 model represents these roles:
+Set `ENABLE_WRITES=true` only after verifying the target is an isolated staging environment and that the database is disposable. This scenario uses currently verified API contracts:
 
-- **Pharmacist — 75% of active CRM activity:** product lookup, patient lookup, patient profile, order history and customer consultation-related reads.
-- **Pharmacy manager — 15%:** inventory monitoring, pharmacy/catalog views and customer lists.
-- **Prescription-related activity — 5%:** current prescription read path only; detailed prescription workflows are not yet modeled because the current route is still a placeholder.
-- **ERP/integration activity — 5%:** current ERP connectivity/status path plus CRM-facing inventory/order reads.
-- **AI — separate concurrent workload:** pharmacist-oriented knowledge and safety questions with configurable concurrency.
+1. **Inventory lot create → delete** — creates a uniquely named lot for an existing synthetic product and pharmacy, then deletes only the inventory record ID returned by that successful create.
+2. **Order create → cancel** — creates a low-value synthetic order for an existing synthetic patient, then transitions that order to cancelled using the current order-status API.
 
-The model intentionally uses human think time. Users do not continuously issue HTTP requests, and the same pharmacy should produce bursty rather than perfectly uniform traffic.
+The order is intentionally left as a cancelled record; it is not hard-deleted. Therefore, run write testing against a disposable staging database/snapshot and restore or recreate it after the run. A failed cleanup/cancellation must be treated as a failed test and may require staging-data cleanup. Do not run write scenarios against a shared or production database.
 
-## Current scenarios
+The order API currently does not model product lines, payment capture, receipt lines, batch allocation or inventory decrement. These order transactions are **not a POS checkout or dispensing test**.
 
-`tests/load/k6/stage1_baseline.js` contains two default concurrent scenarios and one opt-in write scenario:
+### Mortarium AI
 
-- **Pharmacy workload:** ramps to 200 active CRM users by default. This represents roughly 2 active staff per pharmacy across 100 pharmacies. Use `PEAK_VUS=400` for an upper-bound scenario representing roughly 4 active staff per pharmacy.
-- **AI workload:** configurable concurrent users calling `POST /api/v1/ai/query`.
-- **Synthetic writes:** disabled by default. When enabled, a bounded constant-arrival-rate scenario creates a synthetic patient, order, product, inventory lot and prescription per iteration.
+AI is disabled by default because calls can incur provider costs or rate limits. Enable it only in a separate, cost-controlled run with a deterministic prompt containing no patient data. AI latency has separate thresholds so it does not distort the interactive ERP API latency target.
 
-The CRM read workload exercises authenticated paths that exist in the current API: products, patients, inventory, orders, pharmacies and ERP status. Writes are opt-in so the normal baseline remains reproducible without changing database state.
+## Route mapping note
 
-## Synthetic write workload
+The current FastAPI application does not use one uniform prefix for every router. The k6 script follows the paths produced by the currently mounted backend routers, not inferred URL naming conventions:
 
-Writes must run only against an isolated staging/load-test database with synthetic credentials and data. Never enable this scenario against production.
+- Product listing/search: `/products/`, `/products/search`;
+- Drug Reference search: `/drug-catalog/search`;
+- Orders: `/orders/`, `/orders/{order_id}`, `/orders/{order_id}/status`;
+- Patient endpoints: `/api/v1/patients/...`;
+- Inventory, batches, suppliers and ERP integration entities: `/api/v1/...`;
+- Dashboard: `/api/v1/dashboard/summary`;
+- Patient purchases ledger: `/patient-purchases/`.
 
-The write scenario is intentionally bounded:
+The POS search calls are corrected in this PR to use `/products/search` and `/drug-catalog/search`, matching the current backend router aggregation. The existing `/api/v1/...` paths remain appropriate for the routers mounted with that prefix (for example patients, inventory and dashboard). Verify the deployed frontend and backend versions together after the change is merged; this PR does not alter backend route mounting.
 
-- disabled unless `ENABLE_WRITES=true`;
-- default rate: 1 iteration/second;
-- default duration: 2 minutes;
-- default maximum: 120 iterations, producing at most roughly 120 patients, 120 orders, 120 products, 120 inventory lots and 120 prescriptions if every iteration succeeds;
-- concurrency is controlled by k6 `constant-arrival-rate` with a small VU pool;
-- identifiers are deterministic per iteration/run and use the reserved `example.invalid` email domain;
-- no real patient data is accepted by the scenario.
+## Explicit API coverage gaps
 
-The current API contracts were inspected before adding the payloads. Patient and product creation, order creation, inventory creation and prescription creation require the active-superuser authorization path. The test therefore requires an authorized synthetic superuser token.
+The current backend does not expose a verified end-to-end transactional API contract for all of the following workflows:
 
-Example:
+- POS checkout/payment/receipt;
+- batch-level FEFO allocation and dispensing;
+- stock transfer lifecycle and receiving;
+- procurement purchase-order creation/receiving;
+- returns, write-offs and stock adjustments with full audit semantics.
+
+The test deliberately does not invent endpoints or pretend these workflows are covered by reading list endpoints. Add their scenarios when their API contracts, business invariants, fixture strategy and cleanup/rollback procedures exist. The future transaction suite should verify concurrency, idempotency, stock conservation, expiry exclusion, FEFO ordering, tenant isolation and audit records.
+
+## Load profiles
+
+| Profile | Example peak VUs | Intended use |
+|---|---:|---|
+| Smoke | 5 | Validate credentials, route contracts and synthetic fixtures |
+| Baseline | 20 | Establish initial latency/error baseline |
+| Medium | 50 | Observe saturation and database pool behavior |
+| Capacity candidate | 100–200 | Explore representative staging load after smaller runs pass |
+| Upper-bound exploration | 400 | Only after the 200-VU run is stable and infrastructure capacity is understood |
+
+VU counts represent concurrent virtual-user journeys, not a fixed requests-per-second value. Each journey includes think time. Increase load progressively and stop on sustained errors, resource exhaustion, unexpected data changes or staging instability.
+
+The default read workload ramps over six minutes. Optional privileged reads, synthetic writes and Mortarium AI are separate scenarios so their resource impact can be identified. To evaluate the whole platform, first establish individual baselines, then run a controlled mixed profile.
+
+## Safety requirements
+
+- Never use real patient/customer data, production credentials or a production database.
+- Known production Render hosts and production-like URLs are rejected by both the runner and the k6 preflight.
+- Remote targets require `ALLOW_REMOTE_TARGET=true` and `LOAD_TEST_ENV=staging`.
+- `AUTH_TOKEN` must be a dedicated synthetic test-user token with access to `PHARMACY_ID`.
+- For privileged reads, provide a dedicated staging `SUPERUSER_TOKEN`.
+- For write tests, set `ENABLE_WRITES=true`, `CONFIRM_SYNTHETIC_WRITES=YES`, `SUPERUSER_TOKEN`, a valid synthetic `PRODUCT_ID`, `PATIENT_ID`, and `PHARMACY_ID`.
+- The write workload is capped at 20 VUs. Begin with `WRITE_VUS=1` and `WRITE_DURATION=30s`; do not jump directly to a high-volume write run.
+- Write tests create cancelled order records and should run only on a disposable database snapshot. Review the result and restore/recreate the database after the run.
+- Mortarium is opt-in and may incur model-provider costs. Begin with 1 VU and a short duration.
+- Do not bypass guardrails or run 200/400 VU profiles against production.
+
+## Prerequisites and commands
+
+Install k6 and start the API against a synthetic local database.
+
+### 1. Read-only smoke profile
 
 ```bash
 BASE_URL=http://localhost:8000 \
-AUTH_TOKEN="$LOAD_TEST_SUPERUSER_TOKEN" \
-PHARMACY_ID=1 \
+AUTH_TOKEN="$LOAD_TEST_USER_TOKEN" \
+PHARMACY_ID="$SYNTHETIC_PHARMACY_ID" \
+PEAK_VUS=5 \
+./scripts/run_stage1_load_test.sh
+```
+
+### 2. Staging baseline
+
+```bash
+BASE_URL="$STAGING_API_URL" \
+ALLOW_REMOTE_TARGET=true \
+LOAD_TEST_ENV=staging \
+AUTH_TOKEN="$LOAD_TEST_USER_TOKEN" \
+PHARMACY_ID="$STAGING_PHARMACY_ID" \
+PEAK_VUS=20 \
+./scripts/run_stage1_load_test.sh
+```
+
+### 3. Synthetic transaction run
+
+Use a disposable staging database snapshot and synthetic records only. Do not paste tokens into source control.
+
+```bash
+BASE_URL="$STAGING_API_URL" \
+ALLOW_REMOTE_TARGET=true \
+LOAD_TEST_ENV=staging \
+AUTH_TOKEN="$LOAD_TEST_USER_TOKEN" \
+SUPERUSER_TOKEN="$STAGING_SUPERUSER_TOKEN" \
+PHARMACY_ID="$SYNTHETIC_PHARMACY_ID" \
+PRODUCT_ID="$SYNTHETIC_PRODUCT_ID" \
+PATIENT_ID="$SYNTHETIC_PATIENT_ID" \
 ENABLE_WRITES=true \
-WRITE_RATE=1 \
-WRITE_DURATION=2m \
-k6 run tests/load/k6/stage1_baseline.js
-```
-
-For repeatable runs, prefer the guarded runner:
-
-```bash
-BASE_URL=http://localhost:8000 \
-AUTH_TOKEN="$LOAD_TEST_SUPERUSER_TOKEN" \
-PHARMACY_ID=1 \
+CONFIRM_SYNTHETIC_WRITES=YES \
+WRITE_VUS=1 \
+WRITE_DURATION=30s \
+PEAK_VUS=5 \
 ./scripts/run_stage1_load_test.sh
 ```
 
-The runner rejects production-like URLs, requires k6, writes a timestamped JSON result under `artifacts/load-tests/`, and refuses an enabled write workload without an authorization token.
-
-After the run, clean up the generated synthetic records using the staging database cleanup procedure. Product records can be deactivated through the product API; patient/order/inventory/prescription cleanup should use the disposable test database reset rather than ad-hoc production-like deletion scripts.
-
-For higher-volume testing, create a fresh database snapshot or disposable database per run instead of simply increasing write rate. This keeps test data bounded and makes runs comparable.
-
-## Running the read/AI baseline locally
-
-Install k6 using the official package for your operating system, then run:
+### 4. Mortarium AI run
 
 ```bash
-k6 run tests/load/k6/stage1_baseline.js
-```
-
-For an authenticated run against a synthetic/staging dataset:
-
-```bash
-BASE_URL=http://localhost:8000 \
-AUTH_TOKEN="$AUTH_TOKEN" \
-PHARMACY_ID=1 \
-PEAK_VUS=200 \
-AI_VUS=10 \
+BASE_URL="$STAGING_API_URL" \
+ALLOW_REMOTE_TARGET=true \
+LOAD_TEST_ENV=staging \
+AUTH_TOKEN="$LOAD_TEST_USER_TOKEN" \
+PHARMACY_ID="$STAGING_PHARMACY_ID" \
+PEAK_VUS=5 \
+ENABLE_AI=true \
+AI_VUS=1 \
+AI_DURATION=1m \
+AI_QUERY="Summarize low-stock risks for this synthetic pharmacy. Do not guess if data is unavailable." \
 ./scripts/run_stage1_load_test.sh
 ```
 
-Optional variables:
+The runner writes a timestamped JSON stream to `artifacts/load-tests/`. Preserve it with the tested commit SHA, deployment/environment details, VU profile, fixture volume and corresponding infrastructure metrics. Do not commit tokens or sensitive payloads.
 
-- `BASE_URL` — target API URL; defaults to `http://localhost:8000`.
-- `AUTH_TOKEN` — JWT for an authorized test user.
-- `PHARMACY_ID` — authorized pharmacy tenant; defaults to `1`.
-- `PATIENT_ID` / `PRODUCT_ID` / `ORDER_ID` — existing synthetic fixture IDs used for detail reads.
-- `PEAK_VUS` — peak CRM concurrency; defaults to `200`.
-- `AI_VUS` — concurrent AI virtual users; defaults to `10`.
-- `AI_DURATION` — AI scenario duration; defaults to `7m`.
-- `AI_QUERY` — deterministic test question.
-- `COUNTRY` / `LANGUAGE` — AI request context.
+## Metrics and provisional thresholds
 
-Do not use real patient/customer data or production credentials in load tests.
+Record actual measurements for each run:
 
-## What to record
-
-Every baseline run should capture:
-
-- request rate and concurrency;
-- p50, p95 and p99 latency;
-- HTTP error rate;
-- PostgreSQL CPU, connections, query latency and slow queries;
-- pgvector query latency for RAG workloads;
+- request rate, completed iterations and active VUs;
+- p50/p95/p99 latency overall and by endpoint/workload;
+- HTTP failure rate, status-code distribution and failed checks;
+- dashboard and drug-catalog latency;
+- synthetic inventory create/delete and order create/cancel lifecycle duration;
+- PostgreSQL CPU, active connections, pool checkout/overflow/timeouts, slow queries and query latency;
 - Redis CPU, memory and command latency;
-- Celery queue depth and worker utilization;
-- AI request latency, timeout/error rate and concurrency;
-- host/container CPU and memory.
+- application/container CPU, memory, restarts and network throughput;
+- Mortarium latency, errors/timeouts, provider rate limits and cost when enabled;
+- before/after data invariants for the disposable test database.
 
-The application thresholds in the script are **initial engineering gates, not measured SLOs**. They must be recalibrated after the first representative run.
+Current thresholds are **provisional engineering gates**, not achieved SLOs:
 
-## Capacity progression
+- HTTP failure rate below 2%;
+- interactive ERP p95 below 1.5 seconds and p99 below 3 seconds;
+- privileged admin p95 below 2 seconds and p99 below 4 seconds;
+- dashboard-summary p95 below 1.5 seconds;
+- drug-catalog-search p95 below 1 second;
+- synthetic transaction workload p95 below 2 seconds;
+- Mortarium p95 below 20 seconds when enabled.
 
-Run tests in this order:
+Do not report a run as passed solely because k6 exited successfully. Check thresholds, failed checks, route validity, database/Redis/container metrics and business-data invariants.
 
-1. API/health baseline with no AI traffic.
-2. Authenticated CRM read workload at one pharmacy.
-3. Scale the same workload toward 100 pharmacies / 200 active staff users.
-4. Run the upper-bound 400-user scenario.
-5. Run the bounded synthetic write scenario against a disposable staging database.
-6. Add RAG retrieval workload.
-7. Run combined CRM + RAG + AI workload.
-8. Run a sustained test to identify resource leaks or queue growth.
+## Execution sequence
 
-Do not run the 100-pharmacy scenario against production. Use an isolated staging/load-test environment with synthetic data.
+1. Verify each exercised route with 1–5 VUs and valid synthetic fixtures.
+2. Run the 20-VU read-only baseline.
+3. Run the opt-in write workload at 1 VU for 30 seconds on a disposable database.
+4. Verify all created inventory records were removed, all synthetic orders were cancelled, and inspect logs for failed cleanup.
+5. Increase read load to 50 VUs, then consider 100–200 VUs after reviewing metrics.
+6. Scale write VUs/duration independently; do not automatically reuse read-only VU targets for writes.
+7. Test Mortarium separately before adding it to a mixed workload.
+8. Only claim POS/FEFO/procurement/transfer coverage after real transaction APIs and invariant checks are implemented.
+9. Repeat selected tests as a soak run only after the system is stable at the target load.
 
-## Exit criteria
+## Reporting template
 
-Stage 1 is complete when:
+Each run report should include:
 
-- the load test is reproducible;
-- test data and credentials are synthetic/isolated;
-- baseline latency and error measurements are recorded;
-- the first saturation bottleneck is identified;
-- PostgreSQL, Redis, Celery and AI bottlenecks are distinguishable;
-- capacity targets for Stage 2+ are based on measurements rather than assumptions;
-- write tests have a documented cleanup/reset path.
-
-## Known API coverage gap
-
-The business model includes doctors, medical representatives, prescription workflows and ERP transactions. The current API exposes only part of that surface as production-ready routes; for example, the prescription module still contains placeholder list/detail routes, while ERP status is currently a lightweight adapter endpoint. The load test therefore does **not** invent endpoints for these workflows. They should be added to the workload only after their real API contracts are implemented and verified.
+- commit SHA and deployment identifier;
+- local/staging environment and sanitized fixture description;
+- profile, VUs, duration, enabled scenarios and think time;
+- requests/second, iterations, p50/p95/p99 and failure rate;
+- per-endpoint error/status distribution;
+- PostgreSQL, Redis and container metrics;
+- business invariants and cleanup verification;
+- threshold result: pass/fail/inconclusive;
+- top bottlenecks and next engineering actions.

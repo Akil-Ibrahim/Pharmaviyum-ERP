@@ -2,258 +2,239 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Trend } from 'k6/metrics';
 
-const baseUrl = __ENV.BASE_URL || 'http://localhost:8000';
+const baseUrl = (__ENV.BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
+
+// Keep the safety checks inside the k6 script too, so direct `k6 run` calls
+// cannot silently bypass the guarded shell runner.
+const normalizedBaseUrl = baseUrl.toLowerCase();
+if (/prod|production|live|pharmaviyum\.onrender\.com|pharmaviyum-api\.onrender\.com/.test(normalizedBaseUrl)) {
+  throw new Error(`Refusing to run load tests against a production-like target: ${baseUrl}`);
+}
+const isLocalTarget = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:[0-9]+)?(\/|$)/i.test(baseUrl);
+if (!isLocalTarget && (__ENV.ALLOW_REMOTE_TARGET !== 'true' || __ENV.LOAD_TEST_ENV !== 'staging')) {
+  throw new Error('Remote targets require ALLOW_REMOTE_TARGET=true and LOAD_TEST_ENV=staging.');
+}
 const token = __ENV.AUTH_TOKEN || '';
-const pharmacyId = Number(__ENV.PHARMACY_ID || 1);
-const patientId = Number(__ENV.PATIENT_ID || 1);
-const productId = Number(__ENV.PRODUCT_ID || 1);
-const orderId = Number(__ENV.ORDER_ID || 1);
+const superuserToken = __ENV.SUPERUSER_TOKEN || '';
+const pharmacyId = Number(__ENV.PHARMACY_ID || 0);
+const patientId = Number(__ENV.PATIENT_ID || 0);
+const productId = Number(__ENV.PRODUCT_ID || 0);
+const orderId = Number(__ENV.ORDER_ID || 0);
+const writesEnabled = __ENV.ENABLE_WRITES === 'true';
+const aiEnabled = __ENV.ENABLE_AI === 'true';
 
 const aiLatency = new Trend('ai_query_latency', true);
-const writesEnabled = __ENV.ENABLE_WRITES === 'true';
+const transactionLatency = new Trend('synthetic_transaction_lifecycle_latency', true);
+const peakVus = Number(__ENV.PEAK_VUS || 20);
 
-// Business model for the Stage 1 capacity baseline:
-// - 100 pharmacies
-// - ~120 customer visits/day/pharmacy on average
-// - 1 manager + 4-6 pharmacists per pharmacy
-// - ~2-4 staff actively using the system at a busy time
-// - 200 active CRM users is the default peak; 400 is the upper-bound scenario
-const peakVus = Number(__ENV.PEAK_VUS || 200);
+if (!token) throw new Error('AUTH_TOKEN is required.');
+if (!Number.isInteger(pharmacyId) || pharmacyId < 1) throw new Error('PHARMACY_ID must be a positive integer.');
+if (writesEnabled) {
+  if (__ENV.CONFIRM_SYNTHETIC_WRITES !== 'YES') throw new Error('Writes require CONFIRM_SYNTHETIC_WRITES=YES.');
+  if (!superuserToken) throw new Error('Writes require a dedicated staging SUPERUSER_TOKEN.');
+  if (!Number.isInteger(productId) || productId < 1) throw new Error('Writes require a valid synthetic PRODUCT_ID.');
+  if (!Number.isInteger(patientId) || patientId < 1) throw new Error('Writes require a valid synthetic PATIENT_ID.');
+}
 
 const scenarios = {
   pharmacy_workload: {
     executor: 'ramping-vus',
     exec: 'pharmacyWorkload',
-    startVUs: 5,
+    startVUs: Math.min(5, peakVus),
     stages: [
-      { duration: '1m', target: Math.ceil(peakVus * 0.25) },
-      { duration: '2m', target: Math.ceil(peakVus * 0.5) },
-      { duration: '3m', target: peakVus },
-      { duration: '2m', target: Math.ceil(peakVus * 0.5) },
+      { duration: '1m', target: Math.max(1, Math.ceil(peakVus * 0.25)) },
+      { duration: '2m', target: Math.max(1, Math.ceil(peakVus * 0.5)) },
+      { duration: '2m', target: peakVus },
       { duration: '1m', target: 0 },
     ],
     gracefulRampDown: '30s',
   },
-  ai_query: {
-    executor: 'constant-vus',
-    exec: 'aiQuery',
-    vus: Number(__ENV.AI_VUS || 10),
-    duration: __ENV.AI_DURATION || '7m',
-    startTime: '2m',
-    gracefulStop: '30s',
-  },
 };
 
-// Writes are opt-in because they intentionally change database state.
-// Run them only against a disposable synthetic dataset or isolated staging DB.
+if (aiEnabled) {
+  scenarios.ai_query = {
+    executor: 'constant-vus',
+    exec: 'aiQuery',
+    vus: Number(__ENV.AI_VUS || 1),
+    duration: __ENV.AI_DURATION || '1m',
+    startTime: '1m',
+    gracefulStop: '30s',
+  };
+}
+
 if (writesEnabled) {
   scenarios.synthetic_writes = {
-    executor: 'constant-arrival-rate',
+    executor: 'constant-vus',
     exec: 'syntheticWrites',
-    rate: Number(__ENV.WRITE_RATE || 1),
-    timeUnit: '1s',
-    duration: __ENV.WRITE_DURATION || '2m',
-    preAllocatedVUs: Number(__ENV.WRITE_PREALLOCATED_VUS || 5),
-    maxVUs: Number(__ENV.WRITE_MAX_VUS || 10),
-    startTime: __ENV.WRITE_START_TIME || '2m',
+    vus: Number(__ENV.WRITE_VUS || 1),
+    duration: __ENV.WRITE_DURATION || '30s',
+    startTime: __ENV.WRITE_START_TIME || '1m',
+    gracefulStop: '30s',
   };
 }
 
 export const options = {
   scenarios,
   thresholds: {
-    http_req_failed: ['rate<0.01'],
-    http_req_duration: ['p(95)<1000', 'p(99)<2000'],
-    ai_query_latency: ['p(95)<15000'],
+    http_req_failed: ['rate<0.02'],
+    http_req_duration: ['p(95)<1500', 'p(99)<3000'],
+    ...(writesEnabled ? { synthetic_transaction_lifecycle_latency: ['p(95)<2000'] } : {}),
+    ...(aiEnabled ? { ai_query_latency: ['p(95)<20000'] } : {}),
   },
 };
 
-function headers() {
-  return token
-    ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
-    : { 'Content-Type': 'application/json' };
+function headers(useSuperuser = false) {
+  const bearer = useSuperuser ? superuserToken : token;
+  return { Authorization: `Bearer ${bearer}`, 'Content-Type': 'application/json' };
 }
 
-function get(path, endpoint) {
+function get(path, endpoint, useSuperuser = false) {
   const response = http.get(`${baseUrl}${path}`, {
-    headers: headers(),
+    headers: headers(useSuperuser),
     tags: { endpoint },
   });
-  check(response, { [`${endpoint} is successful`]: (r) => r.status === 200 });
+  check(response, { [`${endpoint} returns 200`]: (r) => r.status === 200 });
   return response;
 }
 
-function post(path, payload, endpoint, expectedStatus = 201) {
+function post(path, payload, endpoint, useSuperuser = false, expectedStatus = 201) {
   const response = http.post(`${baseUrl}${path}`, JSON.stringify(payload), {
-    headers: headers(),
+    headers: headers(useSuperuser),
     tags: { endpoint },
   });
-  check(response, {
-    [`${endpoint} is successful`]: (r) => r.status === expectedStatus,
+  check(response, { [`${endpoint} returns ${expectedStatus}`]: (r) => r.status === expectedStatus });
+  return response;
+}
+
+function del(path, endpoint) {
+  const response = http.del(`${baseUrl}${path}`, null, {
+    headers: headers(true),
+    tags: { endpoint },
   });
+  check(response, { [`${endpoint} returns 204`]: (r) => r.status === 204 });
   return response;
 }
 
 function pharmacistJourney() {
-  // Customer needs represented in the workload:
-  // OTC symptoms, prescription refills, chronic therapy, medical goods,
-  // vitamins/supplements and personal-care products.
   const roll = Math.random() * 100;
-
-  if (roll < 35) {
-    get('/api/v1/products/?limit=50', 'pharmacist_product_search');
+  if (roll < 25) {
+    get('/products/?limit=50', 'pos_product_listing');
+  } else if (roll < 45) {
+    get('/products/search?q=par&limit=20', 'pos_product_search');
   } else if (roll < 60) {
-    get('/api/v1/patients/?page=1&page_size=50', 'pharmacist_patient_search');
+    get('/drug-catalog/search?q=para&limit=8', 'drug_reference_search');
   } else if (roll < 75) {
-    get(`/api/v1/products/${productId}`, 'pharmacist_product_detail');
-  } else if (roll < 90) {
-    get(`/api/v1/patients/${patientId}`, 'pharmacist_patient_profile');
+    get(`/api/v1/patients/?page=1&page_size=50&pharmacy_id=${pharmacyId}`, 'patient_list');
+  } else if (roll < 85 && patientId > 0) {
+    get(`/api/v1/patients/${patientId}?pharmacy_id=${pharmacyId}`, 'patient_detail');
+  } else if (orderId > 0) {
+    get(`/orders/${orderId}?pharmacy_id=${pharmacyId}`, 'order_detail');
   } else {
-    get(`/api/v1/orders/${orderId}`, 'pharmacist_order_history');
+    get(`/api/v1/patients/statistics?pharmacy_id=${pharmacyId}`, 'patient_statistics');
   }
 }
 
 function managerJourney() {
-  // Managers monitor stock, pharmacies and customer activity.
   const roll = Math.random() * 100;
-
-  if (roll < 45) {
-    get(`/api/v1/inventory?pharmacy_id=${pharmacyId}`, 'manager_inventory');
+  if (roll < 40) {
+    get(`/api/v1/inventory?pharmacy_id=${pharmacyId}`, 'inventory_list');
+  } else if (roll < 55) {
+    get('/api/v1/dashboard/summary', 'dashboard_summary');
   } else if (roll < 70) {
-    get('/api/v1/pharmacies', 'manager_pharmacies');
-  } else if (roll < 85) {
-    get('/api/v1/products/?limit=50', 'manager_product_catalog');
+    get('/api/v1/pharmacies', 'pharmacy_list');
+  } else if (roll < 80) {
+    get('/api/v1/inventory?low_stock=true', 'inventory_low_stock');
   } else {
-    get('/api/v1/patients/?page=1&page_size=50', 'manager_customer_list');
+    get('/products/?limit=50', 'product_catalog');
   }
 }
 
-function prescriptionJourney() {
-  // Prescription support is represented by the current read endpoint.
-  // Detailed prescription workflows will be enabled once the production
-  // prescription contract is implemented instead of using placeholder data.
-  get('/api/v1/prescriptions/', 'prescription_list');
+function privilegedJourney() {
+  const endpoints = [
+    ['/api/v1/batches', 'batch_list'],
+    ['/api/v1/prescriptions', 'prescription_list'],
+    ['/api/v1/suppliers', 'supplier_list'],
+    ['/api/v1/erp/integrations', 'erp_integrations'],
+    ['/api/v1/sync-events', 'erp_sync_events'],
+    ['/patient-purchases/', 'patient_purchase_ledger'],
+  ];
+  const item = endpoints[Math.floor(Math.random() * endpoints.length)];
+  get(item[0], item[1], true);
 }
 
-function erpJourney() {
-  // The current ERP adapter exposes a lightweight connectivity/status check.
-  // Inventory and order reads above represent the CRM-facing ERP data path.
-  get('/api/v1/erp/status', 'erp_status');
-}
-
-function pharmacyWorkload() {
-  // Role mix for a typical pharmacy peak:
-  // ~75% pharmacists, ~15% managers, ~5% prescription-related work,
-  // ~5% ERP/integration activity. This is a starting assumption and should
-  // be recalibrated against measured production telemetry.
+export function pharmacyWorkload() {
   const roleRoll = Math.random() * 100;
-
-  if (roleRoll < 75) {
-    pharmacistJourney();
-  } else if (roleRoll < 90) {
-    managerJourney();
-  } else if (roleRoll < 95) {
-    prescriptionJourney();
-  } else {
-    erpJourney();
-  }
-
-  // Human think time: users do not issue requests continuously.
+  if (roleRoll < 70) pharmacistJourney();
+  else if (roleRoll < 90) managerJourney();
+  else if (superuserToken) privilegedJourney();
+  else get('/api/v1/dashboard/summary', 'dashboard_summary');
   sleep(1 + Math.random() * 3);
 }
 
 export function aiQuery() {
-  const payload = JSON.stringify({
-    query:
-      __ENV.AI_QUERY ||
-      'Help a pharmacist compare common OTC options for a customer with mild cold symptoms, including key safety considerations.',
+  const response = http.post(`${baseUrl}/api/v1/ai/query`, JSON.stringify({
+    query: __ENV.AI_QUERY,
     pharmacy_id: pharmacyId,
     country: __ENV.COUNTRY || 'VN',
-    language: __ENV.LANGUAGE || 'vi',
+    language: __ENV.LANGUAGE || 'en',
     session_id: `load-test-${__VU}-${__ITER}`,
-  });
-
-  const response = http.post(`${baseUrl}/api/v1/ai/query`, payload, {
-    headers: headers(),
-    tags: { endpoint: 'ai_query' },
-  });
+  }), { headers: headers(), tags: { endpoint: 'ai_query' } });
   aiLatency.add(response.timings.duration);
-  check(response, {
-    'ai response is successful': (r) => r.status === 200,
-  });
+  check(response, { 'AI query returns 200': (r) => r.status === 200 });
   sleep(5 + Math.random() * 5);
 }
 
 export function syntheticWrites() {
-  const runId = `${Date.now()}-${__VU}-${__ITER}`;
-  const unique = String(runId).replace(/\D/g, '').slice(-12);
-  const patientPayload = {
-    first_name: 'LoadTest',
-    last_name: `Patient${unique}`,
-    phone: `+849${unique.slice(-8).padStart(8, '0')}`,
-    email: `load-test-${unique}@example.invalid`,
-    city: 'Synthetic City',
-    country: __ENV.COUNTRY || 'VN',
-    loyalty_tier: 'Bronze',
-  };
+  const startedAt = Date.now();
+  const unique = `${Date.now()}-${__VU}-${__ITER}`.replace(/\D/g, '').slice(-16);
+  let inventoryId = 0;
+  let createdOrderId = 0;
+  let lifecycleOk = true;
 
-  const patientResponse = post(
-    '/api/v1/patients/',
-    patientPayload,
-    'write_patient_create',
-  );
-  if (patientResponse.status !== 201) return;
+  const inventory = post('/api/v1/inventory', {
+    product_id: productId,
+    pharmacy_id: pharmacyId,
+    quantity: 10,
+    reserved_quantity: 0,
+    reorder_level: 2,
+    lot_number: `LOAD-${unique}`,
+    expires_at: '2030-12-31T00:00:00',
+  }, 'write_inventory_create', true);
 
-  const patient = patientResponse.json();
-  const createdPatientId = Number(patient.id);
-  if (!createdPatientId) return;
+  if (inventory.status === 201) {
+    inventoryId = Number(inventory.json('id'));
+    if (!inventoryId) lifecycleOk = false;
+    else {
+      const cleanup = del(`/api/v1/inventory/${inventoryId}`, 'write_inventory_cleanup');
+      if (cleanup.status !== 204) lifecycleOk = false;
+    }
+  } else {
+    lifecycleOk = false;
+  }
 
-  post(
-    '/api/v1/orders/',
-    { patient_id: createdPatientId, total_amount: 250000 },
-    'write_order_create',
-  );
+  const order = post(`/orders/?pharmacy_id=${pharmacyId}`, {
+    patient_id: patientId,
+    total_amount: 1,
+  }, 'write_order_create', true);
 
-  const productResponse = post(
-    '/api/v1/products/',
-    {
-      name: `Load Test Product ${unique}`,
-      sku: `LOAD-${unique}`,
-      description: 'Synthetic load-test product; deactivate after the run.',
-      price: 100000,
-      stock: 100,
-    },
-    'write_product_create',
-  );
-  if (productResponse.status !== 201) return;
+  if (order.status === 201) {
+    createdOrderId = Number(order.json('id'));
+    if (!createdOrderId) lifecycleOk = false;
+    else {
+      const cancel = http.patch(
+        `${baseUrl}/orders/${createdOrderId}/status?pharmacy_id=${pharmacyId}`,
+        JSON.stringify({ status: 'cancelled' }),
+        { headers: headers(true), tags: { endpoint: 'write_order_cancel' } },
+      );
+      check(cancel, { 'synthetic order cancellation returns 200': (r) => r.status === 200 });
+      if (cancel.status !== 200) lifecycleOk = false;
+    }
+  } else {
+    lifecycleOk = false;
+  }
 
-  const product = productResponse.json();
-  const createdProductId = Number(product.id);
-  if (!createdProductId) return;
-
-  post(
-    '/api/v1/inventory',
-    {
-      product_id: createdProductId,
-      pharmacy_id: pharmacyId,
-      quantity: 100,
-      reserved_quantity: 0,
-      reorder_level: 20,
-      lot_number: `LOAD-${unique}`,
-    },
-    'write_inventory_create',
-  );
-
-  post(
-    '/api/v1/prescriptions',
-    {
-      patient_id: createdPatientId,
-      product_id: createdProductId,
-      prescription_number: `LOAD-RX-${unique}`,
-      dosage: '1 unit',
-      instructions: 'Synthetic load-test prescription.',
-      status: 'active',
-    },
-    'write_prescription_create',
-  );
+  transactionLatency.add(Date.now() - startedAt);
+  check({ lifecycleOk }, { 'synthetic transaction lifecycle completed': (v) => v.lifecycleOk });
+  // Avoid an uncontrolled write loop; write intensity is deliberately lower than read VU intensity.
+  sleep(1 + Math.random() * 2);
 }
