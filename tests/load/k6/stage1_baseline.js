@@ -178,13 +178,13 @@ function pharmacistJourney() {
   const roll = Math.random() * 100;
 
   if (roll < 24) {
-    read('/api/v1/products/?limit=50', 'pos_product_listing');
+    read('/products/?limit=50', 'pos_product_listing');
   } else if (roll < 44) {
     const term = encodeURIComponent(__ENV.PRODUCT_SEARCH_TERM || 'paracetamol');
-    read(`/api/v1/products/search?q=${term}&limit=20`, 'pos_product_search');
+    read(`/products/search?q=${term}&limit=20`, 'pos_product_search');
   } else if (roll < 60) {
     const term = encodeURIComponent(__ENV.DRUG_CATALOG_TERM || 'amoxicillin');
-    read(`/api/v1/drug-catalog/search?q=${term}&limit=20`, 'drug_reference_search', {
+    read(`/drug-catalog/search?q=${term}&limit=20`, 'drug_reference_search', {
       trend: drugCatalogLatency,
     });
   } else if (roll < 73) {
@@ -200,7 +200,7 @@ function pharmacistJourney() {
       trend: dashboardLatency,
     });
   } else if (orderId > 0) {
-    read(`/api/v1/orders/${orderId}`, 'order_detail');
+    read(`/orders/${orderId}`, 'order_detail');
   } else if (patientId > 0) {
     read(`/api/v1/patients/${patientId}?pharmacy_id=${pharmacyId}`, 'patient_profile');
   } else {
@@ -217,7 +217,7 @@ function managerJourney() {
       trend: dashboardLatency,
     });
   } else if (roll < 75) {
-    read('/api/v1/products/?limit=100', 'product_catalog');
+    read('/products/?limit=100', 'product_catalog');
   } else if (roll < 90) {
     read(`/api/v1/patients/?page=1&page_size=50&pharmacy_id=${pharmacyId}`, 'patient_list');
   } else {
@@ -238,7 +238,7 @@ export function pharmacyAdminWorkload() {
     ['/api/v1/suppliers', 'supplier_list'],
     ['/api/v1/erp/integrations', 'erp_integrations'],
     ['/api/v1/sync-events', 'erp_sync_events'],
-    ['/api/v1/patient-purchases/?limit=50', 'dispensing_sales_ledger'],
+    ['/patient-purchases/?limit=50', 'dispensing_sales_ledger'],
   ];
   const [path, endpoint] = paths[Math.floor(Math.random() * paths.length)];
   read(path, endpoint, { superuser: true, workload: 'pharmacy_admin' });
@@ -301,7 +301,7 @@ export function pharmacyTransactionWorkload() {
   // Also exercise the real order create -> cancel lifecycle. Canceled orders
   // remain in the database, so this workload requires a disposable staging DB.
   const orderResponse = http.post(
-    `${baseUrl}/api/v1/orders/?pharmacy_id=${pharmacyId}`,
+    `${baseUrl}/orders/?pharmacy_id=${pharmacyId}`,
     JSON.stringify({ patient_id: patientId, total_amount: 12.34 }),
     {
       headers: headers(true),
@@ -333,7 +333,7 @@ export function pharmacyTransactionWorkload() {
   }
 
   const cancelResponse = http.patch(
-    `${baseUrl}/api/v1/orders/${createdOrderId}/status?pharmacy_id=${pharmacyId}`,
+    `${baseUrl}/orders/${createdOrderId}/status?pharmacy_id=${pharmacyId}`,
     JSON.stringify({ status: 'cancelled' }),
     {
       headers: headers(true),
