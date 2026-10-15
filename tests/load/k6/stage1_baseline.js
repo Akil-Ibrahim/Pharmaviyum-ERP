@@ -224,4 +224,6 @@ export function syntheticWrites() {
 
   transactionLatency.add(Date.now() - startedAt);
   check({ lifecycleOk }, { 'synthetic transaction lifecycle completed': (v) => v.lifecycleOk });
+  // Avoid an uncontrolled write loop; write intensity is deliberately lower than read VU intensity.
+  sleep(1 + Math.random() * 2);
 }
