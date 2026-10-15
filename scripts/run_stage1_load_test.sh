@@ -18,7 +18,7 @@ case "${BASE_URL_LOWER}" in
     ;;
 esac
 
-if [[ "${BASE_URL_LOWER}" =~ ^https?://(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)(:[0-9]+)?(/|$) ]]; then
+if [[ "${BASE_URL_LOWER}" =~ ^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0)(:[0-9]+)?(/|$) ]]; then
   :
 elif [[ "${ALLOW_REMOTE_TARGET:-false}" != "true" || "${LOAD_TEST_ENV:-}" != "staging" ]]; then
   echo "Remote targets require ALLOW_REMOTE_TARGET=true and LOAD_TEST_ENV=staging." >&2
