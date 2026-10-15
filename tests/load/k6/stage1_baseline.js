@@ -38,6 +38,9 @@ if (writesEnabled) {
   if (!Number.isInteger(productId) || productId < 1) {
     throw new Error('ENABLE_WRITES=true requires PRODUCT_ID for an existing synthetic product.');
   }
+  if (!Number.isInteger(patientId) || patientId < 1) {
+    throw new Error('ENABLE_WRITES=true requires PATIENT_ID for an existing synthetic patient.');
+  }
   if (!Number.isInteger(writeVus) || writeVus < 1 || writeVus > 20) {
     throw new Error('WRITE_VUS must be an integer from 1 to 20.');
   }
@@ -295,6 +298,54 @@ export function pharmacyTransactionWorkload() {
     'synthetic inventory cleanup returns HTTP 204': (r) => r.status === 204,
   });
   if (!deletedOk) failedChecks.add(1, { endpoint: 'synthetic_inventory_cleanup' });
+  // Also exercise the real order create -> cancel lifecycle. Canceled orders
+  // remain in the database, so this workload requires a disposable staging DB.
+  const orderResponse = http.post(
+    `${baseUrl}/orders/?pharmacy_id=${pharmacyId}`,
+    JSON.stringify({ patient_id: patientId, total_amount: 12.34 }),
+    {
+      headers: headers(true),
+      tags: { endpoint: 'synthetic_order_create', workload: 'pharmacy_transaction' },
+      timeout: '30s',
+    },
+  );
+  const orderCreatedOk = check(orderResponse, {
+    'synthetic order create returns HTTP 201': (r) => r.status === 201,
+  });
+  if (!orderCreatedOk) {
+    failedChecks.add(1, { endpoint: 'synthetic_order_create' });
+    transactionLatency.add(Date.now() - started);
+    sleep(1 + Math.random() * 2);
+    return;
+  }
+
+  let order;
+  try {
+    order = orderResponse.json();
+  } catch (_) {
+    order = null;
+  }
+  const createdOrderId = Number(order && order.id);
+  if (!Number.isInteger(createdOrderId) || createdOrderId < 1) {
+    failedChecks.add(1, { endpoint: 'synthetic_order_create_missing_id' });
+    transactionLatency.add(Date.now() - started);
+    throw new Error('Order create returned 201 without a usable ID; manual staging cleanup may be required.');
+  }
+
+  const cancelResponse = http.patch(
+    `${baseUrl}/orders/${createdOrderId}/status?pharmacy_id=${pharmacyId}`,
+    JSON.stringify({ status: 'cancelled' }),
+    {
+      headers: headers(true),
+      tags: { endpoint: 'synthetic_order_cancel', workload: 'pharmacy_transaction' },
+      timeout: '30s',
+    },
+  );
+  const cancelledOk = check(cancelResponse, {
+    'synthetic order cancellation returns HTTP 200': (r) => r.status === 200,
+  });
+  if (!cancelledOk) failedChecks.add(1, { endpoint: 'synthetic_order_cancel' });
+
   transactionLatency.add(Date.now() - started);
   sleep(1 + Math.random() * 2);
 }
