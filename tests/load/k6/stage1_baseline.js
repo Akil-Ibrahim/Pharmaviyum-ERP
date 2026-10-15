@@ -114,7 +114,7 @@ function pharmacistJourney() {
     get('/drug-catalog/search?q=para&limit=8', 'drug_reference_search');
   } else if (roll < 75) {
     get(`/api/v1/patients/?page=1&page_size=50&pharmacy_id=${pharmacyId}`, 'patient_list');
-  } else if (roll < 85) {
+  } else if (roll < 85 && patientId > 0) {
     get(`/api/v1/patients/${patientId}?pharmacy_id=${pharmacyId}`, 'patient_detail');
   } else if (orderId > 0) {
     get(`/orders/${orderId}?pharmacy_id=${pharmacyId}`, 'order_detail');
