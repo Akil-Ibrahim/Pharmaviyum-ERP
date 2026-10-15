@@ -9,14 +9,16 @@ OUTPUT_DIR="${LOAD_TEST_OUTPUT_DIR:-artifacts/load-tests}"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUTPUT_FILE="${OUTPUT_DIR}/pharmaviyum-erp-${TIMESTAMP}.json"
 
-case "${BASE_URL,,}" in
+BASE_URL_LOWER="${BASE_URL,,}"
+
+case "${BASE_URL_LOWER}" in
   *prod*|*production*|*live*|*pharmaviyum.onrender.com*|*pharmaviyum-api.onrender.com*)
     echo "Refusing to run load tests against a known or production-like target: ${BASE_URL}" >&2
     exit 2
     ;;
 esac
 
-if [[ "${BASE_URL}" == http://localhost* || "${BASE_URL}" == http://127.0.0.1* || "${BASE_URL}" == http://0.0.0.0* ]]; then
+if [[ "${BASE_URL_LOWER}" =~ ^https?://(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)(:[0-9]+)?(/|$) ]]; then
   :
 elif [[ "${ALLOW_REMOTE_TARGET:-false}" != "true" || "${LOAD_TEST_ENV:-}" != "staging" ]]; then
   echo "Remote targets require ALLOW_REMOTE_TARGET=true and LOAD_TEST_ENV=staging." >&2
