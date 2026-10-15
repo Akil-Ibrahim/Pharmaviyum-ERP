@@ -67,7 +67,7 @@ export const options = {
   thresholds: {
     http_req_failed: ['rate<0.02'],
     http_req_duration: ['p(95)<1500', 'p(99)<3000'],
-    synthetic_transaction_lifecycle_latency: ['p(95)<2000'],
+    ...(writesEnabled ? { synthetic_transaction_lifecycle_latency: ['p(95)<2000'] } : {}),
     ...(aiEnabled ? { ai_query_latency: ['p(95)<20000'] } : {}),
   },
 };
