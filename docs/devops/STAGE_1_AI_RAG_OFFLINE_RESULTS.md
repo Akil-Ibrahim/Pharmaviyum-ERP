@@ -175,8 +175,75 @@ SQLAlchemy binds the embedding parameter correctly.
 
 The reusable evaluator now reports Recall@k, Precision@k, MRR and NDCG@k,
 plus mean and p50/p95/p99 latency when supplied per-query timings. Focused
-validation after these changes: 25 tests passed, including metric, vector-store
+validation after these changes: 27 tests passed, including metric, vector-store
 contract and tenant-isolation tests; Ruff checks passed.
+
+### Real-embedding retrieval evaluation (2026-10-15)
+
+The repository includes a manually labeled, synthetic pharmacy SOP/FAQ golden
+set and a runner at
+[`scripts/evaluate_rag_retrieval.py`](../../scripts/evaluate_rag_retrieval.py).
+It embeds the synthetic corpus and each question with a real local ONNX model
+(`BAAI/bge-small-en-v1.5` through FastEmbed), inserts them into a disposable
+pgvector schema, performs tenant-filtered hybrid retrieval, computes
+Recall@k/Precision@k/MRR/NDCG@k and latency percentiles, then drops the
+temporary schema. FastEmbed is an optional evaluation-only dependency, not an
+application runtime dependency. The JSON report records provider/model, a
+dataset hash, source revision and runner hash.
+
+The benchmark ran against the configured local PostgreSQL/pgvector instance
+and 12 synthetic SOP chunks (10 primary-tenant, 2 cross-tenant decoys), with
+30 manually labeled questions and `top_k=5`:
+
+| Measurement | Concurrency 1 | Concurrency 4 |
+|---|---:|---:|
+| Labeled queries | 30 | 30 |
+| Recall@1 / @3 / @5 | 0.983 / 1.000 / 1.000 | 0.983 / 1.000 / 1.000 |
+| Precision@1 / @3 / @5 | 1.000 / 0.344 / 0.207 | 1.000 / 0.344 / 0.207 |
+| MRR | 1.000 | 1.000 |
+| NDCG@1 / @3 / @5 | 1.000 / 1.000 / 1.000 | 1.000 / 1.000 / 1.000 |
+| Cross-tenant hits | 0 | 0 |
+| Query throughput | 51.001 queries/s | 31.127 queries/s |
+| Embedding latency p50 / p95 / p99 | 9.903 / 24.926 / 34.072 ms | 41.564 / 74.787 / 77.879 ms |
+| Hybrid pgvector latency p50 / p95 / p99 | 4.528 / 14.640 / 43.057 ms | 51.309 / 244.837 / 265.614 ms |
+| Embedding + retrieval p50 / p95 / p99 | 14.603 / 42.745 / 59.202 ms | 101.930 / 280.961 / 301.775 ms |
+| Embedding corpus + pgvector upsert | 0.320 s | 0.262 s |
+| Provider initialization | 0.504 s | 0.496 s |
+
+Raw per-query reports:
+[`concurrency 1`](./rag-retrieval-fastembed-c1-2026-10-15.json) and
+[`concurrency 4`](./rag-retrieval-fastembed-c4-2026-10-15.json).
+Runs were executed sequentially, not concurrently with one another. Both
+records note that the run used an uncommitted working tree and include a
+SHA-256 digest of the benchmark runner used.
+
+These are real model embeddings and real PostgreSQL/pgvector queries, but only
+a small synthetic retrieval benchmark. Perfect MRR/NDCG reflects an easy,
+manually authored corpus and small test set; it does not establish quality on a
+representative production knowledge base. The concurrency-4 run was slower in
+this Codespace, especially at the pgvector p95; this is an environment-specific
+observation, not a capacity result. Sample size is too small for stable tail
+latency estimates.
+
+Run from the repository root with the optional evaluation dependency group:
+
+```bash
+uv run --group eval python -m scripts.evaluate_rag_retrieval \
+  --embedding-provider fastembed --concurrency 1 \
+  --output /tmp/rag-eval.json
+```
+
+The runner defaults to synthetic tenant ID `900001` and uses `900002` for
+cross-tenant decoy chunks; both are isolated to its disposable schema. It does
+not write to application tables. This retrieval-only run does not measure
+generation groundedness, answer citations, LLM token usage or cost; those need
+a configured chat model and a separate answer-evaluation stage.
+
+The full application RAG graph still was not evaluated end-to-end: Ollama was
+unreachable, cloud LLM credentials were unavailable, and no LLM generation,
+answer groundedness, citation precision/recall, provider token usage or cost
+was measured. Do not present this retrieval-only benchmark as end-to-end AI
+quality or production capacity.
 
 ## Suggested CV wording
 
