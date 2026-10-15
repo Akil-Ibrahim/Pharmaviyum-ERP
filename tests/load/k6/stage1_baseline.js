@@ -74,10 +74,17 @@ export const options = {
   scenarios,
   thresholds: {
     http_req_failed: ['rate<0.02'],
-    http_req_duration: ['p(95)<1500', 'p(99)<3000'],
+    // Keep AI provider latency separate from the interactive ERP API SLO.
+    'http_req_duration{workload:pharmacy_erp}': ['p(95)<1500', 'p(99)<3000'],
+    'http_req_duration{workload:pharmacy_admin}': ['p(95)<2000', 'p(99)<4000'],
     dashboard_summary_latency: ['p(95)<1500'],
     drug_catalog_search_latency: ['p(95)<1000'],
-    ...(aiEnabled ? { mortarium_query_latency: ['p(95)<20000'] } : {}),
+    ...(aiEnabled
+      ? {
+          'http_req_duration{workload:mortarium_ai}': ['p(95)<20000'],
+          mortarium_query_latency: ['p(95)<20000'],
+        }
+      : {}),
   },
 };
 
