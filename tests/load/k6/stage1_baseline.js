@@ -201,7 +201,7 @@ export function syntheticWrites() {
     lifecycleOk = false;
   }
 
-  const order = post('/orders/', {
+  const order = post(`/orders/?pharmacy_id=${pharmacyId}`, {
     patient_id: patientId,
     total_amount: 1,
   }, 'write_order_create', true);
