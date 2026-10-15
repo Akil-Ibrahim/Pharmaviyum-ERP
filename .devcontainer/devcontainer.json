@@ -1,10 +1,12 @@
 {
   "name": "Pharmaviyum AI",
   "image": "mcr.microsoft.com/devcontainers/python:3.14",
+  "runArgs": ["--init", "--privileged"],
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts"
-    }
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
   "customizations": {
     "vscode": {
@@ -28,9 +30,9 @@
   },
   "forwardPorts": [8000, 5432, 6379],
   "portsAttributes": {
-    "8000": {"label": "FastAPI", "onAutoForward": "notify"},
-    "5432": {"label": "PostgreSQL"},
-    "6379": {"label": "Redis"}
+    "8000": { "label": "FastAPI", "onAutoForward": "notify" },
+    "5432": { "label": "PostgreSQL" },
+    "6379": { "label": "Redis" }
   },
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "remoteUser": "vscode"

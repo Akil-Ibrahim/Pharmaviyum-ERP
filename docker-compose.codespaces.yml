@@ -41,7 +41,7 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # FastAPI Application (uses cloud LLM APIs)
+  # FastAPI Application (cloud LLM provider is optional)
   api:
     build:
       context: .
@@ -57,10 +57,14 @@ services:
       REDIS_URL: redis://redis:6379/0
       
       # PostgreSQL
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
       PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
       
       # Cloud LLM APIs (NO Ollama in Codespaces!)
-      USE_CLOUD_LLM: "true"
+      USE_CLOUD_LLM: ${USE_CLOUD_LLM:-false}
+      CLOUD_LLM_PROVIDER: ${CLOUD_LLM_PROVIDER:-gemini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_MODEL: ${GROQ_MODEL:-llama-3.1-70b-versatile}
       
@@ -102,12 +106,20 @@ services:
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
       PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
-      USE_CLOUD_LLM: "true"
+      USE_CLOUD_LLM: ${USE_CLOUD_LLM:-false}
+      CLOUD_LLM_PROVIDER: ${CLOUD_LLM_PROVIDER:-gemini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./src:/app/src
     command: >

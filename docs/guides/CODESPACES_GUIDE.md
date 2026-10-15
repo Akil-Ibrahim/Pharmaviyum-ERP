@@ -8,14 +8,22 @@ Create a Codespace from the `dev` branch using the repository's `.devcontainer` 
 
 The post-create setup runs `.devcontainer/setup.sh`.
 
+The devcontainer uses Docker-in-Docker to run the application stack. If Docker
+is not available in an existing Codespace after changing `.devcontainer`, run
+**Codespaces: Rebuild Container** from the VS Code Command Palette. Rebuilding
+the container preserves the Codespace workspace; do not delete database
+volumes unless you intentionally want to reset local data.
+
 ## 2. What setup does
 
 The setup script currently:
 
 1. installs Python dependencies from `pyproject.toml + uv.lock`;
-2. starts PostgreSQL and Redis from `docker-compose.codespaces.yml`;
-3. waits for the services;
-4. runs `alembic upgrade head`;
+2. builds and starts PostgreSQL, Redis, the API (including the frontend build),
+   and the Celery worker from `docker-compose.codespaces.yml`;
+3. waits for PostgreSQL and Redis health checks, then checks that the API
+   `/health` endpoint responds;
+4. runs database migrations in the API container before the API starts;
 5. prints the Codespaces API/Docs URLs.
 
 There is no `requirements-ai.txt` dependency file in the current project.
@@ -38,13 +46,21 @@ After Codespaces setup completes:
 
 ```bash
 docker compose -f docker-compose.codespaces.yml ps
+curl --fail http://localhost:8000/health
 ```
 
-Run the API manually if it is not already running:
+The setup starts the API and serves the built frontend from the API container.
+To restart or inspect the full stack:
 
 ```bash
-uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port 8000 --reload
+docker compose -f docker-compose.codespaces.yml restart api celery-worker
+docker compose -f docker-compose.codespaces.yml logs -f api
 ```
+
+For an ERP/CRM load test, use only synthetic records and a dedicated test
+account. Follow the profiles and guardrails in
+[`STAGE_1_LOAD_TESTING.md`](../devops/STAGE_1_LOAD_TESTING.md); a healthy
+`/health` response alone does not verify database-backed workflows.
 
 Then use the forwarded port 8000:
 
@@ -77,17 +93,17 @@ docker compose up --build
 ```bash
 # Codespaces infrastructure
 docker compose -f docker-compose.codespaces.yml ps
+docker compose -f docker-compose.codespaces.yml logs -f api
 docker compose -f docker-compose.codespaces.yml logs -f postgres
 docker compose -f docker-compose.codespaces.yml logs -f redis
+docker compose -f docker-compose.codespaces.yml logs -f celery-worker
 
-# Database migrations
-alembic upgrade head
-
-# Application logs when running through Compose
-docker compose logs -f api
+# Database migrations run once as part of API container startup.
+docker compose -f docker-compose.codespaces.yml exec postgres \
+  pg_isready -U postgres -d pharmaviyum
 
 # Stop Codespaces dependencies
-docker compose -f docker-compose.codespaces.yml stop postgres redis
+docker compose -f docker-compose.codespaces.yml stop
 
 # Remove dependencies and their volumes
 docker compose -f docker-compose.codespaces.yml down -v
@@ -129,23 +145,27 @@ docker compose -f docker-compose.codespaces.yml ps
 docker compose -f docker-compose.codespaces.yml restart postgres redis
 ```
 
-### Migration failure
+### Docker command is missing
 
-Check the database first:
+The Docker-in-Docker feature is applied when the devcontainer is built. Rebuild
+the container from the VS Code Command Palette and then check Docker:
 
 ```bash
-docker compose -f docker-compose.codespaces.yml exec postgres pg_isready -U postgres -d pharmaviyum
+docker info
 ```
 
-Then retry:
+### API or migration startup failure
 
 ```bash
-alembic upgrade head
+docker compose -f docker-compose.codespaces.yml logs --tail 200 api
+docker compose -f docker-compose.codespaces.yml logs --tail 100 postgres
 ```
 
 ### LLM requests fail
 
 Verify the provider configuration in `.env` and restart the API after changing environment variables.
+The base ERP/API can start without a provider key, but AI/RAG calls require a
+configured provider key. Do not commit `.env` or send provider keys in chat.
 
 ## 9. Keep this guide current
 
