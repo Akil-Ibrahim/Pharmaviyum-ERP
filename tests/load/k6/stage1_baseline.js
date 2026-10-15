@@ -116,8 +116,10 @@ function pharmacistJourney() {
     get(`/api/v1/patients/?page=1&page_size=50&pharmacy_id=${pharmacyId}`, 'patient_list');
   } else if (roll < 85) {
     get(`/api/v1/patients/${patientId}?pharmacy_id=${pharmacyId}`, 'patient_detail');
-  } else {
+  } else if (orderId > 0) {
     get(`/orders/${orderId}?pharmacy_id=${pharmacyId}`, 'order_detail');
+  } else {
+    get(`/api/v1/patients/statistics?pharmacy_id=${pharmacyId}`, 'patient_statistics');
   }
 }
 
