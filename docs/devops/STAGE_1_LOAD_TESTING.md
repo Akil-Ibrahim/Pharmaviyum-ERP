@@ -45,7 +45,7 @@ The current FastAPI application does not use one uniform prefix for every router
 - Dashboard: `/api/v1/dashboard/summary`;
 - Patient purchases ledger: `/patient-purchases/`.
 
-The frontend currently references `/api/v1/products` and `/api/v1/drug-catalog`, while their routers are mounted without that prefix in the backend router aggregation. Treat this as a separate API/frontend contract discrepancy to verify before declaring the user-facing POS flow healthy; this load-test change does not silently alter route mounting.
+The POS search calls are corrected in this PR to use `/products/search` and `/drug-catalog/search`, matching the current backend router aggregation. The existing `/api/v1/...` paths remain appropriate for the routers mounted with that prefix (for example patients, inventory and dashboard). Verify the deployed frontend and backend versions together after the change is merged; this PR does not alter backend route mounting.
 
 ## Explicit API coverage gaps
 
