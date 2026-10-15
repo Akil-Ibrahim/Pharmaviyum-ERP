@@ -138,7 +138,11 @@ function pharmacistJourney() {
       { trend: drugCatalogLatency },
     );
   } else if (roll < 73) {
-    read(`/api/v1/inventory?pharmacy_id=${pharmacyId}`, 'inventory_by_pharmacy');
+    const inventoryPath =
+      productId > 0
+        ? `/api/v1/inventory?pharmacy_id=${pharmacyId}&product_id=${productId}`
+        : `/api/v1/inventory?pharmacy_id=${pharmacyId}`;
+    read(inventoryPath, 'inventory_by_pharmacy');
   } else if (roll < 85) {
     read(
       `/api/v1/patients/?page=1&page_size=50&pharmacy_id=${pharmacyId}`,
@@ -150,6 +154,8 @@ function pharmacistJourney() {
       'dashboard_summary',
       { trend: dashboardLatency },
     );
+  } else if (orderId > 0) {
+    read(`/orders/${orderId}`, 'order_detail');
   } else if (patientId > 0) {
     read(
       `/api/v1/patients/${patientId}?pharmacy_id=${pharmacyId}`,
