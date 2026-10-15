@@ -145,7 +145,7 @@ Record actual measurements for each run:
 - p50/p95/p99 latency overall and by endpoint/workload;
 - HTTP failure rate, status-code distribution and failed checks;
 - dashboard and drug-catalog latency;
-- synthetic inventory create/delete and order create/cancel transaction duration;
+- synthetic inventory create/delete and order create/cancel lifecycle duration;
 - PostgreSQL CPU, active connections, pool checkout/overflow/timeouts, slow queries and query latency;
 - Redis CPU, memory and command latency;
 - application/container CPU, memory, restarts and network throughput;
