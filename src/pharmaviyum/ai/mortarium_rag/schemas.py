@@ -130,7 +130,8 @@ class RAGResponse(BaseModel):
             )
             for source in self.sources
         ]
-        return self.model_copy(update={"citations": citations})
+        object.__setattr__(self, "citations", citations)
+        return self
 
 
 class QueryContext(BaseModel):

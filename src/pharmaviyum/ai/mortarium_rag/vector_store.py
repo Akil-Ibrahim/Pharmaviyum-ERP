@@ -271,6 +271,9 @@ class PgVectorStore:
     @staticmethod
     def _require_tenant_metadata(metadata: dict[str, Any]) -> None:
         """Fail closed if an ingested chunk has no canonical tenant metadata."""
+        if "pharmacy_id" not in metadata:
+            raise ValueError("RAG ingestion requires pharmacy_id tenant metadata")
+        PgVectorStore._require_tenant_filter({"pharmacy_id": metadata["pharmacy_id"]})
         CanonicalMetadata.model_validate(metadata)
 
     @staticmethod

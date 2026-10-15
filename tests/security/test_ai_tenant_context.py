@@ -1,6 +1,4 @@
 from unittest.mock import AsyncMock
-from uuid import uuid4
-
 import pytest
 from fastapi import HTTPException
 
@@ -12,8 +10,9 @@ from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
 @pytest.mark.asyncio
 async def test_tenant_context_requires_active_membership():
     user = User(
-        id=uuid4(),
+        id=1,
         email="user@example.com",
+        username="test-user",
         hashed_password="not-used",
         is_active=True,
         is_superuser=False,
@@ -32,8 +31,9 @@ async def test_tenant_context_requires_active_membership():
 @pytest.mark.asyncio
 async def test_tenant_context_returns_authenticated_scope_for_active_membership():
     user = User(
-        id=uuid4(),
+        id=1,
         email="user@example.com",
+        username="test-user",
         hashed_password="not-used",
         is_active=True,
         is_superuser=False,
@@ -44,5 +44,5 @@ async def test_tenant_context_returns_authenticated_scope_for_active_membership(
 
     context = await require_pharmacy_tenant(42, user, session)
 
-    assert context.user_id == str(user.id)
+    assert context.user_id == user.id
     assert context.pharmacy_id == 42

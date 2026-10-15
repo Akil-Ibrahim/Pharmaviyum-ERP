@@ -91,6 +91,7 @@ def sample_query_context():
     from src.pharmaviyum.ai.mortarium_rag.schemas import QueryContext
 
     return QueryContext(
+        user_id="test-user",
         pharmacy_id=1,
         country="VN",
         language="en",

@@ -67,6 +67,8 @@ mortarium-ai/models/*.gguf
 mortarium-ai/models/*.bin
 mortarium-ai/data/vector_store/
 models/
+!src/pharmaviyum/models/
+!src/pharmaviyum/models/pharmacy_membership.py
 *.onnx
 
 # =============================================================================

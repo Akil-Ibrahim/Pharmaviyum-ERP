@@ -30,7 +30,9 @@ def test_rag_ingestion_requires_tenant_metadata():
 
 def test_rag_build_filters_always_contains_tenant():
     rag = object.__new__(LangGraphRAG)
-    context = QueryContext(pharmacy_id=42, country="UA", language="uk")
+    context = QueryContext(
+        user_id="test-user", pharmacy_id=42, country="UA", language="uk"
+    )
 
     filters = rag._build_filters(context)
 
@@ -77,7 +79,9 @@ def test_canonical_tenant_metadata_cannot_be_overridden_by_extra_fields():
 
 
 def test_rag_access_level_filter_sets_include_public_and_pharmacy():
-    context = QueryContext(pharmacy_id=42, country="UA", language="uk")
+    context = QueryContext(
+        user_id="test-user", pharmacy_id=42, country="UA", language="uk"
+    )
     filters = LangGraphRAG._build_filter_sets(context)
 
     assert {item["access_level"] for item in filters} == {"public", "pharmacy"}
@@ -86,6 +90,7 @@ def test_rag_access_level_filter_sets_include_public_and_pharmacy():
 
 def test_rag_patient_filter_requires_authenticated_patient_scope():
     context = QueryContext(
+        user_id="test-user",
         pharmacy_id=42,
         patient_id=7,
         country="UA",
