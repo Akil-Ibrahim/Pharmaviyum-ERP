@@ -81,8 +81,9 @@ This profile translates the business scenario into testable assumptions without 
 
 - **200 customer visits per operating day** for one pharmacy.
 - **Opening hours: 08:00–21:00** (13 hours); the opening pharmacist starts using the system at **07:30** for preparation and opening checks.
-- **Up to 7 rostered staff per pharmacy** on a 2-on/2-off schedule. Model the working shift as **3 staff plus the pharmacy manager**; verify actual shift overlap and role distribution before finalizing concurrent sessions.
-- **3 cash registers**, operated by the three staff already included in the working shift; do not add three more staff VUs. The manager may also use the system for oversight and operational tasks.
+- **Up to 7 rostered staff per pharmacy** on a 2-on/2-off schedule. Model the working shift as **3 pharmacy staff plus the pharmacy manager**, pending confirmation of exact shift overlap.
+- The **pharmacy manager has a separate computer and separate application session in the manager's office**. Count this as its own staff session, not as one of the three register sessions.
+- **3 cash registers** are operated by the three on-shift pharmacy staff. Register workflows are a subset of those staff sessions; do not add three extra staff accounts just because there are three registers.
 - For 200 visits across 13 public-facing hours, the arithmetic average is about **15.4 visits/hour**. This is not an arrival schedule: model opening preparation from 07:30, uneven demand and peak periods separately. Until measured traffic is available, use **30–40 visits/hour as a provisional peak-hour assumption**, not a measured fact.
 - Customer visits are business events, not automatically HTTP requests or completed sales. The current suite does not implement a verified POS checkout/payment/receipt or dispensing flow, so it cannot yet claim to simulate 200 completed customer sales per day or prove three concurrent cash registers.
 
