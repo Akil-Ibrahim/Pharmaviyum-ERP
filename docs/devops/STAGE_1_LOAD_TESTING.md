@@ -115,6 +115,37 @@ PEAK_VUS=20 \
 
 These commands exercise the existing mixed read workload. They do **not** create real POS sales, capture payments, issue receipts, allocate FEFO batches, or decrement stock. Those claims require implementation and validation of the corresponding transactional API contracts first. Record actual k6 results; the profile itself is a test plan, not a performance result.
 
+## Representative 50-pharmacy network profile
+
+This profile extends the single-pharmacy assumptions to a network with concurrent activity and central data exchange. It is a planning model, not a measured capacity result.
+
+### Business scale
+
+- **50 pharmacies** connected to the same Pharmaviyum platform or integration layer.
+- **200 customer visits per pharmacy per operating day** = **10,000 visits/day network-wide**.
+- **6 staff per pharmacy**, including its manager = **300 staff accounts** across the network.
+- **3 registers per pharmacy** = **150 registers**. Register operators are part of the six staff per pharmacy; do not add register count to staff count as if they were extra employees.
+- Under the provisional 12-hour operating-day assumption, 10,000 visits/day averages about **833 visits/hour network-wide**. If every branch reaches a provisional 30–40 visits/hour peak at the same time, the synchronized network peak would be **1,500–2,000 visits/hour**. Replace these planning assumptions with actual opening hours and arrival distributions when available.
+
+A customer visit is not one HTTP request, and a register is not automatically a continuously active virtual user. Model customer arrivals, cashier operations, staff background work and integration events as separate rates.
+
+### Network test stages
+
+1. **Single-branch correctness:** run the existing read-only profile against one synthetic pharmacy, first at 5 VUs and then 6 VUs.
+2. **50-branch fan-out:** simulate one or more read-only staff sessions per synthetic branch, using valid branch-scoped credentials/fixtures and measuring latency and errors by branch.
+3. **Concurrent staff baseline:** model up to 300 staff accounts across the network, but choose active VUs from observed session activity rather than assuming all 300 continuously issue requests.
+4. **Register stress:** progress through 50, 100 and up to 150 concurrent register-like sessions only in isolated synthetic staging, after smaller profiles pass. This is a stress scenario, not a prediction that all tills are busy continuously.
+5. **Synchronization load:** independently generate a controlled stream of synthetic stock/catalog/price events from all 50 branches; measure event throughput, queue depth, delivery lag, retries, duplicates, ordering where required, and recovery after a worker restart.
+6. **Mixed and soak tests:** combine branch reads with sync only after each has a baseline. Add POS write traffic only when checkout, payment/receipt, inventory decrement and FEFO APIs are verified and test cleanup is safe.
+
+### Important current harness limitation
+
+The current k6 script accepts a single `PHARMACY_ID` and one ordinary `AUTH_TOKEN` per run. It does **not yet constitute a true 50-tenant test** by itself. A valid network test requires parameterized synthetic pharmacy fixtures and an explicit mapping of each virtual user to its pharmacy-scoped identity; do not simply reuse one pharmacy ID and label the result “50 pharmacies.”
+
+Likewise, the current workload reads sync-event/integration entities but does not generate or verify end-to-end exchange events across 50 branches. A dedicated sync scenario must use the actual integration/event API contracts and assert idempotency, tenant isolation, retry behavior and eventual consistency. Never invent routes or send writes to production to simulate this.
+
+Suggested capacity progression after implementing the multi-branch fixture/scenario support: **6 VUs → 20 → 50 → 100 → 150**, then consider higher API-only stress profiles only if the prior run is stable. VUs, branch count, active cashier count and event rate must all be recorded separately in the report.
+
 ## Safety requirements
 
 - Never use real patient/customer data, production credentials or a production database.
