@@ -115,6 +115,40 @@ PEAK_VUS=20 \
 
 These commands exercise the existing mixed read workload. They do **not** create real POS sales, capture payments, issue receipts, allocate FEFO batches, or decrement stock. Those claims require implementation and validation of the corresponding transactional API contracts first. Record actual k6 results; the profile itself is a test plan, not a performance result.
 
+## Required execution order: one pharmacy first, then network synchronization
+
+Do not begin with a 50-pharmacy stress test. Validate in this order and keep a separate report for each stage.
+
+### Stage A — one pharmacy works correctly
+
+Use one synthetic pharmacy with 200 modeled customer visits per operating day, six staff sessions including the manager, and three register workflows within those staff sessions.
+
+- Start with the existing 5-VU read-only smoke test.
+- Increase to 6 concurrent staff sessions and review per-endpoint latency, error rate, database pool behavior and application resource usage.
+- Progress to the provisional peak-hour profile only after the baseline is stable.
+- Exercise checkout, receipt, payment and FEFO stock decrement only after those transactional API contracts and safe synthetic fixtures are verified.
+- Establish invariants before/after each write test: stock cannot go negative unexpectedly, expiry/FEFO rules hold, and every mutation is auditable.
+
+**Exit gate:** the one-pharmacy scenarios pass their checks, data invariants hold, and measured latency/error thresholds are reviewed. Do not proceed on the basis of a successful process exit alone.
+
+### Stage B — synchronize one source pharmacy with a 50-pharmacy network
+
+Keep Stage A as the known-good source. In an isolated environment, create 50 synthetic pharmacy tenants and test the actual supported synchronization path.
+
+1. Make a controlled synthetic change in the source pharmacy (for example, a catalog/price update or an inventory event only if the product's business rules permit that event to be shared).
+2. Verify which target pharmacies should receive that event according to the real integration rules. **Do not assume local stock quantities should be copied between branches**; stock is often branch-specific.
+3. Record event creation time, delivery time, event ID/version, source pharmacy and intended recipients.
+4. Verify delivery, correct ordering/version handling where required, idempotency under duplicate delivery, retry after a controlled worker interruption, and no cross-tenant data leakage.
+5. Confirm that each target pharmacy sees only the data it is supposed to receive and that branch-local stock remains branch-local.
+6. Measure end-to-end synchronization lag, queue depth, retry count, failed/dead-letter events and database/Redis/worker resource usage.
+7. Repeat with controlled event rates, then combine sync traffic with the already-validated one-pharmacy read workload. Increase rates progressively; do not jump straight to 50-branch peak load.
+
+**Important:** the current k6 harness reads sync-event/integration entities but does not yet generate and verify this end-to-end 50-branch propagation flow. Stage B requires a dedicated scenario based on the actual integration/event API contracts; it must not invent routes or claim synchronization is tested just because sync-event records can be listed.
+
+### Stage C — network-wide load
+
+Only after Stage A and Stage B pass, introduce concurrent activity from multiple branches and then a network-wide mixed workload. Track branch count, active staff/register sessions, event rate and API VUs as separate dimensions. VU count alone is not a substitute for customer arrivals or synchronization throughput.
+
 ## Representative 50-pharmacy network profile
 
 This profile extends the single-pharmacy assumptions to a network with concurrent activity and central data exchange. It is a planning model, not a measured capacity result.
