@@ -131,6 +131,21 @@ Use one synthetic pharmacy with 200 modeled customer visits per operating day, s
 
 **Exit gate:** the one-pharmacy scenarios pass their checks, data invariants hold, and measured latency/error thresholds are reviewed. Do not proceed on the basis of a successful process exit alone.
 
+### Stage A realism checks before the 50-pharmacy stage
+
+The daily visit count is a planning input, not a request rate. Before treating the profile as representative, define and record the following workload assumptions using synthetic data:
+
+- **Arrival distribution:** opening hours, quiet periods, lunch/evening peaks, shift changes and bursts. Do not spread 200 visits evenly across 24 hours.
+- **Visit-to-sale ratio:** distinguish footfall, completed checkouts, prescription-only interactions, information/search requests and abandoned carts. Do not assume every visitor produces one sale or a fixed number of HTTP requests.
+- **Basket mix:** configurable number of line items, product-search frequency, barcode lookup if supported, stock checks, prescription-related flows where implemented, and receipt/history reads.
+- **Transaction correctness:** if the actual API supports the full workflow, verify checkout/payment/receipt and inventory decrement atomically. Test payment failure, cancellation and return paths only where real API contracts exist.
+- **Stock contention:** send concurrent synthetic checkout attempts for the last available units of the same product/batch. Assert that the resulting stock and sale records are consistent and that FEFO/expiry rules hold.
+- **Operational background work:** include bounded catalog reads, dashboard/reporting reads and any documented import/reconciliation jobs separately before combining them with POS traffic.
+- **Network resilience:** test a brief API/worker interruption and recovery in isolated staging; measure failed requests, retry behavior and recovery time. If the product does not support offline checkout, do not assume it does.
+- **Observability:** capture p50/p95/p99, throughput, status/error classes, timeouts, CPU/memory, PostgreSQL pool saturation/slow queries/locks, Redis or queue health, and worker backlog where available.
+
+These are additional test-design requirements, not claims that all these workflows or telemetry are currently implemented. First map each item to an existing endpoint/job and test fixture; mark unsupported workflows as gaps rather than fabricating API routes.
+
 ### Stage B — synchronize one source pharmacy with a 50-pharmacy network
 
 Keep Stage A as the known-good source. In an isolated environment, create 50 synthetic pharmacy tenants and test the actual supported synchronization path.
