@@ -55,6 +55,15 @@ def mock_event_bus():
 
 
 @pytest.fixture
+def mock_redis():
+    """Mock Redis commands used by cache unit tests."""
+    mock = MagicMock()
+    mock.get = AsyncMock(return_value=None)
+    mock.setex = AsyncMock(return_value=True)
+    return mock
+
+
+@pytest.fixture
 def sample_document():
     """Create a sample Document for testing."""
     from src.pharmaviyum.ai.mortarium_rag.schemas import Document

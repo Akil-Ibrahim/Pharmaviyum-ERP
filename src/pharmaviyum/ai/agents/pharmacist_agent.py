@@ -14,6 +14,7 @@ from langchain_core.messages import (
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.pharmaviyum.ai.llm_utils import response_text
 from src.pharmaviyum.core.logging import logger
 
 from .state import AgentState
@@ -78,7 +79,7 @@ class PharmacistAgent:
             + query
         )
         response = await self.router_llm.ainvoke(prompt)
-        category = str(getattr(response, "content", response)).strip().lower()
+        category = response_text(response).strip().lower()
         valid = {
             "drug_interaction",
             "prescription_check",
@@ -200,7 +201,7 @@ class PharmacistAgent:
                 ),
                 "warnings": warnings + ["no_ai_response_generated"],
             }
-        draft = str(ai_messages[-1].content)
+        draft = response_text(ai_messages[-1])
         question = str(messages[0].content) if messages else ""
         review_prompt = (
             "Review this pharmaceutical AI answer. Consider only the user question, "

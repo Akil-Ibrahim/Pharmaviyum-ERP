@@ -52,6 +52,7 @@ class PromptCache:
         1. Exact hash match (O(1) Redis GET)
         2. Semantic similarity match (if embeddings provider is available)
         """
+        self._require_authenticated_scope(context)
         cache_key = self._build_cache_key(prompt, context)
 
         # 1. Try exact match
@@ -87,6 +88,7 @@ class PromptCache:
 
         Stores both exact hash and semantic embedding (if available).
         """
+        self._require_authenticated_scope(context)
         cache_key = self._build_cache_key(prompt, context)
 
         # 1. Store exact match
@@ -112,6 +114,22 @@ class PromptCache:
                 await self.redis.expire(semantic_key, self.semantic_ttl)
             except Exception as e:
                 logger.warning(f"Failed to cache semantic embedding: {e}")
+
+    @staticmethod
+    def _require_authenticated_scope(context: dict[str, Any] | None) -> None:
+        """Reject cache operations that are not bound to one user and pharmacy."""
+        user_id = context.get("user_id") if context else None
+        pharmacy_id = context.get("pharmacy_id") if context else None
+        if (
+            user_id is None
+            or not str(user_id).strip()
+            or isinstance(pharmacy_id, bool)
+            or not isinstance(pharmacy_id, int)
+            or pharmacy_id <= 0
+        ):
+            raise ValueError(
+                "Prompt cache requires an authenticated user and positive pharmacy_id"
+            )
 
     @staticmethod
     def _context_scope(context: dict[str, Any] | None) -> str:

@@ -1,7 +1,8 @@
-"""Evaluate real tenant-scoped retrieval on a synthetic pharmacy SOP golden set.
+"""Evaluate tenant-scoped retrieval on a 300-query curated pharmacy SOP set.
 
 Requires PostgreSQL with pgvector and either local FastEmbed or a configured
 embedding provider. A disposable PostgreSQL schema is created and dropped.
+The benchmark has 37 primary SOP chunks and two cross-tenant decoys.
 """
 
 from __future__ import annotations
@@ -29,6 +30,10 @@ from src.pharmaviyum.ai.mortarium_rag.quality_metrics import (
 )
 from src.pharmaviyum.ai.mortarium_rag.schemas import Chunk
 from src.pharmaviyum.ai.mortarium_rag.vector_store import PgVectorStore
+from scripts.rag_retrieval_eval_expansion import (
+    get_additional_corpus_rows,
+    get_additional_query_rows,
+)
 
 DATASET_NAMESPACE = UUID("44384428-4c71-4acd-8657-08a934cb38aa")
 FASTEMBED_MODEL = "BAAI/bge-small-en-v1.5"
@@ -235,6 +240,11 @@ GOLDEN_SET: tuple[GoldenQuery, ...] = (
         "Who should be notified about a possible exposure of customer records?",
         ("privacy",),
     ),
+)
+
+CORPUS += tuple(CorpusChunk(*row) for row in get_additional_corpus_rows())
+GOLDEN_SET += tuple(
+    GoldenQuery(query, (chunk_key,)) for query, chunk_key in get_additional_query_rows()
 )
 
 

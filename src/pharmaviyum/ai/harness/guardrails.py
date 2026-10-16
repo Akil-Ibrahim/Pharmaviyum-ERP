@@ -19,6 +19,24 @@ from pydantic import BaseModel, Field
 from src.pharmaviyum.core.logging import logger
 
 
+_PROMPT_INJECTION_PATTERNS = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"(?:^|[.!?:;]\s*)(?:please\s+)?(?:ignore|disregard|forget|override|set aside)\s+(?:(?:all|any|every)\s+)?(?:(?:the|your|my)\s+)?(?:(?:previous|prior|above|earlier|system|developer|safety)\s+){0,3}(?:instructions?|rules?|policies|safeguards?|restrictions?)\b",
+        r"(?:^|[.!?:;]\s*)(?:please\s+)?(?:ignore|disregard|forget)\s+(?:(?:all|any|every)\s+)?(?:instructions?|rules?)\s+(?:above|prior|previous|earlier)\b",
+        r"\b(?:do not|don't|never)\s+(?:follow|obey)\s+(?:(?:the|your)\s+)?(?:system|developer|previous|prior|above|safety)\s+(?:instructions?|rules?|directions?|policies)\b",
+        r"\b(?:reveal|disclose|show|repeat|print|output|expose|share|provide|tell me)\b.{0,50}\b(?:system|developer|hidden|internal|secret)\b.{0,30}\b(?:prompt|instructions?|message|context)\b",
+        r"\b(?:hidden|internal|secret|system|developer)\s+(?:prompt|instructions?|message|context)\b.{0,50}\b(?:reveal|disclose|show|repeat|print|output|expose|share)\b",
+        r"\b(?:act as|pretend to be|you are now)\b.{0,50}\b(?:unrestricted|unfiltered|uncensored|jailbreak|dan)\b",
+        r"\bfrom now on\b.{0,30}\b(?:act as|you are|be)\b.{0,40}\b(?:unrestricted|unfiltered|uncensored|jailbreak|dan)\b",
+        r"\bpretend\b.{0,40}\b(?:safety|security|polic(?:y|ies)|rules?|restrictions?)\b.{0,30}\b(?:does not exist|do not exist|doesn't exist|is disabled)\b",
+        r"\b(?:override|bypass|disable)\b.{0,40}\b(?:safety|security|safeguards?|restrictions?|polic(?:y|ies))\b",
+        r"\b(?:previous|prior|above|earlier)\s+(?:instructions?|rules?)\b.{0,30}\b(?:obsolete|irrelevant|do not apply|no longer apply)\b",
+        r"\bdan\s+mode\b|\bjailbreak\b",
+    )
+)
+
+
 class GuardrailResult(BaseModel):
     """Result of guardrail validation."""
 
@@ -87,13 +105,8 @@ class MedicalGuardrails:
                 warnings.append(f"pii_{pii_type}_redacted")
 
         # 2. Prompt injection detection (basic heuristics)
-        injection_keywords = [
-            "ignore previous instructions",
-            "system prompt",
-            "dan mode",
-            "jailbreak",
-        ]
-        if any(kw in sanitized.lower() for kw in injection_keywords):
+        normalized = re.sub(r"\s+", " ", sanitized).strip()
+        if any(pattern.search(normalized) for pattern in _PROMPT_INJECTION_PATTERNS):
             # Never log user-controlled prompt content; it may contain PII.
             logger.warning("Potential prompt injection detected")
             return GuardrailResult(

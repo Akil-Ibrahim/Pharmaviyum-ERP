@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from src.pharmaviyum.ai.llm_utils import response_text
 from src.pharmaviyum.core.logging import logger
 
 from .schemas import RetrievalResult
@@ -125,7 +126,7 @@ JSON:"""
             import json
             import re
 
-            json_match = re.search(r"\[.*\]", response.content, re.DOTALL)
+            json_match = re.search(r"\[.*\]", response_text(response), re.DOTALL)
             if not json_match:
                 raise ValueError("No JSON array found in response")
             scores = json.loads(json_match.group())

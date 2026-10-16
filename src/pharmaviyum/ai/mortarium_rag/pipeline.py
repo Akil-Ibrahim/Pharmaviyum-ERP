@@ -6,6 +6,8 @@ import asyncio
 import time
 from typing import AsyncIterator, Literal, cast
 
+from src.pharmaviyum.ai.llm_utils import response_text
+
 from .chunking import MedicalChunker
 from .embeddings import EmbeddingsProvider
 from .schemas import Document, QueryContext, RAGResponse, RetrievalResult
@@ -73,7 +75,7 @@ class RAGPipeline:
             temperature=context.temperature,
             max_tokens=context.max_tokens,
         )
-        answer = llm_response.content
+        answer = response_text(llm_response)
         warnings: list[str] = []
         if self.guardrails:
             validated = await self.guardrails.validate(

@@ -17,6 +17,7 @@ from typing import Any
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
+from src.pharmaviyum.ai.llm_utils import response_text
 from src.pharmaviyum.core.logging import logger
 
 
@@ -146,7 +147,7 @@ Respond ONLY with a valid JSON object in this exact format:
             )
 
             # Parse JSON from response
-            content = response.content
+            content = response_text(response)
             json_match = re.search(r"\{.*\}", content, re.DOTALL)
             if json_match:
                 scores = json.loads(json_match.group())

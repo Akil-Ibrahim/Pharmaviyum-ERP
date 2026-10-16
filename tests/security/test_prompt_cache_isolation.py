@@ -17,7 +17,11 @@ async def test_prompt_cache_requires_user_and_pharmacy_scope() -> None:
     with pytest.raises(ValueError):
         await cache.get("question", {"pharmacy_id": 1})
     with pytest.raises(ValueError):
+        await cache.set("question", {}, {"pharmacy_id": 1})
+    with pytest.raises(ValueError):
         await cache.get("question", {"user_id": "u1"})
+    with pytest.raises(ValueError):
+        await cache.set("question", {}, {"user_id": "u1"})
 
 
 def test_prompt_cache_key_changes_with_tenant_and_user() -> None:

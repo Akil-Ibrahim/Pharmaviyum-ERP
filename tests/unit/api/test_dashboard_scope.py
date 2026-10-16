@@ -34,7 +34,12 @@ class _Result:
             retail_value=0,
             items=0,
             low_stock=0,
+            stockout_items=0,
+            near_expiry_value=0,
         )
+
+    def scalar_one(self):
+        return 0
 
 
 class _Session:
@@ -173,15 +178,15 @@ async def test_dashboard_patient_condition_prefers_active_status():
             pharmacy_id=42,
         )
 
-    medication_sql = next(
-        sql
-        for sql in (
-            str(statement.compile(dialect=postgresql.dialect()))
-            for statement in session.statements
-        )
-        if "patient_conditions" in sql
+    medication_statement = next(
+        statement
+        for statement in session.statements
+        if "patient_conditions" in str(statement)
     )
-    assert "patient_conditions.status = 'active'" in medication_sql
+    medication_compiled = medication_statement.compile(dialect=postgresql.dialect())
+    medication_sql = str(medication_compiled)
+    assert "patient_conditions.status =" in medication_sql
+    assert "active" in medication_compiled.params.values()
     assert "row_number() OVER" in medication_sql
     assert "LIMIT %(param_" in medication_sql
     assert "patients.pharmacy_id =" in medication_sql
@@ -210,7 +215,12 @@ async def test_dashboard_expiry_policy_keeps_three_buckets_disjoint():
         if "extended_warning" in str(statement) and "date_trunc" in str(statement)
     )
     compiled = expiry_statement.compile(dialect=postgresql.dialect())
-    expiry_sql = str(compiled)
+    expiry_sql = str(
+        expiry_statement.compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={"literal_binds": True},
+        )
+    )
 
     assert re.search(r"date_trunc\([^)]*expires_at\)\s*<", expiry_sql)
     assert re.search(r"date_trunc\([^)]*expires_at\)\s*>= ", expiry_sql)

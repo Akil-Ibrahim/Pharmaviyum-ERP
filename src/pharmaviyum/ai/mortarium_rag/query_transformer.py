@@ -15,6 +15,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
+from src.pharmaviyum.ai.llm_utils import response_text
 from src.pharmaviyum.core.logging import logger
 
 
@@ -83,7 +84,7 @@ Hypothetical answer:"""
 
         try:
             response = await self.llm.ainvoke(prompt)
-            hypothetical_doc = response.content.strip()
+            hypothetical_doc = response_text(response).strip()
 
             logger.debug(
                 f"HyDE transformation: {query[:50]}... → {hypothetical_doc[:80]}..."
@@ -146,7 +147,7 @@ Generate {num_variations} variations (one per line, no numbering):"""
 
         try:
             response = await self.llm.ainvoke(prompt)
-            variations_text = response.content.strip().split("\n")
+            variations_text = response_text(response).strip().split("\n")
 
             variations = [
                 QueryVariation(
@@ -237,7 +238,7 @@ Sub-questions (one per line, no numbering):"""
 
         try:
             response = await self.llm.ainvoke(prompt)
-            subqueries_text = response.content.strip().split("\n")
+            subqueries_text = response_text(response).strip().split("\n")
 
             subqueries = [
                 QueryVariation(

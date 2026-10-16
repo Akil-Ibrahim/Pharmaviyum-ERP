@@ -15,6 +15,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
+from src.pharmaviyum.ai.llm_utils import response_text
 from src.pharmaviyum.core.logging import logger
 
 
@@ -62,7 +63,7 @@ Return JSON: {{"approved": bool, "warnings": ["string"]}}"""
             import json
             import re
 
-            json_match = re.search(r"\{.*\}", response.content, re.DOTALL)
+            json_match = re.search(r"\{.*\}", response_text(response), re.DOTALL)
             result = (
                 json.loads(json_match.group())
                 if json_match

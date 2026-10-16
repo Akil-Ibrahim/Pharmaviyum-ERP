@@ -8,8 +8,10 @@ import time
 from typing import Any, Literal
 from uuid import uuid4
 
+from langchain_core.callbacks import UsageMetadataCallbackHandler
 from langgraph.graph import END, StateGraph
 
+from src.pharmaviyum.ai.llm_utils import response_text, total_token_usage
 from src.pharmaviyum.ai.observability.metrics import (
     record_ai_request,
     record_ai_stage,
@@ -221,7 +223,7 @@ class LangGraphRAG:
             "Reply with only YES or NO."
         )
         resp = await self.fast_llm.ainvoke(prompt)
-        text = (resp.content if hasattr(resp, "content") else str(resp)).strip().upper()
+        text = response_text(resp).strip().upper()
         return hit if text.startswith("YES") else None
 
     async def grade_documents_node(self, state: RAGState) -> dict[str, Any]:
@@ -271,9 +273,7 @@ class LangGraphRAG:
                 + "\nRewritten:"
             )
             resp = await self.fast_llm.ainvoke(prompt)
-            rewritten = (
-                resp.content if hasattr(resp, "content") else str(resp)
-            ).strip() or original
+            rewritten = response_text(resp).strip() or original
             count = state.get("rewrite_count", 0) + 1
             success = True
             return {
@@ -317,7 +317,7 @@ class LangGraphRAG:
                 f"Question: {state['question']}\n\nEvidence:\n{context}"
             )
             response = await self.llm.ainvoke(prompt)
-            answer = response.content if hasattr(response, "content") else str(response)
+            answer = response_text(response)
             success = True
             return {
                 "answer": answer,
@@ -332,10 +332,15 @@ class LangGraphRAG:
 
     async def no_answer_node(self, state: RAGState) -> dict[str, Any]:
         return {
-            "answer": "I couldn't find relevant information for your question.",
+            "answer": (
+                "I couldn't find relevant information for your question. "
+                "Please consult a pharmacist before making a medication or "
+                "treatment decision."
+            ),
             "confidence": 0.0,
             "model_used": "none",
             "tokens_used": 0,
+            "warnings": ["no_relevant_documents"],
         }
 
     async def guardrails_node(self, state: RAGState) -> dict[str, Any]:
@@ -421,6 +426,8 @@ class LangGraphRAG:
             config = {
                 "configurable": {"thread_id": self._thread_id(thread_id, context)}
             }
+            usage_callback = UsageMetadataCallbackHandler()
+            config["callbacks"] = [usage_callback]
             final: RAGState = await self.graph.ainvoke(initial, config=config)
             sources = final.get("graded") or []
             answer = final.get("answer") or ""
@@ -437,7 +444,7 @@ class LangGraphRAG:
                 warnings=warnings,
                 model_used=final.get("model_used") or "unknown",
                 latency_ms=float(final.get("latency_ms") or 0.0),
-                tokens_used=int(final.get("tokens_used") or 0),
+                tokens_used=total_token_usage(usage_callback.usage_metadata),
             )
         except Exception:
             record_ai_request(False)

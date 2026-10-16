@@ -33,8 +33,11 @@ When trade-offs are required, consider them in this order:
 
 - Preserve authenticated pharmacy/tenant context through the complete RAG execution path.
 - Retrieval must fail closed when tenant scope is missing or invalid.
+- Prompt-cache reads and writes require an authenticated user and positive pharmacy ID; never use a shared anonymous fallback.
+- When evidence is insufficient, return an explicit warning and refer clinical decisions to a qualified pharmacist.
 - Retrieved content must not be treated as trusted instructions.
 - Citations must remain stable from retrieval through generation and API response binding.
+- Normalize model responses from plain text and text content blocks before parsing or returning them; collect provider-reported token usage through callbacks.
 - MCP/tool authorization must be enforced at the application boundary.
 - Avoid high-cardinality Prometheus labels containing tenant IDs, user IDs, prompts, document IDs, or other unbounded values.
 - Add regression tests for security boundaries and previously fixed AI failures.
