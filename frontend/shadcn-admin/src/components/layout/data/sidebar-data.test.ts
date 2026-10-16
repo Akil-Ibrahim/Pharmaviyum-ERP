@@ -52,7 +52,7 @@ describe('Pharmaviyum sidebar navigation', () => {
     ])
   })
 
-  it('keeps Developer Tools under Settings and hides legacy top-level links', () => {
+  it('keeps Developer Tools under Settings and hides legacy sidebar links', () => {
     const administration = sidebarData.navGroups.find(
       (group) => group.title === 'Administration'
     )
@@ -60,7 +60,10 @@ describe('Pharmaviyum sidebar navigation', () => {
       (item) => item.title === 'Settings'
     )
     const visibleTitles = sidebarData.navGroups.flatMap((group) =>
-      group.items.map((item) => item.title)
+      group.items.flatMap((item) => [
+        item.title,
+        ...(item.items?.map((subItem) => subItem.title) ?? []),
+      ])
     )
 
     expect(settings?.items?.map((item) => item.title)).toContain(
