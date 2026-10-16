@@ -65,45 +65,43 @@ class MedicalChunker:
         current_content: list[str] = []
         chunk_index = 0
 
+        def append_section(section: ChunkType | None, content: list[str]) -> None:
+            nonlocal chunk_index
+            section_type = section or "general"
+            text = "\n".join(content)
+            overlap_tokens = min(max(self.overlap, 0), max(self.max_tokens - 1, 0))
+            chunk_limit = max(1, self.max_tokens - overlap_tokens)
+            parts = self._split_text_to_max_tokens(
+                text,
+                ["\n\n", "\n", ". ", " ", ""],
+                max_tokens=chunk_limit,
+            )
+            for index, part in enumerate(parts):
+                if index and overlap_tokens:
+                    overlap_text = parts[index - 1][-overlap_tokens * 4 :]
+                    if " " in overlap_text:
+                        overlap_text = overlap_text.split(" ", 1)[1]
+                    part = overlap_text + part
+                chunk = self._create_chunk(
+                    document, part, section_type, chunk_index
+                )
+                if chunk:
+                    chunks.append(chunk)
+                    chunk_index += 1
+
         for line in document.content.split("\n"):
             section_type = self._detect_section(line)
 
             if section_type and section_type != current_section:
-                if current_section and current_content:
-                    chunk = self._create_chunk(
-                        document,
-                        "\n".join(current_content),
-                        current_section,
-                        chunk_index,
-                    )
-                    if chunk:
-                        chunks.append(chunk)
-                        chunk_index += 1
+                if current_content:
+                    append_section(current_section, current_content)
                 current_section = section_type
                 current_content = [line]
             else:
                 current_content.append(line)
-                if self._count_tokens("\n".join(current_content)) > self.max_tokens:
-                    chunk = self._create_chunk(
-                        document,
-                        "\n".join(current_content[:-1]),
-                        current_section or "general",
-                        chunk_index,
-                    )
-                    if chunk:
-                        chunks.append(chunk)
-                        chunk_index += 1
-                    current_content = current_content[-(self.overlap // 10) :]
 
         if current_content:
-            chunk = self._create_chunk(
-                document,
-                "\n".join(current_content),
-                current_section or "general",
-                chunk_index,
-            )
-            if chunk:
-                chunks.append(chunk)
+            append_section(current_section, current_content)
 
         return chunks
 
@@ -152,46 +150,69 @@ class MedicalChunker:
     def _recursive_split(
         self, text: str, separators: list[str], document: Document
     ) -> list[Chunk]:
-        if self._count_tokens(text) <= self.max_tokens:
-            chunk = self._create_chunk(document, text, "general", 0)
-            return [chunk] if chunk else []
-
-        separator = separators[0] if separators else ""
-        parts = (
-            text.split(separator)
-            if separator
-            else [
-                text[i : i + self.max_tokens * 4]
-                for i in range(0, len(text), self.max_tokens * 4)
-            ]
-        )
-
         chunks: list[Chunk] = []
-        current_parts: list[str] = []
-        current_tokens = 0
-        chunk_index = 0
-
-        for part in parts:
-            part_tokens = self._count_tokens(part)
-            if current_tokens + part_tokens > self.max_tokens and current_parts:
-                chunk = self._create_chunk(
-                    document, separator.join(current_parts), "general", chunk_index
-                )
-                if chunk:
-                    chunks.append(chunk)
-                    chunk_index += 1
-                current_parts, current_tokens = [], 0
-            current_parts.append(part)
-            current_tokens += part_tokens
-
-        if current_parts:
-            chunk = self._create_chunk(
-                document, separator.join(current_parts), "general", chunk_index
-            )
+        for chunk_index, part in enumerate(
+            self._split_text_to_max_tokens(text, separators)
+        ):
+            chunk = self._create_chunk(document, part, "general", chunk_index)
             if chunk:
                 chunks.append(chunk)
-
         return chunks
+
+    def _split_text_to_max_tokens(
+        self,
+        text: str,
+        separators: list[str],
+        max_tokens: int | None = None,
+    ) -> list[str]:
+        token_limit = max_tokens or self.max_tokens
+
+        def split(value: str, separator_index: int = 0) -> list[str]:
+            if self._count_tokens(value) <= token_limit:
+                return [value]
+
+            for index in range(separator_index, len(separators)):
+                separator = separators[index]
+                if separator:
+                    if separator not in value:
+                        continue
+                    raw_parts = value.split(separator)
+                    parts = [
+                        *(part + separator for part in raw_parts[:-1]),
+                        raw_parts[-1],
+                    ]
+                else:
+                    width = max(1, token_limit * 4)
+                    parts = [value[i : i + width] for i in range(0, len(value), width)]
+
+                result: list[str] = []
+                current: list[str] = []
+
+                def append_current() -> None:
+                    if current:
+                        result.append("".join(current))
+                        current.clear()
+
+                for part in parts:
+                    if not part:
+                        continue
+                    if self._count_tokens(part) > token_limit:
+                        append_current()
+                        result.extend(split(part, index + 1))
+                        continue
+
+                    candidate = "".join([*current, part])
+                    if current and self._count_tokens(candidate) > token_limit:
+                        append_current()
+                    current.append(part)
+
+                append_current()
+                return result
+
+            width = max(1, token_limit * 4)
+            return [value[i : i + width] for i in range(0, len(value), width)]
+
+        return split(text)
 
     def _detect_section(self, line: str) -> ChunkType | None:
         line = line.strip()

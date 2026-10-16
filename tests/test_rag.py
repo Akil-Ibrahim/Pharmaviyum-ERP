@@ -9,9 +9,24 @@ Tests cover:
 - Query transformation
 """
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
+
+@pytest.fixture
+def mock_redis():
+    redis = AsyncMock()
+    redis.get = AsyncMock(return_value=None)
+    redis.setex = AsyncMock()
+    return redis
+
+
+@pytest.fixture
+def mock_ollama_llm():
+    llm = AsyncMock()
+    llm.ainvoke = AsyncMock(return_value=MagicMock(content="A generated response."))
+    return llm
 
 
 @pytest.mark.unit
@@ -66,7 +81,6 @@ class TestDocumentPreprocessing:
 
         preprocessor = DocumentPreprocessor(enable_pii_redaction=False)
         doc = Document(
-            id="test-1",
             content="Test content for hashing",
             source="test.pdf",
             doc_type="drug_info",
@@ -84,7 +98,8 @@ class TestDocumentPreprocessing:
 class TestMedicalChunker:
     """Test medical-aware chunking."""
 
-    def test_basic_chunking(self):
+    @pytest.mark.parametrize("strategy", ("recursive", "medical"))
+    def test_basic_chunking(self, strategy):
         """Test basic text chunking respects token limits."""
         from src.pharmaviyum.ai.mortarium_rag.chunking import MedicalChunker
         from src.pharmaviyum.ai.mortarium_rag.schemas import Document
@@ -93,7 +108,6 @@ class TestMedicalChunker:
 
         long_text = "This is a test sentence. " * 50
         doc = Document(
-            id="test-1",
             content=long_text,
             source="test.pdf",
             doc_type="drug_info",
@@ -102,10 +116,12 @@ class TestMedicalChunker:
             language="en",
         )
 
-        chunks = chunker.chunk(doc, strategy="basic")
+        chunks = chunker.chunk(doc, strategy=strategy)
 
         assert len(chunks) > 1
         assert all(len(chunk.content) > 0 for chunk in chunks)
+        assert all(chunk.token_count <= chunker.max_tokens for chunk in chunks)
+        assert sum(chunk.content.count(".") for chunk in chunks) >= long_text.count(".")
 
     def test_medical_section_detection(self):
         """Test chunking detects medical sections."""
@@ -126,7 +142,6 @@ class TestMedicalChunker:
         """
 
         doc = Document(
-            id="test-1",
             content=content,
             source="test.pdf",
             doc_type="drug_info",
@@ -138,25 +153,41 @@ class TestMedicalChunker:
         chunks = chunker.chunk(doc, strategy="medical")
         assert len(chunks) > 0
 
+    def test_medical_chunking_preserves_text_before_first_section(self):
+        """General text before the first medical heading must not be dropped."""
+        from src.pharmaviyum.ai.mortarium_rag.chunking import MedicalChunker
+        from src.pharmaviyum.ai.mortarium_rag.schemas import Document
+
+        doc = Document(
+            content="General pharmacy information.\nINDICATIONS:\nUsed for pain.",
+            source="test.pdf",
+            doc_type="drug_info",
+        )
+
+        chunks = MedicalChunker().chunk(doc, strategy="medical")
+
+        assert any("General pharmacy information." in chunk.content for chunk in chunks)
+
 
 @pytest.mark.unit
 class TestEmbeddings:
     """Test embedding generation."""
 
     @pytest.mark.asyncio
-    async def test_ollama_embeddings(self, mock_redis):
+    async def test_ollama_embeddings(self):
         """Test Ollama embedding generation."""
         from src.pharmaviyum.ai.mortarium_rag.embeddings import OllamaEmbeddings
 
         embeddings = OllamaEmbeddings(
             model="mxbai-embed-large",
-            base_url="http://localhost:11434",
+            endpoint="http://localhost:11434",
             dimensions=1024,
-            redis_client=mock_redis,
         )
 
-        embeddings.client = AsyncMock()
-        embeddings.client.embed = AsyncMock(return_value=[[0.1] * 1024])
+        embeddings._client = AsyncMock()
+        embeddings._client.embeddings = AsyncMock(
+            return_value={"embedding": [0.1] * 1024}
+        )
 
         result = await embeddings.embed("Test text")
 
@@ -173,17 +204,15 @@ class TestEmbeddings:
         base_provider.dimensions = 1024
 
         cached = CachedEmbeddings(
-            base_provider=base_provider,
+            provider=base_provider,
             redis_client=mock_redis,
-            ttl_seconds=3600,
+            ttl=3600,
         )
 
         result1 = await cached.embed("Test text")
         assert len(result1) == 1024
 
-        import json
-
-        mock_redis.get.return_value = json.dumps([0.1] * 1024)
+        mock_redis.get.return_value = mock_redis.setex.await_args.args[2]
 
         result2 = await cached.embed("Test text")
         assert len(result2) == 1024
@@ -226,3 +255,26 @@ class TestQueryTransformer:
             v.original_query == "Drug interactions between Warfarin and Aspirin"
             for v in variations
         )
+
+    @pytest.mark.asyncio
+    async def test_multi_query_accepts_gemini_text_content_blocks(self):
+        from src.pharmaviyum.ai.mortarium_rag.query_transformer import QueryTransformer
+
+        llm = AsyncMock()
+        llm.ainvoke = AsyncMock(
+            return_value=MagicMock(
+                content=[
+                    {"type": "text", "text": "Receiving delivery verification"},
+                    {"type": "text", "text": "Supplier shipment inspection"},
+                ]
+            )
+        )
+        transformer = QueryTransformer(llm=llm)
+
+        variations = await transformer.generate_multi_query("How to receive stock?")
+
+        assert [item.transformed_query for item in variations] == [
+            "How to receive stock?",
+            "Receiving delivery verification",
+            "Supplier shipment inspection",
+        ]
