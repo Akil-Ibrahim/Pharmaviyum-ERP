@@ -1,4 +1,4 @@
-import { useEffect, useState, type ElementType, type ReactNode } from 'react'
+import { useState, type ElementType, type ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import {
@@ -38,7 +38,7 @@ export function NavGroup({ title, items }: NavGroupProps) {
   const href = useLocation({ select: (location) => location.href })
   return (
     <SidebarGroup className='px-2 py-1.5'>
-      <SidebarGroupLabel className='h-7 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/75'>
+      <SidebarGroupLabel className='h-7 px-3 text-[10px] font-bold tracking-[0.16em] text-muted-foreground/75 uppercase'>
         {title}
       </SidebarGroupLabel>
       <SidebarMenu className='gap-1'>
@@ -53,7 +53,13 @@ export function NavGroup({ title, items }: NavGroupProps) {
               <SidebarMenuCollapsedDropdown key={key} item={item} href={href} />
             )
 
-          return <SidebarMenuCollapsible key={key} item={item} href={href} />
+          return (
+            <SidebarMenuCollapsible
+              key={`${key}-${checkIsActive(href, item, true)}`}
+              item={item}
+              href={href}
+            />
+          )
         })}
       </SidebarMenu>
     </SidebarGroup>
@@ -106,7 +112,7 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
         className={[
           'relative h-10 gap-2.5 rounded-xl px-2.5 transition-all duration-150',
           isActive
-            ? 'bg-primary/10 text-foreground shadow-none hover:bg-primary/15 before:absolute before:inset-y-2 before:start-0 before:w-[3px] before:rounded-full before:bg-primary'
+            ? 'bg-primary/10 text-foreground shadow-none before:absolute before:inset-y-2 before:start-0 before:w-[3px] before:rounded-full before:bg-primary hover:bg-primary/15'
             : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
         ].join(' ')}
       >
@@ -132,10 +138,6 @@ function SidebarMenuCollapsible({
   const { setOpenMobile } = useSidebar()
   const isActive = checkIsActive(href, item, true)
   const [open, setOpen] = useState(isActive)
-
-  useEffect(() => {
-    if (isActive) setOpen(true)
-  }, [isActive])
 
   return (
     <Collapsible
@@ -165,7 +167,7 @@ function SidebarMenuCollapsible({
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent className='CollapsibleContent'>
-          <SidebarMenuSub className='ms-5 mt-1 gap-1 border-sidebar-border/80 ps-3 py-1'>
+          <SidebarMenuSub className='ms-5 mt-1 gap-1 border-sidebar-border/80 py-1 ps-3'>
             {item.items.map((subItem) => {
               const isSubActive = checkIsActive(href, subItem)
               return (
@@ -229,8 +231,13 @@ function SidebarMenuCollapsedDropdown({
             <ChevronRight className='ms-auto size-4 text-muted-foreground/70' />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
-        <DropdownMenuContent side='right' align='start' sideOffset={8} className='min-w-52 rounded-xl p-1.5 shadow-lg'>
-          <DropdownMenuLabel className='px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground'>
+        <DropdownMenuContent
+          side='right'
+          align='start'
+          sideOffset={8}
+          className='min-w-52 rounded-xl p-1.5 shadow-lg'
+        >
+          <DropdownMenuLabel className='px-2 py-1.5 text-[10px] font-bold tracking-[0.14em] text-muted-foreground uppercase'>
             {item.title} {item.badge ? `(${item.badge})` : ''}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -241,14 +248,20 @@ function SidebarMenuCollapsedDropdown({
               <DropdownMenuItem
                 key={`${sub.title}-${sub.url}`}
                 asChild
-                className={isSubActive ? 'rounded-lg bg-primary/10 text-foreground' : 'rounded-lg'}
+                className={
+                  isSubActive
+                    ? 'rounded-lg bg-primary/10 text-foreground'
+                    : 'rounded-lg'
+                }
               >
                 <Link to={sub.url} className='gap-2.5'>
                   <NavIcon icon={sub.icon} active={isSubActive} />
                   <span className='max-w-52 truncate text-[13px] font-semibold text-foreground'>
                     {sub.title}
                   </span>
-                  {sub.badge && <span className='ms-auto text-xs'>{sub.badge}</span>}
+                  {sub.badge && (
+                    <span className='ms-auto text-xs'>{sub.badge}</span>
+                  )}
                 </Link>
               </DropdownMenuItem>
             )

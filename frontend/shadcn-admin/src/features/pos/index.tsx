@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Barcode, Minus, Plus, Search, ShoppingCart, Trash2, UserRound } from 'lucide-react'
+import {
+  Barcode,
+  Minus,
+  Plus,
+  Search,
+  ShoppingCart,
+  Trash2,
+  UserRound,
+} from 'lucide-react'
+import { apiFetch } from '@/lib/api-client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { apiFetch } from '@/lib/api-client'
 
 type LocalProduct = {
   id: number
@@ -41,70 +49,67 @@ type DrugCatalogResult = {
 
 type CartItem = LocalProduct & { quantity: number }
 
+type SearchState<T> = {
+  searchId: number
+  results: T[]
+  error: boolean
+}
+
 export function Pos() {
   const [query, setQuery] = useState('')
+  const [searchId, setSearchId] = useState(0)
   const [cart, setCart] = useState<CartItem[]>([])
-  const [localResults, setLocalResults] = useState<LocalProduct[]>([])
-  const [referenceResults, setReferenceResults] = useState<DrugCatalogResult[]>([])
-  const [loading, setLoading] = useState(false)
-  const [referenceLoading, setReferenceLoading] = useState(false)
-  const [localError, setLocalError] = useState(false)
-  const [referenceError, setReferenceError] = useState(false)
+  const [localSearch, setLocalSearch] = useState<SearchState<LocalProduct>>({
+    searchId: 0,
+    results: [],
+    error: false,
+  })
+  const [referenceSearch, setReferenceSearch] = useState<
+    SearchState<DrugCatalogResult>
+  >({
+    searchId: 0,
+    results: [],
+    error: false,
+  })
 
   useEffect(() => {
     const term = query.trim()
-    if (term.length < 2) {
-      setLocalResults([])
-      setReferenceResults([])
-      setLoading(false)
-      setReferenceLoading(false)
-      setLocalError(false)
-      setReferenceError(false)
-      return
-    }
+    if (term.length < 2) return
 
     let cancelled = false
-    setLoading(true)
-    setReferenceLoading(true)
-    setLocalError(false)
-    setReferenceError(false)
 
     apiFetch<LocalProduct[]>(
-      `/api/v1/products/search?q=${encodeURIComponent(term)}&limit=20`,
+      `/api/v1/products/search?q=${encodeURIComponent(term)}&limit=20`
     )
       .then((items) => {
-        if (!cancelled) setLocalResults(items)
+        if (!cancelled) {
+          setLocalSearch({ searchId, results: items, error: false })
+        }
       })
       .catch(() => {
         if (!cancelled) {
-          setLocalResults([])
-          setLocalError(true)
+          setLocalSearch({ searchId, results: [], error: true })
         }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
       })
 
     apiFetch<DrugCatalogResult[]>(
-      `/api/v1/drug-catalog/search?q=${encodeURIComponent(term)}&limit=8`,
+      `/api/v1/drug-catalog/search?q=${encodeURIComponent(term)}&limit=8`
     )
       .then((items) => {
-        if (!cancelled) setReferenceResults(items)
+        if (!cancelled) {
+          setReferenceSearch({ searchId, results: items, error: false })
+        }
       })
       .catch(() => {
         if (!cancelled) {
-          setReferenceResults([])
-          setReferenceError(true)
+          setReferenceSearch({ searchId, results: [], error: true })
         }
-      })
-      .finally(() => {
-        if (!cancelled) setReferenceLoading(false)
       })
 
     return () => {
       cancelled = true
     }
-  }, [query])
+  }, [query, searchId])
 
   const addToCart = (product: LocalProduct) => {
     setCart((items) => {
@@ -113,7 +118,7 @@ export function Pos() {
         return items.map((item) =>
           item.id === product.id
             ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) }
-            : item,
+            : item
         )
       }
       if (product.stock < 1) return items
@@ -129,14 +134,24 @@ export function Pos() {
         return quantity > 0
           ? [{ ...item, quantity: Math.min(quantity, item.stock) }]
           : []
-      }),
+      })
     )
   }
 
   const total = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
-    [cart],
+    [cart]
   )
+  const term = query.trim()
+  const hasSearchTerm = term.length >= 2
+  const localSearchMatches = localSearch.searchId === searchId
+  const referenceSearchMatches = referenceSearch.searchId === searchId
+  const localResults = localSearchMatches ? localSearch.results : []
+  const referenceResults = referenceSearchMatches ? referenceSearch.results : []
+  const loading = hasSearchTerm && !localSearchMatches
+  const referenceLoading = hasSearchTerm && !referenceSearchMatches
+  const localError = localSearchMatches && localSearch.error
+  const referenceError = referenceSearchMatches && referenceSearch.error
 
   return (
     <div className='space-y-6 p-6'>
@@ -144,7 +159,8 @@ export function Pos() {
         <div>
           <h1 className='text-2xl font-bold tracking-tight'>POS</h1>
           <p className='text-muted-foreground'>
-            Find pharmacy stock or look up a medicine in the international reference.
+            Find pharmacy stock or look up a medicine in the international
+            reference.
           </p>
         </div>
         <Badge variant='outline' className='w-fit gap-2 px-3 py-1.5'>
@@ -162,17 +178,21 @@ export function Pos() {
               </Button>
             </div>
             <div className='relative'>
-              <Search className='absolute left-3 top-3 size-4 text-muted-foreground' />
+              <Search className='absolute top-3 left-3 size-4 text-muted-foreground' />
               <Input
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  setQuery(event.target.value)
+                  setSearchId((id) => id + 1)
+                }}
                 placeholder='Name, INN, brand, manufacturer, barcode or SKU…'
                 className='pl-9'
                 aria-label='Search local and international medicines'
               />
             </div>
             <p className='text-xs text-muted-foreground'>
-              Enter at least two characters. Reference medicines are not automatically added to pharmacy stock.
+              Enter at least two characters. Reference medicines are not
+              automatically added to pharmacy stock.
             </p>
           </CardHeader>
           <CardContent className='space-y-3'>
@@ -180,48 +200,75 @@ export function Pos() {
               <p className='font-medium'>Available pharmacy products</p>
               <Badge variant='outline'>Local inventory</Badge>
             </div>
-            {loading && <p className='text-sm text-muted-foreground'>Searching local products…</p>}
-            {localError && (
-              <p className='text-sm text-destructive'>
-                Local product search failed. Check the API connection and your access.
+            {hasSearchTerm && loading && (
+              <p className='text-sm text-muted-foreground'>
+                Searching local products…
               </p>
             )}
-            {!loading && !localError && query.trim().length >= 2 && localResults.length === 0 && (
-              <p className='text-sm text-muted-foreground'>No matching sellable products in the local catalog.</p>
+            {hasSearchTerm && localError && (
+              <p className='text-sm text-destructive'>
+                Local product search failed. Check the API connection and your
+                access.
+              </p>
             )}
-            {localResults.map((product) => (
-              <div key={product.id} className='rounded-lg border p-4'>
-                <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
-                  <div className='min-w-0'>
-                    <div className='flex flex-wrap items-center gap-2'>
-                      <p className='font-semibold'>{product.name}</p>
-                      {product.medicinal_product_id && <Badge variant='secondary'>Reference linked</Badge>}
+            {!loading &&
+              !localError &&
+              query.trim().length >= 2 &&
+              localResults.length === 0 && (
+                <p className='text-sm text-muted-foreground'>
+                  No matching sellable products in the local catalog.
+                </p>
+              )}
+            {hasSearchTerm &&
+              localResults.map((product) => (
+                <div key={product.id} className='rounded-lg border p-4'>
+                  <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+                    <div className='min-w-0'>
+                      <div className='flex flex-wrap items-center gap-2'>
+                        <p className='font-semibold'>{product.name}</p>
+                        {product.medicinal_product_id && (
+                          <Badge variant='secondary'>Reference linked</Badge>
+                        )}
+                      </div>
+                      <p className='mt-1 text-sm text-muted-foreground'>
+                        INN: {product.inn_name || 'Not recorded'}
+                        {product.dosage_strength
+                          ? ` · ${product.dosage_strength}`
+                          : ''}
+                        {product.dosage_form ? ` · ${product.dosage_form}` : ''}
+                      </p>
+                      <p className='text-sm text-muted-foreground'>
+                        SKU: {product.sku}
+                        {product.manufacturer
+                          ? ` · ${product.manufacturer}`
+                          : ''}
+                      </p>
+                      {(product.barcode || product.gtin) && (
+                        <p className='text-xs text-muted-foreground'>
+                          Barcode: {product.barcode || product.gtin}
+                        </p>
+                      )}
                     </div>
-                    <p className='mt-1 text-sm text-muted-foreground'>
-                      INN: {product.inn_name || 'Not recorded'}
-                      {product.dosage_strength ? ` · ${product.dosage_strength}` : ''}
-                      {product.dosage_form ? ` · ${product.dosage_form}` : ''}
-                    </p>
-                    <p className='text-sm text-muted-foreground'>
-                      SKU: {product.sku}
-                      {product.manufacturer ? ` · ${product.manufacturer}` : ''}
-                    </p>
-                    {(product.barcode || product.gtin) && (
-                      <p className='text-xs text-muted-foreground'>Barcode: {product.barcode || product.gtin}</p>
-                    )}
-                  </div>
-                  <div className='flex items-center justify-between gap-3 sm:flex-col sm:items-end'>
-                    <div className='sm:text-right'>
-                      <p className='font-semibold'>{product.price.toFixed(2)}</p>
-                      <p className='text-xs text-muted-foreground'>Stock {product.stock}</p>
+                    <div className='flex items-center justify-between gap-3 sm:flex-col sm:items-end'>
+                      <div className='sm:text-right'>
+                        <p className='font-semibold'>
+                          {product.price.toFixed(2)}
+                        </p>
+                        <p className='text-xs text-muted-foreground'>
+                          Stock {product.stock}
+                        </p>
+                      </div>
+                      <Button
+                        size='sm'
+                        onClick={() => addToCart(product)}
+                        disabled={product.stock < 1}
+                      >
+                        <Plus className='mr-1 size-4' /> Add
+                      </Button>
                     </div>
-                    <Button size='sm' onClick={() => addToCart(product)} disabled={product.stock < 1}>
-                      <Plus className='mr-1 size-4' /> Add
-                    </Button>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
             {query.trim().length >= 2 && (
               <div className='space-y-3 border-t pt-4'>
@@ -230,42 +277,82 @@ export function Pos() {
                   <Badge variant='outline'>NLM RxNorm</Badge>
                 </div>
                 <p className='text-xs text-muted-foreground'>
-                  Clinical reference records support medicine identification. They do not confirm local registration, Rx/OTC status, package barcode, price, or availability. RxNorm Current Prescribable Content is US-centric, not a complete global catalog.
+                  Clinical reference records support medicine identification.
+                  They do not confirm local registration, Rx/OTC status, package
+                  barcode, price, or availability. RxNorm Current Prescribable
+                  Content is US-centric, not a complete global catalog.
                 </p>
                 <p className='text-xs text-muted-foreground'>
-                  Data courtesy of the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services. NLM is not responsible for Pharmaviyum and does not endorse or recommend it.
+                  Data courtesy of the U.S. National Library of Medicine (NLM),
+                  National Institutes of Health, Department of Health and Human
+                  Services. NLM is not responsible for Pharmaviyum and does not
+                  endorse or recommend it.
                 </p>
-                {referenceLoading && <p className='text-sm text-muted-foreground'>Searching the reference catalog…</p>}
+                {referenceLoading && (
+                  <p className='text-sm text-muted-foreground'>
+                    Searching the reference catalog…
+                  </p>
+                )}
                 {referenceError && (
                   <p className='text-sm text-destructive'>
-                    The reference catalog could not be reached. Check the API connection and whether the import has been run.
+                    The reference catalog could not be reached. Check the API
+                    connection and whether the import has been run.
                   </p>
                 )}
-                {!referenceLoading && !referenceError && referenceResults.map((item) => (
-                  <div key={item.medicinal_product_id} className='rounded-lg border p-3'>
-                    <div className='flex flex-wrap items-center gap-2'>
-                      <p className='font-medium'>
-                        {item.brand_name || [item.inn_name, item.strength].filter(Boolean).join(' ')}
+                {!referenceLoading &&
+                  !referenceError &&
+                  referenceResults.map((item) => (
+                    <div
+                      key={item.medicinal_product_id}
+                      className='rounded-lg border p-3'
+                    >
+                      <div className='flex flex-wrap items-center gap-2'>
+                        <p className='font-medium'>
+                          {item.brand_name ||
+                            [item.inn_name, item.strength]
+                              .filter(Boolean)
+                              .join(' ')}
+                        </p>
+                        <Badge variant='secondary'>
+                          {item.product_type === 'brand' ? 'Brand' : 'Generic'}
+                        </Badge>
+                        <Badge variant='outline'>Reference only</Badge>
+                      </div>
+                      <p className='mt-1 text-sm text-muted-foreground'>
+                        INN: {item.inn_name}
+                        {item.strength ? ` · ${item.strength}` : ''}
+                        {item.dosage_form ? ` · ${item.dosage_form}` : ''}
                       </p>
-                      <Badge variant='secondary'>{item.product_type === 'brand' ? 'Brand' : 'Generic'}</Badge>
-                      <Badge variant='outline'>Reference only</Badge>
+                      {item.manufacturer && (
+                        <p className='text-sm text-muted-foreground'>
+                          {item.manufacturer}
+                        </p>
+                      )}
+                      {item.atc_code && (
+                        <p className='text-xs text-muted-foreground'>
+                          ATC: {item.atc_code}
+                        </p>
+                      )}
+                      {item.gtin && (
+                        <p className='text-xs text-muted-foreground'>
+                          GTIN: {item.gtin}
+                        </p>
+                      )}
+                      {item.regulatory_id && (
+                        <p className='text-xs text-muted-foreground'>
+                          {item.regulatory_id}
+                        </p>
+                      )}
                     </div>
-                    <p className='mt-1 text-sm text-muted-foreground'>
-                      INN: {item.inn_name}
-                      {item.strength ? ` · ${item.strength}` : ''}
-                      {item.dosage_form ? ` · ${item.dosage_form}` : ''}
+                  ))}
+                {!referenceLoading &&
+                  !referenceError &&
+                  referenceResults.length === 0 && (
+                    <p className='text-sm text-muted-foreground'>
+                      No reference matches. The international catalog may not be
+                      imported yet.
                     </p>
-                    {item.manufacturer && <p className='text-sm text-muted-foreground'>{item.manufacturer}</p>}
-                    {item.atc_code && <p className='text-xs text-muted-foreground'>ATC: {item.atc_code}</p>}
-                    {item.gtin && <p className='text-xs text-muted-foreground'>GTIN: {item.gtin}</p>}
-                    {item.regulatory_id && <p className='text-xs text-muted-foreground'>{item.regulatory_id}</p>}
-                  </div>
-                ))}
-                {!referenceLoading && !referenceError && referenceResults.length === 0 && (
-                  <p className='text-sm text-muted-foreground'>
-                    No reference matches. The international catalog may not be imported yet.
-                  </p>
-                )}
+                  )}
               </div>
             )}
           </CardContent>
@@ -285,7 +372,8 @@ export function Pos() {
           <CardContent className='space-y-4'>
             {cart.length === 0 ? (
               <div className='rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground'>
-                Search and add a product from local pharmacy stock to start a receipt.
+                Search and add a product from local pharmacy stock to start a
+                receipt.
               </div>
             ) : (
               <div className='space-y-3'>
@@ -302,22 +390,43 @@ export function Pos() {
                         variant='ghost'
                         size='icon'
                         aria-label={`Remove ${item.name}`}
-                        onClick={() => setCart((items) => items.filter((entry) => entry.id !== item.id))}
+                        onClick={() =>
+                          setCart((items) =>
+                            items.filter((entry) => entry.id !== item.id)
+                          )
+                        }
                       >
                         <Trash2 className='size-4' />
                       </Button>
                     </div>
                     <div className='mt-3 flex items-center justify-between'>
                       <div className='flex items-center gap-1'>
-                        <Button variant='outline' size='icon' className='size-8' aria-label='Decrease quantity' onClick={() => updateQuantity(item.id, -1)}>
+                        <Button
+                          variant='outline'
+                          size='icon'
+                          className='size-8'
+                          aria-label='Decrease quantity'
+                          onClick={() => updateQuantity(item.id, -1)}
+                        >
                           <Minus className='size-3' />
                         </Button>
-                        <span className='w-8 text-center text-sm'>{item.quantity}</span>
-                        <Button variant='outline' size='icon' className='size-8' aria-label='Increase quantity' disabled={item.quantity >= item.stock} onClick={() => updateQuantity(item.id, 1)}>
+                        <span className='w-8 text-center text-sm'>
+                          {item.quantity}
+                        </span>
+                        <Button
+                          variant='outline'
+                          size='icon'
+                          className='size-8'
+                          aria-label='Increase quantity'
+                          disabled={item.quantity >= item.stock}
+                          onClick={() => updateQuantity(item.id, 1)}
+                        >
                           <Plus className='size-3' />
                         </Button>
                       </div>
-                      <span className='font-medium'>{(item.price * item.quantity).toFixed(2)}</span>
+                      <span className='font-medium'>
+                        {(item.price * item.quantity).toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -328,19 +437,25 @@ export function Pos() {
               <div className='flex items-center gap-2 text-sm text-muted-foreground'>
                 <UserRound className='size-4' /> Patient
               </div>
-              <Button variant='outline' className='mt-2 w-full justify-start' disabled>
+              <Button
+                variant='outline'
+                className='mt-2 w-full justify-start'
+                disabled
+              >
                 Search patient
               </Button>
             </div>
 
             <div className='flex items-center justify-between border-t pt-4 text-lg font-semibold'>
-              <span>Subtotal</span><span>{total.toFixed(2)}</span>
+              <span>Subtotal</span>
+              <span>{total.toFixed(2)}</span>
             </div>
             <Button className='w-full' size='lg' disabled>
               Checkout integration pending
             </Button>
             <p className='text-xs text-muted-foreground'>
-              This screen currently supports product lookup and a local draft receipt. Payment and stock deduction are not connected here.
+              This screen currently supports product lookup and a local draft
+              receipt. Payment and stock deduction are not connected here.
             </p>
           </CardContent>
         </Card>
