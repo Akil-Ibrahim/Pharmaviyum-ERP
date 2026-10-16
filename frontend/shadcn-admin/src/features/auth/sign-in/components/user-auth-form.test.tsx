@@ -4,11 +4,12 @@ import { type Locator, userEvent } from 'vitest/browser'
 import { UserAuthForm } from './user-auth-form'
 
 const FORM_MESSAGES = {
-  emailEmpty: 'Please enter your email.',
+  emailEmpty: 'Please enter your username or email.',
   passwordEmpty: 'Please enter your password.',
   passwordShort: 'Password must be at least 7 characters long.',
 } as const
 
+const toastError = vi.hoisted(() => vi.fn())
 const navigate = vi.fn()
 const setUserMock = vi.fn()
 const setAccessTokenMock = vi.fn()
@@ -51,13 +52,24 @@ vi.mock('@/lib/utils', async (orig) => ({
   sleep: vi.fn(() => Promise.resolve()),
 }))
 
+vi.mock('sonner', () => ({
+  toast: { error: toastError, success: vi.fn() },
+}))
+
 describe('UserAuthForm', () => {
   beforeEach(() => {
     vi.stubGlobal(
       'fetch',
-      vi.fn()
+      vi
+        .fn()
         .mockResolvedValueOnce(
-          new Response(JSON.stringify({ access_token: 'mock-access-token', token_type: 'bearer' }), { status: 200 })
+          new Response(
+            JSON.stringify({
+              access_token: 'mock-access-token',
+              token_type: 'bearer',
+            }),
+            { status: 200 }
+          )
         )
         .mockResolvedValue(
           new Response(
@@ -97,6 +109,8 @@ describe('UserAuthForm', () => {
     })
 
     it('shows validation messages when submitting empty form', async () => {
+      await userEvent.fill(emailInput, '')
+      await userEvent.fill(passwordInput, '')
       await userEvent.click(signInButton)
 
       await expect
@@ -149,9 +163,11 @@ describe('UserAuthForm', () => {
     await userEvent.fill(screen.getByLabelText('Password'), 'admin')
     await userEvent.click(screen.getByRole('button', { name: /Sign in/i }))
 
-    await expect
-      .element(screen.getByText('Authentication request failed (HTTP 404)'))
-      .toBeInTheDocument()
+    await vi.waitFor(() => {
+      expect(toastError).toHaveBeenCalledWith(
+        'Authentication request failed (HTTP 404)'
+      )
+    })
   })
 
   it('navigates to redirectTo when provided', async () => {

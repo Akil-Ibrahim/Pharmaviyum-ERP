@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, type RenderResult } from 'vitest-browser-react'
 import { type Locator, userEvent } from 'vitest/browser'
 import { SignUpForm } from './sign-up-form'
@@ -10,13 +10,12 @@ const FORM_MESSAGES = {
   passwordMismatch: "Passwords don't match.",
 } as const
 
-const toastPromise = vi.hoisted(() =>
-  vi.fn((p: Promise<unknown>, opts: { success?: () => unknown }) => {
-    p.then(() => opts.success?.())
-  })
-)
+const toast = vi.hoisted(() => ({
+  error: vi.fn(),
+  success: vi.fn(),
+}))
 
-vi.mock('sonner', () => ({ toast: { promise: toastPromise } }))
+vi.mock('sonner', () => ({ toast }))
 
 describe('SignUpForm', () => {
   let screen: RenderResult
@@ -35,8 +34,13 @@ describe('SignUpForm', () => {
     submitButton = screen.getByRole('button', { name: /^Create Account$/i })
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(new Response(JSON.stringify({}), { status: 201 }))
+    )
   })
 
   it('renders fields and submit button', async () => {
@@ -72,17 +76,28 @@ describe('SignUpForm', () => {
   })
 
   it('disables submit while submitting and re-enables after timeout', async () => {
-    vi.useFakeTimers()
-
     await userEvent.fill(emailInput, 'a@b.com')
     await userEvent.fill(passwordInput, '1234567')
     await userEvent.fill(confirmPasswordInput, '1234567')
 
+    let resolveFetch!: (response: Response) => void
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve
+          })
+      )
+    )
+
     await userEvent.click(submitButton)
     await expect.element(submitButton).toBeDisabled()
 
-    await vi.advanceTimersByTimeAsync(2000)
+    resolveFetch(new Response(JSON.stringify({}), { status: 201 }))
     await expect.element(submitButton).toBeEnabled()
-    expect(toastPromise).toHaveBeenCalledOnce()
+    expect(toast.success).toHaveBeenCalledWith(
+      'Account created. You can now sign in.'
+    )
   })
 })

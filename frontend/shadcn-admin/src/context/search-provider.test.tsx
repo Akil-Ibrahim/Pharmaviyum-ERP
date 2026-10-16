@@ -72,7 +72,9 @@ describe('SearchProvider and CommandMenu', () => {
     await expect.element(getByText('Theme')).toBeInTheDocument()
     await expect.element(getByText('Light')).toBeInTheDocument()
     await expect.element(getByText('Dark')).toBeInTheDocument()
-    await expect.element(getByText('System')).toBeInTheDocument()
+    await expect
+      .element(getByText('System', { exact: true }))
+      .toBeInTheDocument()
     await expect.element(getByText('Dashboard')).toBeInTheDocument()
   })
 
