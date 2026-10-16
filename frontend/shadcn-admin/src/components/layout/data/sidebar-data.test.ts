@@ -23,7 +23,9 @@ describe('Pharmaviyum sidebar navigation', () => {
     const operations = sidebarData.navGroups.find(
       (group) => group.title === 'Operations'
     )
-    const pharmacy = operations?.items.find((item) => item.title === 'Pharmacy')
+    const pharmacy = operations?.items.find(
+      (item) => item.title === 'Pharmacy'
+    )
 
     expect(pharmacy?.items?.map((item) => item.title)).toEqual([
       'Inventory',
