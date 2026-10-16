@@ -73,6 +73,48 @@ VU counts represent concurrent virtual-user journeys, not a fixed requests-per-s
 
 The default read workload ramps over six minutes. Optional privileged reads, synthetic writes and Mortarium AI are separate scenarios so their resource impact can be identified. To evaluate the whole platform, first establish individual baselines, then run a controlled mixed profile.
 
+## Representative single-pharmacy operating profile
+
+This profile translates the business scenario into testable assumptions without treating daily visitors as concurrent API users.
+
+### Business assumptions
+
+- **200 customer visits per operating day** for one pharmacy.
+- **6 staff members** working concurrently, including the pharmacy manager.
+- **3 cash registers**, operated by staff who are already included in the six staff sessions (do not add three more staff VUs).
+- Until actual hourly traffic data is available, use a 12-hour operating day as a planning assumption: about 17 visits/hour on average. A provisional peak-hour model may use 30–40 visits/hour. Replace these estimates with measured arrival patterns when available.
+- Customer visits are business events, not automatically HTTP requests. The current suite does not implement a verified POS checkout/payment/receipt or dispensing flow, so it cannot yet claim to simulate 200 completed customer sales per day or prove three concurrent cash registers.
+
+### Recommended staged execution
+
+1. **Route smoke:** 5 VUs, read-only, to validate credentials, fixtures and paths.
+2. **Staff baseline:** peak 6 VUs, representing six simultaneous staff sessions; keep the three-register share within those sessions.
+3. **Peak-hour API stress:** 12 VUs, then 20 VUs if the previous run is stable. This is a technical burst test, not a claim that 20 staff are employed.
+4. **Capacity exploration:** 50 VUs, then 100–200 VUs only after reviewing error rates, latency and database/container metrics.
+5. **Soak:** after the target profile is stable, run a longer read-only test with the same representative workload. Do not run write scenarios until using a disposable synthetic database and explicit write opt-in.
+
+Example six-staff read-only baseline:
+
+```bash
+BASE_URL=http://localhost:8000 \
+AUTH_TOKEN="$LOAD_TEST_USER_TOKEN" \
+PHARMACY_ID="$SYNTHETIC_PHARMACY_ID" \
+PEAK_VUS=6 \
+./scripts/run_stage1_load_test.sh
+```
+
+Example peak-hour burst, after the 6-VU baseline is reviewed:
+
+```bash
+BASE_URL=http://localhost:8000 \
+AUTH_TOKEN="$LOAD_TEST_USER_TOKEN" \
+PHARMACY_ID="$SYNTHETIC_PHARMACY_ID" \
+PEAK_VUS=20 \
+./scripts/run_stage1_load_test.sh
+```
+
+These commands exercise the existing mixed read workload. They do **not** create real POS sales, capture payments, issue receipts, allocate FEFO batches, or decrement stock. Those claims require implementation and validation of the corresponding transactional API contracts first. Record actual k6 results; the profile itself is a test plan, not a performance result.
+
 ## Safety requirements
 
 - Never use real patient/customer data, production credentials or a production database.
