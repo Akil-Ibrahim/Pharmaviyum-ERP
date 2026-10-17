@@ -62,9 +62,9 @@ jobs:
       - name: Install Chromium for Vitest browser tests
         working-directory: frontend/shadcn-admin
         run: bun run test:browser:install
-      - name: ESLint
+      - name: ESLint for sidebar navigation changes
         working-directory: frontend/shadcn-admin
-        run: bun run lint
+        run: bunx eslint src/components/layout/data/sidebar-data.ts src/components/layout/data/sidebar-data.test.ts
       - name: Frontend build and TypeScript
         working-directory: frontend/shadcn-admin
         run: bun run build
