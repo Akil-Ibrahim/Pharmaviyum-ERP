@@ -51,7 +51,7 @@ jobs:
             if [ -z "$FILES" ]; then
               echo "No Python files changed in this pull request; skipping Black."
             else
-              printf '%s\\n' "$FILES" | xargs uv run black --check --diff
+              printf '%s\n' "$FILES" | xargs uv run black --check --diff
             fi
           else
             uv run black --check --diff src/ tests/
