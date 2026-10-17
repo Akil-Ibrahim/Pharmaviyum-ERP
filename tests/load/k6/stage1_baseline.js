@@ -26,6 +26,12 @@ const aiEnabled = __ENV.ENABLE_AI === 'true';
 const aiLatency = new Trend('ai_query_latency', true);
 const transactionLatency = new Trend('synthetic_transaction_lifecycle_latency', true);
 const peakVus = Number(__ENV.PEAK_VUS || 20);
+const loadProfile = __ENV.LOAD_PROFILE || 'baseline';
+const customerVisits = Number(__ENV.CUSTOMER_VISITS || 200);
+const staffVus = Number(__ENV.STAFF_VUS || 6);
+if (!Number.isInteger(customerVisits) || customerVisits < 1 || customerVisits > 10000) throw new Error('CUSTOMER_VISITS must be an integer from 1 to 10000.');
+if (!Number.isInteger(staffVus) || staffVus < 1 || staffVus > 20) throw new Error('STAFF_VUS must be an integer from 1 to 20.');
+if (!['baseline', 'pharmacy_day'].includes(loadProfile)) throw new Error('LOAD_PROFILE must be baseline or pharmacy_day.');
 
 if (!token) throw new Error('AUTH_TOKEN is required.');
 if (!Number.isInteger(pharmacyId) || pharmacyId < 1) throw new Error('PHARMACY_ID must be a positive integer.');
@@ -36,20 +42,31 @@ if (writesEnabled) {
   if (!Number.isInteger(patientId) || patientId < 1) throw new Error('Writes require a valid synthetic PATIENT_ID.');
 }
 
-const scenarios = {
-  pharmacy_workload: {
-    executor: 'ramping-vus',
-    exec: 'pharmacyWorkload',
-    startVUs: Math.min(5, peakVus),
-    stages: [
-      { duration: '1m', target: Math.max(1, Math.ceil(peakVus * 0.25)) },
-      { duration: '2m', target: Math.max(1, Math.ceil(peakVus * 0.5)) },
-      { duration: '2m', target: peakVus },
-      { duration: '1m', target: 0 },
-    ],
-    gracefulRampDown: '30s',
-  },
-};
+const scenarios = loadProfile === 'pharmacy_day'
+  ? {
+      pharmacy_day_customers: {
+        executor: 'shared-iterations',
+        exec: 'pharmacyDay',
+        vus: staffVus,
+        iterations: customerVisits,
+        maxDuration: __ENV.PHARMACY_DAY_MAX_DURATION || '30m',
+        gracefulStop: '30s',
+      },
+    }
+  : {
+      pharmacy_workload: {
+        executor: 'ramping-vus',
+        exec: 'pharmacyWorkload',
+        startVUs: Math.min(5, peakVus),
+        stages: [
+          { duration: '1m', target: Math.max(1, Math.ceil(peakVus * 0.25)) },
+          { duration: '2m', target: Math.max(1, Math.ceil(peakVus * 0.5)) },
+          { duration: '2m', target: peakVus },
+          { duration: '1m', target: 0 },
+        ],
+        gracefulRampDown: '30s',
+      },
+    };
 
 if (aiEnabled) {
   scenarios.ai_query = {
@@ -168,6 +185,23 @@ export function pharmacyWorkload() {
   else if (roleRoll < 90) managerJourney();
   else if (superuserToken) privilegedJourney();
   else get('/api/v1/dashboard/summary', 'dashboard_summary');
+  sleep(1 + Math.random() * 3);
+}
+
+// One iteration represents one synthetic customer visit. This profile models
+// supported search/lookup and manager activity only; it does not fake POS,
+// payment, dispensing, FEFO, procurement or receiving transactions.
+export function pharmacyDay() {
+  const roleRoll = Math.random() * 100;
+  if (roleRoll < 85) {
+    pharmacistJourney();
+  } else if (roleRoll < 98) {
+    managerJourney();
+  } else if (superuserToken) {
+    privilegedJourney();
+  } else {
+    get('/api/v1/dashboard/summary', 'dashboard_summary');
+  }
   sleep(1 + Math.random() * 3);
 }
 
