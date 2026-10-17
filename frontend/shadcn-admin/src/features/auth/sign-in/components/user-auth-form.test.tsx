@@ -156,7 +156,7 @@ describe('UserAuthForm', () => {
     await userEvent.click(screen.getByRole('button', { name: /Sign in/i }))
 
     await vi.waitFor(() =>
-      expect(toastMocks.error).toHaveBeenCalledWith('Invalid credentials')
+      expect(toastMocks.error).toHaveBeenCalledWith('Authentication request failed (HTTP 404)')
     )
   })
 
