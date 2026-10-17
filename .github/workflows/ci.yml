@@ -47,7 +47,7 @@ jobs:
         run: |
           if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
             BASE_SHA="${{ github.event.pull_request.base.sha }}"
-            FILES="$(git diff --name-only "$BASE_SHA" "$GITHUB_SHA" -- src/ tests/ | grep -E "[.]py$" || true)"
+            FILES="$(git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" -- src/ tests/ | grep -E "[.]py$" || true)"
             if [ -z "$FILES" ]; then
               echo "No Python files changed in this pull request; skipping Black."
             else
@@ -61,7 +61,7 @@ jobs:
         run: |
           if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
             BASE_SHA="${{ github.event.pull_request.base.sha }}"
-            FILES="$(git diff --name-only "$BASE_SHA" "$GITHUB_SHA" -- src/ tests/ | grep -E "[.]py$" || true)"
+            FILES="$(git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" -- src/ tests/ | grep -E "[.]py$" || true)"
             if [ -z "$FILES" ]; then
               echo "No Python files changed in this pull request; skipping isort."
             else
