@@ -28,7 +28,7 @@ import { type SidebarData } from '../types'
 
 export const sidebarData: SidebarData = {
   user: {
-    name: 'Pharmaviyum Admin',
+    name: 'admin',
     email: 'admin@pharmaviyum.local',
     avatar: '/avatars/shadcn.jpg',
   },
@@ -76,13 +76,13 @@ export const sidebarData: SidebarData = {
             { title: 'Sync Events', url: '/sync-events', icon: RefreshCw },
           ],
         },
+        { title: 'Tasks', url: '/tasks', icon: ListChecks },
       ],
     },
     {
       title: 'Administration',
       items: [
         { title: 'Users', url: '/users', icon: UsersRound },
-        { title: 'Tasks', url: '/tasks', icon: ListChecks },
         {
           title: 'Settings',
           icon: Settings,
