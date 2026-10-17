@@ -78,7 +78,14 @@ if [[ "${ENABLE_AI:-false}" == "true" ]]; then
 fi
 
 echo "Running Pharmaviyum ERP/CRM load test against ${BASE_URL}"
-echo "Read workload peak VUs: ${PEAK_VUS:-20}"
+echo "Load profile: ${LOAD_PROFILE:-baseline}"
+if [[ "${LOAD_PROFILE:-baseline}" == "pharmacy_day" ]]; then
+  echo "Simulated customer visits: ${CUSTOMER_VISITS:-200}"
+  echo "Concurrent staff VUs: ${STAFF_VUS:-6}"
+  echo "Note: pharmacy_day covers supported search/lookup journeys, not full POS/procurement transactions."
+else
+  echo "Read workload peak VUs: ${PEAK_VUS:-20}"
+fi
 echo "JSON output: ${OUTPUT_FILE}"
 k6 run --out "json=${OUTPUT_FILE}" tests/load/k6/stage1_baseline.js
 
