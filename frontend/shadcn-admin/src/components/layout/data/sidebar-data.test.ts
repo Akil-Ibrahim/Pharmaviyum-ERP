@@ -76,6 +76,7 @@ describe('Pharmaviyum sidebar navigation', () => {
     )
     expect(integrations?.items.map((item) => item.title)).toEqual([
       'ERP Systems',
+      'Sync Events',
       'Tasks',
     ])
     expect(visibleTitles).not.toContain('Products')
