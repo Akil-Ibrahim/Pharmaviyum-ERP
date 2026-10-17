@@ -26,13 +26,24 @@ elif [[ "${ALLOW_REMOTE_TARGET:-false}" != "true" || "${LOAD_TEST_ENV:-}" != "st
   exit 2
 fi
 
-if [[ -z "${AUTH_TOKEN:-}" ]]; then
-  echo "AUTH_TOKEN is required for a dedicated synthetic test account." >&2
+LOAD_PROFILE="${LOAD_PROFILE:-health}"
+if [[ ! "${LOAD_PROFILE}" =~ ^(health|baseline|pharmacy_day)$ ]]; then
+  echo "LOAD_PROFILE must be health, baseline, or pharmacy_day." >&2
   exit 2
 fi
-if [[ ! "${PHARMACY_ID:-}" =~ ^[1-9][0-9]*$ ]]; then
-  echo "PHARMACY_ID must be the ID of a pharmacy accessible to AUTH_TOKEN." >&2
+if [[ "${LOAD_PROFILE}" == "health" && ("${ENABLE_WRITES:-false}" == "true" || "${ENABLE_AI:-false}" == "true") ]]; then
+  echo "The health profile cannot enable writes or Mortarium AI." >&2
   exit 2
+fi
+if [[ "${LOAD_PROFILE}" != "health" ]]; then
+  if [[ -z "${AUTH_TOKEN:-}" ]]; then
+    echo "AUTH_TOKEN is required for a dedicated synthetic test account." >&2
+    exit 2
+  fi
+  if [[ ! "${PHARMACY_ID:-}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "PHARMACY_ID must be the ID of a pharmacy accessible to AUTH_TOKEN." >&2
+    exit 2
+  fi
 fi
 if [[ "${ENABLE_AI:-false}" == "true" && -z "${AI_QUERY:-}" ]]; then
   echo "AI is enabled. Set AI_QUERY to a deterministic, non-patient-specific prompt." >&2
@@ -78,8 +89,10 @@ if [[ "${ENABLE_AI:-false}" == "true" ]]; then
 fi
 
 echo "Running Pharmaviyum ERP/CRM load test against ${BASE_URL}"
-echo "Load profile: ${LOAD_PROFILE:-baseline}"
-if [[ "${LOAD_PROFILE:-baseline}" == "pharmacy_day" ]]; then
+echo "Load profile: ${LOAD_PROFILE}"
+if [[ "${LOAD_PROFILE}" == "health" ]]; then
+  echo "Health-only phase: GET /health; no authentication, writes, or Mortarium AI."
+elif [[ "${LOAD_PROFILE}" == "pharmacy_day" ]]; then
   echo "Simulated customer visits: ${CUSTOMER_VISITS:-200}"
   echo "Concurrent staff VUs: ${STAFF_VUS:-6}"
   echo "Note: pharmacy_day covers supported search/lookup journeys, not full POS/procurement transactions."
