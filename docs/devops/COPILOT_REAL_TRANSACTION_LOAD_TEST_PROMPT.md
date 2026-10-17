@@ -175,3 +175,21 @@ Report:
 9. Exact command to reproduce the verified run.
 
 Start by inspecting the repository and report the real workflow gaps. Then implement, test, and run the highest-priority safe slice. Do not stop after merely writing a plan, but do not fake an end-to-end workflow if the domain contract is missing.
+
+
+## Mandatory acceptance gate — the 200/300 visits must be transactional
+
+This is a non-negotiable requirement, not an optional future enhancement.
+
+The final 200-visit and 300-visit profiles must model completed business journeys, not just product searches or GET requests. Each simulated customer visit must follow a documented, realistic distribution. The normal-sale cohort must execute the actual end-to-end sale path through order/cart, checkout, test payment authorization/capture, receipt, FEFO allocation, stock movement and persisted postcondition checks. Include realistic mixes of multi-item baskets, prescription-required cases only where supported, unsuccessful/declined test payments, retries, cancellations/voids and returns/refunds at controlled rates. Failed payments must not leave a paid order or decrement stock; voids/refunds must create auditable reversals rather than erase history.
+
+The manager/staff workload must also include actual persisted procurement and receiving transactions in a separate, explicitly configured share of the simulated day: create purchase orders, receive synthetic goods with lot and expiry data, verify accepted quantities and stock changes, and validate discrepancy handling. Add opening and end-of-day reconciliation/shift closing only if the real business model supports them; otherwise report these as blocked and implement the required workflow before declaring full-day coverage.
+
+Do not satisfy this acceptance gate by:
+- counting searches, list requests, or HTTP 2xx responses as completed sales;
+- calling a test helper that bypasses the real API/service path in the k6 customer journey;
+- faking payment success without the isolated deterministic payment adapter and persisted payment state;
+- silently skipping missing transaction endpoints;
+- claiming the 200/300 profile is a full transaction load test while any mandatory transaction class is blocked.
+
+Before the load run, define the exact planned counts and proportions for successful sales, declined/failed payments, cancellations/returns, and procurement/receiving workflows. Report both attempted and completed counts for each class. Every completed sale must pass read-back/database assertions for payment, receipt, FEFO allocation, stock movement, inventory delta and audit record. If the repository cannot yet support this, implement the missing safe workflow first; otherwise stop the load profile and report the blocker instead of substituting a read-only run.
