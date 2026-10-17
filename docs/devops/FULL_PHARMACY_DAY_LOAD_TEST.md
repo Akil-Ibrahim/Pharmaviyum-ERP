@@ -58,19 +58,17 @@ STAFF_VUS=6 \
 ./scripts/run_stage1_load_test.sh
 ```
 
-Repeat with `CUSTOMER_VISITS=300` only after reviewing the 200-visit run.
+After reviewing the 200-visit report, the higher-volume profile can be run explicitly:
 
 ```bash
 BASE_URL=http://localhost:8000 \
 AUTH_TOKEN="$LOAD_TEST_USER_TOKEN" \
 PHARMACY_ID="$SYNTHETIC_PHARMACY_ID" \
 LOAD_PROFILE=pharmacy_day \
-CUSTOMER_VISITS=200 \
+CUSTOMER_VISITS=300 \
 STAFF_VUS=6 \
 ./scripts/run_stage1_load_test.sh
 ```
-
-Repeat with `CUSTOMER_VISITS=300` only after reviewing the 200-visit run.
 
 The runner writes a timestamped JSON stream to `artifacts/load-tests/`. Review k6 thresholds, failed checks, latency percentiles, HTTP status distribution, API logs and database metrics. A zero exit code by itself is not proof of business correctness. The default profile is deliberately health-only; authenticated business reads require `LOAD_PROFILE=baseline` or `LOAD_PROFILE=pharmacy_day` explicitly.
 
