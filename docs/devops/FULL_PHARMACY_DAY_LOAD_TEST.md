@@ -32,7 +32,21 @@ The existing opt-in write scenario only creates/deletes an inventory record and 
 
 ## Run
 
-From the repository root, with the local API already running:
+### Phase 1 — health-only baseline (default)
+
+Start the local API in Codespaces, then run the health-only profile first. This phase sends only `GET /health`; it requires no auth token or pharmacy fixture, performs no writes, and does not call Mortarium AI.
+
+```bash
+BASE_URL=http://localhost:8000 \
+PEAK_VUS=10 \
+./scripts/run_stage1_load_test.sh
+```
+
+Review the JSON report and local API/container metrics before proceeding. If health checks fail, stop and diagnose rather than moving to business endpoints.
+
+### Phase 2 — authenticated read-only pharmacy workload
+
+Only after Phase 1 passes, provide a dedicated synthetic user token and pharmacy fixture. The profile below is read-only and does not represent completed sales.
 
 ```bash
 BASE_URL=http://localhost:8000 \
@@ -46,7 +60,19 @@ STAFF_VUS=6 \
 
 Repeat with `CUSTOMER_VISITS=300` only after reviewing the 200-visit run.
 
-The runner writes a timestamped JSON stream to `artifacts/load-tests/`. Review k6 thresholds, failed checks, latency percentiles, HTTP status distribution, API logs and database metrics. A zero exit code by itself is not proof of business correctness.
+```bash
+BASE_URL=http://localhost:8000 \
+AUTH_TOKEN="$LOAD_TEST_USER_TOKEN" \
+PHARMACY_ID="$SYNTHETIC_PHARMACY_ID" \
+LOAD_PROFILE=pharmacy_day \
+CUSTOMER_VISITS=200 \
+STAFF_VUS=6 \
+./scripts/run_stage1_load_test.sh
+```
+
+Repeat with `CUSTOMER_VISITS=300` only after reviewing the 200-visit run.
+
+The runner writes a timestamped JSON stream to `artifacts/load-tests/`. Review k6 thresholds, failed checks, latency percentiles, HTTP status distribution, API logs and database metrics. A zero exit code by itself is not proof of business correctness. The default profile is deliberately health-only; authenticated business reads require `LOAD_PROFILE=baseline` or `LOAD_PROFILE=pharmacy_day` explicitly.
 
 ## Metrics
 
