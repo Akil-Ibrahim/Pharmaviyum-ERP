@@ -216,3 +216,28 @@ jobs:
           sbom: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  frontend-checks:
+    name: Frontend Build, Lint and Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install frontend dependencies
+        working-directory: frontend/shadcn-admin
+        run: bun install
+      - name: Install Chromium for Vitest browser tests
+        working-directory: frontend/shadcn-admin
+        run: bun run test:browser:install
+      - name: ESLint for sidebar navigation changes
+        working-directory: frontend/shadcn-admin
+        run: bunx eslint src/components/layout/data/sidebar-data.ts src/components/layout/data/sidebar-data.test.ts
+      - name: Frontend build and TypeScript
+        working-directory: frontend/shadcn-admin
+        run: bun run build
+      - name: Vitest
+        working-directory: frontend/shadcn-admin
+        run: bun run test
