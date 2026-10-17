@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Simulate a pharmacy operating day for 200–300 customer visits with six staff members, including concurrent cashier and manager activity. This scenario is an accelerated workload model; it does not require a 13-hour wall-clock run.
+Simulate a pharmacy operating day for 200–300 customer visits with six staff members, including concurrent cashier and manager activity. This scenario is an accelerated workload model; it does not require a 14-hour wall-clock run.
 
 ## Important coverage boundary
 
