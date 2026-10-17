@@ -149,7 +149,7 @@ Use only a verified local environment and a dedicated test database. Begin with 
 
 Current pharmacy operating assumptions:
 - 200 customer visits per branch per day.
-- Public opening hours 08:00–21:00.
+- Public opening hours 08:00–22:00.
 - Preparation starts at 07:30.
 - Three register workstations and one manager-office workstation per branch.
 - Six staff in the operating team with mixed schedules; do not assume all six are concurrent.
