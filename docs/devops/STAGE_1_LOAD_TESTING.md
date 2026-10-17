@@ -73,6 +73,131 @@ VU counts represent concurrent virtual-user journeys, not a fixed requests-per-s
 
 The default read workload ramps over six minutes. Optional privileged reads, synthetic writes and Mortarium AI are separate scenarios so their resource impact can be identified. To evaluate the whole platform, first establish individual baselines, then run a controlled mixed profile.
 
+## Representative single-pharmacy operating profile
+
+This profile translates the business scenario into testable assumptions without treating daily visitors as concurrent API users.
+
+### Business assumptions
+
+- **200 customer visits per operating day** for one pharmacy.
+- **Opening hours: 08:00–22:00** (14 hours); the opening pharmacist starts using the system at **07:30** for preparation and opening checks.
+- **Up to 6 staff per pharmacy, including the manager**, on a 2-on/2-off schedule. Model the working shift as **3 pharmacy staff plus the manager**, pending confirmation of exact shift overlap.
+- The **pharmacy manager has a separate computer and application session** and may also serve customers. Count the manager among the six staff, not as an additional employee; the manager's session is separate from the three register sessions unless the manager actually operates a register.
+- **3 cash registers** are operated by the three on-shift pharmacy staff. Register workflows are a subset of those staff sessions; do not add three extra staff accounts just because there are three registers.
+- For 200 visits across 14 public-facing hours, the arithmetic average is about **14.3 visits/hour**. This is not an arrival schedule: model opening preparation from 07:30, uneven demand and peak periods separately. Until measured traffic is available, use **30–40 visits/hour as a provisional peak-hour assumption**, not a measured fact.
+- Customer visits are business events, not automatically HTTP requests or completed sales. The current suite does not implement a verified POS checkout/payment/receipt or dispensing flow, so it cannot yet claim to simulate 200 completed customer sales per day or prove three concurrent cash registers.
+
+### Recommended staged execution
+
+1. **Route smoke:** 5 VUs, read-only, to validate credentials, fixtures and paths.
+2. **Staff baseline:** peak 6 VUs, representing six simultaneous staff sessions; keep the three-register share within those sessions.
+3. **Peak-hour API stress:** 12 VUs, then 20 VUs if the previous run is stable. This is a technical burst test, not a claim that 20 staff are employed.
+4. **Capacity exploration:** 50 VUs, then 100–200 VUs only after reviewing error rates, latency and database/container metrics.
+5. **Soak:** after the target profile is stable, run a longer read-only test with the same representative workload. Do not run write scenarios until using a disposable synthetic database and explicit write opt-in.
+
+Example six-staff read-only baseline:
+
+```bash
+BASE_URL=http://localhost:8000 \
+AUTH_TOKEN="$LOAD_TEST_USER_TOKEN" \
+PHARMACY_ID="$SYNTHETIC_PHARMACY_ID" \
+PEAK_VUS=6 \
+./scripts/run_stage1_load_test.sh
+```
+
+Example peak-hour burst, after the 6-VU baseline is reviewed:
+
+```bash
+BASE_URL=http://localhost:8000 \
+AUTH_TOKEN="$LOAD_TEST_USER_TOKEN" \
+PHARMACY_ID="$SYNTHETIC_PHARMACY_ID" \
+PEAK_VUS=20 \
+./scripts/run_stage1_load_test.sh
+```
+
+These commands exercise the existing mixed read workload. They do **not** create real POS sales, capture payments, issue receipts, allocate FEFO batches, or decrement stock. Those claims require implementation and validation of the corresponding transactional API contracts first. Record actual k6 results; the profile itself is a test plan, not a performance result.
+
+## Required execution order: one pharmacy first, then network synchronization
+
+Do not begin with a 50-pharmacy stress test. Validate in this order and keep a separate report for each stage.
+
+### Stage A — one pharmacy works correctly
+
+Use one synthetic pharmacy with 200 modeled customer visits during 08:00–22:00, opening/preparation activity from 07:30, up to six staff, including the manager, on a 2-on/2-off schedule, a working-shift assumption of three staff plus the manager, and three register workflows within those staff sessions. Confirm actual shift overlap and role permissions before treating the concurrent-session count as final.
+
+- Start with the existing 5-VU read-only smoke test.
+- Increase to 6 concurrent staff sessions and review per-endpoint latency, error rate, database pool behavior and application resource usage.
+- Progress to the provisional peak-hour profile only after the baseline is stable.
+- Exercise checkout, receipt, payment and FEFO stock decrement only after those transactional API contracts and safe synthetic fixtures are verified.
+- Establish invariants before/after each write test: stock cannot go negative unexpectedly, expiry/FEFO rules hold, and every mutation is auditable.
+
+**Exit gate:** the one-pharmacy scenarios pass their checks, data invariants hold, and measured latency/error thresholds are reviewed. Do not proceed on the basis of a successful process exit alone.
+
+### Stage A realism checks before the 50-pharmacy stage
+
+The daily visit count is a planning input, not a request rate. Before treating the profile as representative, define and record the following workload assumptions using synthetic data:
+
+- **Arrival distribution:** opening hours, quiet periods, lunch/evening peaks, shift changes and bursts. Do not spread 200 visits evenly across 24 hours.
+- **Visit-to-sale ratio:** distinguish footfall, completed checkouts, prescription-only interactions, information/search requests and abandoned carts. Do not assume every visitor produces one sale or a fixed number of HTTP requests.
+- **Basket mix:** configurable number of line items, product-search frequency, barcode lookup if supported, stock checks, prescription-related flows where implemented, and receipt/history reads.
+- **Transaction correctness:** if the actual API supports the full workflow, verify checkout/payment/receipt and inventory decrement atomically. Test payment failure, cancellation and return paths only where real API contracts exist.
+- **Stock contention:** send concurrent synthetic checkout attempts for the last available units of the same product/batch. Assert that the resulting stock and sale records are consistent and that FEFO/expiry rules hold.
+- **Operational background work:** include bounded catalog reads, dashboard/reporting reads and any documented import/reconciliation jobs separately before combining them with POS traffic.
+- **Network resilience:** test a brief API/worker interruption and recovery in isolated staging; measure failed requests, retry behavior and recovery time. If the product does not support offline checkout, do not assume it does.
+- **Observability:** capture p50/p95/p99, throughput, status/error classes, timeouts, CPU/memory, PostgreSQL pool saturation/slow queries/locks, Redis or queue health, and worker backlog where available.
+
+These are additional test-design requirements, not claims that all these workflows or telemetry are currently implemented. First map each item to an existing endpoint/job and test fixture; mark unsupported workflows as gaps rather than fabricating API routes.
+
+### Stage B — synchronize one source pharmacy with a 50-pharmacy network
+
+Keep Stage A as the known-good source. In an isolated environment, create 50 synthetic pharmacy tenants and test the actual supported synchronization path.
+
+1. Make a controlled synthetic change in the source pharmacy (for example, a catalog/price update or an inventory event only if the product's business rules permit that event to be shared).
+2. Verify which target pharmacies should receive that event according to the real integration rules. **Do not assume local stock quantities should be copied between branches**; stock is often branch-specific.
+3. Record event creation time, delivery time, event ID/version, source pharmacy and intended recipients.
+4. Verify delivery, correct ordering/version handling where required, idempotency under duplicate delivery, retry after a controlled worker interruption, and no cross-tenant data leakage.
+5. Confirm that each target pharmacy sees only the data it is supposed to receive and that branch-local stock remains branch-local.
+6. Measure end-to-end synchronization lag, queue depth, retry count, failed/dead-letter events and database/Redis/worker resource usage.
+7. Repeat with controlled event rates, then combine sync traffic with the already-validated one-pharmacy read workload. Increase rates progressively; do not jump straight to 50-branch peak load.
+
+**Important:** the current k6 harness reads sync-event/integration entities but does not yet generate and verify this end-to-end 50-branch propagation flow. Stage B requires a dedicated scenario based on the actual integration/event API contracts; it must not invent routes or claim synchronization is tested just because sync-event records can be listed.
+
+### Stage C — network-wide load
+
+Only after Stage A and Stage B pass, introduce concurrent activity from multiple branches and then a network-wide mixed workload. Track branch count, active staff/register sessions, event rate and API VUs as separate dimensions. VU count alone is not a substitute for customer arrivals or synchronization throughput.
+
+## Representative 50-pharmacy network profile
+
+This profile extends the single-pharmacy assumptions to a network with concurrent activity and central data exchange. It is a planning model, not a measured capacity result.
+
+### Business scale
+
+- **50 pharmacies** connected to the same Pharmaviyum platform or integration layer.
+- **200 customer visits per pharmacy per operating day** = **10,000 visits/day network-wide**.
+- **Up to 6 staff per pharmacy, including the manager** = **up to 300 rostered staff** across the network; roster size is not the same as simultaneous active sessions.
+- Under the modeled shift assumption of three staff plus one manager, plan for up to **200 on-shift staff sessions network-wide** if all 50 pharmacies have that shift active at once; validate shift overlap before treating this as a target.
+- **3 registers per pharmacy** = **150 registers**. Register operators are part of the three on-shift staff; do not count them as additional employees.
+- Across 14 public-facing hours (08:00–22:00), 10,000 visits/day averages about **714 visits/hour network-wide**. If every branch reaches a provisional 30–40 visits/hour peak at the same time, the synchronized network peak would be **1,500–2,000 visits/hour**. Replace these planning assumptions with actual arrival distributions when available.
+
+A customer visit is not one HTTP request, and a register is not automatically a continuously active virtual user. Model customer arrivals, cashier operations, staff background work and integration events as separate rates.
+
+### Network test stages
+
+1. **Single-branch correctness:** run the existing read-only profile against one synthetic pharmacy, first at 5 VUs and then 6 VUs.
+2. **50-branch fan-out:** simulate one or more read-only staff sessions per synthetic branch, using valid branch-scoped credentials/fixtures and measuring latency and errors by branch.
+3. **Concurrent staff baseline:** model up to 300 staff accounts across the network, but choose active VUs from observed session activity rather than assuming all 300 continuously issue requests.
+4. **Register stress:** progress through 50, 100 and up to 150 concurrent register-like sessions only in isolated synthetic staging, after smaller profiles pass. This is a stress scenario, not a prediction that all tills are busy continuously.
+5. **Synchronization load:** independently generate a controlled stream of synthetic stock/catalog/price events from all 50 branches; measure event throughput, queue depth, delivery lag, retries, duplicates, ordering where required, and recovery after a worker restart.
+6. **Mixed and soak tests:** combine branch reads with sync only after each has a baseline. Add POS write traffic only when checkout, payment/receipt, inventory decrement and FEFO APIs are verified and test cleanup is safe.
+
+### Important current harness limitation
+
+The current k6 script accepts a single `PHARMACY_ID` and one ordinary `AUTH_TOKEN` per run. It does **not yet constitute a true 50-tenant test** by itself. A valid network test requires parameterized synthetic pharmacy fixtures and an explicit mapping of each virtual user to its pharmacy-scoped identity; do not simply reuse one pharmacy ID and label the result “50 pharmacies.”
+
+Likewise, the current workload reads sync-event/integration entities but does not generate or verify end-to-end exchange events across 50 branches. A dedicated sync scenario must use the actual integration/event API contracts and assert idempotency, tenant isolation, retry behavior and eventual consistency. Never invent routes or send writes to production to simulate this.
+
+Suggested capacity progression after implementing the multi-branch fixture/scenario support: **6 VUs → 20 → 50 → 100 → 150**, then consider higher API-only stress profiles only if the prior run is stable. VUs, branch count, active cashier count and event rate must all be recorded separately in the report.
+
 ## Safety requirements
 
 - Never use real patient/customer data, production credentials or a production database.
