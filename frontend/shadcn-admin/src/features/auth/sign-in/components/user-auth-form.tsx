@@ -71,7 +71,7 @@ export function UserAuthForm({
         throw new Error(
           result?.detail && typeof result.detail === 'string'
             ? result.detail
-            : 'Invalid credentials'
+            : `Authentication request failed (HTTP ${response.status})`
         )
       }
 
