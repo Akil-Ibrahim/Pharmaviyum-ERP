@@ -26,15 +26,18 @@ const aiEnabled = __ENV.ENABLE_AI === 'true';
 const aiLatency = new Trend('ai_query_latency', true);
 const transactionLatency = new Trend('synthetic_transaction_lifecycle_latency', true);
 const peakVus = Number(__ENV.PEAK_VUS || 20);
-const loadProfile = __ENV.LOAD_PROFILE || 'baseline';
+const loadProfile = __ENV.LOAD_PROFILE || 'health';
 const customerVisits = Number(__ENV.CUSTOMER_VISITS || 200);
 const staffVus = Number(__ENV.STAFF_VUS || 6);
 if (!Number.isInteger(customerVisits) || customerVisits < 1 || customerVisits > 10000) throw new Error('CUSTOMER_VISITS must be an integer from 1 to 10000.');
 if (!Number.isInteger(staffVus) || staffVus < 1 || staffVus > 20) throw new Error('STAFF_VUS must be an integer from 1 to 20.');
-if (!['baseline', 'pharmacy_day'].includes(loadProfile)) throw new Error('LOAD_PROFILE must be baseline or pharmacy_day.');
+if (!['health', 'baseline', 'pharmacy_day'].includes(loadProfile)) throw new Error('LOAD_PROFILE must be health, baseline, or pharmacy_day.');
+if (loadProfile === 'health' && (writesEnabled || aiEnabled)) throw new Error('The health profile cannot enable writes or Mortarium AI.');
 
-if (!token) throw new Error('AUTH_TOKEN is required.');
-if (!Number.isInteger(pharmacyId) || pharmacyId < 1) throw new Error('PHARMACY_ID must be a positive integer.');
+if (loadProfile !== 'health') {
+  if (!token) throw new Error('AUTH_TOKEN is required.');
+  if (!Number.isInteger(pharmacyId) || pharmacyId < 1) throw new Error('PHARMACY_ID must be a positive integer.');
+}
 if (writesEnabled) {
   if (__ENV.CONFIRM_SYNTHETIC_WRITES !== 'YES') throw new Error('Writes require CONFIRM_SYNTHETIC_WRITES=YES.');
   if (!superuserToken) throw new Error('Writes require a dedicated staging SUPERUSER_TOKEN.');
@@ -42,7 +45,22 @@ if (writesEnabled) {
   if (!Number.isInteger(patientId) || patientId < 1) throw new Error('Writes require a valid synthetic PATIENT_ID.');
 }
 
-const scenarios = loadProfile === 'pharmacy_day'
+const scenarios = loadProfile === 'health'
+  ? {
+      health_only: {
+        executor: 'ramping-vus',
+        exec: 'healthCheck',
+        startVUs: Math.min(5, peakVus),
+        stages: [
+          { duration: '30s', target: Math.max(1, Math.ceil(peakVus * 0.25)) },
+          { duration: '1m', target: Math.max(1, Math.ceil(peakVus * 0.5)) },
+          { duration: '1m', target: peakVus },
+          { duration: '30s', target: 0 },
+        ],
+        gracefulRampDown: '10s',
+      },
+    }
+  : loadProfile === 'pharmacy_day'
   ? {
       pharmacy_day_customers: {
         executor: 'shared-iterations',
@@ -99,6 +117,17 @@ export const options = {
     ...(aiEnabled ? { ai_query_latency: ['p(95)<20000'] } : {}),
   },
 };
+
+export function healthCheck() {
+  const response = http.get(`${baseUrl}/health`, { tags: { endpoint: 'health' } });
+  check(response, {
+    'health endpoint returns 200': (r) => r.status === 200,
+    'health response is valid JSON': (r) => {
+      try { return typeof r.json() === 'object' && r.json() !== null; } catch (_) { return false; }
+    },
+  });
+  sleep(0.5);
+}
 
 function headers(useSuperuser = false) {
   const bearer = useSuperuser ? superuserToken : token;
