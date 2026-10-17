@@ -69,6 +69,17 @@ describe('Pharmaviyum sidebar navigation', () => {
     expect(settings?.items?.map((item) => item.title)).toContain(
       'Developer Tools'
     )
+    expect(sidebarData.user.name).toBe('admin')
+    expect(
+      sidebarData.navGroups.map((group) => group.title)
+    ).toEqual(['Operations', 'Administration', 'Integrations'])
+    const integrations = sidebarData.navGroups.find(
+      (group) => group.title === 'Integrations'
+    )
+    expect(integrations?.items.map((item) => item.title)).toEqual([
+      'ERP Systems',
+      'Tasks',
+    ])
     expect(visibleTitles).not.toContain('Products')
     expect(visibleTitles).not.toContain('Pharmacist Workspace')
   })
