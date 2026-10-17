@@ -38,17 +38,15 @@ describe('Pharmaviyum sidebar navigation', () => {
     ])
   })
 
-  it('groups ERP Overview and Sync Events under ERP Systems', () => {
+  it('keeps ERP Systems, Sync Events, and Tasks as separate final navigation items', () => {
     const integrations = sidebarData.navGroups.find(
       (group) => group.title === 'Integrations'
     )
-    const erpSystems = integrations?.items.find(
-      (item) => item.title === 'ERP Systems'
-    )
 
-    expect(erpSystems?.items?.map((item) => item.title)).toEqual([
-      'ERP Overview',
+    expect(integrations?.items.map((item) => item.title)).toEqual([
+      'ERP Systems',
       'Sync Events',
+      'Tasks',
     ])
   })
 
