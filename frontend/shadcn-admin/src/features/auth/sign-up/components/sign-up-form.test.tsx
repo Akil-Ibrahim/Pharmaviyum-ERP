@@ -10,13 +10,12 @@ const FORM_MESSAGES = {
   passwordMismatch: "Passwords don't match.",
 } as const
 
-const toastPromise = vi.hoisted(() =>
-  vi.fn((p: Promise<unknown>, opts: { success?: () => unknown }) => {
-    p.then(() => opts.success?.())
-  })
-)
+const toastMocks = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+}))
 
-vi.mock('sonner', () => ({ toast: { promise: toastPromise } }))
+vi.mock('sonner', () => ({ toast: toastMocks }))
 
 describe('SignUpForm', () => {
   let screen: RenderResult
@@ -71,8 +70,12 @@ describe('SignUpForm', () => {
       .toBeInTheDocument()
   })
 
-  it('disables submit while submitting and re-enables after timeout', async () => {
-    vi.useFakeTimers()
+  it('disables submit while submitting and re-enables when the request completes', async () => {
+    let resolveRequest!: (response: Response) => void
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>((resolve) => { resolveRequest = resolve }))
+    )
 
     await userEvent.fill(emailInput, 'a@b.com')
     await userEvent.fill(passwordInput, '1234567')
@@ -81,8 +84,8 @@ describe('SignUpForm', () => {
     await userEvent.click(submitButton)
     await expect.element(submitButton).toBeDisabled()
 
-    await vi.advanceTimersByTimeAsync(2000)
-    await expect.element(submitButton).toBeEnabled()
-    expect(toastPromise).toHaveBeenCalledOnce()
+    resolveRequest(new Response(JSON.stringify({ detail: 'Registration unavailable' }), { status: 503 }))
+    await vi.waitFor(() => expect(submitButton).toBeEnabled())
+    expect(toastMocks.error).toHaveBeenCalledWith('Registration unavailable')
   })
 })
