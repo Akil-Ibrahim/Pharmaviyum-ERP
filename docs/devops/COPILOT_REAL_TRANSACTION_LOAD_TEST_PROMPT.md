@@ -21,10 +21,10 @@ Act as a senior FastAPI/Python engineer, pharmacy domain engineer, QA engineer, 
 ## Goal: model a full pharmacy operating day
 
 Business assumptions:
-- Opening preparation begins at 07:30; pharmacy opens at 08:00 and closes at 21:00.
+- Opening preparation begins at 07:30; pharmacy opens at 08:00 and closes at 22:00.
 - 200 customer visits is the first daily profile; 300 visits is the stress profile.
 - Six staff are employed, but they have mixed schedules. Do not assume all six are simultaneously active without evidence. Start with 3 cashier workflows plus 1 manager workflow; optionally model up to 6 concurrent staff workflows as a separate profile.
-- A visit may include one or more supported operations; document the workload distribution and think time. The accelerated test must complete in a bounded time and label itself as an accelerated day, not 13 hours of real time.
+- A visit may include one or more supported operations; document the workload distribution and think time. The accelerated test must complete in a bounded time and label itself as an accelerated day, not 14 hours of real time.
 - Daily visitor counts are not RPS. Measure actual RPS and completed business transactions independently.
 
 ## Phase 1 — map real transaction contracts
