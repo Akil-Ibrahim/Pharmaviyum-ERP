@@ -65,7 +65,7 @@ jobs:
             if [ -z "$FILES" ]; then
               echo "No Python files changed in this pull request; skipping isort."
             else
-              printf '%s\\n' "$FILES" | xargs uv run isort --check-only --diff --profile black
+              printf '%s\n' "$FILES" | xargs uv run isort --check-only --diff --profile black
             fi
           else
             uv run isort --check-only --diff --profile black src/ tests/
