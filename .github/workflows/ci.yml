@@ -57,7 +57,19 @@ jobs:
             uv run black --check --diff src/ tests/
           fi
       - name: isort diagnostics
-        run: uv run isort --check-only --diff --profile black src/ tests/
+        shell: bash
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            FILES="$(git diff --name-only "$BASE_SHA" "$GITHUB_SHA" -- src/ tests/ | grep -E "[.]py$" || true)"
+            if [ -z "$FILES" ]; then
+              echo "No Python files changed in this pull request; skipping isort."
+            else
+              printf '%s\\n' "$FILES" | xargs uv run isort --check-only --diff --profile black
+            fi
+          else
+            uv run isort --check-only --diff --profile black src/ tests/
+          fi
       - name: mypy diagnostics
         run: uv run mypy --explicit-package-bases src/pharmaviyum/
 
