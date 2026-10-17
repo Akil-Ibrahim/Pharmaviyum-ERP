@@ -81,8 +81,8 @@ This profile translates the business scenario into testable assumptions without 
 
 - **200 customer visits per operating day** for one pharmacy.
 - **Opening hours: 08:00–21:00** (13 hours); the opening pharmacist starts using the system at **07:30** for preparation and opening checks.
-- **Up to 7 rostered staff per pharmacy** on a 2-on/2-off schedule. Model the working shift as **3 pharmacy staff plus the pharmacy manager**, pending confirmation of exact shift overlap.
-- The **pharmacy manager has a separate computer and separate application session in the manager's office**. Count this as its own staff session, not as one of the three register sessions.
+- **Up to 6 staff per pharmacy, including the manager**, on a 2-on/2-off schedule. Model the working shift as **3 pharmacy staff plus the manager**, pending confirmation of exact shift overlap.
+- The **pharmacy manager has a separate computer and application session** and may also serve customers. Count the manager among the six staff, not as an additional employee; the manager's session is separate from the three register sessions unless the manager actually operates a register.
 - **3 cash registers** are operated by the three on-shift pharmacy staff. Register workflows are a subset of those staff sessions; do not add three extra staff accounts just because there are three registers.
 - For 200 visits across 13 public-facing hours, the arithmetic average is about **15.4 visits/hour**. This is not an arrival schedule: model opening preparation from 07:30, uneven demand and peak periods separately. Until measured traffic is available, use **30–40 visits/hour as a provisional peak-hour assumption**, not a measured fact.
 - Customer visits are business events, not automatically HTTP requests or completed sales. The current suite does not implement a verified POS checkout/payment/receipt or dispensing flow, so it cannot yet claim to simulate 200 completed customer sales per day or prove three concurrent cash registers.
@@ -123,7 +123,7 @@ Do not begin with a 50-pharmacy stress test. Validate in this order and keep a s
 
 ### Stage A — one pharmacy works correctly
 
-Use one synthetic pharmacy with 200 modeled customer visits during 08:00–21:00, opening/preparation activity from 07:30, up to seven rostered staff on a 2-on/2-off schedule, a working-shift assumption of three staff plus the manager, and three register workflows within those staff sessions. Confirm actual shift overlap and role permissions before treating the concurrent-session count as final.
+Use one synthetic pharmacy with 200 modeled customer visits during 08:00–21:00, opening/preparation activity from 07:30, up to six staff, including the manager, on a 2-on/2-off schedule, a working-shift assumption of three staff plus the manager, and three register workflows within those staff sessions. Confirm actual shift overlap and role permissions before treating the concurrent-session count as final.
 
 - Start with the existing 5-VU read-only smoke test.
 - Increase to 6 concurrent staff sessions and review per-endpoint latency, error rate, database pool behavior and application resource usage.
@@ -174,7 +174,7 @@ This profile extends the single-pharmacy assumptions to a network with concurren
 
 - **50 pharmacies** connected to the same Pharmaviyum platform or integration layer.
 - **200 customer visits per pharmacy per operating day** = **10,000 visits/day network-wide**.
-- **Up to 7 rostered staff per pharmacy** = **up to 350 rostered staff** across the network; roster size is not the same as simultaneous active sessions.
+- **Up to 6 staff per pharmacy, including the manager** = **up to 300 rostered staff** across the network; roster size is not the same as simultaneous active sessions.
 - Under the modeled shift assumption of three staff plus one manager, plan for up to **200 on-shift staff sessions network-wide** if all 50 pharmacies have that shift active at once; validate shift overlap before treating this as a target.
 - **3 registers per pharmacy** = **150 registers**. Register operators are part of the three on-shift staff; do not count them as additional employees.
 - Across 13 public-facing hours (08:00–21:00), 10,000 visits/day averages about **769 visits/hour network-wide**. If every branch reaches a provisional 30–40 visits/hour peak at the same time, the synchronized network peak would be **1,500–2,000 visits/hour**. Replace these planning assumptions with actual arrival distributions when available.
