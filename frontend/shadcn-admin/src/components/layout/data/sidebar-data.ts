@@ -66,20 +66,6 @@ export const sidebarData: SidebarData = {
       ],
     },
     {
-      title: 'Integrations',
-      items: [
-        {
-          title: 'ERP Systems',
-          icon: ServerCog,
-          items: [
-            { title: 'ERP Overview', url: '/erp-systems', icon: ServerCog },
-            { title: 'Sync Events', url: '/sync-events', icon: RefreshCw },
-          ],
-        },
-        { title: 'Tasks', url: '/tasks', icon: ListChecks },
-      ],
-    },
-    {
       title: 'Administration',
       items: [
         { title: 'Users', url: '/users', icon: UsersRound },
@@ -94,6 +80,20 @@ export const sidebarData: SidebarData = {
             { title: 'Developer Tools', url: '/settings/developer', icon: Code2 },
           ],
         },
+      ],
+    },
+    {
+      title: 'Integrations',
+      items: [
+        {
+          title: 'ERP Systems',
+          icon: ServerCog,
+          items: [
+            { title: 'ERP Overview', url: '/erp-systems', icon: ServerCog },
+            { title: 'Sync Events', url: '/sync-events', icon: RefreshCw },
+          ],
+        },
+        { title: 'Tasks', url: '/tasks', icon: ListChecks },
       ],
     },
   ],
