@@ -423,7 +423,7 @@ class LangGraphRAG:
                 "warnings": [],
                 "input_blocked": False,
             }
-            config = {
+            config: dict[str, Any] = {
                 "configurable": {"thread_id": self._thread_id(thread_id, context)}
             }
             usage_callback = UsageMetadataCallbackHandler()
