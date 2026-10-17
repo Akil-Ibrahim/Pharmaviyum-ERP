@@ -29,6 +29,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4.4.0
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5.6.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -41,9 +43,33 @@ jobs:
       - name: Ruff diagnostics
         run: uv run ruff check src/ tests/
       - name: Black diagnostics
-        run: uv run black --check --diff src/ tests/
+        shell: bash
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            FILES="$(git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" -- src/ tests/ | grep -E "[.]py$" || true)"
+            if [ -z "$FILES" ]; then
+              echo "No Python files changed in this pull request; skipping Black."
+            else
+              printf '%s\n' "$FILES" | xargs uv run black --check --diff
+            fi
+          else
+            uv run black --check --diff src/ tests/
+          fi
       - name: isort diagnostics
-        run: uv run isort --check-only --diff --profile black src/ tests/
+        shell: bash
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            FILES="$(git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" -- src/ tests/ | grep -E "[.]py$" || true)"
+            if [ -z "$FILES" ]; then
+              echo "No Python files changed in this pull request; skipping isort."
+            else
+              printf '%s\n' "$FILES" | xargs uv run isort --check-only --diff --profile black
+            fi
+          else
+            uv run isort --check-only --diff --profile black src/ tests/
+          fi
       - name: mypy diagnostics
         run: uv run mypy --explicit-package-bases src/pharmaviyum/
 
