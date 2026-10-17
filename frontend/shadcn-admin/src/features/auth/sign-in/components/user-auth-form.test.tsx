@@ -9,6 +9,10 @@ const FORM_MESSAGES = {
   passwordShort: 'Password must be at least 7 characters long.',
 } as const
 
+const toastMocks = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
+
+vi.mock('sonner', () => ({ toast: toastMocks }))
+
 const navigate = vi.fn()
 const setUserMock = vi.fn()
 const setAccessTokenMock = vi.fn()
@@ -97,10 +101,12 @@ describe('UserAuthForm', () => {
     })
 
     it('shows validation messages when submitting empty form', async () => {
+      await userEvent.clear(emailInput)
+      await userEvent.clear(passwordInput)
       await userEvent.click(signInButton)
 
       await expect
-        .element(screen.getByText(FORM_MESSAGES.emailEmpty))
+        .element(screen.getByText('Please enter your username or email.'))
         .toBeInTheDocument()
       await expect
         .element(screen.getByText(FORM_MESSAGES.passwordEmpty))
@@ -149,9 +155,9 @@ describe('UserAuthForm', () => {
     await userEvent.fill(screen.getByLabelText('Password'), 'admin')
     await userEvent.click(screen.getByRole('button', { name: /Sign in/i }))
 
-    await expect
-      .element(screen.getByText('Authentication request failed (HTTP 404)'))
-      .toBeInTheDocument()
+    await vi.waitFor(() =>
+      expect(toastMocks.error).toHaveBeenCalledWith('Invalid credentials')
+    )
   })
 
   it('navigates to redirectTo when provided', async () => {
