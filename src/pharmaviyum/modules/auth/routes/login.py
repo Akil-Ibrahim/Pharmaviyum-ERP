@@ -91,7 +91,7 @@ async def refresh_access_token(body: RefreshTokenRequest, session: SessionDep) -
         )
     try:
         user_id = int(payload["sub"])
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
         ) from None
