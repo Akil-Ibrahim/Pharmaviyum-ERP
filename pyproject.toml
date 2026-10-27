@@ -95,7 +95,7 @@ dev = [
     "types-psutil>=7.0.0.20250822",
 ]
 eval = [
-    "fastembed==0.9.0",
+    "fastembed==0.9.1",
 ]
 
 [tool.uv]
