@@ -46,18 +46,24 @@ export function Pos() {
 
   useEffect(() => {
     const term = query.trim()
-    if (term.length < 2) { setLocalResults([]); setReferenceResults([]); setLoading(false); setReferenceLoading(false); setLocalError(false); setReferenceError(false); return }
+    if (term.length < 2) return
     let cancelled = false
-    setLoading(true); setReferenceLoading(true); setLocalError(false); setReferenceError(false)
-    apiFetch<LocalProduct[]>(`/products/search?q=${encodeURIComponent(term)}&limit=20`)
-      .then(items => { if (!cancelled) setLocalResults(items) })
-      .catch(() => { if (!cancelled) { setLocalResults([]); setLocalError(true) } })
-      .finally(() => { if (!cancelled) setLoading(false) })
-    apiFetch<DrugCatalogResult[]>(`/drug-catalog/search?q=${encodeURIComponent(term)}&limit=8`)
-      .then(items => { if (!cancelled) setReferenceResults(items) })
-      .catch(() => { if (!cancelled) { setReferenceResults([]); setReferenceError(true) } })
-      .finally(() => { if (!cancelled) setReferenceLoading(false) })
-    return () => { cancelled = true }
+    const timer = setTimeout(() => {
+      if (cancelled) return
+      setLoading(true)
+      setReferenceLoading(true)
+      setLocalError(false)
+      setReferenceError(false)
+      apiFetch<LocalProduct[]>(`/products/search?q=${encodeURIComponent(term)}&limit=20`)
+        .then(items => { if (!cancelled) setLocalResults(items) })
+        .catch(() => { if (!cancelled) { setLocalResults([]); setLocalError(true) } })
+        .finally(() => { if (!cancelled) setLoading(false) })
+      apiFetch<DrugCatalogResult[]>(`/drug-catalog/search?q=${encodeURIComponent(term)}&limit=8`)
+        .then(items => { if (!cancelled) setReferenceResults(items) })
+        .catch(() => { if (!cancelled) { setReferenceResults([]); setReferenceError(true) } })
+        .finally(() => { if (!cancelled) setReferenceLoading(false) })
+    }, 150)
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [query])
 
   const addToCart = (product: LocalProduct) => {
