@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, Boxes, ClipboardList, RefreshCw, ShoppingCart, UsersRound } from 'lucide-react'
 import { ConfigDrawer } from '@/components/config-drawer'
@@ -41,10 +41,10 @@ export function Dashboard() {
   const inventory = data?.inventory
   const expiryTotal = (inventory?.expired ?? 0) + (inventory?.critical_expiry ?? 0) + (inventory?.warning_expiry ?? 0) + (inventory?.expiry_green ?? 0)
   const cards = [
-    { label: 'Продажи сегодня', value: money(data?.sales.today ?? 0), hint: 'Фактические продажи', progress: 76, color: '#f59e0b', track: '#fef3c7', icon: ShoppingCart },
-    { label: 'Выручка за месяц', value: money(data?.revenue.month ?? 0), hint: `${number(data?.orders.completed_month ?? 0)} заказов выполнено`, progress: 64, color: '#f97316', track: '#ffedd5', icon: Activity },
+    { label: 'Продажи сегодня', value: money(data?.sales.today ?? 0), hint: 'Фактические продажи', progress: (data?.sales.today ?? 0) > 0 ? 100 : 0, color: '#f59e0b', track: '#fef3c7', icon: ShoppingCart },
+    { label: 'Выручка за месяц', value: money(data?.revenue.month ?? 0), hint: `${number(data?.orders.completed_month ?? 0)} заказов выполнено`, progress: (data?.revenue.month ?? 0) > 0 ? 100 : 0, color: '#f97316', track: '#ffedd5', icon: Activity },
     { label: 'Товары на складе', value: number(inventory?.items ?? 0), hint: `${number(inventory?.low_stock ?? 0)} требуют пополнения`, progress: inventory?.items ? Math.max(5, 100 - (inventory.low_stock / inventory.items) * 100) : 0, color: '#10b981', track: '#d1fae5', icon: Boxes },
-    { label: 'Активные пациенты', value: number(data?.patients.active ?? 0), hint: `${number(data?.prescriptions.month ?? 0)} рецептов за месяц`, progress: 82, color: '#d946ef', track: '#fae8ff', icon: UsersRound },
+    { label: 'Активные пациенты', value: number(data?.patients.active ?? 0), hint: `${number(data?.prescriptions.month ?? 0)} рецептов за месяц`, progress: (data?.patients.active ?? 0) > 0 ? 100 : 0, color: '#d946ef', track: '#fae8ff', icon: UsersRound },
   ]
   return <>
     <Header><Search/><ThemeSwitch/><ConfigDrawer/><ProfileDropdown/></Header>
@@ -84,7 +84,7 @@ export function Dashboard() {
   </>
 }
 
-function RingMetric({ progress, color, track, value, icon, size = 88 }: { progress: number; color: string; track: string; value: string; icon: React.ReactNode; size?: number }) {
+function RingMetric({ progress, color, track, value, icon, size = 88 }: { progress: number; color: string; track: string; value: string; icon: ReactNode; size?: number }) {
   const radius = 34
   const circumference = 2 * Math.PI * radius
   const safeProgress = Math.max(0, Math.min(100, progress))
