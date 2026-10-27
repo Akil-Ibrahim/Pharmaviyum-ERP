@@ -123,7 +123,7 @@ The repository also contains Prometheus/Grafana configuration under `docker/`.
 Development Docker Compose currently provides:
 
 - PostgreSQL 16 with pgvector;
-- Redis 7;
+- Redis 7 in the development Compose/CI profile (the managed deployment configuration uses a Redis-compatible Valkey service);
 - Ollama;
 - FastAPI API;
 - Celery ingestion worker.
@@ -147,7 +147,7 @@ This separation is intentional: Render is the cloud deployment profile, while An
 
 Use `.env.example` for local configuration and `.env.prod.example` as the production configuration reference.
 
-The project currently installs runtime dependencies from `pyproject.toml + uv.lock`. `pyproject.toml` and `uv.lock` are also maintained and are the planned long-term dependency source of truth; do not introduce a new `requirements-ai.txt` file.
+The current Python dependency source of truth is `pyproject.toml` for direct dependency declarations and `uv.lock` for resolved versions. CI installs the locked environment with `uv sync --frozen`. Do not introduce a second authoritative dependency list or a separate `requirements-ai.txt` file.
 
 ## Local startup
 
@@ -161,8 +161,8 @@ Or start the API directly after installing dependencies:
 
 ```bash
 uv sync --frozen
-alembic upgrade head
-uvicorn src.pharmaviyum.main:app --reload --port 8000
+uv run alembic upgrade head
+uv run uvicorn src.pharmaviyum.main:app --reload --port 8000
 ```
 
 ## Design principles
