@@ -258,6 +258,10 @@ Detailed AI architecture is documented in [`docs/ai_architecture.md`](docs/ai_ar
 └── README.md              # Project overview
 ```
 
+## Deployment
+
+The hosted application deployment target is **FastAPI Cloud**. The repository uses a manually triggered GitHub Actions workflow for deployment; see [`docs/deployment/FASTAPI_CLOUD.md`](docs/deployment/FASTAPI_CLOUD.md) for prerequisites, environment variables, database migrations, and known runtime constraints. No deployment is implied by a successful CI run.
+
 ## Development
 
 ### Prerequisites
@@ -330,7 +334,7 @@ uv run pytest
 Frontend tests:
 
 ```bash
-cd frontend
+cd frontend/shadcn-admin
 bun run test
 bun run test:e2e
 ```
@@ -338,7 +342,7 @@ bun run test:e2e
 Production-oriented frontend build:
 
 ```bash
-cd frontend
+cd frontend/shadcn-admin
 bun run build
 ```
 
