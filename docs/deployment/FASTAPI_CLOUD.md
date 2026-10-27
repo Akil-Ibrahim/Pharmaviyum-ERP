@@ -8,8 +8,8 @@ The GitHub Actions workflow `.github/workflows/deploy-fastapi-cloud.yml` is manu
 
 1. Installs Bun and builds `frontend/shadcn-admin`.
 2. Installs the Python project using `uv`.
-3. Runs `uv run fastapi cloud deploy .` without JSON/no-wait mode, so the CLI can wait for deployment verification and fail the workflow when the deploy command reports failure.
-4. Requires a successful workflow run, then verifies the deployed app's `/health` and `/ready` endpoints in FastAPI Cloud before considering the release ready.
+3. Runs `uv run fastapi cloud deploy . --json`. JSON output is for machine-readable output; the documented option that skips waiting is `--no-wait`, which this workflow does not use. The CLI should therefore complete its normal deployment verification and fail the workflow when the deploy command reports failure.
+4. After a successful workflow run, verify the deployed app's `/health` and `/ready` endpoints in FastAPI Cloud before considering the release ready.
 
 The workflow is intentionally manual so an ordinary push cannot deploy an incompletely configured production app. A successful CLI deploy is necessary but does not replace post-deploy verification of database/Redis readiness and critical pharmacy workflows.
 
