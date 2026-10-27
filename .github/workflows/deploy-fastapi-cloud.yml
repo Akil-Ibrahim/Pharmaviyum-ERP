@@ -33,8 +33,8 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
 
-      - name: Deploy application
-        run: uv run fastapi cloud deploy . --json
+      - name: Deploy application and wait for verification
+        run: uv run fastapi cloud deploy .
         env:
           FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
           FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
