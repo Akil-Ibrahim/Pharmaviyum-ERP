@@ -57,7 +57,7 @@ The current dependency installation path used by Docker and CI is `pyproject.tom
 
 ## Repository safety
 
-- Work on `dev` unless explicitly instructed otherwise. Keep documentation aligned with the actual repository, especially Render configuration and GitHub Actions.
+- Treat `main` as the canonical release branch unless the task explicitly targets another branch. Keep documentation aligned with the actual repository and FastAPI Cloud deployment workflow.
 - Avoid destructive infrastructure commands unless the task explicitly requires them.
 - Do not modify production deployment infrastructure while working on development/staging documentation unless explicitly requested.
 - Verify referenced paths and commands against the repository before documenting them.

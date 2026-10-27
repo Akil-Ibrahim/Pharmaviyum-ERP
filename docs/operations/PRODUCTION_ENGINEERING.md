@@ -79,4 +79,4 @@ For a production incident:
 
 Changes to production behavior must be made through reviewed commits/PRs. Direct edits to production infrastructure are emergency-only.
 
-The `dev` branch is the staging/implementation branch. Production uses `main` and Render's production Blueprint. Production readiness still depends on verified secrets, migrations, health checks, backups/restore, observability and rollback.
+The `main` branch is the canonical release branch. Hosted application deployment targets FastAPI Cloud; database services, migrations, health checks, backups/restore, observability and rollback remain separate production-readiness requirements.

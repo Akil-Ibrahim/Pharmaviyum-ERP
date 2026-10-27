@@ -4,7 +4,7 @@
 
 # Pharmaviyum — Pharmacy ERP/CRM
 
-![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.14.7-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.142.2-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue) ![React](https://img.shields.io/badge/React-19.3-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.x-646CFF)
+![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.14.7-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162.0-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue) ![React](https://img.shields.io/badge/React-19.3-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.x-646CFF)
 
 > Pharmacy ERP/CRM platform with Mortarium AI for pharmacy operations, workflow, inventory, procurement, POS, and intelligent decision support.
 
@@ -16,7 +16,7 @@ The project evolved from a pharmacy CRM with an AI layer into a broader pharmacy
 
 The system is designed around real pharmacy workflows and can complement existing pharmacy ERP environments during gradual adoption rather than requiring an immediate replacement of existing systems.
 
-The repository is currently developed and reviewed through the `dev` branch.
+The canonical integration and release branch is `main`. Changes should be proposed through pull requests and validated by GitHub Actions before merge.
 
 ## Core Pharmacy Workflow
 
@@ -162,10 +162,10 @@ The application combines a FastAPI backend, PostgreSQL/pgvector, Redis-compatibl
 ### Backend
 
 - Python 3.14.7
-- FastAPI 0.142.2
+- FastAPI 0.162.0
 - Uvicorn
-- Pydantic / Pydantic Settings
-- SQLAlchemy 2.0
+- Pydantic 2.14.0 / Pydantic Settings 2.15.0
+- SQLAlchemy 2.0.53
 - Alembic
 - asyncpg / psycopg
 - Ruff / Black / isort / mypy / pytest
@@ -173,8 +173,8 @@ The application combines a FastAPI backend, PostgreSQL/pgvector, Redis-compatibl
 ### Data & Infrastructure
 
 - PostgreSQL 16
-- pgvector
-- Valkey / Redis-compatible infrastructure
+- pgvector 0.4.1
+- Valkey-compatible managed cache in the deployment configuration; Redis-compatible services are used by local development and CI
 - Docker / Docker Compose
 - Celery
 
@@ -189,9 +189,9 @@ The application combines a FastAPI backend, PostgreSQL/pgvector, Redis-compatibl
 
 ### Frontend
 
-- React
-- TypeScript
-- Vite
+- React 19.3
+- TypeScript 6.0.x
+- Vite 8.x
 - TanStack Query
 - TanStack Router
 - Axios
@@ -206,6 +206,8 @@ Python dependency definitions are maintained in:
 - `uv.lock`
 
 The lockfile is used for reproducible CI/development installation. Dependency changes should be made through the project configuration and lockfile rather than maintaining a second authoritative dependency list.
+
+For the exact declared runtime versions and the dependency-upgrade procedure, see [`docs/technology-stack.md`](docs/technology-stack.md).
 
 ## AI / RAG Architecture
 
@@ -256,14 +258,18 @@ Detailed AI architecture is documented in [`docs/ai_architecture.md`](docs/ai_ar
 └── README.md              # Project overview
 ```
 
+## Deployment
+
+The hosted application deployment target is **FastAPI Cloud**. The repository uses a manually triggered GitHub Actions workflow for deployment; see [`docs/deployment/FASTAPI_CLOUD.md`](docs/deployment/FASTAPI_CLOUD.md) for prerequisites, environment variables, database migrations, and known runtime constraints. No deployment is implied by a successful CI run.
+
 ## Development
 
 ### Prerequisites
 
-- Python 3.14.7
+- Python 3.14.7 (project constraint: `>=3.14.7,<3.15`)
+- `uv` for Python dependency installation and execution
 - Docker and Docker Compose
-- Bun
-- Node.js compatible with the Vite 8 toolchain
+- Bun for the frontend toolchain
 
 ### Backend
 
@@ -284,7 +290,7 @@ Local API documentation:
 ### Frontend
 
 ```bash
-cd frontend
+cd frontend/shadcn-admin
 bun install
 bun run dev
 ```
@@ -328,7 +334,7 @@ uv run pytest
 Frontend tests:
 
 ```bash
-cd frontend
+cd frontend/shadcn-admin
 bun run test
 bun run test:e2e
 ```
@@ -336,7 +342,7 @@ bun run test:e2e
 Production-oriented frontend build:
 
 ```bash
-cd frontend
+cd frontend/shadcn-admin
 bun run build
 ```
 
@@ -375,7 +381,7 @@ Security is treated as a cross-cutting concern across the application.
 
 ## Project Status
 
-**Current development branch:** `dev`
+**Canonical branch:** `main`
 
 **Current stage:** Pharmacy ERP Foundation + Production Hardening
 

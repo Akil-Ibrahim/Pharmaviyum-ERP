@@ -33,7 +33,7 @@ clean:
 
 # =============================================================================
 # Deployment
-# Production deployment is managed by Render from main; local commands stay development-only.
+# Hosted deployment is managed separately through FastAPI Cloud; local commands stay development-only.
 
 # =============================================================================
 # Database

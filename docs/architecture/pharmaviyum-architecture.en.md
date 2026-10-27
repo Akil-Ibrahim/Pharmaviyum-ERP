@@ -461,7 +461,7 @@ The business logic should remain as consistent as possible between deployment mo
 GitHub
   -> GitHub Actions
   -> immutable container image
-  -> Render
+  -> FastAPI Cloud
 ```
 
 ### On-Premise

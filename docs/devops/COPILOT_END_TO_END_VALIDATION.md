@@ -14,8 +14,8 @@ Before making changes:
 
 1. Inspect the current branch, working tree, recent commits, repository instructions, project structure, pyproject.toml, API routes, database configuration, and existing tests.
 2. Preserve all existing user changes. Never reset, clean, or overwrite unrelated work.
-3. Do not merge pull requests, push to main, modify production infrastructure, or change Render configuration.
-4. Never run load tests against production, Render, or a public endpoint.
+3. Do not merge pull requests, push to main, modify production infrastructure, or change hosted deployment configuration.
+4. Never run load tests against production, FastAPI Cloud, or a public endpoint.
 5. Never print secrets, tokens, passwords, connection strings, or personal patient information.
 6. Never fabricate test results, measurements, successful transactions, or data-source coverage.
 7. Use actual APIs, models, schemas, and authorization rules. Do not invent endpoints or claim unsupported functionality works.
@@ -202,7 +202,7 @@ For each confirmed failure:
 6. Preserve existing user work.
 7. Do not merge or push to main.
 
-Do not modify Render, production data, or GitHub Actions configuration for this task.
+Do not modify hosted deployment settings, production data, or GitHub Actions configuration for this task.
 
 ## 11. Final evidence-based report
 
@@ -225,4 +225,4 @@ Never fabricate results to fill gaps or present historical reports as newly exec
 
 ## Short Copilot invocation
 
-When the user asks to run the Pharmaviyum validation prompt, read this file in full and execute its phases in order. Start with repository inspection and a safe baseline. Work on the current branch, preserve uncommitted changes, use actual repository contracts, and report evidence as you progress. Do not merely summarize this document. Do not merge, push to main, alter Render, or run tests against production.
+When the user asks to run the Pharmaviyum validation prompt, read this file in full and execute its phases in order. Start with repository inspection and a safe baseline. Work on the current branch, preserve uncommitted changes, use actual repository contracts, and report evidence as you progress. Do not merely summarize this document. Do not merge, push to main, alter hosted production configuration, or run tests against production.

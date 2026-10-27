@@ -1,6 +1,6 @@
 # Pharmaviyum deployment to FastAPI Cloud
 
-This runbook targets the repository `main` branch and the FastAPI Cloud native Python deployment flow. It does not use Render or the repository Dockerfile.
+This runbook targets the repository `main` branch and the FastAPI Cloud native Python deployment flow.
 
 ## Deployment flow
 
@@ -8,7 +8,7 @@ The GitHub Actions workflow `.github/workflows/deploy-fastapi-cloud.yml` is manu
 
 1. Installs Bun and builds `frontend/shadcn-admin`.
 2. Installs the Python project using `uv`.
-3. Runs `uv run fastapi deploy`.
+3. Runs `uv run fastapi cloud deploy .`.
 
 The workflow is intentionally manual so an ordinary push cannot deploy an incompletely configured production app.
 
@@ -54,7 +54,7 @@ Use the exact variable names; the application reads configuration from environme
 
 The deployment workflow does not run migrations automatically, avoiding concurrent or accidental schema changes during deploys. Run migrations from a trusted environment with the production database URL supplied securely.
 
-A new database starts empty. This runbook does not restore any deleted Render database or data.
+A newly provisioned database starts empty. Restore or migrate existing data only through a separately planned, verified database procedure.
 
 ## Important runtime compatibility notes
 

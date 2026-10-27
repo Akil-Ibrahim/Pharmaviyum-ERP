@@ -123,12 +123,12 @@ The repository also contains Prometheus/Grafana configuration under `docker/`.
 Development Docker Compose currently provides:
 
 - PostgreSQL 16 with pgvector;
-- Redis 7;
+- Redis 7 in the development Compose/CI profile (the managed deployment configuration uses a Redis-compatible Valkey service);
 - Ollama;
 - FastAPI API;
 - Celery ingestion worker.
 
-Production release deployment is handled through GitHub Actions for CI, then Render for staging/production deployment.
+FastAPI Cloud is the hosted application deployment target. GitHub Actions provides CI and a manually triggered deployment workflow; database, cache, and other required services must be provisioned and configured separately.
 
 The repository does not use a separate Kubernetes AI deployment; Mortarium remains an application-level AI layer.
 
@@ -138,16 +138,16 @@ Mortarium uses different LLM profiles depending on the deployment target:
 
 | Deployment | LLM provider | Default model profile |
 |---|---|---|
-| Render staging / production | Gemini cloud provider | Main: `gemini-3.5-flash`; Fast: `gemini-3.5-flash-lite`; Complex/evaluation: `gemini-2.5-pro`; Embeddings: `gemini-embedding-001` |
+| FastAPI Cloud deployment | Gemini cloud provider | Main: `gemini-3.5-flash`; Fast: `gemini-3.5-flash-lite`; Complex/evaluation: `gemini-2.5-pro`; Embeddings: `gemini-embedding-001` |
 | Ansible / on-premises pharmacy deployment | Ollama | Qwen3.5 9B Q4_K_M |
 
-This separation is intentional: Render is the cloud deployment profile, while Ansible provisions the local Ollama-based Mortarium runtime for on-premises installations. Gemma is not the current default; it can be introduced later as an additional Ollama profile without changing the Mortarium architecture.
+This separation is intentional: FastAPI Cloud is the hosted application deployment target, while Ansible provisions the local Ollama-based Mortarium runtime for on-premises installations. Gemma is not the current default; it can be introduced later as an additional Ollama profile without changing the Mortarium architecture.
 
 ## Configuration
 
 Use `.env.example` for local configuration and `.env.prod.example` as the production configuration reference.
 
-The project currently installs runtime dependencies from `pyproject.toml + uv.lock`. `pyproject.toml` and `uv.lock` are also maintained and are the planned long-term dependency source of truth; do not introduce a new `requirements-ai.txt` file.
+The current Python dependency source of truth is `pyproject.toml` for direct dependency declarations and `uv.lock` for resolved versions. CI installs the locked environment with `uv sync --frozen`. Do not introduce a second authoritative dependency list or a separate `requirements-ai.txt` file.
 
 ## Local startup
 
@@ -161,8 +161,8 @@ Or start the API directly after installing dependencies:
 
 ```bash
 uv sync --frozen
-alembic upgrade head
-uvicorn src.pharmaviyum.main:app --reload --port 8000
+uv run alembic upgrade head
+uv run uvicorn src.pharmaviyum.main:app --reload --port 8000
 ```
 
 ## Design principles

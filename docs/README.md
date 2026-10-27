@@ -6,9 +6,11 @@ This directory contains the current engineering documentation for Pharmaviyum ER
 
 | Area | Document | Purpose |
 |---|---|---|
+| Technology stack | [`technology-stack.md`](./technology-stack.md) | Runtime versions, dependency sources of truth, and upgrade policy. |
 | Architecture | [`ai_architecture.md`](./ai_architecture.md) | Current AI/RAG, MCP, memory, guardrail, and observability architecture. |
 | RAG | [`rag_architecture_audit.md`](./rag_architecture_audit.md) | Dated RAG security/quality audit and remaining work. |
 | Development | [`guides/ENVIRONMENT_SETUP.md`](./guides/ENVIRONMENT_SETUP.md) | Canonical local environment and deployment prerequisites. |
+| Hosted deployment | [`deployment/FASTAPI_CLOUD.md`](./deployment/FASTAPI_CLOUD.md) | FastAPI Cloud deployment, secrets, environment, and runtime constraints. |
 | Testing | [`guides/TESTING.md`](./guides/TESTING.md) | Test layout, quality gates, and validation commands. |
 | Codespaces | [`guides/CODESPACES_GUIDE.md`](./guides/CODESPACES_GUIDE.md) | GitHub Codespaces workflow. |
 | Operations | [`operations/INCIDENT_RUNBOOK.md`](./operations/INCIDENT_RUNBOOK.md) | Incident triage and rollback guidance. |
@@ -22,7 +24,7 @@ This directory contains the current engineering documentation for Pharmaviyum ER
 
 ## Documentation ownership rules
 
-- Document the implemented repository, not historical or hypothetical infrastructure. The current dependency contract is `pyproject.toml` + `uv.lock`; CI uses `uv sync --frozen` and project commands use `uv run`.
+- Document the implemented repository, not historical or hypothetical infrastructure. Python dependencies are declared in `pyproject.toml` and resolved in `uv.lock`; CI uses `uv sync --frozen` and project commands use `uv run`. Frontend dependencies are declared in `frontend/shadcn-admin/package.json`.
 - Keep one canonical procedure for each workflow; remove duplicate command guides.
 - Architectural decisions belong in `docs/adr/`.
 - Operational procedures belong in `docs/operations/`.

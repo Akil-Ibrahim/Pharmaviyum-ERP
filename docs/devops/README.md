@@ -11,15 +11,18 @@ The project deliberately evolves the existing deployment model instead of introd
 The current delivery chain is:
 
 ```text
-GitHub Actions
-    -> tests / lint / type checks / security / RAG evaluation
-    -> Render staging (`dev`)
-    -> Render production (`main`)
+Pull request targeting main
+    -> GitHub Actions CI / tests / security / RAG evaluation
+    -> merge after required checks pass
+    -> manually triggered FastAPI Cloud deployment workflow
+    -> deployment status, logs, and smoke checks
 ```
 
-The current repositorysitory also contains an opt-in monitoring Compose stack for controlled deployments. Nginx/edge infrastructure, OpenTelemetry Collector, managed data services and multi-node orchestration are target capabilities, not assumptions about the current base deployment.
+FastAPI Cloud hosts the application. Database, Redis-compatible services, and separate Celery workers must be provisioned and operated according to the deployment runbook.
 
-CI builds images tagged by commit SHA and publishes SBOM and provenance metadata. Render owns hosted deployment from the configured branches. GitHub Actions remains the CI quality gate; do not describe a separate staging Compose-host release workflow unless it is actually implemented.
+The current repository also contains an opt-in monitoring Compose stack for controlled deployments. Nginx/edge infrastructure, OpenTelemetry Collector, managed data services and multi-node orchestration are target capabilities, not assumptions about the current base deployment.
+
+GitHub Actions is the CI quality gate. The dedicated FastAPI Cloud workflow is the current hosted application deployment path. Docker image build jobs may support container-based workflows, but they are not the hosted deployment target.
 
 ## Target production principles
 
@@ -188,7 +191,7 @@ Never place credentials in repository files, Docker images or build logs.
 
 ### Stage 7 — CI/CD & Release Engineering
 
-Keep GitHub Actions as the CI gate and Render Blueprints as the hosted deployment contract. Ansible remains a future/on-premises deployment capability, not the current hosted release path.
+Keep GitHub Actions as the CI gate and FastAPI Cloud as the hosted application deployment target. Ansible remains a separate on-premises deployment capability.
 
 Required capabilities:
 
@@ -335,8 +338,7 @@ The exact topology remains subject to capacity measurements and deployment const
 - `docs/devops/STAGE_1_LOAD_TESTING.md` — Stage 1 load-test procedure.
 - `docs/ai_architecture.md` — AI, RAG, memory, guardrails and MCP architecture.
 - `docs/guides/ENVIRONMENT_SETUP.md` — environment configuration and deployment prerequisites.
+- `docs/deployment/FASTAPI_CLOUD.md` — hosted application deployment runbook.
 - `docs/guides/TESTING.md` — test and CI strategy.
-- `render.yaml` / `render.production.yaml` — Render staging and production topology.
 - `docker-compose.monitoring.yml` — opt-in Prometheus/Grafana monitoring stack.
 - `.github/workflows/ci.yml` — CI quality, security, evaluation and image build gates.
-- Render Blueprints (`render.yaml`, `render.production.yaml`) — staging deployment workflow.
