@@ -8,7 +8,7 @@ The GitHub Actions workflow `.github/workflows/deploy-fastapi-cloud.yml` is manu
 
 1. Installs Bun and builds `frontend/shadcn-admin`.
 2. Installs the Python project using `uv`.
-3. Runs `uv run fastapi deploy`.
+3. Runs `uv run fastapi cloud deploy .`.
 
 The workflow is intentionally manual so an ordinary push cannot deploy an incompletely configured production app.
 
