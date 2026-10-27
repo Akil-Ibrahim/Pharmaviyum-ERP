@@ -3,6 +3,11 @@
 # =============================================================================
 node_modules/
 dist/
+# FastAPI Cloud deploy needs the generated SPA in the source upload.
+!frontend/
+!frontend/shadcn-admin/
+!frontend/shadcn-admin/dist/
+!frontend/shadcn-admin/dist/**
 .vite/
 pnpm-lock.yaml
 package-lock.json
