@@ -201,7 +201,7 @@ Suggested capacity progression after implementing the multi-branch fixture/scena
 ## Safety requirements
 
 - Never use real patient/customer data, production credentials or a production database.
-- Known production Render hosts and production-like URLs are rejected by both the runner and the k6 preflight.
+- Known production hosts and public production-like URLs are rejected by both the runner and the k6 preflight.
 - Remote targets require `ALLOW_REMOTE_TARGET=true` and `LOAD_TEST_ENV=staging`.
 - `AUTH_TOKEN` must be a dedicated synthetic test-user token with access to `PHARMACY_ID`.
 - For privileged reads, provide a dedicated staging `SUPERUSER_TOKEN`.
