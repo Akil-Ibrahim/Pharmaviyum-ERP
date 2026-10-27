@@ -207,6 +207,8 @@ Python dependency definitions are maintained in:
 
 The lockfile is used for reproducible CI/development installation. Dependency changes should be made through the project configuration and lockfile rather than maintaining a second authoritative dependency list.
 
+For the exact declared runtime versions and the dependency-upgrade procedure, see [`docs/technology-stack.md`](docs/technology-stack.md).
+
 ## AI / RAG Architecture
 
 The AI layer is implemented under `src/pharmaviyum/ai` and exposed through the FastAPI application.
