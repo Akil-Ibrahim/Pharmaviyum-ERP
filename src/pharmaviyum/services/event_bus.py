@@ -1,12 +1,15 @@
-"""
-Event bus for asynchronous event processing
-Best practice 2026: Decoupled architecture via events
+"""In-process event dispatch for application-level notifications.
+
+This bus is intentionally process-local. It is suitable for best-effort
+notifications, not durable integration events or inventory transaction
+coordination. Use a transactional outbox when delivery must survive restarts.
 """
 
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List
+from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.pharmaviyum.core.logging import get_logger
 
@@ -14,127 +17,97 @@ logger = get_logger(__name__)
 
 
 class Event(BaseModel):
-    """Base event model"""
+    """Base event model shared by application event notifications."""
 
     event_type: str
-    data: Dict[str, Any]
-    timestamp: str = ""
+    data: dict[str, Any]
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
     correlation_id: str = ""
 
-    def __init__(self, **data):
-        super().__init__(**data)
-        if not self.timestamp:
-            self.timestamp = datetime.now(timezone.utc).isoformat()
+
+EventHandler = Callable[[Event], Awaitable[None]]
 
 
 class EventBus:
-    """
-    In-memory event bus for domain events
+    """Register and sequentially dispatch async handlers for event types.
 
-    Supports:
-    - Event publishing
-    - Event subscription
-    - Async event handlers
-    - Error handling per handler
-
-    Usage:
-        event_bus = EventBus()
-
-        @event_bus.on("patient.created")
-        async def send_welcome_email(event: Event):
-            ...
-
-        await event_bus.emit(Event(
-            event_type="patient.created",
-            data={"patient_id": 123}
-        ))
+    Handler failures are logged and isolated so remaining subscribers still run.
+    This policy is appropriate only for best-effort in-process notifications;
+    callers must not use this bus as proof that a business-critical event was
+    durably delivered.
     """
 
-    def __init__(self):
-        """Initialize event bus"""
-        self._handlers: Dict[str, List[Callable]] = {}
+    def __init__(self) -> None:
+        self._handlers: dict[str, list[EventHandler]] = {}
 
-    def on(self, event_type: str):
-        """
-        Decorator to register event handler
+    def on(self, event_type: str) -> Callable[[EventHandler], EventHandler]:
+        """Register an async handler and return it unchanged."""
 
-        Usage:
-            @event_bus.on("patient.created")
-            async def handler(event: Event):
-                ...
-        """
-
-        def decorator(func: Callable):
-            if event_type not in self._handlers:
-                self._handlers[event_type] = []
-            self._handlers[event_type].append(func)
+        def decorator(func: EventHandler) -> EventHandler:
+            self._handlers.setdefault(event_type, []).append(func)
             return func
 
         return decorator
 
     async def emit(self, event: Event) -> None:
-        """
-        Emit event to all registered handlers
-
-        Args:
-            event: Event to emit
-        """
+        """Dispatch to registered handlers sequentially."""
         handlers = self._handlers.get(event.event_type, [])
 
         if not handlers:
-            logger.debug(f"No handlers for event: {event.event_type}")
+            logger.debug("No handlers for event: %s", event.event_type)
             return
 
         logger.info(
-            f"Emitting event: {event.event_type}",
+            "Emitting event: %s",
+            event.event_type,
             extra={"handlers_count": len(handlers)},
         )
 
-        # Execute all handlers
         for handler in handlers:
             try:
                 await handler(event)
-            except Exception as e:
-                logger.error(
-                    f"Event handler error: {e}",
+            except Exception:
+                logger.exception(
+                    "Event handler failed",
                     extra={
                         "event_type": event.event_type,
-                        "handler": handler.__name__,
+                        "handler": getattr(
+                            handler, "__qualname__", type(handler).__name__
+                        ),
                     },
-                    exc_info=True,
                 )
 
 
-# Singleton instance
 event_bus = EventBus()
 
 
-# Domain events
 class PatientCreatedEvent(Event):
-    """Event emitted when patient is created"""
+    """Event emitted when a patient is created."""
 
     event_type: str = "patient.created"
 
 
 class PatientUpdatedEvent(Event):
-    """Event emitted when patient is updated"""
+    """Event emitted when a patient is updated."""
 
     event_type: str = "patient.updated"
 
 
 class PrescriptionCreatedEvent(Event):
-    """Event emitted when prescription is created"""
+    """Event emitted when a prescription is created."""
 
     event_type: str = "prescription.created"
 
 
 class PrescriptionFilledEvent(Event):
-    """Event emitted when prescription is filled"""
+    """Event emitted when a prescription is filled."""
 
     event_type: str = "prescription.filled"
 
 
 class OrderCreatedEvent(Event):
-    """Event emitted when order is created"""
+    """Event emitted when an order is created."""
 
     event_type: str = "order.created"
