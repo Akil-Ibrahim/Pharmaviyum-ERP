@@ -138,10 +138,10 @@ Mortarium uses different LLM profiles depending on the deployment target:
 
 | Deployment | LLM provider | Default model profile |
 |---|---|---|
-| Render staging / production | Gemini cloud provider | Main: `gemini-3.5-flash`; Fast: `gemini-3.5-flash-lite`; Complex/evaluation: `gemini-2.5-pro`; Embeddings: `gemini-embedding-001` |
+| FastAPI Cloud deployment | Gemini cloud provider | Main: `gemini-3.5-flash`; Fast: `gemini-3.5-flash-lite`; Complex/evaluation: `gemini-2.5-pro`; Embeddings: `gemini-embedding-001` |
 | Ansible / on-premises pharmacy deployment | Ollama | Qwen3.5 9B Q4_K_M |
 
-This separation is intentional: Render is the cloud deployment profile, while Ansible provisions the local Ollama-based Mortarium runtime for on-premises installations. Gemma is not the current default; it can be introduced later as an additional Ollama profile without changing the Mortarium architecture.
+This separation is intentional: FastAPI Cloud is the hosted application deployment target, while Ansible provisions the local Ollama-based Mortarium runtime for on-premises installations. Gemma is not the current default; it can be introduced later as an additional Ollama profile without changing the Mortarium architecture.
 
 ## Configuration
 
