@@ -27,6 +27,8 @@ jobs:
         run: |
           bun install
           bun run build
+        env:
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
