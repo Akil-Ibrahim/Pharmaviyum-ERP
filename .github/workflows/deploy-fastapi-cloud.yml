@@ -1,0 +1,38 @@
+name: Deploy to FastAPI Cloud
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fastapi-cloud-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build frontend and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Build React frontend
+        working-directory: frontend/shadcn-admin
+        run: |
+          bun install
+          bun run build
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Deploy application
+        run: uv run fastapi deploy
+        env:
+          FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
+          FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
