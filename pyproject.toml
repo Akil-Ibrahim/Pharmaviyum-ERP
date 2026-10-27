@@ -27,7 +27,7 @@ dependencies = [
 
     # AI orchestration
     "langgraph==1.2.11",
-    "langgraph-checkpoint-postgres==3.1.2",
+    "langgraph-checkpoint-postgres==3.1.3",
     "langchain==1.4.0",
     "langchain-ollama==1.1.0",
     "langchain-groq==1.1.0",
@@ -65,9 +65,9 @@ dependencies = [
     # Observability
     "prometheus-client==0.21.0",
     "psutil==6.0.0",
-    "opentelemetry-api==1.44.0",
-    "opentelemetry-sdk==1.44.0",
-    "opentelemetry-exporter-otlp==1.44.0",
+    "opentelemetry-api==1.45.1",
+    "opentelemetry-sdk==1.45.1",
+    "opentelemetry-exporter-otlp==1.45.1",
     "opentelemetry-instrumentation-fastapi==0.65b0",
     "opentelemetry-instrumentation-sqlalchemy==0.65b0",
     "opentelemetry-instrumentation-redis==0.65b0",
@@ -83,7 +83,7 @@ dev = [
     "factory-boy==3.3.1",
     "faker==30.8.2",
     "ruff==0.12.10",
-    "black==26.3.1",
+    "black==26.10.1",
     "isort==6.0.1",
     "mypy==1.17.1",
     "pip-audit==2.9.0",
