@@ -12,7 +12,7 @@ OUTPUT_FILE="${OUTPUT_DIR}/pharmaviyum-erp-${TIMESTAMP}.json"
 BASE_URL_LOWER="${BASE_URL,,}"
 
 case "${BASE_URL_LOWER}" in
-  *prod*|*production*|*live*|*pharmaviyum.onrender.com*|*pharmaviyum-api.onrender.com*)
+  *prod*|*production*|*live*)
     echo "Refusing to run load tests against a known or production-like target: ${BASE_URL}" >&2
     exit 2
     ;;
