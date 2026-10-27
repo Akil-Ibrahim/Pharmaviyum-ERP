@@ -22,7 +22,7 @@ FastAPI Cloud hosts the application. Database, Redis-compatible services, and se
 
 The current repository also contains an opt-in monitoring Compose stack for controlled deployments. Nginx/edge infrastructure, OpenTelemetry Collector, managed data services and multi-node orchestration are target capabilities, not assumptions about the current base deployment.
 
-GitHub Actions is the CI quality gate. The dedicated FastAPI Cloud workflow is the current hosted application deployment path. Docker image build jobs may support container-based workflows, but they do not make Render the deployment target.
+GitHub Actions is the CI quality gate. The dedicated FastAPI Cloud workflow is the current hosted application deployment path. Docker image build jobs may support container-based workflows, but they are not the hosted deployment target.
 
 ## Target production principles
 
