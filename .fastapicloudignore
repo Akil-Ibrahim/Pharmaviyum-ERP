@@ -22,5 +22,7 @@ backups/
 
 # Frontend build is generated in the deploy workflow and must be uploaded.
 dist/
+!frontend/
+!frontend/shadcn-admin/
 !frontend/shadcn-admin/dist/
 !frontend/shadcn-admin/dist/**
