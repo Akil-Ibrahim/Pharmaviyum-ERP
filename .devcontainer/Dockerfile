@@ -8,8 +8,7 @@ RUN apt-get update \
         postgresql-client \
         redis-tools \
     && rm -rf /var/lib/apt/lists/* \
-    && python -m pip install --upgrade pip \
-    && corepack enable
+    && python -m pip install --upgrade pip
 
 WORKDIR /workspaces/Pharmaviyum-CRM
 
