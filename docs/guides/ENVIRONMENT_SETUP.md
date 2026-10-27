@@ -44,7 +44,7 @@ alembic/
 alembic.ini
 ```
 
-The development API container runs `alembic upgrade head` before its reload server starts. Production runs migrations through Render's `preDeployCommand`. To run migrations manually:
+The development API container runs `alembic upgrade head` before its reload server starts. The FastAPI Cloud web deployment workflow does not run database migrations automatically. Apply migrations from a trusted environment with the production database URL supplied securely:
 
 ```bash
 docker compose exec api alembic upgrade head
@@ -54,26 +54,27 @@ docker compose exec api alembic upgrade head
 
 The LLM provider depends on the deployment target:
 
-- **Render staging/production:** Gemini cloud models. Current profile: `gemini-3.5-flash` (main), `gemini-3.5-flash-lite` (fast), `gemini-2.5-pro` (complex/evaluation), and `gemini-embedding-001` (embeddings).
+- **FastAPI Cloud:** Gemini cloud models when configured. Current profile: `gemini-3.5-flash` (main), `gemini-3.5-flash-lite` (fast), `gemini-2.5-pro` (complex/evaluation), and `gemini-embedding-001` (embeddings).
 - **Ansible/on-premises:** Ollama with **Qwen3.5 9B Q4_K_M** as the default Mortarium model.
 
-Do not treat the Render Gemini configuration as the on-premises default. Ansible is responsible for the local Ollama model runtime in pharmacy installations.
+Do not treat the cloud Gemini configuration as the on-premises default. Ansible is responsible for the local Ollama model runtime in pharmacy installations.
 
-## 5. Production deployment
+## 5. Hosted deployment
 
-Production is not started from a `docker-compose.prod.yml` path. The hosted configuration is defined by `render.yaml` and `render.production.yaml`.
+The hosted application platform is FastAPI Cloud. The repository includes a manually triggered GitHub Actions workflow at `.github/workflows/deploy-fastapi-cloud.yml`.
 
-The canonical release chain is:
+The release path is:
 
 ```text
-GitHub Actions
-    -> lint / type checks / tests / security / RAG evaluation
-    -> Render staging (`dev`)
-    -> PR
-    -> Render production (`main`)
+Pull request to main
+    -> GitHub Actions CI / tests / security checks
+    -> merge after required checks pass
+    -> manually trigger Deploy to FastAPI Cloud
+    -> inspect deployment status and logs
+    -> verify health/readiness and critical workflows
 ```
 
-Production deployment is managed by Render from `main`; staging is managed by Render from `dev`. Database migrations run as part of the Render deployment contract, followed by the `/health` gate.
+See [FastAPI Cloud deployment](../deployment/FASTAPI_CLOUD.md) for required secrets, environment variables, database setup, and runtime limitations. Do not use retired Render manifests or deployment instructions.
 
 ## 6. Health checks
 
