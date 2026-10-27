@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Literal
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -88,9 +89,17 @@ class PgVectorSettings(BaseSettings):
             url = url.replace("postgres://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgresql://"):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        # asyncpg expects "ssl", not libpq's "sslmode", in URL query parameters.
-        url = url.replace("sslmode=", "ssl=")
-        return SecretStr(url)
+        # SQLAlchemy's asyncpg dialect passes URL query parameters directly to
+        # asyncpg.connect(). Translate libpq's sslmode and drop unsupported
+        # channel_binding, which otherwise raises TypeError at connection time.
+        parts = urlsplit(url)
+        query = []
+        for key, item in parse_qsl(parts.query, keep_blank_values=True):
+            normalized_key = "ssl" if key.lower() == "sslmode" else key
+            if normalized_key.lower() == "channel_binding":
+                continue
+            query.append((normalized_key, item))
+        return SecretStr(urlunsplit(parts._replace(query=urlencode(query))))
 
 
 class LangSmithSettings(BaseSettings):
