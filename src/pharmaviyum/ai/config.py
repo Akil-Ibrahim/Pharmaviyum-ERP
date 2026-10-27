@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Literal
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -72,8 +72,11 @@ class RedisSettings(BaseSettings):
 
 class PgVectorSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PGVECTOR_")
-    database_url: SecretStr = SecretStr(
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum"
+    database_url: SecretStr = Field(
+        default=SecretStr(
+            "postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum"
+        ),
+        validation_alias=AliasChoices("PGVECTOR_DATABASE_URL", "DATABASE_URL"),
     )
     table_name: str = "document_chunks"
     hnsw_m: int = 16
@@ -84,21 +87,20 @@ class PgVectorSettings(BaseSettings):
     @field_validator("database_url")
     @classmethod
     def normalize_database_url(cls, value: SecretStr) -> SecretStr:
+        # This URL is consumed by psycopg's LangGraph checkpointer, not asyncpg.
+        # Keep libpq/psycopg's sslmode parameter and remove asyncpg-incompatible
+        # channel_binding when a provider supplies a libpq-style connection URL.
         url = value.get_secret_value()
         if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
-        elif url.startswith("postgresql://"):
-            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        # SQLAlchemy's asyncpg dialect passes URL query parameters directly to
-        # asyncpg.connect(). Translate libpq's sslmode and drop unsupported
-        # channel_binding, which otherwise raises TypeError at connection time.
+            url = url.replace("postgres://", "postgresql://", 1)
+        elif url.startswith("postgresql+asyncpg://"):
+            url = url.replace("postgresql+asyncpg://", "postgresql://", 1)
         parts = urlsplit(url)
-        query = []
-        for key, item in parse_qsl(parts.query, keep_blank_values=True):
-            normalized_key = "ssl" if key.lower() == "sslmode" else key
-            if normalized_key.lower() == "channel_binding":
-                continue
-            query.append((normalized_key, item))
+        query = [
+            (key, item)
+            for key, item in parse_qsl(parts.query, keep_blank_values=True)
+            if key.lower() != "channel_binding"
+        ]
         return SecretStr(urlunsplit(parts._replace(query=urlencode(query))))
 
 
