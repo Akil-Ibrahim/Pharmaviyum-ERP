@@ -10,6 +10,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && python -m pip install --upgrade pip
 
+RUN useradd --create-home --shell /bin/bash vscode
+
 WORKDIR /workspaces/Pharmaviyum-CRM
 
 USER vscode
