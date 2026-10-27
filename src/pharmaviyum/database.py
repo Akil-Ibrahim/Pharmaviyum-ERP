@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from collections.abc import AsyncGenerator
 from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import structlog
 from sqlalchemy import event
@@ -27,12 +28,24 @@ from src.pharmaviyum.observability.metrics import (
 logger = structlog.get_logger()
 
 
+def _asyncpg_compatible_url(value: str) -> str:
+    """Remove libpq-only URL options before SQLAlchemy passes them to asyncpg."""
+    parts = urlsplit(value)
+    query: list[tuple[str, str]] = []
+    for key, item in parse_qsl(parts.query, keep_blank_values=True):
+        normalized_key = "ssl" if key.lower() == "sslmode" else key
+        if normalized_key.lower() == "channel_binding":
+            continue
+        query.append((normalized_key, item))
+    return urlunsplit(parts._replace(query=urlencode(query)))
+
+
 class Base(DeclarativeBase):
     pass
 
 
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    _asyncpg_compatible_url(settings.DATABASE_URL),
     echo=settings.DEBUG,
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
