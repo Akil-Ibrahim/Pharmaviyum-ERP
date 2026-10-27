@@ -28,10 +28,11 @@ Configure these in the FastAPI Cloud app environment before deploying:
 
 - `ENVIRONMENT=production`
 - `LOG_LEVEL=INFO`
+- `CORS_ORIGINS`: the exact HTTPS origin of the deployed frontend (for a same-origin frontend, use the app's origin; do not use `*` with credentials).
 - `DATABASE_URL`: async SQLAlchemy URL for the new PostgreSQL database, using `postgresql+asyncpg://...`.
 - `PGVECTOR_DATABASE_URL`: async PostgreSQL URL for the vector store. It can point to the same database if the schema and permissions are suitable.
 - `REDIS_URL`: URL of a reachable Redis-compatible service.
-- `API_SECRET_KEY`: a newly generated random secret of at least 32 characters (the application also checks `SECRET_KEY` for production compatibility).
+- `SECRET_KEY`: a newly generated random secret of at least 32 characters. This is required by the active API configuration in production.
 - `USE_CLOUD_LLM=true`
 - `CLOUD_LLM_PROVIDER=gemini`
 - `GEMINI_API_KEY`: Gemini API key, stored as a secret.
