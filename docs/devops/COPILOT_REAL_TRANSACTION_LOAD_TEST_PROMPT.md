@@ -8,7 +8,7 @@ Act as a senior FastAPI/Python engineer, pharmacy domain engineer, QA engineer, 
 ## Safety and working rules
 
 1. Inspect git status, current branch and HEAD first. Preserve all existing changes. Never run git reset/clean or overwrite unrelated edits.
-2. Never merge or push to main. Do not modify Render, production services, production data, or production configuration.
+2. Never merge or push to main. Do not modify hosted deployment settings, production services, production data, or production configuration.
 3. Use a local, isolated, disposable database populated with synthetic fixtures. If you cannot prove that the database is isolated/disposable, do not execute write scenarios; continue with static inspection and tests that do not mutate external systems.
 4. Do not print tokens, secrets, connection strings or patient information. Never use real patient data.
 5. Inspect actual FastAPI routers, schemas, SQLAlchemy models, migrations, services, authorization, frontend requests, and existing tests before changing code. Do not invent API paths or payloads.
@@ -126,7 +126,7 @@ Provide explicit environment variables and documentation for:
 - Optional Mortarium profile, isolated from transaction measurements and disabled by default.
 
 The runner must:
-- Reject production/Render/public targets and require explicit staging opt-in for remote environments.
+- Reject production and public targets, including FastAPI Cloud production endpoints, and require explicit staging opt-in for remote environments.
 - Require explicit write confirmation and a disposable test database marker for writes.
 - Validate fixture IDs and token roles without logging their values.
 - Enforce hard upper bounds for VUs, iterations and duration.
