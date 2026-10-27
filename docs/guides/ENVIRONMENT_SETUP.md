@@ -74,7 +74,7 @@ Pull request to main
     -> verify health/readiness and critical workflows
 ```
 
-See [FastAPI Cloud deployment](../deployment/FASTAPI_CLOUD.md) for required secrets, environment variables, database setup, and runtime limitations. Do not use retired Render manifests or deployment instructions.
+See [FastAPI Cloud deployment](../deployment/FASTAPI_CLOUD.md) for required secrets, environment variables, database setup, and runtime limitations. Use the FastAPI Cloud deployment runbook and workflow as the hosted deployment source of truth.
 
 ## 6. Health checks
 
