@@ -1,5 +1,4 @@
 import { type LinkProps } from '@tanstack/react-router'
-import { type ElementType } from 'react'
 
 type User = {
   name: string
@@ -9,7 +8,7 @@ type User = {
 
 type Team = {
   name: string
-  logo: ElementType
+  logo: string
   plan: string
 }
 
