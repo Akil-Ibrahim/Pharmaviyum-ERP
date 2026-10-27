@@ -13,14 +13,12 @@ import {
   ListChecks,
   PackageCheck,
   Palette,
-  Pill,
   ReceiptText,
   RefreshCw,
   ServerCog,
   Settings,
   ShoppingCart,
   Store,
-  Stethoscope,
   Truck,
   UserCog,
   UserRound,
@@ -30,7 +28,7 @@ import { type SidebarData } from '../types'
 
 export const sidebarData: SidebarData = {
   user: {
-    name: 'Pharmaviyum Admin',
+    name: 'admin',
     email: 'admin@pharmaviyum.local',
     avatar: '/avatars/shadcn.jpg',
   },
@@ -45,12 +43,11 @@ export const sidebarData: SidebarData = {
     {
       title: 'Operations',
       items: [
-        { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-        { title: 'Pharmacist Workspace', url: '/pharmacist-workspace', icon: Stethoscope },
         { title: 'POS', url: '/pos', icon: ReceiptText },
+        { title: 'Mortarium AI', url: '/mortarium-ai', icon: Bot },
+        { title: 'Dashboard', url: '/', icon: LayoutDashboard },
         { title: 'Drug Reference', url: '/drug-reference', icon: BookOpenCheck },
         { title: 'Patients', url: '/patients', icon: UserRound },
-        { title: 'Products', url: '/products', icon: Pill },
         { title: 'Orders', url: '/orders', icon: ClipboardList },
         { title: 'Prescriptions', url: '/prescriptions', icon: FileText },
         {
@@ -69,21 +66,9 @@ export const sidebarData: SidebarData = {
       ],
     },
     {
-      title: 'Mortarium AI',
-      items: [{ title: 'Mortarium AI', url: '/mortarium-ai', icon: Bot }],
-    },
-    {
-      title: 'Integrations',
-      items: [
-        { title: 'ERP Systems', url: '/erp-systems', icon: ServerCog },
-        { title: 'Sync Events', url: '/sync-events', icon: RefreshCw },
-      ],
-    },
-    {
       title: 'Administration',
       items: [
         { title: 'Users', url: '/users', icon: UsersRound },
-        { title: 'Tasks', url: '/tasks', icon: ListChecks },
         {
           title: 'Settings',
           icon: Settings,
@@ -95,6 +80,14 @@ export const sidebarData: SidebarData = {
             { title: 'Developer Tools', url: '/settings/developer', icon: Code2 },
           ],
         },
+      ],
+    },
+    {
+      title: 'Integrations',
+      items: [
+        { title: 'ERP Systems', url: '/erp-systems', icon: ServerCog },
+        { title: 'Sync Events', url: '/sync-events', icon: RefreshCw },
+        { title: 'Tasks', url: '/tasks', icon: ListChecks },
       ],
     },
   ],
