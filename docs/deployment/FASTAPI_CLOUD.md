@@ -8,10 +8,10 @@ The GitHub Actions workflow `.github/workflows/deploy-fastapi-cloud.yml` is manu
 
 1. Installs Bun and builds `frontend/shadcn-admin`.
 2. Installs the Python project using `uv`.
-3. Runs `uv run fastapi cloud deploy . --json` and submits the deployment to FastAPI Cloud.
-4. The CLI's JSON mode does not wait for completion; verify the deployment status in FastAPI Cloud before considering the release successful.
+3. Runs `uv run fastapi cloud deploy . --json`. JSON output is for machine-readable output; the documented option that skips waiting is `--no-wait`, which this workflow does not use. The CLI should therefore complete its normal deployment verification and fail the workflow when the deploy command reports failure.
+4. After a successful workflow run, verify the deployed app's `/health` and `/ready` endpoints in FastAPI Cloud before considering the release ready.
 
-The workflow is intentionally manual so an ordinary push cannot deploy an incompletely configured production app.
+The workflow is intentionally manual so an ordinary push cannot deploy an incompletely configured production app. A successful CLI deploy is necessary but does not replace post-deploy verification of database/Redis readiness and critical pharmacy workflows.
 
 ## GitHub Actions secrets required
 
@@ -47,9 +47,9 @@ Use the exact variable names; the application reads configuration from environme
 
 ## Database preparation
 
-1. Provision a new PostgreSQL database with the pgvector extension available.
+1. Provision a PostgreSQL database with the pgvector extension available.
 2. Set `DATABASE_URL` and `PGVECTOR_DATABASE_URL` in FastAPI Cloud.
-3. Apply Alembic migrations once against that database before sending production traffic:
+3. Apply Alembic migrations once against the intended database before sending production traffic:
    `uv run alembic upgrade head`
 4. Verify `/health` and `/ready` after the database and Redis are reachable.
 
@@ -72,7 +72,7 @@ A newly provisioned database starts empty. Restore or migrate existing data only
 - [ ] PostgreSQL + pgvector and Redis endpoints are provisioned.
 - [ ] Required environment variables are configured securely.
 - [ ] Alembic migrations have been applied once.
-- [ ] Manually run the `Deploy to FastAPI Cloud` workflow.
+- [ ] Manually run the `Deploy to FastAPI Cloud` workflow and wait for it to finish.
 - [ ] Confirm the deployment and inspect logs.
 - [ ] Check `/health`, `/ready`, and a basic frontend route.
 - [ ] Validate authentication, database operations, and AI requests before using real pharmacy data.
