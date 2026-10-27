@@ -461,7 +461,7 @@ Integration Layer должен иметь контракты для:
 GitHub
   -> GitHub Actions
   -> immutable container image
-  -> Render
+  -> FastAPI Cloud
 ```
 
 ### On-Premise
