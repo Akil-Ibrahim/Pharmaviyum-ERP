@@ -13,7 +13,7 @@ This page records the versions declared by the repository configuration. It is n
 | Pydantic Settings | `2.15.0` | `pyproject.toml` |
 | SQLAlchemy | `2.0.53` | `pyproject.toml` |
 | Alembic | `1.20.0` | `pyproject.toml` |
-| PostgreSQL | Major version 16 | `render.yaml`, CI service definitions |
+| PostgreSQL | Major version 16 | FastAPI Cloud environment configuration and CI service definitions |
 | pgvector | `0.4.1` Python package | `pyproject.toml` |
 | LangGraph | `1.2.11` | `pyproject.toml` |
 | LangChain | `1.4.0` | `pyproject.toml` |
@@ -55,7 +55,7 @@ Workflow files are the authoritative source for the exact CI action versions and
 - PostgreSQL is configured at major version 16.
 - The application uses pgvector for vector search where enabled.
 - Development Compose/CI uses Redis-compatible services; the managed deployment uses a Redis-compatible Valkey service. These are deployment profiles, not interchangeable version claims.
-- Mortarium's LLM provider/model selection is environment-configured. See [AI architecture](./ai_architecture.md) and `render.yaml` for the current deployment profile.
+- Mortarium's LLM provider/model selection is environment-configured. See [AI architecture](./ai_architecture.md) and [FastAPI Cloud deployment](./deployment/FASTAPI_CLOUD.md) for the current deployment profile.
 
 ## Documentation rule
 
