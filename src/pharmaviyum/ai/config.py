@@ -88,6 +88,8 @@ class PgVectorSettings(BaseSettings):
             url = url.replace("postgres://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgresql://"):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # asyncpg expects "ssl", not libpq's "sslmode", in URL query parameters.
+        url = url.replace("sslmode=", "ssl=")
         return SecretStr(url)
 
 

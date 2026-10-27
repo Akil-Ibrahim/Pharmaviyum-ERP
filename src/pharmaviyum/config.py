@@ -62,10 +62,11 @@ class Settings(BaseSettings):
     @classmethod
     def normalize_database_url(cls, value: str) -> str:
         if value.startswith("postgres://"):
-            return value.replace("postgres://", "postgresql+asyncpg://", 1)
-        if value.startswith("postgresql://"):
-            return value.replace("postgresql://", "postgresql+asyncpg://", 1)
-        return value
+            value = value.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif value.startswith("postgresql://"):
+            value = value.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # asyncpg expects "ssl", not libpq's "sslmode", in URL query parameters.
+        return value.replace("sslmode=", "ssl=")
 
     # Redis
     REDIS_URL: str = "redis://redis:6379/0"
