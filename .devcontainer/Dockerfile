@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/python:1-3.14-bookworm
+FROM python:3.14.7-bookworm
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -8,6 +8,7 @@ RUN apt-get update \
         postgresql-client \
         redis-tools \
     && rm -rf /var/lib/apt/lists/* \
+    && python -m pip install --upgrade pip \
     && corepack enable
 
 WORKDIR /workspaces/Pharmaviyum-CRM
