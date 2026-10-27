@@ -1,0 +1,28 @@
+# Keep deployment uploads small and exclude local/development files.
+.git/
+.venv/
+**/.venv/
+venv/
+**/node_modules/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+.env
+.env.*
+!.env.example
+!.env.prod.example
+secrets/
+backups/
+*.backup.*
+
+# Frontend build is generated in the deploy workflow and must be uploaded.
+dist/
+!frontend/
+!frontend/shadcn-admin/
+!frontend/shadcn-admin/dist/
+!frontend/shadcn-admin/dist/**
