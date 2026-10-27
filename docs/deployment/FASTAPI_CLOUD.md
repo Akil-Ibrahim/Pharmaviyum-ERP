@@ -18,6 +18,7 @@ Configure these repository Actions secrets after creating the app in FastAPI Clo
 
 - `FASTAPI_CLOUD_TOKEN`: deploy token issued by FastAPI Cloud.
 - `FASTAPI_CLOUD_APP_ID`: ID of the target FastAPI Cloud app.
+- `VITE_CLERK_PUBLISHABLE_KEY`: Clerk publishable key used at React build time if the Clerk sign-in route is enabled. This is a public frontend key, not a private secret, but storing it as a GitHub Actions variable/secret keeps build configuration explicit.
 
 Do not put token values in source files or commit them.
 
@@ -30,7 +31,7 @@ Configure these in the FastAPI Cloud app environment before deploying:
 - `DATABASE_URL`: async SQLAlchemy URL for the new PostgreSQL database, using `postgresql+asyncpg://...`.
 - `PGVECTOR_DATABASE_URL`: async PostgreSQL URL for the vector store. It can point to the same database if the schema and permissions are suitable.
 - `REDIS_URL`: URL of a reachable Redis-compatible service.
-- `API_SECRET_KEY`: a newly generated random secret of at least 32 characters.
+- `API_SECRET_KEY`: a newly generated random secret of at least 32 characters (the application also checks `SECRET_KEY` for production compatibility).
 - `USE_CLOUD_LLM=true`
 - `CLOUD_LLM_PROVIDER=gemini`
 - `GEMINI_API_KEY`: Gemini API key, stored as a secret.
