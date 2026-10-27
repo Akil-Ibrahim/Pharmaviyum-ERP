@@ -31,9 +31,9 @@ jobs:
           python-version: '3.14.7'
       - name: Install uv
         run: pip install uv
-      # Keep the security-sensitive Starlette dependency current while preserving other locked versions.
+      # Refresh transitive dependencies too, so known-vulnerable locked versions can be replaced.
       - name: Refresh dependency lock
-        run: uv lock --upgrade-package starlette
+        run: uv lock --upgrade
       - name: Commit updated lockfile
         run: |
           if git diff --quiet -- uv.lock; then
