@@ -5,6 +5,7 @@ Never hardcode secrets in source code.
 """
 
 from typing import List, Optional
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -65,8 +66,17 @@ class Settings(BaseSettings):
             value = value.replace("postgres://", "postgresql+asyncpg://", 1)
         elif value.startswith("postgresql://"):
             value = value.replace("postgresql://", "postgresql+asyncpg://", 1)
-        # asyncpg expects "ssl", not libpq's "sslmode", in URL query parameters.
-        return value.replace("sslmode=", "ssl=")
+        # SQLAlchemy's asyncpg dialect passes URL query parameters directly to
+        # asyncpg.connect(). Translate libpq's sslmode and drop unsupported
+        # channel_binding, which otherwise raises TypeError at connection time.
+        parts = urlsplit(value)
+        query = []
+        for key, item in parse_qsl(parts.query, keep_blank_values=True):
+            normalized_key = "ssl" if key.lower() == "sslmode" else key
+            if normalized_key.lower() == "channel_binding":
+                continue
+            query.append((normalized_key, item))
+        return urlunsplit(parts._replace(query=urlencode(query)))
 
     # Redis
     REDIS_URL: str = "redis://redis:6379/0"
