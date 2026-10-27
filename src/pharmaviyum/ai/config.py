@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Literal
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -72,8 +72,11 @@ class RedisSettings(BaseSettings):
 
 class PgVectorSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PGVECTOR_")
-    database_url: SecretStr = SecretStr(
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum"
+    database_url: SecretStr = Field(
+        default=SecretStr(
+            "postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum"
+        ),
+        validation_alias=AliasChoices("PGVECTOR_DATABASE_URL", "DATABASE_URL"),
     )
     table_name: str = "document_chunks"
     hnsw_m: int = 16
