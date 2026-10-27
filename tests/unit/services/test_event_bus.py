@@ -1,6 +1,5 @@
 """Tests for the in-process application event bus."""
 
-import asyncio
 from datetime import datetime
 
 import pytest
@@ -32,11 +31,11 @@ async def test_event_bus_dispatches_handlers_in_registration_order() -> None:
     received: list[str] = []
 
     @bus.on("example")
-    async def first(event: Event) -> None:
+    async def first(_event: Event) -> None:
         received.append("first")
 
     @bus.on("example")
-    async def second(event: Event) -> None:
+    async def second(_event: Event) -> None:
         received.append("second")
 
     await bus.emit(Event(event_type="example", data={}))
@@ -50,11 +49,11 @@ async def test_event_bus_continues_after_handler_failure() -> None:
     received: list[str] = []
 
     @bus.on("example")
-    async def broken(event: Event) -> None:
+    async def broken(_event: Event) -> None:
         raise RuntimeError("expected test failure")
 
     @bus.on("example")
-    async def succeeding(event: Event) -> None:
+    async def succeeding(_event: Event) -> None:
         received.append("succeeded")
 
     await bus.emit(Event(event_type="example", data={}))
