@@ -73,7 +73,9 @@ class EventBus:
                     "Event handler failed",
                     extra={
                         "event_type": event.event_type,
-                        "handler": getattr(handler, "__qualname__", type(handler).__name__),
+                        "handler": getattr(
+                            handler, "__qualname__", type(handler).__name__
+                        ),
                     },
                 )
 
