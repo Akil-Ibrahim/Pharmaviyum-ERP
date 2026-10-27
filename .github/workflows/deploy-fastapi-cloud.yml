@@ -2,6 +2,8 @@ name: Deploy to FastAPI Cloud
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -27,6 +29,8 @@ jobs:
         run: |
           bun install
           bun run build
+          test -s dist/index.html
+          test -d dist/assets
         env:
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
 
