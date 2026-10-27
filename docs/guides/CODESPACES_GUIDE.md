@@ -126,7 +126,7 @@ GitHub Codespace
       +--> configured LLM provider / Ollama
 ```
 
-Codespaces is a development environment. Production deployment is handled separately through GitHub Actions for CI, then Render for staging/production deployment.
+Codespaces is a development environment. Hosted application deployment is handled separately through the manually triggered FastAPI Cloud GitHub Actions workflow.
 
 ## 8. Troubleshooting
 
