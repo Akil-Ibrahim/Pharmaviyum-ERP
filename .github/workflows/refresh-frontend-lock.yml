@@ -1,0 +1,46 @@
+name: Refresh frontend lockfile
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [deploy/fastapi-cloud-prep]
+    paths:
+      - frontend/shadcn-admin/package.json
+      - .github/workflows/refresh-frontend-lock.yml
+
+permissions:
+  contents: write
+
+jobs:
+  lock-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend/shadcn-admin
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.2"
+      - name: Resolve dependencies and generate bun.lock
+        run: bun install
+      - name: ESLint
+        run: bun run lint
+      - name: TypeScript and production build
+        run: bun run build
+      - name: Commit lockfile if validation passes
+        working-directory: .
+        run: |
+          if git diff --quiet -- frontend/shadcn-admin/bun.lock; then
+            echo "bun.lock is already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/shadcn-admin/bun.lock
+          git commit -m "chore(frontend): add validated Bun lockfile"
+          git push origin HEAD:${{ github.ref_name }}
