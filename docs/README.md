@@ -10,6 +10,7 @@ This directory contains the current engineering documentation for Pharmaviyum ER
 | Architecture | [`ai_architecture.md`](./ai_architecture.md) | Current AI/RAG, MCP, memory, guardrail, and observability architecture. |
 | RAG | [`rag_architecture_audit.md`](./rag_architecture_audit.md) | Dated RAG security/quality audit and remaining work. |
 | Development | [`guides/ENVIRONMENT_SETUP.md`](./guides/ENVIRONMENT_SETUP.md) | Canonical local environment and deployment prerequisites. |
+| Hosted deployment | [`deployment/FASTAPI_CLOUD.md`](./deployment/FASTAPI_CLOUD.md) | FastAPI Cloud deployment, secrets, environment, and runtime constraints. |
 | Testing | [`guides/TESTING.md`](./guides/TESTING.md) | Test layout, quality gates, and validation commands. |
 | Codespaces | [`guides/CODESPACES_GUIDE.md`](./guides/CODESPACES_GUIDE.md) | GitHub Codespaces workflow. |
 | Operations | [`operations/INCIDENT_RUNBOOK.md`](./operations/INCIDENT_RUNBOOK.md) | Incident triage and rollback guidance. |
