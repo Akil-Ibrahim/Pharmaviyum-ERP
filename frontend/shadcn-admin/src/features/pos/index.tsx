@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Barcode, Check, CreditCard, Minus, Plus, Search, ShoppingCart, Tag, Trash2, UserRound, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -76,7 +76,7 @@ export function Pos() {
     const next = item.quantity + delta
     return next > 0 ? [{ ...item, quantity: Math.min(next, item.stock) }] : []
   }))
-  const scanSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const scanSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const term = query.trim()
     if (!term) return
