@@ -128,7 +128,7 @@ Development Docker Compose currently provides:
 - FastAPI API;
 - Celery ingestion worker.
 
-Production release deployment is handled through GitHub Actions for CI, then Render for staging/production deployment.
+FastAPI Cloud is the hosted application deployment target. GitHub Actions provides CI and a manually triggered deployment workflow; database, cache, and other required services must be provisioned and configured separately.
 
 The repository does not use a separate Kubernetes AI deployment; Mortarium remains an application-level AI layer.
 
