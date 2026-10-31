@@ -60,6 +60,13 @@ class AgentHarness:
                 "country",
                 "language",
                 "halal_filter",
+                "role",
+                "permissions_version",
+                "formulary_version",
+                "inventory_version",
+                "catalog_version",
+                # This flag must only be set by trusted server-side policy.
+                "semantic_cache_safe",
             }
         }
 
@@ -162,8 +169,9 @@ class AgentHarness:
                 user_message=safe_query,
                 assistant_message=final_answer,
             )
-            await self.cache.set(
-                prompt=safe_query,
+            if not context.get("force_fresh") and not context.get("cache_disabled"):
+                await self.cache.set(
+                    prompt=safe_query,
                 response={
                     "answer": final_answer,
                     "warnings": agent_warnings,
@@ -174,8 +182,8 @@ class AgentHarness:
                         or "configured-main"
                     ),
                 },
-                context=cache_key_context,
-            )
+                    context=cache_key_context,
+                )
 
             latency_ms = (time.perf_counter() - start_time) * 1000
             logger.info(
@@ -298,11 +306,12 @@ class AgentHarness:
                 user_message=safe_query,
                 assistant_message=final_answer,
             )
-            await self.cache.set(
-                prompt=safe_query,
+            if not context.get("force_fresh") and not context.get("cache_disabled"):
+                await self.cache.set(
+                    prompt=safe_query,
                 response={"answer": final_answer, "warnings": final_warnings},
-                context=cache_key_context,
-            )
+                    context=cache_key_context,
+                )
 
             yield {"event": "status", "message": "Finalizing response..."}
             yield {
