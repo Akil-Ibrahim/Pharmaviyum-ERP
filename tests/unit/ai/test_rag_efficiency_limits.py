@@ -24,12 +24,16 @@ def test_rag_limits_can_be_configured() -> None:
         max_context_docs=5,
         max_rewrites=1,
         max_query_variations=1,
+        enable_multi_query=False,
+        enable_hyde=False,
     )
 
     assert rag.retrieval_top_k == 5
     assert rag.max_context_docs == 5
     assert rag.max_rewrites == 1
     assert rag.max_query_variations == 1
+    assert rag.enable_multi_query is False
+    assert rag.enable_hyde is False
 
 
 @pytest.mark.parametrize(
