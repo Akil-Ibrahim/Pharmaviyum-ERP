@@ -65,8 +65,8 @@ class AgentHarness:
                 "formulary_version",
                 "inventory_version",
                 "catalog_version",
-                # This flag must only be set by trusted server-side policy.
-                "semantic_cache_safe",
+                "force_fresh",
+                "cache_disabled",
             }
         }
 
@@ -172,7 +172,7 @@ class AgentHarness:
             if not context.get("force_fresh") and not context.get("cache_disabled"):
                 await self.cache.set(
                     prompt=safe_query,
-                response={
+                    response={
                     "answer": final_answer,
                     "warnings": agent_warnings,
                     "tool_results": tool_results,
@@ -309,7 +309,7 @@ class AgentHarness:
             if not context.get("force_fresh") and not context.get("cache_disabled"):
                 await self.cache.set(
                     prompt=safe_query,
-                response={"answer": final_answer, "warnings": final_warnings},
+                    response={"answer": final_answer, "warnings": final_warnings},
                     context=cache_key_context,
                 )
 
