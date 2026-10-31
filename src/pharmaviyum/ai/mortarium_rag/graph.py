@@ -349,7 +349,10 @@ class LangGraphRAG:
                 f"Question: {state['question']}\n\nEvidence:\n{context}"
             )
             try:
-                self.token_budget_manager.check_input(prompt)
+                token_budget_manager = getattr(
+                    self, "token_budget_manager", None
+                ) or TokenBudgetManager()
+                token_budget_manager.check_input(prompt)
             except TokenBudgetExceeded as exc:
                 logger.warning("RAG generation skipped by token budget: %s", exc)
                 success = True
@@ -424,7 +427,9 @@ class LangGraphRAG:
     def _route_after_grade(self, state: RAGState) -> str:
         if state.get("grade_decision") == "sufficient":
             return "sufficient"
-        if state.get("rewrite_count", 0) < self.max_rewrites:
+        if state.get("rewrite_count", 0) < getattr(
+            self, "max_rewrites", self.MAX_REWRITES
+        ):
             return "rewrite"
         return "give_up"
 
