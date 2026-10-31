@@ -21,7 +21,7 @@ Every model call must receive only the information needed for that step.
 
 RAG limits must be configurable and evaluated against a labelled retrieval set. Do not assume one fixed Top-K or chunk size is optimal for every document type or language.
 
-Current configurable controls are exposed through `RAGSettings`:
+Current configurable controls are exposed through `RAGSettings` and `TokenBudgetSettings`:
 
 | Setting | Environment variable | Current default | Purpose |
 |---|---|---:|---|
@@ -34,7 +34,7 @@ Current configurable controls are exposed through `RAGSettings`:
 | `max_chunk_tokens` | `RAG_MAX_CHUNK_TOKENS` | 512 | Ingestion chunk target |
 | `chunk_overlap` | `RAG_CHUNK_OVERLAP` | 50 | Ingestion overlap |
 
-The defaults preserve the current retrieval behavior. Tune them only with retrieval-quality and answer-quality evaluations. A smaller Top-K is not automatically better if it drops clinically important evidence.
+Token budget controls use `AI_TOKEN_MAX_INPUT_TOKENS` (default 6000), `AI_TOKEN_MAX_OUTPUT_TOKENS` (default 500), and `AI_TOKEN_SAFETY_MARGIN_TOKENS` (default 256). The input limit is preflight-enforced. The output limit is a configured target until each provider adapter explicitly maps it to its native generation parameter. The defaults preserve the current retrieval behavior. Tune them only with retrieval-quality and answer-quality evaluations. A smaller Top-K is not automatically better if it drops clinically important evidence.
 
 Operational tuning sequence:
 
@@ -134,7 +134,8 @@ Implemented in the current `dev` branch:
 - existing model routing, dialogue memory, prompt cache, tenant-scoped retrieval, guardrails, MCP authorization, and AI observability components.
 
 Still requiring implementation or verification before claiming complete coverage:
-- end-to-end provider-independent token-budget enforcement;
+- token-budget preflight in the RAG generation node, with model tokenizer use when available and an explicitly marked conservative estimate fallback; over-budget prompts fail closed without silently truncating clinical evidence;
+- provider-specific enforcement of the configured output-token target still requires adapter-level implementation and verification;
 - consistent provider token-usage and prompt-cache metrics across all adapters;
 - safe semantic answer-cache policy for clinical workflows;
 - measured evaluation gates for each supported model/deployment profile.
