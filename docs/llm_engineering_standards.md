@@ -29,6 +29,8 @@ Current configurable controls are exposed through `RAGSettings`:
 | `max_context_docs` | `RAG_MAX_CONTEXT_DOCS` | 12 | Maximum deduplicated candidates retained for grading |
 | `max_rewrites` | `RAG_MAX_REWRITES` | 2 | Maximum retrieval rewrite loops |
 | `max_query_variations` | `RAG_MAX_QUERY_VARIATIONS` | 2 | Query variations requested from the transformer |
+| `enable_multi_query` | `RAG_ENABLE_MULTI_QUERY` | true | Enable query expansion model calls |
+| `enable_hyde` | `RAG_ENABLE_HYDE` | true | Enable HyDE model call |
 | `max_chunk_tokens` | `RAG_MAX_CHUNK_TOKENS` | 512 | Ingestion chunk target |
 | `chunk_overlap` | `RAG_CHUNK_OVERLAP` | 50 | Ingestion overlap |
 
