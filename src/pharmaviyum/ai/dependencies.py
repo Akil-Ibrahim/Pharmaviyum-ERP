@@ -241,6 +241,10 @@ class AIComponents:
                 fast_llm=cast(LLMPort, get_llm_fast()),
                 guardrails=guardrails,
                 checkpointer=self.checkpoint_saver,
+                retrieval_top_k=settings.rag.top_k,
+                max_context_docs=settings.rag.max_context_docs,
+                max_rewrites=settings.rag.max_rewrites,
+                max_query_variations=settings.rag.max_query_variations,
             )
 
             cache = PromptCache(
