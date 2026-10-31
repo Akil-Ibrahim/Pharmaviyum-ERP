@@ -8,7 +8,6 @@ It never silently truncates clinical evidence to fit a budget.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import ceil
 from typing import Callable
 
 
@@ -55,8 +54,9 @@ class TokenBudgetManager:
             except Exception:
                 # A tokenizer failure must not break requests or masquerade as exact.
                 pass
-        # Conservative planning estimate only; not an authoritative token count.
-        return TokenCount(ceil(len(text) / 3), True)
+        # One token per character is deliberately conservative for multilingual text.
+        # This is a planning bound, not an authoritative tokenizer result.
+        return TokenCount(len(text), True)
 
     def check_input(self, prompt: str) -> TokenCount:
         count = self.count(prompt)
