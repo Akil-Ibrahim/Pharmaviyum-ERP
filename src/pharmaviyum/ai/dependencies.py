@@ -245,6 +245,8 @@ class AIComponents:
                 max_context_docs=settings.rag.max_context_docs,
                 max_rewrites=settings.rag.max_rewrites,
                 max_query_variations=settings.rag.max_query_variations,
+                enable_multi_query=settings.rag.enable_multi_query,
+                enable_hyde=settings.rag.enable_hyde,
             )
 
             cache = PromptCache(
