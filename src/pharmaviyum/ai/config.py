@@ -111,6 +111,9 @@ class RAGSettings(BaseSettings):
     max_chunk_tokens: int = 512
     chunk_overlap: int = 50
     top_k: int = 10
+    max_context_docs: int = 12
+    max_rewrites: int = 2
+    max_query_variations: int = 2
     rerank_top_n: int = 5
     rrf_k: int = 60
     similarity_threshold: float = 0.70
