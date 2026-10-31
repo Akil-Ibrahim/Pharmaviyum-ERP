@@ -130,6 +130,7 @@ A change that reduces tokens but degrades safety, recall, citations, or answer q
 
 Implemented in the current `dev` branch:
 - configurable RAG retrieval candidate limit, retained context-document limit, rewrite count, and query-variation count;
+- configurable switches for multi-query expansion and HyDE, now honored by the RAG graph;
 - existing model routing, dialogue memory, prompt cache, tenant-scoped retrieval, guardrails, MCP authorization, and AI observability components.
 
 Still requiring implementation or verification before claiming complete coverage:
