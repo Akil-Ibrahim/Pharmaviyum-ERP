@@ -78,7 +78,7 @@ Provider-side prompt caching is separate from the application's Redis response c
 
 ### Dialogue memory retention and trust boundaries
 
-Mortarium memory uses three logical tiers: a bounded recent-message window, a rolling summary, and explicitly stored episodic facts. Session identifiers must be derived at the authenticated API boundary and scoped to the tenant, user, and conversation.
+Mortarium memory uses three logical tiers: a recent-message window, a rolling summary, and explicitly stored episodic facts. The recent window is compacted after successful summarization; if summarization is unavailable or fails, raw turns are retained and the list can grow until the configured Redis TTL expires. Session identifiers must be derived at the authenticated API boundary and scoped to the tenant, user, and conversation.
 
 - A rolling summary is lossy and must never be treated as the authoritative record for clinical details.
 - Before summarized turns are removed from the active prompt window, preserve their verbatim serialized messages in a session-scoped Redis archive with the same TTL.
@@ -151,6 +151,7 @@ Implemented in the current `dev` branch:
 
 Still requiring implementation or verification before claiming complete coverage:
 - archive retrieval, concurrent compaction/idempotency, and durable retention/deletion policy require dedicated design and integration tests before production use;
+- dialogue memory unit tests have been added, but have not yet been executed in this work session;
 - consistent provider-token-usage and prompt-cache metrics across every internal model call still require end-to-end verification;
 - consistent provider token-usage and prompt-cache metrics across all adapters;
 - production semantic-cache enablement remains disabled by default; it requires a trusted server-side safe-request classifier, and patient-scoped requests are always excluded;
