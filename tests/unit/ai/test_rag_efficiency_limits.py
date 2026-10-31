@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from langgraph.checkpoint.memory import MemorySaver
 
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
 
@@ -12,7 +13,7 @@ def _build_rag(**overrides) -> LangGraphRAG:
         "vector_store": MagicMock(),
         "embeddings": MagicMock(),
         "llm": MagicMock(),
-        "checkpointer": MagicMock(),
+        "checkpointer": MemorySaver(),
     }
     options.update(overrides)
     return LangGraphRAG(**options)
