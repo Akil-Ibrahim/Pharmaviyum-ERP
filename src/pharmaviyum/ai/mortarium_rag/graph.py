@@ -366,8 +366,9 @@ class LangGraphRAG:
                     "model_used": "none",
                     "latency_ms": (time.perf_counter() - started) * 1000,
                     "tokens_used": 0,
-                    "warnings": list(state.get("warnings", []))
-                    + ["input_token_budget_exceeded"],
+                    # RAGState.warnings uses an additive reducer; return only
+                    # this node's delta to avoid duplicating prior warnings.
+                    "warnings": ["input_token_budget_exceeded"],
                 }
             response = await self.llm.ainvoke(prompt)
             answer = response_text(response)
