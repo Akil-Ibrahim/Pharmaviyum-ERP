@@ -134,7 +134,8 @@ Implemented in the current `dev` branch:
 - existing model routing, dialogue memory, prompt cache, tenant-scoped retrieval, guardrails, MCP authorization, and AI observability components.
 
 Still requiring implementation or verification before claiming complete coverage:
-- token-budget preflight in the RAG generation node, with model tokenizer use when available and an explicitly marked conservative estimate fallback; over-budget prompts fail closed without silently truncating clinical evidence;
+- token-budget preflight in the RAG generation node, with model tokenizer use when available and an explicitly marked one-token-per-character conservative fallback; over-budget prompts fail closed without silently truncating clinical evidence;
+- provider-reported input/output token usage is recorded for the RAG generation call; unknown model pricing is left unpriced rather than assigned a fabricated rate;
 - provider-specific enforcement of the configured output-token target still requires adapter-level implementation and verification;
 - consistent provider token-usage and prompt-cache metrics across all adapters;
 - safe semantic answer-cache policy for clinical workflows;
