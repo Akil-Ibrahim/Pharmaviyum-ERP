@@ -43,6 +43,8 @@ def calculate_llm_cost(
 
     # Unknown pricing must remain unknown; never misreport it as a cheap API model.
     pricing = MODEL_PRICING.get(model_key)
+    if pricing is None and model_key.startswith("qwen3:8b"):
+        pricing = MODEL_PRICING["qwen3:8b"]
     if pricing is None:
         return None
 
