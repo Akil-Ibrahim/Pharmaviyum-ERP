@@ -131,12 +131,13 @@ A change that reduces tokens but degrades safety, recall, citations, or answer q
 Implemented in the current `dev` branch:
 - configurable RAG retrieval candidate limit, retained context-document limit, rewrite count, and query-variation count;
 - configurable switches for multi-query expansion and HyDE, now honored by the RAG graph;
+- input token-budget preflight in RAG generation, with a model tokenizer when available and an explicitly marked one-token-per-character fallback; over-budget prompts fail closed without silently truncating clinical evidence;
+- provider-reported input/output token usage recording for RAG generation, and transparent unknown-model cost handling;
+- provider-specific output-token caps for Ollama (`num_predict`), Gemini (`max_output_tokens`), and Groq (`max_tokens`);
 - existing model routing, dialogue memory, prompt cache, tenant-scoped retrieval, guardrails, MCP authorization, and AI observability components.
 
 Still requiring implementation or verification before claiming complete coverage:
-- token-budget preflight in the RAG generation node, with model tokenizer use when available and an explicitly marked one-token-per-character conservative fallback; over-budget prompts fail closed without silently truncating clinical evidence;
-- provider-reported input/output token usage is recorded for the RAG generation call; unknown model pricing is left unpriced rather than assigned a fabricated rate;
-- provider-specific enforcement of the configured output-token target still requires adapter-level implementation and verification;
+- consistent provider-token-usage and prompt-cache metrics across every internal model call still require end-to-end verification;
 - consistent provider token-usage and prompt-cache metrics across all adapters;
 - safe semantic answer-cache policy for clinical workflows;
 - measured evaluation gates for each supported model/deployment profile.
