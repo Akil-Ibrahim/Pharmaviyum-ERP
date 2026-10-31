@@ -30,8 +30,8 @@ class PromptCache:
         self,
         redis_client,
         embeddings_provider=None,
-        exact_ttl_seconds: int = 86400 * 7,  # 7 days for exact matches
-        semantic_ttl_seconds: int = 86400 * 30,  # 30 days for semantic index
+        exact_ttl_seconds: int = 3600,  # 1 hour; answers may become stale
+        semantic_ttl_seconds: int = 86400,  # 1 day; semantic reuse requires explicit opt-in
         similarity_threshold: float = 0.95,
     ):
         self.redis = redis_client
@@ -52,7 +52,9 @@ class PromptCache:
         1. Exact hash match (O(1) Redis GET)
         2. Semantic similarity match (if embeddings provider is available)
         """
-        self._require_authenticated_scope(context)
+        self._validate_context(context)
+        if context.get("cache_disabled") or context.get("force_fresh"):
+            return None
         cache_key = self._build_cache_key(prompt, context)
 
         # 1. Try exact match
@@ -63,7 +65,7 @@ class PromptCache:
             return json.loads(cached)
 
         # 2. Try semantic match (if enabled and available)
-        if self.embeddings:
+        if self.embeddings and self._semantic_cache_allowed(context):
             semantic_result = await self._semantic_search(prompt, context)
             if (
                 semantic_result
@@ -88,7 +90,9 @@ class PromptCache:
 
         Stores both exact hash and semantic embedding (if available).
         """
-        self._require_authenticated_scope(context)
+        self._validate_context(context)
+        if context.get("cache_disabled") or context.get("force_fresh"):
+            return
         cache_key = self._build_cache_key(prompt, context)
 
         # 1. Store exact match
@@ -96,7 +100,7 @@ class PromptCache:
         await self.redis.setex(exact_key, self.exact_ttl, json.dumps(response))
 
         # 2. Store semantic embedding (async, non-blocking)
-        if self.embeddings:
+        if self.embeddings and self._semantic_cache_allowed(context):
             try:
                 embedding = await self.embeddings.embed(prompt)
                 # Store in Redis sorted set for similarity search
@@ -116,7 +120,7 @@ class PromptCache:
                 logger.warning(f"Failed to cache semantic embedding: {e}")
 
     @staticmethod
-    def _require_authenticated_scope(context: dict[str, Any] | None) -> None:
+    def _validate_context(context: dict[str, Any] | None) -> None:
         """Reject cache operations that are not bound to one user and pharmacy."""
         user_id = context.get("user_id") if context else None
         pharmacy_id = context.get("pharmacy_id") if context else None
@@ -132,20 +136,45 @@ class PromptCache:
             )
 
     @staticmethod
+    def _semantic_cache_allowed(context: dict[str, Any] | None) -> bool:
+        """Semantic reuse is opt-in only for explicitly reviewed, non-patient-specific requests."""
+        return bool(
+            context
+            and context.get("semantic_cache_safe") is True
+            and context.get("patient_id") is None
+            and not context.get("force_fresh")
+            and not context.get("cache_disabled")
+        )
+
+    @staticmethod
     def _context_scope(context: dict[str, Any] | None) -> str:
         """Keep semantic cache candidates isolated by authenticated tenant/user context."""
-        if not context:
-            return "anonymous"
+        PromptCache._validate_context(context)
         scoped = {
             key: context.get(key)
-            for key in ("pharmacy_id", "user_id", "patient_id", "country", "language")
+            for key in (
+                "pharmacy_id",
+                "user_id",
+                "patient_id",
+                "country",
+                "language",
+                "role",
+                "permissions_version",
+                "formulary_version",
+                "inventory_version",
+                "catalog_version",
+            )
         }
         raw = json.dumps(scoped, sort_keys=True, default=str)
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
 
     def _build_cache_key(self, prompt: str, context: dict[str, Any] | None) -> str:
         """Generate a unique hash for the prompt + context."""
-        context_str = json.dumps(context, sort_keys=True) if context else ""
+        self._validate_context(context)
+        scope = self._context_scope(context)
+        context_str = json.dumps(
+            {"scope": scope, "context": context}, sort_keys=True, default=str
+        )
         combined = f"{prompt}|{context_str}"
         return hashlib.sha256(combined.encode("utf-8")).hexdigest()[:32]
 
