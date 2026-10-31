@@ -24,7 +24,9 @@ MODEL_PRICING: dict[str, dict[str, float]] = {
 }
 
 
-def calculate_llm_cost(model_name: str, input_tokens: int, output_tokens: int) -> float:
+def calculate_llm_cost(
+    model_name: str, input_tokens: int, output_tokens: int
+) -> float | None:
     """
     Calculate estimated cost for an LLM call.
 
@@ -39,8 +41,10 @@ def calculate_llm_cost(model_name: str, input_tokens: int, output_tokens: int) -
     # Normalize model name for lookup
     model_key = model_name.lower().strip()
 
-    # Fallback to cheapest commercial model if unknown
-    pricing = MODEL_PRICING.get(model_key, MODEL_PRICING["gpt-4o-mini"])
+    # Unknown pricing must remain unknown; never misreport it as a cheap API model.
+    pricing = MODEL_PRICING.get(model_key)
+    if pricing is None:
+        return None
 
     input_cost = (input_tokens / 1000.0) * pricing["input"]
     output_cost = (output_tokens / 1000.0) * pricing["output"]
