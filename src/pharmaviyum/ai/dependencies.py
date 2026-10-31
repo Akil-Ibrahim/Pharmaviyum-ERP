@@ -32,6 +32,7 @@ from src.pharmaviyum.ai.harness.model_router import ModelRouter
 from src.pharmaviyum.ai.mcp.client import MCPClient
 from src.pharmaviyum.ai.mortarium_rag.embeddings import EmbeddingsFactory
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
+from src.pharmaviyum.ai.optimization.token_budget import TokenBudget, TokenBudgetManager
 from src.pharmaviyum.ai.mortarium_rag.ingestion.orchestrator import (
     IngestionOrchestrator,
 )
@@ -247,6 +248,14 @@ class AIComponents:
                 max_query_variations=settings.rag.max_query_variations,
                 enable_multi_query=settings.rag.enable_multi_query,
                 enable_hyde=settings.rag.enable_hyde,
+                token_budget_manager=TokenBudgetManager(
+                    budget=TokenBudget(
+                        max_input_tokens=settings.token_budget.max_input_tokens,
+                        max_output_tokens=settings.token_budget.max_output_tokens,
+                        safety_margin_tokens=settings.token_budget.safety_margin_tokens,
+                    ),
+                    tokenizer=getattr(get_llm_main(), "get_num_tokens", None),
+                ),
             )
 
             cache = PromptCache(
