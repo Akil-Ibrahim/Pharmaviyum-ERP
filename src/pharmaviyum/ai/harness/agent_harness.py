@@ -173,15 +173,15 @@ class AgentHarness:
                 await self.cache.set(
                     prompt=safe_query,
                     response={
-                    "answer": final_answer,
-                    "warnings": agent_warnings,
-                    "tool_results": tool_results,
-                    "model_used": (
-                        getattr(self.agent.main_llm, "model", None)
-                        or getattr(self.agent.main_llm, "model_name", None)
-                        or "configured-main"
-                    ),
-                },
+                        "answer": final_answer,
+                        "warnings": agent_warnings,
+                        "tool_results": tool_results,
+                        "model_used": (
+                            getattr(self.agent.main_llm, "model", None)
+                            or getattr(self.agent.main_llm, "model_name", None)
+                            or "configured-main"
+                        ),
+                    },
                     context=cache_key_context,
                 )
 
@@ -309,7 +309,10 @@ class AgentHarness:
             if not context.get("force_fresh") and not context.get("cache_disabled"):
                 await self.cache.set(
                     prompt=safe_query,
-                    response={"answer": final_answer, "warnings": final_warnings},
+                    response={
+                        "answer": final_answer,
+                        "warnings": final_warnings,
+                    },
                     context=cache_key_context,
                 )
 
