@@ -327,10 +327,18 @@ def record_rag_retrieval(
     RAG_RETRIEVAL_DURATION.labels(query_type=query_type).observe(latency_ms / 1000.0)
 
 
+def _model_label(model_name: str) -> str:
+    """Normalize model identifiers to a bounded Prometheus label set."""
+    normalized = model_name.lower().strip()
+    if normalized.startswith("qwen3:8b"):
+        return "qwen3:8b"
+    return _bounded(normalized, _ALLOWED_MODELS)
+
+
 def record_llm_usage(
     model_name: str, input_tokens: int, output_tokens: int, cost_usd: float | None
 ) -> None:
-    model_name = _bounded(model_name, _ALLOWED_MODELS)
+    model_name = _model_label(model_name)
     LLM_TOKENS_USED_TOTAL.labels(model_name=model_name, token_type="input").inc(
         input_tokens
     )
