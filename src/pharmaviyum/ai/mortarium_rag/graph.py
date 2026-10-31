@@ -402,7 +402,9 @@ class LangGraphRAG:
         success = False
         try:
             answer = state.get("answer") or ""
-            warnings = list(state.get("warnings", []))
+            # Warnings are accumulated by the RAGState additive reducer.
+            # Return only warnings introduced by this node.
+            warnings: list[str] = []
             if self.guardrails is not None:
                 post_process = getattr(self.guardrails, "post_process", None)
                 if post_process is not None:
