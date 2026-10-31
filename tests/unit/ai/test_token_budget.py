@@ -30,5 +30,7 @@ def test_over_budget_prompt_is_rejected_not_truncated() -> None:
         budget=TokenBudget(max_input_tokens=20, safety_margin_tokens=2),
         tokenizer=lambda text: 19,
     )
-    with pytest.raises(TokenBudgetExceeded, match="Clinical evidence was not truncated"):
+    with pytest.raises(
+        TokenBudgetExceeded, match="Clinical evidence was not truncated"
+    ):
         manager.check_input("clinical evidence")
