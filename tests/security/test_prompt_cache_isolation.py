@@ -79,3 +79,25 @@ def test_cache_key_changes_when_formulary_version_changes() -> None:
         "drug availability", {"user_id": "u1", "pharmacy_id": 1, "formulary_version": "v2"}
     )
     assert first != updated
+
+
+@pytest.mark.unit
+def test_semantic_cache_requires_trusted_opt_in_and_excludes_patient_scope() -> None:
+    assert not PromptCache._semantic_cache_allowed(
+        {"user_id": "u1", "pharmacy_id": 1}
+    )
+    assert PromptCache._semantic_cache_allowed(
+        {
+            "user_id": "u1",
+            "pharmacy_id": 1,
+            "semantic_cache_safe": True,
+        }
+    )
+    assert not PromptCache._semantic_cache_allowed(
+        {
+            "user_id": "u1",
+            "pharmacy_id": 1,
+            "patient_id": 42,
+            "semantic_cache_safe": True,
+        }
+    )
