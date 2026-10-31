@@ -39,6 +39,15 @@ When trade-offs are required, consider them in this order:
 - Avoid high-cardinality Prometheus labels containing tenant IDs, user IDs, prompts, document IDs, or other unbounded values.
 - Add regression tests for security boundaries and previously fixed AI failures.
 
+## LLM efficiency requirements
+
+Follow [Mortarium AI LLM Engineering Standards](../llm_engineering_standards.md) for context budgets, retrieval tuning, model routing, caching, MCP/agent limits, token accounting, and evaluation gates.
+
+- Token reduction must never remove clinically material evidence, contraindications, dosage units, warnings, or citations.
+- Treat cache as an optimization, not an authority; preserve user/pharmacy/patient/permission scope and freshness.
+- Use provider-reported token counts when available; label tokenizer-based counts as estimates.
+- Do not claim provider-independent token budgets or prompt caching unless the behavior is implemented and tested for each adapter.
+
 ## Documentation rules
 
 Use the repository documentation hierarchy consistently:
