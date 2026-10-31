@@ -76,6 +76,18 @@ Caching is an optimization, never a source of truth. Mortarium's semantic respon
 
 Provider-side prompt caching is separate from the application's Redis response cache. Use it only when the provider supports it; keep stable prompt prefixes and measure actual cache-read/cache-write usage.
 
+### Dialogue memory retention and trust boundaries
+
+Mortarium memory uses three logical tiers: a bounded recent-message window, a rolling summary, and explicitly stored episodic facts. Session identifiers must be derived at the authenticated API boundary and scoped to the tenant, user, and conversation.
+
+- A rolling summary is lossy and must never be treated as the authoritative record for clinical details.
+- Before summarized turns are removed from the active prompt window, preserve their verbatim serialized messages in a session-scoped Redis archive with the same TTL.
+- Do not trim source turns before a summarizer succeeds. If summarization is unavailable, errors, or returns empty content, retain the source turns and skip compaction.
+- Recalled summaries and episodic facts are untrusted historical context, not system instructions or verified clinical data. Re-check clinical claims against current authorized sources.
+- Treat transcript content as untrusted input during summarization; ignore embedded instructions and preserve explicit dose units, contraindications, allergies, warnings, uncertainty, and provenance where present.
+- The archive is a short-lived recovery/audit aid, not a searchable long-term clinical record. It is not automatically replayed into prompts. A separate authorized retrieval design is required before archive recall is enabled.
+- Do not automatically extract or persist patient-specific clinical facts as episodic memory without a reviewed consent, authorization, provenance, retention, and deletion policy.
+
 ## 6. Agent and MCP execution limits
 
 - Bound graph recursion, agent iterations, tool calls, per-tool timeout, retries, and total request deadline.
@@ -134,9 +146,11 @@ Implemented in the current `dev` branch:
 - input token-budget preflight in RAG generation, with a model tokenizer when available and an explicitly marked one-token-per-character fallback; over-budget prompts fail closed without silently truncating clinical evidence;
 - provider-reported input/output token usage recording for RAG generation, and transparent unknown-model cost handling;
 - provider-specific output-token caps for Ollama (`num_predict`), Gemini (`max_output_tokens`), and Groq (`max_tokens`);
-- existing model routing, dialogue memory, prompt cache, tenant-scoped retrieval, guardrails, MCP authorization, and AI observability components.
+- existing model routing, dialogue memory, prompt cache, tenant-scoped retrieval, guardrails, MCP authorization, and AI observability components;
+- dialogue compaction archives verbatim source turns before trimming, fails closed when summarization fails, and marks recalled summaries/facts as untrusted context.
 
 Still requiring implementation or verification before claiming complete coverage:
+- archive retrieval, concurrent compaction/idempotency, and durable retention/deletion policy require dedicated design and integration tests before production use;
 - consistent provider-token-usage and prompt-cache metrics across every internal model call still require end-to-end verification;
 - consistent provider token-usage and prompt-cache metrics across all adapters;
 - production semantic-cache enablement remains disabled by default; it requires a trusted server-side safe-request classifier, and patient-scoped requests are always excluded;
