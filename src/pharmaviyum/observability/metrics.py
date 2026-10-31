@@ -322,7 +322,7 @@ def record_rag_retrieval(
 
 
 def record_llm_usage(
-    model_name: str, input_tokens: int, output_tokens: int, cost_usd: float
+    model_name: str, input_tokens: int, output_tokens: int, cost_usd: float | None
 ) -> None:
     model_name = _bounded(model_name, _ALLOWED_MODELS)
     LLM_TOKENS_USED_TOTAL.labels(model_name=model_name, token_type="input").inc(
@@ -331,7 +331,8 @@ def record_llm_usage(
     LLM_TOKENS_USED_TOTAL.labels(model_name=model_name, token_type="output").inc(
         output_tokens
     )
-    LLM_COST_ESTIMATE_USD_TOTAL.labels(model_name=model_name).inc(cost_usd)
+    if cost_usd is not None:
+        LLM_COST_ESTIMATE_USD_TOTAL.labels(model_name=model_name).inc(cost_usd)
 
 
 def record_evaluation_scores(
