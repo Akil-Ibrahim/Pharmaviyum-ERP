@@ -64,7 +64,7 @@ Operational tuning sequence:
 
 ## 5. Caching
 
-Caching is an optimization, never a source of truth.
+Caching is an optimization, never a source of truth. Mortarium's semantic response cache is disabled by default unless trusted server-side policy explicitly marks a request safe; patient-scoped requests are never eligible. Exact cache entries are tenant/user scoped, include relevant data-version dimensions when supplied, and have a one-hour default TTL. `force_fresh` bypasses reads and writes in both streaming and non-streaming API paths.
 
 - Exact prompt caching may be used when the full request identity is represented in the cache key.
 - Cache keys must include the authenticated user and pharmacy scope, plus every context attribute that can change the answer (for example patient, country, language, permissions, and relevant data/version identifiers).
@@ -139,7 +139,7 @@ Implemented in the current `dev` branch:
 Still requiring implementation or verification before claiming complete coverage:
 - consistent provider-token-usage and prompt-cache metrics across every internal model call still require end-to-end verification;
 - consistent provider token-usage and prompt-cache metrics across all adapters;
-- safe semantic answer-cache policy for clinical workflows;
+- production semantic-cache enablement remains disabled by default; it requires a trusted server-side safe-request classifier, and patient-scoped requests are always excluded;
 - measured evaluation gates for each supported model/deployment profile.
 
 This status section must be updated when those capabilities are implemented and tested.
