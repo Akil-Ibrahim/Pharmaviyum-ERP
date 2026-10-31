@@ -43,6 +43,8 @@ class LangGraphRAG:
         max_context_docs: int = MAX_CONTEXT_DOCS,
         max_rewrites: int = MAX_REWRITES,
         max_query_variations: int = 2,
+        enable_multi_query: bool = True,
+        enable_hyde: bool = True,
     ) -> None:
         if checkpointer is None:
             raise ValueError(
@@ -61,6 +63,8 @@ class LangGraphRAG:
         self.max_context_docs = max_context_docs
         self.max_rewrites = max_rewrites
         self.max_query_variations = max_query_variations
+        self.enable_multi_query = enable_multi_query
+        self.enable_hyde = enable_hyde
         self.transformer = QueryTransformer(llm=self.fast_llm)
         self.compressor = ContextualCompressor(llm=self.fast_llm)
         self.graph = self._build_graph(checkpointer)
@@ -134,20 +138,30 @@ class LangGraphRAG:
                     question = (
                         getattr(guardrail_result, "sanitized_input", None) or question
                     )
-            variations = await self.transformer.generate_multi_query(
-                query=question, num_variations=self.max_query_variations, context=ctx_dict
-            )
-            queries = [v.transformed_query for v in variations if v.transformed_query]
-            try:
-                hyde = await self.transformer.transform_with_hyde(
-                    query=question, context=ctx_dict
+            queries = [question]
+            if self.enable_multi_query:
+                variations = await self.transformer.generate_multi_query(
+                    query=question,
+                    num_variations=self.max_query_variations,
+                    context=ctx_dict,
                 )
-                if hyde.transformed_query and hyde.transformed_query not in queries:
-                    queries.append(hyde.transformed_query)
-            except Exception as exc:
-                logger.warning("HyDE skipped: %s", exc)
-            if not queries:
-                queries = [question]
+                queries = [
+                    item.transformed_query
+                    for item in variations
+                    if item.transformed_query
+                ] or [question]
+            if self.enable_hyde:
+                try:
+                    hyde = await self.transformer.transform_with_hyde(
+                        query=question, context=ctx_dict
+                    )
+                    if (
+                        hyde.transformed_query
+                        and hyde.transformed_query not in queries
+                    ):
+                        queries.append(hyde.transformed_query)
+                except Exception as exc:
+                    logger.warning("HyDE skipped: %s", exc)
             success = True
             return {"transformed_queries": queries, "rewrite_count": 0, "warnings": []}
         finally:
