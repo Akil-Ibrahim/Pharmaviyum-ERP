@@ -278,7 +278,13 @@ _ALLOWED_STAGES = {
     "other",
 }
 _ALLOWED_QUERY_TYPES = {"hybrid_multi_query", "other"}
-_ALLOWED_MODELS = {"qwen3.5:9b", "other"}
+_ALLOWED_MODELS = {
+    "qwen3.5:9b",
+    "qwen3:8b",
+    "gpt-4o",
+    "gpt-4o-mini",
+    "other",
+}
 # Only registered production MCP tools are exposed as Prometheus labels.
 # Test/dynamic tool names intentionally collapse to `other`.
 _ALLOWED_TOOLS = {
@@ -321,17 +327,26 @@ def record_rag_retrieval(
     RAG_RETRIEVAL_DURATION.labels(query_type=query_type).observe(latency_ms / 1000.0)
 
 
+def _model_label(model_name: str) -> str:
+    """Normalize model identifiers to a bounded Prometheus label set."""
+    normalized = model_name.lower().strip()
+    if normalized.startswith("qwen3:8b"):
+        return "qwen3:8b"
+    return _bounded(normalized, _ALLOWED_MODELS)
+
+
 def record_llm_usage(
-    model_name: str, input_tokens: int, output_tokens: int, cost_usd: float
+    model_name: str, input_tokens: int, output_tokens: int, cost_usd: float | None
 ) -> None:
-    model_name = _bounded(model_name, _ALLOWED_MODELS)
+    model_name = _model_label(model_name)
     LLM_TOKENS_USED_TOTAL.labels(model_name=model_name, token_type="input").inc(
         input_tokens
     )
     LLM_TOKENS_USED_TOTAL.labels(model_name=model_name, token_type="output").inc(
         output_tokens
     )
-    LLM_COST_ESTIMATE_USD_TOTAL.labels(model_name=model_name).inc(cost_usd)
+    if cost_usd is not None:
+        LLM_COST_ESTIMATE_USD_TOTAL.labels(model_name=model_name).inc(cost_usd)
 
 
 def record_evaluation_scores(
