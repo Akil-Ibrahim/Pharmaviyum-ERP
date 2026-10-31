@@ -50,7 +50,11 @@ class TokenBudgetManager:
 
     def count(self, text: str) -> TokenCount:
         if self.tokenizer is not None:
-            return TokenCount(max(0, int(self.tokenizer(text))), False)
+            try:
+                return TokenCount(max(0, int(self.tokenizer(text))), False)
+            except Exception:
+                # A tokenizer failure must not break requests or masquerade as exact.
+                pass
         # Conservative planning estimate only; not an authoritative token count.
         return TokenCount(ceil(len(text) / 3), True)
 
