@@ -57,6 +57,7 @@ class AgentHarness:
                 "user_id",
                 "pharmacy_id",
                 "patient_id",
+                "prescription_id",
                 "country",
                 "language",
                 "halal_filter",
