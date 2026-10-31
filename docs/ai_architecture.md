@@ -73,6 +73,18 @@ Document ingestion is implemented under `src/pharmaviyum/ai/rag/ingestion` and i
 
 Do not document a separate Kubernetes ingestion deployment; the repository no longer maintains a Kubernetes manifest tree.
 
+## LLM efficiency and context budgets
+
+The engineering policy is maintained in [Mortarium AI LLM Engineering Standards](llm_engineering_standards.md).
+
+RAG retrieval limits are configurable through `RAGSettings` and passed into `LangGraphRAG` at initialization:
+- `RAG_TOP_K`: retrieval candidates per query/filter;
+- `RAG_MAX_CONTEXT_DOCS`: deduplicated candidates retained for grading;
+- `RAG_MAX_REWRITES`: maximum retrieval rewrite loops;
+- `RAG_MAX_QUERY_VARIATIONS`: query variations requested from the transformer.
+
+Defaults preserve the existing retrieval behavior. Tune limits only against labelled retrieval and answer-quality evaluations; do not trade away clinical evidence, citation integrity, or tenant isolation for lower token usage.
+
 ## Agent Harness and memory
 
 The Agent Harness provides the application-level orchestration around LLM calls.
