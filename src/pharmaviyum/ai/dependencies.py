@@ -32,7 +32,10 @@ from src.pharmaviyum.ai.harness.model_router import ModelRouter
 from src.pharmaviyum.ai.mcp.client import MCPClient
 from src.pharmaviyum.ai.mortarium_rag.embeddings import EmbeddingsFactory
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
-from src.pharmaviyum.ai.optimization.token_budget import TokenBudget, TokenBudgetManager
+from src.pharmaviyum.ai.optimization.token_budget import (
+    TokenBudget,
+    TokenBudgetManager,
+)
 from src.pharmaviyum.ai.mortarium_rag.ingestion.orchestrator import (
     IngestionOrchestrator,
 )
