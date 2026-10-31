@@ -123,6 +123,13 @@ class RAGSettings(BaseSettings):
     default_languages: list[str] = ["vi", "en", "ar", "th", "id"]
 
 
+class TokenBudgetSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="AI_TOKEN_")
+    max_input_tokens: int = 6000
+    max_output_tokens: int = 500
+    safety_margin_tokens: int = 256
+
+
 class AgentSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="AGENT_")
     max_iterations: int = 5
@@ -176,6 +183,7 @@ class AISettings(BaseSettings):
     otel: OTelSettings = Field(default_factory=OTelSettings)
     rag: RAGSettings = Field(default_factory=RAGSettings)
     agent: AgentSettings = Field(default_factory=AgentSettings)
+    token_budget: TokenBudgetSettings = Field(default_factory=TokenBudgetSettings)
     halal: HalalSettings = Field(default_factory=HalalSettings)
     mcp: MCPSettings = Field(default_factory=MCPSettings)
 
