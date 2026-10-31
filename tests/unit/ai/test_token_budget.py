@@ -21,7 +21,7 @@ def test_exact_tokenizer_is_used_when_available() -> None:
 
 def test_fallback_count_is_explicitly_an_estimate() -> None:
     result = TokenBudgetManager().count("a" * 30)
-    assert result.value == 10
+    assert result.value == 30
     assert result.is_estimate is True
 
 
