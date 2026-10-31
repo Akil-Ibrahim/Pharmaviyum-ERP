@@ -14,6 +14,8 @@ from src.pharmaviyum.ai.observability.metrics import (
     record_ai_stage,
     record_rag_retrieval,
 )
+from src.pharmaviyum.ai.observability.cost_tracker import calculate_llm_cost
+from src.pharmaviyum.ai.observability.metrics import record_llm_usage
 from src.pharmaviyum.ai.optimization.token_budget import (
     TokenBudget,
     TokenBudgetExceeded,
@@ -373,6 +375,14 @@ class LangGraphRAG:
             output_tokens = int(
                 usage.get("output_tokens", usage.get("completion_tokens", 0)) or 0
             )
+            model_name = (
+                getattr(self.llm, "model_name", None)
+                or getattr(self.llm, "model", None)
+                or "other"
+            )
+            if input_tokens or output_tokens:
+                cost = calculate_llm_cost(model_name, input_tokens, output_tokens)
+                record_llm_usage(model_name, input_tokens, output_tokens, cost)
             success = True
             return {
                 "answer": answer,
