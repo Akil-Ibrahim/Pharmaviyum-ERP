@@ -39,6 +39,10 @@ class LangGraphRAG:
         fast_llm: LLMPort | None = None,
         guardrails: GuardrailsPort | None = None,
         checkpointer: Any | None = None,
+        retrieval_top_k: int = RETRIEVAL_TOP_K,
+        max_context_docs: int = MAX_CONTEXT_DOCS,
+        max_rewrites: int = MAX_REWRITES,
+        max_query_variations: int = 2,
     ) -> None:
         if checkpointer is None:
             raise ValueError(
@@ -49,6 +53,14 @@ class LangGraphRAG:
         self.llm = llm
         self.fast_llm = fast_llm or llm
         self.guardrails = guardrails
+        if retrieval_top_k < 1 or max_context_docs < 1:
+            raise ValueError("RAG retrieval and context limits must be positive")
+        if max_rewrites < 0 or max_query_variations < 1:
+            raise ValueError("RAG rewrite/query variation limits are invalid")
+        self.retrieval_top_k = retrieval_top_k
+        self.max_context_docs = max_context_docs
+        self.max_rewrites = max_rewrites
+        self.max_query_variations = max_query_variations
         self.transformer = QueryTransformer(llm=self.fast_llm)
         self.compressor = ContextualCompressor(llm=self.fast_llm)
         self.graph = self._build_graph(checkpointer)
@@ -123,7 +135,7 @@ class LangGraphRAG:
                         getattr(guardrail_result, "sanitized_input", None) or question
                     )
             variations = await self.transformer.generate_multi_query(
-                query=question, num_variations=2, context=ctx_dict
+                query=question, num_variations=self.max_query_variations, context=ctx_dict
             )
             queries = [v.transformed_query for v in variations if v.transformed_query]
             try:
@@ -162,7 +174,7 @@ class LangGraphRAG:
         return await self.vector_store.hybrid_search(
             query=query,
             query_embedding=query_embedding,
-            top_k=self.RETRIEVAL_TOP_K,
+            top_k=self.retrieval_top_k,
             filters=filters,
         )
 
@@ -192,7 +204,7 @@ class LangGraphRAG:
             if key not in best or hit.score > best[key].score:
                 best[key] = hit
         ranked = sorted(best.values(), key=lambda hit: hit.score, reverse=True)[
-            : self.MAX_CONTEXT_DOCS
+            : self.max_context_docs
         ]
         success = failed == 0
         elapsed_ms = (time.perf_counter() - started) * 1000
@@ -360,7 +372,7 @@ class LangGraphRAG:
     def _route_after_grade(self, state: RAGState) -> str:
         if state.get("grade_decision") == "sufficient":
             return "sufficient"
-        if state.get("rewrite_count", 0) < self.MAX_REWRITES:
+        if state.get("rewrite_count", 0) < self.max_rewrites:
             return "rewrite"
         return "give_up"
 
