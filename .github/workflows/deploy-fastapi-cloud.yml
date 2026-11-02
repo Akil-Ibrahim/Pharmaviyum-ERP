@@ -60,6 +60,18 @@ jobs:
             exit 1
           fi
 
+      - name: Apply database migrations before deployment
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGVECTOR_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "Missing required GitHub Actions secret: DATABASE_URL"
+            exit 1
+          fi
+          uv sync --frozen
+          uv run alembic upgrade head
+
       - name: Deploy application and wait for verification
         run: uv run fastapi cloud deploy .
         env:
