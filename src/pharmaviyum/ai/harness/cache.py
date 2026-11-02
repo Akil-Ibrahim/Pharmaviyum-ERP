@@ -92,6 +92,7 @@ class PromptCache:
         Stores both exact hash and semantic embedding (if available).
         """
         self._validate_context(context)
+        context = context or {}
         if context.get("cache_disabled") or context.get("force_fresh"):
             return
         cache_key = self._build_cache_key(prompt, context)
