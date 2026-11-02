@@ -54,7 +54,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           CI_CONCLUSION="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${DEPLOY_SHA}&per_page=20" \
-            --jq '[.workflow_runs[] | select(.event == "push" and .head_sha == env.DEPLOY_SHA)] | sort_by(.created_at) | last | .conclusion // empty')"
+            --jq '[.workflow_runs[] | select((.event == "push" or .event == "workflow_dispatch") and .head_sha == env.DEPLOY_SHA)] | sort_by(.created_at) | last | .conclusion // empty')"
           if [ "$CI_CONCLUSION" != "success" ]; then
             echo "Refusing production deploy: CI for ${DEPLOY_SHA} is not successful (conclusion: ${CI_CONCLUSION:-not found})."
             exit 1
