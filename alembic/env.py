@@ -39,11 +39,17 @@ def get_url() -> str:
 
     # asyncpg does not accept the channel_binding connection option.
     parts = urlsplit(url)
-    query = [
-        (key, value)
-        for key, value in parse_qsl(parts.query, keep_blank_values=True)
-        if key.lower() != "channel_binding"
-    ]
+    query = []
+    for key, value in parse_qsl(parts.query, keep_blank_values=True):
+        normalized_key = key.lower()
+        if normalized_key == "channel_binding":
+            continue
+        # asyncpg uses the "ssl" option, not libpq's "sslmode".
+        if normalized_key == "sslmode":
+            if not any(existing_key.lower() == "ssl" for existing_key, _ in query):
+                query.append(("ssl", value))
+            continue
+        query.append((key, value))
     return urlunsplit(parts._replace(query=urlencode(query)))
 
 
