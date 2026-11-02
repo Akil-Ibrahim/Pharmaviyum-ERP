@@ -53,6 +53,7 @@ class PromptCache:
         2. Semantic similarity match (if embeddings provider is available)
         """
         self._validate_context(context)
+        context = context or {}
         if context.get("cache_disabled") or context.get("force_fresh"):
             return None
         cache_key = self._build_cache_key(prompt, context)
@@ -151,6 +152,7 @@ class PromptCache:
     def _context_scope(context: dict[str, Any] | None) -> str:
         """Keep semantic cache candidates isolated by authenticated tenant/user context."""
         PromptCache._validate_context(context)
+        context = context or {}
         scoped = {
             key: context.get(key)
             for key in (
