@@ -142,6 +142,7 @@ class PromptCache:
             context
             and context.get("semantic_cache_safe") is True
             and context.get("patient_id") is None
+            and context.get("prescription_id") is None
             and not context.get("force_fresh")
             and not context.get("cache_disabled")
         )
@@ -156,6 +157,7 @@ class PromptCache:
                 "pharmacy_id",
                 "user_id",
                 "patient_id",
+                "prescription_id",
                 "country",
                 "language",
                 "role",
