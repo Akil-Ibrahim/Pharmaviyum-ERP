@@ -53,10 +53,10 @@ class PromptCache:
         2. Semantic similarity match (if embeddings provider is available)
         """
         self._validate_context(context)
-        context = context or {}
-        if context.get("cache_disabled") or context.get("force_fresh"):
+        cache_context: dict[str, Any] = context if context is not None else {}
+        if cache_context.get("cache_disabled") or cache_context.get("force_fresh"):
             return None
-        cache_key = self._build_cache_key(prompt, context)
+        cache_key = self._build_cache_key(prompt, cache_context)
 
         # 1. Try exact match
         exact_key = f"{self._exact_prefix}:{cache_key}"
@@ -66,8 +66,8 @@ class PromptCache:
             return json.loads(cached)
 
         # 2. Try semantic match (if enabled and available)
-        if self.embeddings and self._semantic_cache_allowed(context):
-            semantic_result = await self._semantic_search(prompt, context)
+        if self.embeddings and self._semantic_cache_allowed(cache_context):
+            semantic_result = await self._semantic_search(prompt, cache_context)
             if (
                 semantic_result
                 and semantic_result["score"] >= self.similarity_threshold
@@ -92,22 +92,22 @@ class PromptCache:
         Stores both exact hash and semantic embedding (if available).
         """
         self._validate_context(context)
-        context = context or {}
-        if context.get("cache_disabled") or context.get("force_fresh"):
+        cache_context: dict[str, Any] = context if context is not None else {}
+        if cache_context.get("cache_disabled") or cache_context.get("force_fresh"):
             return
-        cache_key = self._build_cache_key(prompt, context)
+        cache_key = self._build_cache_key(prompt, cache_context)
 
         # 1. Store exact match
         exact_key = f"{self._exact_prefix}:{cache_key}"
         await self.redis.setex(exact_key, self.exact_ttl, json.dumps(response))
 
         # 2. Store semantic embedding (async, non-blocking)
-        if self.embeddings and self._semantic_cache_allowed(context):
+        if self.embeddings and self._semantic_cache_allowed(cache_context):
             try:
                 embedding = await self.embeddings.embed(prompt)
                 # Store in Redis sorted set for similarity search
                 # Score = 1.0 (we'll calculate actual similarity at query time)
-                semantic_key = f"{self._semantic_prefix}:{self._context_scope(context)}"
+                semantic_key = f"{self._semantic_prefix}:{self._context_scope(cache_context)}"
                 payload = json.dumps(
                     {
                         "key": cache_key,
@@ -153,9 +153,9 @@ class PromptCache:
     def _context_scope(context: dict[str, Any] | None) -> str:
         """Keep semantic cache candidates isolated by authenticated tenant/user context."""
         PromptCache._validate_context(context)
-        context = context or {}
+        context_data: dict[str, Any] = context if context is not None else {}
         scoped = {
-            key: context.get(key)
+            key: context_data.get(key)
             for key in (
                 "pharmacy_id",
                 "user_id",
