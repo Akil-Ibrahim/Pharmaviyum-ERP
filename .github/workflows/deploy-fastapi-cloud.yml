@@ -70,6 +70,33 @@ jobs:
             exit 1
           fi
           uv sync --frozen
+          uv run python - <<'PY'
+          import os
+          import psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+              with conn.cursor() as cur:
+                  cur.execute("""
+                      SELECT current_user, session_user,
+                             current_database(),
+                             pg_get_userbyid(n.nspowner) AS schema_owner,
+                             has_schema_privilege(current_user, 'public', 'USAGE') AS can_use,
+                             has_schema_privilege(current_user, 'public', 'CREATE') AS can_create,
+                             current_setting('role', true) AS active_role
+                      FROM pg_namespace n
+                      WHERE n.nspname = 'public'
+                  """)
+                  row = cur.fetchone()
+                  print("Neon migration connection diagnostics:")
+                  print({
+                      "current_user": row[0],
+                      "session_user": row[1],
+                      "database": row[2],
+                      "public_schema_owner": row[3],
+                      "can_use_public": row[4],
+                      "can_create_public": row[5],
+                      "active_role": row[6],
+                  })
+          PY
           uv run alembic upgrade head
 
       - name: Deploy application and wait for verification
