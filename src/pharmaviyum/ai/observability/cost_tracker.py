@@ -14,6 +14,7 @@ from __future__ import annotations
 MODEL_PRICING: dict[str, dict[str, float]] = {
     # Open-source / Local (via Ollama) - API cost is 0, but tracked for comparison
     "qwen3.5:9b": {"input": 0.0, "output": 0.0},
+    "qwen3:8b": {"input": 0.0, "output": 0.0},
     "mxbai-embed-large": {"input": 0.0, "output": 0.0},
     # Commercial APIs (Fallback / Enterprise)
     "gpt-4o": {"input": 0.005, "output": 0.015},
@@ -23,7 +24,9 @@ MODEL_PRICING: dict[str, dict[str, float]] = {
 }
 
 
-def calculate_llm_cost(model_name: str, input_tokens: int, output_tokens: int) -> float:
+def calculate_llm_cost(
+    model_name: str, input_tokens: int, output_tokens: int
+) -> float | None:
     """
     Calculate estimated cost for an LLM call.
 
@@ -38,8 +41,12 @@ def calculate_llm_cost(model_name: str, input_tokens: int, output_tokens: int) -
     # Normalize model name for lookup
     model_key = model_name.lower().strip()
 
-    # Fallback to cheapest commercial model if unknown
-    pricing = MODEL_PRICING.get(model_key, MODEL_PRICING["gpt-4o-mini"])
+    # Unknown pricing must remain unknown; never misreport it as a cheap API model.
+    pricing = MODEL_PRICING.get(model_key)
+    if pricing is None and model_key.startswith("qwen3:8b"):
+        pricing = MODEL_PRICING["qwen3:8b"]
+    if pricing is None:
+        return None
 
     input_cost = (input_tokens / 1000.0) * pricing["input"]
     output_cost = (output_tokens / 1000.0) * pricing["output"]

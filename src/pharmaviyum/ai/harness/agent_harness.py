@@ -57,9 +57,17 @@ class AgentHarness:
                 "user_id",
                 "pharmacy_id",
                 "patient_id",
+                "prescription_id",
                 "country",
                 "language",
                 "halal_filter",
+                "role",
+                "permissions_version",
+                "formulary_version",
+                "inventory_version",
+                "catalog_version",
+                "force_fresh",
+                "cache_disabled",
             }
         }
 
@@ -162,20 +170,21 @@ class AgentHarness:
                 user_message=safe_query,
                 assistant_message=final_answer,
             )
-            await self.cache.set(
-                prompt=safe_query,
-                response={
-                    "answer": final_answer,
-                    "warnings": agent_warnings,
-                    "tool_results": tool_results,
-                    "model_used": (
-                        getattr(self.agent.main_llm, "model", None)
-                        or getattr(self.agent.main_llm, "model_name", None)
-                        or "configured-main"
-                    ),
-                },
-                context=cache_key_context,
-            )
+            if not context.get("force_fresh") and not context.get("cache_disabled"):
+                await self.cache.set(
+                    prompt=safe_query,
+                    response={
+                        "answer": final_answer,
+                        "warnings": agent_warnings,
+                        "tool_results": tool_results,
+                        "model_used": (
+                            getattr(self.agent.main_llm, "model", None)
+                            or getattr(self.agent.main_llm, "model_name", None)
+                            or "configured-main"
+                        ),
+                    },
+                    context=cache_key_context,
+                )
 
             latency_ms = (time.perf_counter() - start_time) * 1000
             logger.info(
@@ -298,11 +307,15 @@ class AgentHarness:
                 user_message=safe_query,
                 assistant_message=final_answer,
             )
-            await self.cache.set(
-                prompt=safe_query,
-                response={"answer": final_answer, "warnings": final_warnings},
-                context=cache_key_context,
-            )
+            if not context.get("force_fresh") and not context.get("cache_disabled"):
+                await self.cache.set(
+                    prompt=safe_query,
+                    response={
+                        "answer": final_answer,
+                        "warnings": final_warnings,
+                    },
+                    context=cache_key_context,
+                )
 
             yield {"event": "status", "message": "Finalizing response..."}
             yield {

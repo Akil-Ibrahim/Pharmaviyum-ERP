@@ -27,9 +27,10 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
     - OpenTelemetry spans (correlation with trace_id)
     """
 
-    def __init__(self, session_id: str, trace_id: str):
+    def __init__(self, session_id: str, trace_id: str, model_name: str = "other"):
         self.session_id = session_id
         self.trace_id = trace_id
+        self.model_name = model_name
 
     async def on_llm_start(
         self, serialized: dict[str, Any], prompts: list[str], **kwargs
@@ -46,18 +47,33 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
 
     async def on_llm_end(self, response: Any, **kwargs) -> None:
         """Called when LLM finishes generating."""
-        token_usage = getattr(response, "llm_output", {}).get("token_usage", {})
+        from src.pharmaviyum.ai.observability.cost_tracker import calculate_llm_cost
+        from src.pharmaviyum.ai.observability.metrics import record_llm_usage
 
-        if token_usage:
-            from src.pharmaviyum.ai.observability.cost_tracker import calculate_llm_cost
-            from src.pharmaviyum.ai.observability.metrics import record_llm_usage
+        llm_output = getattr(response, "llm_output", None) or {}
+        usage = (
+            llm_output.get("token_usage")
+            or llm_output.get("usage")
+            or getattr(response, "usage_metadata", None)
+            or {}
+        )
+        input_tokens = int(
+            usage.get("prompt_tokens", usage.get("input_tokens", 0)) or 0
+        )
+        output_tokens = int(
+            usage.get("completion_tokens", usage.get("output_tokens", 0)) or 0
+        )
+        if input_tokens < 0 or output_tokens < 0 or not (input_tokens or output_tokens):
+            return
 
-            model_name = "qwen2.5:7b"
-            input_tokens = token_usage.get("prompt_tokens", 0)
-            output_tokens = token_usage.get("completion_tokens", 0)
-            cost = calculate_llm_cost(model_name, input_tokens, output_tokens)
-
-            record_llm_usage(model_name, input_tokens, output_tokens, cost)
+        model_name = (
+            llm_output.get("model_name")
+            or llm_output.get("model")
+            or kwargs.get("name")
+            or self.model_name
+        )
+        cost = calculate_llm_cost(model_name, input_tokens, output_tokens)
+        record_llm_usage(model_name, input_tokens, output_tokens, cost)
 
     async def on_tool_start(
         self, serialized: dict[str, Any], input_str: str, **kwargs
@@ -108,6 +124,10 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
         )
 
 
-def create_callback_manager(session_id: str, trace_id: str) -> CallbackManager:
+def create_callback_manager(
+    session_id: str, trace_id: str, model_name: str = "other"
+) -> CallbackManager:
     """Create a callback manager with the Pharmaviyum handler configured."""
-    return CallbackManager([PharmaviyumCallbackHandler(session_id, trace_id)])
+    return CallbackManager(
+        [PharmaviyumCallbackHandler(session_id, trace_id, model_name)]
+    )

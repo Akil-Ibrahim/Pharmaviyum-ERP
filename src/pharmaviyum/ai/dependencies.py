@@ -32,6 +32,10 @@ from src.pharmaviyum.ai.harness.model_router import ModelRouter
 from src.pharmaviyum.ai.mcp.client import MCPClient
 from src.pharmaviyum.ai.mortarium_rag.embeddings import EmbeddingsFactory
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
+from src.pharmaviyum.ai.optimization.token_budget import (
+    TokenBudget,
+    TokenBudgetManager,
+)
 from src.pharmaviyum.ai.mortarium_rag.ingestion.orchestrator import (
     IngestionOrchestrator,
 )
@@ -76,6 +80,7 @@ def _build_llm(model: str) -> BaseChatModel:
             model=model,
             base_url=settings.ollama.base_url,
             temperature=settings.ollama.temperature,
+            num_predict=settings.token_budget.max_output_tokens,
         )
 
     if settings.cloud_llm_provider == "gemini":
@@ -89,6 +94,7 @@ def _build_llm(model: str) -> BaseChatModel:
             google_api_key=api_key.get_secret_value(),
             temperature=settings.gemini.temperature,
             timeout=settings.gemini.timeout_seconds,
+            max_output_tokens=settings.token_budget.max_output_tokens,
         )
 
     api_key = settings.groq.api_key
@@ -101,6 +107,7 @@ def _build_llm(model: str) -> BaseChatModel:
         api_key=api_key,
         temperature=settings.groq.temperature,
         timeout=settings.groq.timeout_seconds,
+        max_tokens=settings.token_budget.max_output_tokens,
     )
 
 
@@ -241,6 +248,20 @@ class AIComponents:
                 fast_llm=cast(LLMPort, get_llm_fast()),
                 guardrails=guardrails,
                 checkpointer=self.checkpoint_saver,
+                retrieval_top_k=settings.rag.top_k,
+                max_context_docs=settings.rag.max_context_docs,
+                max_rewrites=settings.rag.max_rewrites,
+                max_query_variations=settings.rag.max_query_variations,
+                enable_multi_query=settings.rag.enable_multi_query,
+                enable_hyde=settings.rag.enable_hyde,
+                token_budget_manager=TokenBudgetManager(
+                    budget=TokenBudget(
+                        max_input_tokens=settings.token_budget.max_input_tokens,
+                        max_output_tokens=settings.token_budget.max_output_tokens,
+                        safety_margin_tokens=settings.token_budget.safety_margin_tokens,
+                    ),
+                    tokenizer=getattr(get_llm_main(), "get_num_tokens", None),
+                ),
             )
 
             cache = PromptCache(

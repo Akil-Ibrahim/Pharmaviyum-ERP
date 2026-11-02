@@ -124,6 +124,9 @@ class RAGSettings(BaseSettings):
     max_chunk_tokens: int = 512
     chunk_overlap: int = 50
     top_k: int = 10
+    max_context_docs: int = 12
+    max_rewrites: int = 2
+    max_query_variations: int = 2
     rerank_top_n: int = 5
     rrf_k: int = 60
     similarity_threshold: float = 0.70
@@ -131,6 +134,13 @@ class RAGSettings(BaseSettings):
     enable_multi_query: bool = True
     enable_contextual_compression: bool = True
     default_languages: list[str] = ["vi", "en", "ar", "th", "id"]
+
+
+class TokenBudgetSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="AI_TOKEN_")
+    max_input_tokens: int = 6000
+    max_output_tokens: int = 500
+    safety_margin_tokens: int = 256
 
 
 class AgentSettings(BaseSettings):
@@ -185,6 +195,7 @@ class AISettings(BaseSettings):
     langsmith: LangSmithSettings = Field(default_factory=LangSmithSettings)
     otel: OTelSettings = Field(default_factory=OTelSettings)
     rag: RAGSettings = Field(default_factory=RAGSettings)
+    token_budget: TokenBudgetSettings = Field(default_factory=TokenBudgetSettings)
     agent: AgentSettings = Field(default_factory=AgentSettings)
     halal: HalalSettings = Field(default_factory=HalalSettings)
     mcp: MCPSettings = Field(default_factory=MCPSettings)

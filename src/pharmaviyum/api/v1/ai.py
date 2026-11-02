@@ -244,6 +244,7 @@ async def query_agent_stream(
         "country": request.country,
         "language": request.language,
         "halal_filter": request.halal_filter,
+        "force_fresh": request.force_fresh,
     }
 
     async def event_generator():
