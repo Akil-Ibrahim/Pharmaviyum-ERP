@@ -31,9 +31,9 @@ jobs:
           python-version: '3.14.7'
       - name: Install uv
         run: pip install uv
-      # Refresh transitive dependencies too, so known-vulnerable locked versions can be replaced.
+      # Refresh only the explicitly patched package; avoid unrelated dependency churn.
       - name: Refresh dependency lock
-        run: uv lock --upgrade
+        run: uv lock --upgrade-package pypdf
       - name: Commit updated lockfile
         run: |
           if git diff --quiet -- uv.lock; then
@@ -43,5 +43,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add uv.lock
-          git commit -m "chore: refresh uv.lock security dependencies"
+          git commit -m "security: refresh pypdf lockfile"
+          git pull --rebase origin "${{ github.event.pull_request.head.ref || github.ref_name }}"
           git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
