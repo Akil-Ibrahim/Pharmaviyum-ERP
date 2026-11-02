@@ -27,9 +27,7 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
     - OpenTelemetry spans (correlation with trace_id)
     """
 
-    def __init__(
-        self, session_id: str, trace_id: str, model_name: str = "other"
-    ):
+    def __init__(self, session_id: str, trace_id: str, model_name: str = "other"):
         self.session_id = session_id
         self.trace_id = trace_id
         self.model_name = model_name
@@ -130,4 +128,6 @@ def create_callback_manager(
     session_id: str, trace_id: str, model_name: str = "other"
 ) -> CallbackManager:
     """Create a callback manager with the Pharmaviyum handler configured."""
-    return CallbackManager([PharmaviyumCallbackHandler(session_id, trace_id, model_name)])
+    return CallbackManager(
+        [PharmaviyumCallbackHandler(session_id, trace_id, model_name)]
+    )
