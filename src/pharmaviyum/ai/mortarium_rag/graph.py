@@ -168,10 +168,7 @@ class LangGraphRAG:
                     hyde = await self.transformer.transform_with_hyde(
                         query=question, context=ctx_dict
                     )
-                    if (
-                        hyde.transformed_query
-                        and hyde.transformed_query not in queries
-                    ):
+                    if hyde.transformed_query and hyde.transformed_query not in queries:
                         queries.append(hyde.transformed_query)
                 except Exception as exc:
                     logger.warning("HyDE skipped: %s", exc)
@@ -349,9 +346,9 @@ class LangGraphRAG:
                 f"Question: {state['question']}\n\nEvidence:\n{context}"
             )
             try:
-                token_budget_manager = getattr(
-                    self, "token_budget_manager", None
-                ) or TokenBudgetManager()
+                token_budget_manager = (
+                    getattr(self, "token_budget_manager", None) or TokenBudgetManager()
+                )
                 token_budget_manager.check_input(prompt)
             except TokenBudgetExceeded as exc:
                 logger.warning("RAG generation skipped by token budget: %s", exc)
@@ -490,9 +487,12 @@ class LangGraphRAG:
             sources = final.get("graded") or []
             answer = final.get("answer") or ""
             warnings = list(final.get("warnings") or [])
-            answer, citation_warning = self._validate_answer_citations(answer, sources)
-            if citation_warning:
-                warnings.append(citation_warning)
+            if "input_token_budget_exceeded" not in warnings:
+                answer, citation_warning = self._validate_answer_citations(
+                    answer, sources
+                )
+                if citation_warning:
+                    warnings.append(citation_warning)
             record_ai_request(True)
             success = True
             return RAGResponse(
