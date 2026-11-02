@@ -105,3 +105,26 @@ def test_semantic_cache_requires_trusted_opt_in_and_excludes_patient_scope() -> 
             "semantic_cache_safe": True,
         }
     )
+
+
+@pytest.mark.unit
+def test_semantic_cache_rejects_prescription_specific_context() -> None:
+    assert not PromptCache._semantic_cache_allowed(
+        {
+            "user_id": "u1",
+            "pharmacy_id": 1,
+            "prescription_id": "rx-1001",
+            "semantic_cache_safe": True,
+        }
+    )
+
+
+@pytest.mark.unit
+def test_semantic_scope_changes_with_prescription_id() -> None:
+    first = PromptCache._context_scope(
+        {"user_id": "u1", "pharmacy_id": 1, "prescription_id": "rx-1001"}
+    )
+    second = PromptCache._context_scope(
+        {"user_id": "u1", "pharmacy_id": 1, "prescription_id": "rx-1002"}
+    )
+    assert first != second
