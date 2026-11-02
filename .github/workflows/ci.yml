@@ -174,11 +174,14 @@ jobs:
           cache: pip
       - run: pip install uv
       - run: uv sync --frozen
-      - name: Apply Alembic migrations to a clean PostgreSQL database
+      - name: Apply Alembic migrations to a separate clean PostgreSQL database
         env:
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
-          PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
-        run: uv run alembic upgrade head
+          PGPASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_migration_test
+          PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_migration_test
+        run: |
+          createdb -h localhost -U postgres pharmaviyum_migration_test
+          uv run alembic upgrade head
       - name: Integration tests
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
