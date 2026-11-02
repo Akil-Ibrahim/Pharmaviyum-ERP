@@ -54,11 +54,23 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           CI_CONCLUSION="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${DEPLOY_SHA}&per_page=20" \
-            --jq '[.workflow_runs[] | select(.event == "push" and .head_sha == env.DEPLOY_SHA)] | sort_by(.created_at) | last | .conclusion // empty')"
+            --jq '[.workflow_runs[] | select((.event == "push" or .event == "workflow_dispatch") and .head_sha == env.DEPLOY_SHA)] | sort_by(.created_at) | last | .conclusion // empty')"
           if [ "$CI_CONCLUSION" != "success" ]; then
             echo "Refusing production deploy: CI for ${DEPLOY_SHA} is not successful (conclusion: ${CI_CONCLUSION:-not found})."
             exit 1
           fi
+
+      - name: Apply database migrations before deployment
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGVECTOR_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "Missing required GitHub Actions secret: DATABASE_URL"
+            exit 1
+          fi
+          uv sync --frozen
+          uv run alembic upgrade head
 
       - name: Deploy application and wait for verification
         run: uv run fastapi cloud deploy .
