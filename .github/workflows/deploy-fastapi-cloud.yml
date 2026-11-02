@@ -2,11 +2,10 @@ name: Deploy to FastAPI Cloud
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: fastapi-cloud-production
@@ -17,6 +16,7 @@ jobs:
     name: Build frontend and deploy
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -37,8 +37,19 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
 
+      - name: Verify CI passed for this exact main commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CI_CONCLUSION="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${GITHUB_SHA}&per_page=20" \
+            --jq '[.workflow_runs[] | select(.event == "push" and .head_sha == env.GITHUB_SHA)] | sort_by(.created_at) | last | .conclusion // empty')"
+          if [ "$CI_CONCLUSION" != "success" ]; then
+            echo "Refusing production deploy: CI for ${GITHUB_SHA} is not successful (conclusion: ${CI_CONCLUSION:-not found})."
+            exit 1
+          fi
+
       - name: Deploy application and wait for verification
-        run: uv run fastapi cloud deploy . --json
+        run: uv run fastapi cloud deploy .
         env:
           FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
           FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
