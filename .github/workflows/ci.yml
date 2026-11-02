@@ -52,6 +52,13 @@ jobs:
             else
               printf '%s\n' "$FILES" | xargs uv run black --check --diff
             fi
+          elif [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            FILES="$(git diff --name-only "$GITHUB_EVENT_BEFORE" "$GITHUB_SHA" -- src/ tests/ | grep -E "[.]py$" || true)"
+            if [ -z "$FILES" ]; then
+              echo "No Python files changed in this push; skipping Black."
+            else
+              printf '%s\\n' "$FILES" | xargs uv run black --check --diff
+            fi
           else
             uv run black --check --diff src/ tests/
           fi
@@ -64,6 +71,13 @@ jobs:
               echo "No Python files changed in this pull request; skipping isort."
             else
               printf '%s\n' "$FILES" | xargs uv run isort --check-only --diff --profile black
+            fi
+          elif [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            FILES="$(git diff --name-only "$GITHUB_EVENT_BEFORE" "$GITHUB_SHA" -- src/ tests/ | grep -E "[.]py$" || true)"
+            if [ -z "$FILES" ]; then
+              echo "No Python files changed in this push; skipping isort."
+            else
+              printf '%s\\n' "$FILES" | xargs uv run isort --check-only --diff --profile black
             fi
           else
             uv run isort --check-only --diff --profile black src/ tests/

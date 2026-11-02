@@ -2,6 +2,10 @@ name: Deploy to FastAPI Cloud
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -16,10 +20,18 @@ jobs:
     name: Build frontend and deploy
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    env:
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -41,10 +53,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          CI_CONCLUSION="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${GITHUB_SHA}&per_page=20" \
-            --jq '[.workflow_runs[] | select(.event == "push" and .head_sha == env.GITHUB_SHA)] | sort_by(.created_at) | last | .conclusion // empty')"
+          CI_CONCLUSION="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${DEPLOY_SHA}&per_page=20" \
+            --jq '[.workflow_runs[] | select(.event == "push" and .head_sha == env.DEPLOY_SHA)] | sort_by(.created_at) | last | .conclusion // empty')"
           if [ "$CI_CONCLUSION" != "success" ]; then
-            echo "Refusing production deploy: CI for ${GITHUB_SHA} is not successful (conclusion: ${CI_CONCLUSION:-not found})."
+            echo "Refusing production deploy: CI for ${DEPLOY_SHA} is not successful (conclusion: ${CI_CONCLUSION:-not found})."
             exit 1
           fi
 
