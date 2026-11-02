@@ -47,7 +47,7 @@ class FakeRedis:
         return values[start : stop + 1 if stop != -1 else None]
 
     async def ltrim(self, key, start, stop):
-        self.lists[key] = (await self.lrange(key, start, stop))
+        self.lists[key] = await self.lrange(key, start, stop)
         return True
 
     async def llen(self, key):
