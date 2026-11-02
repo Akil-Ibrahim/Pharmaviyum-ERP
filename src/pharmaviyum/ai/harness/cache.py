@@ -107,7 +107,9 @@ class PromptCache:
                 embedding = await self.embeddings.embed(prompt)
                 # Store in Redis sorted set for similarity search
                 # Score = 1.0 (we'll calculate actual similarity at query time)
-                semantic_key = f"{self._semantic_prefix}:{self._context_scope(cache_context)}"
+                semantic_key = (
+                    f"{self._semantic_prefix}:{self._context_scope(cache_context)}"
+                )
                 payload = json.dumps(
                     {
                         "key": cache_key,
