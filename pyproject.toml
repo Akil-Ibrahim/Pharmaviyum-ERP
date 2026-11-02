@@ -48,7 +48,7 @@ dependencies = [
     # Documents and RAG ingestion
     "aiofiles==24.1.0",
     "beautifulsoup4==4.14.2",
-    "pypdf==6.21.2",
+    "pypdf==6.21.4",
     "python-docx==1.2.0",
     "pytesseract==0.3.13",
     "Pillow==13.0.0",
