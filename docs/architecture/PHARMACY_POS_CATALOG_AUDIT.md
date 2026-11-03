@@ -146,3 +146,9 @@ The authenticated frontend now includes a Catalog Review page backed by the supe
 - Handles API errors in the page and refreshes the pending queue after a successful decision.
 
 The UI role check is a convenience only. Backend `CurrentSuperuser` dependencies remain the security boundary. Review decisions do not create local sellable products, prices, batches, inventory, or stock movements and do not establish authorization for sale in a local market.
+
+## Matching candidate retrieval and bounded hydration
+
+The match endpoint now performs a lightweight first pass over reference IDs/INN names and ingredient-name rows, using the same fuzzy similarity threshold as the matching service. It then hydrates ORM objects, related ingredients, and medicinal products only for the best 250 reference IDs before computing explainable product-level scores and returning the top 10 suggestions.
+
+This avoids materializing every DrugReference relationship graph in application memory for each review request. The lightweight name scan remains proportional to the catalog size; it deliberately preserves fuzzy matching rather than applying a restrictive exact/prefix-only SQL filter. A future database-specific trigram/full-text index can reduce scan cost after extension availability and query plans are verified on the target database.
