@@ -134,3 +134,15 @@ The source review API also exposes `GET /drug-catalog/sources/{record_id}/matche
 - No automatic creation of approved catalog entities, local sellable products, or inventory from external reference imports.
 - No assertion that RxNorm, EMA, OpenFDA, or DrugBank proves local market authorization.
 - No enabling of checkout until the backend transaction and its tests are implemented.
+
+## Admin source review queue
+
+The authenticated frontend now includes a Catalog Review page backed by the superuser-only source-record endpoints:
+
+- Lists up to 200 `pending_review` source records with source identity, version, extraction time, URL, license terms, and normalized payload.
+- Requests explainable match suggestions on demand and displays confidence plus matching reasons.
+- Requires an explicit candidate selection before approving or marking a record as a duplicate; rejection does not attach a target.
+- Sends exactly one match target to the review API, matching the backend schema.
+- Handles API errors in the page and refreshes the pending queue after a successful decision.
+
+The UI role check is a convenience only. Backend `CurrentSuperuser` dependencies remain the security boundary. Review decisions do not create local sellable products, prices, batches, inventory, or stock movements and do not establish authorization for sale in a local market.
