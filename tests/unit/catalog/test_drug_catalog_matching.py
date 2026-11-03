@@ -80,7 +80,6 @@ def test_source_payload_does_not_mutate_catalog_objects():
     assert reference.medicinal_products[0].brand_name == original_brand
 
 
-
 def test_rank_reference_ids_keeps_fuzzy_candidates_and_bounds_hydration():
     from src.pharmaviyum.services.drug_catalog_matching import rank_reference_ids
 
