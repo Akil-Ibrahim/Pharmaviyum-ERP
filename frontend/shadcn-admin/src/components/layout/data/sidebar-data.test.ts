@@ -12,6 +12,7 @@ describe('Pharmaviyum sidebar navigation', () => {
       'Mortarium AI',
       'Dashboard',
       'Drug Reference',
+      'Catalog Review',
       'Patients',
       'Orders',
       'Prescriptions',

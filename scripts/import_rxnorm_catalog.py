@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import re
 import shutil
 import tempfile
@@ -162,89 +163,62 @@ def parse_rxnorm_archive(
             return ingredients, products
 
 
-async def import_catalog(archive_path: Path) -> tuple[int, int]:
+def _archive_version(path: Path) -> str:
+    """Use the exact source archive checksum as an immutable import version."""
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return f"sha256:{digest.hexdigest()}"
+
+
+async def import_catalog(path: Path) -> tuple[int, int]:
+    """Stage RxNorm records for review; do not mutate the approved drug catalog."""
+    from datetime import datetime
+
     from sqlalchemy import select
 
     from src.pharmaviyum.database import AsyncSessionLocal
-    from src.pharmaviyum.models.drug_catalog import (
-        DrugReference,
-        DrugReferenceIngredient,
-        MedicinalProduct,
-    )
+    from src.pharmaviyum.models.drug_catalog import DrugCatalogSourceRecord
 
-    ingredient_terms, products = parse_rxnorm_archive(archive_path)
-    added_references = 0
-    added_products = 0
-
+    ingredient_terms, products = parse_rxnorm_archive(path)
+    version = _archive_version(path)
+    records = [
+        DrugCatalogSourceRecord(
+            source_name="RxNorm",
+            source_record_id=product["rxcui"],
+            source_version=version,
+            source_url=RXNORM_URL,
+            license_terms=(
+                "NLM RxNorm; review current UMLS/RxNorm terms before redistribution."
+            ),
+            extracted_at=datetime.utcnow(),
+            normalized_payload={
+                **product,
+                "ingredient_name": ingredient_terms[product["ingredient_id"]],
+            },
+        )
+        for product in products
+    ]
     async with AsyncSessionLocal() as session:
-        existing_refs = (await session.execute(select(DrugReference))).scalars().all()
-        reference_ids = {
-            item.inn_name.casefold(): item.id for item in existing_refs
-        }
-        existing_products = (
-            await session.execute(select(MedicinalProduct.regulatory_id))
-        ).scalars().all()
-        existing_codes = {code for code in existing_products if code}
-        existing_ingredients = (
+        existing = (
             await session.execute(
-                select(
-                    DrugReferenceIngredient.drug_reference_id,
-                    DrugReferenceIngredient.ingredient_name,
+                select(DrugCatalogSourceRecord.source_record_id).where(
+                    DrugCatalogSourceRecord.source_name == "RxNorm",
+                    DrugCatalogSourceRecord.source_version == version,
                 )
             )
-        ).all()
-        ingredient_pairs = {
-            (reference_id, name.casefold())
-            for reference_id, name in existing_ingredients
-        }
-
-        for name in ingredient_terms.values():
-            key = name.casefold()
-            reference_id = reference_ids.get(key)
-            if reference_id is None:
-                reference = DrugReference(inn_name=name, atc_code=None)
-                session.add(reference)
-                await session.flush()
-                reference_id = reference.id
-                reference_ids[key] = reference_id
-                added_references += 1
-
-            ingredient_pair = (reference_id, key)
-            if ingredient_pair not in ingredient_pairs:
-                session.add(
-                    DrugReferenceIngredient(
-                        drug_reference_id=reference_id,
-                        ingredient_name=name,
-                    )
-                )
-                ingredient_pairs.add(ingredient_pair)
-
-        for product in products:
-            code = f"RxNorm:{product['rxcui']}"
-            if code in existing_codes:
+        ).scalars().all()
+        existing_ids = set(existing)
+        staged = 0
+        for record in records:
+            if record.source_record_id in existing_ids:
                 continue
-            ingredient_name = ingredient_terms[product["ingredient_id"]]
-            reference_id = reference_ids.get(ingredient_name.casefold())
-            if reference_id is None:
-                continue
-
-            session.add(
-                MedicinalProduct(
-                    drug_reference_id=reference_id,
-                    brand_name=product["brand_name"] or None,
-                    product_type="brand" if product["tty"] == "SBD" else "generic",
-                    strength=product["strength"] or None,
-                    dosage_form=product["dosage_form"] or None,
-                    route=product["route"] or None,
-                    regulatory_id=code,
-                )
-            )
-            existing_codes.add(code)
-            added_products += 1
-
+            session.add(record)
+            existing_ids.add(record.source_record_id)
+            staged += 1
         await session.commit()
-
-    return added_references, added_products
+    return staged, len(records) - staged
 
 
 async def main() -> None:
@@ -283,8 +257,9 @@ async def main() -> None:
         references_added, products_added = await import_catalog(archive_path)
 
     print(
-        f"RxNorm import complete: {references_added} new references, "
-        f"{products_added} new products."
+        f"RxNorm staging complete: {references_added} source records added, "
+        f"{products_added} already present for this archive version. "
+        "All new records remain pending review; the approved catalog is unchanged."
     )
 
 if __name__ == "__main__":

@@ -212,73 +212,48 @@ def _regulatory_id(row: dict[str, str]) -> str:
 
 
 async def import_catalog(path: Path) -> tuple[int, int]:
+    """Stage EMA records for review; do not mutate the approved drug catalog."""
+    from datetime import datetime
     from sqlalchemy import select
 
     from src.pharmaviyum.database import AsyncSessionLocal
-    from src.pharmaviyum.models.drug_catalog import (
-        DrugReference,
-        DrugReferenceIngredient,
-        MedicinalProduct,
-    )
+    from src.pharmaviyum.models.drug_catalog import DrugCatalogSourceRecord
 
     rows = parse_ema_xlsx(path)
-    added_references = 0
-    added_products = 0
+    version = f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}"
+    records = [
+        DrugCatalogSourceRecord(
+            source_name="EMA Article 57",
+            source_record_id=_regulatory_id(row),
+            source_version=version,
+            source_url=EMA_URL,
+            license_terms=(
+                "EMA Article 57 public product data; verify applicable reuse terms."
+            ),
+            extracted_at=datetime.utcnow(),
+            normalized_payload=row,
+        )
+        for row in rows
+    ]
     async with AsyncSessionLocal() as session:
-        references = (await session.execute(select(DrugReference))).scalars().all()
-        reference_ids = {item.inn_name.casefold(): item.id for item in references}
-        codes = (
-            await session.execute(select(MedicinalProduct.regulatory_id))
-        ).scalars().all()
-        existing_codes = {code for code in codes if code}
-        ingredient_rows = (
+        existing = (
             await session.execute(
-                select(
-                    DrugReferenceIngredient.drug_reference_id,
-                    DrugReferenceIngredient.ingredient_name,
+                select(DrugCatalogSourceRecord.source_record_id).where(
+                    DrugCatalogSourceRecord.source_name == "EMA Article 57",
+                    DrugCatalogSourceRecord.source_version == version,
                 )
             )
-        ).all()
-        ingredient_pairs = {
-            (reference_id, name.casefold())
-            for reference_id, name in ingredient_rows
-        }
-
-        for row in rows:
-            key = row["ingredient"].casefold()
-            reference_id = reference_ids.get(key)
-            if reference_id is None:
-                reference = DrugReference(inn_name=row["ingredient"], atc_code=None)
-                session.add(reference)
-                await session.flush()
-                reference_id = reference.id
-                reference_ids[key] = reference_id
-                added_references += 1
-            if (reference_id, key) not in ingredient_pairs:
-                session.add(DrugReferenceIngredient(
-                    drug_reference_id=reference_id,
-                    ingredient_name=row["ingredient"],
-                ))
-                ingredient_pairs.add((reference_id, key))
-
-            code = _regulatory_id(row)
-            if code in existing_codes:
+        ).scalars().all()
+        existing_ids = set(existing)
+        staged = 0
+        for record in records:
+            if record.source_record_id in existing_ids:
                 continue
-            session.add(MedicinalProduct(
-                drug_reference_id=reference_id,
-                brand_name=row["product_name"],
-                product_type="brand",
-                manufacturer=row["holder"] or None,
-                strength=row["strength"] or None,
-                dosage_form=row["dosage_form"] or None,
-                route=row["route"] or None,
-                authorization_country=row["country"],
-                regulatory_id=code,
-            ))
-            existing_codes.add(code)
-            added_products += 1
+            session.add(record)
+            existing_ids.add(record.source_record_id)
+            staged += 1
         await session.commit()
-    return added_references, added_products
+    return staged, len(records) - staged
 
 
 async def main() -> None:
@@ -311,8 +286,9 @@ async def main() -> None:
             return
         references, products = await import_catalog(path)
     print(
-        f"EMA Article 57 import complete: {references} new references, "
-        f"{products} new European medicinal products."
+        f"EMA Article 57 staging complete: {references} source records added, "
+        f"{products} already present for this workbook version. "
+        "All new records remain pending review; the approved catalog is unchanged."
     )
 
 
