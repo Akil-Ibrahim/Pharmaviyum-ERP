@@ -43,7 +43,7 @@ Files:
 - `tests/unit/catalog/test_rxnorm_import.py`
 - `tests/unit/catalog/test_ema_import.py`
 
-The importers are deliberately designed not to create sellable stock, prices, batches, or expiry dates. RxNorm and EMA data should continue to be treated as source reference data. Import should evolve toward a preview → match/deduplicate → review → approve → import process with source identifiers, source timestamps, and provenance.
+The importers now stage source records in `drug_catalog_source_records` rather than writing directly to `DrugReference` or `MedicinalProduct`. Each staged record carries a source identifier, the SHA-256 checksum of the exact downloaded archive/workbook as its source version, extraction time, source URL, a conservative licensing note, and a normalized payload. Re-running the same source file is idempotent for that source/version pair. New records remain `pending_review`; staging does not create or modify approved catalog entities, sellable products, prices, batches, inventory, or expiry dates. Multi-ingredient records remain excluded until the domain model supports them correctly.
 
 RxNorm is not a complete international market catalogue. EMA Article 57 is European reference data, not proof of authorization in every country. DrugBank must not be enabled for commercial use without confirming the applicable license and API entitlement. OpenFDA is US regulatory data and must not be treated as global authorization evidence.
 
@@ -99,10 +99,10 @@ This audit did not connect to the production database, inspect its `alembic_vers
 ## Proposed implementation sequence
 
 ### A. Drug Catalog management
-- Add typed create/update/detail/list contracts for canonical references and medicinal products.
-- Add normalized duplicate checks and explicit conflict responses.
-- Add review states for imported records; do not silently approve ambiguous matches.
-- Add source mapping/provenance records before claiming multi-source aggregation.
+- Typed source-record create/list/review contracts and provenance storage are implemented.
+- RxNorm and EMA importers now stage records with source identity and file-checksum versioning.
+- Imported records remain pending review; duplicate source/version identities are skipped.
+- The review API links a staged record to one existing canonical reference or medicinal product; it does not auto-create catalog entities.
 - Keep reference records separate from local sellable products and stock.
 
 ### B. Local pharmacy product management
@@ -128,6 +128,6 @@ This audit did not connect to the production database, inspect its `alembic_vers
 ## Explicit non-goals for this audit commit
 
 - No production database changes.
-- No automatic creation of inventory from external drug reference imports.
+- No automatic creation of approved catalog entities, local sellable products, or inventory from external reference imports.
 - No assertion that RxNorm, EMA, OpenFDA, or DrugBank proves local market authorization.
 - No enabling of checkout until the backend transaction and its tests are implemented.
