@@ -26,6 +26,7 @@ class DrugCatalogSourceReview(BaseModel):
     matched_drug_reference_id: int | None = Field(default=None, gt=0)
     matched_medicinal_product_id: int | None = Field(default=None, gt=0)
     match_confidence: Decimal | None = Field(default=None, ge=0, le=1)
+    create_catalog_entry: bool = False
     review_notes: str | None = Field(default=None, max_length=1000)
 
     @model_validator(mode="after")
@@ -34,10 +35,18 @@ class DrugCatalogSourceReview(BaseModel):
         has_product = self.matched_medicinal_product_id is not None
         if has_reference and has_product:
             raise ValueError("Choose one match target, not both")
-        if self.review_status in {"approved", "duplicate"} and not (
-            has_reference or has_product
+        if self.create_catalog_entry and self.review_status != "approved":
+            raise ValueError("Only approved records can create catalog entries")
+        if self.create_catalog_entry and (has_reference or has_product):
+            raise ValueError("New catalog entries cannot also select an existing match")
+        if self.review_status == "approved" and not (
+            has_reference or has_product or self.create_catalog_entry
         ):
-            raise ValueError("Approved and duplicate records require a match target")
+            raise ValueError(
+                "Approved records require an existing match or a new catalog entry"
+            )
+        if self.review_status == "duplicate" and not (has_reference or has_product):
+            raise ValueError("Duplicate records require a match target")
         if self.review_status == "rejected" and (has_reference or has_product):
             raise ValueError("Rejected records cannot retain a match target")
         return self
