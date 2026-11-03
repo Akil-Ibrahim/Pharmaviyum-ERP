@@ -25,7 +25,7 @@ from src.pharmaviyum.services.drug_catalog_matching import (
     suggest_matches,
 )
 
-router = APIRouter(prefix="/api/v1/drug-catalog", tags=["Drug Catalog"])
+router = APIRouter(prefix="/drug-catalog", tags=["Drug Catalog"])\nreview_router = APIRouter(prefix="/api/v1/drug-catalog", tags=["Drug Catalog Review"])
 
 
 @router.post(
@@ -53,7 +53,7 @@ async def create_drug_catalog_source(
     return DrugCatalogSourceResult.model_validate(record)
 
 
-@router.get("/sources", response_model=list[DrugCatalogSourceResult])
+@review_router.get("/sources", response_model=list[DrugCatalogSourceResult])
 async def list_drug_catalog_sources(
     db: SessionDep,
     _: CurrentSuperuser,
