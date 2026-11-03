@@ -55,10 +55,13 @@ def test_brand_mismatch_does_not_override_ingredient_match():
 
 
 def test_unrelated_ingredient_returns_no_candidates():
-    assert suggest_matches(
-        {"ingredient": "amoxicillin", "product_name": "ExampleMed"},
-        [_reference()],
-    ) == []
+    assert (
+        suggest_matches(
+            {"ingredient": "amoxicillin", "product_name": "ExampleMed"},
+            [_reference()],
+        )
+        == []
+    )
 
 
 def test_missing_ingredient_returns_no_candidates():
