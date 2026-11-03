@@ -25,7 +25,7 @@ def test_source_intake_requires_source_identity_and_extraction_time() -> None:
 
 
 def test_approved_review_requires_exactly_one_match_target() -> None:
-    with pytest.raises(ValidationError, match="require a match target"):
+    with pytest.raises(ValidationError, match="require an existing match or a new catalog entry"):
         DrugCatalogSourceReview(review_status="approved")
 
 
@@ -55,3 +55,34 @@ def test_duplicate_review_requires_link_to_existing_catalog_record() -> None:
     )
 
     assert payload.matched_medicinal_product_id == 42
+
+
+
+def test_approved_review_can_create_a_new_catalog_entry() -> None:
+    payload = DrugCatalogSourceReview(
+        review_status="approved",
+        create_catalog_entry=True,
+        review_notes="Verified source data.",
+    )
+
+    assert payload.create_catalog_entry is True
+    assert payload.matched_drug_reference_id is None
+    assert payload.matched_medicinal_product_id is None
+
+
+def test_new_catalog_entry_cannot_be_marked_duplicate() -> None:
+    with pytest.raises(ValidationError, match="Only approved records"):
+        DrugCatalogSourceReview(
+            review_status="duplicate",
+            create_catalog_entry=True,
+            matched_medicinal_product_id=42,
+        )
+
+
+def test_new_catalog_entry_cannot_also_select_existing_match() -> None:
+    with pytest.raises(ValidationError, match="cannot also select an existing match"):
+        DrugCatalogSourceReview(
+            review_status="approved",
+            create_catalog_entry=True,
+            matched_drug_reference_id=10,
+        )
