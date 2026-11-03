@@ -108,8 +108,8 @@ async def suggest_drug_catalog_source_matches(
     )
     reference_ids = rank_reference_ids(
         source_record.normalized_payload,
-        reference_rows_result.all(),
-        ingredient_rows_result.all(),
+        reference_rows_result.tuples().all(),
+        ingredient_rows_result.tuples().all(),
     )
     if not reference_ids:
         return []
@@ -124,7 +124,7 @@ async def suggest_drug_catalog_source_matches(
     )
     candidates = suggest_matches(
         source_record.normalized_payload,
-        references_result.scalars().unique().all(),
+        list(references_result.scalars().unique().all()),
     )
     return [
         DrugCatalogMatchCandidate.model_validate(candidate) for candidate in candidates
