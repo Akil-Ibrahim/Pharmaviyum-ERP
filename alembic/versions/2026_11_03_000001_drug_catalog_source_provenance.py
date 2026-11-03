@@ -30,6 +30,9 @@ def upgrade() -> None:
         sa.Column("match_confidence", sa.Numeric(5, 4), nullable=True),
         sa.Column("matched_drug_reference_id", sa.Integer(), nullable=True),
         sa.Column("matched_medicinal_product_id", sa.Integer(), nullable=True),
+        sa.Column("reviewed_by_user_id", sa.Integer(), nullable=True),
+        sa.Column("reviewed_at", sa.DateTime(), nullable=True),
+        sa.Column("review_notes", sa.String(length=1000), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.ForeignKeyConstraint(
@@ -41,6 +44,9 @@ def upgrade() -> None:
             ["matched_medicinal_product_id"],
             ["medicinal_products.id"],
             ondelete="SET NULL",
+        ),
+        sa.ForeignKeyConstraint(
+            ["reviewed_by_user_id"], ["users.id"], ondelete="SET NULL"
         ),
         sa.UniqueConstraint(
             "source_name",
@@ -79,6 +85,11 @@ def upgrade() -> None:
         ["matched_drug_reference_id"],
     )
     op.create_index(
+        "ix_drug_catalog_source_records_reviewed_by_user_id",
+        "drug_catalog_source_records",
+        ["reviewed_by_user_id"],
+    )
+    op.create_index(
         "ix_drug_catalog_source_records_matched_medicinal_product_id",
         "drug_catalog_source_records",
         ["matched_medicinal_product_id"],
@@ -86,6 +97,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.drop_index(
+        "ix_drug_catalog_source_records_reviewed_by_user_id",
+        table_name="drug_catalog_source_records",
+    )
     op.drop_index(
         "ix_drug_catalog_source_records_matched_medicinal_product_id",
         table_name="drug_catalog_source_records",
