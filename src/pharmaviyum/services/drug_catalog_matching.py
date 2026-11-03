@@ -7,6 +7,7 @@ decisions and deliberately avoids treating a source record as local authorizatio
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from difflib import SequenceMatcher
 from typing import Any
 
@@ -117,8 +118,8 @@ def suggest_matches(payload: dict | None, references: list) -> list[dict]:
 
 def rank_reference_ids(
     payload: dict | None,
-    reference_rows: list[tuple[int, str]],
-    ingredient_rows: list[tuple[int, str]],
+    reference_rows: Sequence[tuple[int, str]],
+    ingredient_rows: Sequence[tuple[int, str]],
     limit: int = 250,
 ) -> list[int]:
     """Rank lightweight reference-name rows before loading full ORM graphs.
