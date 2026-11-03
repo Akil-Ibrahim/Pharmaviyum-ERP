@@ -192,6 +192,16 @@ class TestDrugCatalogSourcePromotion:
         )
         assert ingredient.scalar_one().ingredient_name == "paracetamol"
 
+        search_response = await authenticated_client.get(
+            "/drug-catalog/search",
+            params={"q": "paracetamol", "limit": 20},
+        )
+        assert search_response.status_code == 200, search_response.text
+        assert any(
+            item["medicinal_product_id"] == product.id
+            for item in search_response.json()
+        )
+
     async def test_promotion_rejects_source_without_product_name(
         self,
         authenticated_client: AsyncClient,
