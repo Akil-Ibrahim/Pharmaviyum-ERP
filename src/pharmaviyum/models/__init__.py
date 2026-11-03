@@ -3,6 +3,7 @@
 from src.pharmaviyum.models.drug_catalog import (
     DrugReference,
     DrugReferenceIngredient,
+    DrugCatalogSourceRecord,
     MedicinalProduct,
 )
 from src.pharmaviyum.models.erp_sync import ERPIntegration, ERPSyncEvent
@@ -42,5 +43,6 @@ __all__ = [
     "PharmacyMembership",
     "DrugReference",
     "DrugReferenceIngredient",
+    "DrugCatalogSourceRecord",
     "MedicinalProduct",
 ]
