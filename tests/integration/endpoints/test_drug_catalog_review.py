@@ -1,6 +1,7 @@
 """PostgreSQL-backed integration tests for Drug Catalog source review endpoints."""
 
 from datetime import datetime, timezone
+from itertools import count
 
 import pytest
 from httpx import AsyncClient
@@ -9,10 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.pharmaviyum.models.drug_catalog import (
     DrugCatalogSourceRecord,
     DrugReference,
-    MedicinalProduct,
 )
 
 pytestmark = pytest.mark.integration
+_source_ids = count(1)
 
 
 async def create_source_record(
@@ -22,7 +23,7 @@ async def create_source_record(
 ) -> DrugCatalogSourceRecord:
     record = DrugCatalogSourceRecord(
         source_name="test-source",
-        source_record_id=f"source-{datetime.now(timezone.utc).timestamp()}",
+        source_record_id=f"source-{next(_source_ids)}",
         source_version="2026-01",
         extracted_at=datetime.now(timezone.utc).replace(tzinfo=None),
         normalized_payload={"inn": "paracetamol"},
