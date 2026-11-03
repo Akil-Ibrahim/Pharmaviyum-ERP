@@ -25,7 +25,8 @@ from src.pharmaviyum.services.drug_catalog_matching import (
     suggest_matches,
 )
 
-router = APIRouter(prefix="/drug-catalog", tags=["Drug Catalog"])\nreview_router = APIRouter(prefix="/api/v1/drug-catalog", tags=["Drug Catalog Review"])
+router = APIRouter(prefix="/drug-catalog", tags=["Drug Catalog"])
+review_router = APIRouter(prefix="/api/v1/drug-catalog", tags=["Drug Catalog Review"])
 
 
 @router.post(
