@@ -29,7 +29,7 @@ router = APIRouter(prefix="/drug-catalog", tags=["Drug Catalog"])
 review_router = APIRouter(prefix="/api/v1/drug-catalog", tags=["Drug Catalog Review"])
 
 
-@router.post(
+@review_router.post(
     "/sources",
     response_model=DrugCatalogSourceResult,
     status_code=status.HTTP_201_CREATED,
@@ -76,7 +76,7 @@ async def list_drug_catalog_sources(
     ]
 
 
-@router.get(
+@review_router.get(
     "/sources/{record_id}/matches",
     response_model=list[DrugCatalogMatchCandidate],
 )
@@ -132,7 +132,7 @@ async def suggest_drug_catalog_source_matches(
     ]
 
 
-@router.patch(
+@review_router.patch(
     "/sources/{record_id}/review",
     response_model=DrugCatalogSourceResult,
 )
