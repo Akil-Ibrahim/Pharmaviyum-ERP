@@ -3,6 +3,7 @@
 Scores are suggestions only. This module never writes catalog entities or review
 decisions and deliberately avoids treating a source record as local authorization.
 """
+
 from __future__ import annotations
 
 import re
@@ -56,7 +57,9 @@ def _score_candidate(payload: dict, reference, product=None) -> tuple[float, lis
                 source_value = source_value or payload.get("product_name")
             target_value = getattr(product, target_key, None)
             if source_value and target_value:
-                weighted.append((weight, _similarity(source_value, target_value), label))
+                weighted.append(
+                    (weight, _similarity(source_value, target_value), label)
+                )
 
     denominator = sum(weight for weight, _, _ in weighted)
     score = sum(weight * value for weight, value, _ in weighted) / denominator
@@ -75,28 +78,32 @@ def suggest_matches(payload: dict | None, references: list) -> list[dict]:
     for reference in references:
         ref_score, ref_reasons = _score_candidate(source, reference)
         if ref_score >= 0.50:
-            candidates.append({
-                "target_type": "drug_reference",
-                "drug_reference_id": reference.id,
-                "medicinal_product_id": None,
-                "display_name": reference.inn_name,
-                "confidence": ref_score,
-                "reasons": ref_reasons,
-            })
+            candidates.append(
+                {
+                    "target_type": "drug_reference",
+                    "drug_reference_id": reference.id,
+                    "medicinal_product_id": None,
+                    "display_name": reference.inn_name,
+                    "confidence": ref_score,
+                    "reasons": ref_reasons,
+                }
+            )
 
         for product in reference.medicinal_products or []:
             score, reasons = _score_candidate(source, reference, product)
             if score < 0.50:
                 continue
             label = product.brand_name or reference.inn_name
-            candidates.append({
-                "target_type": "medicinal_product",
-                "drug_reference_id": reference.id,
-                "medicinal_product_id": product.id,
-                "display_name": label,
-                "confidence": score,
-                "reasons": reasons,
-            })
+            candidates.append(
+                {
+                    "target_type": "medicinal_product",
+                    "drug_reference_id": reference.id,
+                    "medicinal_product_id": product.id,
+                    "display_name": label,
+                    "confidence": score,
+                    "reasons": reasons,
+                }
+            )
 
     candidates.sort(
         key=lambda item: (
