@@ -249,8 +249,16 @@ async def review_drug_catalog_source(
 
             brand_name = (
                 source_payload.get("brand_name")
-                or source_payload.get("product_name")
-                or source_payload.get("term")
+                or (
+                    source_payload.get("product_name")
+                    if record.source_name != "RxNorm"
+                    else None
+                )
+                or (
+                    source_payload.get("term")
+                    if source_payload.get("tty") == "SBD"
+                    else None
+                )
             )
             manufacturer = (
                 source_payload.get("manufacturer")
@@ -260,11 +268,7 @@ async def review_drug_catalog_source(
             medicinal_product = MedicinalProduct(
                 drug_reference_id=reference.id,
                 brand_name=str(brand_name).strip() if brand_name else None,
-                product_type=(
-                    "brand"
-                    if source_payload.get("brand_name")
-                    else "generic"
-                ),
+                product_type=("brand" if brand_name else "generic"),
                 manufacturer=str(manufacturer).strip() if manufacturer else None,
                 strength=source_payload.get("strength") or None,
                 dosage_form=source_payload.get("dosage_form") or None,
