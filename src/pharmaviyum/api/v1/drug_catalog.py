@@ -203,13 +203,11 @@ async def review_drug_catalog_source(
                 detail="Source payload has no usable medicinal product name",
             )
 
-        source_regulatory_id = (
-            f"{record.source_name}:{record.source_record_id}"
-        )[:100]
+        source_regulatory_id = (f"{record.source_name}:{record.source_record_id}")[:100]
         existing_product_result = await db.execute(
-            select(MedicinalProduct).where(
-                MedicinalProduct.regulatory_id == source_regulatory_id
-            ).limit(1)
+            select(MedicinalProduct)
+            .where(MedicinalProduct.regulatory_id == source_regulatory_id)
+            .limit(1)
         )
         existing_product = existing_product_result.scalar_one_or_none()
         if existing_product is not None:
