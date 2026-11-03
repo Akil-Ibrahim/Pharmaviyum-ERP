@@ -5,11 +5,14 @@ from itertools import count
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.models.drug_catalog import (
     DrugCatalogSourceRecord,
     DrugReference,
+    DrugReferenceIngredient,
+    MedicinalProduct,
 )
 
 pytestmark = pytest.mark.integration
@@ -137,3 +140,72 @@ class TestDrugCatalogSourceReviewEndpoints:
         assert data["review_status"] == "rejected"
         assert data["matched_drug_reference_id"] is None
         assert data["matched_medicinal_product_id"] is None
+
+
+
+class TestDrugCatalogSourcePromotion:
+    async def test_approved_source_can_create_searchable_medicinal_product(
+        self,
+        authenticated_client: AsyncClient,
+        test_db: AsyncSession,
+    ):
+        record = await create_source_record(test_db)
+        record.normalized_payload = {
+            "ingredient_name": "paracetamol",
+            "product_name": "Paracetamol 500 mg Oral Tablet",
+            "strength": "500 mg",
+            "dosage_form": "Tablet",
+            "route": "Oral",
+        }
+        await test_db.flush()
+
+        response = await authenticated_client.patch(
+            f"/api/v1/drug-catalog/sources/{record.id}/review",
+            json={
+                "review_status": "approved",
+                "create_catalog_entry": True,
+                "review_notes": "Validated source record.",
+            },
+        )
+
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["review_status"] == "approved"
+        assert data["matched_drug_reference_id"] is not None
+        assert data["matched_medicinal_product_id"] is not None
+
+        reference = await test_db.get(DrugReference, data["matched_drug_reference_id"])
+        product = await test_db.get(
+            MedicinalProduct, data["matched_medicinal_product_id"]
+        )
+        assert reference is not None
+        assert reference.inn_name == "paracetamol"
+        assert product is not None
+        assert product.drug_reference_id == reference.id
+        assert product.strength == "500 mg"
+        assert product.regulatory_id == f"{record.source_name}:{record.source_record_id}"
+
+        ingredient = await test_db.execute(
+            select(DrugReferenceIngredient).where(
+                DrugReferenceIngredient.drug_reference_id == reference.id
+            )
+        )
+        assert ingredient.scalar_one().ingredient_name == "paracetamol"
+
+    async def test_promotion_rejects_source_without_product_name(
+        self,
+        authenticated_client: AsyncClient,
+        test_db: AsyncSession,
+    ):
+        record = await create_source_record(test_db)
+
+        response = await authenticated_client.patch(
+            f"/api/v1/drug-catalog/sources/{record.id}/review",
+            json={
+                "review_status": "approved",
+                "create_catalog_entry": True,
+            },
+        )
+
+        assert response.status_code == 422
+        assert record.review_status == "pending_review"
