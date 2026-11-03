@@ -87,9 +87,9 @@ function DrugCatalogReviewPage() {
     }
   }
 
-  const submitReview = async (decision: 'approved' | 'duplicate' | 'rejected') => {
+  const submitReview = async (decision: 'approved' | 'duplicate' | 'rejected', createCatalogEntry = false) => {
     if (!selected) return
-    if (decision !== 'rejected' && !selectedMatch) {
+    if (decision !== 'rejected' && !selectedMatch && !createCatalogEntry) {
       setError('Для решения требуется выбрать целевую запись каталога')
       return
     }
@@ -97,9 +97,10 @@ function DrugCatalogReviewPage() {
     setError('')
     const body = {
       review_status: decision,
-      matched_drug_reference_id: decision === 'rejected' || selectedMatch?.target_type !== 'drug_reference' ? null : selectedMatch.drug_reference_id,
-      matched_medicinal_product_id: decision === 'rejected' || selectedMatch?.target_type !== 'medicinal_product' ? null : selectedMatch?.medicinal_product_id ?? null,
-      match_confidence: decision === 'rejected' ? null : selectedMatch?.confidence ?? null,
+      matched_drug_reference_id: decision === 'rejected' || createCatalogEntry || selectedMatch?.target_type !== 'drug_reference' ? null : selectedMatch.drug_reference_id,
+      matched_medicinal_product_id: decision === 'rejected' || createCatalogEntry || selectedMatch?.target_type !== 'medicinal_product' ? null : selectedMatch?.medicinal_product_id ?? null,
+      match_confidence: decision === 'rejected' || createCatalogEntry ? null : selectedMatch?.confidence ?? null,
+      create_catalog_entry: createCatalogEntry,
       review_notes: notes.trim() || null,
     }
     try {
@@ -171,10 +172,11 @@ function DrugCatalogReviewPage() {
                 <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder='Комментарий к проверке (необязательно)' rows={3}/>
                 <div className='flex flex-wrap gap-2'>
                   <Button onClick={() => void submitReview('approved')} disabled={saving || !selectedMatch}><CheckCircle2 className='mr-2 size-4'/>Подтвердить совпадение</Button>
+                  <Button variant='secondary' onClick={() => void submitReview('approved', true)} disabled={saving}><CheckCircle2 className='mr-2 size-4'/>Создать препарат в справочнике</Button>
                   <Button variant='outline' onClick={() => void submitReview('duplicate')} disabled={saving || !selectedMatch}>Отметить дубликатом</Button>
                   <Button variant='destructive' onClick={() => void submitReview('rejected')} disabled={saving}><XCircle className='mr-2 size-4'/>Отклонить</Button>
                 </div>
-                <p className='text-xs text-muted-foreground'>Действия фиксируют только решение по source record. Они не создают sellable product, цену, партию или остаток и не подтверждают local market authorization.</p>
+                <p className='text-xs text-muted-foreground'>Подтверждение совпадения связывает источник с существующей записью. «Создать препарат» добавляет DrugReference и MedicinalProduct в поисковый справочник. Ни одно действие не создаёт товар аптеки, цену, партию или остаток и не подтверждает регистрацию для продажи в стране.</p>
               </CardContent>
             </Card>
           </>}
