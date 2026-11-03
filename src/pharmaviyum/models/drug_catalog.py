@@ -131,6 +131,11 @@ class DrugCatalogSourceRecord(Base):
         nullable=True,
         index=True,
     )
+    reviewed_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    review_notes: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
@@ -138,3 +143,4 @@ class DrugCatalogSourceRecord(Base):
 
     matched_drug_reference: Mapped["DrugReference | None"] = relationship()
     matched_medicinal_product: Mapped["MedicinalProduct | None"] = relationship()
+    reviewed_by: Mapped["User | None"] = relationship()
