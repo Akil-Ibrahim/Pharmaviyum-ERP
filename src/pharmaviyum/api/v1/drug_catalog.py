@@ -81,7 +81,12 @@ async def review_drug_catalog_source(
     reviewer: CurrentSuperuser,
 ) -> DrugCatalogSourceResult:
     """Record an explicit review decision; never creates local products or stock."""
-    record = await db.get(DrugCatalogSourceRecord, record_id)
+    result = await db.execute(
+        select(DrugCatalogSourceRecord)
+        .where(DrugCatalogSourceRecord.id == record_id)
+        .with_for_update()
+    )
+    record = result.scalar_one_or_none()
     if record is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
