@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     JSON,
