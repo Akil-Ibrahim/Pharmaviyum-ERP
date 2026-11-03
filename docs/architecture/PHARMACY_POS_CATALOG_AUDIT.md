@@ -102,8 +102,11 @@ This audit did not connect to the production database, inspect its `alembic_vers
 - Typed source-record create/list/review contracts and provenance storage are implemented.
 - RxNorm and EMA importers now stage records with source identity and file-checksum versioning.
 - Imported records remain pending review; duplicate source/version identities are skipped.
+- Explainable match suggestions rank existing references/products; human review remains mandatory.
 - The review API links a staged record to one existing canonical reference or medicinal product; it does not auto-create catalog entities.
 - Keep reference records separate from local sellable products and stock.
+
+The source review API also exposes `GET /drug-catalog/sources/{record_id}/matches`. It ranks existing canonical references and medicinal products using normalized ingredient, brand/product name, strength, dosage form, route, and country signals. Candidate scores include human-readable reasons and are suggestions only; this endpoint does not change review status or write catalog records. It is intentionally limited to pending source records.
 
 ### B. Local pharmacy product management
 - Create or link a sellable `Product` only after local catalog review.
