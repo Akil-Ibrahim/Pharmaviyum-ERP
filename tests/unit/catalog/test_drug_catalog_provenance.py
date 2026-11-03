@@ -33,3 +33,12 @@ def test_source_record_has_no_sellable_product_or_inventory_columns() -> None:
     assert "inventory_id" not in columns
     assert "price" not in columns
     assert "quantity" not in columns
+
+
+def test_review_decision_has_auditable_actor_and_timestamp() -> None:
+    columns = DrugCatalogSourceRecord.__table__.columns
+
+    assert "reviewed_by_user_id" in columns
+    assert "reviewed_at" in columns
+    assert "review_notes" in columns
+    assert columns["reviewed_by_user_id"].foreign_keys
