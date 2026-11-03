@@ -12,7 +12,6 @@ from pydantic import ValidationError
 
 from src.pharmaviyum.ai.config import settings
 from src.pharmaviyum.ai.dependencies import ai_container
-from src.pharmaviyum.api import mount_api
 from src.pharmaviyum.api.exceptions import (
     PharmaviyumAPIError,
     general_exception_handler,
@@ -107,7 +106,7 @@ app.add_exception_handler(
     ),
 )
 app.add_exception_handler(Exception, general_exception_handler)
-mount_api(app)
+app.include_router(api_v1_router)
 
 
 @app.get("/api-info", tags=["Root"])
