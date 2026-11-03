@@ -52,6 +52,8 @@ def _score_candidate(payload: dict, reference, product=None) -> tuple[float, lis
         )
         for source_key, target_key, weight, label in comparisons:
             source_value = payload.get(source_key)
+            if source_key == "brand_name":
+                source_value = source_value or payload.get("product_name")
             target_value = getattr(product, target_key, None)
             if source_value and target_value:
                 weighted.append((weight, _similarity(source_value, target_value), label))
