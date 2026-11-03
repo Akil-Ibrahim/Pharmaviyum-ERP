@@ -53,17 +53,12 @@ function DrugCatalogReviewPage() {
     try {
       const result = await apiFetch<SourceRecord[]>('/drug-catalog/sources?review_status=pending_review&limit=200')
       setRecords(result)
-      if (selected) {
-        const current = result.find((record) => record.id === selected.id)
-        if (!current) setSelected(null)
-        else setSelected(current)
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось загрузить очередь проверки')
     } finally {
       setLoading(false)
     }
-  }, [selected])
+  }, [])
 
   useEffect(() => {
     if (isAdmin) void loadRecords()
