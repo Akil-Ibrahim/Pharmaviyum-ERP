@@ -97,8 +97,8 @@ function DrugCatalogReviewPage() {
     setError('')
     const body = {
       review_status: decision,
-      matched_drug_reference_id: decision === 'rejected' ? null : selectedMatch?.drug_reference_id ?? null,
-      matched_medicinal_product_id: decision === 'rejected' ? null : selectedMatch?.medicinal_product_id ?? null,
+      matched_drug_reference_id: decision === 'rejected' || selectedMatch?.target_type !== 'drug_reference' ? null : selectedMatch.drug_reference_id,
+      matched_medicinal_product_id: decision === 'rejected' || selectedMatch?.target_type !== 'medicinal_product' ? null : selectedMatch?.medicinal_product_id ?? null,
       match_confidence: decision === 'rejected' ? null : selectedMatch?.confidence ?? null,
       review_notes: notes.trim() || null,
     }
