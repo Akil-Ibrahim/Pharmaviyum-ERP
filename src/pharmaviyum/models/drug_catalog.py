@@ -44,7 +44,9 @@ class DrugReferenceIngredient(Base):
         nullable=False,
         index=True,
     )
-    ingredient_name: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
+    ingredient_name: Mapped[str] = mapped_column(
+        String(200), nullable=False, index=True
+    )
 
     drug_reference: Mapped["DrugReference"] = relationship(back_populates="ingredients")
 
@@ -58,17 +60,23 @@ class MedicinalProduct(Base):
         nullable=False,
         index=True,
     )
-    brand_name: Mapped[str | None] = mapped_column(String(200), nullable=True, index=True)
+    brand_name: Mapped[str | None] = mapped_column(
+        String(200), nullable=True, index=True
+    )
     product_type: Mapped[str] = mapped_column(
         String(30), nullable=False, default="generic"
     )
-    manufacturer: Mapped[str | None] = mapped_column(String(200), nullable=True, index=True)
+    manufacturer: Mapped[str | None] = mapped_column(
+        String(200), nullable=True, index=True
+    )
     strength: Mapped[str | None] = mapped_column(String(100), nullable=True)
     dosage_form: Mapped[str | None] = mapped_column(String(100), nullable=True)
     route: Mapped[str | None] = mapped_column(String(100), nullable=True)
     package_description: Mapped[str | None] = mapped_column(String(200), nullable=True)
     gtin: Mapped[str | None] = mapped_column(String(14), nullable=True, index=True)
-    regulatory_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    regulatory_id: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, index=True
+    )
     authorization_country: Mapped[str | None] = mapped_column(
         String(100), nullable=True, index=True
     )
