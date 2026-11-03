@@ -113,3 +113,34 @@ def suggest_matches(payload: dict | None, references: list) -> list[dict]:
         reverse=True,
     )
     return candidates[:10]
+
+
+def rank_reference_ids(
+    payload: dict | None,
+    reference_rows: list[tuple[int, str]],
+    ingredient_rows: list[tuple[int, str]],
+    limit: int = 250,
+) -> list[int]:
+    """Rank lightweight reference-name rows before loading full ORM graphs.
+
+    The scan intentionally uses the same fuzzy similarity function as the
+    explainable matcher. Only the best bounded set of reference IDs is hydrated.
+    """
+    source = payload or {}
+    ingredient = source.get("ingredient_name") or source.get("ingredient")
+    if not ingredient or limit < 1:
+        return []
+
+    names_by_reference: dict[int, list[str]] = {}
+    for reference_id, name in ingredient_rows:
+        names_by_reference.setdefault(reference_id, []).append(name)
+
+    ranked: list[tuple[float, int]] = []
+    for reference_id, inn_name in reference_rows:
+        names = [inn_name, *names_by_reference.get(reference_id, [])]
+        score = _best_similarity(ingredient, names)
+        if score >= 0.72:
+            ranked.append((score, reference_id))
+
+    ranked.sort(key=lambda item: (-item[0], item[1]))
+    return [reference_id for _, reference_id in ranked[:limit]]
