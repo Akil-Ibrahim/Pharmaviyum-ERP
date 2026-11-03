@@ -78,3 +78,19 @@ def test_source_payload_does_not_mutate_catalog_objects():
     )
 
     assert reference.medicinal_products[0].brand_name == original_brand
+
+
+
+def test_rank_reference_ids_keeps_fuzzy_candidates_and_bounds_hydration():
+    from src.pharmaviyum.services.drug_catalog_matching import rank_reference_ids
+
+    reference_rows = [(1, "ibuprofen"), (2, "amoxicillin"), (3, "ibuprofeno")]
+    ingredient_rows = [(3, "ibuprofeno")]
+    ranked = rank_reference_ids(
+        {"ingredient": "ibuprofin"},
+        reference_rows,
+        ingredient_rows,
+        limit=1,
+    )
+
+    assert ranked == [1]
