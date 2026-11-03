@@ -142,7 +142,6 @@ class TestDrugCatalogSourceReviewEndpoints:
         assert data["matched_medicinal_product_id"] is None
 
 
-
 class TestDrugCatalogSourcePromotion:
     async def test_approved_source_can_create_searchable_medicinal_product(
         self,
@@ -183,7 +182,9 @@ class TestDrugCatalogSourcePromotion:
         assert product is not None
         assert product.drug_reference_id == reference.id
         assert product.strength == "500 mg"
-        assert product.regulatory_id == f"{record.source_name}:{record.source_record_id}"
+        assert (
+            product.regulatory_id == f"{record.source_name}:{record.source_record_id}"
+        )
 
         ingredient = await test_db.execute(
             select(DrugReferenceIngredient).where(
