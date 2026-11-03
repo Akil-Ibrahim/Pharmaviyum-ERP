@@ -12,7 +12,6 @@ from src.pharmaviyum.models.drug_catalog import (
     MedicinalProduct,
 )
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
-from src.pharmaviyum.services.drug_catalog_matching import suggest_matches
 from src.pharmaviyum.schemas.drug_catalog import DrugCatalogResult
 from src.pharmaviyum.schemas.drug_catalog_matching import DrugCatalogMatchCandidate
 from src.pharmaviyum.schemas.drug_catalog_source import (
@@ -20,6 +19,10 @@ from src.pharmaviyum.schemas.drug_catalog_source import (
     DrugCatalogSourceResult,
     DrugCatalogSourceReview,
     ReviewStatus,
+)
+from src.pharmaviyum.services.drug_catalog_matching import (
+    rank_reference_ids,
+    suggest_matches,
 )
 
 router = APIRouter(prefix="/drug-catalog", tags=["Drug Catalog"])
@@ -94,15 +97,34 @@ async def suggest_drug_catalog_source_matches(
             detail="Match suggestions are only available for pending records",
         )
 
-    result = await db.execute(
-        select(DrugReference).options(
+    reference_rows_result = await db.execute(
+        select(DrugReference.id, DrugReference.inn_name)
+    )
+    ingredient_rows_result = await db.execute(
+        select(
+            DrugReferenceIngredient.drug_reference_id,
+            DrugReferenceIngredient.ingredient_name,
+        )
+    )
+    reference_ids = rank_reference_ids(
+        source_record.normalized_payload,
+        reference_rows_result.all(),
+        ingredient_rows_result.all(),
+    )
+    if not reference_ids:
+        return []
+
+    references_result = await db.execute(
+        select(DrugReference)
+        .where(DrugReference.id.in_(reference_ids))
+        .options(
             selectinload(DrugReference.ingredients),
             selectinload(DrugReference.medicinal_products),
         )
     )
     candidates = suggest_matches(
         source_record.normalized_payload,
-        result.scalars().unique().all(),
+        references_result.scalars().unique().all(),
     )
     return [
         DrugCatalogMatchCandidate.model_validate(candidate) for candidate in candidates
