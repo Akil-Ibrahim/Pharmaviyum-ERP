@@ -165,13 +165,17 @@ def parse_rxnorm_archive(
 
 def _archive_version(path: Path) -> str:
     """Use the exact source archive checksum as an immutable import version."""
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    return f"sha256:{digest}"
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return f"sha256:{digest.hexdigest()}"
 
 
 async def import_catalog(path: Path) -> tuple[int, int]:
     """Stage RxNorm records for review; do not mutate the approved drug catalog."""
     from datetime import datetime
+
     from sqlalchemy import select
 
     from src.pharmaviyum.database import AsyncSessionLocal
