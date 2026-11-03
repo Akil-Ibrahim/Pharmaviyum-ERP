@@ -105,8 +105,7 @@ async def suggest_drug_catalog_source_matches(
         result.scalars().unique().all(),
     )
     return [
-        DrugCatalogMatchCandidate.model_validate(candidate)
-        for candidate in candidates
+        DrugCatalogMatchCandidate.model_validate(candidate) for candidate in candidates
     ]
 
 
