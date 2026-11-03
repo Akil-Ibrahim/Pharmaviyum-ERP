@@ -12,7 +12,9 @@ from src.pharmaviyum.models.drug_catalog import (
     MedicinalProduct,
 )
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
+from src.pharmaviyum.services.drug_catalog_matching import suggest_matches
 from src.pharmaviyum.schemas.drug_catalog import DrugCatalogResult
+from src.pharmaviyum.schemas.drug_catalog_matching import DrugCatalogMatchCandidate
 from src.pharmaviyum.schemas.drug_catalog_source import (
     DrugCatalogSourceCreate,
     DrugCatalogSourceResult,
@@ -67,6 +69,44 @@ async def list_drug_catalog_sources(
     return [
         DrugCatalogSourceResult.model_validate(record)
         for record in result.scalars().all()
+    ]
+
+
+@router.get(
+    "/sources/{record_id}/matches",
+    response_model=list[DrugCatalogMatchCandidate],
+)
+async def suggest_drug_catalog_source_matches(
+    record_id: int,
+    db: SessionDep,
+    _: CurrentSuperuser,
+) -> list[DrugCatalogMatchCandidate]:
+    """Suggest existing catalog matches; suggestions never approve or mutate records."""
+    source_record = await db.get(DrugCatalogSourceRecord, record_id)
+    if source_record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Drug catalog source record not found",
+        )
+    if source_record.review_status != "pending_review":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Match suggestions are only available for pending records",
+        )
+
+    result = await db.execute(
+        select(DrugReference).options(
+            selectinload(DrugReference.ingredients),
+            selectinload(DrugReference.medicinal_products),
+        )
+    )
+    candidates = suggest_matches(
+        source_record.normalized_payload,
+        result.scalars().unique().all(),
+    )
+    return [
+        DrugCatalogMatchCandidate.model_validate(candidate)
+        for candidate in candidates
     ]
 
 
