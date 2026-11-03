@@ -19,6 +19,7 @@ from src.pharmaviyum.api.exceptions import (
     validation_exception_handler,
 )
 from src.pharmaviyum.api.middleware import LoggingMiddleware, RequestIDMiddleware
+from src.pharmaviyum.api.v1 import api_v1_router
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.core.static_files import setup_static_files
 from src.pharmaviyum.database import AsyncSessionLocal
