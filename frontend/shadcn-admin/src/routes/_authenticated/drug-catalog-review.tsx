@@ -51,7 +51,7 @@ function DrugCatalogReviewPage() {
     setLoading(true)
     setError('')
     try {
-      const result = await apiFetch<SourceRecord[]>('/drug-catalog/sources?review_status=pending_review&limit=200')
+      const result = await apiFetch<SourceRecord[]>('/api/v1/drug-catalog/sources?review_status=pending_review&limit=200')
       setRecords(result)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось загрузить очередь проверки')
@@ -77,7 +77,7 @@ function DrugCatalogReviewPage() {
     setMatching(true)
     setError('')
     try {
-      const result = await apiFetch<MatchCandidate[]>(`/drug-catalog/sources/${selected.id}/matches`)
+      const result = await apiFetch<MatchCandidate[]>(`/api/v1/drug-catalog/sources/${selected.id}/matches`)
       setMatches(result)
       setSelectedMatch(result[0] ?? null)
     } catch (err) {
@@ -103,7 +103,7 @@ function DrugCatalogReviewPage() {
       review_notes: notes.trim() || null,
     }
     try {
-      await apiFetch<SourceRecord>(`/drug-catalog/sources/${selected.id}/review`, {
+      await apiFetch<SourceRecord>(`/api/v1/drug-catalog/sources/${selected.id}/review`, {
         method: 'PATCH',
         body: JSON.stringify(body),
       })
