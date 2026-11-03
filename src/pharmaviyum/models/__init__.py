@@ -2,8 +2,8 @@
 
 from src.pharmaviyum.models.drug_catalog import (
     DrugReference,
-    DrugReferenceIngredient,
     DrugCatalogSourceRecord,
+    DrugReferenceIngredient,
     MedicinalProduct,
 )
 from src.pharmaviyum.models.erp_sync import ERPIntegration, ERPSyncEvent
