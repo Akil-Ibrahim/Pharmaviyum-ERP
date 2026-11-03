@@ -87,6 +87,11 @@ async def review_drug_catalog_source(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Drug catalog source record not found",
         )
+    if record.review_status != "pending_review":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This source record has already been reviewed",
+        )
 
     if payload.matched_drug_reference_id is not None:
         reference = await db.get(DrugReference, payload.matched_drug_reference_id)
