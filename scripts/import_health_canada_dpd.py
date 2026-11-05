@@ -16,6 +16,8 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any
 
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
+
 import httpx
 
 BASE_URL = "https://health-products.canada.ca/api/drug/"
@@ -96,8 +98,7 @@ def normalize_dpd_records(
         strength = " ".join(part for part in (strength_value, strength_unit) if part)
         din = str(product.get("drug_identification_number") or "").strip()
         brand = str(product.get("brand_name") or "").strip()
-        normalized.append(
-            {
+        candidate = {
                 "source_record_id": f"DPD:{code}",
                 "product_name": brand or str(product.get("descriptor") or ingredient_name),
                 "brand_name": brand,
@@ -113,7 +114,13 @@ def normalize_dpd_records(
                 "package_description": " / ".join(sorted(packaging_by_code.get(code, set()))),
                 "last_update_date": str(product.get("last_update_date") or ""),
             }
-        )
+        if not is_excluded_catalog_entry(
+            brand_name=candidate["brand_name"] or candidate["product_name"],
+            manufacturer=candidate["manufacturer"],
+            authorization_country=candidate["country"],
+            payload=candidate,
+        ):
+            normalized.append(candidate)
     return normalized
 
 
