@@ -448,7 +448,7 @@ async def search_drug_catalog(
                 MedicinalProduct.package_description.ilike(term),
                 MedicinalProduct.gtin.ilike(term),
                 MedicinalProduct.regulatory_id.ilike(term),
-            )
+            ),
         )
     )
     if country:
