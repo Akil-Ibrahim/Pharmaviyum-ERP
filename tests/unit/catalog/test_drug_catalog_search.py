@@ -5,10 +5,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.pharmaviyum.api.v1.drug_catalog import (
-    _is_excluded_catalog_entry,
-    search_drug_catalog,
-)
+from src.pharmaviyum.api.v1.drug_catalog import search_drug_catalog
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
 
 @pytest.mark.asyncio
@@ -72,4 +70,20 @@ async def test_search_includes_medicinal_product_strength() -> None:
     ],
 )
 def test_excluded_catalog_entries(kwargs: dict, expected: bool) -> None:
-    assert _is_excluded_catalog_entry(**kwargs) is expected
+    assert is_excluded_catalog_entry(**kwargs) is expected
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"manufacturerCountry": "IL"},
+        {"metadata": {"countryOfOrigin": "Israel"}},
+        {"details": [{"country_of_manufacture": "State of Israel"}]},
+    ],
+)
+def test_excludes_nested_israeli_country_metadata(payload: dict) -> None:
+    assert is_excluded_catalog_entry(payload=payload)
+
+
+def test_does_not_match_teva_as_part_of_another_word() -> None:
+    assert not is_excluded_catalog_entry(manufacturer="Whatever Pharmaceutical")
