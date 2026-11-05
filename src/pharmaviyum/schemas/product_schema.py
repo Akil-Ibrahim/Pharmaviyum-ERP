@@ -36,6 +36,7 @@ class ProductUpdate(BaseModel):
     blisters_per_pack: int | None = Field(default=None, ge=0)
     units_per_blister: int | None = Field(default=None, ge=0)
     manufacturer: str | None = Field(default=None, max_length=200)
+    manufacturer_country: str | None = Field(default=None, max_length=100)
     inn_name: str | None = Field(default=None, max_length=200)
     atc_code: str | None = Field(default=None, max_length=20)
     regulatory_id: str | None = Field(default=None, max_length=50)
@@ -59,6 +60,7 @@ class ProductResponse(BaseModel):
     blisters_per_pack: int = 0
     units_per_blister: int = 0
     manufacturer: str | None = None
+    manufacturer_country: str | None = None
     inn_name: str | None = None
     atc_code: str | None = None
     regulatory_id: str | None = None
