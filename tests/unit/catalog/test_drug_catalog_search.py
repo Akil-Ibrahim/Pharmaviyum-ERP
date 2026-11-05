@@ -105,14 +105,14 @@ def test_excludes_explicit_manufacturer_country_even_when_authorized_elsewhere()
 
 
 
-def test_catalog_autocomplete_excludes_disallowed_brand_and_manufacturer_origins() -> None:
+def test_catalog_autocomplete_excludes_disallowed_brand_and_manufacturer_origins() -> (
+    None
+):
     from sqlalchemy import select
 
     from src.pharmaviyum.models.drug_catalog import MedicinalProduct
 
-    statement = select(MedicinalProduct).where(
-        *allowed_medicinal_product_conditions()
-    )
+    statement = select(MedicinalProduct).where(*allowed_medicinal_product_conditions())
     sql = str(statement.compile(compile_kwargs={"literal_binds": True})).lower()
     assert "medicinal_products.brand_name" in sql
     assert "medicinal_products.manufacturer" in sql
