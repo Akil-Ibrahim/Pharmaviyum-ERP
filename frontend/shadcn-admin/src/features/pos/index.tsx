@@ -112,6 +112,10 @@ export function Pos() {
   }, [query, pharmacyId])
 
   const resetSale = () => {
+    if (lastSale?.status === 'awaiting_payment') {
+      setNotice('Cancel the pending payment before starting another sale.')
+      return
+    }
     setCart([])
     setQuery('')
     setDiscount('0')
@@ -125,6 +129,10 @@ export function Pos() {
   }
 
   const addToCart = (product: LocalProduct) => {
+    if (lastSale?.status === 'awaiting_payment') {
+      setNotice('Cancel the pending payment before editing this sale.')
+      return
+    }
     if (product.stock < 1) {
       setNotice('This product is out of stock.')
       return
@@ -486,9 +494,9 @@ export function Pos() {
                       </div>
                       <div className='mt-3 flex items-center justify-between gap-3'>
                         <div className='flex items-center gap-2'>
-                          <Button variant='outline' size='icon' className='size-8' aria-label='Decrease quantity' onClick={() => updateQuantity(item.id, -1)}><Minus className='size-3' /></Button>
+                          <Button variant='outline' size='icon' className='size-8' aria-label='Decrease quantity' onClick={() => updateQuantity(item.id, -1)} disabled={lastSale?.status === 'awaiting_payment'}><Minus className='size-3' /></Button>
                           <span className='w-6 text-center text-sm font-semibold tabular-nums'>{item.quantity}</span>
-                          <Button variant='outline' size='icon' className='size-8' aria-label='Increase quantity' disabled={item.quantity >= item.stock} onClick={() => updateQuantity(item.id, 1)}><Plus className='size-3' /></Button>
+                          <Button variant='outline' size='icon' className='size-8' aria-label='Increase quantity' disabled={item.quantity >= item.stock || lastSale?.status === 'awaiting_payment'} onClick={() => updateQuantity(item.id, 1)}><Plus className='size-3' /></Button>
                         </div>
                         <span className='font-semibold tabular-nums'>{money(item.price * item.quantity)}</span>
                       </div>
@@ -581,8 +589,8 @@ export function Pos() {
               This creates a pending payment and reserves stock. The selected terminal or online provider must be configured to initiate payment and send a signed settlement webhook. A pending payment is not treated as paid.
             </div>}
             {lastSale && <p className='mt-3 text-xs text-muted-foreground'>Last receipt: {lastSale.receipt_number} · {lastSale.status}</p>}
-            <Button className='mt-4 w-full' onClick={() => void submitCheckout()} disabled={checkoutLoading || !pharmacyId || !cart.length || (paymentMethod === 'cash' && cash < total)}>
-              {checkoutLoading ? 'Processing…' : paymentMethod === 'cash' ? 'Complete cash sale' : 'Create pending payment'}
+            <Button className='mt-4 w-full' onClick={() => void submitCheckout()} disabled={checkoutLoading || !pharmacyId || !cart.length || lastSale?.status === 'awaiting_payment' || (paymentMethod === 'cash' && cash < total)}>
+              {checkoutLoading ? 'Processing…' : lastSale?.status === 'awaiting_payment' ? 'Payment pending' : paymentMethod === 'cash' ? 'Complete cash sale' : 'Create pending payment'}
             </Button>
             <Button className='mt-2 w-full' variant='outline' onClick={closePaymentReview} disabled={checkoutLoading}>Close</Button>
           </section>
