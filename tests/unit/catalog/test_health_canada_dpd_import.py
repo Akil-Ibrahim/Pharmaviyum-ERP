@@ -34,6 +34,15 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
             "company_name": "Example Pharma",
             "class_name": "Human",
         },
+        {
+            "drug_code": 104,
+            "drug_identification_number": "08888888",
+            "brand_name": "TEVA TEST",
+            "descriptor": "",
+            "number_of_ais": "1",
+            "company_name": "Teva Pharmaceutical Industries",
+            "class_name": "Human",
+        },
     ]
     ingredients = [
         {
@@ -60,6 +69,12 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
             "strength": "40",
             "strength_unit": "MG",
         },
+        {
+            "drug_code": 104,
+            "ingredient_name": "OMEPRAZOLE",
+            "strength": "20",
+            "strength_unit": "MG",
+        },
     ]
     forms = [
         {"drug_code": 101, "pharmaceutical_form_name": "Capsule"},
@@ -72,6 +87,11 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
         {
             "drug_code": 103,
             "status": "Cancelled Post Market",
+            "history_date": "2025-01-01",
+        },
+        {
+            "drug_code": 104,
+            "status": "Approved",
             "history_date": "2025-01-01",
         },
     ]
