@@ -46,7 +46,9 @@ class DrugCatalogSourceReview(BaseModel):
         if self.review_status == "rejected" and (
             has_reference or has_product or self.create_new
         ):
-            raise ValueError("Rejected records cannot retain a match target or create a product")
+            raise ValueError(
+                "Rejected records cannot retain a match target or create a product"
+            )
         if self.review_status == "duplicate" and self.create_new:
             raise ValueError("Duplicate records cannot create a new catalog product")
         return self
