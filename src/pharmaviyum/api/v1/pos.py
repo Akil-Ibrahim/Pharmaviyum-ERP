@@ -107,6 +107,46 @@ async def search_pos_products(
     ]
 
 
+
+@router.get("/products/{product_id}/lots")
+async def get_product_lots(
+    product_id: int,
+    db: SessionDep,
+    user: CurrentUser,
+    pharmacy_id: int = Query(..., gt=0),
+) -> list[dict[str, object]]:
+    """Return real, sellable stock lots for one product in the selected pharmacy."""
+    await require_pharmacy_tenant(pharmacy_id, user, db)
+    product_result = await db.execute(
+        select(Product.id).where(Product.id == product_id, Product.is_active.is_(True))
+    )
+    if product_result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Active product not found")
+    now = datetime.utcnow()
+    result = await db.execute(
+        select(Inventory)
+        .where(
+            Inventory.product_id == product_id,
+            Inventory.pharmacy_id == pharmacy_id,
+            Inventory.quantity > Inventory.reserved_quantity,
+            (Inventory.expires_at.is_(None) | (Inventory.expires_at > now)),
+        )
+        .order_by(Inventory.expires_at.asc().nullslast(), Inventory.id.asc())
+    )
+    return [
+        {
+            "inventory_id": row.id,
+            "lot_number": row.lot_number,
+            "expiry_date": row.expires_at.date().isoformat() if row.expires_at else None,
+            "quantity": row.quantity,
+            "reserved_quantity": row.reserved_quantity,
+            "available_quantity": row.quantity - row.reserved_quantity,
+            "expiry_date_missing": row.expires_at is None,
+        }
+        for row in result.scalars().all()
+    ]
+
+
 @router.post(
     "/checkout", response_model=SaleResponse, status_code=status.HTTP_201_CREATED
 )
