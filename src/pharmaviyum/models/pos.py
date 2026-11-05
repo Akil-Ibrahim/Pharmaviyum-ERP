@@ -50,7 +50,6 @@ class Sale(Base):
         ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     idempotency_key: Mapped[str] = mapped_column(String(100), nullable=False)
-    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="UAH")
     subtotal: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     discount_total: Mapped[Decimal] = mapped_column(
         Numeric(12, 2), nullable=False, default=Decimal("0.00")
@@ -162,7 +161,6 @@ class Payment(Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     cash_received: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     change_due: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
-    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="UAH")
     provider_name: Mapped[str | None] = mapped_column(String(80), nullable=True)
     provider_payment_id: Mapped[str | None] = mapped_column(String(160), nullable=True)
     idempotency_key: Mapped[str] = mapped_column(String(100), nullable=False)
