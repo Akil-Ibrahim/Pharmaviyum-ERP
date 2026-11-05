@@ -221,6 +221,7 @@ async def checkout(
             if remaining == 0:
                 break
         if remaining:
+            await db.rollback()
             raise HTTPException(
                 status_code=409,
                 detail=f"Insufficient non-expired stock for {product.name}; checkout was not completed",
@@ -276,29 +277,31 @@ async def payment_webhook(
         event_status = event["status"]
         provider_name = str(event["provider_name"])
         provider_payment_id = str(event["provider_payment_id"])
+        event_amount = _money(Decimal(str(event["amount"])))
+        event_currency = str(event["currency"]).upper()
     except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
         raise HTTPException(status_code=400, detail="Invalid payment event payload") from exc
     if event_status not in {"succeeded", "failed"}:
         raise HTTPException(status_code=422, detail="Unsupported payment event status")
 
-    result = await db.execute(
-        select(Payment)
-        .where(Payment.id == payment_id)
-        .with_for_update()
-    )
-    payment = result.scalar_one_or_none()
-    if payment is None or payment.method == "cash":
+    payment_lookup = await db.get(Payment, payment_id)
+    if payment_lookup is None or payment_lookup.method == "cash":
         raise HTTPException(status_code=404, detail="External payment not found")
+    sale_result = await db.execute(
+        select(Sale).where(Sale.id == payment_lookup.sale_id).with_for_update()
+    )
+    sale = sale_result.scalar_one()
+    result = await db.execute(
+        select(Payment).where(Payment.id == payment_id).with_for_update()
+    )
+    payment = result.scalar_one()
     if payment.status != "pending":
         # Webhook retries are intentionally idempotent.
         if payment.status == event_status and payment.provider_payment_id == provider_payment_id:
             return {"status": "already_processed"}
         raise HTTPException(status_code=409, detail="Payment has already been finalized")
-
-    sale_result = await db.execute(
-        select(Sale).where(Sale.id == payment.sale_id).with_for_update()
-    )
-    sale = sale_result.scalar_one()
+    if event_amount != payment.amount or event_currency != payment.currency:
+        raise HTTPException(status_code=409, detail="Payment amount or currency does not match the sale")
     allocations_result = await db.execute(
         select(SaleItemAllocation)
         .join(SaleItem, SaleItem.id == SaleItemAllocation.sale_item_id)
