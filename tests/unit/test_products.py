@@ -5,8 +5,14 @@ from pydantic import ValidationError
 
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.product import Product
-from src.pharmaviyum.schemas.product_schema import ProductCreate, ProductResponse, ProductUpdate
-from src.pharmaviyum.services.catalog_exclusions import allowed_pharmacy_product_conditions
+from src.pharmaviyum.schemas.product_schema import (
+    ProductCreate,
+    ProductResponse,
+    ProductUpdate,
+)
+from src.pharmaviyum.services.catalog_exclusions import (
+    allowed_pharmacy_product_conditions,
+)
 
 
 @pytest.mark.unit
@@ -50,7 +56,6 @@ def test_product_schema_matches_database_invariants() -> None:
     }
     assert "ck_products_price_nonnegative" in constraint_names
     assert "ck_products_stock_nonnegative" in constraint_names
-
 
 
 @pytest.mark.unit
