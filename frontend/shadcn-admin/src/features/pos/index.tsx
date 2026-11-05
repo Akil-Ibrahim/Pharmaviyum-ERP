@@ -488,7 +488,7 @@ export function Pos() {
                           <p className='text-sm font-semibold leading-snug'>{item.name}</p>
                           <p className='mt-1 text-xs text-muted-foreground'>{money(item.price)} / unit · Stock {item.stock}</p>
                         </div>
-                        <Button variant='ghost' size='icon' className='size-7 shrink-0 text-muted-foreground hover:text-destructive' aria-label={`Remove ${item.name}`} onClick={() => setCart(items => items.filter(row => row.id !== item.id))}>
+                        <Button variant='ghost' size='icon' className='size-7 shrink-0 text-muted-foreground hover:text-destructive' aria-label={`Remove ${item.name}`} onClick={() => setCart(items => items.filter(row => row.id !== item.id))} disabled={lastSale?.status === 'awaiting_payment'}>
                           <Trash2 className='size-4' />
                         </Button>
                       </div>
