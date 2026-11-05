@@ -93,6 +93,7 @@ def upgrade() -> None:
           AND NOT EXISTS (SELECT 1 FROM inventory i WHERE i.product_id = p.id)
           AND NOT EXISTS (SELECT 1 FROM product_batches b WHERE b.product_id = p.id)
           AND NOT EXISTS (SELECT 1 FROM sale_items si WHERE si.product_id = p.id)
+          AND NOT EXISTS (SELECT 1 FROM prescriptions rx WHERE rx.product_id = p.id)
         """
     )
 
