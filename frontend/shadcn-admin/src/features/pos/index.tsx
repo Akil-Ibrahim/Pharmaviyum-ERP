@@ -52,6 +52,7 @@ export function Pos() {
   const [processing, setProcessing] = useState(false)
   const [sale, setSale] = useState<SaleResult | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+  const [searchActive, setSearchActive] = useState(false)
   const idempotencyKey = useRef(crypto.randomUUID())
 
   const total = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart])
@@ -119,6 +120,7 @@ export function Pos() {
     })
     setNotice('')
     setQuery('')
+    setSearchActive(true)
     searchRef.current?.focus()
   }
 
@@ -196,7 +198,7 @@ export function Pos() {
       <div className='mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-[1920px] flex-col gap-4'>
         <header className='flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background p-4'>
           <div className='flex items-center gap-3'><span className='flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground'><Pill /></span><div><h1 className='text-xl font-bold'>Аптечная касса</h1><p className='text-xs text-muted-foreground'>Выбор препаратов и оформление продажи</p></div></div>
-          <div className='flex flex-wrap items-center gap-2'><Badge variant='outline' className='px-3 py-2'>Counter Workspace</Badge><Button variant='outline' onClick={() => { setCart([]); setSale(null); setCheckoutOpen(false); setQuery(''); setNotice('Новая продажа. Поиск активен.'); window.requestAnimationFrame(() => searchRef.current?.focus()) }}><Plus className='mr-2 size-4' /> New Sale</Button><Button variant='outline' onClick={() => { setReceivingOpen(true); setQuery(''); setResults([]); searchRef.current?.focus() }}>Приёмка на склад</Button><label className='flex items-center gap-2 text-sm'>Аптека<select className='h-9 max-w-[220px] rounded-md border bg-background px-2' value={pharmacyId ?? ''} onChange={e => { setPharmacyId(Number(e.target.value)); setCart([]); setSale(null) }}><option value=''>Выберите аптеку</option>{pharmacies.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label></div>
+          <div className='flex flex-wrap items-center gap-2'><Badge variant='outline' className='px-3 py-2'>Counter Workspace</Badge><Button variant='outline' onClick={() => { setCart([]); setSale(null); setCheckoutOpen(false); setQuery(''); setSearchActive(true); setNotice('Новая продажа. Поиск активен.'); window.requestAnimationFrame(() => searchRef.current?.focus()) }}><Plus className='mr-2 size-4' /> New Sale</Button><Button variant='outline' onClick={() => { setReceivingOpen(true); setQuery(''); setResults([]); setSearchActive(false); searchRef.current?.focus() }}>Приёмка на склад</Button><label className='flex items-center gap-2 text-sm'>Аптека<select className='h-9 max-w-[220px] rounded-md border bg-background px-2' value={pharmacyId ?? ''} onChange={e => { setPharmacyId(Number(e.target.value)); setCart([]); setSale(null) }}><option value=''>Выберите аптеку</option>{pharmacies.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label></div>
         </header>
 
         {notice && <div role='status' className='flex items-center justify-between gap-3 rounded-lg border bg-background p-3 text-sm'>{notice}<button aria-label='Закрыть уведомление' onClick={() => setNotice('')}><X className='size-4' /></button></div>}
@@ -218,7 +220,7 @@ export function Pos() {
         {sale?.status === 'completed' && <Card><CardContent className='flex items-center justify-between gap-3 p-4'><div className='flex items-center gap-2'><Receipt className='size-5 text-primary' /><div><p className='font-semibold'>Чек № {sale.receipt_number}</p><p className='text-sm text-muted-foreground'>Продажа зарегистрирована · {money(Number(sale.total))}</p></div></div><Button variant='outline' onClick={() => { setSale(null); setNotice('Новая продажа.'); searchRef.current?.focus() }}>Новая продажа</Button></CardContent></Card>}
 
         <section aria-label='Поиск препаратов' className='mt-auto max-h-[42vh] shrink-0 space-y-3 overflow-y-auto'>
-            <form aria-label='Поиск препарата' onSubmit={e => { e.preventDefault(); if (results.length === 1) addProduct(results[0]) }} className='flex gap-2'><Input ref={searchRef} autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder='Введите название препарата…' className='h-12 text-base' /><Button type='submit' className='h-12'><Search className='mr-2 size-4' /> Поиск</Button></form>
+            <form aria-label='Поиск препарата' onSubmit={e => { e.preventDefault(); if (results.length === 1) addProduct(results[0]) }} className='flex gap-2'><Input ref={searchRef} value={query} onChange={e => setQuery(e.target.value)} placeholder='Введите название препарата…' className={`h-12 text-base transition-shadow ${searchActive ? 'ring-2 ring-primary ring-offset-2' : ''}`} onFocus={() => setSearchActive(true)} /><Button type='submit' className='h-12'><Search className='mr-2 size-4' /> Поиск</Button></form>
             {loading && <p className='py-4 text-center text-sm text-muted-foreground'>Ищем препараты…</p>}
             {!loading && query.trim().length >= 2 && results.length === 0 && <p className='py-5 text-center text-sm text-muted-foreground'>В ассортименте этой аптеки совпадений нет.</p>}
             {results.map(product => <div key={product.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'><div className='min-w-0 flex-1'><p className='font-semibold'>{product.name}</p><p className='text-xs text-muted-foreground'>Бренд / производитель: {product.manufacturer || 'не указан'} · МНН: {product.inn_name || 'не указано'}</p><p className='text-xs text-muted-foreground'>{[product.dosage_strength, product.dosage_form].filter(Boolean).join(' · ')}</p><p className='mt-1 text-xs text-muted-foreground'>SKU: {product.sku} · Доступно: {product.stock} · Цена: {money(product.price)}</p><p className='text-xs text-muted-foreground'>Штрихкод: {product.barcode || product.gtin || 'не указан'}</p></div><Button onClick={() => addProduct(product)} disabled={product.stock < 1}><Plus className='mr-1 size-4' /> Добавить</Button></div>)}
