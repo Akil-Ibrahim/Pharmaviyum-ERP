@@ -218,8 +218,19 @@ async def import_catalog(path: Path) -> tuple[int, int]:
 
     from src.pharmaviyum.database import AsyncSessionLocal
     from src.pharmaviyum.models.drug_catalog import DrugCatalogSourceRecord
+    from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
-    rows = parse_ema_xlsx(path)
+    parsed_rows = parse_ema_xlsx(path)
+    rows = [
+        row
+        for row in parsed_rows
+        if not is_excluded_catalog_entry(
+            brand_name=row.get("product_name"),
+            manufacturer=row.get("holder"),
+            authorization_country=row.get("country"),
+            payload=row,
+        )
+    ]
     version = f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}"
     records = [
         DrugCatalogSourceRecord(
@@ -253,7 +264,7 @@ async def import_catalog(path: Path) -> tuple[int, int]:
             existing_ids.add(record.source_record_id)
             staged += 1
         await session.commit()
-    return staged, len(records) - staged
+    return staged, len(parsed_rows) - staged
 
 
 async def main() -> None:
