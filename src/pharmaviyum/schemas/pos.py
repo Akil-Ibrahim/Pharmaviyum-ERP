@@ -6,7 +6,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-
 PaymentMethod = Literal["cash", "card_terminal", "online"]
 
 
@@ -18,11 +17,17 @@ class SaleLineCreate(BaseModel):
 class SaleCreate(BaseModel):
     pharmacy_id: int = Field(gt=0)
     idempotency_key: str = Field(min_length=8, max_length=100)
-    currency: str = Field(default="UAH", min_length=3, max_length=3, pattern=r"^[A-Z]{3}$")
+    currency: str = Field(
+        default="UAH", min_length=3, max_length=3, pattern=r"^[A-Z]{3}$"
+    )
     items: list[SaleLineCreate] = Field(min_length=1, max_length=100)
-    discount_total: Decimal = Field(default=Decimal("0.00"), ge=0, max_digits=12, decimal_places=2)
+    discount_total: Decimal = Field(
+        default=Decimal("0.00"), ge=0, max_digits=12, decimal_places=2
+    )
     payment_method: PaymentMethod
-    cash_received: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
+    cash_received: Decimal | None = Field(
+        default=None, ge=0, max_digits=12, decimal_places=2
+    )
 
     @model_validator(mode="after")
     def unique_products(self):
