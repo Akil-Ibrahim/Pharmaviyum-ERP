@@ -19,6 +19,7 @@ from src.pharmaviyum.db.base import Base
 from src.pharmaviyum.models.inventory import Inventory  # noqa: F401
 from src.pharmaviyum.models.pharmacy import Pharmacy  # noqa: F401
 from src.pharmaviyum.models.product import Product  # noqa: F401
+from src.pharmaviyum.models.product_batch import ProductBatch  # noqa: F401
 from src.pharmaviyum.models.user import User  # noqa: F401
 
 
