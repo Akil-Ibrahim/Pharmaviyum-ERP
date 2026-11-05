@@ -221,7 +221,9 @@ async def review_drug_catalog_source(
                 )
             )
 
-        brand_value = source.get("brand_name") or source.get("product_name")
+        brand_value = source.get("brand_name")
+        if not brand_value and "ema" in record.source_name.lower():
+            brand_value = source.get("product_name")
         brand = str(brand_value).strip()[:200] if brand_value else None
         strength_value = source.get("strength")
         strength = str(strength_value).strip()[:100] if strength_value else None
@@ -398,7 +400,9 @@ async def search_drug_catalog(
         )
         if not ingredient:
             continue
-        brand = payload.get("brand_name") or payload.get("product_name")
+        brand = payload.get("brand_name")
+        if not brand and "ema" in record.source_name.lower():
+            brand = payload.get("product_name")
         catalog_results.append(
             DrugCatalogResult(
                 inn_name=str(ingredient),
