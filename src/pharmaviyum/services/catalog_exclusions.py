@@ -83,6 +83,6 @@ def allowed_pharmacy_product_conditions():
     return (
         not_(Product.name.ilike("%teva%")),
         not_(func.coalesce(Product.manufacturer, "").ilike("%teva%")),
-        not_(func.lower(func.trim(func.coalesce(Product.manufacturer_country, ""))).in_(israel_codes),
+        not_(func.lower(func.trim(func.coalesce(Product.manufacturer_country, ""))).in_(israel_codes)),
         not_(linked_to_excluded_catalog_product),
     )
