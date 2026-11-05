@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import or_, select
+from sqlalchemy import String, cast, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
@@ -234,7 +234,7 @@ async def search_drug_catalog(
     result = await db.execute(stmt)
     products = result.scalars().unique().all()
 
-    return [
+    catalog_results = [
         DrugCatalogResult(
             medicinal_product_id=product.id,
             drug_reference_id=product.drug_reference.id,
@@ -254,6 +254,68 @@ async def search_drug_catalog(
             gtin=product.gtin,
             regulatory_id=product.regulatory_id,
             authorization_country=product.authorization_country,
+            review_status="approved",
         )
         for product in products
     ]
+
+    # Show imported source variants before approval as reference-only records.
+    # A staged regulatory record is never converted into a local sellable Product.
+    staged_stmt = (
+        select(DrugCatalogSourceRecord)
+        .where(
+            DrugCatalogSourceRecord.review_status == "pending_review",
+            cast(DrugCatalogSourceRecord.normalized_payload, String).ilike(term),
+        )
+        .order_by(
+            DrugCatalogSourceRecord.extracted_at.desc(),
+            DrugCatalogSourceRecord.id.desc(),
+        )
+        .limit(limit * 3)
+    )
+    staged_rows = (await db.execute(staged_stmt)).scalars().all()
+    seen_source_ids: set[tuple[str, str]] = set()
+    for record in staged_rows:
+        source_identity = (record.source_name, record.source_record_id)
+        if source_identity in seen_source_ids:
+            continue
+        seen_source_ids.add(source_identity)
+        payload = record.normalized_payload or {}
+        ingredient = (
+            payload.get("ingredient_name")
+            or payload.get("ingredient")
+            or payload.get("inn_name")
+        )
+        if not ingredient:
+            continue
+        brand = payload.get("brand_name") or payload.get("product_name")
+        catalog_results.append(
+            DrugCatalogResult(
+                inn_name=str(ingredient),
+                ingredient_names=[str(ingredient)],
+                brand_name=str(brand) if brand else None,
+                product_type=(
+                    "branded"
+                    if brand and str(payload.get("tty", "")).upper() == "SBD"
+                    else "generic"
+                    if not brand
+                    else "reference"
+                ),
+                manufacturer=payload.get("manufacturer") or payload.get("holder"),
+                strength=payload.get("strength"),
+                dosage_form=payload.get("dosage_form"),
+                route=payload.get("route"),
+                package_description=payload.get("package_description"),
+                gtin=payload.get("gtin"),
+                authorization_country=(
+                    payload.get("country") or payload.get("authorization_country")
+                ),
+                source_record_id=record.source_record_id,
+                source_name=record.source_name,
+                review_status=record.review_status,
+            )
+        )
+        if len(catalog_results) >= limit:
+            break
+
+    return catalog_results[:limit]
