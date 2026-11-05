@@ -643,6 +643,49 @@ PATIENT_PROFILES = [
 ("Mixed cardiovascular risk","I10",["BRAND-NORVASC-5-90","BRAND-LIPITOR-20-90","BRAND-PLAVIX-75-28","GEN-AMLOD-SANDOZ-5-30","GEN-ATOR-TEVA-20-30","BRAND-NEXIUM-20-30"]),
 ]
 
+# Pharmaviyum excludes Teva and explicitly Israel-origin catalog entries.
+_EXCLUDED_COUNTRIES = {"il", "isr", "israel", "state of israel", "израиль", "ізраїль"}
+_EXCLUDED_PROFILE_SKUS = {
+    "GEN-MET-TEVA-500-60": "BRAND-GLUCOPHAGE-XR-500-60",
+    "GEN-ATOR-TEVA-20-30": "BRAND-LIPITOR-20-90",
+    "GEN-SALB-TEVA-100-200": "BRAND-VENTOLIN-100-200",
+    "GEN-DIC-TEVA-1-50": "BRAND-VOLTAREN-1-50",
+    "GEN-IBU-TEVA-200-20": "BRAND-NUROFEN-200-24",
+}
+
+
+def _is_excluded_demo_product(spec: dict) -> bool:
+    text = " ".join(
+        str(spec.get(key) or "")
+        for key in ("name", "sku", "manufacturer", "brand_name")
+    ).casefold()
+    if "teva" in text:
+        return True
+    return any(
+        str(spec.get(key) or "").strip().casefold() in _EXCLUDED_COUNTRIES
+        for key in (
+            "country",
+            "authorization_country",
+            "manufacturer_country",
+            "country_of_origin",
+            "country_of_manufacture",
+        )
+    )
+
+
+PRODUCT_CATALOG[:] = [
+    spec for spec in PRODUCT_CATALOG if not _is_excluded_demo_product(spec)
+]
+PATIENT_PROFILES[:] = [
+    (
+        condition,
+        icd10,
+        [_EXCLUDED_PROFILE_SKUS.get(sku, sku) for sku in skus],
+    )
+    for condition, icd10, skus in PATIENT_PROFILES
+]
+
+
 def synthetic_barcode(index: int) -> str:
     return f"DEMO{index:04d}{20260918}"
 
