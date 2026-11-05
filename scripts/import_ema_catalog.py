@@ -164,6 +164,11 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
         or find_column("authorisation", "holder")
         or find_column("authorization", "holder")
     )
+    manufacturer_country_col = (
+        find_column("manufacturer", "country")
+        or find_column("country", "of", "origin")
+        or find_column("country", "of", "manufacture")
+    )
     if product_col is None or ingredient_col is None or country_col is None:
         raise ValueError(f"EMA workbook is missing required columns: {headers!r}")
 
@@ -199,6 +204,7 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
             "route": value(route_col),
             "country": country,
             "holder": holder,
+            "manufacturer_country": value(manufacturer_country_col),
         })
     return parsed
 
