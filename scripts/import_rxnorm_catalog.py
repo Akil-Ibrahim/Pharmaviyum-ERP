@@ -20,6 +20,8 @@ from pathlib import Path
 
 import httpx
 
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
+
 RXNORM_URL = (
     "https://download.nlm.nih.gov/umls/kss/rxnorm/"
     "RxNorm_full_prescribe_current.zip"
@@ -145,8 +147,7 @@ def parse_rxnorm_archive(
                     if strength_match
                     else term
                 )
-                products.append(
-                    {
+                candidate = {
                         "rxcui": rxcui,
                         "term": term,
                         "brand_name": brand_name,
@@ -158,7 +159,11 @@ def parse_rxnorm_archive(
                         "route": route,
                         "dosage_form": dosage_form,
                     }
-                )
+                if not is_excluded_catalog_entry(
+                    brand_name=brand_name or term,
+                    payload=candidate,
+                ):
+                    products.append(candidate)
 
             return ingredients, products
 
