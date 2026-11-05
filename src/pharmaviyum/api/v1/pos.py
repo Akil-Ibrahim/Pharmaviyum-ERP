@@ -263,7 +263,6 @@ async def checkout(
         saved_payment = existing.payments[0] if existing.payments else None
         same_request = (
             requested_items == saved_items
-            and existing.currency == payload.currency
             and existing.discount_total == _money(payload.discount_total)
             and saved_payment is not None
             and saved_payment.method == payload.payment_method
@@ -285,7 +284,6 @@ async def checkout(
                         "id",
                         "receipt_number",
                         "pharmacy_id",
-                        "currency",
                         "subtotal",
                         "discount_total",
                         "total",
@@ -338,7 +336,6 @@ async def checkout(
         pharmacy_id=payload.pharmacy_id,
         cashier_user_id=cashier.id,
         idempotency_key=payload.idempotency_key,
-        currency=payload.currency,
         subtotal=subtotal,
         discount_total=discount,
         total=total,
@@ -416,7 +413,6 @@ async def checkout(
             if payload.payment_method == "cash"
             else None
         ),
-        currency=payload.currency,
         provider_name="cash_register" if payload.payment_method == "cash" else None,
         idempotency_key=payload.idempotency_key,
         settled_at=now if payload.payment_method == "cash" else None,
@@ -446,7 +442,6 @@ async def checkout(
         duplicate_payment = duplicate.payments[0] if duplicate.payments else None
         if (
             duplicate_items != requested_items
-            or duplicate.currency != payload.currency
             or duplicate.discount_total != discount
             or duplicate_payment is None
             or duplicate_payment.method != payload.payment_method
@@ -471,7 +466,6 @@ async def checkout(
                     "id",
                     "receipt_number",
                     "pharmacy_id",
-                    "currency",
                     "subtotal",
                     "discount_total",
                     "total",
@@ -515,7 +509,6 @@ async def payment_webhook(
         provider_name = str(event["provider_name"])
         provider_payment_id = str(event["provider_payment_id"])
         event_amount = _money(Decimal(str(event["amount"])))
-        event_currency = str(event["currency"]).upper()
     except (
         ValueError,
         TypeError,
@@ -550,9 +543,9 @@ async def payment_webhook(
         raise HTTPException(
             status_code=409, detail="Payment has already been finalized"
         )
-    if event_amount != payment.amount or event_currency != payment.currency:
+    if event_amount != payment.amount:
         raise HTTPException(
-            status_code=409, detail="Payment amount or currency does not match the sale"
+            status_code=409, detail="Payment amount does not match the sale"
         )
     allocations_result = await db.execute(
         select(SaleItemAllocation)
