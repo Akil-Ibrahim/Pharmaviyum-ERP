@@ -58,6 +58,7 @@ def is_excluded_catalog_entry(
         return True
 
     countries = [authorization_country, manufacturer_country, *_country_values(payload)]
+
     def is_israeli_country(value: object) -> bool:
         country = str(value).strip().casefold()
         if country in _ISRAEL_COUNTRY_VALUES or "israel" in country:
