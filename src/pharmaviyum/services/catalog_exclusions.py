@@ -51,3 +51,33 @@ def is_excluded_catalog_entry(
         and str(value).strip().casefold() in _ISRAEL_COUNTRY_VALUES
         for value in countries
     )
+
+
+
+def allowed_pharmacy_product_conditions():
+    """SQL predicates that prevent excluded catalog items from being sold or listed."""
+    from sqlalchemy import func, not_, or_, select
+
+    from src.pharmaviyum.models.drug_catalog import MedicinalProduct
+    from src.pharmaviyum.models.product import Product
+
+    israel_codes = ("il", "isr", "israel", "state of israel", "израиль", "ізраїль")
+    linked_to_excluded_catalog_product = (
+        select(MedicinalProduct.id)
+        .where(
+            MedicinalProduct.id == Product.medicinal_product_id,
+            or_(
+                MedicinalProduct.brand_name.ilike("%teva%"),
+                MedicinalProduct.manufacturer.ilike("%teva%"),
+                func.lower(func.trim(MedicinalProduct.authorization_country)).in_(
+                    israel_codes
+                ),
+            ),
+        )
+        .exists()
+    )
+    return (
+        not_(Product.name.ilike("%teva%")),
+        not_(Product.manufacturer.ilike("%teva%")),
+        not_(linked_to_excluded_catalog_product),
+    )
