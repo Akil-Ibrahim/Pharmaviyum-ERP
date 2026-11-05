@@ -14,6 +14,8 @@ import re
 import tempfile
 import zipfile
 from pathlib import Path
+
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 from xml.etree import ElementTree as ET
 
 import httpx
@@ -173,7 +175,14 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
         product_name = value(product_col)
         ingredient_text = value(ingredient_col)
         country = value(country_col)
+        holder = value(holder_col)
         if not product_name or not ingredient_text or not country:
+            continue
+        if is_excluded_catalog_entry(
+            brand_name=product_name,
+            manufacturer=holder,
+            authorization_country=country,
+        ):
             continue
         ingredients = [
             part.strip()
@@ -189,7 +198,7 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
             "dosage_form": value(form_col),
             "route": value(route_col),
             "country": country,
-            "holder": value(holder_col),
+            "holder": holder,
         })
     return parsed
 
