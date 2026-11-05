@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class DrugCatalogResult(BaseModel):
@@ -8,7 +8,7 @@ class DrugCatalogResult(BaseModel):
     drug_reference_id: int | None = None
     inn_name: str
     atc_code: str | None = None
-    ingredient_names: list[str] = []
+    ingredient_names: list[str] = Field(default_factory=list)
     brand_name: str | None = None
     product_type: str = "reference"
     manufacturer: str | None = None
