@@ -77,6 +77,8 @@ def upgrade() -> None:
         sa.Column("method", sa.String(24), nullable=False),
         sa.Column("status", sa.String(20), nullable=False, server_default="pending"),
         sa.Column("amount", sa.Numeric(12, 2), nullable=False),
+        sa.Column("cash_received", sa.Numeric(12, 2), nullable=True),
+        sa.Column("change_due", sa.Numeric(12, 2), nullable=True),
         sa.Column("currency", sa.String(3), nullable=False, server_default="UAH"),
         sa.Column("provider_name", sa.String(80), nullable=True),
         sa.Column("provider_payment_id", sa.String(160), nullable=True),
