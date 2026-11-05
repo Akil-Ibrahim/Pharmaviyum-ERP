@@ -6,7 +6,7 @@ import hashlib
 import hmac
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from uuid import uuid4
 
@@ -17,7 +17,7 @@ from sqlalchemy.orm import selectinload
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.pos import Payment, Sale, SaleItem, SaleItemAllocation
 from src.pharmaviyum.models.product import Product
-from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
+from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
 from src.pharmaviyum.schemas.pos import SaleCreate, SaleResponse
 
