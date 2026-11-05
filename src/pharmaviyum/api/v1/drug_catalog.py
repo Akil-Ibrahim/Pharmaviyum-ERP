@@ -85,6 +85,18 @@ async def create_drug_catalog_source(
     _: CurrentSuperuser,
 ) -> DrugCatalogSourceResult:
     """Register an external reference record without creating a sellable product."""
+    source_payload = payload.normalized_payload or {}
+    if _is_excluded_catalog_entry(
+        brand_name=source_payload.get("brand_name") or source_payload.get("product_name"),
+        manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
+        authorization_country=source_payload.get("authorization_country")
+        or source_payload.get("country"),
+        payload=source_payload,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="This catalog entry is excluded from Pharmaviyum",
+        )
     record = DrugCatalogSourceRecord(**payload.model_dump())
     db.add(record)
     try:
@@ -115,9 +127,19 @@ async def list_drug_catalog_sources(
         DrugCatalogSourceRecord.id.desc(),
     ).limit(limit)
     result = await db.execute(stmt)
+    records = result.scalars().all()
     return [
         DrugCatalogSourceResult.model_validate(record)
-        for record in result.scalars().all()
+        for record in records
+        if not _is_excluded_catalog_entry(
+            brand_name=(record.normalized_payload or {}).get("brand_name")
+            or (record.normalized_payload or {}).get("product_name"),
+            manufacturer=(record.normalized_payload or {}).get("manufacturer")
+            or (record.normalized_payload or {}).get("holder"),
+            authorization_country=(record.normalized_payload or {}).get("authorization_country")
+            or (record.normalized_payload or {}).get("country"),
+            payload=record.normalized_payload or {},
+        )
     ]
 
 
@@ -203,6 +225,18 @@ async def review_drug_catalog_source(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="This source record has already been reviewed",
+        )
+    source_payload = record.normalized_payload or {}
+    if _is_excluded_catalog_entry(
+        brand_name=source_payload.get("brand_name") or source_payload.get("product_name"),
+        manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
+        authorization_country=source_payload.get("authorization_country")
+        or source_payload.get("country"),
+        payload=source_payload,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="This catalog entry is excluded from Pharmaviyum",
         )
 
     matched_reference_id = payload.matched_drug_reference_id
