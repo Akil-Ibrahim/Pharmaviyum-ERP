@@ -16,9 +16,9 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any
 
-from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
-
 import httpx
+
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
 BASE_URL = "https://health-products.canada.ca/api/drug/"
 SOURCE_NAME = "Health Canada DPD"
