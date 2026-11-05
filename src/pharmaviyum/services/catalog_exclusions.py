@@ -129,27 +129,3 @@ def allowed_medicinal_product_conditions():
         not_(israeli_country_clause(MedicinalProduct.authorization_country)),
         not_(israeli_country_clause(MedicinalProduct.manufacturer_country)),
     )
-
-
-def allowed_medicinal_catalog_conditions():
-    """SQL predicates that keep excluded medicines out of global reference search."""
-    from sqlalchemy import func, not_, or_
-
-    from src.pharmaviyum.models.drug_catalog import MedicinalProduct
-
-    israel_codes = ("il", "isr", "israel", "state of israel", "израиль", "ізраїль")
-
-    def israeli_country_clause(column):
-        normalized = func.lower(func.trim(func.coalesce(column, "")))
-        return or_(
-            normalized.in_(israel_codes),
-            normalized.ilike("%israel%"),
-            normalized.op("~*")(r"(^|[^a-z])(il|isr)([^a-z]|$)"),
-        )
-
-    return (
-        not_(func.coalesce(MedicinalProduct.brand_name, "").ilike("%teva%")),
-        not_(func.coalesce(MedicinalProduct.manufacturer, "").ilike("%teva%")),
-        not_(israeli_country_clause(MedicinalProduct.authorization_country)),
-        not_(israeli_country_clause(MedicinalProduct.manufacturer_country)),
-    )
