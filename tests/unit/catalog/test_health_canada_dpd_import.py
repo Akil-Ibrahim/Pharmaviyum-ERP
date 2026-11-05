@@ -69,11 +69,13 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
     statuses = [
         {"drug_code": 101, "status": "Approved", "history_date": "2025-01-01"},
         {"drug_code": 102, "status": "Marketed", "history_date": "2025-01-01"},
-        {"drug_code": 103, "status": "Cancelled Post Market", "history_date": "2025-01-01"},
+        {
+            "drug_code": 103,
+            "status": "Cancelled Post Market",
+            "history_date": "2025-01-01",
+        },
     ]
-    packaging = [
-        {"drug_code": 101, "product_information": "100 Capsule Bottle"}
-    ]
+    packaging = [{"drug_code": 101, "product_information": "100 Capsule Bottle"}]
 
     rows = normalize_dpd_records(
         products, ingredients, forms, routes, statuses, packaging
