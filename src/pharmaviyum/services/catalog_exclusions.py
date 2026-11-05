@@ -36,6 +36,7 @@ def is_excluded_catalog_entry(
     brand_name: object = None,
     manufacturer: object = None,
     authorization_country: object = None,
+    manufacturer_country: object = None,
     payload: object = None,
 ) -> bool:
     """Reject Teva and products explicitly identified as Israeli by country metadata."""
@@ -45,7 +46,7 @@ def is_excluded_catalog_entry(
     ):
         return True
 
-    countries = [authorization_country, *_country_values(payload)]
+    countries = [authorization_country, manufacturer_country, *_country_values(payload)]
     return any(
         value is not None
         and str(value).strip().casefold() in _ISRAEL_COUNTRY_VALUES
@@ -70,6 +71,9 @@ def allowed_pharmacy_product_conditions():
                 MedicinalProduct.brand_name.ilike("%teva%"),
                 MedicinalProduct.manufacturer.ilike("%teva%"),
                 func.lower(func.trim(MedicinalProduct.authorization_country)).in_(
+                    israel_codes
+                ),
+                func.lower(func.trim(MedicinalProduct.manufacturer_country)).in_(
                     israel_codes
                 ),
             ),
