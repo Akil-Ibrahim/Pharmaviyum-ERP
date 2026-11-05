@@ -148,17 +148,17 @@ def parse_rxnorm_archive(
                     else term
                 )
                 candidate = {
-                        "rxcui": rxcui,
-                        "term": term,
-                        "brand_name": brand_name,
-                        "tty": tty,
-                        "ingredient_id": ingredient_id,
-                        "strength": (
-                            strength_match.group(0) if strength_match else ""
-                        ),
-                        "route": route,
-                        "dosage_form": dosage_form,
-                    }
+                    "rxcui": rxcui,
+                    "term": term,
+                    "brand_name": brand_name,
+                    "tty": tty,
+                    "ingredient_id": ingredient_id,
+                    "strength": (
+                        strength_match.group(0) if strength_match else ""
+                    ),
+                    "route": route,
+                    "dosage_form": dosage_form,
+                }
                 if not is_excluded_catalog_entry(
                     brand_name=brand_name or term,
                     payload=candidate,
