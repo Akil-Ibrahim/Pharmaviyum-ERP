@@ -106,6 +106,7 @@ async def search_products(
     result = await db.execute(statement)
     return list(result.scalars().all())
 
+
 @router.get("/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: int, db: SessionDep, _: CurrentUser) -> Product:
     result = await db.execute(
@@ -117,6 +118,7 @@ async def get_product(product_id: int, db: SessionDep, _: CurrentUser) -> Produc
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
+
 
 @router.get("/", response_model=list[ProductResponse])
 async def list_products(
@@ -132,6 +134,7 @@ async def list_products(
         .limit(limit)
     )
     return list(result.scalars().all())
+
 
 @router.put("/{product_id}", response_model=ProductResponse)
 async def update_product(
@@ -166,6 +169,7 @@ async def update_product(
     await db.commit()
     await db.refresh(product)
     return product
+
 
 @router.delete("/{product_id}")
 async def delete_product(
