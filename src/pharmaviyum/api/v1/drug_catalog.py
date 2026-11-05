@@ -102,6 +102,11 @@ async def list_drug_catalog_sources(
                 (record.normalized_payload or {}).get("authorization_country")
             )
             or (record.normalized_payload or {}).get("country"),
+            manufacturer_country=(
+                (record.normalized_payload or {}).get("manufacturer_country")
+                or (record.normalized_payload or {}).get("country_of_origin")
+                or (record.normalized_payload or {}).get("country_of_manufacture")
+            ),
             payload=record.normalized_payload or {},
         )
     ]
@@ -347,6 +352,11 @@ async def review_drug_catalog_source(
                     MedicinalProduct.authorization_country == authorization_country
                     if authorization_country is not None
                     else MedicinalProduct.authorization_country.is_(None)
+                ),
+                (
+                    MedicinalProduct.manufacturer_country == manufacturer_country
+                    if manufacturer_country is not None
+                    else MedicinalProduct.manufacturer_country.is_(None)
                 ),
             )
             .order_by(MedicinalProduct.id.asc())
