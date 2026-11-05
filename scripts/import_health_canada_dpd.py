@@ -99,21 +99,26 @@ def normalize_dpd_records(
         din = str(product.get("drug_identification_number") or "").strip()
         brand = str(product.get("brand_name") or "").strip()
         candidate = {
-                "source_record_id": f"DPD:{code}",
-                "product_name": brand or str(product.get("descriptor") or ingredient_name),
-                "brand_name": brand,
-                "ingredient_name": ingredient_name,
-                "strength": strength,
-                "dosage_form": " / ".join(sorted(forms_by_code.get(code, set()))),
-                "route": " / ".join(sorted(routes_by_code.get(code, set()))),
-                "manufacturer": str(product.get("company_name") or "").strip(),
-                "country": "CA",
-                "regulatory_id": din,
-                "authorization_status": current_status,
-                "product_class": str(product.get("class_name") or "").strip(),
-                "package_description": " / ".join(sorted(packaging_by_code.get(code, set()))),
-                "last_update_date": str(product.get("last_update_date") or ""),
-            }
+            "source_record_id": f"DPD:{code}",
+            "product_name": brand or str(product.get("descriptor") or ingredient_name),
+            "brand_name": brand,
+            "ingredient_name": ingredient_name,
+            "strength": strength,
+            "dosage_form": " / ".join(sorted(forms_by_code.get(code, set()))),
+            "route": " / ".join(sorted(routes_by_code.get(code, set()))),
+            "manufacturer": str(product.get("company_name") or "").strip(),
+            "manufacturer_country": (
+                product.get("manufacturer_country")
+                or product.get("country_of_origin")
+                or product.get("country_of_manufacture")
+            ),
+            "country": "CA",
+            "regulatory_id": din,
+            "authorization_status": current_status,
+            "product_class": str(product.get("class_name") or "").strip(),
+            "package_description": " / ".join(sorted(packaging_by_code.get(code, set()))),
+            "last_update_date": str(product.get("last_update_date") or ""),
+        }
         if not is_excluded_catalog_entry(
             brand_name=candidate["brand_name"] or candidate["product_name"],
             manufacturer=candidate["manufacturer"],
