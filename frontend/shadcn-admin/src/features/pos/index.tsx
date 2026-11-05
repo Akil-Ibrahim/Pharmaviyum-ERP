@@ -24,7 +24,6 @@ type DrugCatalogResult = {
 }
 type InventoryLot = { inventory_id: number; lot_number: string | null; expiry_date: string | null; quantity: number; reserved_quantity: number; available_quantity: number; expiry_date_missing: boolean }
 type CartItem = LocalProduct & { quantity: number }
-type PharmacyOption = { id: number; name: string }
 type SaleResult = {
   id: number; receipt_number: string; status: string; total: string
   payments: { id: number; method: string; status: string }[]
@@ -37,7 +36,6 @@ export function Pos() {
   const [lotsByProduct, setLotsByProduct] = useState<Record<number, InventoryLot[]>>({})
   const [referenceResults, setReferenceResults] = useState<DrugCatalogResult[]>([])
   const [cart, setCart] = useState<CartItem[]>([])
-  const [pharmacies, setPharmacies] = useState<PharmacyOption[]>([])
   const [pharmacyId, setPharmacyId] = useState<number>()
   const [loading, setLoading] = useState(false)
   const [notice, setNotice] = useState('')
@@ -61,7 +59,6 @@ export function Pos() {
 
   useEffect(() => {
     apiFetch<PharmacyOption[]>('/api/v1/pharmacies').then(items => {
-      setPharmacies(items)
       setPharmacyId(items[0]?.id)
     }).catch(() => setNotice('Unable to load pharmacies.'))
   }, [])
@@ -196,13 +193,13 @@ export function Pos() {
   return (
     <div className='min-h-screen bg-muted/20 p-3 md:p-5'>
       <div className='mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-[1920px] flex-col gap-4'>
-        <header className='flex flex-wrap items-center justify-end gap-3 rounded-xl border bg-background p-4'>
-          <div className='flex items-center gap-3'><span className='flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground'><Pill /></span><div><h1 className='text-xl font-bold'>Pharmaviyum POS</h1><p className='text-xs text-muted-foreground'>Pharmacy Point of Sale</p></div></div>
-          <Button variant='outline' onClick={() => { setCart([]); setSale(null); setCheckoutOpen(false); setQuery(''); setSearchActive(true); setNotice('New sale. Search is active.'); window.requestAnimationFrame(() => searchRef.current?.focus()) }}><Plus className='mr-2 size-4' /> Open Register</Button>
-          <Button variant='outline' onClick={() => { setReceivingOpen(true); setQuery(''); setResults([]); setSearchActive(false); searchRef.current?.focus() }}>Receive Stock</Button>
-          <Badge variant='outline' className='px-3 py-2'>News</Badge>
+        <header className='flex items-center justify-end gap-3 bg-transparent py-2'>
+          <Button onClick={() => { setCart([]); setSale(null); setCheckoutOpen(false); setQuery(''); setSearchActive(true); setNotice('New sale. Search is active.'); window.requestAnimationFrame(() => searchRef.current?.focus()) }}><Plus className='mr-2 size-4' /> Open Sale</Button>
+          <div className='flex items-center gap-2'>
+            <span className='flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground'><Pill className='size-5' /></span>
+            <h1 className='text-lg font-semibold'>Pharmaviyum POS</h1>
+          </div>
         </header>
-        <div className='flex justify-end'><label className='flex items-center gap-2 text-sm'>Pharmacy<select className='h-9 max-w-[220px] rounded-md border bg-background px-2' value={pharmacyId ?? ''} onChange={e => { setPharmacyId(Number(e.target.value)); setCart([]); setSale(null) }}><option value=''>Select pharmacy</option>{pharmacies.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label></div>
 
         {notice && <div role='status' className='flex items-center justify-between gap-3 rounded-lg border bg-background p-3 text-sm'>{notice}<button aria-label='Dismiss notification' onClick={() => setNotice('')}><X className='size-4' /></button></div>}
 
@@ -222,8 +219,8 @@ export function Pos() {
 
         {sale?.status === 'completed' && <Card><CardContent className='flex items-center justify-between gap-3 p-4'><div className='flex items-center gap-2'><Receipt className='size-5 text-primary' /><div><p className='font-semibold'>Receipt # {sale.receipt_number}</p><p className='text-sm text-muted-foreground'>Sale recorded · {money(Number(sale.total))}</p></div></div><Button variant='outline' onClick={() => { setSale(null); setNotice('New Sale.'); searchRef.current?.focus() }}>New Sale</Button></CardContent></Card>}
 
-        <section aria-label='Medicine search' className='flex min-h-[38vh] flex-1 flex-col justify-center space-y-3 py-6'><div className='mx-auto w-full max-w-4xl space-y-3'><h2 className='text-center text-lg font-semibold'>Find medicines</h2>
-            <form aria-label='Medicine search' onSubmit={e => { e.preventDefault(); if (results.length === 1) addProduct(results[0]) }} className='flex gap-2'><Input ref={searchRef} value={query} onChange={e => setQuery(e.target.value)} placeholder='Search medicines by name, INN, brand, strength or barcode…' className={`h-12 text-base transition-shadow ${searchActive ? 'ring-2 ring-primary ring-offset-2' : ''}`} onFocus={() => setSearchActive(true)} /><Button type='submit' className='h-12'><Search className='mr-2 size-4' /> Search</Button></form>
+        <section aria-label='Medicine search' className='flex min-h-[24vh] flex-1 flex-col justify-start py-5'><div className='mx-auto w-full max-w-3xl'>
+            <form aria-label='Medicine search' onSubmit={e => { e.preventDefault(); if (results.length === 1) addProduct(results[0]) }} className='relative w-full'><Search aria-hidden='true' className='pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground' /><Input ref={searchRef} value={query} onChange={e => setQuery(e.target.value)} placeholder='Search medicines by name, INN, brand, strength or barcode…' className={`h-12 w-full pl-12 pr-4 text-base transition-shadow ${searchActive ? 'ring-2 ring-primary ring-offset-2' : ''}`} onFocus={() => setSearchActive(true)} /> </form>
             {loading && <p className='py-4 text-center text-sm text-muted-foreground'>Searching medicines…</p>}
             {!loading && query.trim().length >= 2 && results.length === 0 && <p className='py-5 text-center text-sm text-muted-foreground'>No matches in this pharmacy's inventory.</p>}
             {results.map(product => <div key={product.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'><div className='min-w-0 flex-1'><p className='font-semibold'>{product.name}</p><p className='text-xs text-muted-foreground'>Brand / manufacturer: {product.manufacturer || 'not specified'} · INN: {product.inn_name || 'not specified'}</p><p className='text-xs text-muted-foreground'>{[product.dosage_strength, product.dosage_form].filter(Boolean).join(' · ')}</p><p className='mt-1 text-xs text-muted-foreground'>SKU: {product.sku} · Available: {product.stock} · Price: {money(product.price)}</p><p className='text-xs text-muted-foreground'>Barcode: {product.barcode || product.gtin || 'not specified'}</p></div><Button onClick={() => addProduct(product)} disabled={product.stock < 1}><Plus className='mr-1 size-4' /> Add</Button></div>)}
