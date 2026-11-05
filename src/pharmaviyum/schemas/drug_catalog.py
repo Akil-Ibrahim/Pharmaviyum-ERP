@@ -4,18 +4,21 @@ from pydantic import BaseModel, ConfigDict
 class DrugCatalogResult(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    medicinal_product_id: int
-    drug_reference_id: int
+    medicinal_product_id: int | None = None
+    drug_reference_id: int | None = None
     inn_name: str
-    atc_code: str | None
-    ingredient_names: list[str]
-    brand_name: str | None
-    product_type: str
-    manufacturer: str | None
-    strength: str | None
-    dosage_form: str | None
-    route: str | None
-    package_description: str | None
-    gtin: str | None
-    regulatory_id: str | None
+    atc_code: str | None = None
+    ingredient_names: list[str] = []
+    brand_name: str | None = None
+    product_type: str = "reference"
+    manufacturer: str | None = None
+    strength: str | None = None
+    dosage_form: str | None = None
+    route: str | None = None
+    package_description: str | None = None
+    gtin: str | None = None
+    regulatory_id: str | None = None
     authorization_country: str | None = None
+    source_record_id: str | None = None
+    source_name: str | None = None
+    review_status: str = "approved"
