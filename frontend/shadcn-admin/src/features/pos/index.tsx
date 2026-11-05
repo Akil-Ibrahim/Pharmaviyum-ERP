@@ -281,7 +281,7 @@ export function Pos() {
         <div className='flex flex-wrap items-center gap-2'>
           <div className='flex items-center gap-2'>
             <label htmlFor='pos-pharmacy' className='text-xs text-muted-foreground'>Pharmacy</label>
-            <select id='pos-pharmacy' value={pharmacyId ?? ''} onChange={event => setPharmacyId(Number(event.target.value) || undefined)} className='h-9 max-w-[220px] rounded-md border bg-background px-2 text-sm' disabled={!pharmacies.length}>
+            <select id='pos-pharmacy' value={pharmacyId ?? ''} onChange={event => { setPharmacyId(Number(event.target.value) || undefined); setCart([]); setLastSale(null); setNotice('Pharmacy changed; the cart was cleared.') }} className='h-9 max-w-[220px] rounded-md border bg-background px-2 text-sm' disabled={!pharmacies.length || lastSale?.status === 'awaiting_payment'}>
               {pharmacies.map(pharmacy => <option key={pharmacy.id} value={pharmacy.id}>{pharmacy.name}</option>)}
             </select>
           </div>
