@@ -7,7 +7,7 @@ import hmac
 import json
 import os
 from datetime import datetime
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from uuid import uuid4
 
 from fastapi import APIRouter, Header, HTTPException, Query, Request, status
