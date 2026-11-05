@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import not_, or_, select
+from sqlalchemy import func, not_, or_, select
 
 from src.pharmaviyum.models.drug_catalog import MedicinalProduct
 from src.pharmaviyum.models.product import Product
-from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 from src.pharmaviyum.schemas.product_schema import (
     ProductCreate,
     ProductResponse,
@@ -25,7 +25,16 @@ async def _validate_product_exclusion(*, db: SessionDep, name: str, manufacturer
 
 
 def _visible_product_conditions():
-    return (not_(Product.name.ilike("%teva%")), not_(Product.manufacturer.ilike("%teva%")))
+    israel_codes = ("il", "isr", "israel", "state of israel", "израиль", "ізраїль")
+    linked_to_israeli_product = select(MedicinalProduct.id).where(
+        MedicinalProduct.id == Product.medicinal_product_id,
+        func.lower(func.trim(MedicinalProduct.authorization_country)).in_(israel_codes),
+    ).exists()
+    return (
+        not_(Product.name.ilike("%teva%")),
+        not_(Product.manufacturer.ilike("%teva%")),
+        not_(linked_to_israeli_product),
+    )
 
 
 @router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
@@ -102,7 +111,7 @@ async def update_product(
     db: SessionDep,
     _: CurrentSuperuser,
 ) -> Product:
-    result = await db.execute(select(Product).where(Product.id == product_id))
+    result = await db.execute(select(Product).where(Product.id == product_id, *_visible_product_conditions()))
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
