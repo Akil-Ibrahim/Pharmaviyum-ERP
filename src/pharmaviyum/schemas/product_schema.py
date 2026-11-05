@@ -14,6 +14,7 @@ class ProductCreate(BaseModel):
     blisters_per_pack: int = Field(default=0, ge=0)
     units_per_blister: int = Field(default=0, ge=0)
     manufacturer: str | None = Field(default=None, max_length=200)
+    manufacturer_country: str | None = Field(default=None, max_length=100)
     inn_name: str | None = Field(default=None, max_length=200)
     atc_code: str | None = Field(default=None, max_length=20)
     regulatory_id: str | None = Field(default=None, max_length=50)
