@@ -122,9 +122,14 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
         products, ingredients, forms, routes, statuses, packaging
     )
 
-    assert len(rows) == 1
+    # The exclusion policy is paused: all otherwise-valid records remain eligible.
+    # Multi-ingredient and non-current products are still rejected.
+    assert [row["source_record_id"] for row in rows] == [
+        "DPD:101",
+        "DPD:104",
+        "DPD:105",
+    ]
     row = rows[0]
-    assert row["source_record_id"] == "DPD:101"
     assert row["ingredient_name"] == "OMEPRAZOLE"
     assert row["strength"] == "20 MG"
     assert row["dosage_form"] == "Capsule / Delayed-release capsule"

@@ -1,7 +1,15 @@
-"""Central policy for excluding disallowed manufacturers and country origins."""
+"""Central policy for excluding disallowed manufacturers and country origins.
+
+The exclusion policy is intentionally paused while the international catalogue is
+being populated. Set CATALOG_EXCLUSIONS_ENABLED to True when the user asks to
+resume the Teva / Israeli-origin filtering task.
+"""
 
 import re
 from collections.abc import Mapping
+
+# Temporary pause requested by the user on 2026-11-05.
+CATALOG_EXCLUSIONS_ENABLED = False
 
 _ISRAEL_COUNTRY_VALUES = {
     "il",
@@ -50,7 +58,10 @@ def is_excluded_catalog_entry(
     manufacturer_country: object = None,
     payload: object = None,
 ) -> bool:
-    """Reject Teva and products explicitly identified as Israeli by country metadata."""
+    """Return whether an entry is excluded when the policy is enabled."""
+    if not CATALOG_EXCLUSIONS_ENABLED:
+        return False
+
     if any(
         value is not None and re.search(r"teva", str(value), re.IGNORECASE)
         for value in (brand_name, manufacturer)
@@ -69,7 +80,10 @@ def is_excluded_catalog_entry(
 
 
 def allowed_pharmacy_product_conditions():
-    """SQL predicates that prevent excluded catalog items from being sold or listed."""
+    """SQL predicates for the exclusion policy; empty while the policy is paused."""
+    if not CATALOG_EXCLUSIONS_ENABLED:
+        return ()
+
     from sqlalchemy import func, not_, or_, select
 
     from src.pharmaviyum.models.drug_catalog import MedicinalProduct
@@ -107,7 +121,10 @@ def allowed_pharmacy_product_conditions():
 
 
 def allowed_medicinal_product_conditions():
-    """SQL predicates that keep excluded products out of catalog autocomplete."""
+    """SQL predicates for catalogue autocomplete; empty while policy is paused."""
+    if not CATALOG_EXCLUSIONS_ENABLED:
+        return ()
+
     from sqlalchemy import func, not_, or_
 
     from src.pharmaviyum.models.drug_catalog import MedicinalProduct

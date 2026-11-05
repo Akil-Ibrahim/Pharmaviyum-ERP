@@ -3,7 +3,11 @@
 from pathlib import Path
 from zipfile import ZipFile
 
+import pytest
+
 from scripts.import_rxnorm_catalog import parse_rxnorm_archive
+
+pytestmark = pytest.mark.unit
 
 
 def _conso_row(rxcui: str, tty: str, term: str) -> str:
@@ -61,14 +65,16 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
     ingredients, products = parse_rxnorm_archive(archive_path)
 
     assert ingredients == {"100": "ibuprofen", "300": "acetaminophen"}
-    assert {product["rxcui"] for product in products} == {"200", "201", "301"}
+    assert {product["rxcui"] for product in products} == {"200", "201", "202", "301"}
     generic = next(product for product in products if product["rxcui"] == "200")
     brand = next(product for product in products if product["rxcui"] == "201")
+    teva_brand = next(product for product in products if product["rxcui"] == "202")
     assert generic["strength"] == "200 MG"
     assert generic["dosage_form"] == "Oral Tablet"
     assert generic["ingredient_id"] == "100"
     assert brand["tty"] == "SBD"
     assert brand["brand_name"] == "Advil"
+    assert teva_brand["brand_name"] == "Teva"
     liquid = next(product for product in products if product["rxcui"] == "301")
     assert liquid["strength"] == "160 MG/5 ML"
     assert liquid["dosage_form"] == "Oral Suspension"

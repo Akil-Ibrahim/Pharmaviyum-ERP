@@ -6,6 +6,8 @@ import pytest
 
 from scripts.import_ema_catalog import parse_ema_xlsx
 
+pytestmark = pytest.mark.unit
+
 
 def _xlsx(path: Path, rows: list[list[str]]) -> None:
     sheet_rows = []
@@ -128,18 +130,26 @@ def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> N
     ]
     _xlsx(path, rows)
 
-    assert parse_ema_xlsx(path) == [
-        {
-            "product_name": "ExampleMed",
-            "ingredient": "ibuprofen",
-            "strength": "200 mg",
-            "dosage_form": "Tablet",
-            "route": "Oral use",
-            "country": "Germany",
-            "holder": "Example GmbH",
-            "manufacturer_country": "Germany",
-        }
+    parsed = parse_ema_xlsx(path)
+
+    # The exclusion policy is paused: all otherwise-valid single-ingredient
+    # records are retained, regardless of manufacturer or country.
+    assert [row["product_name"] for row in parsed] == [
+        "ExampleMed",
+        "Israeli Example",
+        "Israeli manufacturer",
+        "Example Teva",
     ]
+    assert parsed[0] == {
+        "product_name": "ExampleMed",
+        "ingredient": "ibuprofen",
+        "strength": "200 mg",
+        "dosage_form": "Tablet",
+        "route": "Oral use",
+        "country": "Germany",
+        "holder": "Example GmbH",
+        "manufacturer_country": "Germany",
+    }
 
 
 def test_parse_common_alternate_headers(tmp_path: Path) -> None:
