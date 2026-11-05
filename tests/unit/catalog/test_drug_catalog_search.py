@@ -87,3 +87,12 @@ def test_excludes_nested_israeli_country_metadata(payload: dict) -> None:
 
 def test_does_not_match_teva_as_part_of_another_word() -> None:
     assert not is_excluded_catalog_entry(manufacturer="Whatever Pharmaceutical")
+
+
+
+def test_excludes_explicit_manufacturer_country_even_when_authorized_elsewhere() -> None:
+    assert is_excluded_catalog_entry(
+        manufacturer="Example Pharma",
+        authorization_country="Germany",
+        manufacturer_country="IL",
+    )
