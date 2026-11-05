@@ -27,7 +27,9 @@ from src.pharmaviyum.schemas.pos import (
     SaleResponse,
 )
 from src.pharmaviyum.schemas.pos_product import POSProductResponse
-from src.pharmaviyum.services.catalog_exclusions import allowed_pharmacy_product_conditions
+from src.pharmaviyum.services.catalog_exclusions import (
+    allowed_pharmacy_product_conditions,
+)
 
 router = APIRouter(prefix="/api/v1/pos", tags=["Point of Sale"])
 CENT = Decimal("0.01")
@@ -113,10 +115,11 @@ async def search_pos_products(
         for product, available_stock in rows
     ]
 
-
-
-
-@router.post("/inventory/receive", response_model=InventoryReceiptResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/inventory/receive",
+    response_model=InventoryReceiptResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def receive_inventory(
     payload: InventoryReceiptCreate,
     db: SessionDep,
@@ -140,7 +143,9 @@ async def receive_inventory(
         expiry = expiry.replace(tzinfo=None)
     expiry = expiry.replace(hour=0, minute=0, second=0, microsecond=0)
     if expiry.date() < datetime.utcnow().date():
-        raise HTTPException(status_code=422, detail="Cannot receive an expired medicine lot")
+        raise HTTPException(
+            status_code=422, detail="Cannot receive an expired medicine lot"
+        )
 
     lot_result = await db.execute(
         select(Inventory)
@@ -207,7 +212,11 @@ async def get_product_lots(
     """Return real, sellable stock lots for one product in the selected pharmacy."""
     await require_pharmacy_tenant(pharmacy_id, user, db)
     product_result = await db.execute(
-        select(Product.id).where(Product.id == product_id, Product.is_active.is_(True), *allowed_pharmacy_product_conditions())
+        select(Product.id).where(
+            Product.id == product_id,
+            Product.is_active.is_(True),
+            *allowed_pharmacy_product_conditions(),
+        )
     )
     if product_result.scalar_one_or_none() is None:
         raise HTTPException(status_code=404, detail="Active product not found")
@@ -226,7 +235,9 @@ async def get_product_lots(
         {
             "inventory_id": row.id,
             "lot_number": row.lot_number,
-            "expiry_date": row.expires_at.date().isoformat() if row.expires_at else None,
+            "expiry_date": (
+                row.expires_at.date().isoformat() if row.expires_at else None
+            ),
             "quantity": row.quantity,
             "reserved_quantity": row.reserved_quantity,
             "available_quantity": row.quantity - row.reserved_quantity,
