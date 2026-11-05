@@ -65,7 +65,7 @@ async def checkout(
                 "id", "receipt_number", "pharmacy_id", "currency", "subtotal",
                 "discount_total", "total", "status", "created_at", "completed_at",
                 "items", "payments"
-            )}, "cash_change": Decimal("0.00")}
+            )}, "cash_change": existing.cash_change}
         )
 
     product_ids = [line.product_id for line in payload.items]
@@ -165,6 +165,8 @@ async def checkout(
         method=payload.payment_method,
         status="succeeded" if payload.payment_method == "cash" else "pending",
         amount=total,
+        cash_received=_money(payload.cash_received) if payload.payment_method == "cash" else None,
+        change_due=(_money(payload.cash_received or 0) - total) if payload.payment_method == "cash" else None,
         currency=payload.currency,
         provider_name="cash_register" if payload.payment_method == "cash" else None,
         idempotency_key=payload.idempotency_key,
@@ -174,17 +176,12 @@ async def checkout(
     await db.commit()
 
     saved = await _load_sale(db, sale.id)
-    cash_change = (
-        _money(payload.cash_received or 0) - total
-        if payload.payment_method == "cash"
-        else Decimal("0.00")
-    )
     return SaleResponse.model_validate(
         {**{k: getattr(saved, k) for k in (
             "id", "receipt_number", "pharmacy_id", "currency", "subtotal",
             "discount_total", "total", "status", "created_at", "completed_at",
             "items", "payments"
-        )}, "cash_change": cash_change}
+        )}, "cash_change": saved.cash_change}
     )
 
 
