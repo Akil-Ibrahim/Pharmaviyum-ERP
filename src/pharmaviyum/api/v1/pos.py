@@ -327,6 +327,54 @@ async def payment_webhook(
     return {"status": "processed"}
 
 
+
+@router.post("/sales/{sale_id}/cancel", response_model=SaleResponse)
+async def cancel_pending_sale(
+    sale_id: int,
+    db: SessionDep,
+    user: CurrentUser,
+) -> SaleResponse:
+    """Cancel an unpaid POS sale and release its reserved FEFO lots."""
+    sale_result = await db.execute(
+        select(Sale).where(Sale.id == sale_id).with_for_update()
+    )
+    sale = sale_result.scalar_one_or_none()
+    if sale is None:
+        raise HTTPException(status_code=404, detail="Sale not found")
+    await require_pharmacy_tenant(sale.pharmacy_id, user, db)
+    if sale.status != "awaiting_payment":
+        raise HTTPException(status_code=409, detail="Only pending-payment sales can be cancelled")
+
+    payment_result = await db.execute(
+        select(Payment).where(Payment.sale_id == sale.id).with_for_update()
+    )
+    payments = list(payment_result.scalars().all())
+    if any(payment.status == "succeeded" for payment in payments):
+        raise HTTPException(status_code=409, detail="A settled sale cannot be cancelled")
+
+    allocation_result = await db.execute(
+        select(SaleItemAllocation)
+        .join(SaleItem, SaleItem.id == SaleItemAllocation.sale_item_id)
+        .where(SaleItem.sale_id == sale.id)
+    )
+    allocations = list(allocation_result.scalars().all())
+    inventory_ids = [allocation.inventory_id for allocation in allocations]
+    inventory_result = await db.execute(
+        select(Inventory).where(Inventory.id.in_(inventory_ids)).with_for_update()
+    )
+    inventory_by_id = {lot.id: lot for lot in inventory_result.scalars().all()}
+    for allocation in allocations:
+        lot = inventory_by_id[allocation.inventory_id]
+        lot.reserved_quantity -= allocation.quantity
+    for payment in payments:
+        if payment.status == "pending":
+            payment.status = "failed"
+            payment.settled_at = datetime.utcnow()
+    sale.status = "cancelled"
+    await db.commit()
+    return SaleResponse.model_validate(await _load_sale(db, sale.id))
+
+
 @router.get("/sales/{sale_id}", response_model=SaleResponse)
 async def get_sale(sale_id: int, db: SessionDep, user: CurrentUser) -> SaleResponse:
     sale = await _load_sale(db, sale_id)
