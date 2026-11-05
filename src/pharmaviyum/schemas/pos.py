@@ -113,4 +113,3 @@ class InventoryReceiptResponse(BaseModel):
     lot_quantity: int
     available_quantity: int
     message: str
-
