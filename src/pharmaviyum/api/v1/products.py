@@ -9,7 +9,10 @@ from src.pharmaviyum.schemas.product_schema import (
     ProductResponse,
     ProductUpdate,
 )
-from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
+from src.pharmaviyum.services.catalog_exclusions import (
+    allowed_pharmacy_product_conditions,
+    is_excluded_catalog_entry,
+)
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
@@ -47,28 +50,6 @@ async def _validate_product_exclusion(
         )
 
 
-def _visible_product_conditions():
-    israel_codes = ("il", "isr", "israel", "state of israel", "израиль", "ізраїль")
-    linked_to_excluded_catalog_product = (
-        select(MedicinalProduct.id)
-        .where(
-            MedicinalProduct.id == Product.medicinal_product_id,
-            or_(
-                MedicinalProduct.brand_name.ilike("%teva%"),
-                MedicinalProduct.manufacturer.ilike("%teva%"),
-                func.lower(
-                    func.trim(MedicinalProduct.authorization_country)
-                ).in_(israel_codes),
-            ),
-        )
-        .exists()
-    )
-    return (
-        not_(Product.name.ilike("%teva%")),
-        not_(Product.manufacturer.ilike("%teva%")),
-        not_(linked_to_excluded_catalog_product),
-    )
-
 
 @router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
@@ -102,7 +83,7 @@ async def search_products(
         select(Product)
         .where(
             Product.is_active.is_(True),
-            *_visible_product_conditions(),
+            *allowed_pharmacy_product_conditions(),
             or_(
                 Product.name.ilike(term),
                 Product.sku.ilike(term),
@@ -124,7 +105,7 @@ async def search_products(
 async def get_product(product_id: int, db: SessionDep, _: CurrentUser) -> Product:
     result = await db.execute(
         select(Product).where(
-            Product.id == product_id, *_visible_product_conditions()
+            Product.id == product_id, *allowed_pharmacy_product_conditions()
         )
     )
     product = result.scalar_one_or_none()
@@ -142,7 +123,7 @@ async def list_products(
 ) -> list[Product]:
     result = await db.execute(
         select(Product)
-        .where(Product.is_active, *_visible_product_conditions())
+        .where(Product.is_active, *allowed_pharmacy_product_conditions())
         .offset(skip)
         .limit(limit)
     )
@@ -158,7 +139,7 @@ async def update_product(
 ) -> Product:
     result = await db.execute(
         select(Product).where(
-            Product.id == product_id, *_visible_product_conditions()
+            Product.id == product_id, *allowed_pharmacy_product_conditions()
         )
     )
     product = result.scalar_one_or_none()
@@ -189,7 +170,7 @@ async def delete_product(
 ) -> dict[str, str]:
     result = await db.execute(
         select(Product).where(
-            Product.id == product_id, *_visible_product_conditions()
+            Product.id == product_id, *allowed_pharmacy_product_conditions()
         )
     )
     product = result.scalar_one_or_none()
