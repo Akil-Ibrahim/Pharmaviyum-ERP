@@ -410,11 +410,14 @@ async def checkout(
             if remaining == 0:
                 break
         if remaining:
-            await db.rollback()
-            raise HTTPException(
-                status_code=409,
-                detail=f"Insufficient non-expired stock for {product.name}; checkout was not completed",
+            # Build the response before rollback expires ORM state. Accessing
+            # product.name afterwards can trigger async lazy IO outside greenlet.
+            detail = (
+                f"Insufficient non-expired stock for {product.name}; "
+                "checkout was not completed"
             )
+            await db.rollback()
+            raise HTTPException(status_code=409, detail=detail)
 
     payment = Payment(
         sale_id=sale.id,
