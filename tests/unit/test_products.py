@@ -3,7 +3,8 @@ from pydantic import ValidationError
 
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.product import Product
-from src.pharmaviyum.schemas.product_schema import ProductCreate, ProductUpdate
+from src.pharmaviyum.schemas.product_schema import ProductCreate, ProductResponse, ProductUpdate
+from src.pharmaviyum.services.catalog_exclusions import allowed_pharmacy_product_conditions
 
 
 @pytest.mark.unit
@@ -47,3 +48,42 @@ def test_product_schema_matches_database_invariants() -> None:
     }
     assert "ck_products_price_nonnegative" in constraint_names
     assert "ck_products_stock_nonnegative" in constraint_names
+
+
+
+@pytest.mark.unit
+def test_product_manufacturer_country_is_supported_across_schemas() -> None:
+    created = ProductCreate(
+        name="Synthetic medicine",
+        sku="SYNTH-001",
+        manufacturer="Example Pharma",
+        manufacturer_country="Germany",
+    )
+    updated = ProductUpdate(manufacturer_country="France")
+    assert created.manufacturer_country == "Germany"
+    assert updated.manufacturer_country == "France"
+
+    response = ProductResponse(
+        id=1,
+        name="Synthetic medicine",
+        sku="SYNTH-001",
+        manufacturer="Example Pharma",
+        manufacturer_country="Germany",
+        price=12.5,
+        stock=0,
+        is_active=True,
+        created_at=__import__("datetime").datetime(2026, 1, 1),
+        updated_at=None,
+    )
+    assert response.manufacturer_country == "Germany"
+
+
+@pytest.mark.unit
+def test_pharmacy_product_visibility_excludes_teva_and_israeli_origin() -> None:
+    from sqlalchemy import select
+
+    statement = select(Product).where(*allowed_pharmacy_product_conditions())
+    sql = str(statement.compile(compile_kwargs={"literal_binds": True})).lower()
+    assert "products.manufacturer_country" in sql
+    assert "medicinal_products.manufacturer_country" in sql
+    assert "teva" in sql
