@@ -422,7 +422,9 @@ async def checkout(
         status="succeeded" if payload.payment_method == "cash" else "pending",
         amount=total,
         cash_received=(
-            _money(payload.cash_received or 0) if payload.payment_method == "cash" else None
+            _money(payload.cash_received or 0)
+            if payload.payment_method == "cash"
+            else None
         ),
         change_due=(
             (_money(payload.cash_received or 0) - total)
