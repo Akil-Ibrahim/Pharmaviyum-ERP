@@ -55,6 +55,8 @@ class PaymentResponse(BaseModel):
     method: str
     status: str
     amount: Decimal
+    cash_received: Decimal | None = None
+    change_due: Decimal | None = None
     currency: str
     provider_name: str | None
     provider_payment_id: str | None
