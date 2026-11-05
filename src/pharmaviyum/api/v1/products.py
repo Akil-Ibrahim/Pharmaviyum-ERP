@@ -22,6 +22,7 @@ async def _validate_product_exclusion(
     db: SessionDep,
     name: str,
     manufacturer: str | None,
+    manufacturer_country: str | None,
     medicinal_product_id: int | None,
 ) -> None:
     linked_product = None
@@ -46,7 +47,8 @@ async def _validate_product_exclusion(
         brand_name=f"{name} {linked_brand or ''}",
         manufacturer=f"{manufacturer or ''} {linked_manufacturer or ''}",
         authorization_country=linked_country,
-        manufacturer_country=linked_manufacturer_country,
+        manufacturer_country=manufacturer_country,
+        payload={"manufacturer_country": linked_manufacturer_country},
     ):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -65,6 +67,7 @@ async def create_product(
         db=db,
         name=data.name,
         manufacturer=data.manufacturer,
+        manufacturer_country=data.manufacturer_country,
         medicinal_product_id=data.medicinal_product_id,
     )
     product = Product(**data.model_dump())
@@ -155,6 +158,9 @@ async def update_product(
         db=db,
         name=updates.get("name", product.name),
         manufacturer=updates.get("manufacturer", product.manufacturer),
+        manufacturer_country=updates.get(
+            "manufacturer_country", product.manufacturer_country
+        ),
         medicinal_product_id=updates.get(
             "medicinal_product_id", product.medicinal_product_id
         ),
