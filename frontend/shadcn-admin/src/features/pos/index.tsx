@@ -22,6 +22,7 @@ type DrugCatalogResult = {
   source_record_id?: string | null; source_name?: string | null; review_status?: string
   authorization_status?: string | null; product_class?: string | null
 }
+type InventoryLot = { inventory_id: number; lot_number: string | null; expiry_date: string | null; quantity: number; reserved_quantity: number; available_quantity: number; expiry_date_missing: boolean }
 type CartItem = LocalProduct & { quantity: number }
 type PharmacyOption = { id: number; name: string }
 type SaleResult = {
@@ -33,6 +34,7 @@ const money = (value: number) => new Intl.NumberFormat('uk-UA', { style: 'curren
 export function Pos() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<LocalProduct[]>([])
+  const [lotsByProduct, setLotsByProduct] = useState<Record<number, InventoryLot[]>>({})
   const [referenceResults, setReferenceResults] = useState<DrugCatalogResult[]>([])
   const [cart, setCart] = useState<CartItem[]>([])
   const [pharmacies, setPharmacies] = useState<PharmacyOption[]>([])
@@ -84,6 +86,24 @@ export function Pos() {
   }, [query, pharmacyId])
 
   const formatExpiry = (value?: string | null) => value ? new Date(`${value}T00:00:00`).toLocaleDateString('uk-UA') : 'Не указан — определяется по партии'
+
+  useEffect(() => {
+    if (!pharmacyId || cart.length === 0) { setLotsByProduct({}); return }
+    let cancelled = false
+    Promise.all(cart.map(async item => {
+      try {
+        const lots = await apiFetch<InventoryLot[]>(`/api/v1/pos/products/${item.id}/lots?pharmacy_id=${pharmacyId}`)
+        return [item.id, lots] as const
+      } catch {
+        return [item.id, []] as const
+      }
+    })).then(entries => {
+      if (!cancelled) setLotsByProduct(Object.fromEntries(entries))
+    })
+    return () => { cancelled = true }
+  }, [cart.map(item => item.id).join(','), pharmacyId])
+
+
 
   const addProduct = (product: LocalProduct) => {
     if (product.stock < 1) { setNotice('Нет доступного остатка.'); return }
@@ -147,7 +167,7 @@ export function Pos() {
             <CardHeader className='pb-3'><div className='flex items-center justify-between'><CardTitle>Выбранные препараты</CardTitle><Badge>{units} шт.</Badge></div><p className='text-sm text-muted-foreground'>Проверьте количество и состав продажи.</p></CardHeader>
             <CardContent className='space-y-3'>
               {cart.map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'>
-                <div className='min-w-0 flex-1'><p className='font-semibold'>{item.name}</p><p className='text-xs text-muted-foreground'>{[item.inn_name, item.dosage_strength, item.dosage_form, item.manufacturer].filter(Boolean).join(' · ')}</p><p className='mt-1 text-sm'>Цена: {money(item.price)} · Доступно: {item.stock} · В чеке: {item.quantity} шт.</p><p className='mt-1 text-xs text-muted-foreground'>Партия: {item.batch_number || 'будет определена при списании FEFO'} · Срок годности: {formatExpiry(item.expiry_date)}</p><p className='text-xs text-muted-foreground'>Штрихкод: {item.barcode || item.gtin || 'не указан'}</p></div>
+                <div className='min-w-0 flex-1'><p className='font-semibold'>{item.name}</p><p className='text-xs text-muted-foreground'>{[item.inn_name, item.dosage_strength, item.dosage_form, item.manufacturer].filter(Boolean).join(' · ')}</p><p className='mt-1 text-sm'>Цена: {money(item.price)} · Доступно: {item.stock} · В чеке: {item.quantity} шт.</p><div className='mt-2 space-y-1 text-xs text-muted-foreground'><p className='font-medium text-foreground'>Складские партии (сначала ближайший срок годности):</p>{(lotsByProduct[item.id] || []).length ? lotsByProduct[item.id].map(lot => <p key={lot.inventory_id}>Партия: {lot.lot_number || 'без номера'} · Годен до: {formatExpiry(lot.expiry_date)} · Доступно: {lot.available_quantity} шт.</p>) : <p>Нет доступных партий с указанным сроком годности. Проверьте складской приход.</p>}</div><p className='text-xs text-muted-foreground'>Штрихкод: {item.barcode || item.gtin || 'не указан'}</p></div>
                 <div className='flex items-center gap-2'><Button size='icon' variant='outline' aria-label='Уменьшить количество' onClick={() => changeQuantity(item.id, -1)}><Minus className='size-4' /></Button><span className='w-8 text-center font-semibold'>{item.quantity}</span><Button size='icon' variant='outline' aria-label='Увеличить количество' disabled={item.quantity >= item.stock} onClick={() => changeQuantity(item.id, 1)}><Plus className='size-4' /></Button><Button size='icon' variant='ghost' aria-label='Удалить препарат' onClick={() => setCart(rows => rows.filter(row => row.id !== item.id))}><Trash2 className='size-4' /></Button></div>
                 <strong className='w-28 text-right'>{money(item.price * item.quantity)}</strong>
               </div>)}
@@ -165,7 +185,7 @@ export function Pos() {
             <p className='flex items-center gap-2 text-xs text-muted-foreground'><Barcode className='size-4' /> Сканер штрихкода поддерживается как клавиатурный ввод.</p>
             {loading && <p className='py-4 text-center text-sm text-muted-foreground'>Ищем препараты…</p>}
             {!loading && query.trim().length >= 2 && results.length === 0 && <p className='py-5 text-center text-sm text-muted-foreground'>В ассортименте этой аптеки совпадений нет.</p>}
-            {results.map(product => <div key={product.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'><div className='min-w-0 flex-1'><p className='font-semibold'>{product.name}</p><p className='text-xs text-muted-foreground'>Бренд / производитель: {product.manufacturer || 'не указан'} · МНН: {product.inn_name || 'не указано'}</p><p className='text-xs text-muted-foreground'>{[product.dosage_strength, product.dosage_form].filter(Boolean).join(' · ')}</p><p className='mt-1 text-xs text-muted-foreground'>SKU: {product.sku} · Доступно: {product.stock} · Цена: {money(product.price)}</p><p className='text-xs text-muted-foreground'>Штрихкод: {product.barcode || product.gtin || 'не указан'} · Срок годности: партия уточняется при списании FEFO</p></div><Button onClick={() => addProduct(product)} disabled={product.stock < 1}><Plus className='mr-1 size-4' /> Добавить</Button></div>)}
+            {results.map(product => <div key={product.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'><div className='min-w-0 flex-1'><p className='font-semibold'>{product.name}</p><p className='text-xs text-muted-foreground'>Бренд / производитель: {product.manufacturer || 'не указан'} · МНН: {product.inn_name || 'не указано'}</p><p className='text-xs text-muted-foreground'>{[product.dosage_strength, product.dosage_form].filter(Boolean).join(' · ')}</p><p className='mt-1 text-xs text-muted-foreground'>SKU: {product.sku} · Доступно: {product.stock} · Цена: {money(product.price)}</p><p className='text-xs text-muted-foreground'>Штрихкод: {product.barcode || product.gtin || 'не указан'}</p></div><Button onClick={() => addProduct(product)} disabled={product.stock < 1}><Plus className='mr-1 size-4' /> Добавить</Button></div>)}
             {query.trim().length >= 2 && referenceResults.length > 0 && <div className='space-y-2 border-t pt-3'><p className='text-sm font-semibold'>Международный справочник — только для ознакомления</p>{referenceResults.map((item, index) => <div key={item.source_record_id ?? item.medicinal_product_id ?? index} className='rounded-lg border border-dashed p-3'><p className='font-medium'>{item.brand_name || item.inn_name}</p><p className='text-xs text-muted-foreground'>Бренд: {item.brand_name || 'не указан'} · Производитель: {item.manufacturer || 'не указан'}</p><p className='text-xs text-muted-foreground'>{[item.inn_name, item.strength, item.dosage_form, item.authorization_country].filter(Boolean).join(' · ')}</p><p className='text-xs text-muted-foreground'>Штрихкод / GTIN: {item.gtin || 'нет в источнике'} · Остаток и срок годности: определяются только после заведения партии в аптеке</p><Badge variant='outline' className='mt-2'>Справочная запись — не товар аптеки</Badge></div>)}</div>}
             <p className='pt-1 text-xs text-muted-foreground'>В чек можно добавить только товар выбранной аптеки с назначенной ценой и доступным остатком. Справочные записи каталога не продаются напрямую.</p>
           </CardContent>
