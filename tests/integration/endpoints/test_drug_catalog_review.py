@@ -191,6 +191,8 @@ class TestDrugCatalogSourcePromotion:
         assert medicinal_product.brand_name == "Example Brand"
         assert medicinal_product.strength == "200 mg"
         assert medicinal_product.authorization_country == "Canada"
-        reference = await test_db.get(DrugReference, medicinal_product.drug_reference_id)
+        reference = await test_db.get(
+            DrugReference, medicinal_product.drug_reference_id
+        )
         assert reference is not None and reference.inn_name == "Ibuprofen"
         assert await test_db.scalar(select(Product)) is None
