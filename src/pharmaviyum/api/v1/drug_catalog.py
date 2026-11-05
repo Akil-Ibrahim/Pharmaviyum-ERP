@@ -20,7 +20,10 @@ from src.pharmaviyum.schemas.drug_catalog_source import (
     DrugCatalogSourceReview,
     ReviewStatus,
 )
-from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
+from src.pharmaviyum.services.catalog_exclusions import (
+    allowed_medicinal_product_conditions,
+    is_excluded_catalog_entry,
+)
 from src.pharmaviyum.services.drug_catalog_matching import (
     rank_reference_ids,
     suggest_matches,
@@ -423,6 +426,7 @@ async def search_drug_catalog(
             )
         )
         .where(
+            *allowed_medicinal_product_conditions(),
             or_(
                 DrugReference.inn_name.ilike(term),
                 DrugReference.atc_code.ilike(term),
