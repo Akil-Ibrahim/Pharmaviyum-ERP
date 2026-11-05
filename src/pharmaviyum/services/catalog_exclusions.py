@@ -68,8 +68,8 @@ def allowed_pharmacy_product_conditions():
         .where(
             MedicinalProduct.id == Product.medicinal_product_id,
             or_(
-                MedicinalProduct.brand_name.ilike("%teva%"),
-                MedicinalProduct.manufacturer.ilike("%teva%"),
+                func.coalesce(MedicinalProduct.brand_name, "").ilike("%teva%"),
+                func.coalesce(MedicinalProduct.manufacturer, "").ilike("%teva%"),
                 func.lower(func.trim(MedicinalProduct.authorization_country)).in_(
                     israel_codes
                 ),
@@ -82,6 +82,6 @@ def allowed_pharmacy_product_conditions():
     )
     return (
         not_(Product.name.ilike("%teva%")),
-        not_(Product.manufacturer.ilike("%teva%")),
+        not_(func.coalesce(Product.manufacturer, "").ilike("%teva%")),
         not_(linked_to_excluded_catalog_product),
     )
