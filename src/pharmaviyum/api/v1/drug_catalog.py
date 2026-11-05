@@ -1,5 +1,4 @@
 from datetime import datetime
-import re
 
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import String, cast, or_, select
@@ -21,6 +20,7 @@ from src.pharmaviyum.schemas.drug_catalog_source import (
     DrugCatalogSourceReview,
     ReviewStatus,
 )
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 from src.pharmaviyum.services.drug_catalog_matching import (
     rank_reference_ids,
     suggest_matches,
@@ -28,49 +28,6 @@ from src.pharmaviyum.services.drug_catalog_matching import (
 
 router = APIRouter(prefix="/drug-catalog", tags=["Drug Catalog"])
 
-_ISRAEL_COUNTRY_VALUES = {
-    "il",
-    "isr",
-    "israel",
-    "state of israel",
-    "израиль",
-    "ізраїль",
-}
-
-
-def _is_excluded_catalog_entry(
-    *,
-    brand_name: object = None,
-    manufacturer: object = None,
-    authorization_country: object = None,
-    payload: dict | None = None,
-) -> bool:
-    """Hide Teva and explicitly Israel-origin/Israel-authorised catalog entries."""
-    text_values = (brand_name, manufacturer)
-    if any(
-        value is not None and re.search(r"\bteva\b", str(value), re.IGNORECASE)
-        for value in text_values
-    ):
-        return True
-
-    country_values = [authorization_country]
-    if payload:
-        country_values.extend(
-            payload.get(key)
-            for key in (
-                "country",
-                "authorization_country",
-                "authorization_country_name",
-                "manufacturer_country",
-                "country_of_origin",
-                "country_of_manufacture",
-            )
-        )
-    return any(
-        value is not None
-        and str(value).strip().casefold() in _ISRAEL_COUNTRY_VALUES
-        for value in country_values
-    )
 review_router = APIRouter(prefix="/api/v1/drug-catalog", tags=["Drug Catalog Review"])
 
 
@@ -86,7 +43,7 @@ async def create_drug_catalog_source(
 ) -> DrugCatalogSourceResult:
     """Register an external reference record without creating a sellable product."""
     source_payload = payload.normalized_payload or {}
-    if _is_excluded_catalog_entry(
+    if is_excluded_catalog_entry(
         brand_name=source_payload.get("brand_name") or source_payload.get("product_name"),
         manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
         authorization_country=source_payload.get("authorization_country")
@@ -131,7 +88,7 @@ async def list_drug_catalog_sources(
     return [
         DrugCatalogSourceResult.model_validate(record)
         for record in records
-        if not _is_excluded_catalog_entry(
+        if not is_excluded_catalog_entry(
             brand_name=(record.normalized_payload or {}).get("brand_name")
             or (record.normalized_payload or {}).get("product_name"),
             manufacturer=(record.normalized_payload or {}).get("manufacturer")
@@ -165,7 +122,7 @@ async def suggest_drug_catalog_source_matches(
             detail="Match suggestions are only available for pending records",
         )
     source_payload = source_record.normalized_payload or {}
-    if _is_excluded_catalog_entry(
+    if is_excluded_catalog_entry(
         brand_name=source_payload.get("brand_name") or source_payload.get("product_name"),
         manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
         authorization_country=source_payload.get("authorization_country")
@@ -239,7 +196,7 @@ async def review_drug_catalog_source(
             detail="This source record has already been reviewed",
         )
     source_payload = record.normalized_payload or {}
-    if _is_excluded_catalog_entry(
+    if is_excluded_catalog_entry(
         brand_name=source_payload.get("brand_name") or source_payload.get("product_name"),
         manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
         authorization_country=source_payload.get("authorization_country")
@@ -450,7 +407,7 @@ async def search_drug_catalog(
     products = [
         product
         for product in result.scalars().unique().all()
-        if not _is_excluded_catalog_entry(
+        if not is_excluded_catalog_entry(
             brand_name=product.brand_name,
             manufacturer=product.manufacturer,
             authorization_country=product.authorization_country,
@@ -504,7 +461,7 @@ async def search_drug_catalog(
             continue
         seen_source_ids.add(source_identity)
         payload = record.normalized_payload or {}
-        if _is_excluded_catalog_entry(
+        if is_excluded_catalog_entry(
             brand_name=payload.get("brand_name") or payload.get("product_name"),
             manufacturer=payload.get("manufacturer") or payload.get("holder"),
             payload=payload,
