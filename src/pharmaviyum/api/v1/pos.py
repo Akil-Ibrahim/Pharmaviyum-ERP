@@ -20,7 +20,12 @@ from src.pharmaviyum.models.pos import Payment, Sale, SaleItem, SaleItemAllocati
 from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
-from src.pharmaviyum.schemas.pos import SaleCreate, SaleResponse
+from src.pharmaviyum.schemas.pos import (
+    InventoryReceiptCreate,
+    InventoryReceiptResponse,
+    SaleCreate,
+    SaleResponse,
+)
 from src.pharmaviyum.schemas.pos_product import POSProductResponse
 
 router = APIRouter(prefix="/api/v1/pos", tags=["Point of Sale"])
@@ -106,6 +111,87 @@ async def search_pos_products(
         for product, available_stock in rows
     ]
 
+
+
+
+@router.post("/inventory/receive", response_model=InventoryReceiptResponse, status_code=status.HTTP_201_CREATED)
+async def receive_inventory(
+    payload: InventoryReceiptCreate,
+    db: SessionDep,
+    user: CurrentUser,
+) -> InventoryReceiptResponse:
+    """Receive a traceable medicine lot into one authorized pharmacy."""
+    await require_pharmacy_tenant(payload.pharmacy_id, user, db)
+    product_result = await db.execute(
+        select(Product).where(
+            Product.id == payload.product_id,
+            Product.is_active.is_(True),
+        )
+    )
+    product = product_result.scalar_one_or_none()
+    if product is None:
+        raise HTTPException(status_code=404, detail="Active sellable product not found")
+
+    expiry = payload.expiry_date
+    if expiry.tzinfo is not None:
+        expiry = expiry.replace(tzinfo=None)
+    expiry = expiry.replace(hour=0, minute=0, second=0, microsecond=0)
+    if expiry.date() < datetime.utcnow().date():
+        raise HTTPException(status_code=422, detail="Cannot receive an expired medicine lot")
+
+    lot_result = await db.execute(
+        select(Inventory)
+        .where(
+            Inventory.product_id == payload.product_id,
+            Inventory.pharmacy_id == payload.pharmacy_id,
+            Inventory.lot_number == payload.lot_number.strip(),
+        )
+        .with_for_update()
+    )
+    lot = lot_result.scalar_one_or_none()
+    if lot is not None:
+        if lot.expires_at is not None and lot.expires_at.date() != expiry.date():
+            raise HTTPException(
+                status_code=409,
+                detail="This lot number already exists with a different expiry date",
+            )
+        if lot.expires_at is None:
+            lot.expires_at = expiry
+        lot.quantity += payload.quantity
+        lot.reorder_level = max(lot.reorder_level, 0)
+    else:
+        lot = Inventory(
+            product_id=payload.product_id,
+            pharmacy_id=payload.pharmacy_id,
+            quantity=payload.quantity,
+            reserved_quantity=0,
+            reorder_level=0,
+            lot_number=payload.lot_number.strip(),
+            expires_at=expiry,
+        )
+        db.add(lot)
+
+    try:
+        await db.flush()
+        response = InventoryReceiptResponse(
+            inventory_id=lot.id,
+            pharmacy_id=lot.pharmacy_id,
+            product_id=lot.product_id,
+            lot_number=lot.lot_number or "",
+            expiry_date=lot.expires_at or expiry,
+            received_quantity=payload.quantity,
+            lot_quantity=lot.quantity,
+            available_quantity=lot.quantity - lot.reserved_quantity,
+            message="Stock receipt recorded",
+        )
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Concurrent receipt conflict; refresh stock and retry",
+        ) from exc
+    return response
 
 
 @router.get("/products/{product_id}/lots")
