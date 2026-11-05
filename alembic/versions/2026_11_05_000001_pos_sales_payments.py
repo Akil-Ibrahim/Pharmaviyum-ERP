@@ -32,7 +32,6 @@ def upgrade() -> None:
         sa.CheckConstraint("subtotal >= 0 AND discount_total >= 0 AND total >= 0", name="ck_sales_amounts_nonnegative"),
         sa.CheckConstraint("status IN ('awaiting_payment', 'completed', 'cancelled', 'refunded')", name="ck_sales_status"),
     )
-    op.create_index("ix_sales_receipt_number", "sales", ["receipt_number"])
     op.create_index("ix_sales_pharmacy_id", "sales", ["pharmacy_id"])
     op.create_index("ix_sales_cashier_user_id", "sales", ["cashier_user_id"])
     op.create_index("ix_sales_status", "sales", ["status"])
@@ -109,5 +108,4 @@ def downgrade() -> None:
     op.drop_index("ix_sales_status", table_name="sales")
     op.drop_index("ix_sales_cashier_user_id", table_name="sales")
     op.drop_index("ix_sales_pharmacy_id", table_name="sales")
-    op.drop_index("ix_sales_receipt_number", table_name="sales")
     op.drop_table("sales")
