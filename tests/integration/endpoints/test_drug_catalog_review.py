@@ -13,6 +13,7 @@ from src.pharmaviyum.models.drug_catalog import (
     DrugReference,
     MedicinalProduct,
 )
+from src.pharmaviyum.models.product import Product
 
 pytestmark = pytest.mark.integration
 _source_ids = count(1)
