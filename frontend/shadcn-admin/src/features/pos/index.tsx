@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import {
   Barcode, BookOpen, CreditCard, Layers, Minus, Package, Percent, Pill, Plus,
-  Search, ShoppingCart, Trash2, UserRound, X, ScanLine, Keyboard, PackageSearch,
+  Search, ShoppingCart, Tag, Trash2, UserRound, X, ScanLine, Keyboard, PackageSearch,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
