@@ -49,6 +49,7 @@ class Product(Base):
     blisters_per_pack: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     units_per_blister: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     manufacturer: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    manufacturer_country: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     inn_name: Mapped[str | None] = mapped_column(
         String(200), nullable=True, index=True
     )
