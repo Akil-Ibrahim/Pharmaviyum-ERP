@@ -297,9 +297,7 @@ async def search_drug_catalog(
                 product_type=(
                     "branded"
                     if brand and str(payload.get("tty", "")).upper() == "SBD"
-                    else "generic"
-                    if not brand
-                    else "reference"
+                    else "generic" if not brand else "reference"
                 ),
                 manufacturer=payload.get("manufacturer") or payload.get("holder"),
                 strength=payload.get("strength"),
