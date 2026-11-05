@@ -5,6 +5,8 @@ from pydantic import ValidationError
 
 from src.pharmaviyum.schemas.pos import SaleCreate
 
+pytestmark = pytest.mark.unit
+
 
 def test_cash_checkout_requires_tendered_amount() -> None:
     with pytest.raises(ValidationError, match="cash_received"):
