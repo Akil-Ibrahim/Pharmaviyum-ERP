@@ -20,9 +20,20 @@ def upgrade() -> None:
         "medicinal_products",
         ["manufacturer_country"],
     )
+    op.add_column(
+        "products",
+        sa.Column("manufacturer_country", sa.String(length=100), nullable=True),
+    )
+    op.create_index(
+        "ix_products_manufacturer_country",
+        "products",
+        ["manufacturer_country"],
+    )
 
 
 def downgrade() -> None:
+    op.drop_index("ix_products_manufacturer_country", table_name="products")
+    op.drop_column("products", "manufacturer_country")
     op.drop_index(
         "ix_medicinal_products_manufacturer_country",
         table_name="medicinal_products",
