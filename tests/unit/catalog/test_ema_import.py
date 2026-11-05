@@ -92,6 +92,24 @@ def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> N
             "France",
             "Example SAS",
         ],
+        [
+            "Israeli Example",
+            "ibuprofen",
+            "200 mg",
+            "Tablet",
+            "Oral use",
+            "Israel",
+            "Example Ltd",
+        ],
+        [
+            "Example Teva",
+            "ibuprofen",
+            "200 mg",
+            "Tablet",
+            "Oral use",
+            "Germany",
+            "Teva Pharmaceutical Industries",
+        ],
     ]
     _xlsx(path, rows)
 
