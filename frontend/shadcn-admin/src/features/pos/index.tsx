@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import {
-  Barcode, Check, CreditCard, Minus, Plus, Search, ShoppingCart,
-  Tag, Trash2, UserRound, X, ScanLine, Keyboard, PackageSearch,
+  Barcode, BookOpen, CreditCard, Layers, Minus, Package, Percent, Pill, Plus,
+  Search, ShoppingCart, Tag, Trash2, UserRound, X, ScanLine, Keyboard, PackageSearch,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -185,7 +185,7 @@ export function Pos() {
       <header className='flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background px-4 py-3 shadow-sm'>
         <div className='flex min-w-0 items-center gap-3'>
           <span className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground'>
-            <ShoppingCart className='size-5' />
+            <Pill className='size-5' />
           </span>
           <div className='min-w-0'>
             <h1 className='text-xl font-bold tracking-tight'>Pharmacy POS</h1>
@@ -213,7 +213,7 @@ export function Pos() {
             <CardHeader className='bg-primary/[0.045] pb-3'>
               <div className='flex flex-wrap items-center justify-between gap-2'>
                 <div>
-                  <CardTitle className='flex items-center gap-2 text-base'><PackageSearch className='size-5 text-primary' /> Find a medicine</CardTitle>
+                  <CardTitle className='flex items-center gap-2 text-base'><Search className='size-5 text-primary' /> Find a medicine</CardTitle>
                   <p className='mt-1 text-sm text-muted-foreground'>Search by product name, INN, brand, manufacturer, SKU or barcode.</p>
                 </div>
                 <Badge variant='outline'>F2 · Search</Badge>
@@ -246,7 +246,7 @@ export function Pos() {
 
           <Card className='h-fit shadow-sm'>
             <CardHeader className='pb-2'>
-              <CardTitle className='text-sm'>Browse catalog</CardTitle>
+              <CardTitle className='flex items-center gap-2 text-sm'><PackageSearch className='size-4 text-muted-foreground' /> Browse catalog</CardTitle>
               <p className='text-xs text-muted-foreground'>Filter current search</p>
             </CardHeader>
             <CardContent className='space-y-1 px-2 pb-3'>
@@ -323,7 +323,7 @@ export function Pos() {
                             {(product.barcode || product.gtin) && <p className='mt-1'>{product.barcode || product.gtin}</p>}
                           </td>
                           <td className='px-3 py-3 text-right'>
-                            <span className={product.stock < 1 ? 'font-semibold text-destructive' : product.stock <= 5 ? 'font-semibold text-amber-600' : 'font-medium text-emerald-600'}>
+                            <span className={product.stock < 1 ? 'font-semibold text-destructive' : product.stock <= 5 ? 'font-semibold text-amber-700 dark:text-amber-400' : 'font-medium text-emerald-700 dark:text-emerald-400'}>
                               {product.stock}
                             </span>
                           </td>
@@ -344,13 +344,13 @@ export function Pos() {
 
           {query.trim().length >= 2 && (
             <Card className='shadow-sm'>
-              <CardHeader className='pb-2'>
+              <CardHeader className='border-b border-violet-500/15 bg-violet-500/[0.045] pb-2'>
                 <div className='flex flex-wrap items-center justify-between gap-2'>
                   <div>
-                    <CardTitle className='text-sm'>International medicine reference</CardTitle>
+                    <CardTitle className='flex items-center gap-2 text-sm'><BookOpen className='size-4 text-violet-700 dark:text-violet-300' /> International medicine reference</CardTitle>
                     <p className='mt-1 text-xs text-muted-foreground'>Reference information only — not a pharmacy stock item.</p>
                   </div>
-                  <Badge variant='outline'>Reference catalog</Badge>
+                  <Badge variant='outline' className='border-violet-500/30 bg-violet-500/10 text-violet-800 dark:text-violet-200'>Reference catalog</Badge>
                 </div>
               </CardHeader>
               <CardContent className='space-y-2'>
@@ -363,7 +363,7 @@ export function Pos() {
                       <p className='font-medium'>{item.brand_name || [item.inn_name, item.strength].filter(Boolean).join(' ')}</p>
                       <p className='mt-1 text-xs text-muted-foreground'>{[item.inn_name, item.strength, item.dosage_form, item.manufacturer].filter(Boolean).join(' · ')}</p>
                     </div>
-                    <Badge variant='outline' className='w-fit shrink-0'>Not for checkout</Badge>
+                    <Badge variant='outline' className='w-fit shrink-0 border-violet-500/30 bg-violet-500/10 text-violet-800 dark:text-violet-200'>Reference only</Badge>
                   </div>
                 ))}
                 <p className='text-xs text-muted-foreground'>A reference record does not confirm local market authorization, pharmacy pricing or stock availability.</p>
@@ -433,7 +433,7 @@ export function Pos() {
 
               <div className='space-y-2 border-t pt-4 text-sm'>
                 <div className='flex justify-between text-muted-foreground'><span>Subtotal</span><span className='tabular-nums'>{money(subtotal)}</span></div>
-                <div className='flex justify-between text-rose-600'><span>Discount</span><span className='tabular-nums'>−{money(discountAmount)}</span></div>
+                <div className='flex justify-between text-rose-700 dark:text-rose-400'><span>Discount</span><span className='tabular-nums'>−{money(discountAmount)}</span></div>
                 <div className='flex items-end justify-between gap-3 rounded-lg bg-primary/[0.06] p-3'>
                   <span className='font-semibold'>Total due</span>
                   <span className='text-2xl font-bold tracking-tight tabular-nums'>{money(total)}</span>
@@ -452,12 +452,12 @@ export function Pos() {
 
           <div className='grid grid-cols-3 gap-2'>
             {[
-              { label: 'Items', value: String(cart.length), tone: 'bg-sky-500/10 text-sky-700' },
-              { label: 'Units', value: String(quantity), tone: 'bg-emerald-500/10 text-emerald-700' },
-              { label: 'Discount', value: `${discountPercent}%`, tone: 'bg-rose-500/10 text-rose-700' },
+              { label: 'Items', value: String(cart.length), tone: 'bg-sky-500/10 text-sky-700 dark:text-sky-300', icon: Package },
+              { label: 'Units', value: String(quantity), tone: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300', icon: Layers },
+              { label: 'Discount', value: `${discountPercent}%`, tone: 'bg-rose-500/10 text-rose-700 dark:text-rose-300', icon: Percent },
             ].map(metric => (
               <div key={metric.label} className='rounded-xl border bg-background p-3'>
-                <div className={`mb-2 flex size-8 items-center justify-center rounded-lg ${metric.tone}`}><Check className='size-4' /></div>
+                <div className={`mb-2 flex size-8 items-center justify-center rounded-lg ${metric.tone}`}><metric.icon className='size-4' /></div>
                 <p className='text-lg font-bold tabular-nums'>{metric.value}</p>
                 <p className='text-xs text-muted-foreground'>{metric.label}</p>
               </div>
