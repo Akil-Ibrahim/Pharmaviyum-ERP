@@ -192,7 +192,7 @@ async def checkout(
     db.add(sale)
     await db.flush()
 
-    for line in payload.items:
+    for line in sorted(payload.items, key=lambda item: item.product_id):
         product = products[line.product_id]
         item = SaleItem(
             sale_id=sale.id,
@@ -360,7 +360,7 @@ async def payment_webhook(
     allocations = list(allocations_result.scalars().all())
     inventory_ids = [allocation.inventory_id for allocation in allocations]
     inventory_result = await db.execute(
-        select(Inventory).where(Inventory.id.in_(inventory_ids)).with_for_update()
+        select(Inventory).where(Inventory.id.in_(inventory_ids)).order_by(Inventory.id.asc()).with_for_update()
     )
     inventory_by_id = {row.id: row for row in inventory_result.scalars().all()}
 
