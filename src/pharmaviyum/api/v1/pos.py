@@ -15,7 +15,6 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
-from src.pharmaviyum.models.drug_catalog import MedicinalProduct
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.pos import Payment, Sale, SaleItem, SaleItemAllocation
 from src.pharmaviyum.models.product import Product
