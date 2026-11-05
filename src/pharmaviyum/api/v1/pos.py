@@ -43,7 +43,6 @@ async def _load_sale(db: SessionDep, sale_id: int) -> Sale:
     return sale
 
 
-
 @router.get("/products/search", response_model=list[POSProductResponse])
 async def search_pos_products(
     db: SessionDep,
@@ -378,7 +377,6 @@ async def payment_webhook(
     sale.completed_at = datetime.utcnow() if event_status == "succeeded" else None
     await db.commit()
     return {"status": "processed"}
-
 
 
 @router.post("/sales/{sale_id}/cancel", response_model=SaleResponse)
