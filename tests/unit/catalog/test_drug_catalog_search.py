@@ -117,3 +117,19 @@ def test_catalog_autocomplete_excludes_disallowed_brand_and_manufacturer_origins
     assert "medicinal_products.manufacturer" in sql
     assert "medicinal_products.manufacturer_country" in sql
     assert "teva" in sql
+
+
+@pytest.mark.unit
+def test_global_medicinal_catalog_visibility_excludes_teva_and_israel() -> None:
+    from sqlalchemy import select
+
+    from src.pharmaviyum.models.drug_catalog import MedicinalProduct
+
+    statement = select(MedicinalProduct).where(
+        *allowed_medicinal_product_conditions()
+    )
+    sql = str(statement.compile(compile_kwargs={"literal_binds": True})).lower()
+    assert "medicinal_products.brand_name" in sql
+    assert "medicinal_products.manufacturer_country" in sql
+    assert "teva" in sql
+    assert "israel" in sql
