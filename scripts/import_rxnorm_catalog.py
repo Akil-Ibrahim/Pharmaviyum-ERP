@@ -180,8 +180,18 @@ async def import_catalog(path: Path) -> tuple[int, int]:
 
     from src.pharmaviyum.database import AsyncSessionLocal
     from src.pharmaviyum.models.drug_catalog import DrugCatalogSourceRecord
+    from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
-    ingredient_terms, products = parse_rxnorm_archive(path)
+    ingredient_terms, parsed_products = parse_rxnorm_archive(path)
+    products = [
+        product
+        for product in parsed_products
+        if not is_excluded_catalog_entry(
+            brand_name=product.get("brand_name") or product.get("term"),
+            manufacturer=product.get("manufacturer"),
+            payload=product,
+        )
+    ]
     version = _archive_version(path)
     records = [
         DrugCatalogSourceRecord(
@@ -218,7 +228,7 @@ async def import_catalog(path: Path) -> tuple[int, int]:
             existing_ids.add(record.source_record_id)
             staged += 1
         await session.commit()
-    return staged, len(records) - staged
+    return staged, len(parsed_products) - staged
 
 
 async def main() -> None:
