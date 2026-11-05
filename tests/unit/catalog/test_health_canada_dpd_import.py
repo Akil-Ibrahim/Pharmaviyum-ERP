@@ -1,6 +1,10 @@
 """Tests for the Health Canada DPD source normalizer."""
 
+import pytest
+
 from scripts.import_health_canada_dpd import normalize_dpd_records
+
+pytestmark = pytest.mark.unit
 
 
 def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> None:
