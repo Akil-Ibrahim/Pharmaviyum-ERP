@@ -187,6 +187,7 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
             brand_name=product_name,
             manufacturer=holder,
             authorization_country=country,
+            manufacturer_country=value(manufacturer_country_col),
         ):
             continue
         ingredients = [
