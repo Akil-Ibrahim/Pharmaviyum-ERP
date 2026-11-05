@@ -164,7 +164,6 @@ export function Pos() {
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null
       if (event.key === 'F2') {
         event.preventDefault()
         searchRef.current?.focus()
