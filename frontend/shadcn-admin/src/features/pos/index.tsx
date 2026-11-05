@@ -91,6 +91,7 @@ export function Pos() {
 
   const resetSale = () => {
     setCart([])
+    setQuery('')
     setDiscount('0')
     setCustomer('')
     setCashReceived('')
@@ -164,7 +165,6 @@ export function Pos() {
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
-      const typing = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable
       if (event.key === 'F2') {
         event.preventDefault()
         searchRef.current?.focus()
@@ -172,7 +172,7 @@ export function Pos() {
       } else if (event.key === 'Escape') {
         if (paymentOpen) setPaymentOpen(false)
         else if (query) setQuery('')
-      } else if (event.key === 'F4' && !typing && cart.length > 0) {
+      } else if (event.key === 'F4' && cart.length > 0) {
         event.preventDefault()
         beginPayment()
       }
@@ -194,10 +194,7 @@ export function Pos() {
           </div>
         </div>
         <div className='flex flex-wrap items-center gap-2'>
-          <Badge variant='outline' className='gap-2 px-3 py-2'>
-            <span className='size-2 rounded-full bg-emerald-500' /> Catalog connected
-          </Badge>
-          <Badge variant='secondary' className='px-3 py-2'>Register 01</Badge>
+          <Badge variant='outline' className='px-3 py-2'>Counter workspace</Badge>
           <Button variant='outline' onClick={resetSale}>
             <Plus className='mr-2 size-4' /> New sale
           </Button>
@@ -383,7 +380,7 @@ export function Pos() {
                 <CardTitle className='flex items-center gap-2 text-base'><ShoppingCart className='size-5 text-primary' /> Current sale</CardTitle>
                 <Badge>{quantity} units</Badge>
               </div>
-              <p className='text-xs text-muted-foreground'>Draft receipt · Register 01</p>
+              <p className='text-xs text-muted-foreground'>Draft receipt · Not submitted</p>
             </CardHeader>
             <CardContent className='space-y-4 pt-4'>
               {cart.length === 0 ? (
