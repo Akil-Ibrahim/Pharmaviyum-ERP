@@ -173,6 +173,8 @@ async def test_checkout_rejects_insufficient_stock_without_partial_decrement(
     authenticated_client, test_db
 ):
     pharmacy, product, first, second = await _create_pharmacy_product_and_stock(test_db)
+    pharmacy_id = pharmacy.id
+    product_id = product.id
     # The endpoint rolls back its transaction on insufficient stock; commit fixture
     # rows first so they remain persistent and can be reloaded after that rollback.
     await test_db.commit()
@@ -180,9 +182,9 @@ async def test_checkout_rejects_insufficient_stock_without_partial_decrement(
     response = await authenticated_client.post(
         "/api/v1/pos/checkout",
         json={
-            "pharmacy_id": pharmacy.id,
+            "pharmacy_id": pharmacy_id,
             "idempotency_key": "pos-stock-fail-0001",
-            "items": [{"product_id": product.id, "quantity": 8}],
+            "items": [{"product_id": product_id, "quantity": 8}],
             "payment_method": "cash",
             "cash_received": "100.00",
         },
