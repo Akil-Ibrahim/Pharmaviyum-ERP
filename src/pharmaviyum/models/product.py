@@ -38,7 +38,9 @@ class Product(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    sku: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    sku: Mapped[str] = mapped_column(
+        String(64), unique=True, index=True, nullable=False
+    )
     description: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     dosage_strength: Mapped[str | None] = mapped_column(String(100), nullable=True)
     dosage_form: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -49,10 +51,10 @@ class Product(Base):
     blisters_per_pack: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     units_per_blister: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     manufacturer: Mapped[str | None] = mapped_column(String(200), nullable=True)
-    manufacturer_country: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
-    inn_name: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, index=True
+    manufacturer_country: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, index=True
     )
+    inn_name: Mapped[str | None] = mapped_column(String(200), nullable=True, index=True)
     atc_code: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
     regulatory_id: Mapped[str | None] = mapped_column(
         String(50), nullable=True, index=True
@@ -61,7 +63,9 @@ class Product(Base):
     barcode: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
 
     medicinal_product_id: Mapped[int | None] = mapped_column(
-        ForeignKey("medicinal_products.id", ondelete="SET NULL"), nullable=True, index=True
+        ForeignKey("medicinal_products.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     medicinal_product: Mapped[MedicinalProduct | None] = relationship()
 
