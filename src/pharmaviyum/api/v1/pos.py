@@ -401,9 +401,7 @@ async def payment_webhook(
             status_code=400, detail="Invalid payment event payload"
         ) from exc
     if event_status not in {"succeeded", "failed"}:
-        raise HTTPException(
-            status_code=422, detail="Unsupported payment event status"
-        )
+        raise HTTPException(status_code=422, detail="Unsupported payment event status")
 
     payment_lookup = await db.get(Payment, payment_id)
     if payment_lookup is None or payment_lookup.method == "cash":
