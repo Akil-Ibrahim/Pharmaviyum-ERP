@@ -75,7 +75,9 @@ async def test_search_includes_medicinal_product_strength() -> None:
         ),
     ],
 )
-def test_exclusion_policy_when_enabled(kwargs: dict, expected: bool, monkeypatch) -> None:
+def test_exclusion_policy_when_enabled(
+    kwargs: dict, expected: bool, monkeypatch
+) -> None:
     monkeypatch.setattr(catalog_exclusions, "CATALOG_EXCLUSIONS_ENABLED", True)
     assert is_excluded_catalog_entry(**kwargs) is expected
 
