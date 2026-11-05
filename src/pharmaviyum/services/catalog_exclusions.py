@@ -105,8 +105,6 @@ def allowed_pharmacy_product_conditions():
         not_(linked_to_excluded_catalog_product),
     )
 
-
-
 def allowed_medicinal_product_conditions():
     """SQL predicates that keep excluded products out of catalog autocomplete."""
     from sqlalchemy import func, not_, or_
