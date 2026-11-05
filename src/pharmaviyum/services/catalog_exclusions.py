@@ -58,10 +58,13 @@ def is_excluded_catalog_entry(
         return True
 
     countries = [authorization_country, manufacturer_country, *_country_values(payload)]
-    return any(
-        value is not None and str(value).strip().casefold() in _ISRAEL_COUNTRY_VALUES
-        for value in countries
-    )
+    def is_israeli_country(value: object) -> bool:
+        country = str(value).strip().casefold()
+        if country in _ISRAEL_COUNTRY_VALUES or "israel" in country:
+            return True
+        return bool(re.search(r"(?<![a-z])(?:il|isr)(?![a-z])", country))
+
+    return any(value is not None and is_israeli_country(value) for value in countries)
 
 
 def allowed_pharmacy_product_conditions():
