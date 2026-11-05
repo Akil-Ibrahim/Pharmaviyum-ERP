@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import or_, select
+from sqlalchemy import not_, or_, select
 
+from src.pharmaviyum.models.drug_catalog import MedicinalProduct
 from src.pharmaviyum.models.product import Product
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
 from src.pharmaviyum.schemas.product_schema import (
     ProductCreate,
@@ -12,12 +14,27 @@ from src.pharmaviyum.schemas.product_schema import (
 router = APIRouter(prefix="/products", tags=["Products"])
 
 
+async def _validate_product_exclusion(*, db: SessionDep, name: str, manufacturer: str | None, medicinal_product_id: int | None) -> None:
+    linked_product = None
+    if medicinal_product_id is not None:
+        linked_product = await db.get(MedicinalProduct, medicinal_product_id)
+        if linked_product is None:
+            raise HTTPException(status_code=404, detail="Medicinal catalog product not found")
+    if is_excluded_catalog_entry(brand_name=name, manufacturer=manufacturer, authorization_country=linked_product.authorization_country if linked_product is not None else None):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Teva and Israeli medicines are excluded from Pharmaviyum")
+
+
+def _visible_product_conditions():
+    return (not_(Product.name.ilike("%teva%")), not_(Product.manufacturer.ilike("%teva%")))
+
+
 @router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
     data: ProductCreate,
     db: SessionDep,
     _: CurrentSuperuser,
 ) -> Product:
+    await _validate_product_exclusion(db=db, name=data.name, manufacturer=data.manufacturer, medicinal_product_id=data.medicinal_product_id)
     product = Product(**data.model_dump())
     db.add(product)
     await db.commit()
@@ -38,6 +55,7 @@ async def search_products(
         select(Product)
         .where(
             Product.is_active.is_(True),
+            *_visible_product_conditions(),
             or_(
                 Product.name.ilike(term),
                 Product.sku.ilike(term),
@@ -57,7 +75,7 @@ async def search_products(
 
 @router.get("/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: int, db: SessionDep, _: CurrentUser) -> Product:
-    result = await db.execute(select(Product).where(Product.id == product_id))
+    result = await db.execute(select(Product).where(Product.id == product_id, *_visible_product_conditions()))
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -72,7 +90,7 @@ async def list_products(
     limit: int = Query(50, ge=1, le=200),
 ) -> list[Product]:
     result = await db.execute(
-        select(Product).where(Product.is_active).offset(skip).limit(limit)
+        select(Product).where(Product.is_active, *_visible_product_conditions()).offset(skip).limit(limit)
     )
     return list(result.scalars().all())
 
@@ -88,7 +106,9 @@ async def update_product(
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    for key, value in data.model_dump(exclude_unset=True).items():
+    updates = data.model_dump(exclude_unset=True)
+    await _validate_product_exclusion(db=db, name=updates.get('name', product.name), manufacturer=updates.get('manufacturer', product.manufacturer), medicinal_product_id=updates.get('medicinal_product_id', product.medicinal_product_id))
+    for key, value in updates.items():
         setattr(product, key, value)
     await db.commit()
     await db.refresh(product)
