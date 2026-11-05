@@ -20,7 +20,7 @@ type DrugCatalogResult = {
   atc_code: string | null; ingredient_names: string[]; brand_name: string | null
   product_type: string; manufacturer: string | null; strength: string | null
   dosage_form: string | null; route: string | null; package_description: string | null
-  gtin: string | null; regulatory_id: string | null
+  gtin: string | null; regulatory_id: string | null; authorization_country: string | null
   source_record_id?: string | null; source_name?: string | null; review_status?: string
 }
 type CartItem = LocalProduct & { quantity: number }
