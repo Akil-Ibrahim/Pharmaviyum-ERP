@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import or_, select
+from sqlalchemy import String, cast, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
@@ -20,12 +20,17 @@ from src.pharmaviyum.schemas.drug_catalog_source import (
     DrugCatalogSourceReview,
     ReviewStatus,
 )
+from src.pharmaviyum.services.catalog_exclusions import (
+    allowed_medicinal_product_conditions,
+    is_excluded_catalog_entry,
+)
 from src.pharmaviyum.services.drug_catalog_matching import (
     rank_reference_ids,
     suggest_matches,
 )
 
 router = APIRouter(prefix="/drug-catalog", tags=["Drug Catalog"])
+
 review_router = APIRouter(prefix="/api/v1/drug-catalog", tags=["Drug Catalog Review"])
 
 
@@ -40,6 +45,23 @@ async def create_drug_catalog_source(
     _: CurrentSuperuser,
 ) -> DrugCatalogSourceResult:
     """Register an external reference record without creating a sellable product."""
+    source_payload = payload.normalized_payload or {}
+    if is_excluded_catalog_entry(
+        brand_name=(
+            source_payload.get("brand_name") or source_payload.get("product_name")
+        ),
+        manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
+        authorization_country=source_payload.get("authorization_country")
+        or source_payload.get("country"),
+        manufacturer_country=source_payload.get("manufacturer_country")
+        or source_payload.get("country_of_origin")
+        or source_payload.get("country_of_manufacture"),
+        payload=source_payload,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="This catalog entry is excluded from Pharmaviyum",
+        )
     record = DrugCatalogSourceRecord(**payload.model_dump())
     db.add(record)
     try:
@@ -70,9 +92,26 @@ async def list_drug_catalog_sources(
         DrugCatalogSourceRecord.id.desc(),
     ).limit(limit)
     result = await db.execute(stmt)
+    records = result.scalars().all()
     return [
         DrugCatalogSourceResult.model_validate(record)
-        for record in result.scalars().all()
+        for record in records
+        if not is_excluded_catalog_entry(
+            brand_name=(record.normalized_payload or {}).get("brand_name")
+            or (record.normalized_payload or {}).get("product_name"),
+            manufacturer=(record.normalized_payload or {}).get("manufacturer")
+            or (record.normalized_payload or {}).get("holder"),
+            authorization_country=(
+                (record.normalized_payload or {}).get("authorization_country")
+            )
+            or (record.normalized_payload or {}).get("country"),
+            manufacturer_country=(
+                (record.normalized_payload or {}).get("manufacturer_country")
+                or (record.normalized_payload or {}).get("country_of_origin")
+                or (record.normalized_payload or {}).get("country_of_manufacture")
+            ),
+            payload=record.normalized_payload or {},
+        )
     ]
 
 
@@ -96,6 +135,22 @@ async def suggest_drug_catalog_source_matches(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Match suggestions are only available for pending records",
+        )
+    source_payload = source_record.normalized_payload or {}
+    if is_excluded_catalog_entry(
+        brand_name=source_payload.get("brand_name")
+        or source_payload.get("product_name"),
+        manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
+        authorization_country=source_payload.get("authorization_country")
+        or source_payload.get("country"),
+        manufacturer_country=source_payload.get("manufacturer_country")
+        or source_payload.get("country_of_origin")
+        or source_payload.get("country_of_manufacture"),
+        payload=source_payload,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="This catalog entry is excluded from Pharmaviyum",
         )
 
     reference_rows_result = await db.execute(
@@ -142,7 +197,7 @@ async def review_drug_catalog_source(
     db: SessionDep,
     reviewer: CurrentSuperuser,
 ) -> DrugCatalogSourceResult:
-    """Record an explicit review decision; never creates local products or stock."""
+    """Review a source record without creating local sellable stock."""
     result = await db.execute(
         select(DrugCatalogSourceRecord)
         .where(DrugCatalogSourceRecord.id == record_id)
@@ -159,27 +214,194 @@ async def review_drug_catalog_source(
             status_code=status.HTTP_409_CONFLICT,
             detail="This source record has already been reviewed",
         )
+    source_payload = record.normalized_payload or {}
+    if is_excluded_catalog_entry(
+        brand_name=source_payload.get("brand_name")
+        or source_payload.get("product_name"),
+        manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
+        authorization_country=source_payload.get("authorization_country")
+        or source_payload.get("country"),
+        manufacturer_country=source_payload.get("manufacturer_country")
+        or source_payload.get("country_of_origin")
+        or source_payload.get("country_of_manufacture"),
+        payload=source_payload,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="This catalog entry is excluded from Pharmaviyum",
+        )
 
-    if payload.matched_drug_reference_id is not None:
-        reference = await db.get(DrugReference, payload.matched_drug_reference_id)
+    matched_reference_id = payload.matched_drug_reference_id
+    matched_product_id = payload.matched_medicinal_product_id
+
+    if matched_reference_id is not None:
+        reference = await db.get(DrugReference, matched_reference_id)
         if reference is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Matched drug reference not found",
             )
-    if payload.matched_medicinal_product_id is not None:
-        medicinal_product = await db.get(
-            MedicinalProduct, payload.matched_medicinal_product_id
-        )
+    if matched_product_id is not None:
+        medicinal_product = await db.get(MedicinalProduct, matched_product_id)
         if medicinal_product is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Matched medicinal product not found",
             )
+        if is_excluded_catalog_entry(
+            brand_name=medicinal_product.brand_name,
+            manufacturer=medicinal_product.manufacturer,
+            authorization_country=medicinal_product.authorization_country,
+            manufacturer_country=medicinal_product.manufacturer_country,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Excluded medicines cannot be linked during catalog review",
+            )
+
+    if payload.create_new:
+        source = record.normalized_payload or {}
+        ingredient = str(
+            source.get("ingredient_name")
+            or source.get("ingredient")
+            or source.get("inn_name")
+            or ""
+        ).strip()
+        if not ingredient:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Source record has no single active ingredient to create",
+            )
+
+        reference_result = await db.execute(
+            select(DrugReference)
+            .where(DrugReference.inn_name.ilike(ingredient))
+            .order_by(DrugReference.id.asc())
+            .limit(1)
+        )
+        reference = reference_result.scalar_one_or_none()
+        if reference is None:
+            reference = DrugReference(
+                inn_name=ingredient[:200],
+                atc_code=source.get("atc_code"),
+            )
+            db.add(reference)
+            await db.flush()
+
+        ingredient_result = await db.execute(
+            select(DrugReferenceIngredient).where(
+                DrugReferenceIngredient.drug_reference_id == reference.id,
+                DrugReferenceIngredient.ingredient_name.ilike(ingredient),
+            )
+        )
+        if ingredient_result.scalar_one_or_none() is None:
+            db.add(
+                DrugReferenceIngredient(
+                    drug_reference_id=reference.id,
+                    ingredient_name=ingredient[:200],
+                )
+            )
+
+        brand_value = source.get("brand_name")
+        if not brand_value and "ema" in record.source_name.lower():
+            brand_value = source.get("product_name")
+        brand = str(brand_value).strip()[:200] if brand_value else None
+        strength_value = source.get("strength")
+        strength = str(strength_value).strip()[:100] if strength_value else None
+        form_value = source.get("dosage_form")
+        dosage_form = str(form_value).strip()[:100] if form_value else None
+        route_value = source.get("route")
+        route = str(route_value).strip()[:100] if route_value else None
+        manufacturer_value = source.get("manufacturer") or source.get("holder")
+        manufacturer = (
+            str(manufacturer_value).strip()[:200] if manufacturer_value else None
+        )
+        package_value = source.get("package_description")
+        package_description = (
+            str(package_value).strip()[:200] if package_value else None
+        )
+        gtin_value = source.get("gtin")
+        gtin = str(gtin_value).strip()[:14] if gtin_value else None
+        regulatory_value = source.get("regulatory_id")
+        regulatory_id = (
+            str(regulatory_value).strip()[:100] if regulatory_value else None
+        )
+        country_value = source.get("country") or source.get("authorization_country")
+        authorization_country = (
+            str(country_value).strip()[:100] if country_value else None
+        )
+        manufacturer_country_value = (
+            source.get("manufacturer_country")
+            or source.get("country_of_origin")
+            or source.get("country_of_manufacture")
+            or source.get("country_of_production")
+        )
+        manufacturer_country = (
+            str(manufacturer_country_value).strip()[:100]
+            if manufacturer_country_value
+            else None
+        )
+
+        product_statement = (
+            select(MedicinalProduct)
+            .where(
+                MedicinalProduct.drug_reference_id == reference.id,
+                (
+                    MedicinalProduct.brand_name == brand
+                    if brand is not None
+                    else MedicinalProduct.brand_name.is_(None)
+                ),
+                (
+                    MedicinalProduct.strength == strength
+                    if strength is not None
+                    else MedicinalProduct.strength.is_(None)
+                ),
+                (
+                    MedicinalProduct.dosage_form == dosage_form
+                    if dosage_form is not None
+                    else MedicinalProduct.dosage_form.is_(None)
+                ),
+                (
+                    MedicinalProduct.authorization_country == authorization_country
+                    if authorization_country is not None
+                    else MedicinalProduct.authorization_country.is_(None)
+                ),
+                (
+                    MedicinalProduct.manufacturer_country == manufacturer_country
+                    if manufacturer_country is not None
+                    else MedicinalProduct.manufacturer_country.is_(None)
+                ),
+            )
+            .order_by(MedicinalProduct.id.asc())
+        )
+        existing_product = (
+            await db.execute(product_statement.limit(1))
+        ).scalar_one_or_none()
+        if existing_product is None:
+            medicinal_product = MedicinalProduct(
+                drug_reference_id=reference.id,
+                brand_name=brand,
+                product_type="branded" if brand else "generic",
+                manufacturer=manufacturer,
+                strength=strength,
+                dosage_form=dosage_form,
+                route=route,
+                package_description=package_description,
+                gtin=gtin,
+                regulatory_id=regulatory_id,
+                authorization_country=authorization_country,
+                manufacturer_country=manufacturer_country,
+            )
+            db.add(medicinal_product)
+            await db.flush()
+        else:
+            medicinal_product = existing_product
+        matched_product_id = medicinal_product.id
+        matched_reference_id = None
 
     record.review_status = payload.review_status
-    record.matched_drug_reference_id = payload.matched_drug_reference_id
-    record.matched_medicinal_product_id = payload.matched_medicinal_product_id
+    record.matched_drug_reference_id = matched_reference_id
+    record.matched_medicinal_product_id = matched_product_id
     record.match_confidence = payload.match_confidence
     record.reviewed_by_user_id = reviewer.id
     record.reviewed_at = datetime.utcnow()
@@ -214,6 +436,7 @@ async def search_drug_catalog(
             )
         )
         .where(
+            *allowed_medicinal_product_conditions(),
             or_(
                 DrugReference.inn_name.ilike(term),
                 DrugReference.atc_code.ilike(term),
@@ -225,16 +448,25 @@ async def search_drug_catalog(
                 MedicinalProduct.package_description.ilike(term),
                 MedicinalProduct.gtin.ilike(term),
                 MedicinalProduct.regulatory_id.ilike(term),
-            )
+            ),
         )
     )
     if country:
         stmt = stmt.where(MedicinalProduct.authorization_country.ilike(country.strip()))
-    stmt = stmt.distinct().order_by(MedicinalProduct.brand_name.asc()).limit(limit)
+    stmt = stmt.distinct().order_by(MedicinalProduct.brand_name.asc()).limit(limit * 3)
     result = await db.execute(stmt)
-    products = result.scalars().unique().all()
+    products = [
+        product
+        for product in result.scalars().unique().all()
+        if not is_excluded_catalog_entry(
+            brand_name=product.brand_name,
+            manufacturer=product.manufacturer,
+            authorization_country=product.authorization_country,
+            manufacturer_country=product.manufacturer_country,
+        )
+    ]
 
-    return [
+    catalog_results = [
         DrugCatalogResult(
             medicinal_product_id=product.id,
             drug_reference_id=product.drug_reference.id,
@@ -254,6 +486,82 @@ async def search_drug_catalog(
             gtin=product.gtin,
             regulatory_id=product.regulatory_id,
             authorization_country=product.authorization_country,
+            manufacturer_country=product.manufacturer_country,
+            review_status="approved",
         )
         for product in products
     ]
+
+    # Show imported source variants before approval as reference-only records.
+    # A staged regulatory record is never converted into a local sellable Product.
+    staged_stmt = (
+        select(DrugCatalogSourceRecord)
+        .where(
+            DrugCatalogSourceRecord.review_status == "pending_review",
+            cast(DrugCatalogSourceRecord.normalized_payload, String).ilike(term),
+        )
+        .order_by(
+            DrugCatalogSourceRecord.extracted_at.desc(),
+            DrugCatalogSourceRecord.id.desc(),
+        )
+        .limit(limit * 5)
+    )
+    staged_rows = (await db.execute(staged_stmt)).scalars().all()
+    seen_source_ids: set[tuple[str, str]] = set()
+    for record in staged_rows:
+        source_identity = (record.source_name, record.source_record_id)
+        if source_identity in seen_source_ids:
+            continue
+        seen_source_ids.add(source_identity)
+        payload = record.normalized_payload or {}
+        if is_excluded_catalog_entry(
+            brand_name=payload.get("brand_name") or payload.get("product_name"),
+            manufacturer=payload.get("manufacturer") or payload.get("holder"),
+            payload=payload,
+        ):
+            continue
+        ingredient = (
+            payload.get("ingredient_name")
+            or payload.get("ingredient")
+            or payload.get("inn_name")
+        )
+        if not ingredient:
+            continue
+        brand = payload.get("brand_name")
+        if not brand and "ema" in record.source_name.lower():
+            brand = payload.get("product_name")
+        catalog_results.append(
+            DrugCatalogResult(
+                inn_name=str(ingredient),
+                ingredient_names=[str(ingredient)],
+                brand_name=str(brand) if brand else None,
+                product_type=(
+                    "branded"
+                    if brand and str(payload.get("tty", "")).upper() == "SBD"
+                    else "generic" if not brand else "reference"
+                ),
+                manufacturer=payload.get("manufacturer") or payload.get("holder"),
+                strength=payload.get("strength"),
+                dosage_form=payload.get("dosage_form"),
+                route=payload.get("route"),
+                package_description=payload.get("package_description"),
+                gtin=payload.get("gtin"),
+                authorization_country=(
+                    payload.get("country") or payload.get("authorization_country")
+                ),
+                manufacturer_country=(
+                    payload.get("manufacturer_country")
+                    or payload.get("country_of_origin")
+                    or payload.get("country_of_manufacture")
+                ),
+                authorization_status=payload.get("authorization_status"),
+                product_class=payload.get("product_class"),
+                source_record_id=record.source_record_id,
+                source_name=record.source_name,
+                review_status=record.review_status,
+            )
+        )
+        if len(catalog_results) >= limit:
+            break
+
+    return catalog_results[:limit]

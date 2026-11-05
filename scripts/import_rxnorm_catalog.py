@@ -20,6 +20,8 @@ from pathlib import Path
 
 import httpx
 
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
+
 RXNORM_URL = (
     "https://download.nlm.nih.gov/umls/kss/rxnorm/"
     "RxNorm_full_prescribe_current.zip"
@@ -145,20 +147,23 @@ def parse_rxnorm_archive(
                     if strength_match
                     else term
                 )
-                products.append(
-                    {
-                        "rxcui": rxcui,
-                        "term": term,
-                        "brand_name": brand_name,
-                        "tty": tty,
-                        "ingredient_id": ingredient_id,
-                        "strength": (
-                            strength_match.group(0) if strength_match else ""
-                        ),
-                        "route": route,
-                        "dosage_form": dosage_form,
-                    }
-                )
+                candidate = {
+                    "rxcui": rxcui,
+                    "term": term,
+                    "brand_name": brand_name,
+                    "tty": tty,
+                    "ingredient_id": ingredient_id,
+                    "strength": (
+                        strength_match.group(0) if strength_match else ""
+                    ),
+                    "route": route,
+                    "dosage_form": dosage_form,
+                }
+                if not is_excluded_catalog_entry(
+                    brand_name=brand_name or term,
+                    payload=candidate,
+                ):
+                    products.append(candidate)
 
             return ingredients, products
 
@@ -180,8 +185,18 @@ async def import_catalog(path: Path) -> tuple[int, int]:
 
     from src.pharmaviyum.database import AsyncSessionLocal
     from src.pharmaviyum.models.drug_catalog import DrugCatalogSourceRecord
+    from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
-    ingredient_terms, products = parse_rxnorm_archive(path)
+    ingredient_terms, parsed_products = parse_rxnorm_archive(path)
+    products = [
+        product
+        for product in parsed_products
+        if not is_excluded_catalog_entry(
+            brand_name=product.get("brand_name") or product.get("term"),
+            manufacturer=product.get("manufacturer"),
+            payload=product,
+        )
+    ]
     version = _archive_version(path)
     records = [
         DrugCatalogSourceRecord(
@@ -218,7 +233,7 @@ async def import_catalog(path: Path) -> tuple[int, int]:
             existing_ids.add(record.source_record_id)
             staged += 1
         await session.commit()
-    return staged, len(records) - staged
+    return staged, len(parsed_products) - staged
 
 
 async def main() -> None:

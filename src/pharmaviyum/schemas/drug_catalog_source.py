@@ -25,6 +25,7 @@ class DrugCatalogSourceReview(BaseModel):
     review_status: Literal["approved", "rejected", "duplicate"]
     matched_drug_reference_id: int | None = Field(default=None, gt=0)
     matched_medicinal_product_id: int | None = Field(default=None, gt=0)
+    create_new: bool = False
     match_confidence: Decimal | None = Field(default=None, ge=0, le=1)
     review_notes: str | None = Field(default=None, max_length=1000)
 
@@ -33,13 +34,23 @@ class DrugCatalogSourceReview(BaseModel):
         has_reference = self.matched_drug_reference_id is not None
         has_product = self.matched_medicinal_product_id is not None
         if has_reference and has_product:
-            raise ValueError("Choose one match target, not both")
-        if self.review_status in {"approved", "duplicate"} and not (
-            has_reference or has_product
+            raise ValueError("Choose one match target or create_new, not both")
+        if has_reference and self.create_new or has_product and self.create_new:
+            raise ValueError("Choose an existing match or create_new, not both")
+        if self.review_status == "approved" and not (
+            has_reference or has_product or self.create_new
         ):
-            raise ValueError("Approved and duplicate records require a match target")
-        if self.review_status == "rejected" and (has_reference or has_product):
-            raise ValueError("Rejected records cannot retain a match target")
+            raise ValueError("Approved records require a match target or create_new")
+        if self.review_status == "duplicate" and not (has_reference or has_product):
+            raise ValueError("Duplicate records require a match target")
+        if self.review_status == "rejected" and (
+            has_reference or has_product or self.create_new
+        ):
+            raise ValueError(
+                "Rejected records cannot retain a match target or create a product"
+            )
+        if self.review_status == "duplicate" and self.create_new:
+            raise ValueError("Duplicate records cannot create a new catalog product")
         return self
 
 

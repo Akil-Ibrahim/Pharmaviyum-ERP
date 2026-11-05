@@ -55,3 +55,32 @@ def test_duplicate_review_requires_link_to_existing_catalog_record() -> None:
     )
 
     assert payload.matched_medicinal_product_id == 42
+
+
+def test_approved_review_can_create_a_new_canonical_reference() -> None:
+    payload = DrugCatalogSourceReview(
+        review_status="approved",
+        create_new=True,
+        match_confidence="1.0000",
+    )
+
+    assert payload.create_new is True
+    assert payload.matched_drug_reference_id is None
+    assert payload.matched_medicinal_product_id is None
+
+
+def test_create_new_cannot_be_combined_with_an_existing_match() -> None:
+    with pytest.raises(ValidationError, match="Choose one match target"):
+        DrugCatalogSourceReview(
+            review_status="approved",
+            matched_drug_reference_id=10,
+            create_new=True,
+        )
+
+
+def test_duplicate_review_cannot_create_a_new_reference() -> None:
+    with pytest.raises(ValidationError, match="require a match target"):
+        DrugCatalogSourceReview(
+            review_status="duplicate",
+            create_new=True,
+        )

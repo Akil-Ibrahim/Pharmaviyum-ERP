@@ -5,12 +5,15 @@ from itertools import count
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.models.drug_catalog import (
     DrugCatalogSourceRecord,
     DrugReference,
+    MedicinalProduct,
 )
+from src.pharmaviyum.models.product import Product
 
 pytestmark = pytest.mark.integration
 _source_ids = count(1)
@@ -137,3 +140,59 @@ class TestDrugCatalogSourceReviewEndpoints:
         assert data["review_status"] == "rejected"
         assert data["matched_drug_reference_id"] is None
         assert data["matched_medicinal_product_id"] is None
+
+
+class TestDrugCatalogSourcePromotion:
+    async def test_approval_can_create_global_reference_without_local_stock(
+        self,
+        authenticated_client: AsyncClient,
+        test_db: AsyncSession,
+    ):
+        record = DrugCatalogSourceRecord(
+            source_name="test-source",
+            source_record_id=f"new-product-{next(_source_ids)}",
+            source_version="2026-01",
+            extracted_at=datetime.now(timezone.utc).replace(tzinfo=None),
+            normalized_payload={
+                "ingredient_name": "Ibuprofen",
+                "brand_name": "Example Brand",
+                "strength": "200 mg",
+                "dosage_form": "Tablet",
+                "route": "Oral",
+                "manufacturer": "Example Pharma",
+                "country": "Canada",
+                "regulatory_id": "DIN-TEST-001",
+            },
+            review_status="pending_review",
+        )
+        test_db.add(record)
+        await test_db.flush()
+
+        response = await authenticated_client.patch(
+            f"/api/v1/drug-catalog/sources/{record.id}/review",
+            json={
+                "review_status": "approved",
+                "create_new": True,
+                "match_confidence": "1.0000",
+                "review_notes": "Manually verified against the source record.",
+            },
+        )
+
+        assert response.status_code == 200, response.text
+        result = response.json()
+        assert result["review_status"] == "approved"
+        assert result["matched_drug_reference_id"] is None
+        assert result["matched_medicinal_product_id"] is not None
+
+        medicinal_product = await test_db.get(
+            MedicinalProduct, result["matched_medicinal_product_id"]
+        )
+        assert medicinal_product is not None
+        assert medicinal_product.brand_name == "Example Brand"
+        assert medicinal_product.strength == "200 mg"
+        assert medicinal_product.authorization_country == "Canada"
+        reference = await test_db.get(
+            DrugReference, medicinal_product.drug_reference_id
+        )
+        assert reference is not None and reference.inn_name == "Ibuprofen"
+        assert await test_db.scalar(select(Product)) is None

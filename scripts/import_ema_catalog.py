@@ -18,6 +18,8 @@ from xml.etree import ElementTree as ET
 
 import httpx
 
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
+
 EMA_URL = "https://www.ema.europa.eu/en/documents/other/article-57-product-data_en.xlsx"
 NS = {
     "m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
@@ -162,6 +164,11 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
         or find_column("authorisation", "holder")
         or find_column("authorization", "holder")
     )
+    manufacturer_country_col = (
+        find_column("manufacturer", "country")
+        or find_column("country", "of", "origin")
+        or find_column("country", "of", "manufacture")
+    )
     if product_col is None or ingredient_col is None or country_col is None:
         raise ValueError(f"EMA workbook is missing required columns: {headers!r}")
 
@@ -173,7 +180,15 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
         product_name = value(product_col)
         ingredient_text = value(ingredient_col)
         country = value(country_col)
+        holder = value(holder_col)
         if not product_name or not ingredient_text or not country:
+            continue
+        if is_excluded_catalog_entry(
+            brand_name=product_name,
+            manufacturer=holder,
+            authorization_country=country,
+            manufacturer_country=value(manufacturer_country_col),
+        ):
             continue
         ingredients = [
             part.strip()
@@ -189,7 +204,12 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
             "dosage_form": value(form_col),
             "route": value(route_col),
             "country": country,
-            "holder": value(holder_col),
+            "holder": holder,
+            **(
+                {"manufacturer_country": value(manufacturer_country_col)}
+                if value(manufacturer_country_col)
+                else {}
+            ),
         })
     return parsed
 
@@ -218,8 +238,19 @@ async def import_catalog(path: Path) -> tuple[int, int]:
 
     from src.pharmaviyum.database import AsyncSessionLocal
     from src.pharmaviyum.models.drug_catalog import DrugCatalogSourceRecord
+    from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
-    rows = parse_ema_xlsx(path)
+    parsed_rows = parse_ema_xlsx(path)
+    rows = [
+        row
+        for row in parsed_rows
+        if not is_excluded_catalog_entry(
+            brand_name=row.get("product_name"),
+            manufacturer=row.get("holder"),
+            authorization_country=row.get("country"),
+            payload=row,
+        )
+    ]
     version = f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}"
     records = [
         DrugCatalogSourceRecord(
@@ -253,7 +284,7 @@ async def import_catalog(path: Path) -> tuple[int, int]:
             existing_ids.add(record.source_record_id)
             staged += 1
         await session.commit()
-    return staged, len(records) - staged
+    return staged, len(parsed_rows) - staged
 
 
 async def main() -> None:

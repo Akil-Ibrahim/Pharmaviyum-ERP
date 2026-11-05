@@ -34,6 +34,7 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
             _conso_row("100", "IN", "ibuprofen"),
             _conso_row("200", "SCD", "ibuprofen 200 MG Oral Tablet"),
             _conso_row("201", "SBD", "Advil 200 MG Oral Tablet"),
+            _conso_row("202", "SBD", "Teva 200 MG Oral Tablet"),
             _conso_row("300", "IN", "acetaminophen"),
             _conso_row("301", "SCD", "acetaminophen 160 MG/5 ML Oral Suspension"),
             _conso_row(
@@ -47,6 +48,7 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
         [
             _rel_row("200", "100"),
             _rel_row("201", "100"),
+            _rel_row("202", "100"),
             _rel_row("301", "300"),
             _rel_row("400", "100"),
             _rel_row("400", "300"),

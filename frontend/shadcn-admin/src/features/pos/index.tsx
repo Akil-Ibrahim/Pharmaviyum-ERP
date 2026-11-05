@@ -1,8 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import {
-  Barcode, BookOpen, CreditCard, Layers, Minus, Package, Percent, Pill, Plus,
-  Search, ShoppingCart, Tag, Trash2, UserRound, X, ScanLine, Keyboard, PackageSearch,
-} from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Search, Plus, Minus, Trash2, CreditCard, Pill, X, Receipt } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,485 +11,226 @@ type LocalProduct = {
   dosage_form: string | null; units_per_pack: number; manufacturer: string | null
   inn_name: string | null; gtin: string | null; barcode: string | null
   price: number; stock: number; medicinal_product_id: number | null
+  batch_number?: string | null; expiry_date?: string | null
 }
 type DrugCatalogResult = {
-  medicinal_product_id: number; drug_reference_id: number; inn_name: string
+  medicinal_product_id: number | null; drug_reference_id: number | null; inn_name: string
   atc_code: string | null; ingredient_names: string[]; brand_name: string | null
   product_type: string; manufacturer: string | null; strength: string | null
   dosage_form: string | null; route: string | null; package_description: string | null
-  gtin: string | null; regulatory_id: string | null
+  gtin: string | null; regulatory_id: string | null; authorization_country: string | null
+  source_record_id?: string | null; source_name?: string | null; review_status?: string
+  authorization_status?: string | null; product_class?: string | null
 }
+type InventoryLot = { inventory_id: number; lot_number: string | null; expiry_date: string | null; quantity: number; reserved_quantity: number; available_quantity: number; expiry_date_missing: boolean }
 type CartItem = LocalProduct & { quantity: number }
-
-const money = (value: number) =>
-  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'UAH' }).format(value)
+type PharmacyOption = { id: number; name: string }
+type SaleResult = {
+  id: number; receipt_number: string; status: string; total: string
+  payments: { id: number; method: string; status: string }[]
+}
+const money = (value: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
 
 export function Pos() {
   const [query, setQuery] = useState('')
-  const [cart, setCart] = useState<CartItem[]>([])
-  const [localResults, setLocalResults] = useState<LocalProduct[]>([])
+  const [results, setResults] = useState<LocalProduct[]>([])
+  const [lotsByProduct, setLotsByProduct] = useState<Record<number, InventoryLot[]>>({})
   const [referenceResults, setReferenceResults] = useState<DrugCatalogResult[]>([])
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [pharmacies, setPharmacies] = useState<PharmacyOption[]>([])
+  const [pharmacyId, setPharmacyId] = useState<number>()
   const [loading, setLoading] = useState(false)
-  const [referenceLoading, setReferenceLoading] = useState(false)
-  const [localError, setLocalError] = useState(false)
-  const [referenceError, setReferenceError] = useState(false)
-  const [discount, setDiscount] = useState('0')
-  const [cashReceived, setCashReceived] = useState('')
-  const [paymentOpen, setPaymentOpen] = useState(false)
-  const [customer, setCustomer] = useState('')
   const [notice, setNotice] = useState('')
-  const [selectedForm, setSelectedForm] = useState('all')
-  const [stockFilter, setStockFilter] = useState<'all' | 'available' | 'low'>('all')
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
+  const [receivingOpen, setReceivingOpen] = useState(false)
+  const [receivingProductId, setReceivingProductId] = useState('')
+  const [receivingLot, setReceivingLot] = useState('')
+  const [receivingExpiry, setReceivingExpiry] = useState('')
+  const [receivingQuantity, setReceivingQuantity] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card_terminal' | 'online'>('cash')
+  const [cashReceived, setCashReceived] = useState('')
+  const [processing, setProcessing] = useState(false)
+  const [sale, setSale] = useState<SaleResult | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+  const [searchActive, setSearchActive] = useState(false)
+  const idempotencyKey = useRef(crypto.randomUUID())
 
-  const discountPercent = Math.min(100, Math.max(0, Number(discount) || 0))
-  const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart])
-  const discountAmount = subtotal * discountPercent / 100
-  const total = subtotal - discountAmount
-  const quantity = cart.reduce((sum, item) => sum + item.quantity, 0)
+  const total = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart])
   const cash = Number(cashReceived) || 0
-  const availableForms = useMemo(
-    () => Array.from(new Set(localResults.map(item => item.dosage_form?.trim()).filter((form): form is string => Boolean(form)))).sort((a, b) => a.localeCompare(b)),
-    [localResults],
-  )
-  const visibleLocalResults = useMemo(() => localResults.filter(product => {
-    const matchesForm = selectedForm === 'all' || product.dosage_form === selectedForm
-    const matchesStock = stockFilter === 'all' || (stockFilter === 'available' ? product.stock > 0 : product.stock > 0 && product.stock <= 5)
-    return matchesForm && matchesStock
-  }), [localResults, selectedForm, stockFilter])
+  const units = cart.reduce((sum, item) => sum + item.quantity, 0)
+
+  useEffect(() => {
+    apiFetch<PharmacyOption[]>('/api/v1/pharmacies').then(items => {
+      setPharmacies(items)
+      setPharmacyId(items[0]?.id)
+    }).catch(() => setNotice('Не удалось загрузить список аптек.'))
+  }, [])
 
   useEffect(() => {
     const term = query.trim()
-    if (term.length < 2) {
-      setLocalResults([])
+    if (term.length < 2 || !pharmacyId) {
+      setResults([])
       setReferenceResults([])
-      setLoading(false)
-      setReferenceLoading(false)
       return
     }
     let cancelled = false
-    const timer = setTimeout(() => {
-      if (cancelled) return
+    const timer = window.setTimeout(async () => {
       setLoading(true)
-      setReferenceLoading(true)
-      setLocalError(false)
-      setReferenceError(false)
-      apiFetch<LocalProduct[]>(`/products/search?q=${encodeURIComponent(term)}&limit=20`)
-        .then(items => { if (!cancelled) setLocalResults(items) })
-        .catch(() => { if (!cancelled) { setLocalResults([]); setLocalError(true) } })
-        .finally(() => { if (!cancelled) setLoading(false) })
-      apiFetch<DrugCatalogResult[]>(`/drug-catalog/search?q=${encodeURIComponent(term)}&limit=8`)
-        .then(items => { if (!cancelled) setReferenceResults(items) })
-        .catch(() => { if (!cancelled) { setReferenceResults([]); setReferenceError(true) } })
-        .finally(() => { if (!cancelled) setReferenceLoading(false) })
-    }, 180)
-    return () => { cancelled = true; clearTimeout(timer) }
-  }, [query])
+      try {
+        const [local, reference] = await Promise.all([
+          apiFetch<LocalProduct[]>(`/api/v1/pos/products/search?q=${encodeURIComponent(term)}&pharmacy_id=${pharmacyId}&limit=30`),
+          apiFetch<DrugCatalogResult[]>(`/drug-catalog/search?q=${encodeURIComponent(term)}&limit=50`).catch(() => []),
+        ])
+        if (!cancelled) { setResults(local); setReferenceResults(reference) }
+      } catch {
+        if (!cancelled) { setResults([]); setNotice('Ошибка поиска аптечного ассортимента.') }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }, 200)
+    return () => { cancelled = true; window.clearTimeout(timer) }
+  }, [query, pharmacyId])
 
-  const resetSale = () => {
-    setCart([])
-    setQuery('')
-    setDiscount('0')
-    setCustomer('')
-    setCashReceived('')
-    setSelectedForm('all')
-    setStockFilter('all')
-    setPaymentOpen(false)
-    setNotice('New sale is ready.')
-    searchRef.current?.focus()
-  }
-
-  const addToCart = (product: LocalProduct) => {
-    if (product.stock < 1) {
-      setNotice('This product is out of stock.')
-      return
-    }
-    setNotice('')
-    setCart(items => {
-      const existing = items.find(item => item.id === product.id)
-      if (existing) return items.map(item =>
-        item.id === product.id ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) } : item
-      )
-      return [...items, { ...product, quantity: 1 }]
-    })
-    setQuery('')
-    searchRef.current?.focus()
-  }
-
-  const updateQuantity = (id: number, delta: number) => setCart(items => items.flatMap(item => {
-    if (item.id !== id) return [item]
-    const next = item.quantity + delta
-    return next > 0 ? [{ ...item, quantity: Math.min(next, item.stock) }] : []
-  }))
-
-  const scanSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const term = query.trim()
-    if (!term) return
-    const findExact = (items: LocalProduct[]) => items.find(item =>
-      item.barcode === term || item.gtin === term || item.sku.toLowerCase() === term.toLowerCase()
-    )
-    const existingMatch = findExact(localResults)
-    if (existingMatch) {
-      addToCart(existingMatch)
-      return
-    }
-    setLoading(true)
-    try {
-      const freshResults = await apiFetch<LocalProduct[]>(`/products/search?q=${encodeURIComponent(term)}&limit=20`)
-      setLocalResults(freshResults)
-      const exactMatch = findExact(freshResults)
-      if (exactMatch) addToCart(exactMatch)
-      else setNotice('No exact barcode or SKU match. Review the results and confirm local stock availability.')
-    } catch {
-      setNotice('The pharmacy catalog could not be searched. Check the connection and try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const beginPayment = () => {
-    if (!cart.length) return
-    setPaymentOpen(true)
-    setCashReceived(total.toFixed(2))
-  }
-
-  const closePaymentReview = () => {
-    setNotice('Payment review closed. No sale was recorded.')
-    setPaymentOpen(false)
-  }
+  const formatExpiry = (value?: string | null) => value ? new Date(`${value}T00:00:00`).toLocaleDateString('uk-UA') : 'Не указан — определяется по партии'
 
   useEffect(() => {
-    const handleShortcut = (event: KeyboardEvent) => {
-      if (event.key === 'F2') {
-        event.preventDefault()
-        searchRef.current?.focus()
-        searchRef.current?.select()
-      } else if (event.key === 'Escape') {
-        if (paymentOpen) setPaymentOpen(false)
-        else if (query) setQuery('')
-      } else if (event.key === 'F4' && cart.length > 0) {
-        event.preventDefault()
-        beginPayment()
+    if (!pharmacyId || cart.length === 0) { setLotsByProduct({}); return }
+    let cancelled = false
+    Promise.all(cart.map(async item => {
+      try {
+        const lots = await apiFetch<InventoryLot[]>(`/api/v1/pos/products/${item.id}/lots?pharmacy_id=${pharmacyId}`)
+        return [item.id, lots] as const
+      } catch {
+        return [item.id, []] as const
       }
+    })).then(entries => {
+      if (!cancelled) setLotsByProduct(Object.fromEntries(entries))
+    })
+    return () => { cancelled = true }
+  }, [cart.map(item => item.id).join(','), pharmacyId])
+
+
+
+  const addProduct = (product: LocalProduct) => {
+    if (product.stock < 1) { setNotice('Нет доступного остатка.'); return }
+    setCart(items => {
+      const found = items.find(item => item.id === product.id)
+      if (found) return items.map(item => item.id === product.id ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) } : item)
+      return [...items, { ...product, quantity: 1 }]
+    })
+    setNotice('')
+    setQuery('')
+    setSearchActive(true)
+    searchRef.current?.focus()
+  }
+
+  const changeQuantity = (id: number, delta: number) => setCart(items => items.flatMap(item => {
+    if (item.id !== id) return [item]
+    const next = Math.min(item.stock, item.quantity + delta)
+    return next > 0 ? [{ ...item, quantity: next }] : []
+  }))
+
+
+  const receiveStock = async () => {
+    const quantity = Number(receivingQuantity)
+    if (!pharmacyId || !receivingProductId || !receivingLot.trim() || !receivingExpiry || !Number.isInteger(quantity) || quantity <= 0) {
+      setNotice('Заполните товар, номер партии, срок годности и целое положительное количество.')
+      return
     }
-    window.addEventListener('keydown', handleShortcut)
-    return () => window.removeEventListener('keydown', handleShortcut)
-  }, [cart.length, paymentOpen, query, total])
+    setProcessing(true)
+    setNotice('')
+    try {
+      const received = await apiFetch<{ lot_quantity: number; available_quantity: number; lot_number: string }>('/api/v1/pos/inventory/receive', {
+        method: 'POST',
+        body: JSON.stringify({
+          pharmacy_id: pharmacyId,
+          product_id: Number(receivingProductId),
+          lot_number: receivingLot.trim(),
+          expiry_date: `${receivingExpiry}T00:00:00`,
+          quantity,
+        }),
+      })
+      setReceivingOpen(false)
+      setReceivingLot('')
+      setReceivingExpiry('')
+      setReceivingQuantity('')
+      setNotice(`Приход принят. Партия ${received.lot_number}: доступно ${received.available_quantity} шт.`)
+      if (query.trim().length >= 2) {
+        const refreshed = await apiFetch<LocalProduct[]>(`/api/v1/pos/products/search?q=${encodeURIComponent(query.trim())}&pharmacy_id=${pharmacyId}&limit=30`)
+        setResults(refreshed)
+      }
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Не удалось зарегистрировать приход.')
+    } finally { setProcessing(false) }
+  }
+
+  const completeSale = async () => {
+    if (!pharmacyId || !cart.length || processing) return
+    if (paymentMethod === 'cash' && cash < total) { setNotice('Полученная сумма меньше суммы чека.'); return }
+    setProcessing(true)
+    setNotice('')
+    try {
+      const result = await apiFetch<SaleResult>('/api/v1/pos/checkout', {
+        method: 'POST',
+        body: JSON.stringify({
+          pharmacy_id: pharmacyId, idempotency_key: idempotencyKey.current,
+          items: cart.map(item => ({ product_id: item.id, quantity: item.quantity })),
+          discount_total: 0, payment_method: paymentMethod,
+          ...(paymentMethod === 'cash' ? { cash_received: cash } : {}),
+        }),
+      })
+      setSale(result)
+      idempotencyKey.current = crypto.randomUUID()
+      if (result.status === 'completed') {
+        setCart([])
+        setCheckoutOpen(false)
+        setNotice(`Продажа завершена. Чек № ${result.receipt_number}`)
+      } else {
+        setNotice(`Платёж ожидает подтверждения провайдера. Чек ${result.receipt_number}; товар зарезервирован.`)
+      }
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Продажа не подтверждена. Проверьте состояние операции перед повтором.')
+    } finally { setProcessing(false) }
+  }
 
   return (
-    <div className='pharmacy-pos min-h-full space-y-4 bg-muted/20 p-3 md:p-5'>
-      <header className='flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background px-4 py-3 shadow-sm'>
-        <div className='flex min-w-0 items-center gap-3'>
-          <span className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground'>
-            <Pill className='size-5' />
-          </span>
-          <div className='min-w-0'>
-            <h1 className='text-xl font-bold tracking-tight'>Pharmacy POS</h1>
-            <p className='text-xs text-muted-foreground'>Point of sale · Counter workspace</p>
-          </div>
-        </div>
-        <div className='flex flex-wrap items-center gap-2'>
-          <Badge variant='outline' className='px-3 py-2'>Counter workspace</Badge>
-          <Button variant='outline' onClick={resetSale}>
-            <Plus className='mr-2 size-4' /> New sale
-          </Button>
-        </div>
-      </header>
+    <div className='min-h-screen bg-muted/20 p-3 md:p-5'>
+      <div className='mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-[1920px] flex-col gap-4'>
+        <header className='flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background p-4'>
+          <div className='flex items-center gap-3'><span className='flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground'><Pill /></span><div><h1 className='text-xl font-bold'>Аптечная касса</h1><p className='text-xs text-muted-foreground'>Выбор препаратов и оформление продажи</p></div></div>
+          <div className='flex flex-wrap items-center gap-2'><Badge variant='outline' className='px-3 py-2'>Counter Workspace</Badge><Button variant='outline' onClick={() => { setCart([]); setSale(null); setCheckoutOpen(false); setQuery(''); setSearchActive(true); setNotice('Новая продажа. Поиск активен.'); window.requestAnimationFrame(() => searchRef.current?.focus()) }}><Plus className='mr-2 size-4' /> New Sale</Button><Button variant='outline' onClick={() => { setReceivingOpen(true); setQuery(''); setResults([]); setSearchActive(false); searchRef.current?.focus() }}>Приёмка на склад</Button><label className='flex items-center gap-2 text-sm'>Аптека<select className='h-9 max-w-[220px] rounded-md border bg-background px-2' value={pharmacyId ?? ''} onChange={e => { setPharmacyId(Number(e.target.value)); setCart([]); setSale(null) }}><option value=''>Выберите аптеку</option>{pharmacies.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label></div>
+        </header>
 
-      {notice && (
-        <div role='status' className='flex items-start justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm'>
-          <span>{notice}</span>
-          <button aria-label='Dismiss notification' onClick={() => setNotice('')}><X className='size-4' /></button>
-        </div>
-      )}
+        {notice && <div role='status' className='flex items-center justify-between gap-3 rounded-lg border bg-background p-3 text-sm'>{notice}<button aria-label='Закрыть уведомление' onClick={() => setNotice('')}><X className='size-4' /></button></div>}
 
-      <div className='grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_390px] 2xl:grid-cols-[minmax(0,1fr)_420px]'>
-        <main className='grid min-w-0 gap-4 lg:grid-cols-[176px_minmax(0,1fr)]'>
-          <Card className='overflow-hidden border-primary/20 shadow-sm lg:col-span-2'>
-            <CardHeader className='bg-primary/[0.045] pb-3'>
-              <div className='flex flex-wrap items-center justify-between gap-2'>
-                <div>
-                  <CardTitle className='flex items-center gap-2 text-base'><Search className='size-5 text-primary' /> Find a medicine</CardTitle>
-                  <p className='mt-1 text-sm text-muted-foreground'>Search by product name, INN, brand, manufacturer, SKU or barcode.</p>
-                </div>
-                <Badge variant='outline'>F2 · Search</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className='space-y-2 pt-4'>
-              <form onSubmit={scanSubmit} className='flex flex-col gap-2 sm:flex-row'>
-                <div className='relative min-w-0 flex-1'>
-                  <Search className='pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground' />
-                  <Input
-                    ref={searchRef}
-                    value={query}
-                    onChange={event => setQuery(event.target.value)}
-                    placeholder='Scan barcode or type a medicine name…'
-                    className='h-12 pl-11 text-base'
-                    autoComplete='off'
-                    aria-label='Search medicines by name or barcode'
-                  />
-                </div>
-                <Button type='submit' className='h-12 px-5'>
-                  <ScanLine className='mr-2 size-4' /> Search / scan
-                </Button>
-              </form>
-              <div className='flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground'>
-                <span className='flex items-center gap-1.5'><Barcode className='size-3.5' /> USB barcode scanners work as keyboard input.</span>
-                <span className='flex items-center gap-1.5'><Keyboard className='size-3.5' /> Enter: add exact barcode · F4: payment review · Esc: clear</span>
-              </div>
+        {cart.length > 0 && (
+          <Card className='min-h-0 flex-1 overflow-y-auto'>
+            <CardHeader className='pb-3'><div className='flex items-center justify-between'><CardTitle>Выбранные препараты</CardTitle><Badge>{units} шт.</Badge></div><p className='text-sm text-muted-foreground'>Проверьте количество и состав продажи.</p></CardHeader>
+            <CardContent className='space-y-3'>
+              {cart.map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'>
+                <div className='min-w-0 flex-1'><p className='font-semibold'>{item.name}</p><p className='text-xs text-muted-foreground'>{[item.inn_name, item.dosage_strength, item.dosage_form, item.manufacturer].filter(Boolean).join(' · ')}</p><p className='mt-1 text-sm'>Цена: {money(item.price)} · Доступно: {item.stock} · В чеке: {item.quantity} шт.</p><div className='mt-2 space-y-1 text-xs text-muted-foreground'><p className='font-medium text-foreground'>Складские партии (сначала ближайший срок годности):</p>{(lotsByProduct[item.id] || []).length ? lotsByProduct[item.id].map(lot => <p key={lot.inventory_id}>Партия: {lot.lot_number || 'без номера'} · Годен до: {formatExpiry(lot.expiry_date)} · Доступно: {lot.available_quantity} шт.</p>) : <p>Нет доступных партий с указанным сроком годности. Проверьте складской приход.</p>}</div><p className='text-xs text-muted-foreground'>Штрихкод: {item.barcode || item.gtin || 'не указан'}</p></div>
+                <div className='flex items-center gap-2'><Button size='icon' variant='outline' aria-label='Уменьшить количество' onClick={() => changeQuantity(item.id, -1)}><Minus className='size-4' /></Button><span className='w-8 text-center font-semibold'>{item.quantity}</span><Button size='icon' variant='outline' aria-label='Увеличить количество' disabled={item.quantity >= item.stock} onClick={() => changeQuantity(item.id, 1)}><Plus className='size-4' /></Button><Button size='icon' variant='ghost' aria-label='Удалить препарат' onClick={() => setCart(rows => rows.filter(row => row.id !== item.id))}><Trash2 className='size-4' /></Button></div>
+                <strong className='w-28 text-right'>{money(item.price * item.quantity)}</strong>
+              </div>)}
+              <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'><span className='text-lg font-semibold'>Итого: {money(total)}</span><Button size='lg' onClick={() => { setCashReceived(total.toFixed(2)); setCheckoutOpen(true) }}><CreditCard className='mr-2 size-4' /> Вывести в чек</Button></div>
             </CardContent>
           </Card>
+        )}
 
-          <Card className='h-fit shadow-sm'>
-            <CardHeader className='pb-2'>
-              <CardTitle className='flex items-center gap-2 text-sm'><PackageSearch className='size-4 text-muted-foreground' /> Browse catalog</CardTitle>
-              <p className='text-xs text-muted-foreground'>Filter current search</p>
-            </CardHeader>
-            <CardContent className='space-y-1 px-2 pb-3'>
-              <Button variant={selectedForm === 'all' ? 'secondary' : 'ghost'} className='w-full justify-start' size='sm' onClick={() => setSelectedForm('all')}>
-                <PackageSearch className='mr-2 size-4' /> All products
-                <span className='ml-auto text-xs text-muted-foreground'>{localResults.length}</span>
-              </Button>
-              {availableForms.map(form => (
-                <Button key={form} variant={selectedForm === form ? 'secondary' : 'ghost'} className='w-full justify-start' size='sm' onClick={() => setSelectedForm(form)}>
-                  <span className='mr-2 size-1.5 rounded-full bg-muted-foreground/60' /> <span className='truncate'>{form}</span>
-                </Button>
-              ))}
-              <div className='my-2 border-t pt-2'>
-                <p className='px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground'>Availability</p>
-                <Button variant={stockFilter === 'all' ? 'secondary' : 'ghost'} className='w-full justify-start' size='sm' onClick={() => setStockFilter('all')}>All stock</Button>
-                <Button variant={stockFilter === 'available' ? 'secondary' : 'ghost'} className='w-full justify-start' size='sm' onClick={() => setStockFilter('available')}>In stock</Button>
-                <Button variant={stockFilter === 'low' ? 'secondary' : 'ghost'} className='w-full justify-start' size='sm' onClick={() => setStockFilter('low')}>Low stock (1–5)</Button>
-              </div>
-              <p className='px-2 pt-1 text-[11px] text-muted-foreground'>Categories are derived from product dosage forms returned by the catalog.</p>
-            </CardContent>
-          </Card>
+        {sale?.status === 'completed' && <Card><CardContent className='flex items-center justify-between gap-3 p-4'><div className='flex items-center gap-2'><Receipt className='size-5 text-primary' /><div><p className='font-semibold'>Чек № {sale.receipt_number}</p><p className='text-sm text-muted-foreground'>Продажа зарегистрирована · {money(Number(sale.total))}</p></div></div><Button variant='outline' onClick={() => { setSale(null); setNotice('Новая продажа.'); searchRef.current?.focus() }}>Новая продажа</Button></CardContent></Card>}
 
-          <Card className='overflow-hidden shadow-sm'>
-            <CardHeader className='border-b bg-background py-3'>
-              <div className='flex flex-wrap items-center justify-between gap-2'>
-                <div>
-                  <CardTitle className='text-base'>Search results</CardTitle>
-                  <p className='mt-1 text-xs text-muted-foreground'>Only pharmacy products with local pricing and stock can be added to the sale.</p>
-                </div>
-                <Badge variant='secondary'>{visibleLocalResults.length} products</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className='p-0'>
-              {loading && <p className='px-4 py-10 text-center text-sm text-muted-foreground'>Searching pharmacy catalog…</p>}
-              {localError && <p className='m-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive'>Unable to load pharmacy products. Check the API connection and access permissions.</p>}
-              {!loading && !localError && query.trim().length >= 2 && localResults.length === 0 && (
-                <div className='px-4 py-10 text-center'>
-                  <PackageSearch className='mx-auto mb-2 size-7 text-muted-foreground' />
-                  <p className='text-sm font-medium'>No pharmacy products found</p>
-                  <p className='mt-1 text-xs text-muted-foreground'>Try another name, INN, SKU or barcode.</p>
-                </div>
-              )}
-              {query.trim().length >= 2 && !loading && localResults.length > 0 && visibleLocalResults.length === 0 && <p className='px-4 py-10 text-center text-sm text-muted-foreground'>No products match the selected filters.</p>}
-              {query.trim().length < 2 && (
-                <div className='px-4 py-12 text-center'>
-                  <Search className='mx-auto mb-3 size-8 text-muted-foreground/60' />
-                  <p className='text-sm font-medium'>Ready to search</p>
-                  <p className='mt-1 text-xs text-muted-foreground'>Scan a product barcode or enter at least two characters.</p>
-                </div>
-              )}
-              {visibleLocalResults.length > 0 && (
-                <div className='overflow-x-auto'>
-                  <table className='w-full min-w-[680px] text-sm'>
-                    <thead className='bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground'>
-                      <tr>
-                        <th className='px-4 py-3 font-medium'>Product / manufacturer</th>
-                        <th className='px-3 py-3 font-medium'>SKU / barcode</th>
-                        <th className='px-3 py-3 text-right font-medium'>In stock</th>
-                        <th className='px-3 py-3 text-right font-medium'>Unit price</th>
-                        <th className='px-4 py-3 text-right font-medium'>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className='divide-y'>
-                      {visibleLocalResults.map(product => (
-                        <tr key={product.id} className='bg-background transition-colors hover:bg-muted/30'>
-                          <td className='px-4 py-3'>
-                            <p className='font-semibold'>{product.name}</p>
-                            <p className='mt-1 text-xs text-muted-foreground'>
-                              {[product.inn_name, product.dosage_strength, product.dosage_form, product.manufacturer].filter(Boolean).join(' · ') || 'No additional details'}
-                            </p>
-                          </td>
-                          <td className='px-3 py-3 text-xs text-muted-foreground'>
-                            <p>{product.sku}</p>
-                            {(product.barcode || product.gtin) && <p className='mt-1'>{product.barcode || product.gtin}</p>}
-                          </td>
-                          <td className='px-3 py-3 text-right'>
-                            <span className={product.stock < 1 ? 'font-semibold text-destructive' : product.stock <= 5 ? 'font-semibold text-amber-700 dark:text-amber-400' : 'font-medium text-emerald-700 dark:text-emerald-400'}>
-                              {product.stock}
-                            </span>
-                          </td>
-                          <td className='px-3 py-3 text-right font-semibold tabular-nums'>{money(product.price)}</td>
-                          <td className='px-4 py-3 text-right'>
-                            <Button size='sm' onClick={() => addToCart(product)} disabled={product.stock < 1}>
-                              <Plus className='mr-1 size-4' /> Add
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {query.trim().length >= 2 && (
-            <Card className='shadow-sm'>
-              <CardHeader className='border-b border-violet-500/15 bg-violet-500/[0.045] pb-2'>
-                <div className='flex flex-wrap items-center justify-between gap-2'>
-                  <div>
-                    <CardTitle className='flex items-center gap-2 text-sm'><BookOpen className='size-4 text-violet-700 dark:text-violet-300' /> International medicine reference</CardTitle>
-                    <p className='mt-1 text-xs text-muted-foreground'>Reference information only — not a pharmacy stock item.</p>
-                  </div>
-                  <Badge variant='outline' className='border-violet-500/30 bg-violet-500/10 text-violet-800 dark:text-violet-200'>Reference catalog</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className='space-y-2'>
-                {referenceLoading && <p className='text-sm text-muted-foreground'>Searching reference catalog…</p>}
-                {referenceError && <p className='text-sm text-destructive'>The reference catalog is unavailable.</p>}
-                {!referenceLoading && !referenceError && referenceResults.length === 0 && <p className='text-xs text-muted-foreground'>No reference matches.</p>}
-                {referenceResults.map(item => (
-                  <div key={item.medicinal_product_id} className='flex flex-col justify-between gap-2 rounded-lg border p-3 sm:flex-row sm:items-center'>
-                    <div className='min-w-0'>
-                      <p className='font-medium'>{item.brand_name || [item.inn_name, item.strength].filter(Boolean).join(' ')}</p>
-                      <p className='mt-1 text-xs text-muted-foreground'>{[item.inn_name, item.strength, item.dosage_form, item.manufacturer].filter(Boolean).join(' · ')}</p>
-                    </div>
-                    <Badge variant='outline' className='w-fit shrink-0 border-violet-500/30 bg-violet-500/10 text-violet-800 dark:text-violet-200'>Reference only</Badge>
-                  </div>
-                ))}
-                <p className='text-xs text-muted-foreground'>A reference record does not confirm local market authorization, pharmacy pricing or stock availability.</p>
-              </CardContent>
-            </Card>
-          )}
-        </main>
-
-        <aside className='space-y-4 xl:sticky xl:top-4'>
-          <Card className='overflow-hidden border-primary/20 shadow-sm'>
-            <CardHeader className='bg-primary/[0.045] pb-3'>
-              <div className='flex items-center justify-between gap-2'>
-                <CardTitle className='flex items-center gap-2 text-base'><ShoppingCart className='size-5 text-primary' /> Current sale</CardTitle>
-                <Badge>{quantity} units</Badge>
-              </div>
-              <p className='text-xs text-muted-foreground'>Draft receipt · Not submitted</p>
-            </CardHeader>
-            <CardContent className='space-y-4 pt-4'>
-              {cart.length === 0 ? (
-                <div className='rounded-xl border border-dashed px-4 py-9 text-center'>
-                  <ShoppingCart className='mx-auto mb-2 size-7 text-muted-foreground/60' />
-                  <p className='text-sm font-medium'>Your sale is empty</p>
-                  <p className='mt-1 text-xs text-muted-foreground'>Add a product from the search results.</p>
-                </div>
-              ) : (
-                <div className='max-h-[340px] space-y-3 overflow-y-auto pr-1'>
-                  {cart.map(item => (
-                    <div key={item.id} className='rounded-lg border p-3'>
-                      <div className='flex items-start justify-between gap-2'>
-                        <div className='min-w-0'>
-                          <p className='text-sm font-semibold leading-snug'>{item.name}</p>
-                          <p className='mt-1 text-xs text-muted-foreground'>{money(item.price)} / unit · Stock {item.stock}</p>
-                        </div>
-                        <Button variant='ghost' size='icon' className='size-7 shrink-0 text-muted-foreground hover:text-destructive' aria-label={`Remove ${item.name}`} onClick={() => setCart(items => items.filter(row => row.id !== item.id))}>
-                          <Trash2 className='size-4' />
-                        </Button>
-                      </div>
-                      <div className='mt-3 flex items-center justify-between gap-3'>
-                        <div className='flex items-center gap-2'>
-                          <Button variant='outline' size='icon' className='size-8' aria-label='Decrease quantity' onClick={() => updateQuantity(item.id, -1)}><Minus className='size-3' /></Button>
-                          <span className='w-6 text-center text-sm font-semibold tabular-nums'>{item.quantity}</span>
-                          <Button variant='outline' size='icon' className='size-8' aria-label='Increase quantity' disabled={item.quantity >= item.stock} onClick={() => updateQuantity(item.id, 1)}><Plus className='size-3' /></Button>
-                        </div>
-                        <span className='font-semibold tabular-nums'>{money(item.price * item.quantity)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className='rounded-xl bg-muted/40 p-3'>
-                <div className='mb-2 flex items-center gap-2 text-sm font-medium'><UserRound className='size-4 text-muted-foreground' /> Customer / loyalty</div>
-                <Input value={customer} onChange={event => setCustomer(event.target.value)} placeholder='Phone number or loyalty card' />
-                <p className='mt-1 text-xs text-muted-foreground'>Customer lookup and rewards are not connected yet.</p>
-              </div>
-
-              <div className='rounded-xl border p-3'>
-                <div className='mb-2 flex items-center gap-2 text-sm font-medium'><Tag className='size-4 text-muted-foreground' /> Receipt discount</div>
-                <div className='flex items-center gap-2'>
-                  <Input type='number' min='0' max='100' step='0.5' value={discount} onChange={event => setDiscount(event.target.value)} aria-label='Discount percentage' />
-                  <span className='text-sm text-muted-foreground'>%</span>
-                  <div className='flex gap-1'>
-                    {[0, 5, 10].map(value => <Button key={value} variant={discountPercent === value ? 'default' : 'outline'} size='sm' onClick={() => setDiscount(String(value))}>{value}%</Button>)}
-                  </div>
-                </div>
-              </div>
-
-              <div className='space-y-2 border-t pt-4 text-sm'>
-                <div className='flex justify-between text-muted-foreground'><span>Subtotal</span><span className='tabular-nums'>{money(subtotal)}</span></div>
-                <div className='flex justify-between text-rose-700 dark:text-rose-400'><span>Discount</span><span className='tabular-nums'>−{money(discountAmount)}</span></div>
-                <div className='flex items-end justify-between gap-3 rounded-lg bg-primary/[0.06] p-3'>
-                  <span className='font-semibold'>Total due</span>
-                  <span className='text-2xl font-bold tracking-tight tabular-nums'>{money(total)}</span>
-                </div>
-              </div>
-
-              <Button className='h-12 w-full text-base' size='lg' onClick={beginPayment} disabled={!cart.length}>
-                <CreditCard className='mr-2 size-5' /> Review payment
-              </Button>
-              <Button variant='outline' className='w-full' onClick={resetSale} disabled={!cart.length && !customer && discountPercent === 0}>
-                <X className='mr-2 size-4' /> Clear sale
-              </Button>
-              <p className='text-xs leading-relaxed text-muted-foreground'>Checkout is in review-only mode. A completed sale requires an atomic backend transaction for receipt lines, payment and stock allocation.</p>
-            </CardContent>
-          </Card>
-
-          <div className='grid grid-cols-3 gap-2'>
-            {[
-              { label: 'Items', value: String(cart.length), tone: 'bg-sky-500/10 text-sky-700 dark:text-sky-300', icon: Package },
-              { label: 'Units', value: String(quantity), tone: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300', icon: Layers },
-              { label: 'Discount', value: `${discountPercent}%`, tone: 'bg-rose-500/10 text-rose-700 dark:text-rose-300', icon: Percent },
-            ].map(metric => (
-              <div key={metric.label} className='rounded-xl border bg-background p-3'>
-                <div className={`mb-2 flex size-8 items-center justify-center rounded-lg ${metric.tone}`}><metric.icon className='size-4' /></div>
-                <p className='text-lg font-bold tabular-nums'>{metric.value}</p>
-                <p className='text-xs text-muted-foreground'>{metric.label}</p>
-              </div>
-            ))}
-          </div>
-        </aside>
+        <section aria-label='Поиск препаратов' className='mt-auto max-h-[42vh] shrink-0 space-y-3 overflow-y-auto'>
+            <form aria-label='Поиск препарата' onSubmit={e => { e.preventDefault(); if (results.length === 1) addProduct(results[0]) }} className='flex gap-2'><Input ref={searchRef} value={query} onChange={e => setQuery(e.target.value)} placeholder='Введите название препарата…' className={`h-12 text-base transition-shadow ${searchActive ? 'ring-2 ring-primary ring-offset-2' : ''}`} onFocus={() => setSearchActive(true)} /><Button type='submit' className='h-12'><Search className='mr-2 size-4' /> Поиск</Button></form>
+            {loading && <p className='py-4 text-center text-sm text-muted-foreground'>Ищем препараты…</p>}
+            {!loading && query.trim().length >= 2 && results.length === 0 && <p className='py-5 text-center text-sm text-muted-foreground'>В ассортименте этой аптеки совпадений нет.</p>}
+            {results.map(product => <div key={product.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'><div className='min-w-0 flex-1'><p className='font-semibold'>{product.name}</p><p className='text-xs text-muted-foreground'>Бренд / производитель: {product.manufacturer || 'не указан'} · МНН: {product.inn_name || 'не указано'}</p><p className='text-xs text-muted-foreground'>{[product.dosage_strength, product.dosage_form].filter(Boolean).join(' · ')}</p><p className='mt-1 text-xs text-muted-foreground'>SKU: {product.sku} · Доступно: {product.stock} · Цена: {money(product.price)}</p><p className='text-xs text-muted-foreground'>Штрихкод: {product.barcode || product.gtin || 'не указан'}</p></div><Button onClick={() => addProduct(product)} disabled={product.stock < 1}><Plus className='mr-1 size-4' /> Добавить</Button></div>)}
+            {query.trim().length >= 2 && referenceResults.length > 0 && <div className='space-y-2 border-t pt-3'><p className='text-sm font-semibold'>Международный справочник — только для ознакомления</p>{referenceResults.map((item, index) => <div key={item.source_record_id ?? item.medicinal_product_id ?? index} className='rounded-lg border border-dashed p-3'><p className='font-medium'>{item.brand_name || item.inn_name}</p><p className='text-xs text-muted-foreground'>Бренд: {item.brand_name || 'не указан'} · Производитель: {item.manufacturer || 'не указан'}</p><p className='text-xs text-muted-foreground'>{[item.inn_name, item.strength, item.dosage_form, item.authorization_country].filter(Boolean).join(' · ')}</p><p className='text-xs text-muted-foreground'>Штрихкод / GTIN: {item.gtin || 'нет в источнике'} · Остаток и срок годности: определяются только после заведения партии в аптеке</p><Badge variant='outline' className='mt-2'>Справочная запись — не товар аптеки</Badge></div>)}</div>}
+        </section>
       </div>
 
-      {paymentOpen && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4' role='presentation' onMouseDown={event => { if (event.target === event.currentTarget) setPaymentOpen(false) }}>
-          <section role='dialog' aria-modal='true' aria-labelledby='payment-title' className='w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl'>
-            <div className='mb-4 flex items-center justify-between'>
-              <div>
-                <h2 id='payment-title' className='text-xl font-bold'>Payment review</h2>
-                <p className='text-sm text-muted-foreground'>Verify the amount received.</p>
-              </div>
-              <Button variant='ghost' size='icon' onClick={() => setPaymentOpen(false)} aria-label='Close payment review'><X className='size-4' /></Button>
-            </div>
-            <div className='rounded-xl bg-primary/5 p-4'>
-              <p className='text-sm text-muted-foreground'>Total due</p>
-              <p className='text-3xl font-bold tabular-nums'>{money(total)}</p>
-            </div>
-            <label className='mt-4 block text-sm font-medium' htmlFor='cash-received'>Cash received (₴)</label>
-            <Input id='cash-received' type='number' min='0' step='0.01' value={cashReceived} onChange={event => setCashReceived(event.target.value)} className='mt-2 h-11' />
-            <div className='mt-3 flex justify-between rounded-lg border p-3 text-sm'>
-              <span className='text-muted-foreground'>Change due</span>
-              <strong className={cash < total ? 'text-destructive' : 'text-emerald-600'}>{money(Math.max(0, cash - total))}</strong>
-            </div>
-            <div className='mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm'>
-              Sale completion is disabled. The backend must atomically persist receipt lines, payment and stock movements before checkout can be enabled.
-            </div>
-            <Button className='mt-4 w-full' variant='outline' onClick={closePaymentReview}>Close review — no sale recorded</Button>
-          </section>
-        </div>
-      )}
+      {receivingOpen && <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'><section role='dialog' aria-modal='true' aria-labelledby='receiving-title' className='w-full max-w-lg space-y-4 rounded-xl border bg-background p-5 shadow-xl'><div className='flex items-center justify-between'><h2 id='receiving-title' className='text-xl font-bold'>Приёмка лекарств на склад</h2><Button size='icon' variant='ghost' onClick={() => setReceivingOpen(false)} aria-label='Закрыть'><X /></Button></div><p className='text-sm text-muted-foreground'>Приход будет записан в остатки выбранной аптеки и сразу станет доступен POS с учётом срока годности.</p><label className='block text-sm font-medium'>Найти товар<Input className='mt-2 h-11' value={query} onChange={e => setQuery(e.target.value)} placeholder='Название, МНН, SKU или штрихкод' /></label><div className='max-h-36 space-y-1 overflow-y-auto rounded-md border p-2'>{results.map(product => <button type='button' key={product.id} onClick={() => setReceivingProductId(String(product.id))} className={`flex w-full items-center justify-between rounded-md p-2 text-left text-sm hover:bg-muted ${receivingProductId === String(product.id) ? 'bg-primary/10 outline outline-1 outline-primary' : ''}`}><span>{product.name}<span className='block text-xs text-muted-foreground'>{product.sku} · {product.manufacturer || 'производитель не указан'}</span></span><span>{money(product.price)}</span></button>)}{query.trim().length >= 2 && results.length === 0 && <p className='p-2 text-xs text-muted-foreground'>Товар не найден в локальном ассортименте. Сначала заведите его как товар аптеки.</p>}</div><label className='block text-sm font-medium'>Номер партии / серии<Input className='mt-2 h-11' value={receivingLot} onChange={e => setReceivingLot(e.target.value)} maxLength={100} /></label><label className='block text-sm font-medium'>Срок годности<Input className='mt-2 h-11' type='date' min={new Date().toISOString().slice(0,10)} value={receivingExpiry} onChange={e => setReceivingExpiry(e.target.value)} /></label><label className='block text-sm font-medium'>Количество поступления<Input className='mt-2 h-11' type='number' min='1' step='1' value={receivingQuantity} onChange={e => setReceivingQuantity(e.target.value)} /></label><div className='flex gap-2'><Button className='flex-1' disabled={processing || !receivingProductId || !receivingLot.trim() || !receivingExpiry || Number(receivingQuantity) <= 0} onClick={() => void receiveStock()}>{processing ? 'Сохранение…' : 'Принять на склад'}</Button><Button variant='outline' onClick={() => setReceivingOpen(false)} disabled={processing}>Отмена</Button></div></section></div>}
+
+      {checkoutOpen && <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'><section role='dialog' aria-modal='true' aria-labelledby='checkout-title' className='w-full max-w-md space-y-4 rounded-xl border bg-background p-5 shadow-xl'><div className='flex items-center justify-between'><h2 id='checkout-title' className='text-xl font-bold'>Оплата и закрытие чека</h2><Button size='icon' variant='ghost' onClick={() => setCheckoutOpen(false)} aria-label='Закрыть'><X /></Button></div><div className='rounded-lg border bg-background p-4'><div className='mb-3 flex items-center justify-between'><p className='font-semibold'>Предпросмотр кассового чека</p><span className='text-xs text-muted-foreground'>НЕ ОПЛАЧЕНО</span></div><div className='space-y-2 border-y border-dashed py-3 text-sm'>{cart.map(item => <div key={item.id} className='flex justify-between gap-3'><div className='min-w-0'><p className='font-medium'>{item.name}</p><p className='text-xs text-muted-foreground'>{item.quantity} × {money(item.price)}</p></div><strong className='shrink-0'>{money(item.price * item.quantity)}</strong></div>)}</div><div className='flex justify-between pt-3 text-sm'><span>Количество</span><span>{units} шт.</span></div><div className='mt-2 flex justify-between text-lg font-bold'><span>ИТОГО</span><span>{money(total)}</span></div><p className='mt-2 text-xs text-muted-foreground'>Это предварительный чек. Продажа и списание фиксируются только после подтверждения оплаты.</p></div><label className='block text-sm font-medium'>Способ оплаты<select className='mt-2 h-11 w-full rounded-md border bg-background px-3' value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as typeof paymentMethod)}><option value='cash'>Наличными</option><option value='card_terminal'>Банковской картой через терминал</option><option value='online'>Онлайн-оплата</option></select></label>{paymentMethod === 'cash' ? <label className='block text-sm font-medium'>Получено наличными<Input className='mt-2 h-11' type='number' min='0' step='0.01' value={cashReceived} onChange={e => setCashReceived(e.target.value)} /><span className='mt-2 block text-sm text-muted-foreground'>Сдача: {money(Math.max(0, cash - total))}</span></label> : <p className='rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm'>Оплата картой или онлайн завершится только после подтверждения платёжного провайдера. До подтверждения продажа останется ожидающей, а остаток будет зарезервирован.</p>}<Button className='w-full' size='lg' disabled={processing || !pharmacyId || (paymentMethod === 'cash' && cash < total)} onClick={() => void completeSale()}>{processing ? 'Обработка…' : paymentMethod === 'cash' ? 'Подтвердить оплату и сформировать чек' : 'Создать платёж'}</Button><Button variant='outline' className='w-full' onClick={() => setCheckoutOpen(false)} disabled={processing}>Назад к препаратам</Button></section></div>}
     </div>
   )
 }
