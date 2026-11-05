@@ -11,6 +11,7 @@ type LocalProduct = {
   dosage_form: string | null; units_per_pack: number; manufacturer: string | null
   inn_name: string | null; gtin: string | null; barcode: string | null
   price: number; stock: number; medicinal_product_id: number | null
+  batch_number?: string | null; expiry_date?: string | null
 }
 type DrugCatalogResult = {
   medicinal_product_id: number | null; drug_reference_id: number | null; inn_name: string
@@ -82,6 +83,8 @@ export function Pos() {
     return () => { cancelled = true; window.clearTimeout(timer) }
   }, [query, pharmacyId])
 
+  const formatExpiry = (value?: string | null) => value ? new Date(`${value}T00:00:00`).toLocaleDateString('uk-UA') : 'Не указан — определяется по партии'
+
   const addProduct = (product: LocalProduct) => {
     if (product.stock < 1) { setNotice('Нет доступного остатка.'); return }
     setCart(items => {
@@ -144,7 +147,7 @@ export function Pos() {
             <CardHeader className='pb-3'><div className='flex items-center justify-between'><CardTitle>Выбранные препараты</CardTitle><Badge>{units} шт.</Badge></div><p className='text-sm text-muted-foreground'>Проверьте количество и состав продажи.</p></CardHeader>
             <CardContent className='space-y-3'>
               {cart.map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'>
-                <div className='min-w-0 flex-1'><p className='font-semibold'>{item.name}</p><p className='text-xs text-muted-foreground'>{[item.inn_name, item.dosage_strength, item.dosage_form, item.manufacturer].filter(Boolean).join(' · ')}</p><p className='mt-1 text-sm'>{money(item.price)} · остаток {item.stock}</p></div>
+                <div className='min-w-0 flex-1'><p className='font-semibold'>{item.name}</p><p className='text-xs text-muted-foreground'>{[item.inn_name, item.dosage_strength, item.dosage_form, item.manufacturer].filter(Boolean).join(' · ')}</p><p className='mt-1 text-sm'>Цена: {money(item.price)} · Доступно: {item.stock} · В чеке: {item.quantity} шт.</p><p className='mt-1 text-xs text-muted-foreground'>Партия: {item.batch_number || 'будет определена при списании FEFO'} · Срок годности: {formatExpiry(item.expiry_date)}</p><p className='text-xs text-muted-foreground'>Штрихкод: {item.barcode || item.gtin || 'не указан'}</p></div>
                 <div className='flex items-center gap-2'><Button size='icon' variant='outline' aria-label='Уменьшить количество' onClick={() => changeQuantity(item.id, -1)}><Minus className='size-4' /></Button><span className='w-8 text-center font-semibold'>{item.quantity}</span><Button size='icon' variant='outline' aria-label='Увеличить количество' disabled={item.quantity >= item.stock} onClick={() => changeQuantity(item.id, 1)}><Plus className='size-4' /></Button><Button size='icon' variant='ghost' aria-label='Удалить препарат' onClick={() => setCart(rows => rows.filter(row => row.id !== item.id))}><Trash2 className='size-4' /></Button></div>
                 <strong className='w-28 text-right'>{money(item.price * item.quantity)}</strong>
               </div>)}
@@ -162,8 +165,8 @@ export function Pos() {
             <p className='flex items-center gap-2 text-xs text-muted-foreground'><Barcode className='size-4' /> Сканер штрихкода поддерживается как клавиатурный ввод.</p>
             {loading && <p className='py-4 text-center text-sm text-muted-foreground'>Ищем препараты…</p>}
             {!loading && query.trim().length >= 2 && results.length === 0 && <p className='py-5 text-center text-sm text-muted-foreground'>В ассортименте этой аптеки совпадений нет.</p>}
-            {results.map(product => <div key={product.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'><div className='min-w-0 flex-1'><p className='font-semibold'>{product.name}</p><p className='text-xs text-muted-foreground'>{[product.inn_name, product.dosage_strength, product.dosage_form, product.manufacturer].filter(Boolean).join(' · ')}</p><p className='mt-1 text-xs text-muted-foreground'>SKU: {product.sku} · Остаток: {product.stock} · {money(product.price)}</p></div><Button onClick={() => addProduct(product)} disabled={product.stock < 1}><Plus className='mr-1 size-4' /> Добавить</Button></div>)}
-            {query.trim().length >= 2 && referenceResults.length > 0 && <div className='space-y-2 border-t pt-3'><p className='text-sm font-semibold'>Международный справочник — только для ознакомления</p>{referenceResults.map((item, index) => <div key={item.source_record_id ?? item.medicinal_product_id ?? index} className='rounded-lg border border-dashed p-3'><p className='font-medium'>{item.brand_name || item.inn_name}</p><p className='text-xs text-muted-foreground'>{[item.inn_name, item.strength, item.dosage_form, item.manufacturer, item.authorization_country].filter(Boolean).join(' · ')}</p><Badge variant='outline' className='mt-2'>Справочная запись — не товар аптеки</Badge></div>)}</div>}
+            {results.map(product => <div key={product.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'><div className='min-w-0 flex-1'><p className='font-semibold'>{product.name}</p><p className='text-xs text-muted-foreground'>Бренд / производитель: {product.manufacturer || 'не указан'} · МНН: {product.inn_name || 'не указано'}</p><p className='text-xs text-muted-foreground'>{[product.dosage_strength, product.dosage_form].filter(Boolean).join(' · ')}</p><p className='mt-1 text-xs text-muted-foreground'>SKU: {product.sku} · Доступно: {product.stock} · Цена: {money(product.price)}</p><p className='text-xs text-muted-foreground'>Штрихкод: {product.barcode || product.gtin || 'не указан'} · Срок годности: партия уточняется при списании FEFO</p></div><Button onClick={() => addProduct(product)} disabled={product.stock < 1}><Plus className='mr-1 size-4' /> Добавить</Button></div>)}
+            {query.trim().length >= 2 && referenceResults.length > 0 && <div className='space-y-2 border-t pt-3'><p className='text-sm font-semibold'>Международный справочник — только для ознакомления</p>{referenceResults.map((item, index) => <div key={item.source_record_id ?? item.medicinal_product_id ?? index} className='rounded-lg border border-dashed p-3'><p className='font-medium'>{item.brand_name || item.inn_name}</p><p className='text-xs text-muted-foreground'>Бренд: {item.brand_name || 'не указан'} · Производитель: {item.manufacturer || 'не указан'}</p><p className='text-xs text-muted-foreground'>{[item.inn_name, item.strength, item.dosage_form, item.authorization_country].filter(Boolean).join(' · ')}</p><p className='text-xs text-muted-foreground'>Штрихкод / GTIN: {item.gtin || 'нет в источнике'} · Остаток и срок годности: определяются только после заведения партии в аптеке</p><Badge variant='outline' className='mt-2'>Справочная запись — не товар аптеки</Badge></div>)}</div>}
             <p className='pt-1 text-xs text-muted-foreground'>В чек можно добавить только товар выбранной аптеки с назначенной ценой и доступным остатком. Справочные записи каталога не продаются напрямую.</p>
           </CardContent>
         </Card>
