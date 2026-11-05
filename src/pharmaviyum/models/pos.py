@@ -25,13 +25,14 @@ from src.pharmaviyum.models.user import User  # noqa: F401
 class Sale(Base):
     __tablename__ = "sales"
     __table_args__ = (
+        UniqueConstraint("receipt_number", name="uq_sales_receipt_number"),
         UniqueConstraint("pharmacy_id", "idempotency_key", name="uq_sales_pharmacy_idempotency"),
         CheckConstraint("subtotal >= 0 AND discount_total >= 0 AND total >= 0", name="ck_sales_amounts_nonnegative"),
         CheckConstraint("status IN ('awaiting_payment', 'completed', 'cancelled', 'refunded')", name="ck_sales_status"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    receipt_number: Mapped[str] = mapped_column(String(40), unique=True, nullable=False, index=True)
+    receipt_number: Mapped[str] = mapped_column(String(40), nullable=False)
     pharmacy_id: Mapped[int] = mapped_column(ForeignKey("pharmacies.id", ondelete="RESTRICT"), nullable=False, index=True)
     cashier_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True)
     idempotency_key: Mapped[str] = mapped_column(String(100), nullable=False)
