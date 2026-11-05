@@ -101,6 +101,7 @@ export function Pos() {
         .then(items => { if (!cancelled) setLocalResults(items) })
         .catch(() => { if (!cancelled) { setLocalResults([]); setLocalError(true) } })
         .finally(() => { if (!cancelled) setLoading(false) })
+      else setLoading(false)
       apiFetch<DrugCatalogResult[]>(`/drug-catalog/search?q=${encodeURIComponent(term)}&limit=8`)
         .then(items => { if (!cancelled) setReferenceResults(items) })
         .catch(() => { if (!cancelled) { setReferenceResults([]); setReferenceError(true) } })
@@ -217,6 +218,20 @@ export function Pos() {
     }
   }
 
+  const cancelPendingSale = async () => {
+    if (!lastSale || lastSale.status !== 'awaiting_payment' || checkoutLoading) return
+    setCheckoutLoading(true)
+    try {
+      await apiFetch<SaleResult>(`/api/v1/pos/sales/${lastSale.id}/cancel`, { method: 'POST' })
+      setLastSale({ ...lastSale, status: 'cancelled' })
+      setNotice(`Pending receipt ${lastSale.receipt_number} cancelled; reserved stock released.`)
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Could not cancel the pending sale.')
+    } finally {
+      setCheckoutLoading(false)
+    }
+  }
+
   const closePaymentReview = () => {
     setNotice('Payment review closed.')
     setPaymentOpen(false)
@@ -269,6 +284,7 @@ export function Pos() {
       {notice && (
         <div role='status' className='flex items-start justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm'>
           <span>{notice}</span>
+          {lastSale?.status === 'awaiting_payment' && <Button size='sm' variant='outline' onClick={() => void cancelPendingSale()} disabled={checkoutLoading}>Cancel pending payment</Button>}
           <button aria-label='Dismiss notification' onClick={() => setNotice('')}><X className='size-4' /></button>
         </div>
       )}
