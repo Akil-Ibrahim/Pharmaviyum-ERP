@@ -130,7 +130,8 @@ async def suggest_drug_catalog_source_matches(
         )
     source_payload = source_record.normalized_payload or {}
     if is_excluded_catalog_entry(
-        brand_name=source_payload.get("brand_name") or source_payload.get("product_name"),
+        brand_name=source_payload.get("brand_name")
+        or source_payload.get("product_name"),
         manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
         authorization_country=source_payload.get("authorization_country")
         or source_payload.get("country"),
@@ -207,7 +208,8 @@ async def review_drug_catalog_source(
         )
     source_payload = record.normalized_payload or {}
     if is_excluded_catalog_entry(
-        brand_name=source_payload.get("brand_name") or source_payload.get("product_name"),
+        brand_name=source_payload.get("brand_name")
+        or source_payload.get("product_name"),
         manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
         authorization_country=source_payload.get("authorization_country")
         or source_payload.get("country"),
