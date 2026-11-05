@@ -81,6 +81,7 @@ class SaleResponse(BaseModel):
     payments: list[PaymentResponse]
     cash_change: Decimal = Decimal("0.00")
 
+
 class InventoryReceiptCreate(BaseModel):
     """Validated stock receipt for a single pharmacy lot."""
 
