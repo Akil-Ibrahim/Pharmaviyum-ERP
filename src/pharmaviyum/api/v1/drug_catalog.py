@@ -250,21 +250,33 @@ async def review_drug_catalog_source(
             str(country_value).strip()[:100] if country_value else None
         )
 
-        product_statement = select(MedicinalProduct).where(
-            MedicinalProduct.drug_reference_id == reference.id,
-            MedicinalProduct.brand_name == brand
-            if brand is not None
-            else MedicinalProduct.brand_name.is_(None),
-            MedicinalProduct.strength == strength
-            if strength is not None
-            else MedicinalProduct.strength.is_(None),
-            MedicinalProduct.dosage_form == dosage_form
-            if dosage_form is not None
-            else MedicinalProduct.dosage_form.is_(None),
-            MedicinalProduct.authorization_country == authorization_country
-            if authorization_country is not None
-            else MedicinalProduct.authorization_country.is_(None),
-        ).order_by(MedicinalProduct.id.asc())
+        product_statement = (
+            select(MedicinalProduct)
+            .where(
+                MedicinalProduct.drug_reference_id == reference.id,
+                (
+                    MedicinalProduct.brand_name == brand
+                    if brand is not None
+                    else MedicinalProduct.brand_name.is_(None)
+                ),
+                (
+                    MedicinalProduct.strength == strength
+                    if strength is not None
+                    else MedicinalProduct.strength.is_(None)
+                ),
+                (
+                    MedicinalProduct.dosage_form == dosage_form
+                    if dosage_form is not None
+                    else MedicinalProduct.dosage_form.is_(None)
+                ),
+                (
+                    MedicinalProduct.authorization_country == authorization_country
+                    if authorization_country is not None
+                    else MedicinalProduct.authorization_country.is_(None)
+                ),
+            )
+            .order_by(MedicinalProduct.id.asc())
+        )
         existing_product = (
             await db.execute(product_statement.limit(1))
         ).scalar_one_or_none()
