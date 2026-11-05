@@ -34,7 +34,7 @@ class DrugCatalogSourceReview(BaseModel):
         has_reference = self.matched_drug_reference_id is not None
         has_product = self.matched_medicinal_product_id is not None
         if has_reference and has_product:
-            raise ValueError("Choose one match target, not both")
+            raise ValueError("Choose one match target or create_new, not both")
         if has_reference and self.create_new or has_product and self.create_new:
             raise ValueError("Choose an existing match or create_new, not both")
         if self.review_status == "approved" and not (
