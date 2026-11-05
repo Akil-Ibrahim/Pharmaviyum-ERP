@@ -600,19 +600,19 @@ PRODUCT_CATALOG.extend([
     dict(name="Norvasc 5 mg", sku="BRAND-NORVASC-5-90", dosage_strength="5 mg", dosage_form="tablet", units_per_pack=90, package_type="blister", blisters_per_pack=9, units_per_blister=10, manufacturer="Viatris", inn_name="Amlodipine", atc_code="C08CA01", price=18.90, rx=True, description="Synthetic demo reference/original product."),
     dict(name="Amlodipine 5 mg", sku="GEN-AMLOD-SANDOZ-5-30", dosage_strength="5 mg", dosage_form="tablet", units_per_pack=30, package_type="blister", blisters_per_pack=3, units_per_blister=10, manufacturer="Sandoz", inn_name="Amlodipine", atc_code="C08CA01", price=6.90, rx=True, description="Synthetic demo generic product."),
     dict(name="Lipitor 20 mg", sku="BRAND-LIPITOR-20-90", dosage_strength="20 mg", dosage_form="film-coated tablet", units_per_pack=90, package_type="blister", blisters_per_pack=9, units_per_blister=10, manufacturer="Viatris", inn_name="Atorvastatin", atc_code="C10AA05", price=22.50, rx=True, description="Synthetic demo reference/original product."),
-    dict(name="Atorvastatin 20 mg", sku="GEN-ATOR-TEVA-20-30", dosage_strength="20 mg", dosage_form="film-coated tablet", units_per_pack=30, package_type="blister", blisters_per_pack=3, units_per_blister=10, manufacturer="Teva", inn_name="Atorvastatin", atc_code="C10AA05", price=9.80, rx=True, description="Synthetic demo generic product."),
+    dict(name="Atorvastatin 20 mg", sku="GEN-ATOR-SANDOZ-20-30", dosage_strength="20 mg", dosage_form="film-coated tablet", units_per_pack=30, package_type="blister", blisters_per_pack=3, units_per_blister=10, manufacturer="Sandoz", inn_name="Atorvastatin", atc_code="C10AA05", price=9.80, rx=True, description="Synthetic demo generic product."),
     dict(name="Glucophage XR 500 mg", sku="BRAND-GLUCOPHAGE-XR-500-60", dosage_strength="500 mg", dosage_form="extended-release tablet", units_per_pack=60, package_type="blister", blisters_per_pack=6, units_per_blister=10, manufacturer="Merck", inn_name="Metformin", atc_code="A10BA02", price=16.50, rx=True, description="Synthetic demo reference/original product."),
-    dict(name="Metformin 500 mg", sku="GEN-MET-TEVA-500-60", dosage_strength="500 mg", dosage_form="film-coated tablet", units_per_pack=60, package_type="blister", blisters_per_pack=6, units_per_blister=10, manufacturer="Teva", inn_name="Metformin", atc_code="A10BA02", price=7.50, rx=True, description="Synthetic demo generic product."),
+    dict(name="Metformin 500 mg", sku="GEN-MET-SANDOZ-500-60", dosage_strength="500 mg", dosage_form="film-coated tablet", units_per_pack=60, package_type="blister", blisters_per_pack=6, units_per_blister=10, manufacturer="Sandoz", inn_name="Metformin", atc_code="A10BA02", price=7.50, rx=True, description="Synthetic demo generic product."),
     dict(name="Nexium 20 mg", sku="BRAND-NEXIUM-20-30", dosage_strength="20 mg", dosage_form="gastro-resistant tablet", units_per_pack=30, package_type="blister", blisters_per_pack=3, units_per_blister=10, manufacturer="AstraZeneca", inn_name="Esomeprazole", atc_code="A02BC05", price=24.90, rx=False, description="Synthetic demo reference/original product."),
     dict(name="Omeprazole 20 mg", sku="GEN-OME-SANDOZ-20-30", dosage_strength="20 mg", dosage_form="gastro-resistant capsule", units_per_pack=30, package_type="blister", blisters_per_pack=3, units_per_blister=10, manufacturer="Sandoz", inn_name="Omeprazole", atc_code="A02BC01", price=8.80, rx=False, description="Synthetic demo generic product."),
     dict(name="Ventolin 100 mcg/dose Inhaler", sku="BRAND-VENTOLIN-100-200", dosage_strength="100 mcg/dose", dosage_form="pressurized inhalation", units_per_pack=1, package_type="inhaler", blisters_per_pack=0, units_per_blister=0, manufacturer="GSK", inn_name="Salbutamol", atc_code="R03AC02", price=19.90, rx=True, description="Synthetic demo reference/original product."),
-    dict(name="Salbutamol 100 mcg/dose Inhaler", sku="GEN-SALB-TEVA-100-200", dosage_strength="100 mcg/dose", dosage_form="pressurized inhalation", units_per_pack=1, package_type="inhaler", blisters_per_pack=0, units_per_blister=0, manufacturer="Teva", inn_name="Salbutamol", atc_code="R03AC02", price=14.90, rx=True, description="Synthetic demo generic product."),
+    dict(name="Salbutamol 100 mcg/dose Inhaler", sku="GEN-SALB-SANDOZ-100-200", dosage_strength="100 mcg/dose", dosage_form="pressurized inhalation", units_per_pack=1, package_type="inhaler", blisters_per_pack=0, units_per_blister=0, manufacturer="Sandoz", inn_name="Salbutamol", atc_code="R03AC02", price=14.90, rx=True, description="Synthetic demo generic product."),
     dict(name="Zyrtec 10 mg", sku="BRAND-ZYRTEC-10-20", dosage_strength="10 mg", dosage_form="tablet", units_per_pack=20, package_type="blister", blisters_per_pack=2, units_per_blister=10, manufacturer="UCB", inn_name="Cetirizine", atc_code="R06AE07", price=12.90, rx=False, description="Synthetic demo reference/original product."),
     dict(name="Cetirizine 10 mg", sku="GEN-CET-SANDOZ-10-20", dosage_strength="10 mg", dosage_form="tablet", units_per_pack=20, package_type="blister", blisters_per_pack=2, units_per_blister=10, manufacturer="Sandoz", inn_name="Cetirizine", atc_code="R06AE07", price=6.30, rx=False, description="Synthetic demo generic product."),
     dict(name="Voltaren Emulgel 1%", sku="BRAND-VOLTAREN-1-50", dosage_strength="1%", dosage_form="gel", units_per_pack=1, package_type="tube", blisters_per_pack=0, units_per_blister=0, manufacturer="Haleon", inn_name="Diclofenac", atc_code="M02AA15", price=14.90, rx=False, description="Synthetic demo reference/original product."),
-    dict(name="Diclofenac 1% Gel", sku="GEN-DIC-TEVA-1-50", dosage_strength="1%", dosage_form="gel", units_per_pack=1, package_type="tube", blisters_per_pack=0, units_per_blister=0, manufacturer="Teva", inn_name="Diclofenac", atc_code="M02AA15", price=10.50, rx=False, description="Synthetic demo generic product."),
+    dict(name="Diclofenac 1% Gel", sku="GEN-DIC-SANDOZ-1-50", dosage_strength="1%", dosage_form="gel", units_per_pack=1, package_type="tube", blisters_per_pack=0, units_per_blister=0, manufacturer="Sandoz", inn_name="Diclofenac", atc_code="M02AA15", price=10.50, rx=False, description="Synthetic demo generic product."),
     dict(name="Nurofen 200 mg", sku="BRAND-NUROFEN-200-24", dosage_strength="200 mg", dosage_form="film-coated tablet", units_per_pack=24, package_type="blister", blisters_per_pack=2, units_per_blister=12, manufacturer="Reckitt", inn_name="Ibuprofen", atc_code="M01AE01", price=9.90, rx=False, description="Synthetic demo reference/original product."),
-    dict(name="Ibuprofen 200 mg", sku="GEN-IBU-TEVA-200-20", dosage_strength="200 mg", dosage_form="film-coated tablet", units_per_pack=20, package_type="blister", blisters_per_pack=2, units_per_blister=10, manufacturer="Teva", inn_name="Ibuprofen", atc_code="M01AE01", price=5.10, rx=False, description="Synthetic demo generic product."),
+    dict(name="Ibuprofen 200 mg", sku="GEN-IBU-SANDOZ-200-20", dosage_strength="200 mg", dosage_form="film-coated tablet", units_per_pack=20, package_type="blister", blisters_per_pack=2, units_per_blister=10, manufacturer="Sandoz", inn_name="Ibuprofen", atc_code="M01AE01", price=5.10, rx=False, description="Synthetic demo generic product."),
     dict(name="Panadol 500 mg", sku="BRAND-PANADOL-500-24", dosage_strength="500 mg", dosage_form="tablet", units_per_pack=24, package_type="blister", blisters_per_pack=2, units_per_blister=12, manufacturer="Haleon", inn_name="Paracetamol", atc_code="N02BE01", price=7.90, rx=False, description="Synthetic demo reference/original product."),
     dict(name="Paracetamol 500 mg", sku="GEN-PAR-SANDOZ-500-20", dosage_strength="500 mg", dosage_form="tablet", units_per_pack=20, package_type="blister", blisters_per_pack=2, units_per_blister=10, manufacturer="Sandoz", inn_name="Paracetamol", atc_code="N02BE01", price=4.20, rx=False, description="Synthetic demo generic product."),
     dict(name="Plavix 75 mg", sku="BRAND-PLAVIX-75-28", dosage_strength="75 mg", dosage_form="film-coated tablet", units_per_pack=28, package_type="blister", blisters_per_pack=2, units_per_blister=14, manufacturer="Sanofi", inn_name="Clopidogrel", atc_code="B01AC04", price=21.90, rx=True, description="Synthetic demo reference/original product."),
@@ -622,67 +622,39 @@ PRODUCT_CATALOG.extend([
 
 PATIENT_PROFILES = [
 ("Hypertension","I10",["BRAND-NORVASC-5-90","GEN-AMLOD-SANDOZ-5-30","BRAND-LIPITOR-20-90","BRAND-NUROFEN-200-24","GEN-PAR-SANDOZ-500-20","BRAND-NEXIUM-20-30"]),
-("Type 2 diabetes","E11.9",["BRAND-GLUCOPHAGE-XR-500-60","GEN-MET-TEVA-500-60","BRAND-LIPITOR-20-90","GEN-AMLOD-SANDOZ-5-30","GEN-PAR-SANDOZ-500-20","BRAND-NEXIUM-20-30"]),
-("Hyperlipidemia","E78.5",["BRAND-LIPITOR-20-90","BRAND-CRESTOR-10-90","GEN-ATOR-TEVA-20-30","GEN-ROSU-SANDOZ-10-30","BRAND-NEXIUM-20-30","BRAND-PANADOL-500-24"]),
-("Asthma","J45.909",["BRAND-VENTOLIN-100-200","GEN-SALB-TEVA-100-200","BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-PANADOL-500-24","BRAND-NEXIUM-20-30"]),
+("Type 2 diabetes","E11.9",["BRAND-GLUCOPHAGE-XR-500-60","GEN-MET-SANDOZ-500-60","BRAND-LIPITOR-20-90","GEN-AMLOD-SANDOZ-5-30","GEN-PAR-SANDOZ-500-20","BRAND-NEXIUM-20-30"]),
+("Hyperlipidemia","E78.5",["BRAND-LIPITOR-20-90","BRAND-CRESTOR-10-90","GEN-ATOR-SANDOZ-20-30","GEN-ROSU-SANDOZ-10-30","BRAND-NEXIUM-20-30","BRAND-PANADOL-500-24"]),
+("Asthma","J45.909",["BRAND-VENTOLIN-100-200","GEN-SALB-SANDOZ-100-200","BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-PANADOL-500-24","BRAND-NEXIUM-20-30"]),
 ("Allergic rhinitis","J30.9",["BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-VENTOLIN-100-200","GEN-PAR-SANDOZ-500-20","BRAND-NEXIUM-20-30","BRAND-NUROFEN-200-24"]),
 ("GERD","K21.9",["BRAND-NEXIUM-20-30","GEN-OME-SANDOZ-20-30","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20","BRAND-NUROFEN-200-24","BRAND-ZYRTEC-10-20"]),
-("Osteoarthritis","M19.90",["BRAND-VOLTAREN-1-50","GEN-DIC-TEVA-1-50","BRAND-NUROFEN-200-24","GEN-IBU-TEVA-200-20","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
-("Atopic dermatitis","L20.9",["BRAND-VOLTAREN-1-50","GEN-DIC-TEVA-1-50","BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
-("Coronary artery disease","I25.10",["BRAND-NORVASC-5-90","GEN-AMLOD-SANDOZ-5-30","BRAND-PLAVIX-75-28","BRAND-LIPITOR-20-90","GEN-ATOR-TEVA-20-30","BRAND-NEXIUM-20-30"]),
+("Osteoarthritis","M19.90",["BRAND-VOLTAREN-1-50","GEN-DIC-SANDOZ-1-50","BRAND-NUROFEN-200-24","GEN-IBU-SANDOZ-200-20","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
+("Atopic dermatitis","L20.9",["BRAND-VOLTAREN-1-50","GEN-DIC-SANDOZ-1-50","BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
+("Coronary artery disease","I25.10",["BRAND-NORVASC-5-90","GEN-AMLOD-SANDOZ-5-30","BRAND-PLAVIX-75-28","BRAND-LIPITOR-20-90","GEN-ATOR-SANDOZ-20-30","BRAND-NEXIUM-20-30"]),
 ("Chronic dyspepsia","K30",["BRAND-NEXIUM-20-30","GEN-OME-SANDOZ-20-30","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20","BRAND-ZYRTEC-10-20","BRAND-NUROFEN-200-24"]),
-("COPD","J44.9",["BRAND-VENTOLIN-100-200","GEN-SALB-TEVA-100-200","BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-PANADOL-500-24","BRAND-NEXIUM-20-30"]),
-("Chronic musculoskeletal pain","M79.18",["BRAND-VOLTAREN-1-50","GEN-DIC-TEVA-1-50","BRAND-NUROFEN-200-24","GEN-IBU-TEVA-200-20","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
-("Diabetic dyslipidemia","E11.69",["BRAND-GLUCOPHAGE-XR-500-60","GEN-MET-TEVA-500-60","BRAND-LIPITOR-20-90","GEN-ATOR-TEVA-20-30","BRAND-NORVASC-5-90","GEN-AMLOD-SANDOZ-5-30"]),
+("COPD","J44.9",["BRAND-VENTOLIN-100-200","GEN-SALB-SANDOZ-100-200","BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-PANADOL-500-24","BRAND-NEXIUM-20-30"]),
+("Chronic musculoskeletal pain","M79.18",["BRAND-VOLTAREN-1-50","GEN-DIC-SANDOZ-1-50","BRAND-NUROFEN-200-24","GEN-IBU-SANDOZ-200-20","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
+("Diabetic dyslipidemia","E11.69",["BRAND-GLUCOPHAGE-XR-500-60","GEN-MET-SANDOZ-500-60","BRAND-LIPITOR-20-90","GEN-ATOR-SANDOZ-20-30","BRAND-NORVASC-5-90","GEN-AMLOD-SANDOZ-5-30"]),
 ("Hypertension with hyperlipidemia","I10",["BRAND-NORVASC-5-90","GEN-AMLOD-SANDOZ-5-30","BRAND-CRESTOR-10-90","GEN-ROSU-SANDOZ-10-30","BRAND-PANADOL-500-24","BRAND-NEXIUM-20-30"]),
 ("Seasonal allergy","J30.2",["BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-NEXIUM-20-30","GEN-OME-SANDOZ-20-30","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
-("Chronic pain","G89.29",["BRAND-NUROFEN-200-24","GEN-IBU-TEVA-200-20","BRAND-VOLTAREN-1-50","GEN-DIC-TEVA-1-50","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
-("Atherosclerotic cardiovascular disease","I25.10",["BRAND-PLAVIX-75-28","BRAND-LIPITOR-20-90","BRAND-NORVASC-5-90","GEN-ATOR-TEVA-20-30","GEN-AMLOD-SANDOZ-5-30","BRAND-NEXIUM-20-30"]),
-("Respiratory allergy","J30.9",["BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-VENTOLIN-100-200","GEN-SALB-TEVA-100-200","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
-("Chronic gastritis","K29.70",["BRAND-NEXIUM-20-30","GEN-OME-SANDOZ-20-30","BRAND-NUROFEN-200-24","GEN-IBU-TEVA-200-20","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
-("Mixed cardiovascular risk","I10",["BRAND-NORVASC-5-90","BRAND-LIPITOR-20-90","BRAND-PLAVIX-75-28","GEN-AMLOD-SANDOZ-5-30","GEN-ATOR-TEVA-20-30","BRAND-NEXIUM-20-30"]),
+("Chronic pain","G89.29",["BRAND-NUROFEN-200-24","GEN-IBU-SANDOZ-200-20","BRAND-VOLTAREN-1-50","GEN-DIC-SANDOZ-1-50","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
+("Atherosclerotic cardiovascular disease","I25.10",["BRAND-PLAVIX-75-28","BRAND-LIPITOR-20-90","BRAND-NORVASC-5-90","GEN-ATOR-SANDOZ-20-30","GEN-AMLOD-SANDOZ-5-30","BRAND-NEXIUM-20-30"]),
+("Respiratory allergy","J30.9",["BRAND-ZYRTEC-10-20","GEN-CET-SANDOZ-10-20","BRAND-VENTOLIN-100-200","GEN-SALB-SANDOZ-100-200","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
+("Chronic gastritis","K29.70",["BRAND-NEXIUM-20-30","GEN-OME-SANDOZ-20-30","BRAND-NUROFEN-200-24","GEN-IBU-SANDOZ-200-20","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
+("Mixed cardiovascular risk","I10",["BRAND-NORVASC-5-90","BRAND-LIPITOR-20-90","BRAND-PLAVIX-75-28","GEN-AMLOD-SANDOZ-5-30","GEN-ATOR-SANDOZ-20-30","BRAND-NEXIUM-20-30"]),
 ]
 
-# Pharmaviyum excludes Teva and explicitly Israel-origin catalog entries.
-_EXCLUDED_COUNTRIES = {"il", "isr", "israel", "state of israel", "израиль", "ізраїль"}
-_EXCLUDED_PROFILE_SKUS = {
-    "GEN-MET-TEVA-500-60": "BRAND-GLUCOPHAGE-XR-500-60",
-    "GEN-ATOR-TEVA-20-30": "BRAND-LIPITOR-20-90",
-    "GEN-SALB-TEVA-100-200": "BRAND-VENTOLIN-100-200",
-    "GEN-DIC-TEVA-1-50": "BRAND-VOLTAREN-1-50",
-    "GEN-IBU-TEVA-200-20": "BRAND-NUROFEN-200-24",
-}
-
-
-def _is_excluded_demo_product(spec: dict) -> bool:
-    text = " ".join(
-        str(spec.get(key) or "")
-        for key in ("name", "sku", "manufacturer", "brand_name")
-    ).casefold()
-    if "teva" in text:
-        return True
-    return any(
-        str(spec.get(key) or "").strip().casefold() in _EXCLUDED_COUNTRIES
-        for key in (
-            "country",
-            "authorization_country",
-            "manufacturer_country",
-            "country_of_origin",
-            "country_of_manufacture",
-        )
-    )
-
+# Keep synthetic seed data subject to the same catalog exclusion policy.
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
 PRODUCT_CATALOG[:] = [
-    spec for spec in PRODUCT_CATALOG if not _is_excluded_demo_product(spec)
-]
-PATIENT_PROFILES[:] = [
-    (
-        condition,
-        icd10,
-        [_EXCLUDED_PROFILE_SKUS.get(sku, sku) for sku in skus],
+    spec
+    for spec in PRODUCT_CATALOG
+    if not is_excluded_catalog_entry(
+        brand_name=spec.get("name"),
+        manufacturer=spec.get("manufacturer"),
+        authorization_country=spec.get("authorization_country"),
+        payload=spec,
     )
-    for condition, icd10, skus in PATIENT_PROFILES
 ]
 
 
