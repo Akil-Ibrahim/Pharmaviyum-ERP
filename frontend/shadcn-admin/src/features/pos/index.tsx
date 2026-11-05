@@ -16,11 +16,12 @@ type LocalProduct = {
   price: number; stock: number; medicinal_product_id: number | null
 }
 type DrugCatalogResult = {
-  medicinal_product_id: number; drug_reference_id: number; inn_name: string
+  medicinal_product_id: number | null; drug_reference_id: number | null; inn_name: string
   atc_code: string | null; ingredient_names: string[]; brand_name: string | null
   product_type: string; manufacturer: string | null; strength: string | null
   dosage_form: string | null; route: string | null; package_description: string | null
   gtin: string | null; regulatory_id: string | null
+  source_record_id?: string | null; source_name?: string | null; review_status?: string
 }
 type CartItem = LocalProduct & { quantity: number }
 type PharmacyOption = { id: number; name: string }
@@ -102,7 +103,7 @@ export function Pos() {
         .catch(() => { if (!cancelled) { setLocalResults([]); setLocalError(true) } })
         .finally(() => { if (!cancelled) setLoading(false) })
       else setLoading(false)
-      apiFetch<DrugCatalogResult[]>(`/drug-catalog/search?q=${encodeURIComponent(term)}&limit=8`)
+      apiFetch<DrugCatalogResult[]>(`/drug-catalog/search?q=${encodeURIComponent(term)}&limit=50`)
         .then(items => { if (!cancelled) setReferenceResults(items) })
         .catch(() => { if (!cancelled) { setReferenceResults([]); setReferenceError(true) } })
         .finally(() => { if (!cancelled) setReferenceLoading(false) })
@@ -439,13 +440,13 @@ export function Pos() {
                 {referenceLoading && <p className='text-sm text-muted-foreground'>Searching reference catalog…</p>}
                 {referenceError && <p className='text-sm text-destructive'>The reference catalog is unavailable.</p>}
                 {!referenceLoading && !referenceError && referenceResults.length === 0 && <p className='text-xs text-muted-foreground'>No reference matches.</p>}
-                {referenceResults.map(item => (
-                  <div key={item.medicinal_product_id} className='flex flex-col justify-between gap-2 rounded-lg border p-3 sm:flex-row sm:items-center'>
+                {referenceResults.map((item, index) => (
+                  <div key={`${item.source_name ?? 'catalog'}-${item.source_record_id ?? item.medicinal_product_id ?? index}`} className='flex flex-col justify-between gap-2 rounded-lg border p-3 sm:flex-row sm:items-center'>
                     <div className='min-w-0'>
                       <p className='font-medium'>{item.brand_name || [item.inn_name, item.strength].filter(Boolean).join(' ')}</p>
-                      <p className='mt-1 text-xs text-muted-foreground'>{[item.inn_name, item.strength, item.dosage_form, item.manufacturer].filter(Boolean).join(' · ')}</p>
+                      <p className='mt-1 text-xs text-muted-foreground'>{[item.inn_name, item.strength, item.dosage_form, item.manufacturer, item.authorization_country].filter(Boolean).join(' · ')}</p>
                     </div>
-                    <Badge variant='outline' className='w-fit shrink-0 border-violet-500/30 bg-violet-500/10 text-violet-800 dark:text-violet-200'>Reference only</Badge>
+                    <Badge variant='outline' className='w-fit shrink-0 border-violet-500/30 bg-violet-500/10 text-violet-800 dark:text-violet-200'>{item.review_status === 'pending_review' ? 'Pending review · reference only' : 'Reference only'}</Badge>
                   </div>
                 ))}
                 <p className='text-xs text-muted-foreground'>A reference record does not confirm local market authorization, pharmacy pricing or stock availability.</p>
