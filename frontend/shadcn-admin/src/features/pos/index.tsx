@@ -22,6 +22,7 @@ type DrugCatalogResult = {
   dosage_form: string | null; route: string | null; package_description: string | null
   gtin: string | null; regulatory_id: string | null; authorization_country: string | null
   source_record_id?: string | null; source_name?: string | null; review_status?: string
+  authorization_status?: string | null; product_class?: string | null
 }
 type CartItem = LocalProduct & { quantity: number }
 type PharmacyOption = { id: number; name: string }
@@ -452,7 +453,7 @@ export function Pos() {
                   <div key={`${item.source_name ?? 'catalog'}-${item.source_record_id ?? item.medicinal_product_id ?? index}`} className='flex flex-col justify-between gap-2 rounded-lg border p-3 sm:flex-row sm:items-center'>
                     <div className='min-w-0'>
                       <p className='font-medium'>{item.brand_name || [item.inn_name, item.strength].filter(Boolean).join(' ')}</p>
-                      <p className='mt-1 text-xs text-muted-foreground'>{[item.inn_name, item.strength, item.dosage_form, item.manufacturer, item.authorization_country].filter(Boolean).join(' · ')}</p>
+                      <p className='mt-1 text-xs text-muted-foreground'>{[item.inn_name, item.strength, item.dosage_form, item.manufacturer, item.authorization_country, item.authorization_status].filter(Boolean).join(' · ')}</p>
                     </div>
                     <Badge variant='outline' className='w-fit shrink-0 border-violet-500/30 bg-violet-500/10 text-violet-800 dark:text-violet-200'>{item.review_status === 'pending_review' ? 'Pending review · reference only' : 'Reference only'}</Badge>
                   </div>
