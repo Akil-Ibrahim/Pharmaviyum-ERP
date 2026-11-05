@@ -248,6 +248,16 @@ async def review_drug_catalog_source(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Matched medicinal product not found",
             )
+        if is_excluded_catalog_entry(
+            brand_name=medicinal_product.brand_name,
+            manufacturer=medicinal_product.manufacturer,
+            authorization_country=medicinal_product.authorization_country,
+            manufacturer_country=medicinal_product.manufacturer_country,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Excluded medicines cannot be linked during catalog review",
+            )
 
     if payload.create_new:
         source = record.normalized_payload or {}
