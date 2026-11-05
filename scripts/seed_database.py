@@ -10,6 +10,7 @@ from src.pharmaviyum.core.database import AsyncSessionLocal
 from src.pharmaviyum.models import Inventory, Patient, Pharmacy, Prescription, Product, ProductBatch
 from src.pharmaviyum.models.patients import PatientPurchase
 from src.pharmaviyum.models.patients.patient_condition import PatientCondition
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
 random.seed(20260918)
 
@@ -642,9 +643,6 @@ PATIENT_PROFILES = [
 ("Chronic gastritis","K29.70",["BRAND-NEXIUM-20-30","GEN-OME-SANDOZ-20-30","BRAND-NUROFEN-200-24","GEN-IBU-SANDOZ-200-20","BRAND-PANADOL-500-24","GEN-PAR-SANDOZ-500-20"]),
 ("Mixed cardiovascular risk","I10",["BRAND-NORVASC-5-90","BRAND-LIPITOR-20-90","BRAND-PLAVIX-75-28","GEN-AMLOD-SANDOZ-5-30","GEN-ATOR-SANDOZ-20-30","BRAND-NEXIUM-20-30"]),
 ]
-
-# Keep synthetic seed data subject to the same catalog exclusion policy.
-from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
 PRODUCT_CATALOG[:] = [
     spec
