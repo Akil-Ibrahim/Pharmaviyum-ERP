@@ -148,7 +148,7 @@ export function Pos() {
                 <div className='flex items-center gap-2'><Button size='icon' variant='outline' aria-label='Уменьшить количество' onClick={() => changeQuantity(item.id, -1)}><Minus className='size-4' /></Button><span className='w-8 text-center font-semibold'>{item.quantity}</span><Button size='icon' variant='outline' aria-label='Увеличить количество' disabled={item.quantity >= item.stock} onClick={() => changeQuantity(item.id, 1)}><Plus className='size-4' /></Button><Button size='icon' variant='ghost' aria-label='Удалить препарат' onClick={() => setCart(rows => rows.filter(row => row.id !== item.id))}><Trash2 className='size-4' /></Button></div>
                 <strong className='w-28 text-right'>{money(item.price * item.quantity)}</strong>
               </div>)}
-              <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'><span className='text-lg font-semibold'>Итого: {money(total)}</span><Button size='lg' onClick={() => { setCashReceived(total.toFixed(2)); setCheckoutOpen(true) }}><CreditCard className='mr-2 size-4' /> Перейти к оплате</Button></div>
+              <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'><span className='text-lg font-semibold'>Итого: {money(total)}</span><Button size='lg' onClick={() => { setCashReceived(total.toFixed(2)); setCheckoutOpen(true) }}><CreditCard className='mr-2 size-4' /> Вывести в чек</Button></div>
             </CardContent>
           </Card>
         )}
