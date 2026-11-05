@@ -50,6 +50,20 @@ async def test_search_includes_medicinal_product_strength() -> None:
         (
             {
                 "brand_name": "Generic brand",
+                "payload": {"manufacturer_country": "IL"},
+            },
+            True,
+        ),
+        (
+            {
+                "brand_name": "Generic brand",
+                "payload": {"country_of_manufacture": "State of Israel"},
+            },
+            True,
+        ),
+        (
+            {
+                "brand_name": "Generic brand",
                 "manufacturer": "Example Pharma",
                 "authorization_country": "Germany",
             },
