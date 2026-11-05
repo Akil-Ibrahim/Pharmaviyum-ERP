@@ -116,6 +116,8 @@ async def test_card_payment_reserves_stock_until_signed_webhook(
         "provider_name": "test_terminal",
         "provider_payment_id": "terminal-tx-001",
         "status": "succeeded",
+        "amount": "31.50",
+        "currency": "UAH",
     }
     body = json.dumps(event, separators=(",", ":")).encode()
     signature = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
