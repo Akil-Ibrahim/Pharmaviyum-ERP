@@ -48,6 +48,12 @@ export function Pos() {
   const [notice, setNotice] = useState('')
   const [selectedForm, setSelectedForm] = useState('all')
   const [stockFilter, setStockFilter] = useState<'all' | 'available' | 'low'>('all')
+  const [pharmacies, setPharmacies] = useState<PharmacyOption[]>([])
+  const [pharmacyId, setPharmacyId] = useState<number>()
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card_terminal' | 'online'>('cash')
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [lastSale, setLastSale] = useState<SaleResult | null>(null)
+  const idempotencyKey = useRef('')
   const searchRef = useRef<HTMLInputElement>(null)
 
   const discountPercent = Math.min(100, Math.max(0, Number(discount) || 0))
@@ -212,7 +218,7 @@ export function Pos() {
   }
 
   const closePaymentReview = () => {
-    setNotice('Payment review closed. No sale was recorded.')
+    setNotice('Payment review closed.')
     setPaymentOpen(false)
   }
 
@@ -540,16 +546,28 @@ export function Pos() {
               <p className='text-sm text-muted-foreground'>Total due</p>
               <p className='text-3xl font-bold tabular-nums'>{money(total)}</p>
             </div>
-            <label className='mt-4 block text-sm font-medium' htmlFor='cash-received'>Cash received (₴)</label>
-            <Input id='cash-received' type='number' min='0' step='0.01' value={cashReceived} onChange={event => setCashReceived(event.target.value)} className='mt-2 h-11' />
-            <div className='mt-3 flex justify-between rounded-lg border p-3 text-sm'>
-              <span className='text-muted-foreground'>Change due</span>
-              <strong className={cash < total ? 'text-destructive' : 'text-emerald-600'}>{money(Math.max(0, cash - total))}</strong>
-            </div>
-            <div className='mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm'>
-              Sale completion is disabled. The backend must atomically persist receipt lines, payment and stock movements before checkout can be enabled.
-            </div>
-            <Button className='mt-4 w-full' variant='outline' onClick={closePaymentReview}>Close review — no sale recorded</Button>
+            <label className='mt-4 block text-sm font-medium' htmlFor='payment-method'>Payment method</label>
+            <select id='payment-method' value={paymentMethod} onChange={event => setPaymentMethod(event.target.value as typeof paymentMethod)} className='mt-2 h-11 w-full rounded-md border bg-background px-3 text-sm'>
+              <option value='cash'>Cash</option>
+              <option value='card_terminal'>Bank card — terminal</option>
+              <option value='online'>Online payment</option>
+            </select>
+            {paymentMethod === 'cash' && <>
+              <label className='mt-4 block text-sm font-medium' htmlFor='cash-received'>Cash received (₴)</label>
+              <Input id='cash-received' type='number' min='0' step='0.01' value={cashReceived} onChange={event => setCashReceived(event.target.value)} className='mt-2 h-11' />
+              <div className='mt-3 flex justify-between rounded-lg border p-3 text-sm'>
+                <span className='text-muted-foreground'>Change due</span>
+                <strong className={cash < total ? 'text-destructive' : 'text-emerald-600'}>{money(Math.max(0, cash - total))}</strong>
+              </div>
+            </>}
+            {paymentMethod !== 'cash' && <div className='mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm'>
+              This creates a pending payment and reserves stock. The selected terminal or online provider must be configured to initiate payment and send a signed settlement webhook. A pending payment is not treated as paid.
+            </div>}
+            {lastSale && <p className='mt-3 text-xs text-muted-foreground'>Last receipt: {lastSale.receipt_number} · {lastSale.status}</p>}
+            <Button className='mt-4 w-full' onClick={() => void submitCheckout()} disabled={checkoutLoading || !pharmacyId || !cart.length || (paymentMethod === 'cash' && cash < total)}>
+              {checkoutLoading ? 'Processing…' : paymentMethod === 'cash' ? 'Complete cash sale' : 'Create pending payment'}
+            </Button>
+            <Button className='mt-2 w-full' variant='outline' onClick={closePaymentReview} disabled={checkoutLoading}>Close</Button>
           </section>
         </div>
       )}
