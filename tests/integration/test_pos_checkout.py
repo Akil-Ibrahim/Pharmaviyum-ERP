@@ -193,7 +193,12 @@ async def test_checkout_rejects_insufficient_stock_without_partial_decrement(
     assert second.quantity == 5
     assert first.reserved_quantity == 0
     assert second.reserved_quantity == 0
-    assert await test_db.scalar(select(Sale).where(Sale.idempotency_key == "pos-stock-fail-0001")) is None
+    assert (
+        await test_db.scalar(
+            select(Sale).where(Sale.idempotency_key == "pos-stock-fail-0001")
+        )
+        is None
+    )
 
 
 @pytest.mark.integration
