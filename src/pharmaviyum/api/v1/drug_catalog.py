@@ -44,7 +44,9 @@ async def create_drug_catalog_source(
     """Register an external reference record without creating a sellable product."""
     source_payload = payload.normalized_payload or {}
     if is_excluded_catalog_entry(
-        brand_name=source_payload.get("brand_name") or source_payload.get("product_name"),
+        brand_name=(
+            source_payload.get("brand_name") or source_payload.get("product_name")
+        ),
         manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
         authorization_country=source_payload.get("authorization_country")
         or source_payload.get("country"),
@@ -93,7 +95,9 @@ async def list_drug_catalog_sources(
             or (record.normalized_payload or {}).get("product_name"),
             manufacturer=(record.normalized_payload or {}).get("manufacturer")
             or (record.normalized_payload or {}).get("holder"),
-            authorization_country=(record.normalized_payload or {}).get("authorization_country")
+            authorization_country=(
+                (record.normalized_payload or {}).get("authorization_country")
+            )
             or (record.normalized_payload or {}).get("country"),
             payload=record.normalized_payload or {},
         )
@@ -178,7 +182,7 @@ async def review_drug_catalog_source(
     db: SessionDep,
     reviewer: CurrentSuperuser,
 ) -> DrugCatalogSourceResult:
-    """Approve, reject, or link a source record without creating local sellable stock."""
+    """Review a source record without creating local sellable stock."""
     result = await db.execute(
         select(DrugCatalogSourceRecord)
         .where(DrugCatalogSourceRecord.id == record_id)
