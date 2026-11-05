@@ -41,6 +41,8 @@ export function Pos() {
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [customer, setCustomer] = useState('')
   const [notice, setNotice] = useState('')
+  const [selectedForm, setSelectedForm] = useState('all')
+  const [stockFilter, setStockFilter] = useState<'all' | 'available' | 'low'>('all')
   const searchRef = useRef<HTMLInputElement>(null)
 
   const discountPercent = Math.min(100, Math.max(0, Number(discount) || 0))
@@ -49,6 +51,15 @@ export function Pos() {
   const total = subtotal - discountAmount
   const quantity = cart.reduce((sum, item) => sum + item.quantity, 0)
   const cash = Number(cashReceived) || 0
+  const availableForms = useMemo(
+    () => Array.from(new Set(localResults.map(item => item.dosage_form?.trim()).filter((form): form is string => Boolean(form)))).sort((a, b) => a.localeCompare(b)),
+    [localResults],
+  )
+  const visibleLocalResults = useMemo(() => localResults.filter(product => {
+    const matchesForm = selectedForm === 'all' || product.dosage_form === selectedForm
+    const matchesStock = stockFilter === 'all' || (stockFilter === 'available' ? product.stock > 0 : product.stock > 0 && product.stock <= 5)
+    return matchesForm && matchesStock
+  }), [localResults, selectedForm, stockFilter])
 
   useEffect(() => {
     const term = query.trim()
@@ -83,6 +94,8 @@ export function Pos() {
     setDiscount('0')
     setCustomer('')
     setCashReceived('')
+    setSelectedForm('all')
+    setStockFilter('all')
     setPaymentOpen(false)
     setNotice('New sale is ready.')
     searchRef.current?.focus()
@@ -111,15 +124,30 @@ export function Pos() {
     return next > 0 ? [{ ...item, quantity: Math.min(next, item.stock) }] : []
   }))
 
-  const scanSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const scanSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const term = query.trim()
     if (!term) return
-    const match = localResults.find(item =>
+    const findExact = (items: LocalProduct[]) => items.find(item =>
       item.barcode === term || item.gtin === term || item.sku.toLowerCase() === term.toLowerCase()
     )
-    if (match) addToCart(match)
-    else setNotice('No exact barcode or SKU match. Review the results and confirm local stock availability.')
+    const existingMatch = findExact(localResults)
+    if (existingMatch) {
+      addToCart(existingMatch)
+      return
+    }
+    setLoading(true)
+    try {
+      const freshResults = await apiFetch<LocalProduct[]>(`/products/search?q=${encodeURIComponent(term)}&limit=20`)
+      setLocalResults(freshResults)
+      const exactMatch = findExact(freshResults)
+      if (exactMatch) addToCart(exactMatch)
+      else setNotice('No exact barcode or SKU match. Review the results and confirm local stock availability.')
+    } catch {
+      setNotice('The pharmacy catalog could not be searched. Check the connection and try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const beginPayment = () => {
@@ -132,6 +160,26 @@ export function Pos() {
     setNotice('Payment review closed. No sale was recorded.')
     setPaymentOpen(false)
   }
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const typing = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable
+      if (event.key === 'F2') {
+        event.preventDefault()
+        searchRef.current?.focus()
+        searchRef.current?.select()
+      } else if (event.key === 'Escape') {
+        if (paymentOpen) setPaymentOpen(false)
+        else if (query) setQuery('')
+      } else if (event.key === 'F4' && !typing && cart.length > 0) {
+        event.preventDefault()
+        beginPayment()
+      }
+    }
+    window.addEventListener('keydown', handleShortcut)
+    return () => window.removeEventListener('keydown', handleShortcut)
+  }, [cart.length, paymentOpen, query, total])
 
   return (
     <div className='pharmacy-pos min-h-full space-y-4 bg-muted/20 p-3 md:p-5'>
@@ -164,8 +212,8 @@ export function Pos() {
       )}
 
       <div className='grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_390px] 2xl:grid-cols-[minmax(0,1fr)_420px]'>
-        <main className='min-w-0 space-y-4'>
-          <Card className='overflow-hidden border-primary/20 shadow-sm'>
+        <main className='grid min-w-0 gap-4 lg:grid-cols-[176px_minmax(0,1fr)]'>
+          <Card className='overflow-hidden border-primary/20 shadow-sm lg:col-span-2'>
             <CardHeader className='bg-primary/[0.045] pb-3'>
               <div className='flex flex-wrap items-center justify-between gap-2'>
                 <div>
@@ -195,8 +243,33 @@ export function Pos() {
               </form>
               <div className='flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground'>
                 <span className='flex items-center gap-1.5'><Barcode className='size-3.5' /> USB barcode scanners work as keyboard input.</span>
-                <span className='flex items-center gap-1.5'><Keyboard className='size-3.5' /> Enter to add exact barcode match</span>
+                <span className='flex items-center gap-1.5'><Keyboard className='size-3.5' /> Enter: add exact barcode · F4: payment review · Esc: clear</span>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className='h-fit shadow-sm'>
+            <CardHeader className='pb-2'>
+              <CardTitle className='text-sm'>Browse catalog</CardTitle>
+              <p className='text-xs text-muted-foreground'>Filter current search</p>
+            </CardHeader>
+            <CardContent className='space-y-1 px-2 pb-3'>
+              <Button variant={selectedForm === 'all' ? 'secondary' : 'ghost'} className='w-full justify-start' size='sm' onClick={() => setSelectedForm('all')}>
+                <PackageSearch className='mr-2 size-4' /> All products
+                <span className='ml-auto text-xs text-muted-foreground'>{localResults.length}</span>
+              </Button>
+              {availableForms.map(form => (
+                <Button key={form} variant={selectedForm === form ? 'secondary' : 'ghost'} className='w-full justify-start' size='sm' onClick={() => setSelectedForm(form)}>
+                  <span className='mr-2 size-1.5 rounded-full bg-muted-foreground/60' /> <span className='truncate'>{form}</span>
+                </Button>
+              ))}
+              <div className='my-2 border-t pt-2'>
+                <p className='px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground'>Availability</p>
+                <Button variant={stockFilter === 'all' ? 'secondary' : 'ghost'} className='w-full justify-start' size='sm' onClick={() => setStockFilter('all')}>All stock</Button>
+                <Button variant={stockFilter === 'available' ? 'secondary' : 'ghost'} className='w-full justify-start' size='sm' onClick={() => setStockFilter('available')}>In stock</Button>
+                <Button variant={stockFilter === 'low' ? 'secondary' : 'ghost'} className='w-full justify-start' size='sm' onClick={() => setStockFilter('low')}>Low stock (1–5)</Button>
+              </div>
+              <p className='px-2 pt-1 text-[11px] text-muted-foreground'>Categories are derived from product dosage forms returned by the catalog.</p>
             </CardContent>
           </Card>
 
@@ -207,7 +280,7 @@ export function Pos() {
                   <CardTitle className='text-base'>Search results</CardTitle>
                   <p className='mt-1 text-xs text-muted-foreground'>Only pharmacy products with local pricing and stock can be added to the sale.</p>
                 </div>
-                <Badge variant='secondary'>{localResults.length} products</Badge>
+                <Badge variant='secondary'>{visibleLocalResults.length} products</Badge>
               </div>
             </CardHeader>
             <CardContent className='p-0'>
@@ -220,6 +293,7 @@ export function Pos() {
                   <p className='mt-1 text-xs text-muted-foreground'>Try another name, INN, SKU or barcode.</p>
                 </div>
               )}
+              {query.trim().length >= 2 && !loading && localResults.length > 0 && visibleLocalResults.length === 0 && <p className='px-4 py-10 text-center text-sm text-muted-foreground'>No products match the selected filters.</p>}
               {query.trim().length < 2 && (
                 <div className='px-4 py-12 text-center'>
                   <Search className='mx-auto mb-3 size-8 text-muted-foreground/60' />
@@ -227,7 +301,7 @@ export function Pos() {
                   <p className='mt-1 text-xs text-muted-foreground'>Scan a product barcode or enter at least two characters.</p>
                 </div>
               )}
-              {localResults.length > 0 && (
+              {visibleLocalResults.length > 0 && (
                 <div className='overflow-x-auto'>
                   <table className='w-full min-w-[680px] text-sm'>
                     <thead className='bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground'>
@@ -240,7 +314,7 @@ export function Pos() {
                       </tr>
                     </thead>
                     <tbody className='divide-y'>
-                      {localResults.map(product => (
+                      {visibleLocalResults.map(product => (
                         <tr key={product.id} className='bg-background transition-colors hover:bg-muted/30'>
                           <td className='px-4 py-3'>
                             <p className='font-semibold'>{product.name}</p>
