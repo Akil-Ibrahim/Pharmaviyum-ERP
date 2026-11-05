@@ -88,6 +88,7 @@ class Payment(Base):
         CheckConstraint("method IN ('cash', 'card_terminal', 'online')", name="ck_payments_method"),
         CheckConstraint("status IN ('pending', 'succeeded', 'failed', 'refunded')", name="ck_payments_status"),
         UniqueConstraint("provider_name", "provider_payment_id", name="uq_payments_provider_reference"),
+        UniqueConstraint("sale_id", "idempotency_key", name="uq_payments_sale_idempotency"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
