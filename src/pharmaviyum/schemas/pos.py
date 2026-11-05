@@ -17,9 +17,6 @@ class SaleLineCreate(BaseModel):
 class SaleCreate(BaseModel):
     pharmacy_id: int = Field(gt=0)
     idempotency_key: str = Field(min_length=8, max_length=100)
-    currency: str = Field(
-        default="UAH", min_length=3, max_length=3, pattern=r"^[A-Z]{3}$"
-    )
     items: list[SaleLineCreate] = Field(min_length=1, max_length=100)
     discount_total: Decimal = Field(
         default=Decimal("0.00"), ge=0, max_digits=12, decimal_places=2
@@ -62,7 +59,6 @@ class PaymentResponse(BaseModel):
     amount: Decimal
     cash_received: Decimal | None = None
     change_due: Decimal | None = None
-    currency: str
     provider_name: str | None
     provider_payment_id: str | None
     created_at: datetime
@@ -75,7 +71,6 @@ class SaleResponse(BaseModel):
     id: int
     receipt_number: str
     pharmacy_id: int
-    currency: str
     subtotal: Decimal
     discount_total: Decimal
     total: Decimal
