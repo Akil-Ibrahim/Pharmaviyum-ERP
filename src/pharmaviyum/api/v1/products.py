@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import func, not_, or_, select
+from sqlalchemy import or_, select
 
 from src.pharmaviyum.models.drug_catalog import MedicinalProduct
 from src.pharmaviyum.models.product import Product
@@ -41,7 +41,7 @@ async def _validate_product_exclusion(
     )
     if is_excluded_catalog_entry(
         brand_name=f"{name} {linked_brand or ''}",
-        manufacturer=manufacturer or linked_manufacturer,
+        manufacturer=f"{manufacturer or ''} {linked_manufacturer or ''}",
         authorization_country=linked_country,
     ):
         raise HTTPException(
