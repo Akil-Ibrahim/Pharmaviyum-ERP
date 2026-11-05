@@ -7,11 +7,12 @@ import hmac
 import json
 import os
 from datetime import datetime
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from uuid import uuid4
 
 from fastapi import APIRouter, Header, HTTPException, Query, Request, status
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.models.inventory import Inventory
@@ -126,6 +127,25 @@ async def checkout(
     )
     existing = existing_result.scalar_one_or_none()
     if existing is not None:
+        requested_items = sorted((line.product_id, line.quantity) for line in payload.items)
+        saved_items = sorted((item.product_id, item.quantity) for item in existing.items)
+        saved_payment = existing.payments[0] if existing.payments else None
+        same_request = (
+            requested_items == saved_items
+            and existing.currency == payload.currency
+            and existing.discount_total == _money(payload.discount_total)
+            and saved_payment is not None
+            and saved_payment.method == payload.payment_method
+            and (
+                payload.payment_method != "cash"
+                or saved_payment.cash_received == _money(payload.cash_received or 0)
+            )
+        )
+        if not same_request:
+            raise HTTPException(
+                status_code=409,
+                detail="Idempotency key was already used for a different checkout request",
+            )
         return SaleResponse.model_validate(
             {**{k: getattr(existing, k) for k in (
                 "id", "receipt_number", "pharmacy_id", "currency", "subtotal",
@@ -240,7 +260,37 @@ async def checkout(
         settled_at=now if payload.payment_method == "cash" else None,
     )
     db.add(payment)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        duplicate_result = await db.execute(
+            select(Sale)
+            .where(
+                Sale.pharmacy_id == payload.pharmacy_id,
+                Sale.idempotency_key == payload.idempotency_key,
+            )
+            .options(selectinload(Sale.items), selectinload(Sale.payments))
+        )
+        duplicate = duplicate_result.scalar_one_or_none()
+        if duplicate is None:
+            raise
+        duplicate_items = sorted((item.product_id, item.quantity) for item in duplicate.items)
+        requested_items = sorted((line.product_id, line.quantity) for line in payload.items)
+        duplicate_payment = duplicate.payments[0] if duplicate.payments else None
+        if (
+            duplicate_items != requested_items
+            or duplicate.currency != payload.currency
+            or duplicate.discount_total != discount
+            or duplicate_payment is None
+            or duplicate_payment.method != payload.payment_method
+            or (
+                payload.payment_method == "cash"
+                and duplicate_payment.cash_received != _money(payload.cash_received or 0)
+            )
+        ):
+            raise HTTPException(status_code=409, detail="Idempotency key conflicts with another checkout")
+        return SaleResponse.model_validate(duplicate)
 
     saved = await _load_sale(db, sale.id)
     return SaleResponse.model_validate(
@@ -279,7 +329,7 @@ async def payment_webhook(
         provider_payment_id = str(event["provider_payment_id"])
         event_amount = _money(Decimal(str(event["amount"])))
         event_currency = str(event["currency"]).upper()
-    except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+    except (ValueError, TypeError, KeyError, json.JSONDecodeError, InvalidOperation) as exc:
         raise HTTPException(status_code=400, detail="Invalid payment event payload") from exc
     if event_status not in {"succeeded", "failed"}:
         raise HTTPException(status_code=422, detail="Unsupported payment event status")
