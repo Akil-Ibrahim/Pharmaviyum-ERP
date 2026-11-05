@@ -160,26 +160,136 @@ async def review_drug_catalog_source(
             detail="This source record has already been reviewed",
         )
 
-    if payload.matched_drug_reference_id is not None:
-        reference = await db.get(DrugReference, payload.matched_drug_reference_id)
+    matched_reference_id = payload.matched_drug_reference_id
+    matched_product_id = payload.matched_medicinal_product_id
+
+    if matched_reference_id is not None:
+        reference = await db.get(DrugReference, matched_reference_id)
         if reference is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Matched drug reference not found",
             )
-    if payload.matched_medicinal_product_id is not None:
-        medicinal_product = await db.get(
-            MedicinalProduct, payload.matched_medicinal_product_id
-        )
+    if matched_product_id is not None:
+        medicinal_product = await db.get(MedicinalProduct, matched_product_id)
         if medicinal_product is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Matched medicinal product not found",
             )
 
+    if payload.create_new:
+        source = record.normalized_payload or {}
+        ingredient = str(
+            source.get("ingredient_name")
+            or source.get("ingredient")
+            or source.get("inn_name")
+            or ""
+        ).strip()
+        if not ingredient:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Source record has no single active ingredient to create",
+            )
+
+        reference_result = await db.execute(
+            select(DrugReference)
+            .where(DrugReference.inn_name.ilike(ingredient))
+            .order_by(DrugReference.id.asc())
+            .limit(1)
+        )
+        reference = reference_result.scalar_one_or_none()
+        if reference is None:
+            reference = DrugReference(
+                inn_name=ingredient[:200],
+                atc_code=source.get("atc_code"),
+            )
+            db.add(reference)
+            await db.flush()
+
+        ingredient_result = await db.execute(
+            select(DrugReferenceIngredient).where(
+                DrugReferenceIngredient.drug_reference_id == reference.id,
+                DrugReferenceIngredient.ingredient_name.ilike(ingredient),
+            )
+        )
+        if ingredient_result.scalar_one_or_none() is None:
+            db.add(
+                DrugReferenceIngredient(
+                    drug_reference_id=reference.id,
+                    ingredient_name=ingredient[:200],
+                )
+            )
+
+        brand_value = source.get("brand_name") or source.get("product_name")
+        brand = str(brand_value).strip()[:200] if brand_value else None
+        strength_value = source.get("strength")
+        strength = str(strength_value).strip()[:100] if strength_value else None
+        form_value = source.get("dosage_form")
+        dosage_form = str(form_value).strip()[:100] if form_value else None
+        route_value = source.get("route")
+        route = str(route_value).strip()[:100] if route_value else None
+        manufacturer_value = source.get("manufacturer") or source.get("holder")
+        manufacturer = (
+            str(manufacturer_value).strip()[:200] if manufacturer_value else None
+        )
+        package_value = source.get("package_description")
+        package_description = (
+            str(package_value).strip()[:200] if package_value else None
+        )
+        gtin_value = source.get("gtin")
+        gtin = str(gtin_value).strip()[:14] if gtin_value else None
+        regulatory_value = source.get("regulatory_id")
+        regulatory_id = (
+            str(regulatory_value).strip()[:100] if regulatory_value else None
+        )
+        country_value = source.get("country") or source.get("authorization_country")
+        authorization_country = (
+            str(country_value).strip()[:100] if country_value else None
+        )
+
+        product_statement = select(MedicinalProduct).where(
+            MedicinalProduct.drug_reference_id == reference.id,
+            MedicinalProduct.brand_name == brand
+            if brand is not None
+            else MedicinalProduct.brand_name.is_(None),
+            MedicinalProduct.strength == strength
+            if strength is not None
+            else MedicinalProduct.strength.is_(None),
+            MedicinalProduct.dosage_form == dosage_form
+            if dosage_form is not None
+            else MedicinalProduct.dosage_form.is_(None),
+            MedicinalProduct.authorization_country == authorization_country
+            if authorization_country is not None
+            else MedicinalProduct.authorization_country.is_(None),
+        ).order_by(MedicinalProduct.id.asc())
+        existing_product = (
+            await db.execute(product_statement.limit(1))
+        ).scalar_one_or_none()
+        if existing_product is None:
+            medicinal_product = MedicinalProduct(
+                drug_reference_id=reference.id,
+                brand_name=brand,
+                product_type="branded" if brand else "generic",
+                manufacturer=manufacturer,
+                strength=strength,
+                dosage_form=dosage_form,
+                route=route,
+                package_description=package_description,
+                gtin=gtin,
+                regulatory_id=regulatory_id,
+                authorization_country=authorization_country,
+            )
+            db.add(medicinal_product)
+            await db.flush()
+        else:
+            medicinal_product = existing_product
+        matched_product_id = medicinal_product.id
+        matched_reference_id = None
+
     record.review_status = payload.review_status
-    record.matched_drug_reference_id = payload.matched_drug_reference_id
-    record.matched_medicinal_product_id = payload.matched_medicinal_product_id
+    record.matched_drug_reference_id = matched_reference_id
+    record.matched_medicinal_product_id = matched_product_id
     record.match_confidence = payload.match_confidence
     record.reviewed_by_user_id = reviewer.id
     record.reviewed_at = datetime.utcnow()
