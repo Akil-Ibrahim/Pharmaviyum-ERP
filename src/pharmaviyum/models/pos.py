@@ -46,6 +46,10 @@ class Sale(Base):
     items: Mapped[list["SaleItem"]] = relationship(back_populates="sale", cascade="all, delete-orphan")
     payments: Mapped[list["Payment"]] = relationship(back_populates="sale", cascade="all, delete-orphan")
 
+    @property
+    def cash_change(self) -> Decimal:
+        return sum((payment.change_due or Decimal("0.00") for payment in self.payments), Decimal("0.00"))
+
 
 class SaleItem(Base):
     __tablename__ = "sale_items"
@@ -96,6 +100,8 @@ class Payment(Base):
     method: Mapped[str] = mapped_column(String(24), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending", index=True)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    cash_received: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    change_due: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="UAH")
     provider_name: Mapped[str | None] = mapped_column(String(80), nullable=True)
     provider_payment_id: Mapped[str | None] = mapped_column(String(160), nullable=True)
