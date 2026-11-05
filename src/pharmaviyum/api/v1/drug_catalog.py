@@ -50,6 +50,9 @@ async def create_drug_catalog_source(
         manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
         authorization_country=source_payload.get("authorization_country")
         or source_payload.get("country"),
+        manufacturer_country=source_payload.get("manufacturer_country")
+        or source_payload.get("country_of_origin")
+        or source_payload.get("country_of_manufacture"),
         payload=source_payload,
     ):
         raise HTTPException(
@@ -131,6 +134,9 @@ async def suggest_drug_catalog_source_matches(
         manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
         authorization_country=source_payload.get("authorization_country")
         or source_payload.get("country"),
+        manufacturer_country=source_payload.get("manufacturer_country")
+        or source_payload.get("country_of_origin")
+        or source_payload.get("country_of_manufacture"),
         payload=source_payload,
     ):
         raise HTTPException(
@@ -205,6 +211,9 @@ async def review_drug_catalog_source(
         manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
         authorization_country=source_payload.get("authorization_country")
         or source_payload.get("country"),
+        manufacturer_country=source_payload.get("manufacturer_country")
+        or source_payload.get("country_of_origin")
+        or source_payload.get("country_of_manufacture"),
         payload=source_payload,
     ):
         raise HTTPException(
@@ -301,6 +310,17 @@ async def review_drug_catalog_source(
         authorization_country = (
             str(country_value).strip()[:100] if country_value else None
         )
+        manufacturer_country_value = (
+            source.get("manufacturer_country")
+            or source.get("country_of_origin")
+            or source.get("country_of_manufacture")
+            or source.get("country_of_production")
+        )
+        manufacturer_country = (
+            str(manufacturer_country_value).strip()[:100]
+            if manufacturer_country_value
+            else None
+        )
 
         product_statement = (
             select(MedicinalProduct)
@@ -345,6 +365,7 @@ async def review_drug_catalog_source(
                 gtin=gtin,
                 regulatory_id=regulatory_id,
                 authorization_country=authorization_country,
+                manufacturer_country=manufacturer_country,
             )
             db.add(medicinal_product)
             await db.flush()
@@ -415,6 +436,7 @@ async def search_drug_catalog(
             brand_name=product.brand_name,
             manufacturer=product.manufacturer,
             authorization_country=product.authorization_country,
+            manufacturer_country=product.manufacturer_country,
         )
     ]
 
@@ -438,6 +460,7 @@ async def search_drug_catalog(
             gtin=product.gtin,
             regulatory_id=product.regulatory_id,
             authorization_country=product.authorization_country,
+            manufacturer_country=product.manufacturer_country,
             review_status="approved",
         )
         for product in products
@@ -499,6 +522,11 @@ async def search_drug_catalog(
                 gtin=payload.get("gtin"),
                 authorization_country=(
                     payload.get("country") or payload.get("authorization_country")
+                ),
+                manufacturer_country=(
+                    payload.get("manufacturer_country")
+                    or payload.get("country_of_origin")
+                    or payload.get("country_of_manufacture")
                 ),
                 authorization_status=payload.get("authorization_status"),
                 product_class=payload.get("product_class"),
