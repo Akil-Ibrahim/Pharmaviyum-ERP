@@ -1,6 +1,14 @@
 name: Import International Drug Catalogue
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/import-drug-catalog.yml"
+      - "scripts/import_rxnorm_catalog.py"
+      - "scripts/import_ema_catalog.py"
+      - "scripts/import_health_canada_dpd.py"
+      - "src/pharmaviyum/services/catalog_exclusions.py"
   workflow_dispatch:
     inputs:
       mode:
@@ -39,19 +47,21 @@ jobs:
 
       - name: Validate import mode and database secret
         env:
-          MODE: ${{ inputs.mode }}
+          MODE: ${{ github.event_name == 'push' && 'stage' || inputs.mode }}
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "Missing GitHub Actions secret DATABASE_URL."
             exit 1
           fi
-          if [ "$MODE" = "stage" ] && [ "$CONFIRMATION" != "STAGE" ]; then
+          if [ "$MODE" = "stage" ] && [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$CONFIRMATION" != "STAGE" ]; then
             echo "Production import blocked: type STAGE in the confirmation field."
             exit 1
           fi
           if [ "$MODE" = "dry-run" ]; then
             echo "Dry-run selected. No database records will be written."
+          else
+            echo "Stage mode selected. Records will be added as pending_review source records only."
           fi
 
       - name: Set up Python
@@ -75,7 +85,7 @@ jobs:
           uv run python scripts/import_health_canada_dpd.py --dry-run
 
       - name: Stage source records for review
-        if: inputs.mode == 'stage'
+        if: github.event_name == 'push' || inputs.mode == 'stage'
         run: |
           uv run python scripts/import_rxnorm_catalog.py
           uv run python scripts/import_ema_catalog.py
