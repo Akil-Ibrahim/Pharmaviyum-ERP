@@ -1,0 +1,271 @@
+"""Pharmacy point-of-sale checkout and payment settlement endpoints."""
+
+from __future__ import annotations
+
+import hashlib
+import hmac
+import json
+import os
+from datetime import datetime, timedelta
+from decimal import Decimal, ROUND_HALF_UP
+from uuid import uuid4
+
+from fastapi import APIRouter, Header, HTTPException, Request, status
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
+from src.pharmaviyum.models.inventory import Inventory
+from src.pharmaviyum.models.pos import Payment, Sale, SaleItem, SaleItemAllocation
+from src.pharmaviyum.models.product import Product
+from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
+from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
+from src.pharmaviyum.schemas.pos import SaleCreate, SaleResponse
+
+router = APIRouter(prefix="/api/v1/pos", tags=["Point of Sale"])
+CENT = Decimal("0.01")
+
+
+def _money(value: Decimal | float | int) -> Decimal:
+    return Decimal(str(value)).quantize(CENT, rounding=ROUND_HALF_UP)
+
+
+async def _load_sale(db: SessionDep, sale_id: int) -> Sale:
+    result = await db.execute(
+        select(Sale)
+        .where(Sale.id == sale_id)
+        .options(selectinload(Sale.items), selectinload(Sale.payments))
+    )
+    sale = result.scalar_one_or_none()
+    if sale is None:
+        raise HTTPException(status_code=404, detail="Sale not found")
+    return sale
+
+
+@router.post("/checkout", response_model=SaleResponse, status_code=status.HTTP_201_CREATED)
+async def checkout(
+    payload: SaleCreate,
+    db: SessionDep,
+    cashier: CurrentUser,
+) -> SaleResponse:
+    """Create an idempotent sale, allocate FEFO stock, and record its payment state."""
+    await require_pharmacy_tenant(payload.pharmacy_id, cashier, db)
+
+    existing_result = await db.execute(
+        select(Sale)
+        .where(
+            Sale.pharmacy_id == payload.pharmacy_id,
+            Sale.idempotency_key == payload.idempotency_key,
+        )
+        .options(selectinload(Sale.items), selectinload(Sale.payments))
+    )
+    existing = existing_result.scalar_one_or_none()
+    if existing is not None:
+        return SaleResponse.model_validate(
+            {**{k: getattr(existing, k) for k in (
+                "id", "receipt_number", "pharmacy_id", "currency", "subtotal",
+                "discount_total", "total", "status", "created_at", "completed_at",
+                "items", "payments"
+            )}, "cash_change": Decimal("0.00")}
+        )
+
+    product_ids = [line.product_id for line in payload.items]
+    products_result = await db.execute(
+        select(Product).where(
+            Product.id.in_(product_ids),
+            Product.is_active.is_(True),
+        )
+    )
+    products = {product.id: product for product in products_result.scalars().all()}
+    if len(products) != len(product_ids):
+        raise HTTPException(status_code=404, detail="One or more active products were not found")
+
+    subtotal = sum(
+        (_money(products[line.product_id].price) * line.quantity for line in payload.items),
+        Decimal("0.00"),
+    )
+    discount = _money(payload.discount_total)
+    total = _money(subtotal - discount)
+    if discount > subtotal or total <= 0:
+        raise HTTPException(status_code=422, detail="Discount must be less than the subtotal and total must be positive")
+    if payload.payment_method == "cash" and _money(payload.cash_received or 0) < total:
+        raise HTTPException(status_code=422, detail="Cash received is less than the sale total")
+
+    now = datetime.utcnow()
+    sale = Sale(
+        receipt_number=f"PV-{now:%Y%m%d}-{uuid4().hex[:10].upper()}",
+        pharmacy_id=payload.pharmacy_id,
+        cashier_user_id=cashier.id,
+        idempotency_key=payload.idempotency_key,
+        currency=payload.currency,
+        subtotal=subtotal,
+        discount_total=discount,
+        total=total,
+        status="completed" if payload.payment_method == "cash" else "awaiting_payment",
+        completed_at=now if payload.payment_method == "cash" else None,
+    )
+    db.add(sale)
+    await db.flush()
+
+    for line in payload.items:
+        product = products[line.product_id]
+        item = SaleItem(
+            sale_id=sale.id,
+            product_id=product.id,
+            product_name=product.name,
+            sku=product.sku,
+            quantity=line.quantity,
+            unit_price=_money(product.price),
+            line_total=_money(_money(product.price) * line.quantity),
+        )
+        db.add(item)
+        await db.flush()
+
+        inventory_result = await db.execute(
+            select(Inventory)
+            .where(
+                Inventory.product_id == product.id,
+                Inventory.pharmacy_id == payload.pharmacy_id,
+                Inventory.quantity > Inventory.reserved_quantity,
+                (Inventory.expires_at.is_(None) | (Inventory.expires_at > now)),
+            )
+            .order_by(Inventory.expires_at.asc().nulls_last(), Inventory.id.asc())
+            .with_for_update()
+        )
+        lots = list(inventory_result.scalars().all())
+        remaining = line.quantity
+        for lot in lots:
+            available = lot.quantity - lot.reserved_quantity
+            take = min(available, remaining)
+            if take <= 0:
+                continue
+            if payload.payment_method == "cash":
+                lot.quantity -= take
+            else:
+                lot.reserved_quantity += take
+            db.add(
+                SaleItemAllocation(
+                    sale_item_id=item.id,
+                    inventory_id=lot.id,
+                    lot_number=lot.lot_number,
+                    expires_at=lot.expires_at,
+                    quantity=take,
+                )
+            )
+            remaining -= take
+            if remaining == 0:
+                break
+        if remaining:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Insufficient non-expired stock for {product.name}; checkout was not completed",
+            )
+
+    payment = Payment(
+        sale_id=sale.id,
+        method=payload.payment_method,
+        status="succeeded" if payload.payment_method == "cash" else "pending",
+        amount=total,
+        currency=payload.currency,
+        provider_name="cash_register" if payload.payment_method == "cash" else None,
+        idempotency_key=payload.idempotency_key,
+        settled_at=now if payload.payment_method == "cash" else None,
+    )
+    db.add(payment)
+    await db.commit()
+
+    saved = await _load_sale(db, sale.id)
+    cash_change = (
+        _money(payload.cash_received or 0) - total
+        if payload.payment_method == "cash"
+        else Decimal("0.00")
+    )
+    return SaleResponse.model_validate(
+        {**{k: getattr(saved, k) for k in (
+            "id", "receipt_number", "pharmacy_id", "currency", "subtotal",
+            "discount_total", "total", "status", "created_at", "completed_at",
+            "items", "payments"
+        )}, "cash_change": cash_change}
+    )
+
+
+@router.post("/payments/webhook", status_code=status.HTTP_200_OK)
+async def payment_webhook(
+    request: Request,
+    db: SessionDep,
+    x_pharmaviyum_signature: str | None = Header(default=None),
+) -> dict[str, str]:
+    """Settle external payment notifications using a shared-secret HMAC-SHA256 signature.
+
+    Configure PAYMENT_WEBHOOK_SECRET and have the payment adapter sign the exact
+    raw request body. Provider-specific signature verification belongs in the
+    provider adapter before this normalized event reaches this endpoint.
+    """
+    secret = os.getenv("PAYMENT_WEBHOOK_SECRET")
+    if not secret:
+        raise HTTPException(status_code=503, detail="Payment webhook is not configured")
+    raw_body = await request.body()
+    expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
+    if not x_pharmaviyum_signature or not hmac.compare_digest(expected, x_pharmaviyum_signature):
+        raise HTTPException(status_code=401, detail="Invalid payment webhook signature")
+    try:
+        event = json.loads(raw_body)
+        payment_id = int(event["payment_id"])
+        event_status = event["status"]
+        provider_name = str(event["provider_name"])
+        provider_payment_id = str(event["provider_payment_id"])
+    except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid payment event payload") from exc
+    if event_status not in {"succeeded", "failed"}:
+        raise HTTPException(status_code=422, detail="Unsupported payment event status")
+
+    result = await db.execute(
+        select(Payment)
+        .where(Payment.id == payment_id)
+        .with_for_update()
+    )
+    payment = result.scalar_one_or_none()
+    if payment is None or payment.method == "cash":
+        raise HTTPException(status_code=404, detail="External payment not found")
+    if payment.status != "pending":
+        # Webhook retries are intentionally idempotent.
+        if payment.status == event_status and payment.provider_payment_id == provider_payment_id:
+            return {"status": "already_processed"}
+        raise HTTPException(status_code=409, detail="Payment has already been finalized")
+
+    sale_result = await db.execute(
+        select(Sale).where(Sale.id == payment.sale_id).with_for_update()
+    )
+    sale = sale_result.scalar_one()
+    allocations_result = await db.execute(
+        select(SaleItemAllocation)
+        .join(SaleItem, SaleItem.id == SaleItemAllocation.sale_item_id)
+        .where(SaleItem.sale_id == sale.id)
+    )
+    allocations = list(allocations_result.scalars().all())
+    inventory_ids = [allocation.inventory_id for allocation in allocations]
+    inventory_result = await db.execute(
+        select(Inventory).where(Inventory.id.in_(inventory_ids)).with_for_update()
+    )
+    inventory_by_id = {row.id: row for row in inventory_result.scalars().all()}
+
+    for allocation in allocations:
+        lot = inventory_by_id[allocation.inventory_id]
+        lot.reserved_quantity -= allocation.quantity
+        if event_status == "succeeded":
+            lot.quantity -= allocation.quantity
+
+    payment.status = event_status
+    payment.provider_name = provider_name[:80]
+    payment.provider_payment_id = provider_payment_id[:160]
+    payment.settled_at = datetime.utcnow()
+    sale.status = "completed" if event_status == "succeeded" else "cancelled"
+    sale.completed_at = datetime.utcnow() if event_status == "succeeded" else None
+    await db.commit()
+    return {"status": "processed"}
+
+
+@router.get("/sales/{sale_id}", response_model=SaleResponse)
+async def get_sale(sale_id: int, db: SessionDep, user: CurrentUser) -> SaleResponse:
+    sale = await _load_sale(db, sale_id)
+    await require_pharmacy_tenant(sale.pharmacy_id, user, db)
+    return SaleResponse.model_validate(sale)
