@@ -75,6 +75,15 @@ def allowed_pharmacy_product_conditions():
     from src.pharmaviyum.models.product import Product
 
     israel_codes = ("il", "isr", "israel", "state of israel", "израиль", "ізраїль")
+
+    def israeli_country_clause(column):
+        normalized = func.lower(func.trim(func.coalesce(column, "")))
+        return or_(
+            normalized.in_(israel_codes),
+            normalized.ilike("%israel%"),
+            normalized.op("~*")(r"(^|[^a-z])(il|isr)([^a-z]|$)"),
+        )
+
     linked_to_excluded_catalog_product = (
         select(MedicinalProduct.id)
         .where(
@@ -82,12 +91,8 @@ def allowed_pharmacy_product_conditions():
             or_(
                 func.coalesce(MedicinalProduct.brand_name, "").ilike("%teva%"),
                 func.coalesce(MedicinalProduct.manufacturer, "").ilike("%teva%"),
-                func.lower(func.trim(MedicinalProduct.authorization_country)).in_(
-                    israel_codes
-                ),
-                func.lower(func.trim(MedicinalProduct.manufacturer_country)).in_(
-                    israel_codes
-                ),
+                israeli_country_clause(MedicinalProduct.authorization_country),
+                israeli_country_clause(MedicinalProduct.manufacturer_country),
             ),
         )
         .exists()
@@ -95,10 +100,6 @@ def allowed_pharmacy_product_conditions():
     return (
         not_(Product.name.ilike("%teva%")),
         not_(func.coalesce(Product.manufacturer, "").ilike("%teva%")),
-        not_(
-            func.lower(
-                func.trim(func.coalesce(Product.manufacturer_country, ""))
-            ).in_(israel_codes)
-        ),
+        not_(israeli_country_clause(Product.manufacturer_country)),
         not_(linked_to_excluded_catalog_product),
     )
