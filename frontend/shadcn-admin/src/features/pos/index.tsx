@@ -170,7 +170,8 @@ export function Pos() {
     }
     setLoading(true)
     try {
-      if (!pharmacyId) throw new Error('Select a pharmacy first')\n      const freshResults = await apiFetch<LocalProduct[]>(`/api/v1/pos/products/search?q=${encodeURIComponent(term)}&pharmacy_id=${pharmacyId}&limit=20`)
+      if (!pharmacyId) throw new Error('Select a pharmacy first')
+      const freshResults = await apiFetch<LocalProduct[]>(`/api/v1/pos/products/search?q=${encodeURIComponent(term)}&pharmacy_id=${pharmacyId}&limit=20`)
       setLocalResults(freshResults)
       const exactMatch = findExact(freshResults)
       if (exactMatch) addToCart(exactMatch)
