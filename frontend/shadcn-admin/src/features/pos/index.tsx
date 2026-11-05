@@ -130,8 +130,8 @@ export function Pos() {
   }
 
   return (
-    <div className='min-h-full bg-muted/20 p-3 md:p-6'>
-      <div className='mx-auto max-w-5xl space-y-4'>
+    <div className='min-h-screen bg-muted/20 p-3 md:p-5'>
+      <div className='mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-[1920px] flex-col gap-4'>
         <header className='flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background p-4'>
           <div className='flex items-center gap-3'><span className='flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground'><Pill /></span><div><h1 className='text-xl font-bold'>Аптечная касса</h1><p className='text-xs text-muted-foreground'>Выбор препаратов и оформление продажи</p></div></div>
           <label className='flex items-center gap-2 text-sm'>Аптека<select className='h-9 max-w-[220px] rounded-md border bg-background px-2' value={pharmacyId ?? ''} onChange={e => { setPharmacyId(Number(e.target.value)); setCart([]); setSale(null) }}><option value=''>Выберите аптеку</option>{pharmacies.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
@@ -140,7 +140,7 @@ export function Pos() {
         {notice && <div role='status' className='flex items-center justify-between gap-3 rounded-lg border bg-background p-3 text-sm'>{notice}<button aria-label='Закрыть уведомление' onClick={() => setNotice('')}><X className='size-4' /></button></div>}
 
         {cart.length > 0 && (
-          <Card>
+          <Card className='min-h-0 flex-1 overflow-y-auto'>
             <CardHeader className='pb-3'><div className='flex items-center justify-between'><CardTitle>Выбранные препараты</CardTitle><Badge>{units} шт.</Badge></div><p className='text-sm text-muted-foreground'>Проверьте количество и состав продажи.</p></CardHeader>
             <CardContent className='space-y-3'>
               {cart.map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'>
@@ -155,7 +155,7 @@ export function Pos() {
 
         {sale?.status === 'completed' && <Card><CardContent className='flex items-center justify-between gap-3 p-4'><div className='flex items-center gap-2'><Receipt className='size-5 text-primary' /><div><p className='font-semibold'>Чек № {sale.receipt_number}</p><p className='text-sm text-muted-foreground'>Продажа зарегистрирована · {money(Number(sale.total))}</p></div></div><Button variant='outline' onClick={() => { setSale(null); setNotice('Новая продажа.'); searchRef.current?.focus() }}>Новая продажа</Button></CardContent></Card>}
 
-        <Card className='border-primary/20 shadow-sm'>
+        <Card className='mt-auto max-h-[42vh] shrink-0 overflow-y-auto border-primary/20 shadow-sm'>
           <CardHeader className='pb-3'><CardTitle className='flex items-center gap-2'><Search className='size-5 text-primary' /> Поиск и каталог препаратов</CardTitle><p className='text-sm text-muted-foreground'>Введите название, МНН, бренд, дозировку, производителя или отсканируйте штрихкод.</p></CardHeader>
           <CardContent className='space-y-3'>
             <form onSubmit={e => { e.preventDefault(); if (results.length === 1) addProduct(results[0]) }} className='flex gap-2'><Input ref={searchRef} autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder='Например, омепразол 20 мг или ибупрофен…' className='h-12 text-base' /><Button type='submit' className='h-12'><Search className='mr-2 size-4' /> Найти</Button></form>
