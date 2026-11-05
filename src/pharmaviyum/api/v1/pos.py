@@ -15,6 +15,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
+from src.pharmaviyum.models.drug_catalog import MedicinalProduct
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.pos import Payment, Sale, SaleItem, SaleItemAllocation
 from src.pharmaviyum.models.product import Product
@@ -27,6 +28,7 @@ from src.pharmaviyum.schemas.pos import (
     SaleResponse,
 )
 from src.pharmaviyum.schemas.pos_product import POSProductResponse
+from src.pharmaviyum.services.catalog_exclusions import allowed_pharmacy_product_conditions
 
 router = APIRouter(prefix="/api/v1/pos", tags=["Point of Sale"])
 CENT = Decimal("0.01")
@@ -75,6 +77,7 @@ async def search_pos_products(
         .outerjoin(Inventory, inventory_join)
         .where(
             Product.is_active.is_(True),
+            *allowed_pharmacy_product_conditions(),
             or_(
                 Product.name.ilike(term),
                 Product.sku.ilike(term),
@@ -126,6 +129,7 @@ async def receive_inventory(
         select(Product).where(
             Product.id == payload.product_id,
             Product.is_active.is_(True),
+            *allowed_pharmacy_product_conditions(),
         )
     )
     product = product_result.scalar_one_or_none()
@@ -204,7 +208,7 @@ async def get_product_lots(
     """Return real, sellable stock lots for one product in the selected pharmacy."""
     await require_pharmacy_tenant(pharmacy_id, user, db)
     product_result = await db.execute(
-        select(Product.id).where(Product.id == product_id, Product.is_active.is_(True))
+        select(Product.id).where(Product.id == product_id, Product.is_active.is_(True), *allowed_pharmacy_product_conditions())
     )
     if product_result.scalar_one_or_none() is None:
         raise HTTPException(status_code=404, detail="Active product not found")
@@ -303,6 +307,7 @@ async def checkout(
         select(Product).where(
             Product.id.in_(product_ids),
             Product.is_active.is_(True),
+            *allowed_pharmacy_product_conditions(),
         )
     )
     products = {product.id: product for product in products_result.scalars().all()}
