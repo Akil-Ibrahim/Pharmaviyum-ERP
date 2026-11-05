@@ -1,0 +1,82 @@
+name: Import International Drug Catalogue
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run validates source files without database writes; stage saves pending-review reference records"
+        required: true
+        type: choice
+        options:
+          - dry-run
+          - stage
+        default: dry-run
+      confirmation:
+        description: "For mode=stage, type STAGE to confirm writing source records to the production Neon database"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pharmaviyum-drug-catalog-import
+  cancel-in-progress: false
+
+jobs:
+  import-catalog:
+    name: Validate and import official medicine reference sources
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PGVECTOR_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4.4.0
+        with:
+          ref: main
+
+      - name: Validate import mode and database secret
+        env:
+          MODE: ${{ inputs.mode }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "Missing GitHub Actions secret DATABASE_URL."
+            exit 1
+          fi
+          if [ "$MODE" = "stage" ] && [ "$CONFIRMATION" != "STAGE" ]; then
+            echo "Production import blocked: type STAGE in the confirmation field."
+            exit 1
+          fi
+          if [ "$MODE" = "dry-run" ]; then
+            echo "Dry-run selected. No database records will be written."
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.14.7"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Verify current database migration
+        run: uv run alembic current
+
+      - name: Dry-run RxNorm, EMA and Health Canada sources
+        run: |
+          uv run python scripts/import_rxnorm_catalog.py --dry-run
+          uv run python scripts/import_ema_catalog.py --dry-run
+          uv run python scripts/import_health_canada_dpd.py --dry-run
+
+      - name: Stage source records for review
+        if: inputs.mode == 'stage'
+        run: |
+          uv run python scripts/import_rxnorm_catalog.py
+          uv run python scripts/import_ema_catalog.py
+          uv run python scripts/import_health_canada_dpd.py
