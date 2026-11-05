@@ -74,6 +74,19 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
     assert receipt["payments"][0]["status"] == "succeeded"
     assert receipt["payments"][0]["cash_received"] == "40.00"
 
+    duplicate = await authenticated_client.post(
+        "/api/v1/pos/checkout",
+        json={
+            "pharmacy_id": pharmacy.id,
+            "idempotency_key": "pos-cash-checkout-0001",
+            "items": [{"product_id": product.id, "quantity": 3}],
+            "payment_method": "cash",
+            "cash_received": "40.00",
+        },
+    )
+    assert duplicate.status_code == 201
+    assert duplicate.json()["id"] == receipt["id"]
+
     await test_db.refresh(first)
     await test_db.refresh(second)
     assert first.quantity == 0
@@ -181,3 +194,36 @@ async def test_checkout_rejects_insufficient_stock_without_partial_decrement(
     assert first.reserved_quantity == 0
     assert second.reserved_quantity == 0
     assert await test_db.scalar(select(Sale).where(Sale.idempotency_key == "pos-stock-fail-0001")) is None
+
+
+@pytest.mark.integration
+async def test_cancel_pending_sale_releases_reserved_inventory(
+    authenticated_client, test_db
+):
+    pharmacy, product, first, second = await _create_pharmacy_product_and_stock(test_db)
+    response = await authenticated_client.post(
+        "/api/v1/pos/checkout",
+        json={
+            "pharmacy_id": pharmacy.id,
+            "idempotency_key": "pos-cancel-checkout-0001",
+            "items": [{"product_id": product.id, "quantity": 3}],
+            "payment_method": "online",
+        },
+    )
+    assert response.status_code == 201, response.text
+    receipt = response.json()
+    assert receipt["status"] == "awaiting_payment"
+
+    cancelled = await authenticated_client.post(
+        f"/api/v1/pos/sales/{receipt['id']}/cancel"
+    )
+    assert cancelled.status_code == 200, cancelled.text
+    assert cancelled.json()["status"] == "cancelled"
+    assert cancelled.json()["payments"][0]["status"] == "failed"
+
+    await test_db.refresh(first)
+    await test_db.refresh(second)
+    assert first.quantity == 2
+    assert first.reserved_quantity == 0
+    assert second.quantity == 5
+    assert second.reserved_quantity == 0
