@@ -310,6 +310,8 @@ async def search_drug_catalog(
                 authorization_country=(
                     payload.get("country") or payload.get("authorization_country")
                 ),
+                authorization_status=payload.get("authorization_status"),
+                product_class=payload.get("product_class"),
                 source_record_id=record.source_record_id,
                 source_name=record.source_name,
                 review_status=record.review_status,
