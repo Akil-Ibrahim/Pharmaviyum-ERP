@@ -29,7 +29,7 @@ type SaleResult = {
   id: number; receipt_number: string; status: string; total: string
   payments: { id: number; method: string; status: string }[]
 }
-const money = (value: number) => new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(value)
+const money = (value: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
 
 export function Pos() {
   const [query, setQuery] = useState('')
@@ -174,7 +174,7 @@ export function Pos() {
         method: 'POST',
         body: JSON.stringify({
           pharmacy_id: pharmacyId, idempotency_key: idempotencyKey.current,
-          currency: 'UAH', items: cart.map(item => ({ product_id: item.id, quantity: item.quantity })),
+          items: cart.map(item => ({ product_id: item.id, quantity: item.quantity })),
           discount_total: 0, payment_method: paymentMethod,
           ...(paymentMethod === 'cash' ? { cash_received: cash } : {}),
         }),
