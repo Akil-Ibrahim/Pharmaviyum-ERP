@@ -19,6 +19,8 @@ class DrugCatalogResult(BaseModel):
     gtin: str | None = None
     regulatory_id: str | None = None
     authorization_country: str | None = None
+    authorization_status: str | None = None
+    product_class: str | None = None
     source_record_id: str | None = None
     source_name: str | None = None
     review_status: str = "approved"
