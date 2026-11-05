@@ -55,6 +55,7 @@ async def _validate_product_exclusion(
             detail="Teva and Israeli medicines are excluded from Pharmaviyum",
         )
 
+
 @router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
     data: ProductCreate,
@@ -73,6 +74,7 @@ async def create_product(
     await db.commit()
     await db.refresh(product)
     return product
+
 
 @router.get("/search", response_model=list[ProductResponse])
 async def search_products(
