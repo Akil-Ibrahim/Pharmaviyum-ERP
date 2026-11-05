@@ -37,6 +37,8 @@ async def test_search_includes_medicinal_product_strength() -> None:
         ({"brand_name": "Teva"}, True),
         ({"manufacturer": "Teva Pharmaceutical Industries"}, True),
         ({"brand_name": "Generic brand", "authorization_country": "Israel"}, True),
+        ({"brand_name": "Generic brand", "authorization_country": "IL - Israel"}, True),
+        ({"brand_name": "Generic brand", "manufacturer_country": "ISR (Israel)"}, True),
         (
             {
                 "brand_name": "Generic brand",
