@@ -9,7 +9,7 @@ _ISRAEL_COUNTRY_VALUES = {
 _COUNTRY_KEYS = {
     "country", "authorizationcountry", "authorizationcountryname",
     "manufacturercountry", "countryoforigin", "countryofmanufacture",
-    "countryofproduction", "origin_country", "madein",
+    "countryofproduction", "origincountry", "madein",
 }
 
 
