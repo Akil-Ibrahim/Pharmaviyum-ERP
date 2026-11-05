@@ -10,8 +10,8 @@ from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from uuid import uuid4
 
-from fastapi import APIRouter, Header, HTTPException, Request, status
-from sqlalchemy import select
+from fastapi import APIRouter, Header, HTTPException, Query, Request, status
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.models.inventory import Inventory
@@ -20,6 +20,7 @@ from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.tenant import require_pharmacy_tenant
 from src.pharmaviyum.schemas.pos import SaleCreate, SaleResponse
+from src.pharmaviyum.schemas.pos_product import POSProductResponse
 
 router = APIRouter(prefix="/api/v1/pos", tags=["Point of Sale"])
 CENT = Decimal("0.01")
@@ -39,6 +40,71 @@ async def _load_sale(db: SessionDep, sale_id: int) -> Sale:
     if sale is None:
         raise HTTPException(status_code=404, detail="Sale not found")
     return sale
+
+
+
+@router.get("/products/search", response_model=list[POSProductResponse])
+async def search_pos_products(
+    db: SessionDep,
+    user: CurrentUser,
+    q: str = Query(..., min_length=2, max_length=100),
+    pharmacy_id: int = Query(..., gt=0),
+    limit: int = Query(20, ge=1, le=100),
+) -> list[POSProductResponse]:
+    """Search pharmacy sellable products with authoritative, non-expired tenant stock."""
+    await require_pharmacy_tenant(pharmacy_id, user, db)
+    term = f"%{q.strip()}%"
+    now = datetime.utcnow()
+    inventory_join = (
+        (Inventory.product_id == Product.id)
+        & (Inventory.pharmacy_id == pharmacy_id)
+        & (Inventory.expires_at.is_(None) | (Inventory.expires_at > now))
+    )
+    statement = (
+        select(
+            Product,
+            func.coalesce(
+                func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
+            ).label("available_stock"),
+        )
+        .outerjoin(Inventory, inventory_join)
+        .where(
+            Product.is_active.is_(True),
+            or_(
+                Product.name.ilike(term),
+                Product.sku.ilike(term),
+                Product.inn_name.ilike(term),
+                Product.manufacturer.ilike(term),
+                Product.regulatory_id.ilike(term),
+                Product.gtin.ilike(term),
+                Product.barcode.ilike(term),
+                Product.dosage_strength.ilike(term),
+                Product.dosage_form.ilike(term),
+            ),
+        )
+        .group_by(Product.id)
+        .order_by(Product.name.asc(), Product.id.asc())
+        .limit(limit)
+    )
+    rows = (await db.execute(statement)).all()
+    return [
+        POSProductResponse(
+            id=product.id,
+            name=product.name,
+            sku=product.sku,
+            dosage_strength=product.dosage_strength,
+            dosage_form=product.dosage_form,
+            units_per_pack=product.units_per_pack,
+            manufacturer=product.manufacturer,
+            inn_name=product.inn_name,
+            gtin=product.gtin,
+            barcode=product.barcode,
+            price=product.price,
+            stock=int(available_stock),
+            medicinal_product_id=product.medicinal_product_id,
+        )
+        for product, available_stock in rows
+    ]
 
 
 @router.post("/checkout", response_model=SaleResponse, status_code=status.HTTP_201_CREATED)
