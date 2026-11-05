@@ -24,6 +24,7 @@ type DrugCatalogResult = {
 }
 type InventoryLot = { inventory_id: number; lot_number: string | null; expiry_date: string | null; quantity: number; reserved_quantity: number; available_quantity: number; expiry_date_missing: boolean }
 type CartItem = LocalProduct & { quantity: number }
+type PharmacyOption = { id: number; name: string }
 type SaleResult = {
   id: number; receipt_number: string; status: string; total: string
   payments: { id: number; method: string; status: string }[]
