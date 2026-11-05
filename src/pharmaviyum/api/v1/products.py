@@ -39,10 +39,14 @@ async def _validate_product_exclusion(
     linked_country = (
         linked_product.authorization_country if linked_product is not None else None
     )
+    linked_manufacturer_country = (
+        linked_product.manufacturer_country if linked_product is not None else None
+    )
     if is_excluded_catalog_entry(
         brand_name=f"{name} {linked_brand or ''}",
         manufacturer=f"{manufacturer or ''} {linked_manufacturer or ''}",
         authorization_country=linked_country,
+        manufacturer_country=linked_manufacturer_country,
     ):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
