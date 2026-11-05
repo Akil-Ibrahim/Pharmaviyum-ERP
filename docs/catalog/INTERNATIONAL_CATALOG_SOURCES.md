@@ -36,6 +36,7 @@ Each importer records source identity, source version, extraction time, source U
 ## Review and saleability boundaries
 
 - Imported records are staged with pending_review status.
+- A superuser can approve a source record by linking it to an existing canonical reference or explicitly creating a global DrugReference and MedicinalProduct. The source record retains its provenance link.
 - POS reference search can show these records as **Pending review · reference only**, including INN/ingredient, brand/product name, strength, dosage form, route, manufacturer, country, and source-market status when supplied.
 - A staged record is not a local pharmacy Product. It has no local SKU, retail price, pharmacy inventory, batch, expiry, or sellable quantity.
 - Source-market approval is not authorization to sell in Ukraine or any other market. Local regulatory status and pharmacy policy must be checked independently.
