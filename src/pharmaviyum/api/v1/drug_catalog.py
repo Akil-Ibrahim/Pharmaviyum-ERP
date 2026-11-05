@@ -142,7 +142,7 @@ async def review_drug_catalog_source(
     db: SessionDep,
     reviewer: CurrentSuperuser,
 ) -> DrugCatalogSourceResult:
-    """Record an explicit review decision; never creates local products or stock."""
+    """Approve, reject, or link a source record without creating local sellable stock."""
     result = await db.execute(
         select(DrugCatalogSourceRecord)
         .where(DrugCatalogSourceRecord.id == record_id)
