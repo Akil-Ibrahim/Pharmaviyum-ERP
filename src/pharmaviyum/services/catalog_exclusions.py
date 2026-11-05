@@ -4,12 +4,23 @@ import re
 from collections.abc import Mapping
 
 _ISRAEL_COUNTRY_VALUES = {
-    "il", "isr", "israel", "state of israel", "израиль", "ізраїль",
+    "il",
+    "isr",
+    "israel",
+    "state of israel",
+    "израиль",
+    "ізраїль",
 }
 _COUNTRY_KEYS = {
-    "country", "authorizationcountry", "authorizationcountryname",
-    "manufacturercountry", "countryoforigin", "countryofmanufacture",
-    "countryofproduction", "origincountry", "madein",
+    "country",
+    "authorizationcountry",
+    "authorizationcountryname",
+    "manufacturercountry",
+    "countryoforigin",
+    "countryofmanufacture",
+    "countryofproduction",
+    "origincountry",
+    "madein",
 }
 
 
@@ -48,11 +59,9 @@ def is_excluded_catalog_entry(
 
     countries = [authorization_country, manufacturer_country, *_country_values(payload)]
     return any(
-        value is not None
-        and str(value).strip().casefold() in _ISRAEL_COUNTRY_VALUES
+        value is not None and str(value).strip().casefold() in _ISRAEL_COUNTRY_VALUES
         for value in countries
     )
-
 
 
 def allowed_pharmacy_product_conditions():
@@ -83,6 +92,10 @@ def allowed_pharmacy_product_conditions():
     return (
         not_(Product.name.ilike("%teva%")),
         not_(func.coalesce(Product.manufacturer, "").ilike("%teva%")),
-        not_(func.lower(func.trim(func.coalesce(Product.manufacturer_country, ""))).in_(israel_codes)),
+        not_(
+            func.lower(
+                func.trim(func.coalesce(Product.manufacturer_country, ""))
+            ).in_(israel_codes)
+        ),
         not_(linked_to_excluded_catalog_product),
     )
