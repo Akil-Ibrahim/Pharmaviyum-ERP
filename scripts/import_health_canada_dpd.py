@@ -157,22 +157,23 @@ async def stage_catalog(
         datasets["packaging"],
     )
     async with AsyncSessionLocal() as session:
-        existing = set(
-            (
-                await session.execute(
-                    select(DrugCatalogSourceRecord.source_record_id).where(
-                        DrugCatalogSourceRecord.source_name == SOURCE_NAME,
-                        DrugCatalogSourceRecord.source_version == version,
-                    )
-                )
-            ).scalars().all()
+        existing_result = await session.execute(
+            select(
+                DrugCatalogSourceRecord.source_record_id,
+                DrugCatalogSourceRecord.normalized_payload,
+            ).where(DrugCatalogSourceRecord.source_name == SOURCE_NAME)
         )
+        existing_payloads = {
+            source_id: payload for source_id, payload in existing_result.all()
+        }
         staged = 0
         for row in rows:
             source_id = row["source_record_id"]
-            if source_id in existing:
+            payload = {
+                key: value for key, value in row.items() if key != "source_record_id"
+            }
+            if existing_payloads.get(source_id) == payload:
                 continue
-            payload = {key: value for key, value in row.items() if key != "source_record_id"}
             session.add(
                 DrugCatalogSourceRecord(
                     source_name=SOURCE_NAME,
@@ -187,7 +188,7 @@ async def stage_catalog(
                     normalized_payload=payload,
                 )
             )
-            existing.add(source_id)
+            existing_payloads[source_id] = payload
             staged += 1
         await session.commit()
     return staged, len(rows) - staged
