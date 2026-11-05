@@ -164,6 +164,18 @@ async def suggest_drug_catalog_source_matches(
             status_code=status.HTTP_409_CONFLICT,
             detail="Match suggestions are only available for pending records",
         )
+    source_payload = source_record.normalized_payload or {}
+    if _is_excluded_catalog_entry(
+        brand_name=source_payload.get("brand_name") or source_payload.get("product_name"),
+        manufacturer=source_payload.get("manufacturer") or source_payload.get("holder"),
+        authorization_country=source_payload.get("authorization_country")
+        or source_payload.get("country"),
+        payload=source_payload,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="This catalog entry is excluded from Pharmaviyum",
+        )
 
     reference_rows_result = await db.execute(
         select(DrugReference.id, DrugReference.inn_name)
