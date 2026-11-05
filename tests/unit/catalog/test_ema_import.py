@@ -106,6 +106,16 @@ def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> N
             "Israel",
         ],
         [
+            "Israeli manufacturer",
+            "ibuprofen",
+            "200 mg",
+            "Tablet",
+            "Oral use",
+            "Germany",
+            "Example Pharma",
+            "Israel",
+        ],
+        [
             "Example Teva",
             "ibuprofen",
             "200 mg",
@@ -127,6 +137,7 @@ def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> N
             "route": "Oral use",
             "country": "Germany",
             "holder": "Example GmbH",
+            "manufacturer_country": "Germany",
         }
     ]
 
