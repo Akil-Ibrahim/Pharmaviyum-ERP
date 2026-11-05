@@ -115,6 +115,7 @@ async def search_pos_products(
         for product, available_stock in rows
     ]
 
+
 @router.post(
     "/inventory/receive",
     response_model=InventoryReceiptResponse,
