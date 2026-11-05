@@ -48,7 +48,7 @@ def _is_excluded_catalog_entry(
     """Hide Teva and explicitly Israel-origin/Israel-authorised catalog entries."""
     text_values = (brand_name, manufacturer)
     if any(
-        value is not None and re.search(r"\\bteva\\b", str(value), re.IGNORECASE)
+        value is not None and re.search(r"\bteva\b", str(value), re.IGNORECASE)
         for value in text_values
     ):
         return True
