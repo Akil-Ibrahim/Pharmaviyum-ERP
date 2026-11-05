@@ -14,11 +14,11 @@ import re
 import tempfile
 import zipfile
 from pathlib import Path
-
-from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 from xml.etree import ElementTree as ET
 
 import httpx
+
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
 EMA_URL = "https://www.ema.europa.eu/en/documents/other/article-57-product-data_en.xlsx"
 NS = {
