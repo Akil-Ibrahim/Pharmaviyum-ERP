@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 from pydantic import ValidationError
 
@@ -72,7 +74,7 @@ def test_product_manufacturer_country_is_supported_across_schemas() -> None:
         price=12.5,
         stock=0,
         is_active=True,
-        created_at=__import__("datetime").datetime(2026, 1, 1),
+        created_at=datetime(2026, 1, 1),
         updated_at=None,
     )
     assert response.manufacturer_country == "Germany"
