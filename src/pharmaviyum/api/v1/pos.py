@@ -107,7 +107,9 @@ async def search_pos_products(
     ]
 
 
-@router.post("/checkout", response_model=SaleResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/checkout", response_model=SaleResponse, status_code=status.HTTP_201_CREATED
+)
 async def checkout(
     payload: SaleCreate,
     db: SessionDep,
@@ -126,8 +128,12 @@ async def checkout(
     )
     existing = existing_result.scalar_one_or_none()
     if existing is not None:
-        requested_items = sorted((line.product_id, line.quantity) for line in payload.items)
-        saved_items = sorted((item.product_id, item.quantity) for item in existing.items)
+        requested_items = sorted(
+            (line.product_id, line.quantity) for line in payload.items
+        )
+        saved_items = sorted(
+            (item.product_id, item.quantity) for item in existing.items
+        )
         saved_payment = existing.payments[0] if existing.payments else None
         same_request = (
             requested_items == saved_items
@@ -146,11 +152,26 @@ async def checkout(
                 detail="Idempotency key was already used for a different checkout request",
             )
         return SaleResponse.model_validate(
-            {**{k: getattr(existing, k) for k in (
-                "id", "receipt_number", "pharmacy_id", "currency", "subtotal",
-                "discount_total", "total", "status", "created_at", "completed_at",
-                "items", "payments"
-            )}, "cash_change": existing.cash_change}
+            {
+                **{
+                    k: getattr(existing, k)
+                    for k in (
+                        "id",
+                        "receipt_number",
+                        "pharmacy_id",
+                        "currency",
+                        "subtotal",
+                        "discount_total",
+                        "total",
+                        "status",
+                        "created_at",
+                        "completed_at",
+                        "items",
+                        "payments",
+                    )
+                },
+                "cash_change": existing.cash_change,
+            }
         )
 
     product_ids = [line.product_id for line in payload.items]
@@ -162,18 +183,28 @@ async def checkout(
     )
     products = {product.id: product for product in products_result.scalars().all()}
     if len(products) != len(product_ids):
-        raise HTTPException(status_code=404, detail="One or more active products were not found")
+        raise HTTPException(
+            status_code=404, detail="One or more active products were not found"
+        )
 
     subtotal = sum(
-        (_money(products[line.product_id].price) * line.quantity for line in payload.items),
+        (
+            _money(products[line.product_id].price) * line.quantity
+            for line in payload.items
+        ),
         Decimal("0.00"),
     )
     discount = _money(payload.discount_total)
     total = _money(subtotal - discount)
     if discount > subtotal or total <= 0:
-        raise HTTPException(status_code=422, detail="Discount must be less than the subtotal and total must be positive")
+        raise HTTPException(
+            status_code=422,
+            detail="Discount must be less than the subtotal and total must be positive",
+        )
     if payload.payment_method == "cash" and _money(payload.cash_received or 0) < total:
-        raise HTTPException(status_code=422, detail="Cash received is less than the sale total")
+        raise HTTPException(
+            status_code=422, detail="Cash received is less than the sale total"
+        )
 
     now = datetime.utcnow()
     sale = Sale(
@@ -251,8 +282,14 @@ async def checkout(
         method=payload.payment_method,
         status="succeeded" if payload.payment_method == "cash" else "pending",
         amount=total,
-        cash_received=_money(payload.cash_received) if payload.payment_method == "cash" else None,
-        change_due=(_money(payload.cash_received or 0) - total) if payload.payment_method == "cash" else None,
+        cash_received=(
+            _money(payload.cash_received) if payload.payment_method == "cash" else None
+        ),
+        change_due=(
+            (_money(payload.cash_received or 0) - total)
+            if payload.payment_method == "cash"
+            else None
+        ),
         currency=payload.currency,
         provider_name="cash_register" if payload.payment_method == "cash" else None,
         idempotency_key=payload.idempotency_key,
@@ -274,8 +311,12 @@ async def checkout(
         duplicate = duplicate_result.scalar_one_or_none()
         if duplicate is None:
             raise
-        duplicate_items = sorted((item.product_id, item.quantity) for item in duplicate.items)
-        requested_items = sorted((line.product_id, line.quantity) for line in payload.items)
+        duplicate_items = sorted(
+            (item.product_id, item.quantity) for item in duplicate.items
+        )
+        requested_items = sorted(
+            (line.product_id, line.quantity) for line in payload.items
+        )
         duplicate_payment = duplicate.payments[0] if duplicate.payments else None
         if (
             duplicate_items != requested_items
@@ -285,19 +326,38 @@ async def checkout(
             or duplicate_payment.method != payload.payment_method
             or (
                 payload.payment_method == "cash"
-                and duplicate_payment.cash_received != _money(payload.cash_received or 0)
+                and duplicate_payment.cash_received
+                != _money(payload.cash_received or 0)
             )
         ):
-            raise HTTPException(status_code=409, detail="Idempotency key conflicts with another checkout")
+            raise HTTPException(
+                status_code=409,
+                detail="Idempotency key conflicts with another checkout",
+            )
         return SaleResponse.model_validate(duplicate)
 
     saved = await _load_sale(db, sale.id)
     return SaleResponse.model_validate(
-        {**{k: getattr(saved, k) for k in (
-            "id", "receipt_number", "pharmacy_id", "currency", "subtotal",
-            "discount_total", "total", "status", "created_at", "completed_at",
-            "items", "payments"
-        )}, "cash_change": saved.cash_change}
+        {
+            **{
+                k: getattr(saved, k)
+                for k in (
+                    "id",
+                    "receipt_number",
+                    "pharmacy_id",
+                    "currency",
+                    "subtotal",
+                    "discount_total",
+                    "total",
+                    "status",
+                    "created_at",
+                    "completed_at",
+                    "items",
+                    "payments",
+                )
+            },
+            "cash_change": saved.cash_change,
+        }
     )
 
 
@@ -318,7 +378,9 @@ async def payment_webhook(
         raise HTTPException(status_code=503, detail="Payment webhook is not configured")
     raw_body = await request.body()
     expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
-    if not x_pharmaviyum_signature or not hmac.compare_digest(expected, x_pharmaviyum_signature):
+    if not x_pharmaviyum_signature or not hmac.compare_digest(
+        expected, x_pharmaviyum_signature
+    ):
         raise HTTPException(status_code=401, detail="Invalid payment webhook signature")
     try:
         event = json.loads(raw_body)
@@ -328,10 +390,20 @@ async def payment_webhook(
         provider_payment_id = str(event["provider_payment_id"])
         event_amount = _money(Decimal(str(event["amount"])))
         event_currency = str(event["currency"]).upper()
-    except (ValueError, TypeError, KeyError, json.JSONDecodeError, InvalidOperation) as exc:
-        raise HTTPException(status_code=400, detail="Invalid payment event payload") from exc
+    except (
+        ValueError,
+        TypeError,
+        KeyError,
+        json.JSONDecodeError,
+        InvalidOperation,
+    ) as exc:
+        raise HTTPException(
+            status_code=400, detail="Invalid payment event payload"
+        ) from exc
     if event_status not in {"succeeded", "failed"}:
-        raise HTTPException(status_code=422, detail="Unsupported payment event status")
+        raise HTTPException(
+            status_code=422, detail="Unsupported payment event status"
+        )
 
     payment_lookup = await db.get(Payment, payment_id)
     if payment_lookup is None or payment_lookup.method == "cash":
@@ -346,11 +418,18 @@ async def payment_webhook(
     payment = result.scalar_one()
     if payment.status != "pending":
         # Webhook retries are intentionally idempotent.
-        if payment.status == event_status and payment.provider_payment_id == provider_payment_id:
+        if (
+            payment.status == event_status
+            and payment.provider_payment_id == provider_payment_id
+        ):
             return {"status": "already_processed"}
-        raise HTTPException(status_code=409, detail="Payment has already been finalized")
+        raise HTTPException(
+            status_code=409, detail="Payment has already been finalized"
+        )
     if event_amount != payment.amount or event_currency != payment.currency:
-        raise HTTPException(status_code=409, detail="Payment amount or currency does not match the sale")
+        raise HTTPException(
+            status_code=409, detail="Payment amount or currency does not match the sale"
+        )
     allocations_result = await db.execute(
         select(SaleItemAllocation)
         .join(SaleItem, SaleItem.id == SaleItemAllocation.sale_item_id)
@@ -359,7 +438,10 @@ async def payment_webhook(
     allocations = list(allocations_result.scalars().all())
     inventory_ids = [allocation.inventory_id for allocation in allocations]
     inventory_result = await db.execute(
-        select(Inventory).where(Inventory.id.in_(inventory_ids)).order_by(Inventory.id.asc()).with_for_update()
+        select(Inventory)
+        .where(Inventory.id.in_(inventory_ids))
+        .order_by(Inventory.id.asc())
+        .with_for_update()
     )
     inventory_by_id = {row.id: row for row in inventory_result.scalars().all()}
 
@@ -394,14 +476,18 @@ async def cancel_pending_sale(
         raise HTTPException(status_code=404, detail="Sale not found")
     await require_pharmacy_tenant(sale.pharmacy_id, user, db)
     if sale.status != "awaiting_payment":
-        raise HTTPException(status_code=409, detail="Only pending-payment sales can be cancelled")
+        raise HTTPException(
+            status_code=409, detail="Only pending-payment sales can be cancelled"
+        )
 
     payment_result = await db.execute(
         select(Payment).where(Payment.sale_id == sale.id).with_for_update()
     )
     payments = list(payment_result.scalars().all())
     if any(payment.status == "succeeded" for payment in payments):
-        raise HTTPException(status_code=409, detail="A settled sale cannot be cancelled")
+        raise HTTPException(
+            status_code=409, detail="A settled sale cannot be cancelled"
+        )
 
     allocation_result = await db.execute(
         select(SaleItemAllocation)
