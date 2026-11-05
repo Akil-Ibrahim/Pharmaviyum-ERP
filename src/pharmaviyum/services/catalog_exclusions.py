@@ -52,7 +52,7 @@ def is_excluded_catalog_entry(
 ) -> bool:
     """Reject Teva and products explicitly identified as Israeli by country metadata."""
     if any(
-        value is not None and re.search(r"\bteva\b", str(value), re.IGNORECASE)
+        value is not None and re.search(r"teva", str(value), re.IGNORECASE)
         for value in (brand_name, manufacturer)
     ):
         return True
