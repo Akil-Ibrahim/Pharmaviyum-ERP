@@ -23,6 +23,11 @@ type DrugCatalogResult = {
   gtin: string | null; regulatory_id: string | null
 }
 type CartItem = LocalProduct & { quantity: number }
+type PharmacyOption = { id: number; name: string }
+type SaleResult = {
+  id: number; receipt_number: string; status: string; total: string
+  payments: { id: number; method: string; status: string }[]
+}
 
 const money = (value: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'UAH' }).format(value)
@@ -55,6 +60,15 @@ export function Pos() {
     () => Array.from(new Set(localResults.map(item => item.dosage_form?.trim()).filter((form): form is string => Boolean(form)))).sort((a, b) => a.localeCompare(b)),
     [localResults],
   )
+  useEffect(() => {
+    apiFetch<PharmacyOption[]>('/api/v1/pharmacies')
+      .then(items => {
+        setPharmacies(items)
+        setPharmacyId(current => current ?? items[0]?.id)
+      })
+      .catch(() => setNotice('Could not load your authorized pharmacy locations.'))
+  }, [])
+
   const visibleLocalResults = useMemo(() => localResults.filter(product => {
     const matchesForm = selectedForm === 'all' || product.dosage_form === selectedForm
     const matchesStock = stockFilter === 'all' || (stockFilter === 'available' ? product.stock > 0 : product.stock > 0 && product.stock <= 5)
@@ -77,7 +91,7 @@ export function Pos() {
       setReferenceLoading(true)
       setLocalError(false)
       setReferenceError(false)
-      apiFetch<LocalProduct[]>(`/products/search?q=${encodeURIComponent(term)}&limit=20`)
+      if (pharmacyId) apiFetch<LocalProduct[]>(`/api/v1/pos/products/search?q=${encodeURIComponent(term)}&pharmacy_id=${pharmacyId}&limit=20`)
         .then(items => { if (!cancelled) setLocalResults(items) })
         .catch(() => { if (!cancelled) { setLocalResults([]); setLocalError(true) } })
         .finally(() => { if (!cancelled) setLoading(false) })
@@ -87,7 +101,7 @@ export function Pos() {
         .finally(() => { if (!cancelled) setReferenceLoading(false) })
     }, 180)
     return () => { cancelled = true; clearTimeout(timer) }
-  }, [query])
+  }, [query, pharmacyId])
 
   const resetSale = () => {
     setCart([])
@@ -139,7 +153,7 @@ export function Pos() {
     }
     setLoading(true)
     try {
-      const freshResults = await apiFetch<LocalProduct[]>(`/products/search?q=${encodeURIComponent(term)}&limit=20`)
+      if (!pharmacyId) throw new Error('Select a pharmacy first')\n      const freshResults = await apiFetch<LocalProduct[]>(`/api/v1/pos/products/search?q=${encodeURIComponent(term)}&pharmacy_id=${pharmacyId}&limit=20`)
       setLocalResults(freshResults)
       const exactMatch = findExact(freshResults)
       if (exactMatch) addToCart(exactMatch)
@@ -155,6 +169,46 @@ export function Pos() {
     if (!cart.length) return
     setPaymentOpen(true)
     setCashReceived(total.toFixed(2))
+  }
+
+  const submitCheckout = async () => {
+    if (!pharmacyId || !cart.length || checkoutLoading) return
+    if (paymentMethod === 'cash' && cash < total) {
+      setNotice('Cash received is less than the amount due.')
+      return
+    }
+    setCheckoutLoading(true)
+    setNotice('')
+    if (!idempotencyKey.current) idempotencyKey.current = crypto.randomUUID()
+    try {
+      const sale = await apiFetch<SaleResult>('/api/v1/pos/checkout', {
+        method: 'POST',
+        body: JSON.stringify({
+          pharmacy_id: pharmacyId,
+          idempotency_key: idempotencyKey.current,
+          currency: 'UAH',
+          items: cart.map(item => ({ product_id: item.id, quantity: item.quantity })),
+          discount_total: Number(discountAmount.toFixed(2)),
+          payment_method: paymentMethod,
+          ...(paymentMethod === 'cash' ? { cash_received: Number(cashReceived) } : {}),
+        }),
+      })
+      setLastSale(sale)
+      idempotencyKey.current = crypto.randomUUID()
+      if (sale.status === 'completed') {
+        setNotice(`Sale completed. Receipt ${sale.receipt_number}.`)
+        setCart([])
+        setDiscount('0')
+        setCashReceived('')
+        setPaymentOpen(false)
+      } else {
+        setNotice(`Payment ${sale.payments[0]?.id ?? ''} is pending provider confirmation. Stock is reserved until settlement.`)
+      }
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Checkout failed. No completed sale was confirmed.')
+    } finally {
+      setCheckoutLoading(false)
+    }
   }
 
   const closePaymentReview = () => {
@@ -193,6 +247,12 @@ export function Pos() {
           </div>
         </div>
         <div className='flex flex-wrap items-center gap-2'>
+          <div className='flex items-center gap-2'>
+            <label htmlFor='pos-pharmacy' className='text-xs text-muted-foreground'>Pharmacy</label>
+            <select id='pos-pharmacy' value={pharmacyId ?? ''} onChange={event => setPharmacyId(Number(event.target.value) || undefined)} className='h-9 max-w-[220px] rounded-md border bg-background px-2 text-sm' disabled={!pharmacies.length}>
+              {pharmacies.map(pharmacy => <option key={pharmacy.id} value={pharmacy.id}>{pharmacy.name}</option>)}
+            </select>
+          </div>
           <Badge variant='outline' className='px-3 py-2'>Counter workspace</Badge>
           <Button variant='outline' onClick={resetSale}>
             <Plus className='mr-2 size-4' /> New sale
@@ -446,7 +506,7 @@ export function Pos() {
               <Button variant='outline' className='w-full' onClick={resetSale} disabled={!cart.length && !customer && discountPercent === 0}>
                 <X className='mr-2 size-4' /> Clear sale
               </Button>
-              <p className='text-xs leading-relaxed text-muted-foreground'>Checkout is in review-only mode. A completed sale requires an atomic backend transaction for receipt lines, payment and stock allocation.</p>
+              <p className='text-xs leading-relaxed text-muted-foreground'>Stock availability is calculated for the selected pharmacy. Checkout revalidates and allocates FEFO lots on the server.</p>
             </CardContent>
           </Card>
 
