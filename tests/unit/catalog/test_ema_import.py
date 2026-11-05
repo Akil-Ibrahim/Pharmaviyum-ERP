@@ -55,6 +55,7 @@ def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> N
             "Route of administration",
             "Country where authorised",
             "Name of marketing authorisation holder",
+            "Manufacturer country",
         ],
         [
             "ExampleMed",
@@ -64,6 +65,7 @@ def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> N
             "Oral use",
             "Germany",
             "Example GmbH",
+            "Germany",
         ],
         [
             "Combination semicolon",
@@ -73,6 +75,7 @@ def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> N
             "Oral use",
             "France",
             "Example SAS",
+            "France",
         ],
         [
             "Combination slash",
@@ -100,6 +103,7 @@ def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> N
             "Oral use",
             "Israel",
             "Example Ltd",
+            "Israel",
         ],
         [
             "Example Teva",
@@ -109,6 +113,7 @@ def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> N
             "Oral use",
             "Germany",
             "Teva Pharmaceutical Industries",
+            "Germany",
         ],
     ]
     _xlsx(path, rows)
