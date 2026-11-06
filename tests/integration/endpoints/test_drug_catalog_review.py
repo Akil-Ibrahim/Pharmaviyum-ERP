@@ -117,9 +117,24 @@ class TestDrugCatalogSourceReviewEndpoints:
 
         reviewed = await authenticated_client.patch(
             f"/api/v1/drug-catalog/sources/{record.id}/review",
-            json={"review_status": "approved"},
+            json={"review_status": "rejected"},
         )
         assert reviewed.status_code == 422
+        assert record.review_status == "pending_review"
+
+    async def test_invalid_approval_payload_returns_422(
+        self,
+        authenticated_client: AsyncClient,
+        test_db: AsyncSession,
+    ):
+        record = await create_source_record(test_db)
+
+        response = await authenticated_client.patch(
+            f"/api/v1/drug-catalog/sources/{record.id}/review",
+            json={"review_status": "approved"},
+        )
+
+        assert response.status_code == 422
         assert record.review_status == "pending_review"
 
     async def test_review_approves_existing_reference_and_prevents_second_review(
