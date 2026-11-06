@@ -143,9 +143,7 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
         )
         assert response.status_code == 404
         assert (
-            await test_db.scalar(
-                select(Sale).where(Sale.idempotency_key == key)
-            )
+            await test_db.scalar(select(Sale).where(Sale.idempotency_key == key))
             is None
         )
 
