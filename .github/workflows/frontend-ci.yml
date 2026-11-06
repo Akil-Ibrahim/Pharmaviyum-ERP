@@ -42,8 +42,7 @@ jobs:
           fi
           if [ -n "$FILES" ]; then
             cd "$GITHUB_WORKSPACE"
-            printf '%s
-' "$FILES" | xargs bunx prettier --check
+            printf '%s\n' "$FILES" | xargs bunx prettier --check
           else
             echo "No frontend files changed; skipping Prettier."
           fi
