@@ -94,7 +94,7 @@ def test_pharmacy_product_visibility_enforces_catalog_exclusions_by_default() ->
 
     statement = select(Product).where(*conditions)
     sql = str(statement.compile(compile_kwargs={"literal_binds": True})).lower()
-    assert " where " in sql
+    assert "\nwhere " in sql
     assert "products.name" in sql
     assert "products.manufacturer" in sql
     assert "products.manufacturer_country" in sql
