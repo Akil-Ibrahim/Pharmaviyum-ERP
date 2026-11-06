@@ -34,15 +34,29 @@ jobs:
       - name: Prettier
         shell: bash
         run: |
+          set -euo pipefail
           if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
-            BASE_REF="origin/$GITHUB_BASE_REF"
-            FILES="$(git diff --name-only "$BASE_REF...$GITHUB_SHA" -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.json' '*.css' '*.html')"
+            BASE_SHA="origin/$GITHUB_BASE_REF"
+            HEAD_SHA="$GITHUB_SHA"
           else
-            FILES="$(git diff --name-only "$GITHUB_SHA^" "$GITHUB_SHA" -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.json' '*.css' '*.html')"
+            BASE_SHA="${GITHUB_SHA}^"
+            HEAD_SHA="$GITHUB_SHA"
           fi
-          if [ -n "$FILES" ]; then
-            cd "$GITHUB_WORKSPACE"
-            printf '%s\n' "$FILES" | xargs bunx prettier --check
+
+          mapfile -t CHANGED_PATHS < <(
+            git -C "$GITHUB_WORKSPACE" diff --name-only "$BASE_SHA" "$HEAD_SHA" -- frontend/shadcn-admin
+          )
+          FILES=()
+          for path in "${CHANGED_PATHS[@]}"; do
+            case "$path" in
+              *.ts|*.tsx|*.js|*.jsx|*.json|*.css|*.html)
+                FILES+=("${path#frontend/shadcn-admin/}")
+                ;;
+            esac
+          done
+
+          if (("${#FILES[@]}" > 0)); then
+            bunx prettier --check "${FILES[@]}"
           else
             echo "No frontend files changed; skipping Prettier."
           fi
