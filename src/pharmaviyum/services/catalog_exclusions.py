@@ -1,15 +1,14 @@
-"""Central policy for excluding disallowed manufacturers and country origins.
+"""Central policy for excluding Teva and Israeli-origin/authorized medicines.
 
-The exclusion policy is intentionally paused while the international catalogue is
-being populated. Set CATALOG_EXCLUSIONS_ENABLED to True when the user asks to
-resume the Teva / Israeli-origin filtering task.
+The policy is enabled by default and is shared by catalog ingestion, review,
+autocomplete, pharmacy product search, POS add-to-cart, and checkout.
 """
 
 import re
 from collections.abc import Mapping
 
-# Temporary pause requested by the user on 2026-11-05.
-CATALOG_EXCLUSIONS_ENABLED = False
+# Enforce the user's catalog exclusion policy in every environment.
+CATALOG_EXCLUSIONS_ENABLED = True
 
 _ISRAEL_COUNTRY_VALUES = {
     "il",
@@ -23,6 +22,13 @@ _COUNTRY_KEYS = {
     "country",
     "authorizationcountry",
     "authorizationcountryname",
+    "countryofauthorization",
+    "countrywhereauthorised",
+    "countrywhereauthorized",
+    "countryofmarketingauthorisation",
+    "countryofmarketingauthorization",
+    "marketingauthorisationcountry",
+    "marketingauthorizationcountry",
     "manufacturercountry",
     "countryoforigin",
     "countryofmanufacture",
