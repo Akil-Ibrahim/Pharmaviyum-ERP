@@ -6,9 +6,9 @@ from contextlib import asynccontextmanager
 from typing import cast
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from src.pharmaviyum.ai.config import settings
@@ -88,6 +88,7 @@ app.add_middleware(
         else ["Authorization", "Content-Type", "X-Request-ID"]
     ),
 )
+
 
 async def _handle_pharmaviyum_api_error(
     request: Request, exc: Exception
