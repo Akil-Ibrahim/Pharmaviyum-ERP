@@ -17,16 +17,17 @@ import shutil
 import tempfile
 import zipfile
 from pathlib import Path
+from urllib.parse import urlparse
 
 import httpx
 
 from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
-RXNORM_URL = (
-    "https://download.nlm.nih.gov/umls/kss/rxnorm/"
-    "RxNorm_full_prescribe_current.zip"
+RXNORM_RELEASES_URL = (
+    "https://uts-ws.nlm.nih.gov/releases?"
+    "releaseType=rxnorm-prescribable-content-monthly-release&current=true"
 )
-PRODUCT_TERMS = {"SCD", "SBD"}
+PRODUCT_TERMS = {"SCD"}
 INGREDIENT_TERMS = {"IN", "PIN"}
 INGREDIENT_RELATIONS = {"has_ingredient", "has_precise_ingredient"}
 STRENGTH_RE = re.compile(
@@ -50,6 +51,79 @@ ROUTE_TERMS = {
     "buccal",
     "sublingual",
 }
+
+def _release_records(payload: object) -> list[dict[str, object]]:
+    """Extract release records from the NLM Release API response."""
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    if not isinstance(payload, dict):
+        return []
+    if "downloadUrl" in payload:
+        return [payload]
+    for key in ("result", "results", "releases", "releaseList"):
+        nested = payload.get(key)
+        records = _release_records(nested)
+        if records:
+            return records
+    return []
+
+
+def get_current_rxnorm_download_url() -> tuple[str, str]:
+    """Resolve the current prescribable RxNorm archive from NLM's Release API."""
+    response = httpx.get(
+        RXNORM_RELEASES_URL,
+        timeout=30,
+        follow_redirects=True,
+    )
+    response.raise_for_status()
+    releases = _release_records(response.json())
+    if not releases:
+        raise ValueError("NLM Release API returned no RxNorm prescribable releases")
+
+    current = next(
+        (
+            release
+            for release in releases
+            if str(release.get("current", "")).casefold() in {"true", "1", "yes"}
+        ),
+        releases[0],
+    )
+    download_url = str(current.get("downloadUrl") or "").strip()
+    parsed_url = urlparse(download_url)
+    if (
+        parsed_url.scheme != "https"
+        or parsed_url.hostname != "download.nlm.nih.gov"
+        or "rxnorm" not in parsed_url.path.casefold()
+        or not parsed_url.path.casefold().endswith(".zip")
+    ):
+        raise ValueError(
+            "NLM Release API returned an unexpected RxNorm download URL"
+        )
+
+    version = str(
+        current.get("releaseVersion")
+        or current.get("releaseDate")
+        or current.get("fileName")
+        or "current"
+    )
+    return download_url, version
+
+
+def validate_rxnorm_archive(
+    archive_path: Path,
+    content_type: str,
+    download_url: str,
+) -> None:
+    """Fail clearly if NLM returns an HTML error page instead of a ZIP archive."""
+    if zipfile.is_zipfile(archive_path):
+        return
+    with archive_path.open("rb") as archive_file:
+        prefix = archive_file.read(80)
+    raise ValueError(
+        "NLM RxNorm download did not return a ZIP archive "
+        f"(content-type={content_type or 'unknown'}, url={download_url}, "
+        f"first_bytes={prefix[:40]!r})"
+    )
 
 
 def _rrf_rows(path: Path):
@@ -179,7 +253,7 @@ def _archive_version(path: Path) -> str:
     return f"sha256:{digest.hexdigest()}"
 
 
-async def import_catalog(path: Path) -> tuple[int, int]:
+async def import_catalog(path: Path, source_url: str) -> tuple[int, int]:
     """Stage RxNorm records for review; do not mutate the approved drug catalog."""
     from datetime import datetime
 
@@ -205,9 +279,9 @@ async def import_catalog(path: Path) -> tuple[int, int]:
             source_name="RxNorm",
             source_record_id=product["rxcui"],
             source_version=version,
-            source_url=RXNORM_URL,
+            source_url=source_url,
             license_terms=(
-                "NLM RxNorm; review current UMLS/RxNorm terms before redistribution."
+                "NLM RxNorm Current Prescribable Content; review NLM terms before redistribution."
             ),
             extracted_at=datetime.utcnow(),
             normalized_payload={
@@ -247,31 +321,38 @@ async def main() -> None:
     )
     args = parser.parse_args()
 
+    download_url, release_version = get_current_rxnorm_download_url()
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = Path(temp_dir) / "rxnorm.zip"
         headers = {"User-Agent": "Pharmaviyum-DrugCatalog/1.0"}
+        content_type = ""
         with httpx.stream(
             "GET",
-            RXNORM_URL,
+            download_url,
             headers=headers,
             timeout=120,
             follow_redirects=True,
         ) as response:
             response.raise_for_status()
+            content_type = response.headers.get("content-type", "")
             with archive_path.open("wb") as archive_file:
                 for chunk in response.iter_bytes():
                     archive_file.write(chunk)
 
+        validate_rxnorm_archive(archive_path, content_type, download_url)
+
         if args.dry_run:
             references, products = parse_rxnorm_archive(archive_path)
             print(
-                f"RxNorm dry run: {len(references)} ingredient concepts and "
-                f"{len(products)} single-ingredient products parsed; "
-                "database unchanged."
+                f"RxNorm dry run ({release_version}): {len(references)} "
+                f"ingredient concepts and {len(products)} single-ingredient "
+                "products parsed; database unchanged."
             )
             return
 
-        references_added, products_added = await import_catalog(archive_path)
+        references_added, products_added = await import_catalog(
+            archive_path, source_url=download_url
+        )
 
     print(
         f"RxNorm staging complete: {references_added} source records added, "
