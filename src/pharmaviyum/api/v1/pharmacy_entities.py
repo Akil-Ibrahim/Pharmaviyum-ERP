@@ -17,6 +17,9 @@ from src.pharmaviyum.models.product_batch import ProductBatch
 from src.pharmaviyum.models.supplier import Supplier
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.models import PharmacyMembership
+from src.pharmaviyum.services.catalog_exclusions import (
+    allowed_pharmacy_product_conditions,
+)
 
 router = APIRouter(prefix="/api/v1", tags=["Pharmacy Domain"])
 
