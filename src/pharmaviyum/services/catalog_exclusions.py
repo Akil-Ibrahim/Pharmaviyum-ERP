@@ -86,7 +86,7 @@ def is_excluded_catalog_entry(
 
 
 def allowed_pharmacy_product_conditions():
-    """SQL predicates for the exclusion policy; empty while the policy is paused."""
+    """SQL predicates that prevent excluded medicines from entering pharmacy workflows."""
     if not CATALOG_EXCLUSIONS_ENABLED:
         return ()
 
@@ -127,7 +127,7 @@ def allowed_pharmacy_product_conditions():
 
 
 def allowed_medicinal_product_conditions():
-    """SQL predicates for catalogue autocomplete; empty while policy is paused."""
+    """SQL predicates that prevent excluded medicines from catalog autocomplete."""
     if not CATALOG_EXCLUSIONS_ENABLED:
         return ()
 
