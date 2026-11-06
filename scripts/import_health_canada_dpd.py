@@ -55,8 +55,14 @@ def normalize_dpd_records(
     company_countries: dict[str, set[str]] = defaultdict(set)
     for company in companies or []:
         company_name = " ".join(str(company.get("company_name") or "").split())
+        company_type = str(company.get("company_type") or "").casefold()
         country_name = str(company.get("country_name") or "").strip()
-        if company_name and country_name:
+        # A DIN owner or mailing contact is not necessarily the manufacturer.
+        if (
+            company_name
+            and country_name
+            and "manufacturer" in company_type
+        ):
             company_countries[company_name.casefold()].add(country_name)
 
     ingredients_by_code: dict[str, list[dict[str, Any]]] = defaultdict(list)
