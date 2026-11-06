@@ -24,6 +24,7 @@ BASE_URL = "https://health-products.canada.ca/api/drug/"
 SOURCE_NAME = "Health Canada DPD"
 ENDPOINTS = {
     "products": "drugproduct/?lang=en&type=json",
+    "companies": "company/?lang=en&type=json",
     "ingredients": "activeingredient/?lang=en&type=json",
     "forms": "form/?lang=en&type=json",
     "routes": "route/?lang=en&type=json",
@@ -48,8 +49,16 @@ def normalize_dpd_records(
     routes: list[dict[str, Any]],
     statuses: list[dict[str, Any]],
     packaging: list[dict[str, Any]],
+    companies: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, str]]:
-    """Normalize current single-ingredient Canadian drug product records."""
+    """Normalize single-ingredient products with verified manufacturer origin."""
+    company_countries: dict[str, set[str]] = defaultdict(set)
+    for company in companies or []:
+        company_name = " ".join(str(company.get("company_name") or "").split())
+        country_name = str(company.get("country_name") or "").strip()
+        if company_name and country_name:
+            company_countries[company_name.casefold()].add(country_name)
+
     ingredients_by_code: dict[str, list[dict[str, Any]]] = defaultdict(list)
     forms_by_code: dict[str, set[str]] = defaultdict(set)
     routes_by_code: dict[str, set[str]] = defaultdict(set)
@@ -98,6 +107,22 @@ def normalize_dpd_records(
         strength = " ".join(part for part in (strength_value, strength_unit) if part)
         din = str(product.get("drug_identification_number") or "").strip()
         brand = str(product.get("brand_name") or "").strip()
+        manufacturer = str(product.get("company_name") or "").strip()
+        origin_countries = set(
+            company_countries.get(manufacturer.casefold(), set())
+        )
+        for field in (
+            "manufacturer_country",
+            "country_of_origin",
+            "country_of_manufacture",
+        ):
+            country_value = str(product.get(field) or "").strip()
+            if country_value:
+                origin_countries.add(country_value)
+        # DPD's product endpoint omits manufacturer country. Resolve it through
+        # the official company endpoint; unknown origin fails closed.
+        if not manufacturer or not origin_countries:
+            continue
         candidate = {
             "source_record_id": f"DPD:{code}",
             "product_name": brand or str(product.get("descriptor") or ingredient_name),
@@ -106,12 +131,8 @@ def normalize_dpd_records(
             "strength": strength,
             "dosage_form": " / ".join(sorted(forms_by_code.get(code, set()))),
             "route": " / ".join(sorted(routes_by_code.get(code, set()))),
-            "manufacturer": str(product.get("company_name") or "").strip(),
-            "manufacturer_country": (
-                product.get("manufacturer_country")
-                or product.get("country_of_origin")
-                or product.get("country_of_manufacture")
-            ),
+            "manufacturer": manufacturer,
+            "manufacturer_country": " / ".join(sorted(origin_countries)),
             "country": "CA",
             "regulatory_id": din,
             "authorization_status": current_status,
@@ -167,6 +188,7 @@ async def stage_catalog(
         datasets["routes"],
         datasets["statuses"],
         datasets["packaging"],
+        datasets["companies"],
     )
     async with AsyncSessionLocal() as session:
         existing_result = await session.execute(
