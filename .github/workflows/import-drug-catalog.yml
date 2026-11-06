@@ -39,6 +39,7 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       PGVECTOR_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PYTHONPATH: ${{ github.workspace }}
     steps:
       - name: Checkout main
         uses: actions/checkout@v4.4.0
