@@ -132,14 +132,8 @@ def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> N
 
     parsed = parse_ema_xlsx(path)
 
-    # The exclusion policy is paused: all otherwise-valid single-ingredient
-    # records are retained, regardless of manufacturer or country.
-    assert [row["product_name"] for row in parsed] == [
-        "ExampleMed",
-        "Israeli Example",
-        "Israeli manufacturer",
-        "Example Teva",
-    ]
+    # Teva and Israeli-authorized or Israeli-manufactured products are excluded.
+    assert [row["product_name"] for row in parsed] == ["ExampleMed"]
     assert parsed[0] == {
         "product_name": "ExampleMed",
         "ingredient": "ibuprofen",
