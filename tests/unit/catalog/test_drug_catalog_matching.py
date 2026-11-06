@@ -97,7 +97,6 @@ def test_rank_reference_ids_keeps_fuzzy_candidates_and_bounds_hydration():
     assert ranked == [1]
 
 
-
 @pytest.mark.parametrize(
     ("field", "value"),
     [
