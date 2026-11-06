@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Search, RefreshCw } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -33,7 +33,7 @@ export function EntityPage({ title, description, endpoint, columns = [], status 
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
 
-  const load = () => {
+  const load = useCallback(() => {
     if (!endpoint) return
     setLoading(true)
     setError(null)
@@ -41,9 +41,12 @@ export function EntityPage({ title, description, endpoint, columns = [], status 
       .then(setRows)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to load data'))
       .finally(() => setLoading(false))
-  }
+  }, [endpoint])
 
-  useEffect(() => { const timer = window.setTimeout(load, 0); return () => window.clearTimeout(timer) }, [endpoint])
+  useEffect(() => {
+    const timer = window.setTimeout(load, 0)
+    return () => window.clearTimeout(timer)
+  }, [load])
 
   const visibleColumns = columns.length ? columns : rows[0] ? Object.keys(rows[0]).slice(0, 6) : []
   const filteredRows = useMemo(() => {
