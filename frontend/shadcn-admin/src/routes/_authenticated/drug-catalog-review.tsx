@@ -60,7 +60,9 @@ function DrugCatalogReviewPage() {
   }, [])
 
   useEffect(() => {
-    if (isAdmin) void loadRecords()
+    if (!isAdmin) return
+    const timer = window.setTimeout(() => { void loadRecords() }, 0)
+    return () => window.clearTimeout(timer)
   }, [isAdmin, loadRecords])
 
   const chooseRecord = (record: SourceRecord) => {
