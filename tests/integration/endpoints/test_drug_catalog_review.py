@@ -135,6 +135,9 @@ class TestDrugCatalogSourceReviewEndpoints:
         )
 
         assert response.status_code == 422
+        error_details = response.json()["error"]["details"]
+        assert error_details
+        assert "input" not in error_details[0]
         assert record.review_status == "pending_review"
 
     async def test_review_approves_existing_reference_and_prevents_second_review(
