@@ -42,17 +42,16 @@ function DrugCatalogReviewPage() {
   const [matches, setMatches] = useState<MatchCandidate[]>([])
   const [selectedMatch, setSelectedMatch] = useState<MatchCandidate | null>(null)
   const [notes, setNotes] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [matching, setMatching] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   const loadRecords = useCallback(async () => {
-    setLoading(true)
-    setError('')
     try {
       const result = await apiFetch<SourceRecord[]>('/api/v1/drug-catalog/sources?review_status=pending_review&limit=200')
       setRecords(result)
+      setError('')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось загрузить очередь проверки')
     } finally {
@@ -111,6 +110,7 @@ function DrugCatalogReviewPage() {
       setSelected(null)
       setMatches([])
       setSelectedMatch(null)
+      setLoading(true)
       await loadRecords()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось сохранить решение')
@@ -127,7 +127,7 @@ function DrugCatalogReviewPage() {
     <div className='space-y-6 p-4 md:p-6'>
       <header className='flex flex-wrap items-center justify-between gap-3'>
         <div className='flex items-center gap-3'><span className='flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary'><ClipboardCheck className='size-5'/></span><div><h1 className='text-2xl font-bold tracking-tight'>Проверка Drug Catalog</h1><p className='text-sm text-muted-foreground'>Очередь импорта, provenance и подтверждение совпадений с существующим справочником</p></div></div>
-        <Button variant='outline' onClick={() => void loadRecords()} disabled={loading}><RefreshCw className={`mr-2 size-4 ${loading ? 'animate-spin' : ''}`}/>Обновить</Button>
+        <Button variant='outline' onClick={() => { setLoading(true); void loadRecords() }} disabled={loading}><RefreshCw className={`mr-2 size-4 ${loading ? 'animate-spin' : ''}`}/>Обновить</Button>
       </header>
       <div className='grid gap-4 lg:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.6fr)]'>
         <Card className='min-w-0'>
