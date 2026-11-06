@@ -229,6 +229,13 @@ async def update_inventory(
     reserved_quantity = values.get("reserved_quantity", inventory.reserved_quantity)
     _validate_inventory_levels(quantity, reserved_quantity)
 
+    # Allow stock reductions for reconciliation, but never increase stock for an
+    # excluded or inactive product through the inventory-adjustment endpoint.
+    if quantity > inventory.quantity:
+        await _require_inventory_dependencies(
+            session, inventory.product_id, inventory.pharmacy_id
+        )
+
     if "lot_number" in values and values["lot_number"] != inventory.lot_number:
         duplicate = await session.scalar(
             select(Inventory).where(
