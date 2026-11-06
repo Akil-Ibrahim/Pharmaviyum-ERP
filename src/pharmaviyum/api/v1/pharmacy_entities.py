@@ -94,8 +94,14 @@ async def _list(session: AsyncSession, model: type[Any]) -> list[Any]:
 async def _require_inventory_dependencies(
     session: AsyncSession, product_id: int, pharmacy_id: int
 ) -> None:
-    product = await session.get(Product, product_id)
-    if product is None or not product.is_active:
+    eligible_product_id = await session.scalar(
+        select(Product.id).where(
+            Product.id == product_id,
+            Product.is_active.is_(True),
+            *allowed_pharmacy_product_conditions(),
+        )
+    )
+    if eligible_product_id is None:
         raise HTTPException(status_code=404, detail="Active product not found")
     pharmacy = await session.get(Pharmacy, pharmacy_id)
     if pharmacy is None or not pharmacy.is_active:
