@@ -161,11 +161,9 @@ def test_parse_common_alternate_headers(tmp_path: Path) -> None:
     )
     rows = parse_ema_xlsx(path)
 
-    assert len(rows) == 1
-    assert rows[0]["product_name"] == "ExampleMed"
-    assert rows[0]["country"] == "Germany"
-    assert rows[0]["strength"] == ""
-    assert rows[0]["dosage_form"] == ""
+    # The standard Article 57 export has no manufacturing-country field.
+    # Do not stage records whose origin cannot be verified.
+    assert rows == []
 
 
 def test_missing_required_columns_fails_clearly(tmp_path: Path) -> None:
