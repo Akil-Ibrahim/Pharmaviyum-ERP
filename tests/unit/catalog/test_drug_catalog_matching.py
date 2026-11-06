@@ -1,5 +1,7 @@
 from types import SimpleNamespace
 
+import pytest
+
 from src.pharmaviyum.services.drug_catalog_matching import suggest_matches
 
 
@@ -93,3 +95,26 @@ def test_rank_reference_ids_keeps_fuzzy_candidates_and_bounds_hydration():
     )
 
     assert ranked == [1]
+
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("brand_name", "Teva"),
+        ("authorization_country", "Israel"),
+        ("manufacturer_country", "IL"),
+    ],
+)
+def test_excluded_medicinal_products_are_never_suggested(field, value):
+    reference = _reference()
+    setattr(reference.medicinal_products[0], field, value)
+
+    matches = suggest_matches(
+        {"ingredient_name": "ibuprofen", "brand_name": "ExampleMed"},
+        [reference],
+    )
+
+    assert matches
+    assert all(item["target_type"] == "drug_reference" for item in matches)
+    assert all(item["medicinal_product_id"] is None for item in matches)
