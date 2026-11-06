@@ -65,6 +65,63 @@ class TestDrugCatalogSourceReviewEndpoints:
 
         assert response.status_code == 409
 
+    @pytest.mark.parametrize(
+        "normalized_payload",
+        [
+            {
+                "ingredient_name": "ibuprofen",
+                "brand_name": "Teva",
+                "manufacturer": "Teva Pharmaceutical Industries",
+                "country": "Germany",
+            },
+            {
+                "ingredient_name": "ibuprofen",
+                "brand_name": "ExampleMed",
+                "manufacturer": "Example Pharma",
+                "country": "Israel",
+            },
+            {
+                "ingredient_name": "ibuprofen",
+                "brand_name": "ExampleMed",
+                "manufacturer": "Example Pharma",
+                "country": "Germany",
+                "manufacturer_country": "IL",
+            },
+        ],
+    )
+    async def test_excluded_sources_are_hidden_and_cannot_be_matched_or_reviewed(
+        self,
+        normalized_payload: dict,
+        authenticated_client: AsyncClient,
+        test_db: AsyncSession,
+    ):
+        record = DrugCatalogSourceRecord(
+            source_name="test-source",
+            source_record_id=f"excluded-{next(_source_ids)}",
+            source_version="2026-01",
+            extracted_at=datetime.now(timezone.utc).replace(tzinfo=None),
+            normalized_payload=normalized_payload,
+            review_status="pending_review",
+        )
+        test_db.add(record)
+        await test_db.flush()
+
+        listed = await authenticated_client.get("/api/v1/drug-catalog/sources")
+        assert listed.status_code == 200, listed.text
+        assert record.id not in {item["id"] for item in listed.json()}
+
+        matches = await authenticated_client.get(
+            f"/api/v1/drug-catalog/sources/{record.id}/matches"
+        )
+        assert matches.status_code == 422
+
+        reviewed = await authenticated_client.patch(
+            f"/api/v1/drug-catalog/sources/{record.id}/review",
+            json={"review_status": "approved"},
+        )
+        assert reviewed.status_code == 422
+        assert record.review_status == "pending_review"
+
     async def test_review_approves_existing_reference_and_prevents_second_review(
         self,
         authenticated_client: AsyncClient,
