@@ -137,8 +137,16 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
     ]
     packaging = [{"drug_code": 101, "product_information": "100 Capsule Bottle"}]
     companies = [
-        {"company_name": "Example Pharma", "country_name": "Canada"},
-        {"company_name": "Teva Pharmaceutical Industries", "country_name": "Israel"},
+        {
+            "company_name": "Example Pharma",
+            "company_type": "MANUFACTURER",
+            "country_name": "Canada",
+        },
+        {
+            "company_name": "Teva Pharmaceutical Industries",
+            "company_type": "MANUFACTURER",
+            "country_name": "Israel",
+        },
     ]
 
     rows = normalize_dpd_records(
