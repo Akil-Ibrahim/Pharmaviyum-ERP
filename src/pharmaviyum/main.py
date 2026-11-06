@@ -5,7 +5,8 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from typing import cast
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
@@ -88,24 +89,25 @@ app.add_middleware(
     ),
 )
 
-app.add_exception_handler(
-    PharmaviyumAPIError,
-    lambda request, exc: pharmaviyum_api_error_handler(
+async def _handle_pharmaviyum_api_error(
+    request: Request, exc: Exception
+) -> JSONResponse:
+    return await pharmaviyum_api_error_handler(
         request, cast(PharmaviyumAPIError, exc)
-    ),
-)
-app.add_exception_handler(
-    RequestValidationError,
-    lambda request, exc: validation_exception_handler(
-        request, cast(RequestValidationError, exc)
-    ),
-)
-app.add_exception_handler(
-    ValidationError,
-    lambda request, exc: validation_exception_handler(
-        request, cast(ValidationError, exc)
-    ),
-)
+    )
+
+
+async def _handle_validation_error(
+    request: Request, exc: Exception
+) -> JSONResponse:
+    return await validation_exception_handler(
+        request, cast(RequestValidationError | ValidationError, exc)
+    )
+
+
+app.add_exception_handler(PharmaviyumAPIError, _handle_pharmaviyum_api_error)
+app.add_exception_handler(RequestValidationError, _handle_validation_error)
+app.add_exception_handler(ValidationError, _handle_validation_error)
 app.add_exception_handler(Exception, general_exception_handler)
 app.include_router(api_v1_router)
 
