@@ -104,3 +104,59 @@ jobs:
         env:
           FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
           FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
+
+      - name: Verify production health, authentication and POS protection
+        shell: bash
+        env:
+          SMOKE_USERNAME: ${{ secrets.PHARMAVIYUM_SMOKE_USERNAME }}
+          SMOKE_PASSWORD: ${{ secrets.PHARMAVIYUM_SMOKE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
+
+          health="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/health")"
+          printf '%s\n' "$health" | jq -e '.status == "healthy"' >/dev/null
+
+          readiness="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/ready")"
+          printf '%s\n' "$readiness" | jq -e '
+            .status == "ready" and
+            .components.postgres == "ok" and
+            .components.redis == "ok" and
+            .components.ai_initialized == "ok"
+          ' >/dev/null
+
+          auth_status="$(curl --silent --show-error -o /tmp/auth-invalid.json -w '%{http_code}' \
+            -X POST "$base_url/api/v1/auth/token" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode 'username=pharmaviyum-smoke-invalid-user' \
+            --data-urlencode 'password=not-a-real-password')"
+          if [ "$auth_status" != "401" ]; then
+            echo "Authentication negative-path smoke test expected HTTP 401, received $auth_status."
+            cat /tmp/auth-invalid.json
+            exit 1
+          fi
+
+          pos_status="$(curl --silent --show-error -o /tmp/pos-unauthorized.json -w '%{http_code}' \
+            "$base_url/api/v1/pos/products/search?q=omeprazole&pharmacy_id=1")"
+          if [ "$pos_status" != "401" ]; then
+            echo "Protected POS search expected HTTP 401 without a token, received $pos_status."
+            cat /tmp/pos-unauthorized.json
+            exit 1
+          fi
+
+          if [ -n "$SMOKE_USERNAME" ] && [ -n "$SMOKE_PASSWORD" ]; then
+            login_response="$(curl --fail --silent --show-error \
+              -X POST "$base_url/api/v1/auth/token" \
+              -H 'Content-Type: application/x-www-form-urlencoded' \
+              --data-urlencode "username=$SMOKE_USERNAME" \
+              --data-urlencode "password=$SMOKE_PASSWORD")"
+            access_token="$(printf '%s' "$login_response" | jq -er '.access_token')"
+            profile="$(curl --fail --silent --show-error \
+              -H "Authorization: Bearer $access_token" "$base_url/api/v1/auth/me")"
+            printf '%s\n' "$profile" | jq -e '.accountNo and .email' >/dev/null
+            echo "Authenticated sign-in and /auth/me smoke checks passed."
+          else
+            echo "Successful sign-in smoke check skipped; configure PHARMAVIYUM_SMOKE_USERNAME and PHARMAVIYUM_SMOKE_PASSWORD Actions secrets to enable it."
+          fi
+
+          echo "Production liveness, readiness, invalid-credential handling and protected POS access checks passed."
