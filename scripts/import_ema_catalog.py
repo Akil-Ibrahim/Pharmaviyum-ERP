@@ -213,9 +213,7 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
             "route": value(route_col),
             "country": country,
             "holder": holder,
-            **(
-                "manufacturer_country": manufacturer_country,
-            ),
+            "manufacturer_country": manufacturer_country,
         })
     return parsed
 
