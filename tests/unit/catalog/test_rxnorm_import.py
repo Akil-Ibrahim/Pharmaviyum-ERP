@@ -80,12 +80,8 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
     assert liquid["dosage_form"] == "Oral Suspension"
 
 
-
 def test_current_rxnorm_release_resolves_prescribable_download(monkeypatch):
-    download_url = (
-        "https://download.nlm.nih.gov/rxnorm/"
-        "RxNorm_full_prescribe_11022026.zip"
-    )
+    download_url = "https://download.nlm.nih.gov/rxnorm/RxNorm_full_prescribe_11022026.zip"
     payload = {
         "result": [
             {
