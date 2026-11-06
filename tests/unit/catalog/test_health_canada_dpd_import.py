@@ -53,6 +53,14 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
             "manufacturer_country": "IL",
             "class_name": "Human",
         },
+        {
+            "drug_code": 106,
+            "drug_identification_number": "06666666",
+            "brand_name": "UNKNOWN ORIGIN TEST",
+            "number_of_ais": "1",
+            "company_name": "Unknown Pharma",
+            "class_name": "Human",
+        },
     ]
     ingredients = [
         {
