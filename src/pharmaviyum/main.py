@@ -93,14 +93,10 @@ app.add_middleware(
 async def _handle_pharmaviyum_api_error(
     request: Request, exc: Exception
 ) -> JSONResponse:
-    return await pharmaviyum_api_error_handler(
-        request, cast(PharmaviyumAPIError, exc)
-    )
+    return await pharmaviyum_api_error_handler(request, cast(PharmaviyumAPIError, exc))
 
 
-async def _handle_validation_error(
-    request: Request, exc: Exception
-) -> JSONResponse:
+async def _handle_validation_error(request: Request, exc: Exception) -> JSONResponse:
     return await validation_exception_handler(
         request, cast(RequestValidationError | ValidationError, exc)
     )
