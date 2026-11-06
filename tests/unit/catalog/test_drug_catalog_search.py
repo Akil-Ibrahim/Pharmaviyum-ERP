@@ -1,4 +1,4 @@
-"""Regression tests for reference catalog search fields and paused exclusions."""
+"""Regression tests for reference catalog search fields and strict exclusions."""
 
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -9,6 +9,7 @@ from src.pharmaviyum.api.v1.drug_catalog import search_drug_catalog
 from src.pharmaviyum.services import catalog_exclusions
 from src.pharmaviyum.services.catalog_exclusions import (
     allowed_medicinal_product_conditions,
+    allowed_pharmacy_product_conditions,
     is_excluded_catalog_entry,
 )
 
@@ -113,21 +114,18 @@ def test_excludes_explicit_manufacturer_country_even_when_authorized_elsewhere(
     )
 
 
-def test_exclusion_policy_is_paused_by_default() -> None:
-    assert catalog_exclusions.CATALOG_EXCLUSIONS_ENABLED is False
-    assert not is_excluded_catalog_entry(
-        brand_name="Teva",
-        authorization_country="Israel",
-    )
-    assert allowed_medicinal_product_conditions() == ()
+def test_exclusion_policy_is_enabled_by_default() -> None:
+    assert catalog_exclusions.CATALOG_EXCLUSIONS_ENABLED is True
+    assert is_excluded_catalog_entry(brand_name="Teva")
+    assert is_excluded_catalog_entry(authorization_country="Israel")
+    assert allowed_medicinal_product_conditions()
 
 
-def test_catalog_autocomplete_exclusions_can_be_enabled(monkeypatch) -> None:
+def test_catalog_autocomplete_exclusions_are_enabled_by_default() -> None:
     from sqlalchemy import select
 
     from src.pharmaviyum.models.drug_catalog import MedicinalProduct
 
-    monkeypatch.setattr(catalog_exclusions, "CATALOG_EXCLUSIONS_ENABLED", True)
     statement = select(MedicinalProduct).where(*allowed_medicinal_product_conditions())
     sql = str(statement.compile(compile_kwargs={"literal_binds": True})).lower()
     assert "medicinal_products.brand_name" in sql
@@ -136,8 +134,23 @@ def test_catalog_autocomplete_exclusions_can_be_enabled(monkeypatch) -> None:
     assert "teva" in sql
 
 
+def test_pos_product_queries_enforce_exclusions_by_default() -> None:
+    from sqlalchemy import select
+
+    from src.pharmaviyum.models.product import Product
+
+    statement = select(Product).where(*allowed_pharmacy_product_conditions())
+    sql = str(statement.compile(compile_kwargs={"literal_binds": True})).lower()
+    assert "products.name" in sql
+    assert "products.manufacturer" in sql
+    assert "products.manufacturer_country" in sql
+    assert "medicinal_products.authorization_country" in sql
+    assert "teva" in sql
+    assert "israel" in sql
+
+
 @pytest.mark.unit
-def test_global_medicinal_catalog_visibility_can_enable_exclusions(monkeypatch) -> None:
+def test_global_medicinal_catalog_visibility_enforces_exclusions(monkeypatch) -> None:
     from sqlalchemy import select
 
     from src.pharmaviyum.models.drug_catalog import MedicinalProduct
