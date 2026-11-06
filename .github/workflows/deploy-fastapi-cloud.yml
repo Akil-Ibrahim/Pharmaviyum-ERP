@@ -209,13 +209,14 @@ jobs:
           base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
 
           health="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/health")"
-          printf '%s\n' "$health" | jq -e '(.status == "healthy" or .status == "degraded")' >/dev/null
+          printf '%s\n' "$health" | jq -e '.status == "healthy"' >/dev/null
 
           readiness="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/ready")"
           printf '%s\n' "$readiness" | jq -e '
             .status == "ready" and
-            .checks.database.status == "healthy" and
-            .checks.redis.status == "healthy"
+            .components.postgres == "ok" and
+            .components.redis == "ok" and
+            .components.ai_initialized == "ok"
           ' >/dev/null
 
           auth_status="$(curl --silent --show-error -o /tmp/auth-invalid.json -w '%{http_code}' \
