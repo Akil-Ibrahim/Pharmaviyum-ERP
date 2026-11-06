@@ -66,11 +66,7 @@ export function Pos() {
 
   useEffect(() => {
     const term = query.trim()
-    if (term.length < 2 || !pharmacyId) {
-      setResults([])
-      setReferenceResults([])
-      return
-    }
+    if (term.length < 2 || !pharmacyId) return
     let cancelled = false
     const timer = window.setTimeout(async () => {
       setLoading(true)
@@ -81,7 +77,11 @@ export function Pos() {
         ])
         if (!cancelled) { setResults(local); setReferenceResults(reference) }
       } catch {
-        if (!cancelled) { setResults([]); setNotice('Pharmacy product search failed.') }
+        if (!cancelled) {
+          setResults([])
+          setReferenceResults([])
+          setNotice('Pharmacy product search failed.')
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -92,7 +92,7 @@ export function Pos() {
   const formatExpiry = (value?: string | null) => value ? new Date(`${value}T00:00:00`).toLocaleDateString('uk-UA') : 'Not specified — determined by batch'
 
   useEffect(() => {
-    if (!pharmacyId || cart.length === 0) { setLotsByProduct({}); return }
+    if (!pharmacyId || cart.length === 0) return
     let cancelled = false
     Promise.all(cart.map(async item => {
       try {
@@ -105,12 +105,16 @@ export function Pos() {
       if (!cancelled) setLotsByProduct(Object.fromEntries(entries))
     })
     return () => { cancelled = true }
-  }, [cart.map(item => item.id).join(','), pharmacyId])
+  }, [cart, pharmacyId])
 
 
 
   const addProduct = (product: LocalProduct) => {
     if (product.stock < 1) { setNotice('No available stock.'); return }
+    if (cart.length === 0) setLotsByProduct({})
+    setResults([])
+    setReferenceResults([])
+    setLoading(false)
     setCart(items => {
       const found = items.find(item => item.id === product.id)
       if (found) return items.map(item => item.id === product.id ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) } : item)
@@ -181,6 +185,7 @@ export function Pos() {
       idempotencyKey.current = crypto.randomUUID()
       if (result.status === 'completed') {
         setCart([])
+        setLotsByProduct({})
         setCheckoutOpen(false)
         setNotice(`Sale completed. Receipt # ${result.receipt_number}`)
       } else {
@@ -195,7 +200,7 @@ export function Pos() {
     <div className='min-h-screen bg-muted/20 p-3 md:p-5'>
       <div className='mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-[1920px] flex-col gap-4'>
         <header className='flex items-center justify-end gap-3 bg-transparent py-2'>
-          <Button onClick={() => { setCart([]); setSale(null); setCheckoutOpen(false); setQuery(''); setSearchActive(true); setNotice('New sale. Search is active.'); window.requestAnimationFrame(() => searchRef.current?.focus()) }}><Plus className='mr-2 size-4' /> Open Sale</Button>
+          <Button onClick={() => { setCart([]); setLotsByProduct({}); setResults([]); setReferenceResults([]); setLoading(false); setSale(null); setCheckoutOpen(false); setQuery(''); setSearchActive(true); setNotice('New sale. Search is active.'); window.requestAnimationFrame(() => searchRef.current?.focus()) }}><Plus className='mr-2 size-4' /> Open Sale</Button>
           <div className='flex items-center gap-2'>
             <span className='flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground'><Pill className='size-5' /></span>
             <h1 className='text-lg font-semibold'>Pharmaviyum POS</h1>
@@ -221,10 +226,10 @@ export function Pos() {
         {sale?.status === 'completed' && <Card><CardContent className='flex items-center justify-between gap-3 p-4'><div className='flex items-center gap-2'><Receipt className='size-5 text-primary' /><div><p className='font-semibold'>Receipt # {sale.receipt_number}</p><p className='text-sm text-muted-foreground'>Sale recorded · {money(Number(sale.total))}</p></div></div><Button variant='outline' onClick={() => { setSale(null); setNotice('New Sale.'); searchRef.current?.focus() }}>New Sale</Button></CardContent></Card>}
 
         <section aria-label='Medicine search' className='flex min-h-[24vh] flex-1 flex-col justify-start py-5'><div className='mx-auto w-full max-w-3xl'>
-            <form aria-label='Medicine search' onSubmit={e => { e.preventDefault(); if (results.length === 1) addProduct(results[0]) }} className='relative w-full'><Search aria-hidden='true' className='pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground' /><Input ref={searchRef} value={query} onChange={e => setQuery(e.target.value)} placeholder='Search medicines by name, INN, brand, strength or barcode…' className={`h-12 w-full pl-12 pr-4 text-base transition-shadow ${searchActive ? 'ring-2 ring-primary ring-offset-2' : ''}`} onFocus={() => setSearchActive(true)} /> </form>
+            <form aria-label='Medicine search' onSubmit={e => { e.preventDefault(); if (results.length === 1) addProduct(results[0]) }} className='relative w-full'><Search aria-hidden='true' className='pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground' /><Input ref={searchRef} value={query} onChange={e => { setQuery(e.target.value); setResults([]); setReferenceResults([]); setLoading(false) }} placeholder='Search medicines by name, INN, brand, strength or barcode…' className={`h-12 w-full pl-12 pr-4 text-base transition-shadow ${searchActive ? 'ring-2 ring-primary ring-offset-2' : ''}`} onFocus={() => setSearchActive(true)} /> </form>
             {loading && <p className='py-4 text-center text-sm text-muted-foreground'>Searching medicines…</p>}
             {!loading && query.trim().length >= 2 && results.length === 0 && <p className='py-5 text-center text-sm text-muted-foreground'>No matches in this pharmacy's inventory.</p>}
-            {results.map(product => <div key={product.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'><div className='min-w-0 flex-1'><p className='font-semibold'>{product.name}</p><p className='text-xs text-muted-foreground'>Brand / manufacturer: {product.manufacturer || 'not specified'} · INN: {product.inn_name || 'not specified'}</p><p className='text-xs text-muted-foreground'>{[product.dosage_strength, product.dosage_form].filter(Boolean).join(' · ')}</p><p className='mt-1 text-xs text-muted-foreground'>SKU: {product.sku} · Available: {product.stock} · Price: {money(product.price)}</p><p className='text-xs text-muted-foreground'>Barcode: {product.barcode || product.gtin || 'not specified'}</p></div><Button onClick={() => addProduct(product)} disabled={product.stock < 1}><Plus className='mr-1 size-4' /> Add</Button></div>)}
+            {query.trim().length >= 2 && results.map(product => <div key={product.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'><div className='min-w-0 flex-1'><p className='font-semibold'>{product.name}</p><p className='text-xs text-muted-foreground'>Brand / manufacturer: {product.manufacturer || 'not specified'} · INN: {product.inn_name || 'not specified'}</p><p className='text-xs text-muted-foreground'>{[product.dosage_strength, product.dosage_form].filter(Boolean).join(' · ')}</p><p className='mt-1 text-xs text-muted-foreground'>SKU: {product.sku} · Available: {product.stock} · Price: {money(product.price)}</p><p className='text-xs text-muted-foreground'>Barcode: {product.barcode || product.gtin || 'not specified'}</p></div><Button onClick={() => addProduct(product)} disabled={product.stock < 1}><Plus className='mr-1 size-4' /> Add</Button></div>)}
             {query.trim().length >= 2 && referenceResults.length > 0 && <div className='space-y-2 border-t pt-3'><p className='text-sm font-semibold'>International drug reference — information only</p>{referenceResults.map((item, index) => <div key={item.source_record_id ?? item.medicinal_product_id ?? index} className='rounded-lg border border-dashed p-3'><p className='font-medium'>{item.brand_name || item.inn_name}</p><p className='text-xs text-muted-foreground'>Brand: {item.brand_name || 'not specified'} · Manufacturer: {item.manufacturer || 'not specified'}</p><p className='text-xs text-muted-foreground'>{[item.inn_name, item.strength, item.dosage_form, item.authorization_country].filter(Boolean).join(' · ')}</p><p className='text-xs text-muted-foreground'>Barcode / GTIN: {item.gtin || 'not available in source'} · Stock and expiry are available only after a pharmacy batch is recorded</p><Badge variant='outline' className='mt-2'>Reference record — not a pharmacy product</Badge></div>)}</div>}
             </div>
         </section>
