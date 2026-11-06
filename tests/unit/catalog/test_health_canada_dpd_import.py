@@ -91,6 +91,12 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
             "strength": "20",
             "strength_unit": "MG",
         },
+        {
+            "drug_code": 106,
+            "ingredient_name": "OMEPRAZOLE",
+            "strength": "20",
+            "strength_unit": "MG",
+        },
     ]
     forms = [
         {"drug_code": 101, "pharmaceutical_form_name": "Capsule"},
@@ -115,11 +121,20 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
             "status": "Approved",
             "history_date": "2025-01-01",
         },
+        {
+            "drug_code": 106,
+            "status": "Approved",
+            "history_date": "2025-01-01",
+        },
     ]
     packaging = [{"drug_code": 101, "product_information": "100 Capsule Bottle"}]
+    companies = [
+        {"company_name": "Example Pharma", "country_name": "Canada"},
+        {"company_name": "Teva Pharmaceutical Industries", "country_name": "Israel"},
+    ]
 
     rows = normalize_dpd_records(
-        products, ingredients, forms, routes, statuses, packaging
+        products, ingredients, forms, routes, statuses, packaging, companies
     )
 
     # Teva manufacturers and Israeli-origin products are excluded.
@@ -131,6 +146,7 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
     assert row["dosage_form"] == "Capsule / Delayed-release capsule"
     assert row["route"] == "Oral"
     assert row["country"] == "CA"
+    assert row["manufacturer_country"] == "Canada"
     assert row["regulatory_id"] == "01234567"
     assert row["authorization_status"] == "Approved"
 
