@@ -65,14 +65,12 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
     ingredients, products = parse_rxnorm_archive(archive_path)
 
     assert ingredients == {"100": "ibuprofen", "300": "acetaminophen"}
-    assert {product["rxcui"] for product in products} == {"200", "201", "301"}
+    # Branded SBD concepts have no manufacturer-country provenance in RxNorm.
+    assert {product["rxcui"] for product in products} == {"200", "301"}
     generic = next(product for product in products if product["rxcui"] == "200")
-    brand = next(product for product in products if product["rxcui"] == "201")
     assert generic["strength"] == "200 MG"
     assert generic["dosage_form"] == "Oral Tablet"
     assert generic["ingredient_id"] == "100"
-    assert brand["tty"] == "SBD"
-    assert brand["brand_name"] == "Advil"
     liquid = next(product for product in products if product["rxcui"] == "301")
     assert liquid["strength"] == "160 MG/5 ML"
     assert liquid["dosage_form"] == "Oral Suspension"
