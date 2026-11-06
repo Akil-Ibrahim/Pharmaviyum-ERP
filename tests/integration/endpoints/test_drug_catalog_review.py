@@ -1,6 +1,6 @@
 """PostgreSQL-backed integration tests for Drug Catalog source review endpoints."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from itertools import count
 
 import pytest
@@ -121,6 +121,41 @@ class TestDrugCatalogSourceReviewEndpoints:
         )
         assert reviewed.status_code == 422
         assert record.review_status == "pending_review"
+
+    async def test_source_review_list_refills_after_excluded_rows(
+        self,
+        authenticated_client: AsyncClient,
+        test_db: AsyncSession,
+    ):
+        excluded_rows = [
+            DrugCatalogSourceRecord(
+                source_name="test-source",
+                source_record_id=f"excluded-page-{index}",
+                source_version="2026-01",
+                extracted_at=datetime(2026, 1, 1) + timedelta(seconds=index),
+                normalized_payload={"brand_name": "Teva"},
+                review_status="pending_review",
+            )
+            for index in range(201)
+        ]
+        eligible = DrugCatalogSourceRecord(
+            source_name="test-source",
+            source_record_id=f"eligible-after-exclusions-{next(_source_ids)}",
+            source_version="2026-01",
+            extracted_at=datetime(2025, 12, 31),
+            normalized_payload={"ingredient_name": "ibuprofen"},
+            review_status="pending_review",
+        )
+        test_db.add_all([*excluded_rows, eligible])
+        await test_db.flush()
+
+        response = await authenticated_client.get(
+            "/api/v1/drug-catalog/sources",
+            params={"limit": 1},
+        )
+
+        assert response.status_code == 200, response.text
+        assert [item["id"] for item in response.json()] == [eligible.id]
 
     async def test_invalid_approval_payload_returns_422(
         self,
