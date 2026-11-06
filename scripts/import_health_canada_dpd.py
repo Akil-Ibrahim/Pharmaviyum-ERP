@@ -244,6 +244,7 @@ async def main() -> None:
         datasets["routes"],
         datasets["statuses"],
         datasets["packaging"],
+        datasets["companies"],
     )
     if args.dry_run:
         print(
