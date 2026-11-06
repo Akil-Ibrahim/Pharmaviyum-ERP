@@ -77,14 +77,22 @@ async def pharmaviyum_api_error_handler(request: Request, exc: PharmaviyumAPIErr
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError | ValidationError
 ):
-    """Handler for Pydantic/FastAPI validation errors."""
+    """Handler for Pydantic/FastAPI validation errors without echoing inputs."""
+    safe_errors = [
+        {
+            "loc": list(error.get("loc", ())),
+            "msg": str(error.get("msg", "Invalid value")),
+            "type": str(error.get("type", "value_error")),
+        }
+        for error in exc.errors()
+    ]
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
             "error": {
                 "code": "VALIDATION_ERROR",
                 "message": "Invalid request payload",
-                "details": exc.errors(),
+                "details": safe_errors,
             }
         },
     )

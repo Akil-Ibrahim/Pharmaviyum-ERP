@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import pytest
 from sqlalchemy import select
 
+from src.pharmaviyum.models.drug_catalog import DrugReference, MedicinalProduct
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.pos import Payment, Sale
@@ -47,6 +48,109 @@ async def _create_pharmacy_product_and_stock(test_db):
     test_db.add_all([first, second])
     await test_db.flush()
     return pharmacy, product, first, second
+
+
+@pytest.mark.integration
+async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
+    authenticated_client, test_db
+):
+    pharmacy = Pharmacy(name="POS Exclusion Test Pharmacy", code="POS-EXCLUSION")
+    reference = DrugReference(inn_name="omeprazole")
+    test_db.add_all([pharmacy, reference])
+    await test_db.flush()
+
+    israeli_authorized = MedicinalProduct(
+        drug_reference_id=reference.id,
+        brand_name="ExampleAuthorized",
+        product_type="branded",
+        manufacturer="Example Pharma",
+        authorization_country="Israel",
+        manufacturer_country="Germany",
+    )
+    test_db.add(israeli_authorized)
+    await test_db.flush()
+
+    teva_product = Product(
+        name="Teva Omeprazole 20 mg",
+        sku="POS-EXCLUDED-TEVA",
+        price=10.50,
+        stock=0,
+        is_active=True,
+        manufacturer="Teva Pharmaceutical Industries",
+    )
+    israeli_origin_product = Product(
+        name="ExampleOrigin Omeprazole 20 mg",
+        sku="POS-EXCLUDED-ORIGIN",
+        price=10.50,
+        stock=0,
+        is_active=True,
+        manufacturer="Example Pharma",
+        manufacturer_country="IL",
+    )
+    israeli_authorized_product = Product(
+        name="ExampleAuthorized Omeprazole 20 mg",
+        sku="POS-EXCLUDED-AUTH",
+        price=10.50,
+        stock=0,
+        is_active=True,
+        manufacturer="Example Pharma",
+        manufacturer_country="Germany",
+        medicinal_product_id=israeli_authorized.id,
+    )
+    products = [teva_product, israeli_origin_product, israeli_authorized_product]
+    test_db.add_all(products)
+    await test_db.flush()
+
+    now = datetime.utcnow()
+    lots = [
+        Inventory(
+            product_id=product.id,
+            pharmacy_id=pharmacy.id,
+            quantity=5,
+            reserved_quantity=0,
+            lot_number=f"EXCLUDED-{index}",
+            expires_at=now + timedelta(days=30),
+        )
+        for index, product in enumerate(products, start=1)
+    ]
+    test_db.add_all(lots)
+    await test_db.flush()
+
+    search = await authenticated_client.get(
+        "/api/v1/pos/products/search",
+        params={"q": "omeprazole", "pharmacy_id": pharmacy.id},
+    )
+    assert search.status_code == 200, search.text
+    assert search.json() == []
+
+    for product, key in zip(
+        products,
+        (
+            "pos-excluded-teva-0001",
+            "pos-excluded-origin-0001",
+            "pos-excluded-auth-0001",
+        ),
+    ):
+        response = await authenticated_client.post(
+            "/api/v1/pos/checkout",
+            json={
+                "pharmacy_id": pharmacy.id,
+                "idempotency_key": key,
+                "items": [{"product_id": product.id, "quantity": 1}],
+                "payment_method": "cash",
+                "cash_received": "20.00",
+            },
+        )
+        assert response.status_code == 404
+        assert (
+            await test_db.scalar(select(Sale).where(Sale.idempotency_key == key))
+            is None
+        )
+
+    for lot in lots:
+        await test_db.refresh(lot)
+        assert lot.quantity == 5
+        assert lot.reserved_quantity == 0
 
 
 @pytest.mark.integration

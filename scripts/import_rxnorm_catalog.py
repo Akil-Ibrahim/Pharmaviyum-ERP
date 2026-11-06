@@ -124,8 +124,10 @@ def parse_rxnorm_archive(
             products: list[dict[str, str]] = []
             for rxcui, (tty, term) in concepts.items():
                 linked = product_ingredients.get(rxcui, set())
-                # Do not silently misrepresent combination medicines.
-                if tty not in PRODUCT_TERMS or len(linked) != 1:
+                # Do not silently misrepresent combination medicines. RxNorm
+                # does not publish manufacturer-country provenance for branded
+                # SBD concepts, so only unbranded SCD concepts are eligible.
+                if tty != "SCD" or len(linked) != 1:
                     continue
 
                 ingredient_id = next(iter(linked))

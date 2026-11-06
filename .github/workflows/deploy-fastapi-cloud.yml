@@ -104,3 +104,184 @@ jobs:
         env:
           FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
           FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
+
+      - name: Verify production catalog exclusions (read-only)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          uv run python - <<'PY'
+          import os
+          import psycopg
+          from psycopg.rows import dict_row
+          from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
+
+          with psycopg.connect(os.environ["DATABASE_URL"], row_factory=dict_row) as conn:
+              source_rows = conn.execute(
+                  "SELECT id, normalized_payload FROM drug_catalog_source_records"
+              ).fetchall()
+              excluded_sources = []
+              for row in source_rows:
+                  payload = row["normalized_payload"] or {}
+                  if isinstance(payload, str):
+                      import json
+                      payload = json.loads(payload)
+                  if is_excluded_catalog_entry(
+                      brand_name=payload.get("brand_name") or payload.get("product_name"),
+                      manufacturer=payload.get("manufacturer") or payload.get("holder"),
+                      authorization_country=payload.get("authorization_country") or payload.get("country"),
+                      manufacturer_country=payload.get("manufacturer_country")
+                          or payload.get("country_of_origin")
+                          or payload.get("country_of_manufacture"),
+                      payload=payload,
+                  ):
+                      excluded_sources.append(row["id"])
+
+              medicinal_rows = conn.execute(
+                  """
+                  SELECT id, brand_name, manufacturer,
+                         authorization_country, manufacturer_country
+                  FROM medicinal_products
+                  """
+              ).fetchall()
+              excluded_medicinal_ids = {
+                  row["id"] for row in medicinal_rows
+                  if is_excluded_catalog_entry(
+                      brand_name=row["brand_name"],
+                      manufacturer=row["manufacturer"],
+                      authorization_country=row["authorization_country"],
+                      manufacturer_country=row["manufacturer_country"],
+                  )
+              }
+
+              product_rows = conn.execute(
+                  """
+                  SELECT id, name, manufacturer, manufacturer_country,
+                         medicinal_product_id, is_active
+                  FROM products
+                  """
+              ).fetchall()
+              excluded_active_products = [
+                  row["id"] for row in product_rows
+                  if row["is_active"] and (
+                      is_excluded_catalog_entry(
+                          brand_name=row["name"],
+                          manufacturer=row["manufacturer"],
+                          manufacturer_country=row["manufacturer_country"],
+                      )
+                      or row["medicinal_product_id"] in excluded_medicinal_ids
+                  )
+              ]
+              retained_inactive_products = [
+                  row["id"] for row in product_rows
+                  if not row["is_active"] and (
+                      is_excluded_catalog_entry(
+                          brand_name=row["name"],
+                          manufacturer=row["manufacturer"],
+                          manufacturer_country=row["manufacturer_country"],
+                      )
+                      or row["medicinal_product_id"] in excluded_medicinal_ids
+                  )
+              ]
+
+          if excluded_sources or excluded_active_products:
+              raise SystemExit(
+                  "Catalog exclusion verification failed: "
+                  f"{len(excluded_sources)} excluded source records and "
+                  f"{len(excluded_active_products)} active excluded products remain."
+              )
+
+          print(
+              "Catalog exclusion verification passed: "
+              f"{len(source_rows)} source records checked; "
+              f"{len(product_rows)} products checked; "
+              f"{len(retained_inactive_products)} inactive historical products retained."
+          )
+          PY
+
+      - name: Verify production health, authentication and POS protection
+        shell: bash
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SMOKE_USERNAME: ${{ secrets.PHARMAVIYUM_SMOKE_USERNAME }}
+          SMOKE_PASSWORD: ${{ secrets.PHARMAVIYUM_SMOKE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
+
+          health="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/health")"
+          printf '%s\n' "$health" | jq -e '.status == "healthy"' >/dev/null
+
+          readiness="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/ready")"
+          printf '%s\n' "$readiness" | jq -e '
+            .status == "ready" and
+            .components.postgres == "ok" and
+            .components.redis == "ok" and
+            .components.ai_initialized == "ok"
+          ' >/dev/null
+
+          auth_status="$(curl --silent --show-error -o /tmp/auth-invalid.json -w '%{http_code}' \
+            -X POST "$base_url/api/v1/auth/token" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode 'username=pharmaviyum-smoke-invalid-user' \
+            --data-urlencode 'password=not-a-real-password')"
+          if [ "$auth_status" != "401" ]; then
+            echo "Authentication negative-path smoke test expected HTTP 401, received $auth_status."
+            cat /tmp/auth-invalid.json
+            exit 1
+          fi
+
+          pos_status="$(curl --silent --show-error -o /tmp/pos-unauthorized.json -w '%{http_code}' \
+            "$base_url/api/v1/pos/products/search?q=omeprazole&pharmacy_id=1")"
+          if [ "$pos_status" != "401" ]; then
+            echo "Protected POS search expected HTTP 401 without a token, received $pos_status."
+            cat /tmp/pos-unauthorized.json
+            exit 1
+          fi
+
+          if [ -n "$SMOKE_USERNAME" ] && [ -n "$SMOKE_PASSWORD" ]; then
+            login_response="$(curl --fail --silent --show-error \
+              -X POST "$base_url/api/v1/auth/token" \
+              -H 'Content-Type: application/x-www-form-urlencoded' \
+              --data-urlencode "username=$SMOKE_USERNAME" \
+              --data-urlencode "password=$SMOKE_PASSWORD")"
+            access_token="$(printf '%s' "$login_response" | jq -er '.access_token')"
+            profile="$(curl --fail --silent --show-error \
+              -H "Authorization: Bearer $access_token" "$base_url/api/v1/auth/me")"
+            printf '%s\n' "$profile" | jq -e '.accountNo and .email' >/dev/null
+
+            curl --fail --silent --show-error \
+              -H "Authorization: Bearer $access_token" \
+              "$base_url/api/v1/drug-catalog/search?q=omeprazole" \
+              -o /tmp/drug-catalog-smoke.json
+            curl --fail --silent --show-error \
+              -H "Authorization: Bearer $access_token" \
+              "$base_url/api/v1/products/search?q=omeprazole" \
+              -o /tmp/products-smoke.json
+            uv run python - <<'PY'
+            import json
+            from pathlib import Path
+            from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
+
+            for path in ("/tmp/drug-catalog-smoke.json", "/tmp/products-smoke.json"):
+                rows = json.loads(Path(path).read_text())
+                if not isinstance(rows, list):
+                    raise SystemExit(f"Expected a list response from {path}")
+                for row in rows:
+                    if is_excluded_catalog_entry(
+                        brand_name=row.get("brand_name") or row.get("name"),
+                        manufacturer=row.get("manufacturer"),
+                        authorization_country=row.get("authorization_country"),
+                        manufacturer_country=row.get("manufacturer_country"),
+                        payload=row,
+                    ):
+                        raise SystemExit(f"Excluded medicine surfaced by {path}")
+            print("Authenticated catalog search returned no excluded medicines.")
+            PY
+
+            echo "Authenticated sign-in, /auth/me and catalog exclusion smoke checks passed."
+          else
+            echo "Successful sign-in smoke check skipped; configure PHARMAVIYUM_SMOKE_USERNAME and PHARMAVIYUM_SMOKE_PASSWORD Actions secrets to enable it."
+          fi
+
+          echo "Production liveness, readiness, invalid-credential handling and protected POS access checks passed."
+          echo "POS checkout exclusion and stock immutability are covered by the PostgreSQL integration suite; no production sale or stock mutation was created by this smoke run."

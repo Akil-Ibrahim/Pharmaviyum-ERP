@@ -17,6 +17,9 @@ from src.pharmaviyum.models.product_batch import ProductBatch
 from src.pharmaviyum.models.supplier import Supplier
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
 from src.pharmaviyum.modules.auth.models import PharmacyMembership
+from src.pharmaviyum.services.catalog_exclusions import (
+    allowed_pharmacy_product_conditions,
+)
 
 router = APIRouter(prefix="/api/v1", tags=["Pharmacy Domain"])
 
@@ -91,8 +94,14 @@ async def _list(session: AsyncSession, model: type[Any]) -> list[Any]:
 async def _require_inventory_dependencies(
     session: AsyncSession, product_id: int, pharmacy_id: int
 ) -> None:
-    product = await session.get(Product, product_id)
-    if product is None or not product.is_active:
+    eligible_product_id = await session.scalar(
+        select(Product.id).where(
+            Product.id == product_id,
+            Product.is_active.is_(True),
+            *allowed_pharmacy_product_conditions(),
+        )
+    )
+    if eligible_product_id is None:
         raise HTTPException(status_code=404, detail="Active product not found")
     pharmacy = await session.get(Pharmacy, pharmacy_id)
     if pharmacy is None or not pharmacy.is_active:
@@ -219,6 +228,13 @@ async def update_inventory(
     quantity = values.get("quantity", inventory.quantity)
     reserved_quantity = values.get("reserved_quantity", inventory.reserved_quantity)
     _validate_inventory_levels(quantity, reserved_quantity)
+
+    # Allow stock reductions for reconciliation, but never increase stock for an
+    # excluded or inactive product through the inventory-adjustment endpoint.
+    if quantity > inventory.quantity:
+        await _require_inventory_dependencies(
+            session, inventory.product_id, inventory.pharmacy_id
+        )
 
     if "lot_number" in values and values["lot_number"] != inventory.lot_number:
         duplicate = await session.scalar(

@@ -53,6 +53,14 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
             "manufacturer_country": "IL",
             "class_name": "Human",
         },
+        {
+            "drug_code": 106,
+            "drug_identification_number": "06666666",
+            "brand_name": "UNKNOWN ORIGIN TEST",
+            "number_of_ais": "1",
+            "company_name": "Unknown Pharma",
+            "class_name": "Human",
+        },
     ]
     ingredients = [
         {
@@ -91,6 +99,12 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
             "strength": "20",
             "strength_unit": "MG",
         },
+        {
+            "drug_code": 106,
+            "ingredient_name": "OMEPRAZOLE",
+            "strength": "20",
+            "strength_unit": "MG",
+        },
     ]
     forms = [
         {"drug_code": 101, "pharmaceutical_form_name": "Capsule"},
@@ -115,26 +129,40 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
             "status": "Approved",
             "history_date": "2025-01-01",
         },
+        {
+            "drug_code": 106,
+            "status": "Approved",
+            "history_date": "2025-01-01",
+        },
     ]
     packaging = [{"drug_code": 101, "product_information": "100 Capsule Bottle"}]
+    companies = [
+        {
+            "company_name": "Example Pharma",
+            "company_type": "MANUFACTURER",
+            "country_name": "Canada",
+        },
+        {
+            "company_name": "Teva Pharmaceutical Industries",
+            "company_type": "MANUFACTURER",
+            "country_name": "Israel",
+        },
+    ]
 
     rows = normalize_dpd_records(
-        products, ingredients, forms, routes, statuses, packaging
+        products, ingredients, forms, routes, statuses, packaging, companies
     )
 
-    # The exclusion policy is paused: all otherwise-valid records remain eligible.
-    # Multi-ingredient and non-current products are still rejected.
-    assert [row["source_record_id"] for row in rows] == [
-        "DPD:101",
-        "DPD:104",
-        "DPD:105",
-    ]
+    # Teva manufacturers and Israeli-origin products are excluded.
+    # Multi-ingredient and non-current products are also rejected.
+    assert [row["source_record_id"] for row in rows] == ["DPD:101"]
     row = rows[0]
     assert row["ingredient_name"] == "OMEPRAZOLE"
     assert row["strength"] == "20 MG"
     assert row["dosage_form"] == "Capsule / Delayed-release capsule"
     assert row["route"] == "Oral"
     assert row["country"] == "CA"
+    assert row["manufacturer_country"] == "Canada"
     assert row["regulatory_id"] == "01234567"
     assert row["authorization_status"] == "Approved"
 

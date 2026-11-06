@@ -181,13 +181,21 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
         ingredient_text = value(ingredient_col)
         country = value(country_col)
         holder = value(holder_col)
-        if not product_name or not ingredient_text or not country:
+        manufacturer_country = value(manufacturer_country_col)
+        if (
+            not product_name
+            or not ingredient_text
+            or not country
+            or not manufacturer_country
+        ):
+            # Article 57 does not publish manufacturing origin in its standard
+            # export. Do not surface a branded product without verified origin.
             continue
         if is_excluded_catalog_entry(
             brand_name=product_name,
             manufacturer=holder,
             authorization_country=country,
-            manufacturer_country=value(manufacturer_country_col),
+            manufacturer_country=manufacturer_country,
         ):
             continue
         ingredients = [
@@ -205,11 +213,7 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
             "route": value(route_col),
             "country": country,
             "holder": holder,
-            **(
-                {"manufacturer_country": value(manufacturer_country_col)}
-                if value(manufacturer_country_col)
-                else {}
-            ),
+            "manufacturer_country": manufacturer_country,
         })
     return parsed
 
@@ -312,7 +316,7 @@ async def main() -> None:
             rows = parse_ema_xlsx(path)
             print(
                 f"EMA Article 57 dry run: {len(rows)} single-ingredient "
-                "country-authorisation records parsed; database unchanged."
+                "records with verified manufacturer origin parsed; database unchanged."
             )
             return
         references, products = await import_catalog(path)

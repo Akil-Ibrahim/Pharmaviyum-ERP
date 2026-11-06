@@ -11,6 +11,8 @@ from collections.abc import Sequence
 from difflib import SequenceMatcher
 from typing import Any
 
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
+
 
 def _normalize(value: Any) -> str:
     if value is None:
@@ -91,6 +93,13 @@ def suggest_matches(payload: dict | None, references: list) -> list[dict]:
             )
 
         for product in reference.medicinal_products or []:
+            if is_excluded_catalog_entry(
+                brand_name=getattr(product, "brand_name", None),
+                manufacturer=getattr(product, "manufacturer", None),
+                authorization_country=getattr(product, "authorization_country", None),
+                manufacturer_country=getattr(product, "manufacturer_country", None),
+            ):
+                continue
             score, reasons = _score_candidate(source, reference, product)
             if score < 0.50:
                 continue

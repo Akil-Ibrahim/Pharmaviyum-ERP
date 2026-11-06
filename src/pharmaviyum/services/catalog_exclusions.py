@@ -1,15 +1,14 @@
-"""Central policy for excluding disallowed manufacturers and country origins.
+"""Central policy for excluding Teva and Israeli-origin/authorized medicines.
 
-The exclusion policy is intentionally paused while the international catalogue is
-being populated. Set CATALOG_EXCLUSIONS_ENABLED to True when the user asks to
-resume the Teva / Israeli-origin filtering task.
+The policy is enabled by default and is shared by catalog ingestion, review,
+autocomplete, pharmacy product search, POS add-to-cart, and checkout.
 """
 
 import re
 from collections.abc import Mapping
 
-# Temporary pause requested by the user on 2026-11-05.
-CATALOG_EXCLUSIONS_ENABLED = False
+# Enforce the user's catalog exclusion policy in every environment.
+CATALOG_EXCLUSIONS_ENABLED = True
 
 _ISRAEL_COUNTRY_VALUES = {
     "il",
@@ -21,8 +20,32 @@ _ISRAEL_COUNTRY_VALUES = {
 }
 _COUNTRY_KEYS = {
     "country",
+    "countryname",
+    "holdercountry",
+    "holdercountryname",
+    "marketingauthorizationholdercountry",
+    "marketingauthorisationholdercountry",
+    "countryofholder",
+    "countryofmanufacturer",
+    "countryofmanufacturing",
+    "manufacturingcountry",
+    "countrywhereproduced",
+    "productioncountry",
+    "countryofregistration",
+    "registrationcountry",
+    "authorizationterritory",
+    "authorisationterritory",
+    "territoryofauthorization",
+    "territoryofauthorisation",
     "authorizationcountry",
     "authorizationcountryname",
+    "countryofauthorization",
+    "countrywhereauthorised",
+    "countrywhereauthorized",
+    "countryofmarketingauthorisation",
+    "countryofmarketingauthorization",
+    "marketingauthorisationcountry",
+    "marketingauthorizationcountry",
     "manufacturercountry",
     "countryoforigin",
     "countryofmanufacture",
@@ -80,7 +103,7 @@ def is_excluded_catalog_entry(
 
 
 def allowed_pharmacy_product_conditions():
-    """SQL predicates for the exclusion policy; empty while the policy is paused."""
+    """SQL predicates that prevent excluded medicines from entering pharmacy workflows."""
     if not CATALOG_EXCLUSIONS_ENABLED:
         return ()
 
@@ -121,7 +144,7 @@ def allowed_pharmacy_product_conditions():
 
 
 def allowed_medicinal_product_conditions():
-    """SQL predicates for catalogue autocomplete; empty while policy is paused."""
+    """SQL predicates that prevent excluded medicines from catalog autocomplete."""
     if not CATALOG_EXCLUSIONS_ENABLED:
         return ()
 

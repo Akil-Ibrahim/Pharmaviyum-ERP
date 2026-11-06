@@ -90,28 +90,42 @@ async def list_drug_catalog_sources(
     stmt = stmt.order_by(
         DrugCatalogSourceRecord.extracted_at.desc(),
         DrugCatalogSourceRecord.id.desc(),
-    ).limit(limit)
-    result = await db.execute(stmt)
-    records = result.scalars().all()
-    return [
-        DrugCatalogSourceResult.model_validate(record)
-        for record in records
-        if not is_excluded_catalog_entry(
-            brand_name=(record.normalized_payload or {}).get("brand_name")
-            or (record.normalized_payload or {}).get("product_name"),
-            manufacturer=(record.normalized_payload or {}).get("manufacturer")
-            or (record.normalized_payload or {}).get("holder"),
-            authorization_country=(
-                (record.normalized_payload or {}).get("authorization_country")
-            )
-            or (record.normalized_payload or {}).get("country"),
-            manufacturer_country=(
-                (record.normalized_payload or {}).get("manufacturer_country")
-                or (record.normalized_payload or {}).get("country_of_origin")
-                or (record.normalized_payload or {}).get("country_of_manufacture")
-            ),
-            payload=record.normalized_payload or {},
+    )
+
+    def is_allowed(record: DrugCatalogSourceRecord) -> bool:
+        source_payload = record.normalized_payload or {}
+        return not is_excluded_catalog_entry(
+            brand_name=source_payload.get("brand_name")
+            or source_payload.get("product_name"),
+            manufacturer=source_payload.get("manufacturer")
+            or source_payload.get("holder"),
+            authorization_country=source_payload.get("authorization_country")
+            or source_payload.get("country"),
+            manufacturer_country=source_payload.get("manufacturer_country")
+            or source_payload.get("country_of_origin")
+            or source_payload.get("country_of_manufacture"),
+            payload=source_payload,
         )
+
+    # Refill after applying the exclusion policy. Filtering only after LIMIT can
+    # leave the review queue empty when newer excluded rows occupy the first page.
+    visible_records: list[DrugCatalogSourceRecord] = []
+    offset = 0
+    page_size = max(limit, 200)
+    while len(visible_records) < limit:
+        result = await db.execute(stmt.offset(offset).limit(page_size))
+        page = result.scalars().all()
+        if not page:
+            break
+        offset += len(page)
+        for record in page:
+            if is_allowed(record):
+                visible_records.append(record)
+                if len(visible_records) == limit:
+                    break
+
+    return [
+        DrugCatalogSourceResult.model_validate(record) for record in visible_records
     ]
 
 
