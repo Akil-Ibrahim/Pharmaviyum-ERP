@@ -56,12 +56,7 @@ jobs:
           done
 
           if (("${#FILES[@]}" > 0)); then
-            bunx prettier --write "${FILES[@]}"
-            git --no-pager diff -- "${FILES[@]}"
-            if ! git diff --quiet -- "${FILES[@]}"; then
-              echo "Prettier diff captured for repair; this diagnostic run intentionally fails."
-              exit 1
-            fi
+            bunx prettier --check "${FILES[@]}"
           else
             echo "No frontend files changed; skipping Prettier."
           fi
