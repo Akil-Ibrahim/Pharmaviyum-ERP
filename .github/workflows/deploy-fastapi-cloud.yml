@@ -258,25 +258,25 @@ jobs:
               "$base_url/api/v1/products/search?q=omeprazole" \
               -o /tmp/products-smoke.json
             uv run python - <<'PY'
-            import json
-            from pathlib import Path
-            from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
+          import json
+          from pathlib import Path
+          from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
-            for path in ("/tmp/drug-catalog-smoke.json", "/tmp/products-smoke.json"):
-                rows = json.loads(Path(path).read_text())
-                if not isinstance(rows, list):
-                    raise SystemExit(f"Expected a list response from {path}")
-                for row in rows:
-                    if is_excluded_catalog_entry(
-                        brand_name=row.get("brand_name") or row.get("name"),
-                        manufacturer=row.get("manufacturer"),
-                        authorization_country=row.get("authorization_country"),
-                        manufacturer_country=row.get("manufacturer_country"),
-                        payload=row,
-                    ):
-                        raise SystemExit(f"Excluded medicine surfaced by {path}")
-            print("Authenticated catalog search returned no excluded medicines.")
-            PY
+          for path in ("/tmp/drug-catalog-smoke.json", "/tmp/products-smoke.json"):
+              rows = json.loads(Path(path).read_text())
+              if not isinstance(rows, list):
+                  raise SystemExit(f"Expected a list response from {path}")
+              for row in rows:
+                  if is_excluded_catalog_entry(
+                      brand_name=row.get("brand_name") or row.get("name"),
+                      manufacturer=row.get("manufacturer"),
+                      authorization_country=row.get("authorization_country"),
+                      manufacturer_country=row.get("manufacturer_country"),
+                      payload=row,
+                  ):
+                      raise SystemExit(f"Excluded medicine surfaced by {path}")
+          print("Authenticated catalog search returned no excluded medicines.")
+          PY
 
             echo "Authenticated sign-in, /auth/me and catalog exclusion smoke checks passed."
           else
