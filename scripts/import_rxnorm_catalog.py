@@ -42,7 +42,7 @@ class _RxNormReleaseLinkParser(HTMLParser):
             return
         href = dict(attrs).get("href")
         if href and re.search(
-            r"RxNorm_full_prescribe_[^/]+\\.zip(?:$|[?#])", href, re.IGNORECASE
+            r"RxNorm_full_prescribe_[^/]+\.zip(?:$|[?#])", href, re.IGNORECASE
         ):
             self.links.append(href)
 
@@ -60,7 +60,7 @@ def resolve_current_rxnorm_url(page_html: str) -> str:
     if (
         parsed.scheme != "https"
         or parsed.hostname != RXNORM_DOWNLOAD_HOST
-        or not re.fullmatch(r"RxNorm_full_prescribe_[^/]+\\.zip", filename, re.IGNORECASE)
+        or not re.fullmatch(r"RxNorm_full_prescribe_[^/]+\.zip", filename, re.IGNORECASE)
     ):
         raise ValueError("NLM release page returned an unexpected RxNorm download URL.")
     return url
