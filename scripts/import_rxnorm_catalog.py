@@ -16,16 +16,54 @@ import re
 import shutil
 import tempfile
 import zipfile
+from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import urljoin, urlparse
 
 import httpx
 
 from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
-RXNORM_URL = (
-    "https://download.nlm.nih.gov/umls/kss/rxnorm/"
-    "RxNorm_full_prescribe_current.zip"
+RXNORM_FILES_URL = (
+    "https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html"
 )
+RXNORM_DOWNLOAD_HOST = "download.nlm.nih.gov"
+
+
+class _RxNormReleaseLinkParser(HTMLParser):
+    """Collect official current-prescribable release links in page order."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.links: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag != "a":
+            return
+        href = dict(attrs).get("href")
+        if href and re.search(
+            r"RxNorm_full_prescribe_[^/]+\\.zip(?:$|[?#])", href, re.IGNORECASE
+        ):
+            self.links.append(href)
+
+
+def resolve_current_rxnorm_url(page_html: str) -> str:
+    """Resolve the first current prescribable ZIP linked by NLM's release page."""
+    parser = _RxNormReleaseLinkParser()
+    parser.feed(page_html)
+    if not parser.links:
+        raise RuntimeError("NLM RxNorm release page contains no prescribable ZIP link.")
+
+    url = urljoin(RXNORM_FILES_URL, parser.links[0])
+    parsed = urlparse(url)
+    filename = parsed.path.rsplit("/", 1)[-1]
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname != RXNORM_DOWNLOAD_HOST
+        or not re.fullmatch(r"RxNorm_full_prescribe_[^/]+\\.zip", filename, re.IGNORECASE)
+    ):
+        raise ValueError("NLM release page returned an unexpected RxNorm download URL.")
+    return url
 PRODUCT_TERMS = {"SCD", "SBD"}
 INGREDIENT_TERMS = {"IN", "PIN"}
 INGREDIENT_RELATIONS = {"has_ingredient", "has_precise_ingredient"}
@@ -179,7 +217,7 @@ def _archive_version(path: Path) -> str:
     return f"sha256:{digest.hexdigest()}"
 
 
-async def import_catalog(path: Path) -> tuple[int, int]:
+async def import_catalog(path: Path, *, source_url: str) -> tuple[int, int]:
     """Stage RxNorm records for review; do not mutate the approved drug catalog."""
     from datetime import datetime
 
@@ -205,7 +243,7 @@ async def import_catalog(path: Path) -> tuple[int, int]:
             source_name="RxNorm",
             source_record_id=product["rxcui"],
             source_version=version,
-            source_url=RXNORM_URL,
+            source_url=source_url,
             license_terms=(
                 "NLM RxNorm; review current UMLS/RxNorm terms before redistribution."
             ),
@@ -250,9 +288,18 @@ async def main() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = Path(temp_dir) / "rxnorm.zip"
         headers = {"User-Agent": "Pharmaviyum-DrugCatalog/1.0"}
+        release_page = httpx.get(
+            RXNORM_FILES_URL,
+            headers=headers,
+            timeout=30,
+            follow_redirects=True,
+        )
+        release_page.raise_for_status()
+        archive_url = resolve_current_rxnorm_url(release_page.text)
+
         with httpx.stream(
             "GET",
-            RXNORM_URL,
+            archive_url,
             headers=headers,
             timeout=120,
             follow_redirects=True,
@@ -261,6 +308,11 @@ async def main() -> None:
             with archive_path.open("wb") as archive_file:
                 for chunk in response.iter_bytes():
                     archive_file.write(chunk)
+
+        if not zipfile.is_zipfile(archive_path):
+            raise RuntimeError(
+                f"NLM RxNorm download did not return a ZIP archive: {archive_url}"
+            )
 
         if args.dry_run:
             references, products = parse_rxnorm_archive(archive_path)
@@ -271,7 +323,9 @@ async def main() -> None:
             )
             return
 
-        references_added, products_added = await import_catalog(archive_path)
+        references_added, products_added = await import_catalog(
+            archive_path, source_url=archive_url
+        )
 
     print(
         f"RxNorm staging complete: {references_added} source records added, "
