@@ -65,6 +65,7 @@ def resolve_current_rxnorm_url(page_html: str) -> str:
         raise ValueError("NLM release page returned an unexpected RxNorm download URL.")
     return url
 PRODUCT_TERMS = {"SCD", "SBD"}
+COMPONENT_TERMS = {"SCDC"}
 INGREDIENT_TERMS = {"IN", "PIN"}
 INGREDIENT_RELATIONS = {"has_ingredient", "has_precise_ingredient"}
 STRENGTH_RE = re.compile(
@@ -128,7 +129,7 @@ def parse_rxnorm_archive(
                 ):
                     continue
                 rxcui, tty, term = row[0], row[12], row[14]
-                if tty in INGREDIENT_TERMS | PRODUCT_TERMS and term:
+                if tty in INGREDIENT_TERMS | PRODUCT_TERMS | COMPONENT_TERMS and term:
                     # Keep the preferred English name when duplicate atoms exist.
                     if row[1] == "ENG" and (
                         rxcui not in concepts or row[6] == "Y"
@@ -140,28 +141,64 @@ def parse_rxnorm_archive(
                 for rxcui, (tty, term) in concepts.items()
                 if tty in INGREDIENT_TERMS
             }
+            product_components: dict[str, set[str]] = {}
+            component_ingredients: dict[str, set[str]] = {}
             product_ingredients: dict[str, set[str]] = {}
 
             for row in _rrf_rows(rel_path):
-                if len(row) < 8 or row[7] not in INGREDIENT_RELATIONS:
+                if len(row) < 8:
                     continue
-                left, right = row[0], row[4]
-                if (
-                    left in concepts
-                    and concepts[left][0] in PRODUCT_TERMS
-                    and right in ingredients
-                ):
+                left, right, relation = row[0], row[4], row[7]
+
+                # RxNorm models a clinical drug (SCD) as one or more clinical
+                # drug components (SCDC); each component then links to IN/PIN.
+                if relation == "consists_of":
+                    if (
+                        left in concepts
+                        and concepts[left][0] in PRODUCT_TERMS
+                        and right in concepts
+                        and concepts[right][0] in COMPONENT_TERMS
+                    ):
+                        product_components.setdefault(left, set()).add(right)
+                    elif (
+                        right in concepts
+                        and concepts[right][0] in PRODUCT_TERMS
+                        and left in concepts
+                        and concepts[left][0] in COMPONENT_TERMS
+                    ):
+                        product_components.setdefault(right, set()).add(left)
+                elif relation == "constitutes":
+                    if (
+                        left in concepts
+                        and concepts[left][0] in COMPONENT_TERMS
+                        and right in concepts
+                        and concepts[right][0] in PRODUCT_TERMS
+                    ):
+                        product_components.setdefault(right, set()).add(left)
+                    elif (
+                        right in concepts
+                        and concepts[right][0] in COMPONENT_TERMS
+                        and left in concepts
+                        and concepts[left][0] in PRODUCT_TERMS
+                    ):
+                        product_components.setdefault(left, set()).add(right)
+
+                if relation not in INGREDIENT_RELATIONS:
+                    continue
+                if left in concepts and concepts[left][0] in COMPONENT_TERMS and right in ingredients:
+                    component_ingredients.setdefault(left, set()).add(right)
+                elif right in concepts and concepts[right][0] in COMPONENT_TERMS and left in ingredients:
+                    component_ingredients.setdefault(right, set()).add(left)
+                elif left in concepts and concepts[left][0] in PRODUCT_TERMS and right in ingredients:
                     product_ingredients.setdefault(left, set()).add(right)
-                elif (
-                    right in concepts
-                    and concepts[right][0] in PRODUCT_TERMS
-                    and left in ingredients
-                ):
+                elif right in concepts and concepts[right][0] in PRODUCT_TERMS and left in ingredients:
                     product_ingredients.setdefault(right, set()).add(left)
 
             products: list[dict[str, str]] = []
             for rxcui, (tty, term) in concepts.items():
-                linked = product_ingredients.get(rxcui, set())
+                linked = set(product_ingredients.get(rxcui, set()))
+                for component_id in product_components.get(rxcui, set()):
+                    linked.update(component_ingredients.get(component_id, set()))
                 # Do not silently misrepresent combination medicines. RxNorm
                 # does not publish manufacturer-country provenance for branded
                 # SBD concepts, so only unbranded SCD concepts are eligible.
