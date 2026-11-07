@@ -5,7 +5,10 @@ from zipfile import ZipFile
 
 import pytest
 
-from scripts.import_rxnorm_catalog import parse_rxnorm_archive
+from scripts.import_rxnorm_catalog import (
+    parse_rxnorm_archive,
+    resolve_current_rxnorm_url,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -29,6 +32,25 @@ def _rel_row(product_id: str, ingredient_id: str) -> str:
     row[4] = ingredient_id
     row[7] = "has_ingredient"
     return "|".join(row) + "|\n"
+
+
+
+def test_resolver_uses_first_official_current_prescribable_release_link():
+    html = """
+    <html><body>
+      <a href="https://download.nlm.nih.gov/rxnorm/RxNorm_full_prescribe_11022026.zip">Current release</a>
+      <a href="https://download.nlm.nih.gov/rxnorm/RxNorm_full_prescribe_10052026.zip">Previous release</a>
+    </body></html>
+    """
+    assert resolve_current_rxnorm_url(html) == (
+        "https://download.nlm.nih.gov/rxnorm/RxNorm_full_prescribe_11022026.zip"
+    )
+
+
+def test_resolver_rejects_non_nlm_download_hosts():
+    html = '<a href="https://example.com/RxNorm_full_prescribe_11022026.zip">Download</a>'
+    with pytest.raises(ValueError, match="unexpected RxNorm download URL"):
+        resolve_current_rxnorm_url(html)
 
 
 def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path: Path):
