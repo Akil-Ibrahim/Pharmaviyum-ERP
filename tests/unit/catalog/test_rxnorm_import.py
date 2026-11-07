@@ -34,6 +34,23 @@ def _rel_row(product_id: str, ingredient_id: str) -> str:
     return "|".join(row) + "|\n"
 
 
+def _component_row(product_id: str, component_id: str) -> str:
+    row = [""] * 16
+    row[0] = product_id
+    row[3] = "RO"
+    row[4] = component_id
+    row[7] = "consists_of"
+    return "|".join(row) + "|\n"
+
+
+def _component_ingredient_row(component_id: str, ingredient_id: str) -> str:
+    row = [""] * 16
+    row[0] = component_id
+    row[3] = "RO"
+    row[4] = ingredient_id
+    row[7] = "has_ingredient"
+    return "|".join(row) + "|\n"
+
 
 def test_resolver_uses_first_official_current_prescribable_release_link():
     html = """
@@ -58,11 +75,15 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
     conso = "".join(
         [
             _conso_row("100", "IN", "ibuprofen"),
+            _conso_row("1200", "SCDC", "ibuprofen 200 MG"),
             _conso_row("200", "SCD", "ibuprofen 200 MG Oral Tablet"),
             _conso_row("201", "SBD", "Advil 200 MG Oral Tablet"),
             _conso_row("202", "SBD", "Teva 200 MG Oral Tablet"),
             _conso_row("300", "IN", "acetaminophen"),
+            _conso_row("1301", "SCDC", "acetaminophen 160 MG/5 ML"),
             _conso_row("301", "SCD", "acetaminophen 160 MG/5 ML Oral Suspension"),
+            _conso_row("1400", "SCDC", "ibuprofen 200 MG"),
+            _conso_row("1401", "SCDC", "acetaminophen 325 MG"),
             _conso_row(
                 "400",
                 "SCD",
@@ -72,12 +93,16 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
     )
     rel = "".join(
         [
-            _rel_row("200", "100"),
+            _component_row("200", "1200"),
+            _component_ingredient_row("1200", "100"),
             _rel_row("201", "100"),
             _rel_row("202", "100"),
-            _rel_row("301", "300"),
-            _rel_row("400", "100"),
-            _rel_row("400", "300"),
+            _component_row("301", "1301"),
+            _component_ingredient_row("1301", "300"),
+            _component_row("400", "1400"),
+            _component_ingredient_row("1400", "100"),
+            _component_row("400", "1401"),
+            _component_ingredient_row("1401", "300"),
         ]
     )
     with ZipFile(archive_path, "w") as archive:
