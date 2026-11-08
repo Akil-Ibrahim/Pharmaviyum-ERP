@@ -51,14 +51,14 @@ async def lifespan(app: FastAPI):
         logger.exception("Failed to initialize critical application dependencies")
         if settings.environment == "production":
             shutdown_opentelemetry()
-    await close_redis()
+            await close_redis()
             raise
 
     yield
 
     logger.info("Shutting down Pharmaviyum AI Application")
+    shutdown_opentelemetry()
     await close_redis()
-
 
 app = FastAPI(
     title="Pharmaviyum AI API",
