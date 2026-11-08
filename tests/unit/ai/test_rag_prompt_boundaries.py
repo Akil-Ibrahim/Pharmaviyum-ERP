@@ -12,9 +12,11 @@ from src.pharmaviyum.ai.mortarium_rag.query_transformer import QueryTransformer
 class CapturingLLM:
     def __init__(self, content: str) -> None:
         self.content = content
-        self.messages = None
+        self.messages: list[SystemMessage | HumanMessage] = []
 
-    async def ainvoke(self, messages):
+    async def ainvoke(
+        self, messages: list[SystemMessage | HumanMessage]
+    ) -> SimpleNamespace:
         self.messages = messages
         return SimpleNamespace(content=self.content)
 
@@ -25,7 +27,10 @@ def assert_role_separated_messages(llm: CapturingLLM, query: str) -> None:
     assert isinstance(llm.messages[0], SystemMessage)
     assert isinstance(llm.messages[1], HumanMessage)
     assert query not in llm.messages[0].content
-    assert "&lt;/untrusted" in llm.messages[1].content or query in llm.messages[1].content
+    assert (
+        "&lt;/untrusted" in llm.messages[1].content
+        or query in llm.messages[1].content
+    )
 
 
 @pytest.mark.asyncio
@@ -107,7 +112,10 @@ async def test_rag_generation_uses_system_role_and_escapes_untrusted_content() -
     assert result["answer"] == "Evidence-bounded answer."
     assert isinstance(llm.messages[0], SystemMessage)
     assert isinstance(llm.messages[1], HumanMessage)
-    assert "Answer only from the supplied retrieved evidence" in llm.messages[0].content
+    assert (
+        "Answer only from the supplied retrieved evidence"
+        in llm.messages[0].content
+    )
     assert question not in llm.messages[0].content
     assert evidence not in llm.messages[0].content
     assert "&lt;/user_question&gt;" in llm.messages[1].content
