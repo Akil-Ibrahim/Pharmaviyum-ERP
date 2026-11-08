@@ -89,7 +89,7 @@ class AgentHarness:
             for source in sources
             if source.get("source_id")
         }
-        cited = re.findall(r"\\[(src-[^\\]\\s]+)\\]", answer)
+        cited = re.findall(r"\[(src-[^\]\s]+)\]", answer)
         if cited and all(citation in allowed for citation in cited):
             return answer, []
         return (
