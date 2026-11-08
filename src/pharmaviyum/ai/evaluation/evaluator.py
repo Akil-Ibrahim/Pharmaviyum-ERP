@@ -179,7 +179,6 @@ Respond ONLY with a valid JSON object in this exact format:
                 logger.warning(
                     "Evaluation FAILED",
                     extra={
-                        "query_preview": query[:50],
                         "scores": result.model_dump(
                             include={
                                 "accuracy",
@@ -189,7 +188,6 @@ Respond ONLY with a valid JSON object in this exact format:
                                 "overall_score",
                             }
                         ),
-                        "feedback": result.feedback,
                     },
                 )
             else:
