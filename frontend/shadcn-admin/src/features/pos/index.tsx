@@ -124,10 +124,7 @@ const money = (value: number) =>
     maximumFractionDigits: 2,
   }).format(value)
 
-const getFefoAllocationPreview = (
-  lots: InventoryLot[],
-  quantity: number
-) => {
+const getFefoAllocationPreview = (lots: InventoryLot[], quantity: number) => {
   let remaining = quantity
   return lots.map((lot) => {
     const allocated_quantity = Math.min(lot.available_quantity, remaining)
