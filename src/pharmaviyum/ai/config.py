@@ -114,7 +114,7 @@ class LangSmithSettings(BaseSettings):
 
 class OTelSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="OTEL_")
-    enabled: bool = True
+    enabled: bool = False
     exporter_endpoint: str | None = Field(
         default=None,
         validation_alias=AliasChoices(
