@@ -153,7 +153,7 @@ class MCPClient:
                         "user_role": user_role,
                     },
                 )
-                self._circuit_breaker.pop(tool_name, None)
+                self._circuit_breaker.pop(canonical_tool_name, None)
                 return ToolExecutionResult(
                     tool_name=canonical_tool_name,
                     success=True,
