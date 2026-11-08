@@ -58,16 +58,9 @@ function DrugReferencePage() {
 
   useEffect(() => {
     const term = query.trim()
-    if (term.length < 2) {
-      setResults([])
-      setError('')
-      setLoading(false)
-      return
-    }
+    if (term.length < 2) return
 
     let cancelled = false
-    setResults([])
-    setError('')
     const timer = window.setTimeout(async () => {
       setLoading(true)
       const params = new URLSearchParams({
@@ -159,7 +152,12 @@ function DrugReferencePage() {
                 <Search className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
                 <Input
                   value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  onChange={(event) => {
+                    setQuery(event.target.value)
+                    setResults([])
+                    setError('')
+                    setLoading(false)
+                  }}
                   className='h-11 pl-9'
                   placeholder='e.g. omeprazole, 500 mg, or 1234567890123'
                   autoComplete='off'
@@ -172,7 +170,12 @@ function DrugReferencePage() {
                 <Globe2 className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
                 <Input
                   value={country}
-                  onChange={(event) => setCountry(event.target.value)}
+                  onChange={(event) => {
+                    setCountry(event.target.value)
+                    setResults([])
+                    setError('')
+                    setLoading(false)
+                  }}
                   className='h-11 pl-9'
                   placeholder='Exact country name'
                   autoComplete='off'
