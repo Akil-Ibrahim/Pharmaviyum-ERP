@@ -215,10 +215,7 @@ class ToolCallingLayer:
                         latency_ms=latency_ms,
                     )
                 else:
-                    logger.warning(
-                        "MCP tool returned an unsuccessful result",
-                        extra={},
-                    )
+                    logger.warning("MCP tool returned an unsuccessful result")
 
             except Exception as exc:
                 latency_ms = (time.perf_counter() - start) * 1000
