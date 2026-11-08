@@ -228,7 +228,9 @@ class AgentHarness:
                 span.set_attribute(
                     "ai.tool_result_count", len(agent_result.get("tool_results", []))
                 )
-                span.set_attribute("ai.execution_success", bool(agent_result.get("success")))
+                span.set_attribute(
+                    "ai.execution_success", bool(agent_result.get("success"))
+                )
             if not agent_result.get("success"):
                 raise RuntimeError("Agent execution failed")
 
