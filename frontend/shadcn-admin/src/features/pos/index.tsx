@@ -52,6 +52,7 @@ type LocalProduct = {
   inn_name: string | null
   gtin: string | null
   barcode: string | null
+  regulatory_id?: string | null
   price: number
   stock: number
   medicinal_product_id: number | null
@@ -313,7 +314,12 @@ export function Pos() {
     const normalized = term.replace(/\s+/g, '').toLowerCase()
     const findExact = (products: LocalProduct[]) =>
       products.filter((product) =>
-        [product.barcode, product.gtin, product.sku].some(
+        [
+          product.barcode,
+          product.gtin,
+          product.sku,
+          product.regulatory_id,
+        ].some(
           (value) => value?.replace(/\s+/g, '').toLowerCase() === normalized
         )
       )
@@ -924,6 +930,7 @@ export function Pos() {
                   product.dosage_form,
                   product.sku,
                   product.manufacturer,
+                  product.regulatory_id,
                   product.barcode,
                   product.gtin,
                 ]
