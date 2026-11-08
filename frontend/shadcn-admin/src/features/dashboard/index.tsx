@@ -135,8 +135,9 @@ export function Dashboard() {
     {
       label: 'Inventory Items',
       value: number(inventory?.items ?? 0),
-      hint:
-        `${money(inventory?.retail_value ?? 0)} retail value · ${number(inventory?.low_stock ?? 0)} low stock`,
+      hint: `${money(inventory?.retail_value ?? 0)} retail value · ${
+        number(inventory?.low_stock ?? 0)
+      } low stock`,
       icon: Boxes,
       tone: 'bg-emerald-500/10 text-emerald-600',
     },
