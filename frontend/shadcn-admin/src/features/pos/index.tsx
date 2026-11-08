@@ -303,7 +303,10 @@ export function Pos() {
         if (found)
           return items.map((item) =>
             item.id === product.id
-              ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) }
+              ? {
+                  ...item,
+                  quantity: Math.min(item.quantity + 1, product.stock),
+                }
               : item
           )
         return [...items, { ...product, quantity: 1 }]
