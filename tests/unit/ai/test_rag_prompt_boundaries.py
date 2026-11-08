@@ -38,7 +38,10 @@ def assert_role_separated_messages(llm: CapturingLLM, query: str) -> None:
     ("method_name", "response"),
     [
         ("transform_with_hyde", "hypothetical search text"),
-        ("generate_multi_query", "warfarin aspirin interaction\nwarfarin aspirin risks"),
+        (
+            "generate_multi_query",
+            "warfarin aspirin interaction\\nwarfarin aspirin risks",
+        ),
         ("decompose_query", "warfarin aspirin interactions\nwarfarin alternatives"),
     ],
 )
