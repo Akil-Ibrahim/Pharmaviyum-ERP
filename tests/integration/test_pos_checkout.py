@@ -274,7 +274,6 @@ async def test_fefo_skips_expired_lots_and_uses_undated_lots_last(
     assert response.status_code == 201, response.text
     allocation_result = await test_db.execute(
         select(SaleItemAllocation)
-        .join(SaleItemAllocation.sale_item)
         .where(SaleItemAllocation.sale_item.has(sale_id=response.json()["id"]))
         .order_by(SaleItemAllocation.id.asc())
     )
