@@ -50,7 +50,8 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.exception("Failed to initialize critical application dependencies")
         if settings.environment == "production":
-            await close_redis()
+            shutdown_opentelemetry()
+    await close_redis()
             raise
 
     yield
