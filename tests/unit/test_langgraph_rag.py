@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
 from src.pharmaviyum.ai.mortarium_rag.schemas import QueryContext
