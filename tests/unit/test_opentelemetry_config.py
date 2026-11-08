@@ -116,3 +116,14 @@ def test_ai_spans_only_allow_reviewed_names_and_operational_attributes():
         "ai.model_name": "approved-model",
         "ai.execution_success": True,
     }
+
+
+def test_production_environment_aliases_are_recognized():
+    from src.pharmaviyum.observability.opentelemetry import (
+        _is_production_environment,
+    )
+
+    assert _is_production_environment("production") is True
+    assert _is_production_environment("prod") is True
+    assert _is_production_environment("development") is False
+    assert _is_production_environment("test") is False
