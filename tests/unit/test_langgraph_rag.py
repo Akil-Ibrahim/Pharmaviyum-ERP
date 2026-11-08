@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -271,3 +272,47 @@ async def test_document_grading_propagates_task_cancellation(rag: LangGraphRAG):
                 "retrieved": [SimpleNamespace()],
             }
         )
+
+
+@pytest.mark.asyncio
+async def test_langgraph_node_spans_record_only_operational_attributes(monkeypatch):
+    import src.pharmaviyum.ai.mortarium_rag.graph as graph_module
+
+    span = MagicMock()
+    span_context = MagicMock()
+    span_context.__enter__.return_value = span
+    tracer = MagicMock()
+    tracer.start_as_current_span.return_value = span_context
+    monkeypatch.setattr(graph_module, "rag_tracer", tracer)
+
+    node = AsyncMock(
+        return_value={
+            "retrieved": [SimpleNamespace()],
+            "graded": [],
+            "warnings": ["low_relevance"],
+        }
+    )
+    wrapped = LangGraphRAG._traced_node("retrieve", node)
+
+    result = await wrapped(
+        {
+            "question": "patient name and medication query",
+            "rewrite_count": 1,
+            "retrieved": [SimpleNamespace()],
+            "context": QueryContext(user_id="user-1", pharmacy_id=7),
+        }
+    )
+
+    assert result["warnings"] == ["low_relevance"]
+    attributes = {call.args[0] for call in span.set_attribute.call_args_list}
+    assert {
+        "ai.rag.rewrite_count",
+        "ai.rag.input_source_count",
+        "ai.execution_success",
+        "ai.rag.retrieved_count",
+        "ai.rag.graded_count",
+        "ai.rag.warning_count",
+    }.issubset(attributes)
+    assert attributes.isdisjoint(
+        {"ai.prompt", "ai.query", "user.id", "patient.id", "rag.document"}
+    )
