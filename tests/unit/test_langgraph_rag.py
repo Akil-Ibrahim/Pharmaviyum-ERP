@@ -50,6 +50,13 @@ def test_thread_id_is_stable_opaque_and_tenant_scoped(rag: LangGraphRAG) -> None
     other_user = QueryContext(user_id="user-2", pharmacy_id=7)
     assert rag._thread_id("conversation-123", other_user) != first
 
+    # Delimiter-containing values must not create ambiguous HMAC scopes.
+    left = QueryContext(user_id="user:segment", pharmacy_id=7)
+    right = QueryContext(user_id="user", pharmacy_id=7)
+    assert rag._thread_id("conversation", left) != rag._thread_id(
+        "segment:conversation", right
+    )
+
     assert rag._thread_id(None, context) != rag._thread_id(None, context)
 
 
