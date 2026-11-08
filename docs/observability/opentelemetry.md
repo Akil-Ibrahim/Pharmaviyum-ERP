@@ -38,6 +38,10 @@ environment or secret manager.
   with `OTEL_ENABLE_SENSITIVE_CLIENT_INSTRUMENTATION=true`.
 - Production must not enable that development-only switch. Add reviewed,
   bounded manual spans for database/cache/client operations where needed.
+- The local Collector also deletes SQL text, URL/query values, auth/cookie
+  headers, exception messages/stack traces, user/patient/pharmacy/session IDs
+  and messaging destination names as a second privacy boundary. This local
+  filter is defense-in-depth, not a substitute for production collector policy.
 - Mortarium spans should contain only bounded operational attributes such as
   model name, source count, tool count, latency, cache outcome and execution
   status. Never attach prompts, model outputs, retrieved clinical text,
