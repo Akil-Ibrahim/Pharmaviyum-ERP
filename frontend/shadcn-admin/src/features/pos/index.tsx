@@ -329,13 +329,25 @@ export function Pos() {
               <Pill className='size-5' />
             </span>
             <div>
-              <h1 className='text-xl font-semibold tracking-tight'>Pharmacy POS</h1>
-              <p className='text-sm text-muted-foreground'>Point of sale · Inventory-aware checkout</p>
+              <h1 className='text-xl font-semibold tracking-tight'>
+                Pharmacy POS
+              </h1>
+              <p className='text-sm text-muted-foreground'>
+                Point of sale · Inventory-aware checkout
+              </p>
             </div>
           </div>
           <div className='flex flex-wrap items-center gap-2'>
-            <Badge variant='outline' className='h-9 px-3'>Register active</Badge>
-            <Button variant='outline' onClick={() => { setReceivingOpen(true); setReceivingProductId('') }}>
+            <Badge variant='outline' className='h-9 px-3'>
+              Register active
+            </Badge>
+            <Button
+              variant='outline'
+              onClick={() => {
+                setReceivingOpen(true)
+                setReceivingProductId('')
+              }}
+            >
               <Plus className='mr-2 size-4' /> Receive stock
             </Button>
             <Button
