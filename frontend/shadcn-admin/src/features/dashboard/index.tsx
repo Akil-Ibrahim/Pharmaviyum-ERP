@@ -431,7 +431,9 @@ export function Dashboard() {
                     size={104}
                   />
                   <div>
-                    <p className='text-sm font-semibold'>Expiry Status: Healthy</p>
+                    <p className='text-sm font-semibold'>
+                      Expiry Status: Healthy
+                    </p>
                     <p className='mt-1 text-xs text-muted-foreground'>
                       Items with more than 12 months remaining
                     </p>
