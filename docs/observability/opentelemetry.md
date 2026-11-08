@@ -43,6 +43,8 @@ prevent the pharmacy API from starting.
 - SQLAlchemy synchronous engine boundary used by the async SQLAlchemy engine.
 - Redis client operations.
 - Outbound HTTPX client requests.
+- Mortarium RAG retrieval and MCP tool execution, with bounded attributes for source counts, warning counts, tool names, and success state.
+- Mortarium model routing and agent execution, without recording prompts, patient data, tool arguments, or retrieved clinical text.
 
 The SDK uses a parent-based, ratio sampler. Child spans follow the sampled state
 of their parent. The provider is flushed and shut down during application
