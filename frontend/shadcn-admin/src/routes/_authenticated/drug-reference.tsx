@@ -225,7 +225,9 @@ function DrugReferencePage() {
               {hasQuery
                 ? loading
                   ? 'Updating results…'
-                  : `${results.length} record${results.length === 1 ? '' : 's'} returned`
+                  : `${results.length} record${
+                      results.length === 1 ? '' : 's'
+                    } returned`
                 : 'Results will appear here after you enter a search term.'}
             </p>
           </div>
@@ -268,7 +270,12 @@ function DrugReferencePage() {
             {results.map((item, index) => {
               const displayName = item.brand_name || item.inn_name
               const isPending = item.review_status === 'pending_review'
-              const identity = `${item.source_name ?? 'catalog'}-${item.source_record_id ?? item.medicinal_product_id ?? item.drug_reference_id ?? index}`
+              const identity = `${item.source_name ?? 'catalog'}-${
+                item.source_record_id ??
+                item.medicinal_product_id ??
+                item.drug_reference_id ??
+                index
+              }`
 
               return (
                 <Card key={identity} className='min-w-0'>
