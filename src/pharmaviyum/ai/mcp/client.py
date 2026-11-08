@@ -142,7 +142,6 @@ class MCPClient:
                         "retry_count": retry_count,
                         "trace_id": trace_id,
                         "user_role": user_role,
-                        "pharmacy_id": pharmacy_id,
                     },
                 )
                 self._circuit_breaker.pop(tool_name, None)
@@ -155,7 +154,6 @@ class MCPClient:
                     metadata={
                         "trace_id": trace_id,
                         "user_role": user_role,
-                        "pharmacy_id": pharmacy_id,
                     },
                 )
             except asyncio.TimeoutError:
@@ -165,18 +163,21 @@ class MCPClient:
                     extra={"tool": tool_name, "attempt": attempt + 1},
                 )
             except PermissionError as exc:
-                last_error = str(exc)
+                last_error = "MCP tool not authorized"
                 logger.warning(
                     "MCP tool authorization denied",
                     extra={"tool": tool_name, "user_role": user_role},
                 )
                 break
             except Exception as exc:
-                last_error = f"Tool {tool_name} failed: {exc}"
+                last_error = "Tool execution failed"
                 logger.error(
-                    last_error,
-                    extra={"tool": tool_name, "attempt": attempt + 1},
-                    exc_info=True,
+                    "MCP tool execution failed",
+                    extra={
+                        "tool": tool_name,
+                        "attempt": attempt + 1,
+                        "error_type": type(exc).__name__,
+                    },
                 )
 
             retry_count = attempt + 1
@@ -200,7 +201,6 @@ class MCPClient:
             metadata={
                 "trace_id": trace_id,
                 "user_role": user_role,
-                "pharmacy_id": pharmacy_id,
             },
         )
 
