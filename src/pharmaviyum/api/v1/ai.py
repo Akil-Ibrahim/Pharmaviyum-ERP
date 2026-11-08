@@ -42,9 +42,11 @@ class QueryRequest(BaseModel):
         description="Conversation session ID (max 64 characters)",
     )
     patient_id: int | None = Field(
-        default=None, description="Patient ID for history lookup"
+        default=None, strict=True, description="Patient ID for history lookup"
     )
-    pharmacy_id: int = Field(..., gt=0, description="Authorized pharmacy tenant")
+    pharmacy_id: int = Field(
+        ..., strict=True, gt=0, description="Authorized pharmacy tenant"
+    )
     country: str | None = Field(
         default=None,
         description="Explicit market jurisdiction; omit when not known",
