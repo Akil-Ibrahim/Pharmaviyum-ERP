@@ -15,7 +15,10 @@ from src.pharmaviyum.ai.mortarium_rag.schemas import QueryContext
 def test_rag_filters_omit_unknown_optional_country() -> None:
     context = QueryContext(user_id="user-1", pharmacy_id=7, country=None)
 
-    assert LangGraphRAG._build_filters(context) == {"pharmacy_id": 7}
+    assert LangGraphRAG._build_filters(context) == {
+        "pharmacy_id": 7,
+        "_search_language": "en",
+    }
 
 
 def test_rag_filters_keep_known_country_and_halal_constraint() -> None:
@@ -28,6 +31,7 @@ def test_rag_filters_keep_known_country_and_halal_constraint() -> None:
 
     assert LangGraphRAG._build_filters(context) == {
         "pharmacy_id": 7,
+        "_search_language": "en",
         "country": "VN",
         "halal": True,
     }
