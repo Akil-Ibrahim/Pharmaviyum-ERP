@@ -167,7 +167,7 @@ class QueryTransformer:
         )
         human_prompt = (
             "<untrusted_original_question>\n"
-            f"{query}"
+            f"{html.escape(query, quote=False)}"
             "\n</untrusted_original_question>"
         )
 
@@ -273,7 +273,7 @@ class QueryTransformer:
         )
         human_prompt = (
             "<untrusted_complex_question>\n"
-            f"{query}"
+            f"{html.escape(query, quote=False)}"
             "\n</untrusted_complex_question>"
         )
 
