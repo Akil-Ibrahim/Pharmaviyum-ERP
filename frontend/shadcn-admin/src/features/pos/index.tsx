@@ -544,7 +544,8 @@ export function Pos() {
               <div>
                 <h2 className='text-base font-semibold'>Product catalog</h2>
                 <p className='text-xs text-muted-foreground'>
-                  Search by product name, active ingredient, brand, strength or barcode
+                  Search by product name, active ingredient, brand, strength or
+                  barcode
                 </p>
               </div>
               <Badge variant='secondary'>Live pharmacy inventory</Badge>
@@ -599,9 +600,15 @@ export function Pos() {
                       <tr>
                         <th className='px-3 py-2 font-medium'>Product</th>
                         <th className='px-3 py-2 font-medium'>SKU / Barcode</th>
-                        <th className='px-3 py-2 text-right font-medium'>Price</th>
-                        <th className='px-3 py-2 text-right font-medium'>Available</th>
-                        <th className='px-3 py-2 text-right font-medium'>Action</th>
+                        <th className='px-3 py-2 text-right font-medium'>
+                          Price
+                        </th>
+                        <th className='px-3 py-2 text-right font-medium'>
+                          Available
+                        </th>
+                        <th className='px-3 py-2 text-right font-medium'>
+                          Action
+                        </th>
                       </tr>
                     </thead>
                     <tbody className='divide-y'>
@@ -610,7 +617,12 @@ export function Pos() {
                           <td className='px-3 py-3'>
                             <p className='font-medium'>{product.name}</p>
                             <p className='text-xs text-muted-foreground'>
-                              {[product.inn_name, product.dosage_strength, product.dosage_form, product.manufacturer]
+                              {[
+                                product.inn_name,
+                                product.dosage_strength,
+                                product.dosage_form,
+                                product.manufacturer,
+                              ]
                                 .filter(Boolean)
                                 .join(' · ')}
                             </p>
@@ -623,7 +635,11 @@ export function Pos() {
                             {money(product.price)}
                           </td>
                           <td className='px-3 py-3 text-right tabular-nums'>
-                            <Badge variant={product.stock > 0 ? 'secondary' : 'destructive'}>
+                            <Badge
+                              variant={
+                                product.stock > 0 ? 'secondary' : 'destructive'
+                              }
+                            >
                               {product.stock}
                             </Badge>
                           </td>
