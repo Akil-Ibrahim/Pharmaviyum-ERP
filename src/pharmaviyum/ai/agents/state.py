@@ -41,3 +41,4 @@ class AgentState(TypedDict):
     rag_context: str
     rag_sources: list[dict[str, Any]]
     iteration: int
+    model_used: str
