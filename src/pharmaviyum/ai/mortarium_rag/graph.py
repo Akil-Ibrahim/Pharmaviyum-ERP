@@ -10,6 +10,8 @@ from uuid import uuid4
 
 from langchain_core.callbacks import UsageMetadataCallbackHandler
 from langgraph.graph import END, StateGraph
+from opentelemetry import trace
+from opentelemetry.trace import Status, StatusCode
 
 from src.pharmaviyum.ai.llm_utils import response_text, total_token_usage
 from src.pharmaviyum.ai.observability.metrics import (
@@ -28,6 +30,8 @@ from .ports import EmbeddingsPort, GuardrailsPort, LLMPort, RetrieverPort
 from .query_transformer import QueryTransformer
 from .schemas import QueryContext, RAGResponse, RetrievalResult
 from .state import RAGState
+
+rag_tracer = trace.get_tracer(__name__)
 
 
 class LangGraphRAG:
@@ -86,17 +90,68 @@ class LangGraphRAG:
         self.compressor = ContextualCompressor(llm=self.fast_llm)
         self.graph = self._build_graph(checkpointer)
 
+    @staticmethod
+    def _traced_node(name: str, node):
+        """Wrap a LangGraph node with PHI-safe, low-cardinality telemetry."""
+
+        async def execute(state: RAGState) -> dict[str, Any]:
+            with rag_tracer.start_as_current_span(f"mortarium.rag.{name}") as span:
+                span.set_attribute(
+                    "ai.rag.rewrite_count", int(state.get("rewrite_count", 0))
+                )
+                if "retrieved" in state:
+                    span.set_attribute(
+                        "ai.rag.input_source_count", len(state.get("retrieved", []))
+                    )
+                try:
+                    result = await node(state)
+                    span.set_attribute("ai.execution_success", True)
+                    if "retrieved" in result:
+                        span.set_attribute(
+                            "ai.rag.retrieved_count", len(result["retrieved"])
+                        )
+                    if "graded" in result:
+                        span.set_attribute(
+                            "ai.rag.graded_count", len(result["graded"])
+                        )
+                    if "warnings" in result:
+                        span.set_attribute(
+                            "ai.rag.warning_count", len(result["warnings"])
+                        )
+                    return result
+                except Exception as exc:
+                    error_type = type(exc).__name__
+                    span.set_attribute("ai.execution_success", False)
+                    span.set_attribute("error.type", error_type)
+                    span.set_status(Status(StatusCode.ERROR, error_type))
+                    raise
+
+        return execute
+
     def _build_graph(self, checkpointer: Any):
         workflow = StateGraph(RAGState)
-        workflow.add_node("transform_query", self.transform_query_node)
-        workflow.add_node("blocked", self.blocked_node)
-        workflow.add_node("retrieve", self.retrieve_node)
-        workflow.add_node("grade_documents", self.grade_documents_node)
-        workflow.add_node("rewrite_query", self.rewrite_query_node)
-        workflow.add_node("compress", self.compress_node)
-        workflow.add_node("generate", self.generate_node)
-        workflow.add_node("no_answer", self.no_answer_node)
-        workflow.add_node("guardrails", self.guardrails_node)
+        workflow.add_node(
+            "transform_query",
+            self._traced_node("transform_query", self.transform_query_node),
+        )
+        workflow.add_node("blocked", self._traced_node("blocked", self.blocked_node))
+        workflow.add_node("retrieve", self._traced_node("retrieve", self.retrieve_node))
+        workflow.add_node(
+            "grade_documents",
+            self._traced_node("grade_documents", self.grade_documents_node),
+        )
+        workflow.add_node(
+            "rewrite_query",
+            self._traced_node("rewrite_query", self.rewrite_query_node),
+        )
+        workflow.add_node("compress", self._traced_node("compress", self.compress_node))
+        workflow.add_node("generate", self._traced_node("generate", self.generate_node))
+        workflow.add_node(
+            "no_answer", self._traced_node("no_answer", self.no_answer_node)
+        )
+        workflow.add_node(
+            "guardrails", self._traced_node("guardrails", self.guardrails_node)
+        )
         workflow.set_entry_point("transform_query")
         workflow.add_conditional_edges(
             "transform_query",
