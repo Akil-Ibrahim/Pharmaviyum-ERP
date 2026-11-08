@@ -67,6 +67,21 @@ Query
 
 The graph requires an explicit checkpointer and derives the checkpoint/thread scope from the authenticated pharmacy and user context.
 
+Both the Mortarium RAG graph and the pharmacist Agent Harness use opaque,
+versioned HMAC-SHA-256 checkpoint thread identifiers. The digest is keyed with
+the application `SECRET_KEY`; raw pharmacy, user, and conversation identifiers
+must not be embedded in checkpoint metadata. Keep `SECRET_KEY` stable across
+deployments to preserve checkpoint continuity. Rotating it changes derived
+thread identifiers.
+
+The `v2` identifier format does not automatically resume checkpoints written
+with the former plaintext `rag:` or `agent:` formats. Existing checkpoint
+records are not rewritten by application startup. Before rollout, choose an
+explicit compatibility window or a controlled migration with verified tenant
+ownership; never fall back to a caller-supplied legacy thread key without
+re-authenticating its pharmacy and user scope. Checkpoint payload retention and
+deletion remain separate PHI lifecycle responsibilities.
+
 ### Ingestion
 
 Document ingestion is implemented under `src/pharmaviyum/ai/rag/ingestion` and is integrated with the project's Celery worker in the development Docker Compose stack.
