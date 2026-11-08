@@ -18,6 +18,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   CommandDialog,
   CommandInput,
   CommandList,
@@ -987,17 +994,21 @@ export function Pos() {
             </div>
             <label className='block text-sm font-medium'>
               Payment method
-              <select
-                className='mt-2 h-11 w-full rounded-md border bg-background px-3'
+              <Select
                 value={paymentMethod}
-                onChange={(e) =>
-                  setPaymentMethod(e.target.value as typeof paymentMethod)
+                onValueChange={(value) =>
+                  setPaymentMethod(value as typeof paymentMethod)
                 }
               >
-                <option value='cash'>Cash</option>
-                <option value='card_terminal'>Card terminal</option>
-                <option value='online'>Online payment</option>
-              </select>
+                <SelectTrigger className='mt-2 h-11 w-full'>
+                  <SelectValue placeholder='Choose a payment method' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='cash'>Cash</SelectItem>
+                  <SelectItem value='card_terminal'>Card terminal</SelectItem>
+                  <SelectItem value='online'>Online payment</SelectItem>
+                </SelectContent>
+              </Select>
             </label>
             {paymentMethod === 'cash' ? (
               <label className='block text-sm font-medium'>
