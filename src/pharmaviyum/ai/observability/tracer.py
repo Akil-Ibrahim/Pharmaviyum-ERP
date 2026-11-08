@@ -15,6 +15,22 @@ from src.pharmaviyum.core.logging import logger
 LangSmithRunType = Literal[
     "tool", "chain", "llm", "retriever", "embedding", "prompt", "parser"
 ]
+_SAFE_SPAN_ATTRIBUTE_KEYS = {
+    "ai.model_name",
+    "ai.history_length",
+    "ai.safety_check_required",
+    "ai.execution_success",
+    "ai.rag.source_count",
+    "ai.tool_result_count",
+    "ai.rag.rewrite_count",
+    "ai.rag.input_source_count",
+    "ai.rag.retrieved_count",
+    "ai.rag.graded_count",
+    "ai.rag.warning_count",
+    "ai.stream.cancelled",
+    "error.type",
+}
+
 _SAFE_METADATA_KEYS = {
     "model_name",
     "provider",
@@ -110,8 +126,12 @@ class ObservabilityTracer:
         """Create a span; record only exception type, never exception content."""
         with self.tracer.start_as_current_span(name) as span:
             for key, value in attributes.items():
-                if isinstance(value, (bool, int, float, str)):
+                if key in _SAFE_SPAN_ATTRIBUTE_KEYS and isinstance(
+                    value, (bool, int, float)
+                ):
                     span.set_attribute(key, value)
+                elif key in _SAFE_SPAN_ATTRIBUTE_KEYS and isinstance(value, str):
+                    span.set_attribute(key, value[:64])
             try:
                 yield span
                 span.set_status(Status(StatusCode.OK))
