@@ -94,7 +94,7 @@ const formatDateTime = (value: string | null) => {
 // Parse its components directly so the displayed day cannot shift by timezone.
 const formatCalendarDate = (value: string | null) => {
   if (!value) return '—'
-  const match = /^(\\d{4})-(\\d{2})-(\\d{2})/.exec(value)
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
   if (!match) return '—'
   const [, year, month, day] = match
   const date = new Date(Number(year), Number(month) - 1, Number(day))
