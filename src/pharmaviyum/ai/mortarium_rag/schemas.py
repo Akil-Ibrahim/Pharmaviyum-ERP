@@ -14,13 +14,13 @@ class CanonicalMetadata(BaseModel):
 
     model_config = ConfigDict(extra="allow", frozen=True)
 
-    pharmacy_id: int = Field(..., gt=0)
+    pharmacy_id: int = Field(..., strict=True, gt=0)
     source: str = Field(..., min_length=1)
     version: str | None = None
     effective_from: datetime | None = None
     effective_to: datetime | None = None
     access_level: Literal["public", "pharmacy", "patient"] = "pharmacy"
-    patient_id: int | None = Field(default=None, gt=0)
+    patient_id: int | None = Field(default=None, strict=True, gt=0)
     country: str | None = Field(default=None, min_length=2, max_length=8)
     language: str = Field(default="en", min_length=2, max_length=8)
     category: str | None = None
@@ -138,10 +138,10 @@ class QueryContext(BaseModel):
     """Immutable, authenticated AI request context."""
 
     model_config = ConfigDict(frozen=True)
-    user_id: str = Field(..., min_length=1, max_length=128)
+    user_id: str = Field(..., strict=True, min_length=1, max_length=128)
     pharmacy_id: int = Field(..., gt=0)
     patient_id: int | None = Field(default=None, gt=0)
-    prescription_id: int | None = Field(default=None, gt=0)
+    prescription_id: int | None = Field(default=None, strict=True, gt=0)
     country: str | None = None
     language: str = "en"
     category: str | None = None
