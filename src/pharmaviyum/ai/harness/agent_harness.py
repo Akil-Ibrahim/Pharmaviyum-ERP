@@ -18,6 +18,7 @@ import uuid
 from typing import Any
 
 from langchain_core.messages import SystemMessage
+from opentelemetry import trace
 
 from src.pharmaviyum.ai.agents import PharmacistAgent
 from src.pharmaviyum.core.logging import logger
@@ -26,6 +27,8 @@ from .cache import PromptCache
 from .guardrails import MedicalGuardrails
 from .memory import DialogueMemory
 from .model_router import ModelRouter
+
+tracer = trace.get_tracer(__name__)
 
 
 class AgentHarness:
@@ -178,31 +181,46 @@ class AgentHarness:
                 for message in history
                 if isinstance(message, SystemMessage)
             )
-            selected_model = await self.model_router.select(
-                query=safe_query,
-                history_length=len(history),
-                context=context,
-                requires_safety_check=bool(
-                    context.get("halal_filter") or context.get("prescription_id")
-                ),
-            )
+            with tracer.start_as_current_span("mortarium.model_router.select") as span:
+                selected_model = await self.model_router.select(
+                    query=safe_query,
+                    history_length=len(history),
+                    context=context,
+                    requires_safety_check=bool(
+                        context.get("halal_filter") or context.get("prescription_id")
+                    ),
+                )
+                span.set_attribute("ai.history_length", len(history))
+                span.set_attribute(
+                    "ai.safety_check_required",
+                    bool(context.get("halal_filter") or context.get("prescription_id")),
+                )
             selected_model_name = (
                 getattr(selected_model, "model_name", None)
                 or getattr(selected_model, "model", None)
                 or "configured-model"
             )
 
-            agent_result = await self.agent.run(
-                query=safe_query,
-                context={
-                    **context,
-                    "trace_id": trace_id,
-                    "session_id": session_id,
-                    "memory_context": memory_context,
-                },
-                thread_id=session_id,
-                selected_model=selected_model,
-            )
+            with tracer.start_as_current_span("mortarium.agent.execute") as span:
+                span.set_attribute("ai.model_name", str(selected_model_name)[:64])
+                agent_result = await self.agent.run(
+                    query=safe_query,
+                    context={
+                        **context,
+                        "trace_id": trace_id,
+                        "session_id": session_id,
+                        "memory_context": memory_context,
+                    },
+                    thread_id=session_id,
+                    selected_model=selected_model,
+                )
+                span.set_attribute(
+                    "ai.rag.source_count", len(agent_result.get("rag_sources", []))
+                )
+                span.set_attribute(
+                    "ai.tool_result_count", len(agent_result.get("tool_results", []))
+                )
+                span.set_attribute("ai.execution_success", bool(agent_result.get("success")))
             if not agent_result.get("success"):
                 raise RuntimeError("Agent execution failed")
 
