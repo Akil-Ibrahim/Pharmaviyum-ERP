@@ -188,3 +188,36 @@ async def test_streaming_harness_marks_error_span(monkeypatch) -> None:
     span.set_attribute.assert_any_call("ai.execution_success", False)
     span.set_status.assert_called_once()
     span.end.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_cached_stream_emits_complete_event() -> None:
+    from types import SimpleNamespace
+
+    from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+
+    harness = AgentHarness.__new__(AgentHarness)
+    harness.memory = SimpleNamespace(load=AsyncMock(return_value=[]))
+    harness.guardrails = SimpleNamespace(
+        pre_process=AsyncMock(
+            return_value=SimpleNamespace(is_safe=True, sanitized_input="safe query")
+        )
+    )
+    harness.cache = SimpleNamespace(
+        get=AsyncMock(
+            return_value={
+                "answer": "Cached response",
+                "rag_sources": [],
+                "model_used": "cached-model",
+            }
+        )
+    )
+
+    events = [
+        event
+        async for event in harness._astream_events("session", "original query")
+    ]
+
+    assert events[-2]["event"] == "answer"
+    assert events[-2]["cache_hit"] is True
+    assert events[-1]["event"] == "complete"
