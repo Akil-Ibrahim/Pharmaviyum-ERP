@@ -308,7 +308,9 @@ class LangGraphRAG:
         all_hits: list[RetrievalResult] = []
         failed = 0
         for result in results:
-            if isinstance(result, BaseException):
+            if isinstance(result, asyncio.CancelledError):
+                raise result
+            if isinstance(result, Exception):
                 failed += 1
                 logger.warning(
                     "RAG retrieval variant failed",
@@ -364,7 +366,9 @@ class LangGraphRAG:
             graded: list[RetrievalResult] = []
             failed = 0
             for result in results:
-                if isinstance(result, BaseException):
+                if isinstance(result, asyncio.CancelledError):
+                    raise result
+                if isinstance(result, Exception):
                     failed += 1
                 elif result is not None:
                     graded.append(result)
