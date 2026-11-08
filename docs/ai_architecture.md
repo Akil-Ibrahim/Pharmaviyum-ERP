@@ -57,7 +57,7 @@ The current RAG implementation is under `src/pharmaviyum/ai/mortarium_rag/`.
 Agent policy is sent in a dedicated `SystemMessage`. Authenticated request
 metadata, historical Redis memory, retrieved RAG evidence, and tool results
 remain untrusted content in human/tool messages; they must never be interpolated
-into the system-policy message. The agent inserts a separately named
+into the system-policy message. The agent inserts a separately marked
 `untrusted_reference_context` message before the latest user request.
 Intent routing and memory summarization also use separate system and data
 messages. User-controlled delimiters are escaped before structured context is
