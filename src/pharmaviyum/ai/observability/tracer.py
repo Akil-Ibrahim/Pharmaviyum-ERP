@@ -49,9 +49,9 @@ _SAFE_METADATA_KEYS = {
 }
 
 
-def _is_production() -> bool:
-    environment = os.getenv("ENVIRONMENT", "development").strip().lower()
-    return environment in {"production", "prod"}
+def _content_tracing_allowed() -> bool:
+    environment = os.getenv("ENVIRONMENT", "").strip().lower()
+    return environment in {"development", "test"}
 
 
 class ObservabilityTracer:
@@ -72,7 +72,7 @@ class ObservabilityTracer:
         requested_content = (
             os.getenv("AI_TELEMETRY_INCLUDE_CONTENT", "false").lower() == "true"
         )
-        self.include_content = requested_content and not _is_production()
+        self.include_content = requested_content and _content_tracing_allowed()
         if requested_content and not self.include_content:
             logger.warning(
                 "AI telemetry content export is forbidden in production; redaction enforced"
