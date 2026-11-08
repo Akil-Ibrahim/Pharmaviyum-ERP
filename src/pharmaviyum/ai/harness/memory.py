@@ -247,4 +247,4 @@ class DialogueMemory:
         pipe.delete(f"{self._prefix}:{session_id}:episodic")
         pipe.delete(f"{self._prefix}:{session_id}:archive")
         await pipe.execute()
-        logger.info("Cleared all memory for session %s", session_id)
+        logger.info("Cleared conversation memory")
