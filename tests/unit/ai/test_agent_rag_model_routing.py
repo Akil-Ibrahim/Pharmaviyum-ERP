@@ -130,3 +130,124 @@ def test_harness_blocks_missing_or_fabricated_rag_citations() -> None:
 
     assert "does not preserve verifiable citations" in answer
     assert warnings == ["citation_validation_failed"]
+
+
+@pytest.mark.asyncio
+async def test_streaming_harness_records_phi_safe_execution_span(monkeypatch) -> None:
+    import src.pharmaviyum.ai.harness.agent_harness as harness_module
+    from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+
+    span = MagicMock()
+    tracer = MagicMock()
+    tracer.start_span.return_value = span
+    monkeypatch.setattr(harness_module, "tracer", tracer)
+    harness = AgentHarness.__new__(AgentHarness)
+
+    async def events(*args, **kwargs):
+        yield {
+            "event": "answer",
+            "sources": [{"source_id": "src-1"}],
+            "model_used": "test-model",
+            "tool_result_count": 2,
+        }
+        yield {"event": "complete", "message": "Response ready"}
+
+    harness._astream_events = events
+    streamed = [event async for event in harness.astream("session", "sensitive query")]
+
+    assert [event["event"] for event in streamed] == ["answer", "complete"]
+    span.set_attribute.assert_any_call("ai.model_name", "test-model")
+    span.set_attribute.assert_any_call("ai.rag.source_count", 1)
+    span.set_attribute.assert_any_call("ai.tool_result_count", 2)
+    span.set_attribute.assert_any_call("ai.execution_success", True)
+    attribute_names = {call.args[0] for call in span.set_attribute.call_args_list}
+    assert attribute_names.isdisjoint(
+        {"ai.prompt", "ai.query", "user.id", "patient.id"}
+    )
+    span.end.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_streaming_harness_marks_error_span(monkeypatch) -> None:
+    import src.pharmaviyum.ai.harness.agent_harness as harness_module
+    from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+
+    span = MagicMock()
+    tracer = MagicMock()
+    tracer.start_span.return_value = span
+    monkeypatch.setattr(harness_module, "tracer", tracer)
+    harness = AgentHarness.__new__(AgentHarness)
+
+    async def events(*args, **kwargs):
+        yield {"event": "error", "message": "safe error"}
+
+    harness._astream_events = events
+    streamed = [event async for event in harness.astream("session", "sensitive query")]
+
+    assert streamed[0]["event"] == "error"
+    span.set_attribute.assert_any_call("ai.execution_success", False)
+    span.set_status.assert_called_once()
+    span.end.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_cached_stream_emits_complete_event() -> None:
+    from types import SimpleNamespace
+
+    from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+
+    harness = AgentHarness.__new__(AgentHarness)
+    harness.memory = SimpleNamespace(load=AsyncMock(return_value=[]))
+    harness.guardrails = SimpleNamespace(
+        pre_process=AsyncMock(
+            return_value=SimpleNamespace(is_safe=True, sanitized_input="safe query")
+        )
+    )
+    harness.cache = SimpleNamespace(
+        get=AsyncMock(
+            return_value={
+                "answer": "Cached response",
+                "rag_sources": [],
+                "model_used": "cached-model",
+            }
+        )
+    )
+
+    events = [
+        event async for event in harness._astream_events("session", "original query")
+    ]
+
+    assert events[-2]["event"] == "answer"
+    assert events[-2]["cache_hit"] is True
+    assert events[-1]["event"] == "complete"
+
+
+@pytest.mark.asyncio
+async def test_streaming_harness_marks_consumer_cancellation(monkeypatch) -> None:
+    import src.pharmaviyum.ai.harness.agent_harness as harness_module
+    from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+
+    span = MagicMock()
+    tracer = MagicMock()
+    tracer.start_span.return_value = span
+    monkeypatch.setattr(harness_module, "tracer", tracer)
+    harness = AgentHarness.__new__(AgentHarness)
+
+    async def events(*args, **kwargs):
+        yield {
+            "event": "answer",
+            "sources": [],
+            "model_used": "test-model",
+            "tool_result_count": 0,
+        }
+        yield {"event": "complete", "message": "Should not be consumed"}
+
+    harness._astream_events = events
+    stream = harness.astream("session", "sensitive query")
+    first_event = await stream.__anext__()
+    assert first_event["event"] == "answer"
+    await stream.aclose()
+
+    span.set_attribute.assert_any_call("ai.execution_success", False)
+    span.set_attribute.assert_any_call("ai.stream.cancelled", True)
+    span.end.assert_called_once()
