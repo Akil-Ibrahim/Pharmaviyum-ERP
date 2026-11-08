@@ -24,13 +24,18 @@ from src.pharmaviyum.api.v1 import api_v1_router
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.core.static_files import setup_static_files
 from src.pharmaviyum.database import AsyncSessionLocal
-from src.pharmaviyum.redis_client import close_redis, get_redis\nfrom src.pharmaviyum.observability.opentelemetry import (\n    configure_opentelemetry,\n    shutdown_opentelemetry,\n)
+from src.pharmaviyum.redis_client import close_redis, get_redis
+from src.pharmaviyum.observability.opentelemetry import (
+    configure_opentelemetry,
+    shutdown_opentelemetry,
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize shared infrastructure once for the application lifetime."""
-    logger.info("Starting Pharmaviyum AI Application")\n    configure_opentelemetry(app)
+    logger.info("Starting Pharmaviyum AI Application")
+    configure_opentelemetry(app)
 
     try:
         redis_client = await get_redis()
