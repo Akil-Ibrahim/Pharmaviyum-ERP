@@ -32,3 +32,14 @@ def test_otel_settings_accept_legacy_endpoint_name(monkeypatch: pytest.MonkeyPat
 def test_otel_sampling_rate_is_bounded():
     with pytest.raises(ValueError):
         OTelSettings(sample_rate=1.1)
+def test_agent_harness_trace_id_uses_active_w3c_trace():
+    from opentelemetry.sdk.trace import TracerProvider
+
+    from src.pharmaviyum.ai.harness.agent_harness import _current_trace_id
+
+    provider = TracerProvider()
+    tracer = provider.get_tracer("test")
+    with tracer.start_as_current_span("request") as span:
+        expected = f"{span.get_span_context().trace_id:032x}"
+        assert _current_trace_id() == expected
+    provider.shutdown()
