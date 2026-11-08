@@ -81,7 +81,9 @@ def _safe_span_name(name: str) -> str:
     return name if name in _SAFE_SPAN_NAMES else "pharmaviyum.ai.operation"
 
 
-def _safe_span_attributes(attributes: dict[str, Any]) -> dict[str, bool | int | float | str]:
+def _safe_span_attributes(
+    attributes: dict[str, Any],
+) -> dict[str, bool | int | float | str]:
     """Allow only reviewed, bounded operational span attributes."""
     return {
         key: value
