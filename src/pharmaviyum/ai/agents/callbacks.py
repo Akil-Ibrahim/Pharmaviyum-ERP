@@ -112,14 +112,12 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
         """Called when a tool raises an error."""
         tool_name = kwargs.get("name", "unknown")
         logger.error(
-            f"Tool execution failed: {tool_name} - {error}",
+            "Tool execution failed",
             extra={
-                "session_id": self.session_id,
                 "trace_id": self.trace_id,
                 "tool": tool_name,
-                "error": str(error),
+                "error_type": type(error).__name__,
             },
-            exc_info=True,
         )
 
 
