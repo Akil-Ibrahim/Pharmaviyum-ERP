@@ -24,8 +24,15 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
       - uses: oven-sh/setup-bun@v2
+        id: setup-bun
+        continue-on-error: true
         with:
           bun-version: "1.4.2"
+      - name: Install Bun from npm if GitHub Releases is unavailable
+        if: steps.setup-bun.outcome == 'failure'
+        run: |
+          npm install --global bun@1.4.2
+          test "$(bun --version)" = "1.4.2"
       - name: Resolve dependencies and generate bun.lock
         run: bun install
       - name: ESLint
