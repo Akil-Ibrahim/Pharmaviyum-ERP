@@ -557,10 +557,16 @@ export function Pos() {
 
   return (
     <div className='w-full min-w-0 bg-muted/20 p-3 md:p-5'>
-      <div className='mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-[1920px] flex-col gap-5'>
-        <header className='sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80'>
+      <div
+        className='mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-[1920px] flex-col gap-5'
+      >
+        <header
+          className='sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80'
+        >
           <div className='flex items-center gap-3'>
-            <span className='flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm'>
+            <span
+              className='flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm'
+            >
               <Pill className='size-5' />
             </span>
             <div>
@@ -625,8 +631,12 @@ export function Pos() {
           </div>
         )}
 
-        <div className='grid min-w-0 flex-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]'>
-          <Card className='order-2 min-w-0 lg:sticky lg:top-24 lg:order-none lg:col-start-2 lg:row-start-1 lg:max-h-[calc(100svh-8rem)] lg:overflow-y-auto lg:shadow-sm'>
+        <div
+          className='grid min-w-0 flex-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]'
+        >
+          <Card
+            className='order-2 min-w-0 lg:sticky lg:top-24 lg:order-none lg:col-start-2 lg:row-start-1 lg:max-h-[calc(100svh-8rem)] lg:overflow-y-auto lg:shadow-sm'
+          >
             <CardHeader className='pb-3'>
               <div className='flex items-center justify-between'>
                 <CardTitle className='flex items-center gap-2'>
@@ -641,8 +651,12 @@ export function Pos() {
             </CardHeader>
             <CardContent className='space-y-3'>
               {cart.length === 0 ? (
-                <div className='flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/20 px-5 py-8 text-center'>
-                  <span className='mb-3 flex size-12 items-center justify-center rounded-full bg-muted'>
+                <div
+                  className='flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/20 px-5 py-8 text-center'
+                >
+                  <span
+                    className='mb-3 flex size-12 items-center justify-center rounded-full bg-muted'
+                  >
                     <ShoppingCart className='size-5 text-muted-foreground' />
                   </span>
                   <p className='font-medium'>Your sale is empty</p>
@@ -656,7 +670,9 @@ export function Pos() {
                     onClick={() => setCommandOpen(true)}
                   >
                     <Search className='mr-2 size-4' /> Find medicine
-                    <kbd className='ml-2 rounded border px-1.5 py-0.5 text-[10px]'>
+                    <kbd
+                      className='ml-2 rounded border px-1.5 py-0.5 text-[10px]'
+                    >
                       ⌘ K
                     </kbd>
                   </Button>
@@ -683,7 +699,9 @@ export function Pos() {
                         Price: {money(item.price)} · Available: {item.stock} ·
                         In cart: {item.quantity} units
                       </p>
-                      <div className='mt-2 space-y-1 text-xs text-muted-foreground'>
+                      <div
+                        className='mt-2 space-y-1 text-xs text-muted-foreground'
+                      >
                         <p className='font-medium text-foreground'>
                           Inventory lots (earliest expiry first):
                         </p>
@@ -782,7 +800,9 @@ export function Pos() {
                   </div>
                 ))
               )}
-              <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
+              <div
+                className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'
+              >
                 <span className='text-lg font-semibold'>
                   Total: {money(total)}
                 </span>
@@ -802,7 +822,9 @@ export function Pos() {
 
           {sale?.status === 'completed' && (
             <Card className='order-3 lg:col-span-2'>
-              <CardContent className='flex items-center justify-between gap-3 p-4'>
+              <CardContent
+                className='flex items-center justify-between gap-3 p-4'
+              >
                 <div className='flex items-center gap-2'>
                   <Receipt className='size-5 text-primary' />
                   <div>
@@ -812,7 +834,9 @@ export function Pos() {
                     <p className='text-sm text-muted-foreground'>
                       Sale recorded · {money(Number(sale.total))}
                     </p>
-                    <div className='mt-2 space-y-1 text-xs text-muted-foreground'>
+                    <div
+                      className='mt-2 space-y-1 text-xs text-muted-foreground'
+                    >
                       {sale.items.map((item) => (
                         <div key={item.id}>
                           <p className='font-medium text-foreground'>
@@ -854,7 +878,9 @@ export function Pos() {
             className='order-1 flex min-h-[calc(100svh-12rem)] min-w-0 flex-col justify-start py-1 lg:col-start-1 lg:row-start-1'
           >
             <div className='w-full'>
-              <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
+              <div
+                className='mb-4 flex flex-wrap items-center justify-between gap-2'
+              >
                 <div>
                   <h2 className='text-lg font-semibold tracking-tight'>
                     Medicine catalog
@@ -896,7 +922,9 @@ export function Pos() {
                   }`}
                   onFocus={() => setSearchActive(true)}
                 />
-                <kbd className='pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border bg-muted px-2 py-1 text-[10px] text-muted-foreground sm:inline-flex'>
+                <kbd
+                  className='pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border bg-muted px-2 py-1 text-[10px] text-muted-foreground sm:inline-flex'
+                >
                   Ctrl K
                 </kbd>
               </form>
@@ -912,7 +940,9 @@ export function Pos() {
               )}
               {query.trim().length >= 2 && results.length > 0 && (
                 <div className='mt-3 overflow-hidden rounded-lg border bg-card'>
-                  <div className='flex items-center justify-between border-b px-3 py-2'>
+                  <div
+                    className='flex items-center justify-between border-b px-3 py-2'
+                  >
                     <p className='text-sm font-medium'>Pharmacy products</p>
                     <span className='text-xs text-muted-foreground'>
                       {results.length} matching items
@@ -920,7 +950,9 @@ export function Pos() {
                   </div>
                   <div className='overflow-x-auto'>
                     <table className='w-full min-w-[680px] text-sm'>
-                      <thead className='bg-muted/60 text-left text-xs text-muted-foreground'>
+                      <thead
+                        className='bg-muted/60 text-left text-xs text-muted-foreground'
+                      >
                         <tr>
                           <th className='px-3 py-2 font-medium'>Product</th>
                           <th className='px-3 py-2 font-medium'>
@@ -953,7 +985,9 @@ export function Pos() {
                                   .join(' · ')}
                               </p>
                             </td>
-                            <td className='px-3 py-3 text-xs text-muted-foreground'>
+                            <td
+                              className='px-3 py-3 text-xs text-muted-foreground'
+                            >
                               <p>{product.sku}</p>
                               <p>{product.barcode || product.gtin || '—'}</p>
                             </td>
@@ -1120,7 +1154,9 @@ export function Pos() {
                 placeholder='Name, INN, SKU or barcode'
               />
             </label>
-            <div className='max-h-36 space-y-1 overflow-y-auto rounded-md border p-2'>
+            <div
+              className='max-h-36 space-y-1 overflow-y-auto rounded-md border p-2'
+            >
               {results.map((product) => (
                 <button
                   type='button'
@@ -1280,7 +1316,9 @@ export function Pos() {
                 </span>
               </label>
             ) : (
-              <p className='rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm'>
+              <p
+                className='rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm'
+              >
                 Card or online payment completes only after provider
                 confirmation. Until then, the sale remains pending and stock is
                 reserved.
