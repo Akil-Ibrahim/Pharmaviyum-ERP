@@ -205,7 +205,6 @@ class PharmacistAgent:
         configurable = (config or {}).get("configurable", {})
         selected_model = configurable.get("selected_model")
         planner_model = selected_model or self.main_llm
-        llm_with_tools = planner_model.bind_tools(self.mcp_client.to_openai_tools())
         country = str(context.get("country") or "VN")
         language = str(context.get("language") or "vi")
         if not re.fullmatch(r"[A-Za-z]{2,3}", country):
@@ -237,7 +236,9 @@ class PharmacistAgent:
             )
         )
         try:
-            response = await llm_with_tools.ainvoke([system] + state["messages"])
+            response = await planner_model.bind_tools(
+                self.mcp_client.to_openai_tools()
+            ).ainvoke([system] + state["messages"])
             return {
                 "messages": [response],
                 "iteration": state.get("iteration", 0) + 1,
