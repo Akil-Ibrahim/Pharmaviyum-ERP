@@ -522,7 +522,8 @@ class LangGraphRAG:
                 # The graph has a bounded rewrite loop. Keep an explicit
                 # recursion ceiling as a second guard against accidental
                 # future cycles introduced during graph evolution.
-                "recursion_limit": 12 + (getattr(self, "max_rewrites", self.MAX_REWRITES) * 3),
+                "recursion_limit": 12
+                + (getattr(self, "max_rewrites", self.MAX_REWRITES) * 3),
             }
             usage_callback = UsageMetadataCallbackHandler()
             config["callbacks"] = [usage_callback]
