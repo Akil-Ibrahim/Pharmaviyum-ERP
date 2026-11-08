@@ -182,8 +182,8 @@ export function Dashboard() {
                 Welcome to your pharmacy
               </h1>
               <p className='mt-2 max-w-2xl text-sm text-muted-foreground'>
-                Sales, inventory, expiry tracking, and key performance indicators
-                in one workspace.
+                Sales, inventory, expiry tracking, and key performance
+                indicators in one workspace.
               </p>
             </div>
             <div className='relative z-10 flex shrink-0 gap-2'>
@@ -431,7 +431,9 @@ export function Dashboard() {
                     size={104}
                   />
                   <div>
-                    <p className='text-sm font-semibold'>Expiry Status: Healthy</p>
+                    <p className='text-sm font-semibold'>
+                      Expiry Status: Healthy
+                    </p>
                     <p className='mt-1 text-xs text-muted-foreground'>
                       Items with more than 12 months remaining
                     </p>
@@ -631,7 +633,8 @@ export function Dashboard() {
                           {item.name}
                         </p>
                         <p className='text-xs text-muted-foreground'>
-                          Available: {item.available_packs} packs · threshold{' '}
+                          Available: {item.available_packs} packs ·
+                          threshold{' '}
                           {item.reorder_level}
                         </p>
                       </div>
