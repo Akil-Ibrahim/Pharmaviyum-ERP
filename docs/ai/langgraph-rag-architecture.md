@@ -37,8 +37,8 @@ All model-facing RAG stages use separate chat roles: policy and task constraints
 are sent as `SystemMessage`; user questions and retrieved chunks are sent as
 `HumanMessage`. Query and evidence payloads are explicitly treated as
 untrusted data, and delimiter-like content is escaped before being placed in
-structured prompt sections. This applies to document grading, query rewriting,
-HyDE, multi-query generation, decomposition and final answer generation.
+structured prompt sections. This applies to document grading, query rewriting, HyDE, multi-query generation,
+query decomposition, contextual sentence compression and final answer generation.
 
 Retrieved text never becomes system policy. HyDE output is a retrieval aid, not
 verified clinical evidence. The system prompt requires evidence-bounded answers
