@@ -51,20 +51,18 @@ class MCPServer:
             result = await self._route_method(method, params)
             return self._success_response(request_id, result)
         except PermissionError:
-            logger.warning("MCP request denied", extra={"method": method})
+            logger.warning("MCP request denied")
             return self._error_response(request_id, -32001, "Unauthorized")
         except LookupError:
             return self._error_response(request_id, -32601, "Method not found")
         except ValueError:
-            logger.warning(
-                "MCP request has invalid parameters", extra={"method": method}
-            )
+            logger.warning("MCP request has invalid parameters")
             return self._error_response(request_id, -32602, "Invalid params")
         except Exception as exc:
             # Exception strings and tracebacks may contain clinical data.
             logger.error(
                 "MCP request failed",
-                extra={"method": method, "error_type": type(exc).__name__},
+                extra={"error_type": type(exc).__name__},
             )
             return self._error_response(request_id, -32603, "Internal error")
 
