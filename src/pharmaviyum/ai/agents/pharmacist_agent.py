@@ -409,7 +409,9 @@ class PharmacistAgent:
         # Authenticated tenant IDs are integers in the API, while tests and
         # internal integrations may supply their canonical string form.
         if isinstance(user_id, bool) or not isinstance(user_id, (int, str)):
-            raise ValueError("Agent checkpoint user_id must be a positive integer or string")
+            raise ValueError(
+                "Agent checkpoint user_id must be a positive integer or string"
+            )
         if isinstance(user_id, int) and user_id <= 0:
             raise ValueError("Agent checkpoint user_id must be positive")
         normalized_user_id = str(user_id)
@@ -422,7 +424,8 @@ class PharmacistAgent:
             or len(thread_id) > 128
         ):
             raise ValueError(
-                "Agent checkpoint thread identifier must be 1-128 non-whitespace characters"
+                "Agent checkpoint thread identifier must be 1-128 "
+                "non-whitespace characters"
             )
         normalized_pharmacy_id = pharmacy_id
 
