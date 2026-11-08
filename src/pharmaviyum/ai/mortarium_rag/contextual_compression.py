@@ -200,7 +200,6 @@ JSON:"""
             source = result.chunk.metadata.get("source", "unknown")
             version = result.chunk.metadata.get("version")
             chunk_type = result.chunk.chunk_type
-            version_text = f", Version: {version}" if version else ""
             safe_source = html.escape(str(source), quote=False)
             safe_chunk_type = html.escape(str(chunk_type), quote=False)
             safe_version = html.escape(str(version), quote=False) if version else None
