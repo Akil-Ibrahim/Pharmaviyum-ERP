@@ -234,7 +234,8 @@ class AgentHarness:
                         "warnings": agent_warnings,
                         "tool_results": tool_results,
                         "rag_sources": rag_sources,
-                        "model_used": agent_result.get("model_used") or selected_model_name,
+                        "model_used": agent_result.get("model_used")
+                        or selected_model_name,
                     },
                     context=cache_key_context,
                 )
@@ -367,7 +368,10 @@ class AgentHarness:
                     }
                 elif node == "knowledge_retrieval":
                     rag_sources = list(data.get("rag_sources", []))
-                    yield {"event": "status", "message": "Retrieving pharmacy knowledge..."}
+                    yield {
+                        "event": "status",
+                        "message": "Retrieving pharmacy knowledge...",
+                    }
                 elif node == "planner":
                     yield {"event": "status", "message": "Planning tool usage..."}
                 elif node == "executor":
