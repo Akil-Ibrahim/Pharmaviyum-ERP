@@ -58,6 +58,7 @@ class AgentHarness:
             in {
                 "user_id",
                 "pharmacy_id",
+                "session_id",
                 "patient_id",
                 "prescription_id",
                 "country",
@@ -100,7 +101,7 @@ class AgentHarness:
         context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         start_time = time.perf_counter()
-        context = context or {}
+        context = {**(context or {}), "session_id": session_id}
         trace_id = str(uuid.uuid4())
 
         logger.info(
@@ -250,7 +251,7 @@ class AgentHarness:
         context: dict[str, Any] | None = None,
     ):
         start_time = time.perf_counter()
-        context = context or {}
+        context = {**(context or {}), "session_id": session_id}
         trace_id = str(uuid.uuid4())
         yield {"event": "start", "trace_id": trace_id}
 
