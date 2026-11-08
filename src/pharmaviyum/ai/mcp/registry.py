@@ -53,9 +53,7 @@ class MCPToolRegistry:
         self._tools: dict[str, tuple[ToolMetadata, Callable]] = {}
         self._approval_verifier = approval_verifier
 
-    def configure_approval_verifier(
-        self, verifier: ApprovalVerifier | None
-    ) -> None:
+    def configure_approval_verifier(self, verifier: ApprovalVerifier | None) -> None:
         """Install a trusted verifier that atomically consumes human approvals.
 
         The verifier must validate the authenticated actor, tenant, exact
@@ -104,9 +102,11 @@ class MCPToolRegistry:
                 requires_rag=requires_rag,
                 requires_external_api=requires_external_api,
                 tags=tags or [],
-                required_roles=required_roles
-                if required_roles is not None
-                else ["pharmacist", "admin", "system"],
+                required_roles=(
+                    required_roles
+                    if required_roles is not None
+                    else ["pharmacist", "admin", "system"]
+                ),
                 version=version,
                 deprecated=deprecated,
                 deprecation_message=deprecation_message,
