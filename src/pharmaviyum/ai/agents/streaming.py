@@ -103,11 +103,11 @@ class AgentStreamManager:
 
                     elif event_kind == "on_tool_end":
                         tool_name = event.get("name", "unknown")
-                        tool_output = event.get("data", {}).get("output", "")
+                        tool_output = event.get("data", {}).get("output")
                         yield {
                             "type": "tool_result",
                             "tool": tool_name,
-                            "output_summary": str(tool_output)[:200],
+                            "output_type": type(tool_output).__name__,
                             "timestamp": event.get("timestamp"),
                         }
 
