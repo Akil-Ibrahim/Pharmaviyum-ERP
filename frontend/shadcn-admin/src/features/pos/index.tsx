@@ -322,10 +322,16 @@ export function Pos() {
 
   return (
     <div className='w-full min-w-0 bg-muted/20 p-3 md:p-5'>
-      <div className='mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-[1920px] flex-col gap-4'>
-        <header className='flex flex-wrap items-center justify-between gap-3 border-b pb-4'>
+      <div
+        className='mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-[1920px] flex-col gap-4'
+      >
+        <header
+          className='flex flex-wrap items-center justify-between gap-3 border-b pb-4'
+        >
           <div className='flex items-center gap-3'>
-            <span className='flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm'>
+            <span
+              className='flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm'
+            >
               <Pill className='size-5' />
             </span>
             <div>
@@ -432,7 +438,9 @@ export function Pos() {
                         Price: {money(item.price)} · Available: {item.stock} ·
                         In cart: {item.quantity} units
                       </p>
-                      <div className='mt-2 space-y-1 text-xs text-muted-foreground'>
+                      <div
+                        className='mt-2 space-y-1 text-xs text-muted-foreground'
+                      >
                         <p className='font-medium text-foreground'>
                           Inventory lots (earliest expiry first):
                         </p>
@@ -494,7 +502,9 @@ export function Pos() {
                     </strong>
                   </div>
                 ))}
-                <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
+                <div
+                  className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'
+                >
                   <span className='text-lg font-semibold'>
                     Total: {money(total)}
                   </span>
@@ -514,7 +524,9 @@ export function Pos() {
 
           {sale?.status === 'completed' && (
             <Card className='order-3 xl:col-span-2'>
-              <CardContent className='flex items-center justify-between gap-3 p-4'>
+              <CardContent
+                className='flex items-center justify-between gap-3 p-4'
+              >
                 <div className='flex items-center gap-2'>
                   <Receipt className='size-5 text-primary' />
                   <div>
@@ -545,7 +557,9 @@ export function Pos() {
             className='order-1 flex min-h-[60vh] min-w-0 flex-col justify-start py-5 xl:col-start-1 xl:row-start-1'
           >
             <div className='w-full'>
-              <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
+              <div
+                className='mb-4 flex flex-wrap items-center justify-between gap-2'
+              >
                 <div>
                   <h2 className='text-base font-semibold'>Product catalog</h2>
                   <p className='text-xs text-muted-foreground'>
@@ -593,7 +607,9 @@ export function Pos() {
               )}
               {query.trim().length >= 2 && results.length > 0 && (
                 <div className='mt-3 overflow-hidden rounded-lg border bg-card'>
-                  <div className='flex items-center justify-between border-b px-3 py-2'>
+                  <div
+                    className='flex items-center justify-between border-b px-3 py-2'
+                  >
                     <p className='text-sm font-medium'>Pharmacy products</p>
                     <span className='text-xs text-muted-foreground'>
                       {results.length} matching items
@@ -601,7 +617,9 @@ export function Pos() {
                   </div>
                   <div className='overflow-x-auto'>
                     <table className='w-full min-w-[680px] text-sm'>
-                      <thead className='bg-muted/60 text-left text-xs text-muted-foreground'>
+                      <thead
+                        className='bg-muted/60 text-left text-xs text-muted-foreground'
+                      >
                         <tr>
                           <th className='px-3 py-2 font-medium'>Product</th>
                           <th className='px-3 py-2 font-medium'>SKU / Barcode</th>
@@ -632,7 +650,9 @@ export function Pos() {
                                   .join(' · ')}
                               </p>
                             </td>
-                            <td className='px-3 py-3 text-xs text-muted-foreground'>
+                            <td
+                              className='px-3 py-3 text-xs text-muted-foreground'
+                            >
                               <p>{product.sku}</p>
                               <p>{product.barcode || product.gtin || '—'}</p>
                             </td>
@@ -713,7 +733,9 @@ export function Pos() {
       </div>
 
       {receivingOpen && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'>
+        <div
+          className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'
+        >
           <section
             role='dialog'
             aria-modal='true'
@@ -746,7 +768,9 @@ export function Pos() {
                 placeholder='Name, INN, SKU or barcode'
               />
             </label>
-            <div className='max-h-36 space-y-1 overflow-y-auto rounded-md border p-2'>
+            <div
+              className='max-h-36 space-y-1 overflow-y-auto rounded-md border p-2'
+            >
               {results.map((product) => (
                 <button
                   type='button'
@@ -828,7 +852,9 @@ export function Pos() {
       )}
 
       {checkoutOpen && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'>
+        <div
+          className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'
+        >
           <section
             role='dialog'
             aria-modal='true'
@@ -911,7 +937,9 @@ export function Pos() {
                 </span>
               </label>
             ) : (
-              <p className='rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm'>
+              <p
+                className='rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm'
+              >
                 Card or online payment completes only after provider
                 confirmation. Until then, the sale remains pending and stock is
                 reserved.
