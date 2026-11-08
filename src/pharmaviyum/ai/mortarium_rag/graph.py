@@ -79,12 +79,15 @@ class LangGraphRAG:
             raise ValueError("RAG rewrite/query variation limits are invalid")
         if max_retrieval_concurrency < 1 or max_grading_concurrency < 1:
             raise ValueError("RAG concurrency limits must be positive")
+        if execution_timeout_seconds <= 0:
+            raise ValueError("RAG execution timeout must be positive")
         self.retrieval_top_k = retrieval_top_k
         self.max_context_docs = max_context_docs
         self.max_rewrites = max_rewrites
         self.max_query_variations = max_query_variations
         self.max_retrieval_concurrency = max_retrieval_concurrency
         self.max_grading_concurrency = max_grading_concurrency
+        self.execution_timeout_seconds = execution_timeout_seconds
         self.enable_multi_query = enable_multi_query
         self.enable_hyde = enable_hyde
         self.token_budget_manager = token_budget_manager or TokenBudgetManager()
@@ -600,7 +603,10 @@ class LangGraphRAG:
             }
             usage_callback = UsageMetadataCallbackHandler()
             config["callbacks"] = [usage_callback]
-            final: RAGState = await self.graph.ainvoke(initial, config=config)
+            async with asyncio.timeout(
+                getattr(self, "execution_timeout_seconds", 90.0)
+            ):
+                final: RAGState = await self.graph.ainvoke(initial, config=config)
             sources = final.get("graded") or []
             answer = final.get("answer") or ""
             warnings = list(final.get("warnings") or [])
