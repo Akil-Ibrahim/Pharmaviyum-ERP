@@ -856,6 +856,7 @@ export function Pos() {
               batch available to POS with expiry controls.
             </DialogDescription>
           </DialogHeader>
+          <div className='space-y-4'>
             <label className='block text-sm font-medium'>
               Find product
               <Input
@@ -924,49 +925,28 @@ export function Pos() {
                 onChange={(e) => setReceivingQuantity(e.target.value)}
               />
             </label>
-            <div className='flex gap-2'>
-              <Button
-                className='flex-1'
-                disabled={
-                  processing ||
-                  !receivingProductId ||
-                  !receivingLot.trim() ||
-                  !receivingExpiry ||
-                  Number(receivingQuantity) <= 0
-                }
-                onClick={() => void receiveStock()}
-              >
-                {processing ? 'Saving…' : 'Receive stock'}
-              </Button>
-              <Button
-                variant='outline'
-                onClick={() => setReceivingOpen(false)}
-                disabled={processing}
-              >
-                Cancel
-              </Button>
+          </div>
           <DialogFooter>
-              <Button
-                className='flex-1'
-                disabled={
-                  processing ||
-                  !receivingProductId ||
-                  !receivingLot.trim() ||
-                  !receivingExpiry ||
-                  Number(receivingQuantity) <= 0
-                }
-                onClick={() => void receiveStock()}
-              >
-                {processing ? 'Saving…' : 'Receive stock'}
-              </Button>
-              <Button
-                variant='outline'
-                onClick={() => setReceivingOpen(false)}
-                disabled={processing}
-              >
-                Cancel
-              </Button>
-            </DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setReceivingOpen(false)}
+              disabled={processing}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={
+                processing ||
+                !receivingProductId ||
+                !receivingLot.trim() ||
+                !receivingExpiry ||
+                Number(receivingQuantity) <= 0
+              }
+              onClick={() => void receiveStock()}
+            >
+              {processing ? 'Saving…' : 'Receive stock'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -978,6 +958,7 @@ export function Pos() {
               Review the receipt and confirm the payment method.
             </DialogDescription>
           </DialogHeader>
+          <div className='space-y-4'>
             <div className='rounded-lg border bg-background p-4'>
               <div className='mb-3 flex items-center justify-between'>
                 <p className='font-semibold'>Receipt preview</p>
@@ -1051,8 +1032,16 @@ export function Pos() {
                 reserved.
               </p>
             )}
+          </div>
+          <DialogFooter className='flex-col-reverse sm:flex-row'>
             <Button
-              className='w-full'
+              variant='outline'
+              onClick={() => setCheckoutOpen(false)}
+              disabled={processing}
+            >
+              Back to cart
+            </Button>
+            <Button
               size='lg'
               disabled={
                 processing ||
@@ -1067,16 +1056,7 @@ export function Pos() {
                   ? 'Confirm payment & issue receipt'
                   : 'Create payment'}
             </Button>
-            <DialogFooter className='flex-col-reverse sm:flex-col'>
-              <Button
-                variant='outline'
-                className='w-full'
-                onClick={() => setCheckoutOpen(false)}
-                disabled={processing}
-              >
-                Back to cart
-              </Button>
-            </DialogFooter>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
