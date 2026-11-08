@@ -32,6 +32,16 @@ _provider: TracerProvider | None = None
 _instrumented = False
 
 
+def _allow_sensitive_client_instrumentation(
+    environment: str, explicitly_enabled: bool
+) -> bool:
+    """Sensitive SQL/Redis/HTTP client spans are development-only opt-ins."""
+    return explicitly_enabled and environment.strip().lower() not in {
+        "production",
+        "prod",
+    }
+
+
 def configure_opentelemetry(app: Any) -> TracerProvider | None:
     """Configure process-wide tracing and instrument application dependencies."""
     global _provider, _instrumented
@@ -55,9 +65,14 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
         if endpoint:
             try:
                 parsed_endpoint = urlsplit(endpoint)
+                environment = str(
+                    getattr(settings.environment, "value", settings.environment)
+                ).lower()
                 if parsed_endpoint.scheme in {"http", "https"}:
                     target = parsed_endpoint.netloc
                     insecure = parsed_endpoint.scheme == "http"
+                    if environment in {"production", "prod"} and insecure:
+                        raise ValueError("Production OTLP export requires HTTPS")
                 else:
                     target = endpoint
                     insecure = False
@@ -97,10 +112,10 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
         environment = str(
             getattr(settings.environment, "value", settings.environment)
         ).lower()
-        allow_sensitive_client_spans = (
+        allow_sensitive_client_spans = _allow_sensitive_client_instrumentation(
+            environment,
             os.getenv("OTEL_ENABLE_SENSITIVE_CLIENT_INSTRUMENTATION", "false").lower()
-            == "true"
-            and environment not in {"production", "prod"}
+            == "true",
         )
         if allow_sensitive_client_spans:
             instrumentations.extend(
