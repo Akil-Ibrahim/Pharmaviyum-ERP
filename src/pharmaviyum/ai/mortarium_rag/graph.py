@@ -12,14 +12,14 @@ from langchain_core.callbacks import UsageMetadataCallbackHandler
 from langgraph.graph import END, StateGraph
 
 from src.pharmaviyum.ai.llm_utils import response_text, total_token_usage
-from src.pharmaviyum.ai.optimization.token_budget import (
-    TokenBudgetExceeded,
-    TokenBudgetManager,
-)
 from src.pharmaviyum.ai.observability.metrics import (
     record_ai_request,
     record_ai_stage,
     record_rag_retrieval,
+)
+from src.pharmaviyum.ai.optimization.token_budget import (
+    TokenBudgetExceeded,
+    TokenBudgetManager,
 )
 from src.pharmaviyum.core.logging import logger
 
