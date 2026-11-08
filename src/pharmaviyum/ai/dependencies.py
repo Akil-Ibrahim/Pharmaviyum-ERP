@@ -37,11 +37,11 @@ from src.pharmaviyum.ai.mortarium_rag.ingestion.orchestrator import (
 )
 from src.pharmaviyum.ai.mortarium_rag.ports import LLMPort, RetrieverPort
 from src.pharmaviyum.ai.mortarium_rag.vector_store import PgVectorStore
+from src.pharmaviyum.ai.observability.tracer import ObservabilityTracer, tracer
 from src.pharmaviyum.ai.optimization.token_budget import (
     TokenBudget,
     TokenBudgetManager,
 )
-from src.pharmaviyum.ai.observability.tracer import ObservabilityTracer, tracer
 from src.pharmaviyum.core.logging import logger
 
 mcp_client = MCPClient()
