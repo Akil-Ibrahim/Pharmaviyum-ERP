@@ -141,7 +141,7 @@ class AgentHarness:
                     "latency_ms": (time.perf_counter() - start_time) * 1000,
                 }
 
-            memory_context = "\\n\\n".join(
+            memory_context = "\n\n".join(
                 str(message.content)
                 for message in history
                 if isinstance(message, SystemMessage)
@@ -284,7 +284,7 @@ class AgentHarness:
                 "message": "Thinking and retrieving information...",
             }
             history = await self.memory.load(session_id)
-            memory_context = "\\n\\n".join(
+            memory_context = "\n\n".join(
                 str(message.content)
                 for message in history
                 if isinstance(message, SystemMessage)
