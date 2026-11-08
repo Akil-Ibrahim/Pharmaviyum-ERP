@@ -181,7 +181,7 @@ class AgentHarness:
             final_answer, post_warnings = await self._post_process(
                 answer=raw_answer,
                 question=safe_query,
-                sources=tool_results,
+                sources=tool_results + rag_sources,
             )
             agent_warnings.extend(post_warnings)
 
@@ -266,7 +266,13 @@ class AgentHarness:
             yield {"event": "status", "message": "Checking knowledge cache..."}
             cached = await self.cache.get(safe_query, cache_key_context)
             if cached and not context.get("force_fresh"):
-                yield {"event": "answer", "text": cached["answer"], "cache_hit": True}
+                yield {
+                    "event": "answer",
+                    "text": cached["answer"],
+                    "sources": cached.get("rag_sources", []),
+                    "model_used": cached.get("model_used", "cached"),
+                    "cache_hit": True,
+                }
                 return
 
             final_answer: str | None = None
