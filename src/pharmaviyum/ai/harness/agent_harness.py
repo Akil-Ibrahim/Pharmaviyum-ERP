@@ -351,14 +351,20 @@ class AgentHarness:
                 for message in history
                 if isinstance(message, SystemMessage)
             )
-            selected_model = await self.model_router.select(
-                query=safe_query,
-                history_length=len(history),
-                context=context,
-                requires_safety_check=bool(
-                    context.get("halal_filter") or context.get("prescription_id")
-                ),
-            )
+            with tracer.start_as_current_span("mortarium.model_router.select") as span:
+                selected_model = await self.model_router.select(
+                    query=safe_query,
+                    history_length=len(history),
+                    context=context,
+                    requires_safety_check=bool(
+                        context.get("halal_filter") or context.get("prescription_id")
+                    ),
+                )
+                span.set_attribute("ai.history_length", len(history))
+                span.set_attribute(
+                    "ai.safety_check_required",
+                    bool(context.get("halal_filter") or context.get("prescription_id")),
+                )
             selected_model_name = (
                 getattr(selected_model, "model_name", None)
                 or getattr(selected_model, "model", None)
