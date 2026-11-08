@@ -44,9 +44,9 @@ export const sidebarData: SidebarData = {
     {
       title: 'Operations',
       items: [
+        { title: 'Dashboard', url: '/', icon: LayoutDashboard },
         { title: 'POS', url: '/pos', icon: ReceiptText },
         { title: 'Mortarium AI', url: '/mortarium-ai', icon: Bot },
-        { title: 'Dashboard', url: '/', icon: LayoutDashboard },
         { title: 'Drug Reference', url: '/drug-reference', icon: BookOpenCheck },
         { title: 'Catalog Review', url: '/drug-catalog-review', icon: ClipboardCheck },
         { title: 'Patients', url: '/patients', icon: UserRound },
