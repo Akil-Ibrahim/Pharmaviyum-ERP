@@ -129,7 +129,10 @@ export function Pos() {
   useEffect(() => {
     const handleShortcuts = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
-      const typing = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable
+      const typing =
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.isContentEditable
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
         setCommandOpen(true)
@@ -371,12 +374,10 @@ export function Pos() {
           </div>
           <div className='flex flex-wrap items-center gap-2'>
             <Badge variant='outline' className='h-9 gap-2 px-3'>
-              <span className='size-2 rounded-full bg-emerald-500' /> Register active
+              <span className='size-2 rounded-full bg-emerald-500' />
+              Register active
             </Badge>
-            <Button
-              variant='outline'
-              onClick={() => setCommandOpen(true)}
-            >
+            <Button variant='outline' onClick={() => setCommandOpen(true)}>
               <ScanBarcode className='mr-2 size-4' /> Scan / search
             </Button>
             <Button
@@ -427,7 +428,10 @@ export function Pos() {
           <Card className='order-2 min-w-0 lg:sticky lg:top-24 lg:order-none lg:col-start-2 lg:row-start-1 lg:max-h-[calc(100svh-8rem)] lg:overflow-y-auto lg:shadow-sm'>
               <CardHeader className='pb-3'>
                 <div className='flex items-center justify-between'>
-                  <CardTitle className='flex items-center gap-2'><ShoppingCart className='size-4 text-muted-foreground' /> Current sale</CardTitle>
+                  <CardTitle className='flex items-center gap-2'>
+                    <ShoppingCart className='size-4 text-muted-foreground' />
+                    Current sale
+                  </CardTitle>
                   <Badge>{units} units</Badge>
                 </div>
                 <p className='text-sm text-muted-foreground'>
@@ -437,10 +441,24 @@ export function Pos() {
               <CardContent className='space-y-3'>
                 {cart.length === 0 ? (
                   <div className='flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/20 px-5 py-8 text-center'>
-                    <span className='mb-3 flex size-12 items-center justify-center rounded-full bg-muted'><ShoppingCart className='size-5 text-muted-foreground' /></span>
+                    <span className='mb-3 flex size-12 items-center justify-center rounded-full bg-muted'>
+                      <ShoppingCart className='size-5 text-muted-foreground' />
+                    </span>
                     <p className='font-medium'>Your sale is empty</p>
-                    <p className='mt-1 max-w-56 text-sm text-muted-foreground'>Search the pharmacy catalog and add medicines to begin checkout.</p>
-                    <Button className='mt-4' variant='outline' onClick={() => setCommandOpen(true)}><Search className='mr-2 size-4' /> Find medicine <kbd className='ml-2 rounded border px-1.5 py-0.5 text-[10px]'>⌘ K</kbd></Button>
+                    <p className='mt-1 max-w-56 text-sm text-muted-foreground'>
+                      Search the pharmacy catalog and add medicines to begin
+                      checkout.
+                    </p>
+                    <Button
+                      className='mt-4'
+                      variant='outline'
+                      onClick={() => setCommandOpen(true)}
+                    >
+                      <Search className='mr-2 size-4' /> Find medicine
+                      <kbd className='ml-2 rounded border px-1.5 py-0.5 text-[10px]'>
+                        ⌘ K
+                      </kbd>
+                    </Button>
                   </div>
                 ) : cart.map((item) => (
                   <div
@@ -577,13 +595,20 @@ export function Pos() {
             <div className='w-full'>
               <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
                 <div>
-                  <h2 className='text-lg font-semibold tracking-tight'>Medicine catalog</h2>
+                  <h2 className='text-lg font-semibold tracking-tight'>
+                    Medicine catalog
+                  </h2>
                   <p className='text-xs text-muted-foreground'>
                     Search by product name, active ingredient, brand, strength
                     or barcode
                   </p>
                 </div>
-                <div className='flex items-center gap-2'><Badge variant='secondary' className='gap-1'><PackageCheck className='size-3' /> Live inventory</Badge><Badge variant='outline'>FEFO batches</Badge></div>
+                <div className='flex items-center gap-2'>
+                  <Badge variant='secondary' className='gap-1'>
+                    <PackageCheck className='size-3' /> Live inventory
+                  </Badge>
+                  <Badge variant='outline'>FEFO batches</Badge>
+                </div>
               </div>
               <form
                 aria-label='Medicine search'
@@ -612,7 +637,9 @@ export function Pos() {
                   }`}
                   onFocus={() => setSearchActive(true)}
                 />
-                <kbd className='pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border bg-muted px-2 py-1 text-[10px] text-muted-foreground sm:inline-flex'>Ctrl K</kbd>
+                <kbd className='pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border bg-muted px-2 py-1 text-[10px] text-muted-foreground sm:inline-flex'>
+                  Ctrl K
+                </kbd>
               </form>
               {loading && (
                 <p className='py-4 text-center text-sm text-muted-foreground'>
@@ -755,9 +782,28 @@ export function Pos() {
           <CommandEmpty>{loading ? 'Searching pharmacy catalog…' : 'No matching pharmacy products. Try another search term.'}</CommandEmpty>
           <CommandGroup heading='Pharmacy inventory'>
             {results.map((product) => (
-              <CommandItem key={product.id} value={`${product.name} ${product.inn_name || ''} ${product.dosage_strength || ''} ${product.barcode || ''}`} disabled={product.stock < 1} onSelect={() => { addProduct(product); setCommandOpen(false) }}>
+              <CommandItem
+                key={product.id}
+                value={`${product.name} ${product.inn_name || ''} ${product.dosage_strength || ''} ${product.barcode || ''}`}
+                disabled={product.stock < 1}
+                onSelect={() => {
+                  addProduct(product)
+                  setCommandOpen(false)
+                }}
+              >
                 <Pill className='size-4 text-muted-foreground' />
-                <div className='min-w-0 flex-1'><p className='truncate font-medium'>{product.name}</p><p className='truncate text-xs text-muted-foreground'>{[product.inn_name, product.dosage_strength, product.dosage_form].filter(Boolean).join(' · ')}</p></div>
+                <div className='min-w-0 flex-1'>
+                  <p className='truncate font-medium'>{product.name}</p>
+                  <p className='truncate text-xs text-muted-foreground'>
+                    {[
+                      product.inn_name,
+                      product.dosage_strength,
+                      product.dosage_form,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                </div>
                 <span className='text-xs tabular-nums'>{money(product.price)}</span>
                 <Badge variant={product.stock > 0 ? 'secondary' : 'destructive'}>{product.stock} in stock</Badge>
               </CommandItem>
