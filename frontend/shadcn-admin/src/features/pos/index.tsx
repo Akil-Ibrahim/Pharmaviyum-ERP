@@ -112,6 +112,15 @@ const money = (value: number) =>
     maximumFractionDigits: 2,
   }).format(value)
 
+const getFefoAllocationPreview = (lots: InventoryLot[], quantity: number) => {
+  let remaining = quantity
+  return lots.map((lot) => {
+    const allocated_quantity = Math.min(lot.available_quantity, remaining)
+    remaining -= allocated_quantity
+    return { ...lot, allocated_quantity }
+  })
+}
+
 export function Pos() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<LocalProduct[]>([])
@@ -630,19 +639,37 @@ export function Pos() {
                           Inventory lots (earliest expiry first):
                         </p>
                         {(lotsByProduct[item.id] || []).length ? (
-                          lotsByProduct[item.id].map((lot) => (
+                          getFefoAllocationPreview(
+                            lotsByProduct[item.id],
+                            item.quantity
+                          ).map((lot) => (
                             <p key={lot.inventory_id}>
                               Batch: {lot.lot_number || 'no number'} · Expires:{' '}
                               {formatExpiry(lot.expiry_date)} · Available:{' '}
-                              {lot.available_quantity} units
+                              {lot.available_quantity} · Allocate:{' '}
+                              <span className='font-semibold text-foreground'>
+                                {lot.allocated_quantity} units
+                              </span>
                             </p>
                           ))
-                      ) : (
-                        <p>
-                          No eligible inventory lots found. Check stock
-                          receipts.
-                        </p>
-                      )}
+                        ) : (
+                          <p>
+                            No eligible inventory lots found. Check stock
+                            receipts.
+                          </p>
+                        )}
+                        {Math.max(
+                          0,
+                          item.quantity -
+                            (lotsByProduct[item.id] || []).reduce(
+                              (sum, lot) => sum + lot.available_quantity,
+                              0
+                            )
+                        ) > 0 && (
+                          <p className='font-medium text-destructive'>
+                            Insufficient batch stock for this quantity.
+                          </p>
+                        )}
                       </div>
                       <p className='text-xs text-muted-foreground'>
                         Barcode: {item.barcode || item.gtin || 'not specified'}
