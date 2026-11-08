@@ -249,10 +249,6 @@ export function Pos() {
     if (!pharmacyId || cart.length === 0) return
     let cancelled = false
     const productIds = cart.map((item) => item.id)
-    setLotsStatusByProduct((current) => ({
-      ...current,
-      ...Object.fromEntries(productIds.map((id) => [id, 'loading' as const])),
-    }))
     Promise.all(
       cart.map(async (item) => {
         try {
@@ -290,7 +286,12 @@ export function Pos() {
       }
       if (cart.length === 0) {
         setLotsByProduct({})
-        setLotsStatusByProduct({})
+        setLotsStatusByProduct({ [product.id]: 'loading' })
+      } else {
+        setLotsStatusByProduct((current) => ({
+          ...current,
+          [product.id]: 'loading',
+        }))
       }
       pendingScanRef.current = ''
       setResults([])
@@ -345,7 +346,11 @@ export function Pos() {
     }
   }, [results, loading, query, addProduct])
 
-  const changeQuantity = (id: number, delta: number) =>
+  const changeQuantity = (id: number, delta: number) => {
+    setLotsStatusByProduct((current) => ({
+      ...current,
+      [id]: 'loading',
+    }))
     setCart((items) =>
       items.flatMap((item) => {
         if (item.id !== id) return [item]
@@ -353,11 +358,16 @@ export function Pos() {
         return next > 0 ? [{ ...item, quantity: next }] : []
       })
     )
+  }
 
   const setItemQuantity = (id: number, value: string) => {
     if (!/^\d+$/.test(value)) return
     const quantity = Number(value)
     if (!Number.isSafeInteger(quantity)) return
+    setLotsStatusByProduct((current) => ({
+      ...current,
+      [id]: 'loading',
+    }))
     setCart((items) =>
       items.map((item) =>
         item.id === id
