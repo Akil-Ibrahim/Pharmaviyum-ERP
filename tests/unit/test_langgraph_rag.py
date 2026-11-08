@@ -138,11 +138,12 @@ async def test_transform_query_always_preserves_original_query(rag: LangGraphRAG
             return [
                 SimpleNamespace(transformed_query="rewritten drug question"),
                 SimpleNamespace(transformed_query=query),
+                SimpleNamespace(transformed_query="unbounded third variation"),
             ]
 
     rag.guardrails = None
     rag.enable_multi_query = True
-    rag.max_query_variations = 2
+    rag.max_query_variations = 1
     rag.enable_hyde = False
     rag.transformer = _Transformer()
 
