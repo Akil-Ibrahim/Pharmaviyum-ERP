@@ -221,3 +221,33 @@ async def test_cached_stream_emits_complete_event() -> None:
     assert events[-2]["event"] == "answer"
     assert events[-2]["cache_hit"] is True
     assert events[-1]["event"] == "complete"
+
+
+@pytest.mark.asyncio
+async def test_streaming_harness_marks_consumer_cancellation(monkeypatch) -> None:
+    import src.pharmaviyum.ai.harness.agent_harness as harness_module
+    from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+
+    span = MagicMock()
+    tracer = MagicMock()
+    tracer.start_span.return_value = span
+    monkeypatch.setattr(harness_module, "tracer", tracer)
+    harness = AgentHarness.__new__(AgentHarness)
+
+    async def events(*args, **kwargs):
+        yield {
+            "event": "answer",
+            "sources": [],
+            "model_used": "test-model",
+            "tool_result_count": 0,
+        }
+        yield {"event": "complete", "message": "Should not be consumed"}
+
+    stream = harness.astream("session", "sensitive query")
+    first_event = await stream.__anext__()
+    assert first_event["event"] == "answer"
+    await stream.aclose()
+
+    span.set_attribute.assert_any_call("ai.execution_success", False)
+    span.set_attribute.assert_any_call("ai.stream.cancelled", True)
+    span.end.assert_called_once()
