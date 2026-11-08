@@ -92,8 +92,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4.4.0
       - uses: oven-sh/setup-bun@v2
+        id: setup-bun
+        continue-on-error: true
         with:
-          bun-version: latest
+          bun-version: "1.4.4"
+      - name: Install Bun from npm if GitHub Releases is unavailable
+        if: steps.setup-bun.outcome == 'failure'
+        run: |
+          npm install --global bun@1.4.4
+          test "$(bun --version)" = "1.4.4"
       - name: Install frontend dependencies
         working-directory: frontend/shadcn-admin
         run: bun install
