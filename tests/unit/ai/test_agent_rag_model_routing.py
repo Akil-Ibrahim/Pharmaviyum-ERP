@@ -280,3 +280,34 @@ async def test_planner_prefers_explicit_model_router_fallback() -> None:
     assert configured_fallback.ainvoke.await_count == 1
     assert router_fallback.ainvoke.await_count == 0
     assert result["model_used"] == "provider-fallback"
+
+
+@pytest.mark.asyncio
+async def test_cached_harness_stream_emits_terminal_complete_event() -> None:
+    from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+
+    harness = AgentHarness.__new__(AgentHarness)
+    harness.memory = SimpleNamespace(load=AsyncMock(return_value=[]))
+    harness.guardrails = SimpleNamespace(
+        pre_process=AsyncMock(
+            return_value=SimpleNamespace(is_safe=True, sanitized_input="safe query")
+        )
+    )
+    harness.cache = SimpleNamespace(
+        get=AsyncMock(
+            return_value={
+                "answer": "Cached response",
+                "rag_sources": [],
+                "tool_results": [],
+                "model_used": "cached-model",
+            }
+        )
+    )
+
+    events = [
+        event async for event in harness.astream("session", "original query")
+    ]
+
+    assert events[-2]["event"] == "answer"
+    assert events[-2]["cache_hit"] is True
+    assert events[-1]["event"] == "complete"
