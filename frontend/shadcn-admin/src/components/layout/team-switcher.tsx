@@ -27,11 +27,8 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
             />
           </div>
           <div className='grid min-w-0 flex-1 text-start leading-tight group-data-[collapsible=icon]:hidden'>
-            <span className='pharmaviyum-brand block truncate text-base font-bold text-black dark:text-white'>
+            <span className='pharmaviyum-brand block truncate text-xs font-bold text-black dark:text-white'>
               {brand.name}
-            </span>
-            <span className='pharmacy-workflow block truncate text-xs font-medium text-muted-foreground'>
-              {brand.plan}
             </span>
           </div>
         </div>
