@@ -20,6 +20,7 @@ from src.pharmaviyum.schemas.drug_catalog_source import (
     DrugCatalogSourceReview,
     ReviewStatus,
 )
+from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 from src.pharmaviyum.services.drug_catalog_matching import (
     rank_reference_ids,
     suggest_matches,
@@ -181,6 +182,21 @@ async def review_drug_catalog_source(
     matched_product_id = payload.matched_medicinal_product_id
     if payload.create_catalog_entry:
         source_payload = record.normalized_payload or {}
+        if is_excluded_catalog_entry(
+            brand_name=source_payload.get("brand_name")
+            or source_payload.get("product_name")
+            or source_payload.get("term"),
+            manufacturer=source_payload.get("manufacturer")
+            or source_payload.get("holder"),
+            authorization_country=source_payload.get("authorization_country")
+            or source_payload.get("country"),
+            manufacturer_country=source_payload.get("manufacturer_country"),
+            payload=source_payload,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="This source record is excluded by the catalog policy",
+            )
         inn_name = (
             source_payload.get("ingredient_name")
             or source_payload.get("ingredient")
