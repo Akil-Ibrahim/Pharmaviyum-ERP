@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, Boxes, ClipboardList, RefreshCw, ShoppingCart, UsersRound } from 'lucide-react'
 import { ConfigDrawer } from '@/components/config-drawer'
@@ -111,6 +111,16 @@ export function Dashboard() {
       </div>
     </Main>
   </>
+}
+
+function RingMetric({ progress, color, track, value, icon, size = 88 }: { progress: number; color: string; track: string; value: string; icon: ReactNode; size?: number }) {
+  const radius = 34
+  const circumference = 2 * Math.PI * radius
+  const safeProgress = Math.max(0, Math.min(100, progress))
+  return <div className='relative shrink-0' style={{ width: size, height: size }} aria-label={`Показатель ${value}`}>
+    <svg viewBox='0 0 88 88' className='size-full -rotate-90' role='img' aria-hidden='true'><circle cx='44' cy='44' r={radius} fill='none' stroke={track} strokeWidth='7'/><circle cx='44' cy='44' r={radius} fill='none' stroke={color} strokeWidth='7' strokeLinecap='round' strokeDasharray={circumference} strokeDashoffset={circumference * (1 - safeProgress / 100)} style={{transition:'stroke-dashoffset 500ms ease'}}/></svg>
+    <div className='absolute inset-0 flex items-center justify-center' style={{color}}>{icon}</div>
+  </div>
 }
 
 function EmptyState({ text }: { text: string }) { return <div className='rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground'>{text}</div> }
