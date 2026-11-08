@@ -387,10 +387,16 @@ class AgentHarness:
                 yield {
                     "event": "answer",
                     "text": cached["answer"],
+                    "warnings": cached.get("warnings", []),
                     "sources": cached.get("rag_sources", []),
                     "model_used": cached.get("model_used", "cached"),
                     "tool_result_count": len(cached.get("tool_results", [])),
                     "cache_hit": True,
+                }
+                yield {
+                    "event": "complete",
+                    "message": "Response ready",
+                    "latency_ms": (time.perf_counter() - start_time) * 1000,
                 }
                 return
 
