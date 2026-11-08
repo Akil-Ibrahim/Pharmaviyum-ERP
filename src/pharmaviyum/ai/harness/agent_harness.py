@@ -138,7 +138,7 @@ class AgentHarness:
                     "latency_ms": (time.perf_counter() - start_time) * 1000,
                 }
 
-            await self.model_router.select(
+            selected_model = await self.model_router.select(
                 query=safe_query,
                 history_length=len(history),
                 context=context,
@@ -146,11 +146,17 @@ class AgentHarness:
                     context.get("halal_filter") or context.get("prescription_id")
                 ),
             )
+            selected_model_name = (
+                getattr(selected_model, "model_name", None)
+                or getattr(selected_model, "model", None)
+                or "configured-model"
+            )
 
             agent_result = await self.agent.run(
                 query=safe_query,
-                context={**context, "trace_id": trace_id},
+                context={**context, "trace_id": trace_id, "session_id": session_id},
                 thread_id=session_id,
+                selected_model=selected_model,
             )
             if not agent_result.get("success"):
                 raise RuntimeError("Agent execution failed")
@@ -158,6 +164,7 @@ class AgentHarness:
             raw_answer = str(agent_result.get("answer", ""))
             agent_warnings = list(agent_result.get("warnings", []))
             tool_results = list(agent_result.get("tool_results", []))
+            rag_sources = list(agent_result.get("rag_sources", []))
             final_answer, post_warnings = await self._post_process(
                 answer=raw_answer,
                 question=safe_query,
@@ -177,11 +184,8 @@ class AgentHarness:
                         "answer": final_answer,
                         "warnings": agent_warnings,
                         "tool_results": tool_results,
-                        "model_used": (
-                            getattr(self.agent.main_llm, "model", None)
-                            or getattr(self.agent.main_llm, "model_name", None)
-                            or "configured-main"
-                        ),
+                        "rag_sources": rag_sources,
+                        "model_used": agent_result.get("model_used") or selected_model_name,
                     },
                     context=cache_key_context,
                 )
@@ -201,12 +205,8 @@ class AgentHarness:
                 "answer": final_answer,
                 "warnings": list(set(agent_warnings)),
                 "tool_results": tool_results,
-                "model_used": (
-                    agent_result.get("model_used")
-                    or getattr(self.agent.main_llm, "model", None)
-                    or getattr(self.agent.main_llm, "model_name", None)
-                    or "configured-main"
-                ),
+                "rag_sources": rag_sources,
+                "model_used": agent_result.get("model_used") or selected_model_name,
                 "cache_hit": False,
                 "trace_id": trace_id,
                 "latency_ms": latency_ms,
@@ -264,10 +264,19 @@ class AgentHarness:
                 "event": "status",
                 "message": "Thinking and retrieving information...",
             }
+            selected_model = await self.model_router.select(
+                query=safe_query,
+                history_length=0,
+                context=context,
+                requires_safety_check=bool(
+                    context.get("halal_filter") or context.get("prescription_id")
+                ),
+            )
             async for stream_event in self.agent.astream(
                 query=safe_query,
-                context={**context, "trace_id": trace_id},
+                context={**context, "trace_id": trace_id, "session_id": session_id},
                 thread_id=session_id,
+                selected_model=selected_model,
             ):
                 node = stream_event.get("node")
                 data = stream_event.get("data", {})
@@ -278,6 +287,8 @@ class AgentHarness:
                             f"Routing query: {data.get('query_intent', 'analyzing')}..."
                         ),
                     }
+                elif node == "knowledge_retrieval":
+                    yield {"event": "status", "message": "Retrieving pharmacy knowledge..."}
                 elif node == "planner":
                     yield {"event": "status", "message": "Planning tool usage..."}
                 elif node == "executor":
