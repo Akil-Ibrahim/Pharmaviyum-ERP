@@ -44,6 +44,7 @@ def calculate_age(dob: date | None) -> int | None:
     input_schema=PatientHistoryRequest,
     output_schema=PatientHistory,
     category="clinical",
+    execution_class="read",
     latency_estimate_ms=80,
     requires_db=True,
     tags=["patient", "clinical", "safety", "context"],

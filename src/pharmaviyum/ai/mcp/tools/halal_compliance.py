@@ -231,6 +231,7 @@ def check_istihalah(ingredient: str, final_product: str) -> dict[str, str] | Non
     input_schema=HalalCheckRequest,
     output_schema=HalalCertification,
     category="regulatory",
+    execution_class="read",
     latency_estimate_ms=80,
     requires_db=True,
     tags=["halal", "fiqh", "shia", "sunni", "regulatory", "mena", "sea"],

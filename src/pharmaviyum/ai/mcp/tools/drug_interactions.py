@@ -195,6 +195,7 @@ def aggregate_severity(interactions: list[DrugInteraction]) -> Severity:
     input_schema=DrugInteractionCheck,
     output_schema=InteractionCheckResult,
     category="clinical",
+    execution_class="read",
     latency_estimate_ms=150,
     requires_db=True,
     requires_rag=True,

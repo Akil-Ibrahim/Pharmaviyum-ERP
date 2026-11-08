@@ -93,6 +93,7 @@ CONTROLLED_PRESCRIPTION_VALIDITY: dict[str, int] = {
     input_schema=PrescriptionVerifyRequest,
     output_schema=PrescriptionVerification,
     category="regulatory",
+    execution_class="read",
     latency_estimate_ms=120,
     requires_db=True,
     tags=["prescription", "regulatory", "compliance", "safety"],
