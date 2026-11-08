@@ -399,7 +399,7 @@ class PharmacistAgent:
             "rag_sources": [],
             "iteration": 0,
         }
-        configurable = {"thread_id": self._thread_id(thread_id, context)}
+        configurable: dict[str, Any] = {"thread_id": self._thread_id(thread_id, context)}
         if selected_model is not None:
             configurable["selected_model"] = selected_model
         config = {"configurable": configurable}
