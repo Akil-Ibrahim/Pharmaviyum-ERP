@@ -34,7 +34,17 @@ jobs:
           ref: ${{ env.DEPLOY_SHA }}
 
       - name: Set up Bun
+        id: setup-bun
         uses: oven-sh/setup-bun@v2
+        continue-on-error: true
+        with:
+          bun-version: "1.4.4"
+
+      - name: Install Bun from npm if GitHub Releases is unavailable
+        if: steps.setup-bun.outcome == 'failure'
+        run: |
+          npm install --global bun@1.4.4
+          test "$(bun --version)" = "1.4.4"
 
       - name: Build React frontend
         working-directory: frontend/shadcn-admin
@@ -46,8 +56,11 @@ jobs:
         env:
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
 
-      - name: Set up uv
+      - name: Set up uv and managed Python
         uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.14.7"
+          enable-cache: true
 
       - name: Verify CI passed for this exact main commit
         env:
