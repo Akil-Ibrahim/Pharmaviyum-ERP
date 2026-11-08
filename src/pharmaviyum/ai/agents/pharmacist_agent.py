@@ -208,7 +208,6 @@ class PharmacistAgent:
                 "</memory_context>\n"
                 "<retrieved_rag_context>"
 
-                "<retrieved_rag_context>"
                 f"{state.get('rag_context', '')}"
                 "</retrieved_rag_context>"
             )
