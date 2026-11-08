@@ -251,3 +251,94 @@ async def test_streaming_harness_marks_consumer_cancellation(monkeypatch) -> Non
     span.set_attribute.assert_any_call("ai.execution_success", False)
     span.set_attribute.assert_any_call("ai.stream.cancelled", True)
     span.end.assert_called_once()
+
+
+
+def test_agent_checkpoint_thread_id_is_opaque_and_tenant_scoped(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "agent-checkpoint-test-secret")
+    first = PharmacistAgent._thread_id(
+        "conversation-123", {"pharmacy_id": 7, "user_id": "user-1"}
+    )
+    same_scope = PharmacistAgent._thread_id(
+        "conversation-123", {"pharmacy_id": 7, "user_id": "user-1"}
+    )
+    other_user = PharmacistAgent._thread_id(
+        "conversation-123", {"pharmacy_id": 7, "user_id": "user-2"}
+    )
+    other_pharmacy = PharmacistAgent._thread_id(
+        "conversation-123", {"pharmacy_id": 8, "user_id": "user-1"}
+    )
+
+    assert first == same_scope
+    assert first != other_user
+    assert first != other_pharmacy
+    assert first.startswith("agent:v2:")
+    assert "user-1" not in first
+    assert "conversation-123" not in first
+    assert ":7:" not in first
+
+
+def test_agent_checkpoint_thread_id_uses_unambiguous_scope_encoding(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "agent-checkpoint-test-secret")
+    first = PharmacistAgent._thread_id(
+        "c:d", {"pharmacy_id": 7, "user_id": "a:b"}
+    )
+    second = PharmacistAgent._thread_id(
+        "b:c:d", {"pharmacy_id": 7, "user_id": "a"}
+    )
+
+    assert first != second
+
+
+@pytest.mark.parametrize(
+    ("thread_id", "context"),
+    [
+        ("   ", {"pharmacy_id": 7, "user_id": "user-1"}),
+        ("x" * 129, {"pharmacy_id": 7, "user_id": "user-1"}),
+        ("session", {"pharmacy_id": 0, "user_id": "user-1"}),
+        ("session", {"pharmacy_id": 7, "user_id": "   "}),
+        ("session", {"pharmacy_id": None, "user_id": "user-1"}),
+    ],
+)
+def test_agent_checkpoint_thread_id_rejects_invalid_scope(
+    thread_id: str,
+    context: dict[str, object],
+) -> None:
+    with pytest.raises(ValueError):
+        PharmacistAgent._thread_id(thread_id, context)
+
+
+def test_agent_checkpoint_thread_id_changes_when_secret_rotates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    context = {"pharmacy_id": 7, "user_id": "user-1"}
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "first-agent-secret")
+    first = PharmacistAgent._thread_id("conversation-123", context)
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-agent-secret")
+    second = PharmacistAgent._thread_id("conversation-123", context)
+
+    assert first != second
+
+
+def test_agent_checkpoint_thread_id_fails_closed_without_production_secret(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from src.pharmaviyum.core.config import Environment, settings as app_settings
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", None)
+    monkeypatch.setattr(app_settings, "ENVIRONMENT", Environment.PRODUCTION)
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY"):
+        PharmacistAgent._thread_id(
+            "conversation-123", {"pharmacy_id": 7, "user_id": "user-1"}
+        )
