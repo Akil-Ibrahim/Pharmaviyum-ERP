@@ -19,11 +19,11 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
     <SidebarMenu>
       <SidebarMenuItem>
         <div className='flex min-h-12 items-center gap-2 rounded-lg px-2 py-1 group-data-[collapsible=icon]:justify-center'>
-          <div className='flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-background shadow-sm ring-1 ring-border/40'>
+          <div className='flex h-10 w-14 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-background shadow-sm ring-1 ring-border/40 group-data-[collapsible=icon]:size-9'>
             <img
               src={brand.logo}
               alt=''
-              className='size-8 object-contain'
+              className='h-8 w-12 object-contain group-data-[collapsible=icon]:size-7'
             />
           </div>
           <div className='grid min-w-0 flex-1 text-start leading-tight group-data-[collapsible=icon]:hidden'>
