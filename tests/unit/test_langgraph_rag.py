@@ -112,3 +112,69 @@ async def test_run_reports_provider_token_usage_from_callbacks(
     response = await rag.run("Question", context)
 
     assert response.tokens_used == 20
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"user_id": "", "pharmacy_id": 1},
+        {"user_id": "user-1", "pharmacy_id": 0},
+        {"user_id": "user-1", "pharmacy_id": -1},
+        {"user_id": "user-1", "pharmacy_id": 1, "patient_id": 0},
+        {"user_id": "user-1", "pharmacy_id": 1, "patient_id": -1},
+    ],
+)
+def test_query_context_rejects_invalid_identity_and_tenant_scope(payload):
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        QueryContext(**payload)
+
+
+@pytest.mark.asyncio
+async def test_transform_query_always_preserves_original_query(rag: LangGraphRAG):
+    class _Transformer:
+        async def generate_multi_query(self, query, num_variations, context):
+            return [
+                SimpleNamespace(transformed_query="rewritten drug question"),
+                SimpleNamespace(transformed_query=query),
+            ]
+
+    rag.guardrails = None
+    rag.enable_multi_query = True
+    rag.max_query_variations = 2
+    rag.enable_hyde = False
+    rag.transformer = _Transformer()
+
+    context = QueryContext(user_id="user-1", pharmacy_id=7)
+    result = await rag.transform_query_node(
+        {"question": "original medicine question", "context": context}
+    )
+
+    assert result["transformed_queries"] == [
+        "original medicine question",
+        "rewritten drug question",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_run_sets_explicit_langgraph_recursion_limit(rag: LangGraphRAG):
+    class _Graph:
+        async def ainvoke(self, initial, config):
+            assert config["recursion_limit"] == 18
+            return {
+                "answer": "No answer.",
+                "graded": [],
+                "confidence": 0.0,
+                "model_used": "test",
+                "latency_ms": 1.0,
+                "warnings": [],
+            }
+
+    rag.graph = _Graph()
+    rag.max_rewrites = 2
+    response = await rag.run(
+        "Question",
+        QueryContext(user_id="user-1", pharmacy_id=1),
+    )
+    assert response.answer == "No answer."
