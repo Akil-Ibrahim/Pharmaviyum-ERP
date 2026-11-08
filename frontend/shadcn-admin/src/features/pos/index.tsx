@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import {
   Search,
   Plus,
@@ -283,9 +290,13 @@ export function Pos() {
       addProduct(matches[0])
       setNotice('Barcode matched. Medicine added to the sale.')
     } else if (matches.length > 1) {
-      setNotice('This barcode matches multiple products. Select the correct item.')
+      setNotice(
+        'This barcode matches multiple products. Select the correct item.'
+      )
     } else {
-      setNotice('No exact barcode match. Review the search results before adding.')
+      setNotice(
+        'No exact barcode match. Review the search results before adding.'
+      )
     }
   }, [results, loading, query, addProduct])
 
@@ -311,7 +322,7 @@ export function Pos() {
     )
   }
 
-  const handleSearchSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSearchSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const term = query.trim()
     if (term.length < 2) return
