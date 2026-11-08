@@ -369,3 +369,27 @@ async def test_run_enforces_end_to_end_execution_timeout(rag: LangGraphRAG):
             "Question",
             QueryContext(user_id="user-1", pharmacy_id=1),
         )
+
+
+@pytest.mark.asyncio
+async def test_langgraph_node_span_marks_cancellation(monkeypatch):
+    import asyncio
+
+    import src.pharmaviyum.ai.mortarium_rag.graph as graph_module
+
+    span = MagicMock()
+    span_context = MagicMock()
+    span_context.__enter__.return_value = span
+    tracer = MagicMock()
+    tracer.start_as_current_span.return_value = span_context
+    monkeypatch.setattr(graph_module, "rag_tracer", tracer)
+
+    async def cancel(state):
+        raise asyncio.CancelledError()
+
+    wrapped = LangGraphRAG._traced_node("retrieve", cancel)
+    with pytest.raises(asyncio.CancelledError):
+        await wrapped({"rewrite_count": 0})
+
+    span.set_attribute.assert_any_call("ai.execution_success", False)
+    span.set_attribute.assert_any_call("ai.stream.cancelled", True)
