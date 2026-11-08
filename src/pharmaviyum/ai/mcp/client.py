@@ -101,25 +101,28 @@ class MCPClient:
         user_id = context.user_id
         pharmacy_id = context.pharmacy_id
 
-        if self.enable_circuit_breaker and self._is_circuit_open(tool_name):
-            logger.warning("Circuit breaker open for tool: %s", tool_name)
-            return ToolExecutionResult(
-                tool_name=tool_name,
-                success=False,
-                error=f"Circuit breaker open: tool {tool_name} is temporarily unavailable",
-                latency_ms=(time.perf_counter() - start) * 1000,
-            )
-
         tool_entry = registry.get_tool(tool_name)
         if not tool_entry:
             return ToolExecutionResult(
-                tool_name=tool_name,
+                tool_name="unknown",
                 success=False,
-                error=f"Unknown tool: {tool_name}",
+                error="Unknown MCP tool",
                 latency_ms=(time.perf_counter() - start) * 1000,
             )
 
         tool_metadata, _ = tool_entry
+        canonical_tool_name = tool_metadata.name
+        if self.enable_circuit_breaker and self._is_circuit_open(canonical_tool_name):
+            logger.warning(
+                "MCP tool circuit breaker is open",
+                extra={"tool": canonical_tool_name},
+            )
+            return ToolExecutionResult(
+                tool_name=canonical_tool_name,
+                success=False,
+                error="Tool temporarily unavailable",
+                latency_ms=(time.perf_counter() - start) * 1000,
+            )
         # A write may have succeeded even if the response timed out. Never
         # automatically replay a potentially non-idempotent side effect.
         max_attempts = (
@@ -141,10 +144,9 @@ class MCPClient:
                 )
                 latency_ms = (time.perf_counter() - start) * 1000
                 logger.info(
-                    "Tool %s executed successfully",
-                    tool_name,
+                    "MCP tool executed successfully",
                     extra={
-                        "tool": tool_name,
+                        "tool": canonical_tool_name,
                         "latency_ms": latency_ms,
                         "retry_count": retry_count,
                         "trace_id": trace_id,
@@ -153,7 +155,7 @@ class MCPClient:
                 )
                 self._circuit_breaker.pop(tool_name, None)
                 return ToolExecutionResult(
-                    tool_name=tool_name,
+                    tool_name=canonical_tool_name,
                     success=True,
                     data=result,
                     latency_ms=latency_ms,
@@ -164,16 +166,16 @@ class MCPClient:
                     },
                 )
             except asyncio.TimeoutError:
-                last_error = f"Tool {tool_name} timed out after {self.timeout_seconds}s"
+                last_error = "Tool execution timed out"
                 logger.warning(
                     last_error,
-                    extra={"tool": tool_name, "attempt": attempt + 1},
+                    extra={"tool": canonical_tool_name, "attempt": attempt + 1},
                 )
             except PermissionError:
                 last_error = "MCP tool not authorized"
                 logger.warning(
                     "MCP tool authorization denied",
-                    extra={"tool": tool_name, "user_role": user_role},
+                    extra={"tool": canonical_tool_name, "user_role": user_role},
                 )
                 break
             except Exception as exc:
@@ -181,7 +183,7 @@ class MCPClient:
                 logger.error(
                     "MCP tool execution failed",
                     extra={
-                        "tool": tool_name,
+                        "tool": canonical_tool_name,
                         "attempt": attempt + 1,
                         "error_type": type(exc).__name__,
                     },
@@ -197,10 +199,10 @@ class MCPClient:
             and last_error
             and "not authorized" not in last_error
         ):
-            self._record_failure(tool_name)
+            self._record_failure(canonical_tool_name)
 
         return ToolExecutionResult(
-            tool_name=tool_name,
+            tool_name=canonical_tool_name,
             success=False,
             error=last_error,
             latency_ms=latency_ms,
