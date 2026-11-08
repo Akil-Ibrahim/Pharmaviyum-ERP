@@ -291,7 +291,12 @@ async def test_cached_harness_stream_emits_terminal_complete_event() -> None:
     harness.guardrails = SimpleNamespace(
         pre_process=AsyncMock(
             return_value=SimpleNamespace(is_safe=True, sanitized_input="safe query")
-        )
+        ),
+        post_process=AsyncMock(
+            return_value=SimpleNamespace(
+                is_safe=True, validated_output="Cached response", warnings=[]
+            )
+        ),
     )
     harness.cache = SimpleNamespace(
         get=AsyncMock(
@@ -311,3 +316,13 @@ async def test_cached_harness_stream_emits_terminal_complete_event() -> None:
     assert events[-2]["event"] == "answer"
     assert events[-2]["cache_hit"] is True
     assert events[-1]["event"] == "complete"
+
+
+def test_citation_validator_rejects_orphan_source_references():
+    answer, warnings = AgentHarness._validate_rag_citations(
+        "The medicine is safe [src-unknown].",
+        [],
+    )
+
+    assert "cannot provide a reliable answer" in answer
+    assert warnings == ["citation_validation_failed"]
