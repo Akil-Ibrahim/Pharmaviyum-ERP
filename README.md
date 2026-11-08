@@ -116,7 +116,7 @@ Current architectural areas include:
 - MCP tools and resources
 - LangGraph orchestration
 - AI-assisted analytics and forecasting
-- Application observability
+- Application observability (OpenTelemetry traces + Prometheus metrics)
 - Access-controlled AI workflows
 
 The pharmacist remains the professional decision-maker. AI output is treated as decision support, not as an authoritative replacement for professional judgment.
@@ -208,6 +208,10 @@ Python dependency definitions are maintained in:
 The lockfile is used for reproducible CI/development installation. Dependency changes should be made through the project configuration and lockfile rather than maintaining a second authoritative dependency list.
 
 For the exact declared runtime versions and the dependency-upgrade procedure, see [`docs/technology-stack.md`](docs/technology-stack.md).
+
+## Observability
+
+The API supports OpenTelemetry distributed tracing for FastAPI, SQLAlchemy, Redis, and outbound HTTPX requests. Configure an OTLP endpoint with `OTEL_EXPORTER_OTLP_ENDPOINT`; see [`docs/observability/opentelemetry.md`](docs/observability/opentelemetry.md) for deployment, sampling, and data-protection guidance.
 
 ## AI / RAG Architecture
 

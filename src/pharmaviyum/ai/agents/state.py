@@ -26,6 +26,8 @@ class AgentState(TypedDict):
         tool_results: Results returned from MCP tools
         final_answer: The validated final response to the user
         warnings: Safety/regulatory warnings generated during execution
+        rag_context: Tenant-scoped evidence supplied by Mortarium RAG
+        rag_sources: Source citations returned by Mortarium RAG
         iteration: Counter to prevent infinite loops in planning
     """
 
@@ -35,4 +37,6 @@ class AgentState(TypedDict):
     tool_results: list[dict[str, Any]]
     final_answer: str | None
     warnings: list[str]
+    rag_context: str
+    rag_sources: list[dict[str, Any]]
     iteration: int

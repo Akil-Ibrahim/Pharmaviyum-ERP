@@ -24,6 +24,10 @@ from src.pharmaviyum.api.v1 import api_v1_router
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.core.static_files import setup_static_files
 from src.pharmaviyum.database import AsyncSessionLocal
+from src.pharmaviyum.observability.opentelemetry import (
+    configure_opentelemetry,
+    shutdown_opentelemetry,
+)
 from src.pharmaviyum.redis_client import close_redis, get_redis
 
 
@@ -31,6 +35,7 @@ from src.pharmaviyum.redis_client import close_redis, get_redis
 async def lifespan(app: FastAPI):
     """Initialize shared infrastructure once for the application lifetime."""
     logger.info("Starting Pharmaviyum AI Application")
+    configure_opentelemetry(app)
 
     try:
         redis_client = await get_redis()
@@ -45,13 +50,16 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.exception("Failed to initialize critical application dependencies")
         if settings.environment == "production":
+            shutdown_opentelemetry()
             await close_redis()
             raise
 
-    yield
-
-    logger.info("Shutting down Pharmaviyum AI Application")
-    await close_redis()
+    try:
+        yield
+    finally:
+        logger.info("Shutting down Pharmaviyum AI Application")
+        shutdown_opentelemetry()
+        await close_redis()
 
 
 app = FastAPI(

@@ -83,6 +83,13 @@ class PgVectorStore:
                 ON {self.table_name} USING gin (to_tsvector('english', content))
             """
             await session.execute(text(content_index_sql))
+            # The simple configuration avoids applying English stemming to
+            # Vietnamese, Arabic, Thai, Indonesian, and other query languages.
+            simple_content_index_sql = f"""
+                CREATE INDEX IF NOT EXISTS idx_{self.table_name}_content_fts_simple
+                ON {self.table_name} USING gin (to_tsvector('simple', content))
+            """
+            await session.execute(text(simple_content_index_sql))
             await session.commit()
             logger.info("Vector store initialized: %s", self.table_name)
 
@@ -161,15 +168,25 @@ class PgVectorStore:
         query: str,
         top_k: int = 10,
         filters: dict[str, Any] | None = None,
+        language: str = "en",
     ) -> list[RetrievalResult]:
-        """Keyword search, always tenant scoped."""
+        """Keyword search with a safe language-specific PostgreSQL text-search config."""
         filter_clause, filter_params = self._build_filter_clause(filters)
+        # PostgreSQL has robust built-in stemming for English. Its "simple"
+        # configuration is a safer multilingual tokenizer fallback than English
+        # stemming for languages without a built-in PostgreSQL dictionary.
+        language_code = language.lower().split("-", maxsplit=1)[0]
+        text_search_config = "english" if language_code == "en" else "simple"
         async with self.session_factory() as session:
             query_sql = text(f"""
                 SELECT id, document_id, content, chunk_index, chunk_type, metadata, token_count,
-                       ts_rank(to_tsvector('english', content), plainto_tsquery('english', :query)) AS score
+                       ts_rank(
+                           to_tsvector('{text_search_config}', content),
+                           plainto_tsquery('{text_search_config}', :query)
+                       ) AS score
                 FROM {self.table_name} {filter_clause}
-                AND to_tsvector('english', content) @@ plainto_tsquery('english', :query)
+                AND to_tsvector('{text_search_config}', content)
+                    @@ plainto_tsquery('{text_search_config}', :query)
                 ORDER BY score DESC LIMIT :top_k
             """)
             result = await session.execute(
@@ -196,9 +213,21 @@ class PgVectorStore:
     ) -> list[RetrievalResult]:
         """Hybrid vector + keyword search with optional typed reranking."""
         self._require_tenant_filter(filters)
+        assert filters is not None
+        search_language = str(filters.get("_search_language", "en"))
+        metadata_filters = {
+            key: value for key, value in filters.items() if key != "_search_language"
+        }
         vector_results, bm25_results = await asyncio.gather(
-            self.vector_search(query_embedding, top_k=top_k * 2, filters=filters),
-            self.bm25_search(query, top_k=top_k * 2, filters=filters),
+            self.vector_search(
+                query_embedding, top_k=top_k * 2, filters=metadata_filters
+            ),
+            self.bm25_search(
+                query,
+                top_k=top_k * 2,
+                filters=metadata_filters,
+                language=search_language,
+            ),
         )
         fused = self._reciprocal_rank_fusion([vector_results, bm25_results], k=rrf_k)
         active_reranker = reranker or self.reranker

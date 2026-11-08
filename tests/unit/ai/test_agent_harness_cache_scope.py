@@ -22,3 +22,14 @@ def test_cache_context_does_not_mix_distinct_prescriptions() -> None:
     )
 
     assert first != second
+
+
+def test_cache_context_isolates_conversation_sessions() -> None:
+    first = AgentHarness._cache_context(
+        {"user_id": "user-1", "pharmacy_id": 7, "session_id": "session-a"}
+    )
+    second = AgentHarness._cache_context(
+        {"user_id": "user-1", "pharmacy_id": 7, "session_id": "session-b"}
+    )
+
+    assert first != second

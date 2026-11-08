@@ -114,9 +114,15 @@ class LangSmithSettings(BaseSettings):
 
 class OTelSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="OTEL_")
-    enabled: bool = True
-    exporter_endpoint: str = "http://otel-collector:4317"
+    enabled: bool = False
+    exporter_endpoint: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "OTEL_EXPORTER_OTLP_ENDPOINT", "OTEL_EXPORTER_ENDPOINT"
+        ),
+    )
     service_name: str = "pharmaviyum-ai"
+    sample_rate: float = Field(default=0.1, ge=0.0, le=1.0)
 
 
 class RAGSettings(BaseSettings):

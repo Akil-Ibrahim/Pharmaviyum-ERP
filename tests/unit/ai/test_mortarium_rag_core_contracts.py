@@ -114,3 +114,20 @@ def test_answer_citation_validation_fails_closed(answer):
 
     assert "lacks verifiable citations" in validated_answer
     assert warning == "citation_validation_failed"
+
+
+@pytest.mark.asyncio
+async def test_bm25_uses_simple_text_search_for_non_english_queries():
+    session = _FakeSession()
+    store = PgVectorStore(session_factory=lambda: session)
+
+    await store.bm25_search(
+        "парацетамол",
+        filters={"pharmacy_id": 7},
+        language="uk",
+    )
+
+    sql = str(session.statement)
+    assert "to_tsvector('simple', content)" in sql
+    assert "plainto_tsquery('simple', :query)" in sql
+    assert session.params["filter_0"] == 7

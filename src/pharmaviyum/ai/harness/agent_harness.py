@@ -11,9 +11,14 @@ Best practice 2026:
 
 from __future__ import annotations
 
+import hashlib
+import re
 import time
 import uuid
 from typing import Any
+
+from langchain_core.messages import SystemMessage
+from opentelemetry import trace
 
 from src.pharmaviyum.ai.agents import PharmacistAgent
 from src.pharmaviyum.core.logging import logger
@@ -22,6 +27,16 @@ from .cache import PromptCache
 from .guardrails import MedicalGuardrails
 from .memory import DialogueMemory
 from .model_router import ModelRouter
+
+tracer = trace.get_tracer(__name__)
+
+
+def _current_trace_id() -> str:
+    """Return the active W3C trace ID, or a fallback ID outside traced requests."""
+    span_context = trace.get_current_span().get_span_context()
+    if span_context.is_valid:
+        return f"{span_context.trace_id:032x}"
+    return uuid.uuid4().hex
 
 
 class AgentHarness:
@@ -56,6 +71,8 @@ class AgentHarness:
             in {
                 "user_id",
                 "pharmacy_id",
+                "session_id",
+                "memory_fingerprint",
                 "patient_id",
                 "prescription_id",
                 "country",
@@ -70,6 +87,28 @@ class AgentHarness:
                 "cache_disabled",
             }
         }
+
+    @staticmethod
+    def _validate_rag_citations(
+        answer: str, sources: list[dict[str, Any]]
+    ) -> tuple[str, list[str]]:
+        """Revalidate citations after post-processing so provenance is not lost."""
+        if not sources:
+            return answer, []
+        allowed = {
+            str(source.get("source_id"))
+            for source in sources
+            if source.get("source_id")
+        }
+        cited = re.findall(r"\[(src-[^\]\s]+)\]", answer)
+        if cited and all(citation in allowed for citation in cited):
+            return answer, []
+        return (
+            "I cannot provide a reliable answer because the final response does not "
+            "preserve verifiable citations to retrieved evidence. Please review the "
+            "source records with a pharmacist.",
+            ["citation_validation_failed"],
+        )
 
     async def _post_process(
         self,
@@ -98,8 +137,8 @@ class AgentHarness:
         context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         start_time = time.perf_counter()
-        context = context or {}
-        trace_id = str(uuid.uuid4())
+        context = {**(context or {}), "session_id": session_id}
+        trace_id = _current_trace_id()
 
         logger.info(
             "Agent harness execution started",
@@ -108,6 +147,12 @@ class AgentHarness:
 
         try:
             history = await self.memory.load(session_id)
+            memory_snapshot = "\\n".join(
+                f"{message.type}:{message.content}" for message in history
+            )
+            context["memory_fingerprint"] = hashlib.sha256(
+                memory_snapshot.encode("utf-8")
+            ).hexdigest()
             pre_process_result = await self.guardrails.pre_process(query)
             if not pre_process_result.is_safe:
                 logger.warning("Input blocked by guardrails")
@@ -132,38 +177,77 @@ class AgentHarness:
                     "answer": cached_response["answer"],
                     "warnings": cached_response.get("warnings", []),
                     "tool_results": cached_response.get("tool_results", []),
+                    "rag_sources": cached_response.get("rag_sources", []),
                     "model_used": cached_response.get("model_used", "cached"),
                     "cache_hit": True,
                     "trace_id": trace_id,
                     "latency_ms": (time.perf_counter() - start_time) * 1000,
                 }
 
-            await self.model_router.select(
-                query=safe_query,
-                history_length=len(history),
-                context=context,
-                requires_safety_check=bool(
-                    context.get("halal_filter") or context.get("prescription_id")
-                ),
+            memory_context = "\n\n".join(
+                str(message.content)
+                for message in history
+                if isinstance(message, SystemMessage)
+            )
+            with tracer.start_as_current_span("mortarium.model_router.select") as span:
+                selected_model = await self.model_router.select(
+                    query=safe_query,
+                    history_length=len(history),
+                    context=context,
+                    requires_safety_check=bool(
+                        context.get("halal_filter") or context.get("prescription_id")
+                    ),
+                )
+                span.set_attribute("ai.history_length", len(history))
+                span.set_attribute(
+                    "ai.safety_check_required",
+                    bool(context.get("halal_filter") or context.get("prescription_id")),
+                )
+            selected_model_name = (
+                getattr(selected_model, "model_name", None)
+                or getattr(selected_model, "model", None)
+                or "configured-model"
             )
 
-            agent_result = await self.agent.run(
-                query=safe_query,
-                context={**context, "trace_id": trace_id},
-                thread_id=session_id,
-            )
+            with tracer.start_as_current_span("mortarium.agent.execute") as span:
+                span.set_attribute("ai.model_name", str(selected_model_name)[:64])
+                agent_result = await self.agent.run(
+                    query=safe_query,
+                    context={
+                        **context,
+                        "trace_id": trace_id,
+                        "session_id": session_id,
+                        "memory_context": memory_context,
+                    },
+                    thread_id=session_id,
+                    selected_model=selected_model,
+                )
+                span.set_attribute(
+                    "ai.rag.source_count", len(agent_result.get("rag_sources", []))
+                )
+                span.set_attribute(
+                    "ai.tool_result_count", len(agent_result.get("tool_results", []))
+                )
+                span.set_attribute(
+                    "ai.execution_success", bool(agent_result.get("success"))
+                )
             if not agent_result.get("success"):
                 raise RuntimeError("Agent execution failed")
 
             raw_answer = str(agent_result.get("answer", ""))
             agent_warnings = list(agent_result.get("warnings", []))
             tool_results = list(agent_result.get("tool_results", []))
+            rag_sources = list(agent_result.get("rag_sources", []))
             final_answer, post_warnings = await self._post_process(
                 answer=raw_answer,
                 question=safe_query,
-                sources=tool_results,
+                sources=tool_results + rag_sources,
             )
             agent_warnings.extend(post_warnings)
+            final_answer, citation_warnings = self._validate_rag_citations(
+                final_answer, rag_sources
+            )
+            agent_warnings.extend(citation_warnings)
 
             await self.memory.save(
                 session_id=session_id,
@@ -177,11 +261,9 @@ class AgentHarness:
                         "answer": final_answer,
                         "warnings": agent_warnings,
                         "tool_results": tool_results,
-                        "model_used": (
-                            getattr(self.agent.main_llm, "model", None)
-                            or getattr(self.agent.main_llm, "model_name", None)
-                            or "configured-main"
-                        ),
+                        "rag_sources": rag_sources,
+                        "model_used": agent_result.get("model_used")
+                        or selected_model_name,
                     },
                     context=cache_key_context,
                 )
@@ -201,12 +283,8 @@ class AgentHarness:
                 "answer": final_answer,
                 "warnings": list(set(agent_warnings)),
                 "tool_results": tool_results,
-                "model_used": (
-                    agent_result.get("model_used")
-                    or getattr(self.agent.main_llm, "model", None)
-                    or getattr(self.agent.main_llm, "model_name", None)
-                    or "configured-main"
-                ),
+                "rag_sources": rag_sources,
+                "model_used": agent_result.get("model_used") or selected_model_name,
                 "cache_hit": False,
                 "trace_id": trace_id,
                 "latency_ms": latency_ms,
@@ -237,8 +315,15 @@ class AgentHarness:
         context: dict[str, Any] | None = None,
     ):
         start_time = time.perf_counter()
-        context = context or {}
-        trace_id = str(uuid.uuid4())
+        context = {**(context or {}), "session_id": session_id}
+        history = await self.memory.load(session_id)
+        memory_snapshot = "\\n".join(
+            f"{message.type}:{message.content}" for message in history
+        )
+        context["memory_fingerprint"] = hashlib.sha256(
+            memory_snapshot.encode("utf-8")
+        ).hexdigest()
+        trace_id = _current_trace_id()
         yield {"event": "start", "trace_id": trace_id}
 
         try:
@@ -253,21 +338,58 @@ class AgentHarness:
             yield {"event": "status", "message": "Checking knowledge cache..."}
             cached = await self.cache.get(safe_query, cache_key_context)
             if cached and not context.get("force_fresh"):
-                yield {"event": "answer", "text": cached["answer"], "cache_hit": True}
+                yield {
+                    "event": "answer",
+                    "text": cached["answer"],
+                    "sources": cached.get("rag_sources", []),
+                    "model_used": cached.get("model_used", "cached"),
+                    "cache_hit": True,
+                }
                 return
 
             final_answer: str | None = None
             final_warnings: list[str] = []
             tool_results: list[dict[str, Any]] = []
+            rag_sources: list[dict[str, Any]] = []
 
             yield {
                 "event": "status",
                 "message": "Thinking and retrieving information...",
             }
+            memory_context = "\n\n".join(
+                str(message.content)
+                for message in history
+                if isinstance(message, SystemMessage)
+            )
+            with tracer.start_as_current_span("mortarium.model_router.select") as span:
+                selected_model = await self.model_router.select(
+                    query=safe_query,
+                    history_length=len(history),
+                    context=context,
+                    requires_safety_check=bool(
+                        context.get("halal_filter") or context.get("prescription_id")
+                    ),
+                )
+                span.set_attribute("ai.history_length", len(history))
+                span.set_attribute(
+                    "ai.safety_check_required",
+                    bool(context.get("halal_filter") or context.get("prescription_id")),
+                )
+            selected_model_name = (
+                getattr(selected_model, "model_name", None)
+                or getattr(selected_model, "model", None)
+                or "configured-model"
+            )
             async for stream_event in self.agent.astream(
                 query=safe_query,
-                context={**context, "trace_id": trace_id},
+                context={
+                    **context,
+                    "trace_id": trace_id,
+                    "session_id": session_id,
+                    "memory_context": memory_context,
+                },
                 thread_id=session_id,
+                selected_model=selected_model,
             ):
                 node = stream_event.get("node")
                 data = stream_event.get("data", {})
@@ -277,6 +399,12 @@ class AgentHarness:
                         "message": (
                             f"Routing query: {data.get('query_intent', 'analyzing')}..."
                         ),
+                    }
+                elif node == "knowledge_retrieval":
+                    rag_sources = list(data.get("rag_sources", []))
+                    yield {
+                        "event": "status",
+                        "message": "Retrieving pharmacy knowledge...",
                     }
                 elif node == "planner":
                     yield {"event": "status", "message": "Planning tool usage..."}
@@ -298,9 +426,13 @@ class AgentHarness:
             final_answer, post_warnings = await self._post_process(
                 answer=str(final_answer),
                 question=safe_query,
-                sources=tool_results,
+                sources=tool_results + rag_sources,
             )
             final_warnings.extend(post_warnings)
+            final_answer, citation_warnings = self._validate_rag_citations(
+                final_answer, rag_sources
+            )
+            final_warnings.extend(citation_warnings)
 
             await self.memory.save(
                 session_id=session_id,
@@ -313,6 +445,8 @@ class AgentHarness:
                     response={
                         "answer": final_answer,
                         "warnings": final_warnings,
+                        "rag_sources": rag_sources,
+                        "model_used": selected_model_name,
                     },
                     context=cache_key_context,
                 )
@@ -322,6 +456,8 @@ class AgentHarness:
                 "event": "answer",
                 "text": final_answer,
                 "warnings": list(set(final_warnings)),
+                "sources": rag_sources,
+                "model_used": selected_model_name,
                 "cache_hit": False,
             }
             yield {
