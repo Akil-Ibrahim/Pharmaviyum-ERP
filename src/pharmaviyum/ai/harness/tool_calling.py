@@ -230,7 +230,6 @@ class ToolCallingLayer:
             except Exception as exc:
                 latency_ms = (time.perf_counter() - start) * 1000
                 total_latency += latency_ms
-                last_error = "Tool execution failed"
                 logger.error(
                     "MCP tool execution raised an exception",
                     extra={
