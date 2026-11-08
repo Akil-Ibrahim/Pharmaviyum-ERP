@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from urllib.parse import urlsplit
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -52,12 +53,18 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
         endpoint = settings.otel.exporter_endpoint
         if endpoint:
             try:
+                parsed_endpoint = urlsplit(endpoint)
+                if parsed_endpoint.scheme in {"http", "https"}:
+                    target = parsed_endpoint.netloc
+                    insecure = parsed_endpoint.scheme == "http"
+                else:
+                    target = endpoint
+                    insecure = False
+                if not target:
+                    raise ValueError("OTLP gRPC endpoint must include a host and port")
                 provider.add_span_processor(
                     BatchSpanProcessor(
-                        OTLPSpanExporter(
-                            endpoint=endpoint,
-                            insecure=endpoint.startswith("http://"),
-                        )
+                        OTLPSpanExporter(endpoint=target, insecure=insecure)
                     )
                 )
                 logger.info("OpenTelemetry OTLP exporter configured")
