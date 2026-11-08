@@ -251,7 +251,7 @@ export function Pos() {
     const productIds = cart.map((item) => item.id)
     setLotsStatusByProduct((current) => ({
       ...current,
-      ...Object.fromEntries(productIds.map((id) => [id, 'loading'])),
+      ...Object.fromEntries(productIds.map((id) => [id, 'loading' as const])),
     }))
     Promise.all(
       cart.map(async (item) => {
