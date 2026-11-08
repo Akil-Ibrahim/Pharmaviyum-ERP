@@ -160,10 +160,7 @@ class ObservabilityTracer:
         """Allow only low-risk operational scalar attributes."""
         safe: dict[str, Any] = {}
         for key, value in (metadata or {}).items():
-            if (
-                key in _SAFE_METADATA_KEYS
-                and isinstance(value, (bool, int, float))
-            ):
+            if key in _SAFE_METADATA_KEYS and isinstance(value, (bool, int, float)):
                 safe[key] = value
             elif key in _SAFE_METADATA_KEYS and isinstance(value, str):
                 safe[key] = value[:64]
@@ -189,7 +186,11 @@ class ObservabilityTracer:
                 inputs=self._payload(inputs),
                 outputs=self._payload(outputs),
                 metadata=self._safe_metadata(metadata),
-                tags=[tag for tag in (tags or []) if tag in {"mcp_tool", "evaluation", "llm_as_judge"}],
+                tags=[
+                    tag
+                    for tag in (tags or [])
+                    if tag in {"mcp_tool", "evaluation", "llm_as_judge"}
+                ],
                 # Session identifiers are intentionally never exported.
             )
             return None
@@ -215,7 +216,10 @@ class ObservabilityTracer:
             run_type="tool",
             inputs=inputs,
             outputs={"success": success},
-            metadata={"latency_ms": latency_ms, "status": "success" if success else "error"},
+            metadata={
+                "latency_ms": latency_ms,
+                "status": "success" if success else "error",
+            },
             tags=["mcp_tool"],
         )
 
