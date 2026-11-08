@@ -15,6 +15,8 @@ import time
 import uuid
 from typing import Any
 
+from langchain_core.messages import SystemMessage
+
 from src.pharmaviyum.ai.agents import PharmacistAgent
 from src.pharmaviyum.core.logging import logger
 
@@ -139,6 +141,11 @@ class AgentHarness:
                     "latency_ms": (time.perf_counter() - start_time) * 1000,
                 }
 
+            memory_context = "\\n\\n".join(
+                str(message.content)
+                for message in history
+                if isinstance(message, SystemMessage)
+            )
             selected_model = await self.model_router.select(
                 query=safe_query,
                 history_length=len(history),
@@ -155,7 +162,12 @@ class AgentHarness:
 
             agent_result = await self.agent.run(
                 query=safe_query,
-                context={**context, "trace_id": trace_id, "session_id": session_id},
+                context={
+                    **context,
+                    "trace_id": trace_id,
+                    "session_id": session_id,
+                    "memory_context": memory_context,
+                },
                 thread_id=session_id,
                 selected_model=selected_model,
             )
@@ -271,9 +283,15 @@ class AgentHarness:
                 "event": "status",
                 "message": "Thinking and retrieving information...",
             }
+            history = await self.memory.load(session_id)
+            memory_context = "\\n\\n".join(
+                str(message.content)
+                for message in history
+                if isinstance(message, SystemMessage)
+            )
             selected_model = await self.model_router.select(
                 query=safe_query,
-                history_length=0,
+                history_length=len(history),
                 context=context,
                 requires_safety_check=bool(
                     context.get("halal_filter") or context.get("prescription_id")
@@ -281,7 +299,12 @@ class AgentHarness:
             )
             async for stream_event in self.agent.astream(
                 query=safe_query,
-                context={**context, "trace_id": trace_id, "session_id": session_id},
+                context={
+                    **context,
+                    "trace_id": trace_id,
+                    "session_id": session_id,
+                    "memory_context": memory_context,
+                },
                 thread_id=session_id,
                 selected_model=selected_model,
             ):
