@@ -314,6 +314,50 @@ class AgentHarness:
         query: str,
         context: dict[str, Any] | None = None,
     ):
+        """Stream events with one bounded, PHI-safe execution span.
+
+        The span is not made current across yield: consumers may resume this
+        async generator in a different task or context.
+        """
+        span = tracer.start_span("mortarium.agent.stream")
+        completed = False
+        failed = False
+        source_count = 0
+        tool_result_count = 0
+        try:
+            async for event in self._astream_events(session_id, query, context):
+                event_type = event.get("event")
+                if event_type == "answer":
+                    completed = True
+                    source_count = len(event.get("sources", []))
+                    tool_result_count = int(event.get("tool_result_count", 0))
+                    model_name = event.get("model_used")
+                    if model_name:
+                        span.set_attribute("ai.model_name", str(model_name)[:64])
+                elif event_type == "error":
+                    failed = True
+                yield event
+        except Exception as exc:
+            failed = True
+            span.record_exception(exc)
+            raise
+        finally:
+            span.set_attribute("ai.rag.source_count", source_count)
+            span.set_attribute("ai.tool_result_count", tool_result_count)
+            span.set_attribute("ai.execution_success", completed and not failed)
+            if failed:
+                from opentelemetry.trace import Status, StatusCode
+
+                span.set_status(Status(StatusCode.ERROR))
+            elif not completed:
+                span.set_attribute("ai.stream.cancelled", True)
+            span.end()
+
+    async def _astream_events(        self,
+        session_id: str,
+        query: str,
+        context: dict[str, Any] | None = None,
+    ):
         start_time = time.perf_counter()
         context = {**(context or {}), "session_id": session_id}
         history = await self.memory.load(session_id)
@@ -343,6 +387,7 @@ class AgentHarness:
                     "text": cached["answer"],
                     "sources": cached.get("rag_sources", []),
                     "model_used": cached.get("model_used", "cached"),
+                    "tool_result_count": len(cached.get("tool_results", [])),
                     "cache_hit": True,
                 }
                 return
@@ -458,6 +503,7 @@ class AgentHarness:
                 "warnings": list(set(final_warnings)),
                 "sources": rag_sources,
                 "model_used": selected_model_name,
+                "tool_result_count": len(tool_results),
                 "cache_hit": False,
             }
             yield {
