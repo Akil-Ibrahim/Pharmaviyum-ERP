@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   type ColumnDef,
+  type ColumnFiltersState,
   type SortingState,
   type VisibilityState,
   flexRender,
@@ -14,7 +15,11 @@ import {
 } from '@tanstack/react-table'
 import { RefreshCw } from 'lucide-react'
 import { createFileRoute } from '@tanstack/react-router'
-import { DataTableColumnHeader, DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import {
+  DataTableColumnHeader,
+  DataTablePagination,
+  DataTableToolbar,
+} from '@/components/data-table'
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -165,7 +170,7 @@ function InventoryPage() {
   const [error, setError] = useState<string | null>(null)
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = useState([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState('')
 
   const load = () => {
@@ -232,7 +237,11 @@ function InventoryPage() {
         <Metric title='Inventory items' value={metrics.total} />
         <Metric title='Low stock' value={metrics.low} tone='amber' />
         <Metric title='Out of stock' value={metrics.out} tone='red' />
-        <Metric title='Inventory health' value={metrics.healthy + '%'} tone='green' />
+        <Metric
+          title='Inventory health'
+          value={metrics.healthy + '%'}
+          tone='green'
+        />
       </div>
 
       <Card>
@@ -240,7 +249,8 @@ function InventoryPage() {
           <div className='flex flex-col gap-1'>
             <CardTitle>Stock ledger</CardTitle>
             <p className='text-sm text-muted-foreground'>
-              Review available quantities, reservations, reorder levels, and batch expiry.
+              Review available quantities, reservations, reorder levels, and
+              batch expiry.
             </p>
           </div>
           <DataTableToolbar
