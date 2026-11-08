@@ -142,6 +142,9 @@ export function Pos() {
   const [lotsByProduct, setLotsByProduct] = useState<
     Record<number, InventoryLot[]>
   >({})
+  const [lotsStatusByProduct, setLotsStatusByProduct] = useState<
+    Record<number, 'loading' | 'loaded' | 'error'>
+  >({})
   const [referenceResults, setReferenceResults] = useState<DrugCatalogResult[]>(
     []
   )
@@ -245,19 +248,34 @@ export function Pos() {
   useEffect(() => {
     if (!pharmacyId || cart.length === 0) return
     let cancelled = false
+    const productIds = cart.map((item) => item.id)
+    setLotsStatusByProduct((current) => ({
+      ...current,
+      ...Object.fromEntries(productIds.map((id) => [id, 'loading'])),
+    }))
     Promise.all(
       cart.map(async (item) => {
         try {
           const lots = await apiFetch<InventoryLot[]>(
             `/api/v1/pos/products/${item.id}/lots?pharmacy_id=${pharmacyId}`
           )
-          return [item.id, lots] as const
+          return { productId: item.id, lots, status: 'loaded' as const }
         } catch {
-          return [item.id, []] as const
+          return { productId: item.id, lots: [], status: 'error' as const }
         }
       })
     ).then((entries) => {
-      if (!cancelled) setLotsByProduct(Object.fromEntries(entries))
+      if (cancelled) return
+      setLotsByProduct((current) => ({
+        ...current,
+        ...Object.fromEntries(entries.map(({ productId, lots }) => [productId, lots])),
+      }))
+      setLotsStatusByProduct((current) => ({
+        ...current,
+        ...Object.fromEntries(
+          entries.map(({ productId, status }) => [productId, status])
+        ),
+      }))
     })
     return () => {
       cancelled = true
@@ -270,7 +288,10 @@ export function Pos() {
         setNotice('No available stock.')
         return
       }
-      if (cart.length === 0) setLotsByProduct({})
+      if (cart.length === 0) {
+        setLotsByProduct({})
+        setLotsStatusByProduct({})
+      }
       pendingScanRef.current = ''
       setResults([])
       setReferenceResults([])
@@ -503,6 +524,7 @@ export function Pos() {
       if (result.status === 'completed') {
         setCart([])
         setLotsByProduct({})
+        setLotsStatusByProduct({})
         setCheckoutOpen(false)
         setNotice(`Sale completed. Receipt # ${result.receipt_number}`)
       } else {
@@ -560,6 +582,7 @@ export function Pos() {
               onClick={() => {
                 setCart([])
                 setLotsByProduct({})
+                setLotsStatusByProduct({})
                 setResults([])
                 setReferenceResults([])
                 setLoading(false)
@@ -653,7 +676,15 @@ export function Pos() {
                         <p className='font-medium text-foreground'>
                           Inventory lots (earliest expiry first):
                         </p>
-                        {(lotsByProduct[item.id] || []).length ? (
+                        {lotsStatusByProduct[item.id] === 'loading' ||
+                        !lotsStatusByProduct[item.id] ? (
+                          <p>Loading batch availability…</p>
+                        ) : lotsStatusByProduct[item.id] === 'error' ? (
+                          <p>
+                            Batch availability could not be loaded. Checkout
+                            will verify stock on the server.
+                          </p>
+                        ) : (lotsByProduct[item.id] || []).length ? (
                           getFefoAllocationPreview(
                             lotsByProduct[item.id],
                             item.quantity
@@ -673,18 +704,19 @@ export function Pos() {
                             receipts.
                           </p>
                         )}
-                        {Math.max(
-                          0,
-                          item.quantity -
-                            (lotsByProduct[item.id] || []).reduce(
-                              (sum, lot) => sum + lot.available_quantity,
-                              0
-                            )
-                        ) > 0 && (
-                          <p className='font-medium text-destructive'>
-                            Insufficient batch stock for this quantity.
-                          </p>
-                        )}
+                        {lotsStatusByProduct[item.id] === 'loaded' &&
+                          Math.max(
+                            0,
+                            item.quantity -
+                              (lotsByProduct[item.id] || []).reduce(
+                                (sum, lot) => sum + lot.available_quantity,
+                                0
+                              )
+                          ) > 0 && (
+                            <p className='font-medium text-destructive'>
+                              Insufficient batch stock for this quantity.
+                            </p>
+                          )}
                       </div>
                       <p className='text-xs text-muted-foreground'>
                         Barcode: {item.barcode || item.gtin || 'not specified'}
