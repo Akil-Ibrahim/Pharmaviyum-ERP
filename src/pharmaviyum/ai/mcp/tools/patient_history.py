@@ -159,7 +159,10 @@ async def _count_active_prescriptions(
         result = await session.execute(query)
         return result.scalar_one()
     except Exception as exc:
-        logger.warning("Could not count prescriptions: %s", exc)
+        logger.warning(
+            "Could not count prescriptions",
+            extra={"error_type": type(exc).__name__},
+        )
         return 0
 
 
