@@ -244,9 +244,30 @@ class PharmacistAgent:
                 "iteration": state.get("iteration", 0) + 1,
             }
         except Exception as primary_exc:
-            fallback_model = (
-                self.main_llm if planner_model is self.router_llm else self.router_llm
+            fallback_candidates = [
+                configurable.get("fallback_model"),
+                self.main_llm,
+                self.router_llm,
+            ]
+            fallback_model = next(
+                (
+                    candidate
+                    for candidate in fallback_candidates
+                    if candidate is not None and candidate is not planner_model
+                ),
+                None,
             )
+            if fallback_model is None:
+                logger.error(
+                    "Planner model failed and no distinct fallback is configured",
+                    extra={"primary_error_type": type(primary_exc).__name__},
+                )
+                return {
+                    "messages": [
+                        AIMessage(content="Unable to safely plan the request.")
+                    ],
+                    "iteration": self.MAX_ITERATIONS,
+                }
             try:
                 with tracer.start_as_current_span(
                     "mortarium.model_router.fallback"
@@ -469,6 +490,7 @@ class PharmacistAgent:
         context: dict[str, Any] | None = None,
         thread_id: str | None = None,
         selected_model: Any | None = None,
+        fallback_model: Any | None = None,
     ) -> dict[str, Any]:
         context = context or {}
         initial_state: AgentState = {
@@ -487,6 +509,8 @@ class PharmacistAgent:
         }
         if selected_model is not None:
             configurable["selected_model"] = selected_model
+        if fallback_model is not None:
+            configurable["fallback_model"] = fallback_model
         config = {"configurable": configurable}
         try:
             final_state = await self.graph.ainvoke(initial_state, config=config)
@@ -524,6 +548,7 @@ class PharmacistAgent:
         context: dict[str, Any] | None = None,
         thread_id: str | None = None,
         selected_model: Any | None = None,
+        fallback_model: Any | None = None,
     ):
         context = context or {}
         initial_state: AgentState = {
@@ -540,6 +565,8 @@ class PharmacistAgent:
         configurable = {"thread_id": self._thread_id(thread_id, context)}
         if selected_model is not None:
             configurable["selected_model"] = selected_model
+        if fallback_model is not None:
+            configurable["fallback_model"] = fallback_model
         config = {"configurable": configurable}
         async for event in self.graph.astream(
             initial_state, config=config, stream_mode="updates"
