@@ -2,7 +2,7 @@
 LangChain Callback Manager for LangSmith Integration.
 
 Best practice 2026:
-- Automatic LangSmith tracing for all LLM calls
+- Metadata-only callbacks with explicit content tracing disabled by default
 - Custom callbacks for metrics collection
 - Correlation with OpenTelemetry traces
 """
@@ -22,7 +22,7 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
     Custom callback handler for Pharmaviyum AI agent.
 
     Integrates:
-    - LangSmith tracing (automatic via environment)
+    - Operational metrics without prompt or tool-payload logging
     - Prometheus metrics (tool calls, latency)
     - OpenTelemetry spans (correlation with trace_id)
     """
@@ -82,7 +82,6 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
         logger.info(
             f"Tool execution started: {tool_name}",
             extra={
-                "session_id": self.session_id,
                 "trace_id": self.trace_id,
                 "tool": tool_name,
             },
@@ -94,7 +93,6 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
         logger.info(
             f"Tool execution completed: {tool_name}",
             extra={
-                "session_id": self.session_id,
                 "trace_id": self.trace_id,
                 "tool": tool_name,
             },
