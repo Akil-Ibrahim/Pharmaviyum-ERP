@@ -102,8 +102,9 @@ class DocumentLoader:
                 "pdf_info": pdf_reader.metadata,
             }
             logger.info(
-                f"Loaded PDF ({len(content)} chars, "
-                f"{metadata['page_count']} pages)"
+                "Loaded PDF (%s chars, %s pages)",
+                len(content),
+                metadata["page_count"],
             )
             return LoadedDocument(
                 str(uuid4()), content, str(file_path), doc_type, metadata, language
