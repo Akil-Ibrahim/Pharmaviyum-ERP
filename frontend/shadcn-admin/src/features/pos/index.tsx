@@ -263,7 +263,9 @@ export function Pos() {
       if (cancelled) return
       setLotsByProduct((current) => ({
         ...current,
-        ...Object.fromEntries(entries.map(({ productId, lots }) => [productId, lots])),
+        ...Object.fromEntries(
+          entries.map(({ productId, lots }) => [productId, lots])
+        ),
       }))
       setLotsStatusByProduct((current) => ({
         ...current,
