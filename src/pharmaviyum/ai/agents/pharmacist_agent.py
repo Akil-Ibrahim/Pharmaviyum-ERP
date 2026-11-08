@@ -383,6 +383,13 @@ class PharmacistAgent:
                 "tool_calls_made": len(final_state.get("tool_results", [])),
                 "iterations": final_state.get("iteration", 0),
                 "tool_results": final_state.get("tool_results", []),
+                "model_used": (
+                    getattr(selected_model, "model_name", None)
+                    or getattr(selected_model, "model", None)
+                    or getattr(self.main_llm, "model_name", None)
+                    or getattr(self.main_llm, "model", None)
+                    or "configured-main"
+                ),
                 "rag_sources": final_state.get("rag_sources", []),
             }
         except Exception as exc:
