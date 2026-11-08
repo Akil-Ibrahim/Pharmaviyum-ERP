@@ -394,8 +394,9 @@ export function Pos() {
           </div>
         )}
 
-        {cart.length > 0 && (
-          <Card className='min-h-0 flex-1 overflow-y-auto xl:sticky xl:top-4 xl:max-h-[calc(100vh-12rem)] xl:w-full xl:shadow-lg'>
+        <div className='grid min-w-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] xl:items-start'>
+          {cart.length > 0 && (
+            <Card className='order-2 min-w-0 xl:sticky xl:top-4 xl:order-none xl:col-start-2 xl:row-start-1 xl:max-h-[calc(100svh-7rem)] xl:overflow-y-auto xl:shadow-lg'>
             <CardHeader className='pb-3'>
               <div className='flex items-center justify-between'>
                 <CardTitle>Cart</CardTitle>
@@ -507,8 +508,8 @@ export function Pos() {
           </Card>
         )}
 
-        {sale?.status === 'completed' && (
-          <Card>
+          {sale?.status === 'completed' && (
+            <Card className='order-3 xl:col-span-2'>
             <CardContent className='flex items-center justify-between gap-3 p-4'>
               <div className='flex items-center gap-2'>
                 <Receipt className='size-5 text-primary' />
@@ -535,11 +536,11 @@ export function Pos() {
           </Card>
         )}
 
-        <section
-          aria-label='Medicine search'
-          className='flex min-h-[60vh] min-w-0 flex-1 flex-col justify-start py-5'
-        >
-          <div className='w-full'>
+          <section
+            aria-label='Medicine search'
+            className='order-1 flex min-h-[60vh] min-w-0 flex-col justify-start py-5 xl:col-start-1 xl:row-start-1'
+          >
+            <div className='w-full'>
             <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
               <div>
                 <h2 className='text-base font-semibold'>Product catalog</h2>
@@ -703,7 +704,8 @@ export function Pos() {
               </div>
             )}
           </div>
-        </section>
+          </section>
+        </div>
       </div>
 
       {receivingOpen && (
