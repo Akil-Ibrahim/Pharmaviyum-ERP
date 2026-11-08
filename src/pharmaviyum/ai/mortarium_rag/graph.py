@@ -689,4 +689,4 @@ class LangGraphRAG:
         digest = hmac.new(
             secret.encode("utf-8"), scope.encode("utf-8"), hashlib.sha256
         ).hexdigest()
-        return f"rag:{digest}"
+        return f"rag:v2:{digest}"
