@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from unittest.mock import MagicMock
 
 from src.pharmaviyum.ai.config import OTelSettings
 
@@ -64,3 +65,29 @@ def test_sensitive_client_spans_are_opt_in_and_never_enabled_in_production():
     assert _allow_sensitive_client_instrumentation("development", False) is False
     assert _allow_sensitive_client_instrumentation("production", True) is False
     assert _allow_sensitive_client_instrumentation("prod", True) is False
+
+
+def test_custom_span_attributes_are_allowlisted():
+    from src.pharmaviyum.ai.observability.tracer import ObservabilityTracer
+
+    span = MagicMock()
+    span_context = MagicMock()
+    span_context.__enter__.return_value = span
+    tracer = MagicMock()
+    tracer.start_as_current_span.return_value = span_context
+    observability = ObservabilityTracer.__new__(ObservabilityTracer)
+    observability.tracer = tracer
+
+    with observability.start_span(
+        "mortarium.test",
+        **{
+            "ai.rag.source_count": 3,
+            "ai.model_name": "test-model",
+            "patient.id": 123,
+            "prompt": "sensitive clinical query",
+        },
+    ):
+        pass
+
+    recorded = {call.args[0] for call in span.set_attribute.call_args_list}
+    assert recorded == {"ai.rag.source_count", "ai.model_name"}
