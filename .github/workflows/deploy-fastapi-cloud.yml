@@ -56,8 +56,11 @@ jobs:
         env:
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
 
-      - name: Set up uv
+      - name: Set up uv and managed Python
         uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.14.7"
+          enable-cache: true
 
       - name: Verify CI passed for this exact main commit
         env:
