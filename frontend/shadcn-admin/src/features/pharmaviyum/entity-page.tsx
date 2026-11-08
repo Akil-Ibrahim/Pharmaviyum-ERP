@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Search, RefreshCw } from 'lucide-react'
 import { apiFetch } from '@/lib/api-client'
+import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -90,18 +91,23 @@ export function EntityPage({
 
   return (
     <div className='space-y-6 p-6'>
-      <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>
-        <div>
-          <h1 className='text-2xl font-bold tracking-tight'>{title}</h1>
-          <p className='text-muted-foreground'>{description}</p>
-        </div>
-        {endpoint && (
-          <Button variant='outline' size='sm' onClick={load} disabled={loading}>
-            <RefreshCw className='mr-2 size-4' />
-            Refresh
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title={title}
+        description={description}
+        actions={
+          endpoint ? (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={load}
+              disabled={loading}
+            >
+              <RefreshCw className='mr-2 size-4' />
+              Refresh
+            </Button>
+          ) : undefined
+        }
+      />
 
       {status && <Badge variant='secondary'>{status}</Badge>}
 
