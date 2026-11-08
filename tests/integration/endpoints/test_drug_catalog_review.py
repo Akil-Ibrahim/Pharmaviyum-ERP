@@ -203,6 +203,44 @@ class TestDrugCatalogSourcePromotion:
             for item in search_response.json()
         )
 
+
+    @pytest.mark.parametrize(
+        "excluded_payload",
+        [
+            {
+                "ingredient_name": "paracetamol",
+                "product_name": "Teva Paracetamol 500 mg",
+                "manufacturer": "Teva",
+            },
+            {
+                "ingredient_name": "paracetamol",
+                "product_name": "Paracetamol 500 mg",
+                "authorization_country": "Israel",
+            },
+        ],
+    )
+    async def test_promotion_rejects_excluded_medicines(
+        self,
+        authenticated_client: AsyncClient,
+        test_db: AsyncSession,
+        excluded_payload: dict,
+    ):
+        record = await create_source_record(test_db)
+        record.normalized_payload = excluded_payload
+        await test_db.flush()
+
+        response = await authenticated_client.patch(
+            f"/api/v1/drug-catalog/sources/{record.id}/review",
+            json={
+                "review_status": "approved",
+                "create_catalog_entry": True,
+            },
+        )
+
+        assert response.status_code == 422
+        assert "excluded by the catalog policy" in response.text
+        assert record.review_status == "pending_review"
+
     async def test_promotion_rejects_source_without_product_name(
         self,
         authenticated_client: AsyncClient,
