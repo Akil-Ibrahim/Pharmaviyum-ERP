@@ -179,3 +179,46 @@ async def test_run_sets_explicit_langgraph_recursion_limit(rag: LangGraphRAG):
         QueryContext(user_id="user-1", pharmacy_id=1),
     )
     assert response.answer == "No answer."
+
+
+@pytest.mark.asyncio
+async def test_retrieval_fanout_respects_concurrency_limit(rag: LangGraphRAG):
+    import asyncio
+
+    class _Embeddings:
+        async def embed(self, query):
+            return [0.1, 0.2]
+
+    class _Store:
+        def __init__(self):
+            self.active = 0
+            self.max_active = 0
+
+        async def hybrid_search(self, query, query_embedding, top_k, filters):
+            self.active += 1
+            self.max_active = max(self.max_active, self.active)
+            try:
+                await asyncio.sleep(0.01)
+                return []
+            finally:
+                self.active -= 1
+
+    store = _Store()
+    rag.embeddings = _Embeddings()
+    rag.vector_store = store
+    rag.max_retrieval_concurrency = 2
+    rag.retrieval_top_k = 5
+    rag.max_context_docs = 10
+    context = QueryContext(user_id="user-1", pharmacy_id=7)
+
+    result = await rag.retrieve_node(
+        {
+            "question": "medicine question",
+            "context": context,
+            "transformed_queries": ["q1", "q2", "q3", "q4"],
+        }
+    )
+
+    assert result["retrieved"] == []
+    assert store.max_active == 2
+    assert store.active == 0
