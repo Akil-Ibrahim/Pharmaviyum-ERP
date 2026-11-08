@@ -214,7 +214,7 @@ class DialogueMemory:
         pipe.setex(summary_key, self.ttl, summary)
         pipe.ltrim(short_term_key, to_summarize_count, -1)
         await pipe.execute()
-        logger.info("Summarized and archived memory for session %s", session_id)
+        logger.info("Summarized and archived conversation memory")
 
     async def save_episodic_fact(
         self,
