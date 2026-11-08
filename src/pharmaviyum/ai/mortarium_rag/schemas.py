@@ -53,8 +53,18 @@ class Document(BaseModel):
         "patient_record",
     ]
     metadata: dict[str, Any] = Field(default_factory=dict)
-    country: str | None = None
-    language: str = "en"
+    country: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=3,
+        pattern=r"^[A-Za-z]{2,3}$",
+    )
+    language: str = Field(
+        default="en",
+        min_length=2,
+        max_length=8,
+        pattern=r"^[A-Za-z]{2,3}(?:-[A-Za-z]{2,4})?$",
+    )
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
