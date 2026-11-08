@@ -95,9 +95,12 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
                     )
                 )
                 logger.info("OpenTelemetry OTLP exporter configured")
-            except Exception:
+            except Exception as exc:
                 # Observability must not prevent the pharmacy API from starting.
-                logger.exception("OpenTelemetry exporter initialization failed")
+                logger.error(
+                    "OpenTelemetry exporter initialization failed",
+                    extra={"error_type": type(exc).__name__},
+                )
         else:
             logger.warning(
                 "OpenTelemetry is enabled without an OTLP endpoint; spans will "
@@ -164,8 +167,11 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
             try:
                 instrument()
                 logger.info("OpenTelemetry %s instrumentation enabled", name)
-            except Exception:
-                logger.exception("OpenTelemetry %s instrumentation setup failed", name)
+            except Exception as exc:
+                logger.error(
+                    "OpenTelemetry instrumentation setup failed",
+                    extra={"instrumentation": name, "error_type": type(exc).__name__},
+                )
         _instrumented = True
     return _provider
 
@@ -177,11 +183,17 @@ def shutdown_opentelemetry() -> None:
     if _provider is not None:
         try:
             _provider.force_flush(timeout_millis=5_000)
-        except Exception:
-            logger.exception("OpenTelemetry span flush failed")
+        except Exception as exc:
+            logger.error(
+                "OpenTelemetry span flush failed",
+                extra={"error_type": type(exc).__name__},
+            )
         try:
             _provider.shutdown()
-        except Exception:
-            logger.exception("OpenTelemetry provider shutdown failed")
+        except Exception as exc:
+            logger.error(
+                "OpenTelemetry provider shutdown failed",
+                extra={"error_type": type(exc).__name__},
+            )
         _provider = None
         _instrumented = False
