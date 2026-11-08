@@ -61,6 +61,7 @@ async def lifespan(app: FastAPI):
         shutdown_opentelemetry()
         await close_redis()
 
+
 app = FastAPI(
     title="Pharmaviyum AI API",
     description="Enterprise AI/LLM layer for pharmaceutical CRM.",
