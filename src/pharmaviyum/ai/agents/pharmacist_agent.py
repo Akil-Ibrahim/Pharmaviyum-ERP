@@ -260,7 +260,6 @@ class PharmacistAgent:
             )
             try:
                 with tracer.start_as_current_span("mortarium.mcp.tool") as span:
-                    span.set_attribute("mcp.tool_name", str(name)[:64])
                     result = await self.mcp_client.call_tool(
                         tool_name=name,
                         input_data=args,
