@@ -278,5 +278,12 @@ class DialogueMemory:
         pipe.delete(f"{session_prefix}:summary")
         pipe.delete(f"{session_prefix}:episodic")
         pipe.delete(f"{session_prefix}:archive")
+        # Explicit user-requested clearing also removes exact legacy keys. They
+        # are never read or used as a compatibility fallback.
+        legacy_prefix = f"agent:memory:{session_id}"
+        pipe.delete(f"{legacy_prefix}:messages")
+        pipe.delete(f"{legacy_prefix}:summary")
+        pipe.delete(f"{legacy_prefix}:episodic")
+        pipe.delete(f"{legacy_prefix}:archive")
         await pipe.execute()
         logger.info("Cleared all agent memory tiers")
