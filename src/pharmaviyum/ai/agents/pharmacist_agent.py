@@ -242,6 +242,11 @@ class PharmacistAgent:
             return {
                 "messages": [response],
                 "iteration": state.get("iteration", 0) + 1,
+                "model_used": (
+                    getattr(planner_model, "model_name", None)
+                    or getattr(planner_model, "model", None)
+                    or "configured-model"
+                ),
             }
         except Exception as primary_exc:
             fallback_candidates = [
@@ -267,6 +272,7 @@ class PharmacistAgent:
                         AIMessage(content="Unable to safely plan the request.")
                     ],
                     "iteration": self.MAX_ITERATIONS,
+                    "model_used": "none",
                 }
             try:
                 with tracer.start_as_current_span(
@@ -284,6 +290,11 @@ class PharmacistAgent:
                 return {
                     "messages": [fallback_response],
                     "iteration": state.get("iteration", 0) + 1,
+                    "model_used": (
+                        getattr(fallback_model, "model_name", None)
+                        or getattr(fallback_model, "model", None)
+                        or "configured-fallback"
+                    ),
                     "warnings": list(state.get("warnings", []))
                     + ["model_fallback_used"],
                 }
@@ -300,6 +311,7 @@ class PharmacistAgent:
                         AIMessage(content="Unable to safely plan the request.")
                     ],
                     "iteration": self.MAX_ITERATIONS,
+                    "model_used": "none",
                 }
 
     async def executor_node(self, state: AgentState) -> dict[str, Any]:
@@ -503,6 +515,7 @@ class PharmacistAgent:
             "rag_context": "",
             "rag_sources": [],
             "iteration": 0,
+            "model_used": "none",
         }
         configurable: dict[str, Any] = {
             "thread_id": self._thread_id(thread_id, context)
@@ -521,13 +534,12 @@ class PharmacistAgent:
                 "tool_calls_made": len(final_state.get("tool_results", [])),
                 "iterations": final_state.get("iteration", 0),
                 "tool_results": final_state.get("tool_results", []),
-                "model_used": (
-                    getattr(selected_model, "model_name", None)
-                    or getattr(selected_model, "model", None)
-                    or getattr(self.main_llm, "model_name", None)
-                    or getattr(self.main_llm, "model", None)
-                    or "configured-main"
-                ),
+                "model_used": final_state.get("model_used")
+                or getattr(selected_model, "model_name", None)
+                or getattr(selected_model, "model", None)
+                or getattr(self.main_llm, "model_name", None)
+                or getattr(self.main_llm, "model", None)
+                or "configured-main",
                 "rag_sources": final_state.get("rag_sources", []),
             }
         except Exception as exc:
@@ -561,6 +573,7 @@ class PharmacistAgent:
             "rag_context": "",
             "rag_sources": [],
             "iteration": 0,
+            "model_used": "none",
         }
         configurable = {"thread_id": self._thread_id(thread_id, context)}
         if selected_model is not None:
