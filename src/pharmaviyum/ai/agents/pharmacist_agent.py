@@ -151,7 +151,9 @@ class PharmacistAgent:
                         "country": item.chunk.metadata.get("country"),
                         "language": item.chunk.metadata.get("language"),
                     },
-                    "relevance_score": float(item.rerank_score or item.score),
+                    "relevance_score": min(
+                        1.0, max(0.0, float(item.rerank_score or item.score))
+                    ),
                 }
                 for item in response.sources
             ]
