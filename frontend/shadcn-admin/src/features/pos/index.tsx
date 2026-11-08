@@ -374,7 +374,7 @@ export function Pos() {
         )}
 
         {cart.length > 0 && (
-          <Card className='fixed right-5 top-24 z-20 hidden max-h-[calc(100vh-7.5rem)] w-[min(420px,34vw)] overflow-y-auto shadow-lg xl:block'>
+          <Card className='min-h-0 flex-1 overflow-y-auto xl:fixed xl:right-5 xl:top-24 xl:z-20 xl:max-h-[calc(100vh-7.5rem)] xl:w-[min(420px,34vw)] xl:shadow-lg'>
             <CardHeader className='pb-3'>
               <div className='flex items-center justify-between'>
                 <CardTitle>Cart</CardTitle>
