@@ -394,9 +394,13 @@ export function Pos() {
           </div>
         )}
 
-        <div className='grid min-w-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] xl:items-start'>
+        <div
+          className='grid min-w-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] xl:items-start'
+        >
           {cart.length > 0 && (
-            <Card className='order-2 min-w-0 xl:sticky xl:top-4 xl:order-none xl:col-start-2 xl:row-start-1 xl:max-h-[calc(100svh-7rem)] xl:overflow-y-auto xl:shadow-lg'>
+            <Card
+              className='order-2 min-w-0 xl:sticky xl:top-4 xl:order-none xl:col-start-2 xl:row-start-1 xl:max-h-[calc(100svh-7rem)] xl:overflow-y-auto xl:shadow-lg'
+            >
               <CardHeader className='pb-3'>
                 <div className='flex items-center justify-between'>
                   <CardTitle>Cart</CardTitle>
@@ -425,8 +429,8 @@ export function Pos() {
                           .join(' · ')}
                       </p>
                       <p className='mt-1 text-sm'>
-                        Price: {money(item.price)} · Available: {item.stock} · In
-                        cart: {item.quantity} units
+                        Price: {money(item.price)} · Available: {item.stock} ·
+                        In cart: {item.quantity} units
                       </p>
                       <div className='mt-2 space-y-1 text-xs text-muted-foreground'>
                         <p className='font-medium text-foreground'>
@@ -435,8 +439,8 @@ export function Pos() {
                         {(lotsByProduct[item.id] || []).length ? (
                           lotsByProduct[item.id].map((lot) => (
                             <p key={lot.inventory_id}>
-                              Batch: {lot.lot_number || 'no number'} · Expires:{' '}
-                              {formatExpiry(lot.expiry_date)} · Available:{' '}
+                              Batch: {lot.lot_number || 'no number'} ·
+                              Expires: {formatExpiry(lot.expiry_date)} · Available:{' '}
                               {lot.available_quantity} units
                             </p>
                           ))
@@ -545,8 +549,8 @@ export function Pos() {
                 <div>
                   <h2 className='text-base font-semibold'>Product catalog</h2>
                   <p className='text-xs text-muted-foreground'>
-                    Search by product name, active ingredient, brand, strength or
-                    barcode
+                    Search by product name, active ingredient, brand, strength
+                    or barcode
                   </p>
                 </div>
                 <Badge variant='secondary'>Live pharmacy inventory</Badge>
@@ -692,9 +696,9 @@ export function Pos() {
                           .join(' · ')}
                       </p>
                       <p className='text-xs text-muted-foreground'>
-                        Barcode / GTIN: {item.gtin || 'not available in source'} ·
-                        Stock and expiry are available only after a pharmacy batch
-                        is recorded
+                        Barcode / GTIN: {item.gtin || 'not available in source'}
+                        · Stock and expiry are available only after a pharmacy
+                        batch is recorded
                       </p>
                       <Badge variant='outline' className='mt-2'>
                         Reference record — not a pharmacy product
