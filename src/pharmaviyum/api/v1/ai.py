@@ -178,6 +178,18 @@ async def query_agent(
                         }
                         for index, item in enumerate(result.get("tool_results", []))
                         if item.get("success")
+                    ]
+                    + [
+                        {
+                            "source_id": item.get("source_id", "rag:unknown"),
+                            "source_type": "rag_chunk",
+                            "content": str(item.get("content", ""))[:500],
+                            "metadata": item.get("metadata", {}),
+                            "relevance_score": min(
+                                1.0, max(0.0, float(item.get("relevance_score", 0.0)))
+                            ),
+                        }
+                        for item in result.get("rag_sources", [])
                     ],
                 ),
                 tool_calls=cast(
