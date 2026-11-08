@@ -125,6 +125,10 @@ class LangGraphRAG:
                             "ai.rag.warning_count", len(result["warnings"])
                         )
                     return result
+                except asyncio.CancelledError:
+                    span.set_attribute("ai.execution_success", False)
+                    span.set_attribute("ai.stream.cancelled", True)
+                    raise
                 except Exception as exc:
                     error_type = type(exc).__name__
                     span.set_attribute("ai.execution_success", False)
