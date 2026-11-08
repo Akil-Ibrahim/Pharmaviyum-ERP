@@ -54,11 +54,12 @@ async def lifespan(app: FastAPI):
             await close_redis()
             raise
 
-    yield
-
-    logger.info("Shutting down Pharmaviyum AI Application")
-    shutdown_opentelemetry()
-    await close_redis()
+    try:
+        yield
+    finally:
+        logger.info("Shutting down Pharmaviyum AI Application")
+        shutdown_opentelemetry()
+        await close_redis()
 
 app = FastAPI(
     title="Pharmaviyum AI API",
