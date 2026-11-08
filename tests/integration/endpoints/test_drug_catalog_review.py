@@ -170,16 +170,16 @@ class TestDrugCatalogSourcePromotion:
         assert response.status_code == 200, response.text
         data = response.json()
         assert data["review_status"] == "approved"
-        assert data["matched_drug_reference_id"] is not None
+        assert data["matched_drug_reference_id"] is None
         assert data["matched_medicinal_product_id"] is not None
 
-        reference = await test_db.get(DrugReference, data["matched_drug_reference_id"])
         product = await test_db.get(
             MedicinalProduct, data["matched_medicinal_product_id"]
         )
+        assert product is not None
+        reference = await test_db.get(DrugReference, product.drug_reference_id)
         assert reference is not None
         assert reference.inn_name == "paracetamol"
-        assert product is not None
         assert product.drug_reference_id == reference.id
         assert product.strength == "500 mg"
         assert (
