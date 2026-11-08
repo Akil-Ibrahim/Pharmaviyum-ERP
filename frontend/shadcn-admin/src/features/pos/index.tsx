@@ -9,7 +9,6 @@ import {
   X,
   Receipt,
   ScanBarcode,
-  Command as CommandIcon,
   PackageCheck,
   ShoppingCart,
 } from 'lucide-react'
