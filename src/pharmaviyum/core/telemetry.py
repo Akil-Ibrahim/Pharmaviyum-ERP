@@ -19,13 +19,11 @@ ConsoleSpanExporter: Any
 Resource: Any
 FastAPIInstrumentor: Any
 SQLAlchemyInstrumentor: Any
-RedisInstrumentor: Any
 HTTPXClientInstrumentor: Any
 
 try:
     from opentelemetry import trace
     from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
-    from opentelemetry.instrumentation.redis import RedisInstrumentor
     from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
@@ -45,7 +43,6 @@ except Exception:  # pragma: no cover - compatibility fallback for Python 3.14
     Resource = None
     FastAPIInstrumentor = None
     SQLAlchemyInstrumentor = None
-    RedisInstrumentor = None
     HTTPXClientInstrumentor = None
 
 
@@ -108,8 +105,6 @@ def setup_telemetry(app=None, engine=None) -> None:
         if engine and SQLAlchemyInstrumentor is not None:
             SQLAlchemyInstrumentor().instrument(engine=engine)
 
-        if RedisInstrumentor is not None:
-            RedisInstrumentor().instrument()
         if HTTPXClientInstrumentor is not None:
             HTTPXClientInstrumentor().instrument()
     except Exception:
