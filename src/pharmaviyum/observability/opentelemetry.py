@@ -32,6 +32,11 @@ _provider: TracerProvider | None = None
 _instrumented = False
 
 
+def _is_production_environment(environment: str) -> bool:
+    """Recognize production aliases consistently across telemetry policies."""
+    return environment.strip().lower() in {"production", "prod"}
+
+
 def _allow_sensitive_client_instrumentation(
     environment: str, explicitly_enabled: bool
 ) -> bool:
@@ -71,13 +76,12 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
                 if parsed_endpoint.scheme in {"http", "https"}:
                     target = parsed_endpoint.netloc
                     insecure = parsed_endpoint.scheme == "http"
-                    if insecure and parsed_endpoint.hostname not in {
-                        "localhost",
-                        "127.0.0.1",
-                        "::1",
-                        "otel-collector",
-                    }:
-                        raise ValueError("Non-local OTLP export requires HTTPS")
+                    if insecure and (
+                        _is_production_environment(environment)
+                        or parsed_endpoint.hostname
+                        not in {"localhost", "127.0.0.1", "::1", "otel-collector"}
+                    ):
+                        raise ValueError("Production and non-local OTLP export require HTTPS")
                 else:
                     target = endpoint
                     insecure = False
@@ -114,7 +118,9 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
             )
         ]
 
-        environment = os.getenv("ENVIRONMENT", "").strip().lower()
+        environment = str(
+            getattr(settings.environment, "value", settings.environment)
+        ).strip().lower()
         allow_sensitive_client_spans = _allow_sensitive_client_instrumentation(
             environment,
             os.getenv("OTEL_ENABLE_SENSITIVE_CLIENT_INSTRUMENTATION", "false").lower()
