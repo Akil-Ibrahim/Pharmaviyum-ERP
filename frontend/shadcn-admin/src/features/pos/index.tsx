@@ -105,6 +105,18 @@ type SaleResult = {
   status: string
   total: string
   payments: { id: number; method: string; status: string }[]
+  items: {
+    id: number
+    product_name: string
+    quantity: number
+    allocations: {
+      id: number
+      inventory_id: number
+      lot_number: string | null
+      expires_at: string | null
+      quantity: number
+    }[]
+  }[]
 }
 const money = (value: number) =>
   new Intl.NumberFormat('en-US', {
@@ -754,6 +766,27 @@ export function Pos() {
                     <p className='text-sm text-muted-foreground'>
                       Sale recorded · {money(Number(sale.total))}
                     </p>
+                    <div className='mt-2 space-y-1 text-xs text-muted-foreground'>
+                      {sale.items.map((item) => (
+                        <div key={item.id}>
+                          <p className='font-medium text-foreground'>
+                            {item.product_name} × {item.quantity}
+                          </p>
+                          {item.allocations.map((allocation) => (
+                            <p key={allocation.id}>
+                              Batch {allocation.lot_number || 'no number'} ·
+                              {allocation.expires_at
+                                ? ' expires ' +
+                                  new Date(
+                                    allocation.expires_at
+                                  ).toLocaleDateString('en-US')
+                                : ' no expiry date'}{' '}
+                              · {allocation.quantity} units
+                            </p>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <Button
