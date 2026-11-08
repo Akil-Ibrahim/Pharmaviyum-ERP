@@ -225,15 +225,15 @@ class PharmacistAgent:
         )
         reference_context = HumanMessage(
             content=(
-                "<untrusted_reference_context>\\n"
-                f"Country: {html.escape(str(context.get('country', 'VN'))[:32], quote=False)}\\n"
-                f"Language: {html.escape(str(context.get('language', 'vi'))[:16], quote=False)}\\n"
-                "<historical_memory>\\n"
+                "<untrusted_reference_context>\n"
+                f"Country: {html.escape(str(context.get('country', 'VN'))[:32], quote=False)}\n"
+                f"Language: {html.escape(str(context.get('language', 'vi'))[:16], quote=False)}\n"
+                "<historical_memory>\n"
                 f"{html.escape(str(context.get('memory_context', '')), quote=False)}"
-                "\\n</historical_memory>\\n"
-                "<retrieved_rag_evidence>\\n"
+                "\n</historical_memory>\n"
+                "<retrieved_rag_evidence>\n"
                 f"{html.escape(str(state.get('rag_context', '')), quote=False)}"
-                "\\n</retrieved_rag_evidence>\\n"
+                "\n</retrieved_rag_evidence>\n"
                 "</untrusted_reference_context>"
             ),
             name="untrusted_reference_context",
