@@ -139,8 +139,8 @@ class QueryContext(BaseModel):
 
     model_config = ConfigDict(frozen=True)
     user_id: str = Field(..., strict=True, min_length=1, max_length=128)
-    pharmacy_id: int = Field(..., gt=0)
-    patient_id: int | None = Field(default=None, gt=0)
+    pharmacy_id: int = Field(..., strict=True, gt=0)
+    patient_id: int | None = Field(default=None, strict=True, gt=0)
     prescription_id: int | None = Field(default=None, strict=True, gt=0)
     country: str | None = None
     language: str = "en"
