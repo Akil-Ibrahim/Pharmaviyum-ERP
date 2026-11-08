@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import re
 import time
-from typing import Any, Literal
+from typing import Any, Awaitable, Callable, Literal
 from uuid import uuid4
 
 from langchain_core.callbacks import UsageMetadataCallbackHandler
@@ -91,7 +91,10 @@ class LangGraphRAG:
         self.graph = self._build_graph(checkpointer)
 
     @staticmethod
-    def _traced_node(name: str, node):
+    def _traced_node(
+        name: str,
+        node: Callable[[RAGState], Awaitable[dict[str, Any]]],
+    ) -> Callable[[RAGState], Awaitable[dict[str, Any]]]:
         """Wrap a LangGraph node with PHI-safe, low-cardinality telemetry."""
 
         async def execute(state: RAGState) -> dict[str, Any]:
