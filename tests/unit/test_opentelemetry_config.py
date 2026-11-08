@@ -53,3 +53,14 @@ def test_otel_is_disabled_by_default(monkeypatch: pytest.MonkeyPatch):
     settings = OTelSettings(_env_file=None)
 
     assert settings.enabled is False
+
+
+def test_sensitive_client_spans_are_opt_in_and_never_enabled_in_production():
+    from src.pharmaviyum.observability.opentelemetry import (
+        _allow_sensitive_client_instrumentation,
+    )
+
+    assert _allow_sensitive_client_instrumentation("development", True) is True
+    assert _allow_sensitive_client_instrumentation("development", False) is False
+    assert _allow_sensitive_client_instrumentation("production", True) is False
+    assert _allow_sensitive_client_instrumentation("prod", True) is False
