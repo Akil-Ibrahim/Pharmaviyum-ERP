@@ -5,14 +5,8 @@ from __future__ import annotations
 import os
 from contextlib import contextmanager
 from typing import Any, Iterator, Literal
-from urllib.parse import urlsplit
-
 from langsmith import Client as LangSmithClient
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, Status, StatusCode
 
 from src.pharmaviyum.core.logging import logger
@@ -71,40 +65,18 @@ class ObservabilityTracer:
         self.tracer = trace.get_tracer(service_name)
 
     def _init_otel(self, endpoint: str | None) -> None:
-        """Initialize OTLP export; production requires a TLS endpoint."""
-        resource = Resource.create(
-            {
-                "service.name": self.service_name,
-                "deployment.environment": os.getenv("ENVIRONMENT", "development"),
-            }
-        )
-        provider = TracerProvider(resource=resource)
-        try:
-            trace.set_tracer_provider(provider)
-        except Exception:
-            pass
+        """Use the application-owned OpenTelemetry provider.
 
-        otlp_endpoint = endpoint or os.getenv(
-            "OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317"
-        )
-        if os.getenv("OTEL_ENABLED", "false").lower() != "true":
+        The FastAPI application configures one process-wide TracerProvider and
+        OTLP exporter. Creating another provider here would cause duplicate or
+        ignored global-provider registration depending on import order.
+        """
+        if os.getenv("OTEL_ENABLED", "false").lower() == "true":
+            logger.info(
+                "AI spans will use the application-managed OpenTelemetry provider"
+            )
+        else:
             logger.info("OpenTelemetry exporter disabled")
-            return
-        try:
-            parsed = urlsplit(otlp_endpoint)
-            if _is_production() and parsed.scheme != "https":
-                raise ValueError("Production OTLP export requires HTTPS")
-            exporter = OTLPSpanExporter(
-                endpoint=otlp_endpoint,
-                insecure=parsed.scheme != "https",
-            )
-            provider.add_span_processor(BatchSpanProcessor(exporter))
-            logger.info("OpenTelemetry initialized")
-        except Exception as exc:
-            logger.warning(
-                "OpenTelemetry exporter initialization failed",
-                extra={"error_type": type(exc).__name__},
-            )
 
     def _init_langsmith(self, api_key: str | None, project: str) -> None:
         """Initialize manual LangSmith client without implicit content tracing."""
