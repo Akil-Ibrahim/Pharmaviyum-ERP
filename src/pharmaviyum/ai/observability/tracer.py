@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from contextlib import contextmanager
 from typing import Any, Iterator, Literal
+
 from langsmith import Client as LangSmithClient
 from opentelemetry import trace
 from opentelemetry.trace import Span, Status, StatusCode
