@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import html
 import re
 import time
@@ -660,5 +661,12 @@ class LangGraphRAG:
 
     @staticmethod
     def _thread_id(thread_id: str | None, context: QueryContext) -> str:
+        """Create a stable opaque checkpoint key without persisting raw identities."""
+        if thread_id is not None and (
+            not thread_id.strip() or len(thread_id) > 128
+        ):
+            raise ValueError("RAG thread identifier must be 1–128 non-whitespace characters")
         raw = thread_id or str(uuid4())
-        return f"rag:{context.pharmacy_id}:{context.user_id}:{raw}"
+        scope = f"{context.pharmacy_id}:{context.user_id}:{raw}"
+        digest = hashlib.sha256(scope.encode("utf-8")).hexdigest()
+        return f"rag:{digest}"
