@@ -24,9 +24,7 @@ describe('Pharmaviyum sidebar navigation', () => {
     const operations = sidebarData.navGroups.find(
       (group) => group.title === 'Operations'
     )
-    const pharmacy = operations?.items.find(
-      (item) => item.title === 'Pharmacy'
-    )
+    const pharmacy = operations?.items.find((item) => item.title === 'Pharmacy')
 
     expect(pharmacy?.items?.map((item) => item.title)).toEqual([
       'Inventory',
@@ -69,9 +67,11 @@ describe('Pharmaviyum sidebar navigation', () => {
       'Developer Tools'
     )
     expect(sidebarData.user.name).toBe('admin')
-    expect(
-      sidebarData.navGroups.map((group) => group.title)
-    ).toEqual(['Operations', 'Administration', 'Integrations'])
+    expect(sidebarData.navGroups.map((group) => group.title)).toEqual([
+      'Operations',
+      'Administration',
+      'Integrations',
+    ])
     const integrations = sidebarData.navGroups.find(
       (group) => group.title === 'Integrations'
     )
