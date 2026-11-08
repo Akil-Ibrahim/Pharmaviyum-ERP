@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from pydantic import ValidationError
 
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
 from src.pharmaviyum.ai.mortarium_rag.schemas import QueryContext
@@ -477,3 +478,18 @@ def test_checkpoint_thread_id_rejects_non_string_thread_identifier(
 
     with pytest.raises(ValueError, match="thread identifier"):
         rag._thread_id(123, context)  # type: ignore[arg-type]
+
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"user_id": 123, "pharmacy_id": 7},
+        {"user_id": "user-1", "pharmacy_id": True},
+        {"user_id": "user-1", "pharmacy_id": 7, "patient_id": True},
+        {"user_id": "user-1", "pharmacy_id": 7, "prescription_id": "12"},
+    ],
+)
+def test_query_context_rejects_coerced_identity_types(payload) -> None:
+    with pytest.raises(ValidationError):
+        QueryContext(**payload)
