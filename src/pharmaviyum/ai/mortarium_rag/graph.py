@@ -437,7 +437,10 @@ class LangGraphRAG:
     def _build_filters(context: QueryContext) -> dict[str, Any]:
         # Tenant scope is mandatory. Optional metadata filters must be omitted
         # when unknown; SQL equality against NULL never matches rows.
-        filters: dict[str, Any] = {"pharmacy_id": context.pharmacy_id}
+        filters: dict[str, Any] = {
+            "pharmacy_id": context.pharmacy_id,
+            "_search_language": context.language,
+        }
         if context.country:
             filters["country"] = context.country
         if context.category:
