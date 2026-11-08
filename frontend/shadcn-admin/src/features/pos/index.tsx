@@ -332,7 +332,7 @@ export function Pos() {
     }
 
     const normalized = term.replace(/\s+/g, '').toLowerCase()
-    const isBarcodeLike = /^(?:\\d{8}|\\d{12,14})$/.test(normalized)
+    const isBarcodeLike = /^(?:\d{8}|\d{12,14})$/.test(normalized)
     const findExact = (products: LocalProduct[]) =>
       products.filter((product) =>
         [
