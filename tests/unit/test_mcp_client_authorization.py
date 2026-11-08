@@ -30,6 +30,7 @@ def test_tool_discovery_rejects_role_escalation(monkeypatch):
     client = MCPClient()
     assert client.list_tools(user_role="admin") == []
     assert client.to_openai_tools(user_role="admin") == []
+    assert client.get_tool_metadata("admin_only_tool") is None
     list_tools.assert_not_called()
     to_openai_tools.assert_not_called()
 
