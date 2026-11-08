@@ -8,9 +8,9 @@ describe('Pharmaviyum sidebar navigation', () => {
     )
 
     expect(operations?.items.map((item) => item.title)).toEqual([
+      'Dashboard',
       'POS',
       'Mortarium AI',
-      'Dashboard',
       'Drug Reference',
       'Catalog Review',
       'Patients',
