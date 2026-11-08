@@ -133,6 +133,7 @@ async def test_registry_rejects_caller_supplied_identity_mismatch() -> None:
         input_schema=SafeInput,
         output_schema=EmptyOutput,
         required_roles=["patient"],
+        execution_class="read",
     )
     async def patient_read(data: SafeInput) -> EmptyOutput:
         return EmptyOutput(ok=True)
@@ -151,3 +152,16 @@ async def test_registry_rejects_caller_supplied_identity_mismatch() -> None:
             )
     finally:
         reset_mcp_context(token)
+
+
+@pytest.mark.unit
+def test_registry_rejects_tool_without_explicit_execution_class() -> None:
+    registry = MCPToolRegistry()
+
+    with pytest.raises(ValueError, match="must explicitly declare execution_class"):
+        registry.tool(
+            name="unclassified_tool",
+            description="A tool without an access classification",
+            input_schema=SafeInput,
+            output_schema=EmptyOutput,
+        )
