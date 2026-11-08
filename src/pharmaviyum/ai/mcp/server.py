@@ -53,6 +53,8 @@ class MCPServer:
         except PermissionError:
             logger.warning("MCP request denied", extra={"method": method})
             return self._error_response(request_id, -32001, "Unauthorized")
+        except LookupError:
+            return self._error_response(request_id, -32601, "Method not found")
         except ValueError:
             logger.warning("MCP request has invalid parameters", extra={"method": method})
             return self._error_response(request_id, -32602, "Invalid params")
