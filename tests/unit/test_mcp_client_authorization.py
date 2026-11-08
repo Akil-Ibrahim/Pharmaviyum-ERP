@@ -20,9 +20,7 @@ def test_tool_discovery_denies_without_authenticated_context(monkeypatch):
 
 def test_tool_discovery_rejects_role_escalation(monkeypatch):
     context = SimpleNamespace(user_id=7, pharmacy_id=2, user_role="patient")
-    monkeypatch.setattr(
-        client_module, "get_authorization_context", lambda: context
-    )
+    monkeypatch.setattr(client_module, "get_authorization_context", lambda: context)
     list_tools = MagicMock(return_value=[])
     to_openai_tools = MagicMock(return_value=[])
     monkeypatch.setattr(client_module.registry, "list_tools_for_role", list_tools)
@@ -38,9 +36,7 @@ def test_tool_discovery_rejects_role_escalation(monkeypatch):
 
 def test_tool_discovery_uses_authenticated_role(monkeypatch):
     context = SimpleNamespace(user_id=7, pharmacy_id=2, user_role="pharmacist")
-    monkeypatch.setattr(
-        client_module, "get_authorization_context", lambda: context
-    )
+    monkeypatch.setattr(client_module, "get_authorization_context", lambda: context)
     list_tools = MagicMock(return_value=[])
     monkeypatch.setattr(client_module.registry, "list_tools_for_role", list_tools)
 
@@ -50,9 +46,7 @@ def test_tool_discovery_uses_authenticated_role(monkeypatch):
 
 def test_write_tool_timeout_is_not_automatically_retried(monkeypatch):
     context = SimpleNamespace(user_id=7, pharmacy_id=2, user_role="pharmacist")
-    monkeypatch.setattr(
-        client_module, "get_authorization_context", lambda: context
-    )
+    monkeypatch.setattr(client_module, "get_authorization_context", lambda: context)
     metadata = SimpleNamespace(execution_class="write")
     monkeypatch.setattr(
         client_module.registry,
