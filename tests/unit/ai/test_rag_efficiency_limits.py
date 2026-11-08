@@ -35,6 +35,7 @@ def test_rag_limits_can_be_configured() -> None:
     assert rag.max_query_variations == 1
     assert rag.max_retrieval_concurrency == 6
     assert rag.max_grading_concurrency == 4
+    assert rag.execution_timeout_seconds == 90.0
     assert rag.enable_multi_query is False
     assert rag.enable_hyde is False
 
@@ -48,6 +49,7 @@ def test_rag_limits_can_be_configured() -> None:
         {"max_query_variations": 0},
         {"max_retrieval_concurrency": 0},
         {"max_grading_concurrency": 0},
+        {"execution_timeout_seconds": 0},
     ],
 )
 def test_rag_rejects_invalid_efficiency_limits(overrides: dict[str, int]) -> None:
