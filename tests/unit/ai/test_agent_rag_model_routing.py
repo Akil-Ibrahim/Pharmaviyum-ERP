@@ -370,9 +370,10 @@ def test_agent_checkpoint_accepts_authenticated_integer_user_id(
         {"pharmacy_id": "7"},
         {"pharmacy_id": 7, "patient_id": True},
         {"pharmacy_id": 7, "patient_id": "12"},
+        {"pharmacy_id": 7, "session_id": "x" * 65},
     ],
 )
-def test_ai_query_request_rejects_coerced_tenant_ids(payload) -> None:
+def test_ai_query_request_rejects_malformed_tenant_and_session_ids(payload) -> None:
     from src.pharmaviyum.api.v1.ai import QueryRequest
 
     with pytest.raises(ValidationError):
