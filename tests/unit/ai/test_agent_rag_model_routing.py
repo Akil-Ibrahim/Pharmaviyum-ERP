@@ -310,7 +310,7 @@ def test_agent_checkpoint_thread_id_uses_unambiguous_scope_encoding(
 )
 def test_agent_checkpoint_thread_id_rejects_invalid_scope(
     thread_id: str,
-    context: dict[str, object],
+    context,
 ) -> None:
     with pytest.raises(ValueError):
         PharmacistAgent._thread_id(thread_id, context)
