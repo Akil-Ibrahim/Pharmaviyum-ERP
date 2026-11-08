@@ -255,10 +255,14 @@ export function Dashboard() {
                         <Icon className='size-4' />
                       </span>
                     </div>
-                    <p className='mt-3 truncate text-2xl font-semibold tracking-tight tabular-nums'>
+                    <p
+                      className='mt-3 truncate text-2xl font-semibold tracking-tight tabular-nums'
+                    >
                       {loading ? '—' : card.value}
                     </p>
-                    <p className='mt-1 min-h-8 text-xs leading-4 text-muted-foreground'>
+                    <p
+                      className='mt-1 min-h-8 text-xs leading-4 text-muted-foreground'
+                    >
                       {card.hint}
                     </p>
                   </div>
@@ -288,7 +292,9 @@ export function Dashboard() {
                 <div className='space-y-5'>
                   {categoryRows.map((row) => (
                     <div key={row.category} className='space-y-2'>
-                      <div className='flex items-center justify-between gap-3 text-sm'>
+                      <div
+                        className='flex items-center justify-between gap-3 text-sm'
+                      >
                         <span className='font-medium'>
                           {row.category === 'Rx'
                             ? 'Prescription (Rx)'
@@ -300,7 +306,9 @@ export function Dashboard() {
                           {money(row.revenue)}
                         </span>
                       </div>
-                      <div className='h-2.5 overflow-hidden rounded-full bg-muted'>
+                      <div
+                        className='h-2.5 overflow-hidden rounded-full bg-muted'
+                      >
                         <div
                           className={
                             'h-full rounded-full ' +
@@ -324,7 +332,9 @@ export function Dashboard() {
                       </p>
                     </div>
                   ))}
-                  <div className='flex items-center justify-between border-t pt-3 text-sm'>
+                  <div
+                    className='flex items-center justify-between border-t pt-3 text-sm'
+                  >
                     <span className='text-muted-foreground'>Total Revenue</span>
                     <span className='font-bold tabular-nums'>
                       {money(categoryTotalRevenue)}
@@ -604,7 +614,9 @@ export function Dashboard() {
                           <td className='py-3 text-right tabular-nums'>
                             {number(product.packs)}
                           </td>
-                          <td className='py-3 text-right font-semibold tabular-nums'>
+                          <td
+                            className='py-3 text-right font-semibold tabular-nums'
+                          >
                             {money(product.revenue)}
                           </td>
                         </tr>
