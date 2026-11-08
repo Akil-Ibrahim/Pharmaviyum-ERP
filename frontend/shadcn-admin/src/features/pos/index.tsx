@@ -130,6 +130,7 @@ export function Pos() {
   const [processing, setProcessing] = useState(false)
   const [sale, setSale] = useState<SaleResult | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+  const pendingScanRef = useRef('')
   const [searchActive, setSearchActive] = useState(false)
   const [commandOpen, setCommandOpen] = useState(false)
   const idempotencyKey = useRef(crypto.randomUUID())
@@ -231,12 +232,13 @@ export function Pos() {
     }
   }, [cart, pharmacyId])
 
-  const addProduct = (product: LocalProduct) => {
+  function addProduct(product: LocalProduct) {
     if (product.stock < 1) {
       setNotice('No available stock.')
       return
     }
     if (cart.length === 0) setLotsByProduct({})
+    pendingScanRef.current = ''
     setResults([])
     setReferenceResults([])
     setLoading(false)
@@ -256,6 +258,28 @@ export function Pos() {
     searchRef.current?.focus()
   }
 
+  useEffect(() => {
+    const pending = pendingScanRef.current
+    if (!pending || loading || query.trim() !== pending) return
+
+    pendingScanRef.current = ''
+    const normalized = pending.replace(/\\s+/g, '').toLowerCase()
+    const matches = results.filter((product) =>
+      [product.barcode, product.gtin, product.sku].some(
+        (value) => value?.replace(/\\s+/g, '').toLowerCase() === normalized
+      )
+    )
+
+    if (matches.length === 1) {
+      addProduct(matches[0])
+      setNotice('Barcode matched. Medicine added to the sale.')
+    } else if (matches.length > 1) {
+      setNotice('This barcode matches multiple products. Select the correct item.')
+    } else {
+      setNotice('No exact barcode match. Review the search results before adding.')
+    }
+  }, [results, loading, query])
+
   const changeQuantity = (id: number, delta: number) =>
     setCart((items) =>
       items.flatMap((item) => {
@@ -264,6 +288,19 @@ export function Pos() {
         return next > 0 ? [{ ...item, quantity: next }] : []
       })
     )
+
+  const setItemQuantity = (id: number, value: string) => {
+    if (!/^\\d+$/.test(value)) return
+    const quantity = Number(value)
+    if (!Number.isSafeInteger(quantity)) return
+    setCart((items) =>
+      items.map((item) =>
+        item.id === id
+          ? { ...item, quantity: Math.max(1, Math.min(item.stock, quantity)) }
+          : item
+      )
+    )
+  }
 
   const receiveStock = async () => {
     const quantity = Number(receivingQuantity)
@@ -529,9 +566,18 @@ export function Pos() {
                     >
                       <Minus className='size-4' />
                     </Button>
-                    <span className='w-8 text-center font-semibold'>
-                      {item.quantity}
-                    </span>
+                    <Input
+                      aria-label={`Quantity for ${item.name}`}
+                      className='h-9 w-16 px-2 text-center tabular-nums'
+                      type='number'
+                      min={1}
+                      max={item.stock}
+                      step={1}
+                      value={item.quantity}
+                      onChange={(event) =>
+                        setItemQuantity(item.id, event.target.value)
+                      }
+                    />
                     <Button
                       size='icon'
                       variant='outline'
@@ -632,7 +678,26 @@ export function Pos() {
                 aria-label='Medicine search'
                 onSubmit={(e) => {
                   e.preventDefault()
-                  if (results.length === 1) addProduct(results[0])
+                  const term = query.trim()
+                  const normalized = term.replace(/\\s+/g, '').toLowerCase()
+                  const exact = results.filter((product) =>
+                    [product.barcode, product.gtin, product.sku].some(
+                      (value) =>
+                        value?.replace(/\\s+/g, '').toLowerCase() === normalized
+                    )
+                  )
+                  if (exact.length === 1) {
+                    addProduct(exact[0])
+                  } else if (loading) {
+                    pendingScanRef.current = term
+                    setNotice('Barcode received. Looking up the exact match…')
+                  } else if (results.length === 1) {
+                    addProduct(results[0])
+                  } else if (exact.length > 1) {
+                    setNotice('This barcode matches multiple products. Select the correct item.')
+                  } else {
+                    setNotice('Select a medicine from the search results to add it.')
+                  }
                 }}
                 className='relative w-full'
               >
