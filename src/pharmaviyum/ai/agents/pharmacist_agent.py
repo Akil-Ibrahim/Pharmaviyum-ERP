@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import re
 from typing import Any
@@ -19,6 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from src.pharmaviyum.ai.llm_utils import response_text
 from src.pharmaviyum.ai.mortarium_rag.schemas import QueryContext
+from src.pharmaviyum.core.config import settings as app_settings
 from src.pharmaviyum.core.logging import logger
 
 from .state import AgentState
@@ -377,12 +380,58 @@ class PharmacistAgent:
 
     @staticmethod
     def _thread_id(thread_id: str | None, context: dict[str, Any]) -> str:
-        pharmacy_id, user_id = context.get("pharmacy_id"), context.get("user_id")
+        """Return an opaque, tenant-scoped checkpoint key.
+
+        The keyed digest prevents user, pharmacy, and conversation identifiers
+        from being persisted in LangGraph checkpoint metadata.
+        """
+        pharmacy_id = context.get("pharmacy_id")
+        user_id = context.get("user_id")
         if pharmacy_id is None or user_id is None:
             raise ValueError(
                 "Agent checkpoint namespace requires pharmacy_id and user_id"
             )
-        return f"agent:{pharmacy_id}:{user_id}:{thread_id or 'default'}"
+        try:
+            normalized_pharmacy_id = int(pharmacy_id)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Agent checkpoint pharmacy_id must be positive") from exc
+        normalized_user_id = str(user_id)
+        if normalized_pharmacy_id <= 0:
+            raise ValueError("Agent checkpoint pharmacy_id must be positive")
+        if not normalized_user_id.strip() or len(normalized_user_id) > 128:
+            raise ValueError("Agent checkpoint user_id must be 1-128 characters")
+        if thread_id is not None and (
+            not thread_id.strip() or len(thread_id) > 128
+        ):
+            raise ValueError(
+                "Agent checkpoint thread identifier must be 1-128 non-whitespace characters"
+            )
+
+        scope = json.dumps(
+            [
+                "agent",
+                normalized_pharmacy_id,
+                normalized_user_id,
+                thread_id or "default",
+            ],
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        # A local-only fallback keeps development/test environments usable.
+        # Staging and production must always use the configured application key.
+        secret = app_settings.SECRET_KEY or "local-development-only-agent-key"
+        if (
+            getattr(app_settings.ENVIRONMENT, "value", app_settings.ENVIRONMENT)
+            in {"staging", "production"}
+            and not app_settings.SECRET_KEY
+        ):
+            raise RuntimeError(
+                "Application SECRET_KEY is required for agent checkpoints"
+            )
+        digest = hmac.new(
+            secret.encode("utf-8"), scope.encode("utf-8"), hashlib.sha256
+        ).hexdigest()
+        return f"agent:v2:{digest}"
 
     async def run(
         self,
