@@ -70,7 +70,7 @@ export function Dashboard() {
             {loading ? <p className='py-6 text-center text-sm text-muted-foreground'>Загрузка…</p> : categoryRows.length === 0 ? <EmptyState text='Нет данных о продажах по категориям.'/> : <div className='space-y-5'>
               {categoryRows.map((row) => <div key={row.category} className='space-y-2'>
                 <div className='flex items-center justify-between gap-3 text-sm'><span className='font-medium'>{row.category === 'Rx' ? 'Рецептурные (Rx)' : row.category === 'OTC' ? 'Без рецепта (OTC)' : row.category}</span><span className='font-semibold tabular-nums'>{money(row.revenue)}</span></div>
-                <div className='h-2.5 overflow-hidden rounded-full bg-muted'><div className={'h-full rounded-full '+(row.category === 'Rx' ? 'bg-primary' : 'bg-chart-2')} style={{width: `${Math.max(0, Math.min(100, (row.revenue / categoryMaxRevenue) * 100))}%`}}/></div>
+                <div className='h-2.5 overflow-hidden rounded-full bg-muted'><div className={'h-full rounded-full '+(row.category === 'Rx' ? 'bg-primary' : 'bg-muted-foreground/60')} style={{width: `${Math.max(0, Math.min(100, (row.revenue / categoryMaxRevenue) * 100))}%`}}/></div>
                 <p className='text-xs text-muted-foreground'>{number(row.lines)} строк · {number(row.packs)} упаковок</p>
               </div>)}
               <div className='flex items-center justify-between border-t pt-3 text-sm'><span className='text-muted-foreground'>Общая выручка</span><span className='font-bold tabular-nums'>{money(categoryTotalRevenue)}</span></div>
