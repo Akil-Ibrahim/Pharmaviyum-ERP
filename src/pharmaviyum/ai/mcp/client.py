@@ -162,7 +162,7 @@ class MCPClient:
                     last_error,
                     extra={"tool": tool_name, "attempt": attempt + 1},
                 )
-            except PermissionError as exc:
+            except PermissionError:
                 last_error = "MCP tool not authorized"
                 logger.warning(
                     "MCP tool authorization denied",
