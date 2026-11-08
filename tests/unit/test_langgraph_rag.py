@@ -470,7 +470,6 @@ def test_thread_id_refuses_missing_secret_in_production(
         )
 
 
-
 def test_checkpoint_thread_id_rejects_non_string_thread_identifier(
     rag: LangGraphRAG,
 ) -> None:
@@ -478,7 +477,6 @@ def test_checkpoint_thread_id_rejects_non_string_thread_identifier(
 
     with pytest.raises(ValueError, match="thread identifier"):
         rag._thread_id(123, context)  # type: ignore[arg-type]
-
 
 
 @pytest.mark.parametrize(
