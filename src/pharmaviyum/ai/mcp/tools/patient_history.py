@@ -117,10 +117,8 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
         logger.info(
             "Patient history loaded",
             extra={
-                "patient_id": patient.id,
-                "pharmacy_id": auth_context.pharmacy_id,
-                "allergies": len(allergies),
-                "conditions": len(conditions),
+                "allergy_count": len(allergies),
+                "condition_count": len(conditions),
                 "latency_ms": (time.perf_counter() - start) * 1000,
             },
         )
