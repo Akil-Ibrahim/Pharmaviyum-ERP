@@ -97,9 +97,7 @@ export function Dashboard() {
       .then(setData)
       .catch((reason: unknown) =>
         setError(
-          reason instanceof Error
-            ? reason.message
-            : 'Unable to load analytics'
+          reason instanceof Error ? reason.message : 'Unable to load analytics'
         )
       )
       .finally(() => setLoading(false))
@@ -135,17 +133,16 @@ export function Dashboard() {
     {
       label: 'Inventory Items',
       value: number(inventory?.items ?? 0),
-      hint: `${money(inventory?.retail_value ?? 0)} retail value · ${
-        number(inventory?.low_stock ?? 0)
-      } low stock`,
+      hint: `${money(inventory?.retail_value ?? 0)} retail value · ${number(
+        inventory?.low_stock ?? 0
+      )} low stock`,
       icon: Boxes,
       tone: 'bg-emerald-500/10 text-emerald-600',
     },
     {
       label: 'Active Patients',
       value: number(data?.patients.active ?? 0),
-      hint:
-        `${number(data?.prescriptions.month ?? 0)} prescriptions this month`,
+      hint: `${number(data?.prescriptions.month ?? 0)} prescriptions this month`,
       icon: UsersRound,
       tone: 'bg-violet-500/10 text-violet-600',
     },
@@ -170,12 +167,8 @@ export function Dashboard() {
         <ProfileDropdown />
       </Header>
       <Main>
-        <div
-          className='pharmaviyum-dashboard pharmacy-dashboard-page space-y-5'
-        >
-          <section
-            className='pharmacy-dashboard-hero relative flex flex-col gap-4 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7'
-          >
+        <div className='pharmaviyum-dashboard pharmacy-dashboard-page space-y-5'>
+          <section className='pharmacy-dashboard-hero relative flex flex-col gap-4 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7'>
             <div className='relative z-10'>
               <div className='mb-2 flex items-center gap-2'>
                 <Badge variant='secondary' className='rounded-md'>
@@ -256,14 +249,10 @@ export function Dashboard() {
                         <Icon className='size-4' />
                       </span>
                     </div>
-                    <p
-                      className='mt-3 truncate text-2xl font-semibold tracking-tight tabular-nums'
-                    >
+                    <p className='mt-3 truncate text-2xl font-semibold tracking-tight tabular-nums'>
                       {loading ? '—' : card.value}
                     </p>
-                    <p
-                      className='mt-1 min-h-8 text-xs leading-4 text-muted-foreground'
-                    >
+                    <p className='mt-1 min-h-8 text-xs leading-4 text-muted-foreground'>
                       {card.hint}
                     </p>
                   </div>
@@ -293,9 +282,7 @@ export function Dashboard() {
                 <div className='space-y-5'>
                   {categoryRows.map((row) => (
                     <div key={row.category} className='space-y-2'>
-                      <div
-                        className='flex items-center justify-between gap-3 text-sm'
-                      >
+                      <div className='flex items-center justify-between gap-3 text-sm'>
                         <span className='font-medium'>
                           {row.category === 'Rx'
                             ? 'Prescription (Rx)'
@@ -307,9 +294,7 @@ export function Dashboard() {
                           {money(row.revenue)}
                         </span>
                       </div>
-                      <div
-                        className='h-2.5 overflow-hidden rounded-full bg-muted'
-                      >
+                      <div className='h-2.5 overflow-hidden rounded-full bg-muted'>
                         <div
                           className={
                             'h-full rounded-full ' +
@@ -333,9 +318,7 @@ export function Dashboard() {
                       </p>
                     </div>
                   ))}
-                  <div
-                    className='flex items-center justify-between border-t pt-3 text-sm'
-                  >
+                  <div className='flex items-center justify-between border-t pt-3 text-sm'>
                     <span className='text-muted-foreground'>Total Revenue</span>
                     <span className='font-bold tabular-nums'>
                       {money(categoryTotalRevenue)}
@@ -396,9 +379,7 @@ export function Dashboard() {
             </div>
           </section>
 
-          <section
-            className='grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,.75fr)]'
-          >
+          <section className='grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,.75fr)]'>
             <div className='rounded-2xl border bg-card p-4 sm:p-5'>
               <div className='mb-4 flex items-center justify-between gap-3'>
                 <div>
@@ -559,9 +540,7 @@ export function Dashboard() {
                         {row.detail}
                       </p>
                     </div>
-                    <ArrowDownRight
-                      className='ml-auto size-4 shrink-0 text-muted-foreground'
-                    />
+                    <ArrowDownRight className='ml-auto size-4 shrink-0 text-muted-foreground' />
                   </div>
                 ))}
               </div>
@@ -615,9 +594,7 @@ export function Dashboard() {
                           <td className='py-3 text-right tabular-nums'>
                             {number(product.packs)}
                           </td>
-                          <td
-                            className='py-3 text-right font-semibold tabular-nums'
-                          >
+                          <td className='py-3 text-right font-semibold tabular-nums'>
                             {money(product.revenue)}
                           </td>
                         </tr>
@@ -648,9 +625,7 @@ export function Dashboard() {
                 <div className='space-y-3'>
                   {data.reorder_attention.slice(0, 5).map((item) => (
                     <div key={item.id} className='flex items-center gap-3'>
-                      <div
-                        className='flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600'
-                      >
+                      <div className='flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600'>
                         <Boxes className='size-4' />
                       </div>
                       <div className='min-w-0 flex-1'>
@@ -658,8 +633,7 @@ export function Dashboard() {
                           {item.name}
                         </p>
                         <p className='text-xs text-muted-foreground'>
-                          Available: {item.available_packs} packs ·
-                          threshold{' '}
+                          Available: {item.available_packs} packs · threshold{' '}
                           {item.reorder_level}
                         </p>
                       </div>
@@ -690,8 +664,8 @@ export function Dashboard() {
           </section>
 
           <p className='text-center text-xs text-muted-foreground'>
-            Metrics reflect API data as of the last refresh.
-            Empty values are never replaced with fabricated figures.
+            Metrics reflect API data as of the last refresh. Empty values are
+            never replaced with fabricated figures.
           </p>
         </div>
       </Main>
@@ -763,9 +737,7 @@ function RingMetric({
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div
-      className='rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground'
-    >
+    <div className='rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground'>
       {text}
     </div>
   )
