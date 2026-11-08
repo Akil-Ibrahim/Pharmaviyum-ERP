@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import hmac
 import html
 import re
 import time
@@ -26,6 +27,7 @@ from src.pharmaviyum.ai.optimization.token_budget import (
     TokenBudgetExceeded,
     TokenBudgetManager,
 )
+from src.pharmaviyum.core.config import settings as app_settings
 from src.pharmaviyum.core.logging import logger
 
 from .contextual_compression import ContextualCompressor
@@ -670,5 +672,16 @@ class LangGraphRAG:
             )
         raw = thread_id or str(uuid4())
         scope = f"{context.pharmacy_id}:{context.user_id}:{raw}"
-        digest = hashlib.sha256(scope.encode("utf-8")).hexdigest()
+        # SECRET_KEY is mandatory in staging/production. A fixed development-only
+        # fallback keeps local tests/dev usable; it must never be used in prod.
+        secret = app_settings.SECRET_KEY or "local-development-only-rag-key"
+        if (
+            getattr(app_settings.ENVIRONMENT, "value", app_settings.ENVIRONMENT)
+            in {"staging", "production"}
+            and not app_settings.SECRET_KEY
+        ):
+            raise RuntimeError("Application SECRET_KEY is required for RAG checkpoints")
+        digest = hmac.new(
+            secret.encode("utf-8"), scope.encode("utf-8"), hashlib.sha256
+        ).hexdigest()
         return f"rag:{digest}"
