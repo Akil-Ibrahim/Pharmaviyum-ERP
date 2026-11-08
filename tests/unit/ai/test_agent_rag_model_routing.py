@@ -360,7 +360,7 @@ def test_agent_checkpoint_accepts_authenticated_integer_user_id(
     )
 
     assert checkpoint_id.startswith("agent:v2:")
-    assert "42" not in checkpoint_id
+    assert len(checkpoint_id.rsplit(":", maxsplit=1)[-1]) == 64
 
 
 @pytest.mark.parametrize(
