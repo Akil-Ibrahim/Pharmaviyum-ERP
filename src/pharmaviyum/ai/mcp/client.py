@@ -242,8 +242,18 @@ class MCPClient:
         return registry.list_tools_for_role(authorized_role)
 
     def get_tool_metadata(self, tool_name: str) -> Any | None:
-        tool_info = registry.get_tool(tool_name)
-        return tool_info[0] if tool_info else None
+        """Return metadata only when the authenticated role may discover the tool."""
+        authorized_role = self._authorized_role(None)
+        if authorized_role is None:
+            return None
+        return next(
+            (
+                metadata
+                for metadata in registry.list_tools_for_role(authorized_role)
+                if metadata.name == tool_name
+            ),
+            None,
+        )
 
     def to_openai_tools(
         self, user_role: UserRole | None = None
