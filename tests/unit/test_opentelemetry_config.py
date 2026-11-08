@@ -45,3 +45,11 @@ def test_agent_harness_trace_id_uses_active_w3c_trace():
         expected = f"{span.get_span_context().trace_id:032x}"
         assert _current_trace_id() == expected
     provider.shutdown()
+
+
+def test_otel_is_disabled_by_default(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("OTEL_ENABLED", raising=False)
+
+    settings = OTelSettings(_env_file=None)
+
+    assert settings.enabled is False
