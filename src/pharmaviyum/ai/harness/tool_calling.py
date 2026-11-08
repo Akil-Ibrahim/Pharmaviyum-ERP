@@ -178,7 +178,6 @@ class ToolCallingLayer:
 
         # Try primary tool, then fallbacks
         tools_to_try = [tool_name] + (spec.fallback_tools if spec else [])
-        last_error = None
         total_latency = 0.0
 
         for attempt_tool in tools_to_try:
@@ -206,7 +205,6 @@ class ToolCallingLayer:
                                     "error_type": type(e).__name__,
                                 },
                             )
-                            last_error = "Tool result validation failed"
                             continue
 
                     # Reset circuit breaker on success
@@ -221,7 +219,6 @@ class ToolCallingLayer:
                         latency_ms=latency_ms,
                     )
                 else:
-                    last_error = "Tool execution failed"
                     logger.warning(
                         "MCP tool returned an unsuccessful result",
                         extra={"tool": attempt_tool},
