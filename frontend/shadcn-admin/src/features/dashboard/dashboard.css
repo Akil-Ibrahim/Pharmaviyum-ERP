@@ -139,7 +139,7 @@
 
 .pharmaviyum-dashboard button:focus-visible,
 .pharmaviyum-dashboard summary:focus-visible {
-  outline: 2px solid hsl(var(--primary));
+  outline: 2px solid var(--ring);
   outline-offset: 3px;
 }
 
