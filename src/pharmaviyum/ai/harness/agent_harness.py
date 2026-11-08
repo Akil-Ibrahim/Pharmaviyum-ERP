@@ -132,6 +132,7 @@ class AgentHarness:
                     "answer": cached_response["answer"],
                     "warnings": cached_response.get("warnings", []),
                     "tool_results": cached_response.get("tool_results", []),
+                    "rag_sources": cached_response.get("rag_sources", []),
                     "model_used": cached_response.get("model_used", "cached"),
                     "cache_hit": True,
                     "trace_id": trace_id,
@@ -259,6 +260,12 @@ class AgentHarness:
             final_answer: str | None = None
             final_warnings: list[str] = []
             tool_results: list[dict[str, Any]] = []
+            rag_sources: list[dict[str, Any]] = []
+            selected_model_name = (
+                getattr(selected_model, "model_name", None)
+                or getattr(selected_model, "model", None)
+                or "configured-model"
+            )
 
             yield {
                 "event": "status",
@@ -288,6 +295,7 @@ class AgentHarness:
                         ),
                     }
                 elif node == "knowledge_retrieval":
+                    rag_sources = list(data.get("rag_sources", []))
                     yield {"event": "status", "message": "Retrieving pharmacy knowledge..."}
                 elif node == "planner":
                     yield {"event": "status", "message": "Planning tool usage..."}
@@ -324,6 +332,8 @@ class AgentHarness:
                     response={
                         "answer": final_answer,
                         "warnings": final_warnings,
+                        "rag_sources": rag_sources,
+                        "model_used": selected_model_name,
                     },
                     context=cache_key_context,
                 )
@@ -333,6 +343,8 @@ class AgentHarness:
                 "event": "answer",
                 "text": final_answer,
                 "warnings": list(set(final_warnings)),
+                "sources": rag_sources,
+                "model_used": selected_model_name,
                 "cache_hit": False,
             }
             yield {
