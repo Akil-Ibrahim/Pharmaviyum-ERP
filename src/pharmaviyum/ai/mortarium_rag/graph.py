@@ -224,7 +224,9 @@ class LangGraphRAG:
         started = time.perf_counter()
         filter_sets = self._build_filter_sets(state["context"])
         queries = state["transformed_queries"] or [state["question"]]
-        semaphore = asyncio.Semaphore(self.max_retrieval_concurrency)
+        semaphore = asyncio.Semaphore(
+            getattr(self, "max_retrieval_concurrency", self.MAX_RETRIEVAL_CONCURRENCY)
+        )
 
         async def retrieve_bounded(
             query: str, filters: dict[str, Any]
@@ -284,7 +286,9 @@ class LangGraphRAG:
         started = time.perf_counter()
         success = False
         try:
-            semaphore = asyncio.Semaphore(self.max_grading_concurrency)
+            semaphore = asyncio.Semaphore(
+                getattr(self, "max_grading_concurrency", self.MAX_GRADING_CONCURRENCY)
+            )
 
             async def grade_bounded(hit: RetrievalResult) -> RetrievalResult | None:
                 async with semaphore:
@@ -518,7 +522,7 @@ class LangGraphRAG:
                 # The graph has a bounded rewrite loop. Keep an explicit
                 # recursion ceiling as a second guard against accidental
                 # future cycles introduced during graph evolution.
-                "recursion_limit": 12 + (self.max_rewrites * 3),
+                "recursion_limit": 12 + (getattr(self, "max_rewrites", self.MAX_REWRITES) * 3),
             }
             usage_callback = UsageMetadataCallbackHandler()
             config["callbacks"] = [usage_callback]
