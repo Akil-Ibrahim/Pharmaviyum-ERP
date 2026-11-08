@@ -195,6 +195,11 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
     assert receipt["cash_change"] == "8.50"
     assert receipt["payments"][0]["status"] == "succeeded"
     assert receipt["payments"][0]["cash_received"] == "40.00"
+    allocations = receipt["items"][0]["allocations"]
+    assert [(row["lot_number"], row["quantity"]) for row in allocations] == [
+        ("EARLY-LOT", 2),
+        ("LATE-LOT", 1),
+    ]
 
     duplicate = await authenticated_client.post(
         "/api/v1/pos/checkout",
