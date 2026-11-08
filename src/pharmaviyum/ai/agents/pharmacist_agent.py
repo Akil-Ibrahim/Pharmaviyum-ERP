@@ -448,7 +448,7 @@ class PharmacistAgent:
                 "success": False,
                 "answer": "Unable to safely process the request.",
                 "warnings": ["agent_execution_error"],
-                "error": str(exc),
+                "error": "agent_execution_error",
             }
 
     async def astream(
