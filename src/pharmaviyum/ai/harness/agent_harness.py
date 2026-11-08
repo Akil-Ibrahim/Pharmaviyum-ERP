@@ -11,6 +11,8 @@ Best practice 2026:
 
 from __future__ import annotations
 
+import hashlib
+import re
 import time
 import uuid
 from typing import Any
@@ -59,6 +61,7 @@ class AgentHarness:
                 "user_id",
                 "pharmacy_id",
                 "session_id",
+                "memory_fingerprint",
                 "patient_id",
                 "prescription_id",
                 "country",
@@ -73,6 +76,28 @@ class AgentHarness:
                 "cache_disabled",
             }
         }
+
+    @staticmethod
+    def _validate_rag_citations(
+        answer: str, sources: list[dict[str, Any]]
+    ) -> tuple[str, list[str]]:
+        """Revalidate citations after post-processing so provenance is not lost."""
+        if not sources:
+            return answer, []
+        allowed = {
+            str(source.get("source_id"))
+            for source in sources
+            if source.get("source_id")
+        }
+        cited = re.findall(r"\\[(src-[^\\]\\s]+)\\]", answer)
+        if cited and all(citation in allowed for citation in cited):
+            return answer, []
+        return (
+            "I cannot provide a reliable answer because the final response does not "
+            "preserve verifiable citations to retrieved evidence. Please review the "
+            "source records with a pharmacist.",
+            ["citation_validation_failed"],
+        )
 
     async def _post_process(
         self,
@@ -111,6 +136,12 @@ class AgentHarness:
 
         try:
             history = await self.memory.load(session_id)
+            memory_snapshot = "\\n".join(
+                f"{message.type}:{message.content}" for message in history
+            )
+            context["memory_fingerprint"] = hashlib.sha256(
+                memory_snapshot.encode("utf-8")
+            ).hexdigest()
             pre_process_result = await self.guardrails.pre_process(query)
             if not pre_process_result.is_safe:
                 logger.warning("Input blocked by guardrails")
@@ -185,6 +216,10 @@ class AgentHarness:
                 sources=tool_results + rag_sources,
             )
             agent_warnings.extend(post_warnings)
+            final_answer, citation_warnings = self._validate_rag_citations(
+                final_answer, rag_sources
+            )
+            agent_warnings.extend(citation_warnings)
 
             await self.memory.save(
                 session_id=session_id,
@@ -252,6 +287,13 @@ class AgentHarness:
     ):
         start_time = time.perf_counter()
         context = {**(context or {}), "session_id": session_id}
+        history = await self.memory.load(session_id)
+        memory_snapshot = "\\n".join(
+            f"{message.type}:{message.content}" for message in history
+        )
+        context["memory_fingerprint"] = hashlib.sha256(
+            memory_snapshot.encode("utf-8")
+        ).hexdigest()
         trace_id = str(uuid.uuid4())
         yield {"event": "start", "trace_id": trace_id}
 
@@ -347,9 +389,13 @@ class AgentHarness:
             final_answer, post_warnings = await self._post_process(
                 answer=str(final_answer),
                 question=safe_query,
-                sources=tool_results,
+                sources=tool_results + rag_sources,
             )
             final_warnings.extend(post_warnings)
+            final_answer, citation_warnings = self._validate_rag_citations(
+                final_answer, rag_sources
+            )
+            final_warnings.extend(citation_warnings)
 
             await self.memory.save(
                 session_id=session_id,
