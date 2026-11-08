@@ -441,141 +441,141 @@ export function Pos() {
 
         <div className='grid min-w-0 flex-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]'>
           <Card className='order-2 min-w-0 lg:sticky lg:top-24 lg:order-none lg:col-start-2 lg:row-start-1 lg:max-h-[calc(100svh-8rem)] lg:overflow-y-auto lg:shadow-sm'>
-              <CardHeader className='pb-3'>
-                <div className='flex items-center justify-between'>
-                  <CardTitle className='flex items-center gap-2'>
-                    <ShoppingCart className='size-4 text-muted-foreground' />
-                    Current sale
-                  </CardTitle>
-                  <Badge>{units} units</Badge>
-                </div>
-                <p className='text-sm text-muted-foreground'>
-                  Review products, quantities and batch availability.
-                </p>
-              </CardHeader>
-              <CardContent className='space-y-3'>
-                {cart.length === 0 ? (
-                  <div className='flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/20 px-5 py-8 text-center'>
-                    <span className='mb-3 flex size-12 items-center justify-center rounded-full bg-muted'>
-                      <ShoppingCart className='size-5 text-muted-foreground' />
-                    </span>
-                    <p className='font-medium'>Your sale is empty</p>
-                    <p className='mt-1 max-w-56 text-sm text-muted-foreground'>
-                      Search the pharmacy catalog and add medicines to begin
-                      checkout.
-                    </p>
-                    <Button
-                      className='mt-4'
-                      variant='outline'
-                      onClick={() => setCommandOpen(true)}
-                    >
-                      <Search className='mr-2 size-4' /> Find medicine
-                      <kbd className='ml-2 rounded border px-1.5 py-0.5 text-[10px]'>
-                        ⌘ K
-                      </kbd>
-                    </Button>
-                  </div>
-                ) : (
-                  cart.map((item) => (
-                  <div
-                    key={item.id}
-                    className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'
-                  >
-                    <div className='min-w-0 flex-1'>
-                      <p className='font-semibold'>{item.name}</p>
-                      <p className='text-xs text-muted-foreground'>
-                        {[
-                          item.inn_name,
-                          item.dosage_strength,
-                          item.dosage_form,
-                          item.manufacturer,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </p>
-                      <p className='mt-1 text-sm'>
-                        Price: {money(item.price)} · Available: {item.stock} ·
-                        In cart: {item.quantity} units
-                      </p>
-                      <div className='mt-2 space-y-1 text-xs text-muted-foreground'>
-                        <p className='font-medium text-foreground'>
-                          Inventory lots (earliest expiry first):
-                        </p>
-                        {(lotsByProduct[item.id] || []).length ? (
-                          lotsByProduct[item.id].map((lot) => (
-                            <p key={lot.inventory_id}>
-                              Batch: {lot.lot_number || 'no number'} · Expires:{' '}
-                              {formatExpiry(lot.expiry_date)} · Available:{' '}
-                              {lot.available_quantity} units
-                            </p>
-                          ))
-                        ) : (
-                          <p>
-                            No eligible inventory lots found. Check stock
-                            receipts.
-                          </p>
-                        )}
-                      </div>
-                      <p className='text-xs text-muted-foreground'>
-                        Barcode: {item.barcode || item.gtin || 'not specified'}
-                      </p>
-                    </div>
-                    <div className='flex items-center gap-2'>
-                      <Button
-                        size='icon'
-                        variant='outline'
-                        aria-label='Decrease quantity'
-                        onClick={() => changeQuantity(item.id, -1)}
-                      >
-                        <Minus className='size-4' />
-                      </Button>
-                      <span className='w-8 text-center font-semibold'>
-                        {item.quantity}
-                      </span>
-                      <Button
-                        size='icon'
-                        variant='outline'
-                        aria-label='Increase quantity'
-                        disabled={item.quantity >= item.stock}
-                        onClick={() => changeQuantity(item.id, 1)}
-                      >
-                        <Plus className='size-4' />
-                      </Button>
-                      <Button
-                        size='icon'
-                        variant='ghost'
-                        aria-label='Remove item'
-                        onClick={() =>
-                          setCart((rows) =>
-                            rows.filter((row) => row.id !== item.id)
-                          )
-                        }
-                      >
-                        <Trash2 className='size-4' />
-                      </Button>
-                    </div>
-                    <strong className='w-28 text-right'>
-                      {money(item.price * item.quantity)}
-                    </strong>
-                  </div>
-                  ))
-                )}
-                <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
-                  <span className='text-lg font-semibold'>
-                    Total: {money(total)}
+            <CardHeader className='pb-3'>
+              <div className='flex items-center justify-between'>
+                <CardTitle className='flex items-center gap-2'>
+                  <ShoppingCart className='size-4 text-muted-foreground' />
+                  Current sale
+                </CardTitle>
+                <Badge>{units} units</Badge>
+              </div>
+              <p className='text-sm text-muted-foreground'>
+                Review products, quantities and batch availability.
+              </p>
+            </CardHeader>
+            <CardContent className='space-y-3'>
+              {cart.length === 0 ? (
+                <div className='flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/20 px-5 py-8 text-center'>
+                  <span className='mb-3 flex size-12 items-center justify-center rounded-full bg-muted'>
+                    <ShoppingCart className='size-5 text-muted-foreground' />
                   </span>
+                  <p className='font-medium'>Your sale is empty</p>
+                  <p className='mt-1 max-w-56 text-sm text-muted-foreground'>
+                    Search the pharmacy catalog and add medicines to begin
+                    checkout.
+                  </p>
                   <Button
-                    size='lg'
-                    onClick={() => {
-                      setCashReceived(total.toFixed(2))
-                      setCheckoutOpen(true)
-                    }}
+                    className='mt-4'
+                    variant='outline'
+                    onClick={() => setCommandOpen(true)}
                   >
-                    <CreditCard className='mr-2 size-4' /> Proceed to checkout
+                    <Search className='mr-2 size-4' /> Find medicine
+                    <kbd className='ml-2 rounded border px-1.5 py-0.5 text-[10px]'>
+                      ⌘ K
+                    </kbd>
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              ) : (
+                cart.map((item) => (
+                <div
+                  key={item.id}
+                  className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'
+                >
+                  <div className='min-w-0 flex-1'>
+                    <p className='font-semibold'>{item.name}</p>
+                    <p className='text-xs text-muted-foreground'>
+                      {[
+                        item.inn_name,
+                        item.dosage_strength,
+                        item.dosage_form,
+                        item.manufacturer,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </p>
+                    <p className='mt-1 text-sm'>
+                      Price: {money(item.price)} · Available: {item.stock} ·
+                      In cart: {item.quantity} units
+                    </p>
+                    <div className='mt-2 space-y-1 text-xs text-muted-foreground'>
+                      <p className='font-medium text-foreground'>
+                        Inventory lots (earliest expiry first):
+                      </p>
+                      {(lotsByProduct[item.id] || []).length ? (
+                        lotsByProduct[item.id].map((lot) => (
+                          <p key={lot.inventory_id}>
+                            Batch: {lot.lot_number || 'no number'} · Expires:{' '}
+                            {formatExpiry(lot.expiry_date)} · Available:{' '}
+                            {lot.available_quantity} units
+                          </p>
+                        ))
+                      ) : (
+                        <p>
+                          No eligible inventory lots found. Check stock
+                          receipts.
+                        </p>
+                      )}
+                    </div>
+                    <p className='text-xs text-muted-foreground'>
+                      Barcode: {item.barcode || item.gtin || 'not specified'}
+                    </p>
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <Button
+                      size='icon'
+                      variant='outline'
+                      aria-label='Decrease quantity'
+                      onClick={() => changeQuantity(item.id, -1)}
+                    >
+                      <Minus className='size-4' />
+                    </Button>
+                    <span className='w-8 text-center font-semibold'>
+                      {item.quantity}
+                    </span>
+                    <Button
+                      size='icon'
+                      variant='outline'
+                      aria-label='Increase quantity'
+                      disabled={item.quantity >= item.stock}
+                      onClick={() => changeQuantity(item.id, 1)}
+                    >
+                      <Plus className='size-4' />
+                    </Button>
+                    <Button
+                      size='icon'
+                      variant='ghost'
+                      aria-label='Remove item'
+                      onClick={() =>
+                        setCart((rows) =>
+                          rows.filter((row) => row.id !== item.id)
+                        )
+                      }
+                    >
+                      <Trash2 className='size-4' />
+                    </Button>
+                  </div>
+                  <strong className='w-28 text-right'>
+                    {money(item.price * item.quantity)}
+                  </strong>
+                </div>
+                ))
+              )}
+              <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
+                <span className='text-lg font-semibold'>
+                  Total: {money(total)}
+                </span>
+                <Button
+                  size='lg'
+                  onClick={() => {
+                    setCashReceived(total.toFixed(2))
+                    setCheckoutOpen(true)
+                  }}
+                >
+                  <CreditCard className='mr-2 size-4' /> Proceed to checkout
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {sale?.status === 'completed' && (
             <Card className='order-3 lg:col-span-2'>
