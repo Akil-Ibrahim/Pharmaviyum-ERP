@@ -321,7 +321,7 @@ export function Pos() {
   }
 
   return (
-    <div className='min-h-screen bg-muted/20 p-3 md:p-5'>
+    <div className='w-full min-w-0 bg-muted/20 p-3 md:p-5'>
       <div className='mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-[1920px] flex-col gap-4'>
         <header className='flex flex-wrap items-center justify-between gap-3 border-b pb-4'>
           <div className='flex items-center gap-3'>
@@ -374,7 +374,7 @@ export function Pos() {
         )}
 
         {cart.length > 0 && (
-          <Card className='min-h-0 flex-1 overflow-y-auto xl:fixed xl:right-5 xl:top-24 xl:z-20 xl:max-h-[calc(100vh-7.5rem)] xl:w-[min(420px,34vw)] xl:shadow-lg'>
+          <Card className='min-h-0 flex-1 overflow-y-auto xl:sticky xl:top-4 xl:max-h-[calc(100vh-12rem)] xl:w-full xl:shadow-lg'>
             <CardHeader className='pb-3'>
               <div className='flex items-center justify-between'>
                 <CardTitle>Cart</CardTitle>
@@ -516,7 +516,7 @@ export function Pos() {
 
         <section
           aria-label='Medicine search'
-          className='flex min-h-[60vh] flex-1 flex-col justify-start py-5 xl:mr-[min(440px,36vw)]'
+          className='flex min-h-[60vh] min-w-0 flex-1 flex-col justify-start py-5'
         >
           <div className='mx-auto w-full max-w-5xl'>
             <form
