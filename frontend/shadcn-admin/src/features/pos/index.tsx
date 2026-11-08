@@ -477,38 +477,38 @@ export function Pos() {
                 </div>
               ) : (
                 cart.map((item) => (
-                <div
-                  key={item.id}
-                  className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'
-                >
-                  <div className='min-w-0 flex-1'>
-                    <p className='font-semibold'>{item.name}</p>
-                    <p className='text-xs text-muted-foreground'>
-                      {[
-                        item.inn_name,
-                        item.dosage_strength,
-                        item.dosage_form,
-                        item.manufacturer,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </p>
-                    <p className='mt-1 text-sm'>
-                      Price: {money(item.price)} · Available: {item.stock} ·
-                      In cart: {item.quantity} units
-                    </p>
-                    <div className='mt-2 space-y-1 text-xs text-muted-foreground'>
-                      <p className='font-medium text-foreground'>
-                        Inventory lots (earliest expiry first):
+                  <div
+                    key={item.id}
+                    className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'
+                  >
+                    <div className='min-w-0 flex-1'>
+                      <p className='font-semibold'>{item.name}</p>
+                      <p className='text-xs text-muted-foreground'>
+                        {[
+                          item.inn_name,
+                          item.dosage_strength,
+                          item.dosage_form,
+                          item.manufacturer,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
                       </p>
-                      {(lotsByProduct[item.id] || []).length ? (
-                        lotsByProduct[item.id].map((lot) => (
-                          <p key={lot.inventory_id}>
-                            Batch: {lot.lot_number || 'no number'} · Expires:{' '}
-                            {formatExpiry(lot.expiry_date)} · Available:{' '}
-                            {lot.available_quantity} units
-                          </p>
-                        ))
+                      <p className='mt-1 text-sm'>
+                        Price: {money(item.price)} · Available: {item.stock} ·
+                        In cart: {item.quantity} units
+                      </p>
+                      <div className='mt-2 space-y-1 text-xs text-muted-foreground'>
+                        <p className='font-medium text-foreground'>
+                          Inventory lots (earliest expiry first):
+                        </p>
+                        {(lotsByProduct[item.id] || []).length ? (
+                          lotsByProduct[item.id].map((lot) => (
+                            <p key={lot.inventory_id}>
+                              Batch: {lot.lot_number || 'no number'} · Expires:{' '}
+                              {formatExpiry(lot.expiry_date)} · Available:{' '}
+                              {lot.available_quantity} units
+                            </p>
+                          ))
                       ) : (
                         <p>
                           No eligible inventory lots found. Check stock
