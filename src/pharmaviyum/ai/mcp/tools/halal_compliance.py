@@ -322,13 +322,10 @@ async def check_halal_compliance(input: HalalCheckRequest) -> HalalCertification
     latency_ms = (time.perf_counter() - start) * 1000
 
     logger.info(
-        f"Global Halal check: {drug_name} ({country}, {fiqh_school}) -> {status.upper()}",
+        "Halal compliance check completed",
         extra={
-            "drug": drug_name,
             "status": status,
-            "fiqh": fiqh_school,
-            "marja": marja,
-            "darurah": darurah_applied,
+            "darurah_applied": darurah_applied,
             "latency_ms": latency_ms,
         },
     )
