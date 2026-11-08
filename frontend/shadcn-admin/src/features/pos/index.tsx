@@ -736,7 +736,7 @@ export function Pos() {
                     <strong className='w-28 text-right'>
                       {money(item.price * item.quantity)}
                     </strong>
-                </div>
+                  </div>
                 ))
               )}
               <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
