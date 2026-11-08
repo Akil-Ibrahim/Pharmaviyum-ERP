@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
+from pydantic import ValidationError
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
@@ -346,3 +347,33 @@ def test_agent_checkpoint_thread_id_fails_closed_without_production_secret(
         PharmacistAgent._thread_id(
             "conversation-123", {"pharmacy_id": 7, "user_id": "user-1"}
         )
+
+
+def test_agent_checkpoint_accepts_authenticated_integer_user_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "agent-checkpoint-test-secret")
+    checkpoint_id = PharmacistAgent._thread_id(
+        "conversation-123", {"pharmacy_id": 7, "user_id": 42}
+    )
+
+    assert checkpoint_id.startswith("agent:v2:")
+    assert "42" not in checkpoint_id
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"pharmacy_id": True},
+        {"pharmacy_id": "7"},
+        {"pharmacy_id": 7, "patient_id": True},
+        {"pharmacy_id": 7, "patient_id": "12"},
+    ],
+)
+def test_ai_query_request_rejects_coerced_tenant_ids(payload) -> None:
+    from src.pharmaviyum.api.v1.ai import QueryRequest
+
+    with pytest.raises(ValidationError):
+        QueryRequest(query="What is this medicine?", **payload)
