@@ -197,8 +197,11 @@ class DialogueMemory:
             if not summary:
                 logger.warning("Memory summarization returned empty output")
                 return
-        except Exception:
-            logger.error("Memory summarization failed", exc_info=True)
+        except Exception as exc:
+            logger.error(
+                "Memory summarization failed",
+                extra={"error_type": type(exc).__name__},
+            )
             return
 
         # The summary is a context optimization, never the only copy of clinical
