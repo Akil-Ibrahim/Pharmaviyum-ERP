@@ -9,6 +9,7 @@ from typing import Any, Awaitable, Callable, Literal
 from uuid import uuid4
 
 from langchain_core.callbacks import UsageMetadataCallbackHandler
+from langchain_core.runnables import Runnable, RunnableLambda
 from langgraph.graph import END, StateGraph
 from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
@@ -94,7 +95,7 @@ class LangGraphRAG:
     def _traced_node(
         name: str,
         node: Callable[[RAGState], Awaitable[dict[str, Any]]],
-    ) -> Callable[[RAGState], Awaitable[dict[str, Any]]]:
+    ) -> Runnable[RAGState, dict[str, Any]]:
         """Wrap a LangGraph node with PHI-safe, low-cardinality telemetry."""
 
         async def execute(state: RAGState) -> dict[str, Any]:
@@ -127,7 +128,7 @@ class LangGraphRAG:
                     span.set_status(Status(StatusCode.ERROR, error_type))
                     raise
 
-        return execute
+        return RunnableLambda(execute)
 
     def _build_graph(self, checkpointer: Any):
         workflow = StateGraph(RAGState)
@@ -306,9 +307,9 @@ class LangGraphRAG:
         all_hits: list[RetrievalResult] = []
         failed = 0
         for result in results:
-            if isinstance(result, asyncio.CancelledError):
-                raise result
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
+                if isinstance(result, asyncio.CancelledError):
+                    raise result
                 failed += 1
                 logger.warning(
                     "RAG retrieval variant failed",
@@ -364,9 +365,9 @@ class LangGraphRAG:
             graded: list[RetrievalResult] = []
             failed = 0
             for result in results:
-                if isinstance(result, asyncio.CancelledError):
-                    raise result
-                if isinstance(result, Exception):
+                if isinstance(result, BaseException):
+                    if isinstance(result, asyncio.CancelledError):
+                        raise result
                     failed += 1
                 elif result is not None:
                     graded.append(result)
