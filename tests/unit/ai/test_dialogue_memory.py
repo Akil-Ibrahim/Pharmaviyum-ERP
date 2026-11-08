@@ -95,9 +95,9 @@ async def test_raw_turns_are_retained_when_summarizer_is_not_configured():
     await memory.save("session-1", "first question", "first answer")
     await memory.save("session-1", "second question", "second answer")
 
-    key = "agent:memory:session-1:messages"
+    key = f"{memory._session_prefix('session-1')}:messages"
     assert await redis.llen(key) == 4
-    assert not redis.lists.get("agent:memory:session-1:archive")
+    assert not redis.lists.get(f"{memory._session_prefix('session-1')}:archive")
 
 
 @pytest.mark.asyncio
@@ -110,9 +110,10 @@ async def test_successful_compaction_archives_verbatim_turns_before_trimming():
     await memory.save("session-1", "first question", "first answer")
     await memory.save("session-1", "second question", "second answer")
 
-    active_key = "agent:memory:session-1:messages"
-    archive_key = "agent:memory:session-1:archive"
-    summary_key = "agent:memory:session-1:summary"
+    session_prefix = memory._session_prefix("session-1")
+    active_key = f"{session_prefix}:messages"
+    archive_key = f"{session_prefix}:archive"
+    summary_key = f"{session_prefix}:summary"
     assert await redis.llen(active_key) == 2
     assert len(redis.lists[archive_key]) == 2
     archived = [json.loads(item) for item in redis.lists[archive_key]]
@@ -131,6 +132,43 @@ async def test_failed_summarization_does_not_trim_or_archive_source_turns():
     await memory.save("session-1", "first question", "first answer")
     await memory.save("session-1", "second question", "second answer")
 
-    assert await redis.llen("agent:memory:session-1:messages") == 4
-    assert not redis.lists.get("agent:memory:session-1:archive")
-    assert await redis.get("agent:memory:session-1:summary") is None
+    session_prefix = memory._session_prefix("session-1")
+    assert await redis.llen(f"{session_prefix}:messages") == 4
+    assert not redis.lists.get(f"{session_prefix}:archive")
+    assert await redis.get(f"{session_prefix}:summary") is None
+
+
+
+def test_memory_redis_namespace_is_opaque_and_keyed(monkeypatch):
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "first-memory-secret")
+    first = DialogueMemory._session_prefix(
+        "pharmacy:7:user:42:session:conversation-123"
+    )
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-memory-secret")
+    second = DialogueMemory._session_prefix(
+        "pharmacy:7:user:42:session:conversation-123"
+    )
+
+    assert first.startswith("agent:memory:v2:")
+    assert first != second
+    assert "pharmacy" not in first
+    assert "user" not in first
+    assert "conversation-123" not in first
+
+
+def test_memory_redis_namespace_fails_closed_without_production_secret(monkeypatch):
+    from src.pharmaviyum.core.config import Environment, settings as app_settings
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", None)
+    monkeypatch.setattr(app_settings, "ENVIRONMENT", Environment.PRODUCTION)
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY"):
+        DialogueMemory._session_prefix("session-1")
+
+
+@pytest.mark.parametrize("session_id", ["", "   ", "x" * 513, 123])
+def test_memory_redis_namespace_rejects_invalid_session_id(session_id):
+    with pytest.raises(ValueError, match="session identifier"):
+        DialogueMemory._session_prefix(session_id)
