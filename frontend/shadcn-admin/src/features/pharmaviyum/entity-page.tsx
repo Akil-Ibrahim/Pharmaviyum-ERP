@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Search, RefreshCw } from 'lucide-react'
 import { apiFetch } from '@/lib/api-client'
+import { Main } from '@/components/layout/main'
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -90,7 +91,7 @@ export function EntityPage({
   }, [rows])
 
   return (
-    <div className='space-y-6 p-6'>
+    <Main className='flex flex-col gap-6'>
       <PageHeader
         title={title}
         description={description}
@@ -205,7 +206,7 @@ export function EntityPage({
           )}
         </CardContent>
       </Card>
-    </div>
+    </Main>
   )
 }
 
