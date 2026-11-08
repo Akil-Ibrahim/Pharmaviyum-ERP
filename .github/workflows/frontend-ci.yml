@@ -56,8 +56,7 @@ jobs:
           done
 
           if (("${#FILES[@]}" > 0)); then
-            bunx prettier --write "${FILES[@]}"
-            git -C "$GITHUB_WORKSPACE" diff --no-ext-diff -- frontend/shadcn-admin/src/features/pos/index.tsx
+            bunx prettier --check "${FILES[@]}"
           else
             echo "No frontend files changed; skipping Prettier."
           fi
