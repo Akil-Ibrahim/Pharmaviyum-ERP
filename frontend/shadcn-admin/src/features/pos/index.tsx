@@ -263,10 +263,10 @@ export function Pos() {
     if (!pending || loading || query.trim() !== pending) return
 
     pendingScanRef.current = ''
-    const normalized = pending.replace(/\\s+/g, '').toLowerCase()
+    const normalized = pending.replace(/\s+/g, '').toLowerCase()
     const matches = results.filter((product) =>
       [product.barcode, product.gtin, product.sku].some(
-        (value) => value?.replace(/\\s+/g, '').toLowerCase() === normalized
+        (value) => value?.replace(/\s+/g, '').toLowerCase() === normalized
       )
     )
 
@@ -679,22 +679,26 @@ export function Pos() {
                 onSubmit={(e) => {
                   e.preventDefault()
                   const term = query.trim()
-                  const normalized = term.replace(/\\s+/g, '').toLowerCase()
+                  const normalized = term.replace(/\s+/g, '').toLowerCase()
                   const exact = results.filter((product) =>
                     [product.barcode, product.gtin, product.sku].some(
                       (value) =>
-                        value?.replace(/\\s+/g, '').toLowerCase() === normalized
+                        value?.replace(/\s+/g, '').toLowerCase() === normalized
                     )
                   )
                   if (exact.length === 1) {
                     addProduct(exact[0])
                   } else if (loading) {
                     pendingScanRef.current = term
-                    setNotice('Barcode received. Looking up the exact match…')
+                    setNotice(
+                      'Barcode received. Looking up the exact match…'
+                    )
                   } else if (results.length === 1) {
                     addProduct(results[0])
                   } else if (exact.length > 1) {
-                    setNotice('This barcode matches multiple products. Select the correct item.')
+                    setNotice(
+                      'This barcode matches multiple products. Select the correct item.'
+                    )
                   } else {
                     setNotice('Select a medicine from the search results to add it.')
                   }
