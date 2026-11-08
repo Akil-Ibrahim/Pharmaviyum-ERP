@@ -170,17 +170,22 @@ class LangGraphRAG:
                 # Generated rewrites supplement the original; they must never
                 # replace it because a rewrite can lose a critical drug name,
                 # strength, formulation or negation.
+                added_variations = 0
                 for item in variations:
-                    candidate = item.transformed_query.strip()
+                    candidate = item.transformed_query.strip()[:2000]
                     if candidate and candidate not in queries:
                         queries.append(candidate)
+                        added_variations += 1
+                    if added_variations >= self.max_query_variations:
+                        break
             if self.enable_hyde:
                 try:
                     hyde = await self.transformer.transform_with_hyde(
                         query=question, context=ctx_dict
                     )
-                    if hyde.transformed_query and hyde.transformed_query not in queries:
-                        queries.append(hyde.transformed_query)
+                    hyde_query = hyde.transformed_query.strip()[:2000]
+                    if hyde_query and hyde_query not in queries:
+                        queries.append(hyde_query)
                 except Exception as exc:
                     logger.warning(
                         "HyDE query transformation failed",
