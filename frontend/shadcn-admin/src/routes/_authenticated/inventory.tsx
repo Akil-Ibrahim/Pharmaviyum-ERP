@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createFileRoute } from '@tanstack/react-router'
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -14,7 +15,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { RefreshCw } from 'lucide-react'
-import { createFileRoute } from '@tanstack/react-router'
+import { apiFetch } from '@/lib/api-client'
+import { cn } from '@/lib/utils'
 import {
   DataTableColumnHeader,
   DataTablePagination,
@@ -32,9 +34,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { apiFetch } from '@/lib/api-client'
-import { cn } from '@/lib/utils'
-
 type InventoryRow = {
   id: number
   product_id: number
