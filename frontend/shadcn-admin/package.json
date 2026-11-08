@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "bun run generate-routes && vite build && tsc -b",
+    "build": "prettier --write src/features/pos/index.tsx && git diff -- src/features/pos/index.tsx && bun run generate-routes && vite build && tsc -b",
     "lint": "eslint .",
     "preview": "vite preview",
     "format:check": "prettier --check .",
