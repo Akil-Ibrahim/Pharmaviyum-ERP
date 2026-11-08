@@ -150,11 +150,12 @@ async def test_streaming_harness_records_phi_safe_execution_span(monkeypatch) ->
             "model_used": "test-model",
             "tool_result_count": 2,
         }
+        yield {"event": "complete", "message": "Response ready"}
 
     harness._astream_events = events
     streamed = [event async for event in harness.astream("session", "sensitive query")]
 
-    assert streamed[0]["event"] == "answer"
+    assert [event["event"] for event in streamed] == ["answer", "complete"]
     span.set_attribute.assert_any_call("ai.model_name", "test-model")
     span.set_attribute.assert_any_call("ai.rag.source_count", 1)
     span.set_attribute.assert_any_call("ai.tool_result_count", 2)
