@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
+from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.checkpoint.memory import MemorySaver
 
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
@@ -76,23 +77,25 @@ class _PatientOnlyRetriever:
 class _FakeLLM:
     model_name = "synthetic-smoke-test-model"
 
-    async def ainvoke(self, prompt):
-        prompt_text = str(prompt)
-        if "Reply with only YES or NO." in prompt_text:
+    async def ainvoke(self, messages):
+        assert isinstance(messages[0], SystemMessage)
+        assert isinstance(messages[1], HumanMessage)
+        system_text = messages[0].content
+        if "Return exactly YES or NO." in system_text:
             return SimpleNamespace(content="YES")
-        if "Generate 2 different ways" in prompt_text:
+        if "concise search-query variations" in system_text:
             return SimpleNamespace(
                 content=(
                     "List the medications recorded for synthetic patient 1001.\\n"
                     "Summarize the active medication list for patient 1001."
                 )
             )
-        if "Hypothetical answer:" in prompt_text:
+        if "hypothetical document-style retrieval aid" in system_text:
             # Used only to create a retrieval query, never presented as evidence.
             return SimpleNamespace(
                 content="Retrieve the patient's documented medication list."
             )
-        if "Every factual claim supported by evidence MUST include" in prompt_text:
+        if "Every factual claim supported by evidence must include" in system_text:
             return SimpleNamespace(
                 content=(
                     "The synthetic record lists metformin 500 mg, lisinopril "
@@ -106,7 +109,7 @@ class _FakeLLM:
                 )
             )
         raise AssertionError(
-            f"Unexpected LLM prompt in smoke test: {prompt_text[:120]}"
+            f"Unexpected LLM system prompt in smoke test: {system_text[:120]}"
         )
 
 
