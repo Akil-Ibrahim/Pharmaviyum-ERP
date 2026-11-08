@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import hmac
 import html
+import json
 import re
 import time
 from typing import Any, Awaitable, Callable, Literal
@@ -671,7 +672,11 @@ class LangGraphRAG:
                 "RAG thread identifier must be 1-128 non-whitespace characters"
             )
         raw = thread_id or str(uuid4())
-        scope = f"{context.pharmacy_id}:{context.user_id}:{raw}"
+        scope = json.dumps(
+            [context.pharmacy_id, context.user_id, raw],
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
         # SECRET_KEY is mandatory in staging/production. A fixed development-only
         # fallback keeps local tests/dev usable; it must never be used in prod.
         secret = app_settings.SECRET_KEY or "local-development-only-rag-key"
