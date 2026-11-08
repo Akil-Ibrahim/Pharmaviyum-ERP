@@ -1,11 +1,11 @@
 """
 MCP Tool Registry — central registry for all available tools.
 
-Supports:
-- Tool versioning (e.g., "check_drug_interactions:v2")
-- Role-Based Access Control (RBAC)
-- Role-filtered tool discovery for LLM tool binding
-- Trusted tenant context propagation to tool execution
+Security guarantees:
+- Role-filtered tool discovery and runtime RBAC.
+- Authenticated tenant context is mandatory and cannot be supplied by model arguments.
+- Write tools fail closed unless a trusted, one-time approval verifier is configured.
+- Tool inputs and exception details are never copied into application logs.
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ from src.pharmaviyum.core.logging import logger
 from .security import ExecutionClass, validate_execution_policy, validate_tool_schema
 
 UserRole = Literal["patient", "pharmacist", "admin", "system"]
+ApprovalVerifier = Callable[[Any, "ToolMetadata", BaseModel], Awaitable[bool]]
 
 
 @dataclass
@@ -48,8 +49,20 @@ class ToolMetadata:
 
 
 class MCPToolRegistry:
-    def __init__(self):
+    def __init__(self, approval_verifier: ApprovalVerifier | None = None):
         self._tools: dict[str, tuple[ToolMetadata, Callable]] = {}
+        self._approval_verifier = approval_verifier
+
+    def configure_approval_verifier(
+        self, verifier: ApprovalVerifier | None
+    ) -> None:
+        """Install a trusted verifier that atomically consumes human approvals.
+
+        The verifier must validate the authenticated actor, tenant, exact
+        canonical action payload, expiry and one-time approval state. Until
+        such a verifier is configured, every write tool is denied.
+        """
+        self._approval_verifier = verifier
 
     def tool(
         self,
@@ -71,10 +84,13 @@ class MCPToolRegistry:
         requires_pharmacist_confirmation: bool = False,
     ) -> Callable:
         """Decorator to register a tool."""
-        # Validate the contract at decorator creation time so invalid tools
-        # fail closed even before a function is registered.
         validate_tool_schema(input_schema.model_json_schema())
         validate_execution_policy(execution_class, requires_pharmacist_confirmation)
+
+        if not name or not name.strip():
+            raise ValueError("MCP tool name must not be empty")
+        if required_roles is not None and not required_roles:
+            raise ValueError("MCP tool required_roles must not be empty")
 
         def decorator(func: Callable[..., Awaitable[Any]]) -> Callable:
             metadata = ToolMetadata(
@@ -88,7 +104,9 @@ class MCPToolRegistry:
                 requires_rag=requires_rag,
                 requires_external_api=requires_external_api,
                 tags=tags or [],
-                required_roles=required_roles or ["pharmacist", "admin", "system"],
+                required_roles=required_roles
+                if required_roles is not None
+                else ["pharmacist", "admin", "system"],
                 version=version,
                 deprecated=deprecated,
                 deprecation_message=deprecation_message,
@@ -96,7 +114,7 @@ class MCPToolRegistry:
                 requires_pharmacist_confirmation=requires_pharmacist_confirmation,
             )
             self._tools[name] = (metadata, func)
-            logger.info(f"Registered MCP tool: {name} v{version} ({category})")
+            logger.info("Registered MCP tool: %s v%s (%s)", name, version, category)
             return func
 
         return decorator
@@ -109,113 +127,110 @@ class MCPToolRegistry:
         user_id: int | None = None,
         pharmacy_id: int | None = None,
     ) -> Any:
-        """Call a registered tool with RBAC and trusted tenant context."""
+        """Execute a tool only within a matching authenticated request context."""
+        from .context import require_mcp_context
         from .tool_management import (
+            ToolUsageRecord,
             analytics_tracker,
             check_rbac,
             health_checker,
             resolve_tool_version,
         )
 
-        if user_id is None or pharmacy_id is None:
-            raise PermissionError("MCP tenant authorization context is required")
+        context = require_mcp_context()
+        if (
+            user_id is None
+            or pharmacy_id is None
+            or context.user_id != user_id
+            or context.pharmacy_id != pharmacy_id
+            or context.user_role != user_role
+        ):
+            raise PermissionError("MCP authorization context mismatch")
 
         resolved_name = resolve_tool_version(name)
-        if resolved_name not in self._tools:
-            raise ValueError(f"Unknown tool: {name}")
+        tool_entry = self._tools.get(resolved_name)
+        if tool_entry is None:
+            raise ValueError("Unknown MCP tool")
 
-        metadata, func = self._tools[resolved_name]
-
+        metadata, func = tool_entry
         if metadata.deprecated:
-            logger.warning(
-                "Deprecated tool called: %s. %s",
-                resolved_name,
-                metadata.deprecation_message,
-            )
+            logger.warning("Deprecated MCP tool invoked: %s", resolved_name)
 
-        if not check_rbac(user_role, metadata.required_roles):
-            raise PermissionError(
-                f"Role '{user_role}' is not authorized to use tool '{resolved_name}'. "
-                f"Required: {metadata.required_roles}"
-            )
-
-        health = await health_checker.check_tool_health(resolved_name)
-        if health["status"] == "unhealthy":
-            raise RuntimeError(f"Tool dependency unhealthy: {health['details']}")
+        if not check_rbac(context.user_role, metadata.required_roles):
+            raise PermissionError("MCP tool access denied")
 
         try:
-            validated_input = metadata.input_schema(**input_data)
-        except Exception as exc:
-            raise ValueError(f"Invalid input for tool {resolved_name}: {exc}") from exc
+            validated_input = metadata.input_schema.model_validate(input_data)
+        except Exception:
+            # Pydantic validation errors may echo submitted clinical values.
+            raise ValueError("Invalid MCP tool input") from None
+
+        if metadata.execution_class == "write":
+            verifier = self._approval_verifier
+            if not metadata.requires_pharmacist_confirmation or verifier is None:
+                raise PermissionError(
+                    "MCP write execution is disabled until a trusted approval "
+                    "workflow is configured"
+                )
+            approved = await verifier(context, metadata, validated_input)
+            if approved is not True:
+                raise PermissionError("MCP write action has no valid approval")
+
+        health = await health_checker.check_tool_health(resolved_name)
+        if health.get("status") != "healthy":
+            raise RuntimeError("MCP tool dependency is unavailable")
 
         start = time.perf_counter()
         try:
-            from .context import (
-                MCPAuthorizationContext,
-                reset_mcp_context,
-                set_mcp_context,
-            )
-
-            token = set_mcp_context(
-                MCPAuthorizationContext(
-                    user_id=user_id,
-                    pharmacy_id=pharmacy_id,
-                    user_role=user_role,
-                )
-            )
-            try:
-                result = await func(validated_input)
-            finally:
-                reset_mcp_context(token)
-
-            latency_ms = (time.perf_counter() - start) * 1000
+            result = await func(validated_input)
             if not isinstance(result, metadata.output_schema):
                 result = metadata.output_schema.model_validate(result)
 
-            from .tool_management import ToolUsageRecord
-
+            latency_ms = (time.perf_counter() - start) * 1000
             analytics_tracker.record_usage(
                 ToolUsageRecord(
                     tool_name=metadata.name,
                     tool_version=metadata.version,
-                    user_role=user_role,
+                    user_role=context.user_role,
                     success=True,
                     latency_ms=latency_ms,
                 )
             )
             logger.info(
-                "Tool %s executed in %.2fms by %s",
+                "MCP tool executed: %s in %.2fms",
                 resolved_name,
                 latency_ms,
-                user_role,
             )
             return result
         except Exception as exc:
             latency_ms = (time.perf_counter() - start) * 1000
-            logger.error(
-                "Tool %s failed: %s",
-                resolved_name,
-                exc,
-                extra={"tool": resolved_name, "role": user_role},
-            )
-            from .tool_management import ToolUsageRecord
-
             analytics_tracker.record_usage(
                 ToolUsageRecord(
                     tool_name=metadata.name,
                     tool_version=metadata.version,
-                    user_role=user_role,
+                    user_role=context.user_role,
                     success=False,
                     latency_ms=latency_ms,
                 )
             )
+            # Never serialize exception text/tracebacks into logs: drivers and
+            # validators can include SQL, identifiers or patient data.
+            logger.error(
+                "MCP tool execution failed",
+                extra={
+                    "tool": resolved_name,
+                    "role": context.user_role,
+                    "error_type": type(exc).__name__,
+                },
+            )
             raise
 
     def list_tools(self) -> list[ToolMetadata]:
+        """Return all metadata for trusted internal administration only."""
         return [meta for meta, _ in self._tools.values()]
 
     def list_tools_for_role(self, user_role: UserRole) -> list[ToolMetadata]:
-        """Return only tools the role is authorized to invoke."""
+        """Return only tools the authenticated role may invoke."""
         from .tool_management import check_rbac
 
         return [
@@ -228,14 +243,13 @@ class MCPToolRegistry:
         """Build OpenAI-compatible tool schemas after RBAC filtering."""
         tools: list[dict[str, Any]] = []
         for metadata in self.list_tools_for_role(user_role):
-            schema = metadata.input_schema.model_json_schema()
             tools.append(
                 {
                     "type": "function",
                     "function": {
                         "name": metadata.name,
                         "description": metadata.description,
-                        "parameters": schema,
+                        "parameters": metadata.input_schema.model_json_schema(),
                     },
                 }
             )
