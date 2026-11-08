@@ -11,6 +11,7 @@ Best practice 2026:
 
 from __future__ import annotations
 
+import html
 from typing import Any, Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -85,7 +86,7 @@ class QueryTransformer:
         )
         human_prompt = (
             "<untrusted_query>\n"
-            f"{query}"
+            f"{html.escape(query, quote=False)}"
             "\n</untrusted_query>\nHypothetical retrieval text:"
         )
 
