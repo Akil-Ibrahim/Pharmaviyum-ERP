@@ -67,7 +67,9 @@ def test_resolver_uses_first_official_current_prescribable_release_link():
 
 
 def test_resolver_rejects_non_nlm_download_hosts():
-    html = '<a href="https://example.com/RxNorm_full_prescribe_11022026.zip">Download</a>'
+    html = (
+        '<a href="https://example.com/RxNorm_full_prescribe_11022026.zip">Download</a>'
+    )
     with pytest.raises(ValueError, match="unexpected RxNorm download URL"):
         resolve_current_rxnorm_url(html)
 
