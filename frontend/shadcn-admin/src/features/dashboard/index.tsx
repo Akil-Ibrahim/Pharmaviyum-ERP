@@ -373,8 +373,8 @@ export function Dashboard() {
                 </div>
               </div>
               <p className='mt-3 text-xs text-muted-foreground'>
-                Days of stock are calculated from available inventory and actual
-                dispensing over the last 30 days.
+                Days of stock are calculated from available inventory
+                and actual dispensing over the last 30 days.
               </p>
             </div>
           </section>
