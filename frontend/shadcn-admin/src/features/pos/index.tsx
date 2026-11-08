@@ -506,7 +506,7 @@ export function Pos() {
                 </div>
               </CardContent>
             </Card>
-        )}
+          )}
 
           {sale?.status === 'completed' && (
             <Card className='order-3 xl:col-span-2'>
@@ -534,7 +534,7 @@ export function Pos() {
                 </Button>
               </CardContent>
             </Card>
-        )}
+          )}
 
           <section
             aria-label='Medicine search'
