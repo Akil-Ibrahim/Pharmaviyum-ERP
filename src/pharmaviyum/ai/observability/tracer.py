@@ -20,6 +20,7 @@ _SAFE_SPAN_ATTRIBUTE_KEYS = {
     "ai.history_length",
     "ai.safety_check_required",
     "ai.execution_success",
+    "ai.fallback_used",
     "ai.rag.source_count",
     "ai.tool_result_count",
     "ai.rag.rewrite_count",
