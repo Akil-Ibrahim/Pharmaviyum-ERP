@@ -69,9 +69,11 @@ covered by regression tests.
 
 Production graph construction requires an explicit checkpointer. The application
 uses the PostgreSQL-backed async LangGraph checkpointer. Checkpoint thread IDs are
-stable opaque SHA-256 digests of the tenant, authenticated user and conversation
-identifier; raw identity and caller conversation strings are not stored in the
-checkpoint key. Caller-supplied conversation identifiers are bounded to 128
+stable opaque HMAC-SHA-256 digests of the tenant, authenticated user and
+conversation identifier, keyed with the application's SECRET_KEY; raw identity
+and caller conversation strings are not stored in the checkpoint key. All
+application replicas must share the same SECRET_KEY to preserve checkpoint
+continuity. A development-only fallback is never accepted in staging/production. Caller-supplied conversation identifiers are bounded to 128
 characters and blank values are rejected. Checkpoint payloads can contain user questions and
 retrieved clinical context. Production retention, deletion, access-control and
 backup policies must therefore be reviewed as part of the application's PHI
