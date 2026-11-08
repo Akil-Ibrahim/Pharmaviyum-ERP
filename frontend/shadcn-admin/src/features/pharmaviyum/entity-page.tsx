@@ -96,7 +96,7 @@ export function EntityPage({
         title={title}
         description={description}
         actions={
-          endpoint ? (
+          endpoint && (
             <Button
               variant='outline'
               size='sm'
@@ -106,7 +106,7 @@ export function EntityPage({
               <RefreshCw className='mr-2 size-4' />
               Refresh
             </Button>
-          ) : undefined
+          )
         }
       />
 
