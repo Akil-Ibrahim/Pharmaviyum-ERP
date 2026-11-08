@@ -10,11 +10,12 @@ import {
   Search,
   X,
 } from 'lucide-react'
+import { apiFetch } from '@/lib/api-client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { apiFetch } from '@/lib/api-client'
+
 
 export const Route = createFileRoute('/_authenticated/drug-reference')({
   component: DrugReferencePage,
