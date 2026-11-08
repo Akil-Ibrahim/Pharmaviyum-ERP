@@ -36,16 +36,30 @@ class QueryRequest(BaseModel):
         max_length=2000,
         description="User's question",
     )
-    session_id: str | None = Field(default=None, description="Conversation session ID")
+    session_id: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=128,
+        description="Conversation session ID",
+    )
     patient_id: int | None = Field(
-        default=None, description="Patient ID for history lookup"
+        default=None, gt=0, description="Patient ID for history lookup"
     )
     pharmacy_id: int = Field(..., gt=0, description="Authorized pharmacy tenant")
     country: str | None = Field(
         default=None,
-        description="Explicit market jurisdiction; omit when not known",
+        min_length=2,
+        max_length=3,
+        pattern=r"^[A-Za-z]{2,3}$",
+        description="ISO country code; omit when not known",
     )
-    language: str = Field(default="en", description="Response language code")
+    language: str = Field(
+        default="en",
+        min_length=2,
+        max_length=8,
+        pattern=r"^[A-Za-z]{2,3}(?:-[A-Za-z]{2,4})?$",
+        description="Response language code",
+    )
     halal_filter: bool = Field(
         default=False, description="Enable strict halal compliance check"
     )
