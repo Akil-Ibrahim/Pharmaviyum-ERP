@@ -134,10 +134,7 @@ class ToolCallingLayer:
                 if isinstance(result, Exception):
                     logger.error(
                         "Parallel MCP tool execution failed",
-                        extra={
-                            "tool": parallel_tools[i]["name"],
-                            "error_type": type(result).__name__,
-                        },
+                        extra={"error_type": type(result).__name__},
                     )
                     results.append(
                         ToolCallRecord(
@@ -169,7 +166,7 @@ class ToolCallingLayer:
 
         # Check circuit breaker
         if self._is_circuit_open(tool_name):
-            logger.warning(f"Circuit breaker open for {tool_name}")
+            logger.warning("MCP tool circuit breaker is open")
             return ToolCallRecord(
                 tool_name=tool_name,
                 input_data=tool_args,
@@ -202,10 +199,7 @@ class ToolCallingLayer:
                         except ValidationError as e:
                             logger.warning(
                                 "MCP tool result validation failed",
-                                extra={
-                                    "tool": attempt_tool,
-                                    "error_type": type(e).__name__,
-                                },
+                                extra={"error_type": type(e).__name__},
                             )
                             continue
 
@@ -223,7 +217,7 @@ class ToolCallingLayer:
                 else:
                     logger.warning(
                         "MCP tool returned an unsuccessful result",
-                        extra={"tool": attempt_tool},
+                        extra={},
                     )
 
             except Exception as exc:
@@ -231,10 +225,7 @@ class ToolCallingLayer:
                 total_latency += latency_ms
                 logger.error(
                     "MCP tool execution raised an exception",
-                    extra={
-                        "tool": attempt_tool,
-                        "error_type": type(exc).__name__,
-                    },
+                    extra={"error_type": type(exc).__name__},
                 )
 
         # All tools in fallback chain failed
