@@ -52,15 +52,8 @@ class AgentCheckpointer:
         await self._saver.setup()
 
         logger.info(
-            "PostgreSQL LangGraph checkpointer initialized: %s",
-            self.table_name,
-            extra={
-                "database": (
-                    self.database_url.split("@")[-1]
-                    if "@" in self.database_url
-                    else "local"
-                )
-            },
+            "PostgreSQL LangGraph checkpointer initialized",
+            extra={"table": self.table_name},
         )
         return self._saver
 
