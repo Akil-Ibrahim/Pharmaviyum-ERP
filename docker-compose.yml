@@ -65,6 +65,34 @@ services:
     networks:
       - pharmaviyum-network
 
+  # Jaeger provides a local trace UI for development.
+  jaeger:
+    image: jaegertracing/all-in-one:1.67.0
+    container_name: pharmaviyum-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+    restart: unless-stopped
+    networks:
+      - pharmaviyum-network
+
+  # OTLP receiver and trace pipeline for local development.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.123.0
+    container_name: pharmaviyum-otel-collector
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./deploy/otel/collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    depends_on:
+      - jaeger
+    restart: unless-stopped
+    networks:
+      - pharmaviyum-network
+
   # FastAPI Application
   api:
     build:
@@ -88,12 +116,15 @@ services:
       LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-pharmaviyum-pharmacist-agent}
       OTEL_ENABLED: ${OTEL_ENABLED:-true}
       OTEL_EXPORTER_ENDPOINT: ${OTEL_EXPORTER_ENDPOINT:-http://otel-collector:4317}
+      OTEL_SAMPLE_RATE: ${OTEL_SAMPLE_RATE:-0.1}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
       ollama:
+        condition: service_started
+      otel-collector:
         condition: service_started
     volumes:
       - ./src:/app/src
