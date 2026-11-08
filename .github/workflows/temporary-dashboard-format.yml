@@ -1,0 +1,43 @@
+name: Temporary dashboard formatter
+
+on:
+  push:
+    branches:
+      - feat/shadcn-dashboard-metrics-nav-order
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/shadcn-admin
+    steps:
+      - uses: actions/checkout@v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.2"
+      - name: Install dependencies
+        run: bun install
+      - name: Format dashboard files
+        run: |
+          bunx prettier --write \
+            src/components/layout/data/sidebar-data.ts \
+            src/components/layout/data/sidebar-data.test.ts \
+            src/features/dashboard/index.tsx
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            frontend/shadcn-admin/src/components/layout/data/sidebar-data.ts \
+            frontend/shadcn-admin/src/components/layout/data/sidebar-data.test.ts \
+            frontend/shadcn-admin/src/features/dashboard/index.tsx
+          if ! git diff --cached --quiet; then
+            git commit -m "style(dashboard): apply Prettier formatting"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
