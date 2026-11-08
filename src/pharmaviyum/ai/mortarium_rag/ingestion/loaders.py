@@ -50,7 +50,10 @@ class DocumentLoader:
                 return await self._load_text(file_path, doc_type, language)
             raise ValueError(f"Unsupported file format: {extension}")
         except Exception as e:
-            logger.error(f"Failed to load file {file_path}: {e}", exc_info=True)
+            logger.error(
+                "Failed to load ingestion document",
+                extra={"error_type": type(e).__name__},
+            )
             raise
 
     async def load_directory(
@@ -99,7 +102,7 @@ class DocumentLoader:
                 "pdf_info": pdf_reader.metadata,
             }
             logger.info(
-                f"Loaded PDF: {file_path.name} ({len(content)} chars, "
+                f"Loaded PDF ({len(content)} chars, "
                 f"{metadata['page_count']} pages)"
             )
             return LoadedDocument(
@@ -127,7 +130,7 @@ class DocumentLoader:
                 "file_size_bytes": file_path.stat().st_size,
                 "paragraph_count": len(doc.paragraphs),
             }
-            logger.info(f"Loaded DOCX: {file_path.name} ({len(content)} chars)")
+            logger.info("Loaded DOCX document", extra={"character_count": len(content)})
             return LoadedDocument(
                 str(uuid4()), content, str(file_path), doc_type, metadata, language
             )
@@ -153,7 +156,7 @@ class DocumentLoader:
                 "file_size_bytes": file_path.stat().st_size,
                 "title": title,
             }
-            logger.info(f"Loaded HTML: {file_path.name} ({len(content)} chars)")
+            logger.info("Loaded HTML document", extra={"character_count": len(content)})
             return LoadedDocument(
                 str(uuid4()), content, str(file_path), doc_type, metadata, language
             )
@@ -172,7 +175,7 @@ class DocumentLoader:
             "file_name": file_path.name,
             "file_size_bytes": file_path.stat().st_size,
         }
-        logger.info(f"Loaded text: {file_path.name} ({len(content)} chars)")
+        logger.info("Loaded text document", extra={"character_count": len(content)})
         return LoadedDocument(
             str(uuid4()), content, str(file_path), doc_type, metadata, language
         )
