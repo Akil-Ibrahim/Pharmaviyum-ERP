@@ -159,9 +159,7 @@ class PharmacistAgent:
             ]
             evidence = {
                 "answer": response.answer,
-                "citations": [
-                    citation.model_dump() for citation in response.citations
-                ],
+                "citations": [citation.model_dump() for citation in response.citations],
                 "sources": [
                     {
                         "source_id": item["source_id"],
@@ -353,7 +351,9 @@ class PharmacistAgent:
                 if source.get("source_id")
             }
             cited = re.findall(r"\[(src-[^\]\s]+)\]", final)
-            if not cited or any(citation not in allowed_citations for citation in cited):
+            if not cited or any(
+                citation not in allowed_citations for citation in cited
+            ):
                 final = (
                     "I cannot provide a reliable answer because the final response "
                     "does not preserve verifiable citations to the retrieved evidence. "
@@ -399,7 +399,9 @@ class PharmacistAgent:
             "rag_sources": [],
             "iteration": 0,
         }
-        configurable: dict[str, Any] = {"thread_id": self._thread_id(thread_id, context)}
+        configurable: dict[str, Any] = {
+            "thread_id": self._thread_id(thread_id, context)
+        }
         if selected_model is not None:
             configurable["selected_model"] = selected_model
         config = {"configurable": configurable}
