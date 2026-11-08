@@ -1,22 +1,359 @@
 import { useEffect, useMemo, useState } from 'react'
-import { RefreshCw, Search } from 'lucide-react'
+import {
+  type ColumnDef,
+  type SortingState,
+  type VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
+import { RefreshCw } from 'lucide-react'
 import { createFileRoute } from '@tanstack/react-router'
+import { DataTableColumnHeader, DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { apiFetch } from '@/lib/api-client'
+import { cn } from '@/lib/utils'
 
-type InventoryRow={id:number;product_id:number;pharmacy_id:number;quantity:number;reserved_quantity:number;reorder_level:number;lot_number:string|null;expires_at:string|null}
-export const Route=createFileRoute('/_authenticated/inventory')({component:InventoryPage})
-function InventoryPage(){
- const [rows,setRows]=useState<InventoryRow[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState<string|null>(null),[query,setQuery]=useState('')
- const load=()=>{setLoading(true);setError(null);apiFetch<InventoryRow[]>('/api/v1/inventory').then(setRows).catch((e:unknown)=>setError(e instanceof Error?e.message:'Unable to load inventory')).finally(()=>setLoading(false))}
- useEffect(()=>{const timer=window.setTimeout(load,0);return()=>window.clearTimeout(timer)},[])
- const filtered=useMemo(()=>{const q=query.trim().toLowerCase();return q?rows.filter(r=>[r.product_id,r.pharmacy_id,r.lot_number??'',r.quantity,r.reorder_level].some(v=>String(v).toLowerCase().includes(q))):rows},[rows,query])
- const low=rows.filter(r=>r.quantity-r.reserved_quantity<=r.reorder_level).length,out=rows.filter(r=>r.quantity-r.reserved_quantity<=0).length,total=rows.length,healthy=total?Math.round(((total-low)/total)*100):100
- return <div className='pharmacy-data-page pharmacy-inventory-page space-y-6 p-6'><div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'><div><h1 className='text-2xl font-bold tracking-tight'>Inventory</h1><p className='text-muted-foreground'>Stock health, reserved quantities, reorder levels, lots, and expiry.</p></div><Button variant='outline' size='sm' onClick={load} disabled={loading}><RefreshCw className='mr-2 size-4'/>Refresh</Button></div>
- <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'><Metric title='Inventory items' value={total}/><Metric title='Low stock' value={low} tone='amber'/><Metric title='Out of stock' value={out} tone='red'/><Metric title='Inventory health' value={healthy+'%'} tone='green'/></div>
- <Card><CardHeader><div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'><CardTitle>Stock ledger</CardTitle><div className='relative w-full sm:max-w-sm'><Search className='absolute left-2.5 top-2.5 size-4 text-muted-foreground'/><Input className='pl-9' value={query} onChange={e=>setQuery(e.target.value)} placeholder='Search product, pharmacy, lot...'/></div></div></CardHeader><CardContent>{loading&&<p className='text-sm text-muted-foreground'>Loading inventory...</p>}{error&&<p className='text-sm text-destructive'>{error}</p>}{!loading&&!error&&filtered.length===0&&<p className='text-sm text-muted-foreground'>No inventory records found.</p>}{!loading&&!error&&filtered.length>0&&<div className='overflow-x-auto rounded-md border'><table className='w-full text-sm'><thead><tr className='border-b bg-muted/40 text-left text-muted-foreground'><th className='p-3'>Product</th><th className='p-3'>Pharmacy</th><th className='p-3'>Lot</th><th className='p-3 text-right'>Available</th><th className='p-3 text-right'>Reserved</th><th className='p-3 text-right'>Reorder</th><th className='p-3'>Expiry</th><th className='p-3'>Health</th></tr></thead><tbody>{filtered.map(r=>{const available=r.quantity-r.reserved_quantity;const low=available<=r.reorder_level;return <tr key={r.id} className='border-b last:border-0 hover:bg-muted/30'><td className='p-3'>{r.product_id}</td><td className='p-3'>{r.pharmacy_id}</td><td className='p-3'>{r.lot_number??'—'}</td><td className='p-3 text-right font-medium'>{available}</td><td className='p-3 text-right'>{r.reserved_quantity}</td><td className='p-3 text-right'>{r.reorder_level}</td><td className='p-3'>{r.expires_at?new Date(r.expires_at).toLocaleDateString():'—'}</td><td className='p-3'><Badge variant='outline' className={available<=0?'bg-red-500/15 text-red-700 dark:text-red-300':low?'bg-amber-500/15 text-amber-700 dark:text-amber-300':'bg-green-500/15 text-green-700 dark:text-green-300'}>{available<=0?'Out of stock':low?'Low stock':'Healthy'}</Badge></td></tr>})}</tbody></table></div>}</CardContent></Card></div>
+type InventoryRow = {
+  id: number
+  product_id: number
+  pharmacy_id: number
+  quantity: number
+  reserved_quantity: number
+  reorder_level: number
+  lot_number: string | null
+  expires_at: string | null
 }
-function Metric({title,value,tone}:{title:string;value:string|number;tone?:string}){return <Card><CardContent className='p-4'><p className='text-xs font-medium text-muted-foreground'>{title}</p><p className={'mt-2 text-2xl font-semibold '+(tone==='green'?'text-emerald-600 dark:text-emerald-400':tone==='amber'?'text-amber-600 dark:text-amber-400':tone==='red'?'text-red-600 dark:text-red-400':'')}>{value}</p></CardContent></Card>}
+
+type InventoryHealth = 'out' | 'low' | 'healthy'
+
+const healthOptions = [
+  { label: 'Out of stock', value: 'out' },
+  { label: 'Low stock', value: 'low' },
+  { label: 'Healthy', value: 'healthy' },
+]
+
+function getAvailable(row: InventoryRow) {
+  return row.quantity - row.reserved_quantity
+}
+
+function getHealth(row: InventoryRow): InventoryHealth {
+  const available = getAvailable(row)
+  if (available <= 0) return 'out'
+  if (available <= row.reorder_level) return 'low'
+  return 'healthy'
+}
+
+const columns: ColumnDef<InventoryRow>[] = [
+  {
+    accessorKey: 'product_id',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Product ID' />
+    ),
+    cell: ({ row }) => (
+      <span className='font-medium tabular-nums'>{row.original.product_id}</span>
+    ),
+  },
+  {
+    accessorKey: 'pharmacy_id',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Pharmacy ID' />
+    ),
+    cell: ({ row }) => row.original.pharmacy_id,
+  },
+  {
+    accessorKey: 'lot_number',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Lot' />
+    ),
+    cell: ({ row }) => row.original.lot_number || '—',
+  },
+  {
+    id: 'available',
+    accessorFn: getAvailable,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Available' />
+    ),
+    cell: ({ row }) => (
+      <span className='font-medium tabular-nums'>
+        {getAvailable(row.original)}
+      </span>
+    ),
+    meta: { className: 'text-right', thClassName: 'text-right' },
+  },
+  {
+    accessorKey: 'reserved_quantity',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Reserved' />
+    ),
+    cell: ({ row }) => row.original.reserved_quantity,
+    meta: { className: 'text-right', thClassName: 'text-right' },
+  },
+  {
+    accessorKey: 'reorder_level',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Reorder level' />
+    ),
+    cell: ({ row }) => row.original.reorder_level,
+    meta: { className: 'text-right', thClassName: 'text-right' },
+  },
+  {
+    id: 'expiry',
+    accessorFn: (row) =>
+      row.expires_at ? new Date(row.expires_at).getTime() : null,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Expiry date' />
+    ),
+    cell: ({ row }) =>
+      row.original.expires_at
+        ? new Date(row.original.expires_at).toLocaleDateString('en-US')
+        : '—',
+  },
+  {
+    id: 'health',
+    accessorFn: getHealth,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Stock health' />
+    ),
+    cell: ({ row }) => {
+      const health = getHealth(row.original)
+      const variants: Record<InventoryHealth, string> = {
+        out: 'bg-destructive/10 text-destructive',
+        low: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+        healthy: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+      }
+      const labels: Record<InventoryHealth, string> = {
+        out: 'Out of stock',
+        low: 'Low stock',
+        healthy: 'Healthy',
+      }
+
+      return (
+        <Badge variant='outline' className={cn('font-medium', variants[health])}>
+          {labels[health]}
+        </Badge>
+      )
+    },
+    filterFn: (row, id, value: InventoryHealth[]) =>
+      value.includes(row.getValue(id)),
+  },
+]
+
+export const Route = createFileRoute('/_authenticated/inventory')({
+  component: InventoryPage,
+})
+
+function InventoryPage() {
+  const [rows, setRows] = useState<InventoryRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnFilters, setColumnFilters] = useState([])
+  const [globalFilter, setGlobalFilter] = useState('')
+
+  const load = () => {
+    setLoading(true)
+    setError(null)
+    apiFetch<InventoryRow[]>('/api/v1/inventory')
+      .then(setRows)
+      .catch((reason: unknown) =>
+        setError(
+          reason instanceof Error ? reason.message : 'Unable to load inventory'
+        )
+      )
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    const timer = window.setTimeout(load, 0)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  const metrics = useMemo(() => {
+    const low = rows.filter((row) => getHealth(row) !== 'healthy').length
+    const out = rows.filter((row) => getHealth(row) === 'out').length
+    const healthy = rows.length
+      ? Math.round(((rows.length - low) / rows.length) * 100)
+      : 100
+
+    return { total: rows.length, low, out, healthy }
+  }, [rows])
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const table = useReactTable({
+    data: rows,
+    columns,
+    state: { sorting, columnVisibility, columnFilters, globalFilter },
+    onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+  })
+
+  return (
+    <div className='pharmacy-data-page pharmacy-inventory-page space-y-6 p-6'>
+      <PageHeader
+        title='Inventory'
+        description='Monitor stock levels, reservations, reorder thresholds, lots, and expiry dates.'
+        actions={
+          <Button variant='outline' size='sm' onClick={load} disabled={loading}>
+            <RefreshCw
+              className={cn('mr-2 size-4', loading && 'animate-spin')}
+            />
+            Refresh
+          </Button>
+        }
+      />
+
+      <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
+        <Metric title='Inventory items' value={metrics.total} />
+        <Metric title='Low stock' value={metrics.low} tone='amber' />
+        <Metric title='Out of stock' value={metrics.out} tone='red' />
+        <Metric title='Inventory health' value={metrics.healthy + '%'} tone='green' />
+      </div>
+
+      <Card>
+        <CardHeader className='gap-4'>
+          <div className='flex flex-col gap-1'>
+            <CardTitle>Stock ledger</CardTitle>
+            <p className='text-sm text-muted-foreground'>
+              Review available quantities, reservations, reorder levels, and batch expiry.
+            </p>
+          </div>
+          <DataTableToolbar
+            table={table}
+            searchPlaceholder='Search inventory...'
+            filters={[
+              {
+                columnId: 'health',
+                title: 'Stock health',
+                options: healthOptions,
+              },
+            ]}
+          />
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p className='py-8 text-center text-sm text-muted-foreground'>
+              Loading inventory...
+            </p>
+          ) : error ? (
+            <div
+              role='alert'
+              className='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm'
+            >
+              <span>Unable to load inventory: {error}</span>
+              <Button variant='outline' size='sm' onClick={load}>
+                Retry
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className='overflow-hidden rounded-md border'>
+                <Table>
+                  <TableHeader>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <TableHead key={header.id}>
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableHeader>
+                  <TableBody>
+                    {table.getRowModel().rows.length ? (
+                      table.getRowModel().rows.map((row) => (
+                        <TableRow key={row.id}>
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell key={cell.id}>
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={columns.length}
+                          className='h-24 text-center text-muted-foreground'
+                        >
+                          No inventory records match your filters.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              <DataTablePagination table={table} className='pt-4' />
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function Metric({
+  title,
+  value,
+  tone,
+}: {
+  title: string
+  value: string | number
+  tone?: 'amber' | 'red' | 'green'
+}) {
+  const tones = {
+    amber: 'text-amber-600 dark:text-amber-400',
+    red: 'text-destructive',
+    green: 'text-emerald-600 dark:text-emerald-400',
+  }
+
+  return (
+    <Card>
+      <CardContent className='p-4'>
+        <p className='text-xs font-medium text-muted-foreground'>{title}</p>
+        <p
+          className={cn(
+            'mt-2 text-2xl font-semibold tabular-nums',
+            tone ? tones[tone] : undefined
+          )}
+        >
+          {value}
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
