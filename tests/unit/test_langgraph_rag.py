@@ -467,3 +467,13 @@ def test_thread_id_refuses_missing_secret_in_production(
             "conversation-123",
             QueryContext(user_id="user-1", pharmacy_id=7),
         )
+
+
+
+def test_checkpoint_thread_id_rejects_non_string_thread_identifier(
+    rag: LangGraphRAG,
+) -> None:
+    context = QueryContext(user_id="user-1", pharmacy_id=7)
+
+    with pytest.raises(ValueError, match="thread identifier"):
+        rag._thread_id(123, context)  # type: ignore[arg-type]
