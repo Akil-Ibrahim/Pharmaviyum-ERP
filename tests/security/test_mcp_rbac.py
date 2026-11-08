@@ -82,6 +82,15 @@ async def test_mcp_client_rejects_unauthorized_role(monkeypatch) -> None:
 
     monkeypatch.setattr(tool_management.health_checker, "check_tool_health", healthy)
 
+    from src.pharmaviyum.ai.mcp.context import (
+        MCPAuthorizationContext,
+        reset_mcp_context,
+        set_mcp_context,
+    )
+
+    token = set_mcp_context(
+        MCPAuthorizationContext(user_id=1, pharmacy_id=1, user_role="patient")
+    )
     try:
         result = await MCPClient(max_retries=0).call_tool(
             tool_name="restricted_test_tool",
@@ -94,5 +103,6 @@ async def test_mcp_client_rejects_unauthorized_role(monkeypatch) -> None:
         assert result.error is not None
         assert "not authorized" in result.error
     finally:
+        reset_mcp_context(token)
         registry._tools.clear()
         registry._tools.update(original)
