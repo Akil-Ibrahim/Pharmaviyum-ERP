@@ -328,7 +328,6 @@ class AgentHarness:
             async for event in self._astream_events(session_id, query, context):
                 event_type = event.get("event")
                 if event_type == "answer":
-                    completed = True
                     source_count = len(event.get("sources", []))
                     tool_result_count = int(event.get("tool_result_count", 0))
                     model_name = event.get("model_used")
@@ -336,6 +335,8 @@ class AgentHarness:
                         span.set_attribute("ai.model_name", str(model_name)[:64])
                 elif event_type == "error":
                     failed = True
+                elif event_type == "complete":
+                    completed = True
                 yield event
         except Exception as exc:
             failed = True
