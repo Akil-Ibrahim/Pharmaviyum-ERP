@@ -122,6 +122,8 @@ async def test_run_reports_provider_token_usage_from_callbacks(
         {"user_id": "user-1", "pharmacy_id": -1},
         {"user_id": "user-1", "pharmacy_id": 1, "patient_id": 0},
         {"user_id": "user-1", "pharmacy_id": 1, "patient_id": -1},
+        {"user_id": "user-1", "pharmacy_id": 1, "prescription_id": 0},
+        {"user_id": "user-1", "pharmacy_id": 1, "prescription_id": -1},
     ],
 )
 def test_query_context_rejects_invalid_identity_and_tenant_scope(payload):
