@@ -77,7 +77,9 @@ thread identifiers.
 Agent Harness Redis dialogue-memory namespaces also use versioned HMAC-SHA-256
 keys. Raw API-scoped session IDs are not embedded in Redis key names or
 application log fields. The same `SECRET_KEY` stability requirement applies to
-memory continuity.
+memory continuity. This pseudonymizes Redis key names only; it does not encrypt
+conversation payloads. Redis transport security, access control, encryption at
+rest, and retention controls remain mandatory infrastructure responsibilities.
 
 The `v2` checkpoint identifiers and memory namespaces do not automatically
 resume/read records written with the former plaintext `rag:`, `agent:`, or
