@@ -41,7 +41,7 @@ def test_thread_id_is_stable_opaque_and_tenant_scoped(rag: LangGraphRAG) -> None
     context = QueryContext(user_id="user-1", pharmacy_id=7)
     first = rag._thread_id("conversation-123", context)
     assert first == rag._thread_id("conversation-123", context)
-    assert first.startswith("rag:")
+    assert first.startswith("rag:v2:")
     assert "user-1" not in first
     assert "conversation-123" not in first
 
