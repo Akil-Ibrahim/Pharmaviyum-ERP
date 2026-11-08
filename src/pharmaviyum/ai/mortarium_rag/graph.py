@@ -665,6 +665,18 @@ class LangGraphRAG:
     @staticmethod
     def _thread_id(thread_id: str | None, context: QueryContext) -> str:
         """Create a stable opaque checkpoint key without persisting raw identities."""
+        if (
+            isinstance(context.pharmacy_id, bool)
+            or not isinstance(context.pharmacy_id, int)
+            or context.pharmacy_id <= 0
+        ):
+            raise ValueError("RAG checkpoint pharmacy_id must be a positive integer")
+        if (
+            not isinstance(context.user_id, str)
+            or not context.user_id.strip()
+            or len(context.user_id) > 128
+        ):
+            raise ValueError("RAG checkpoint user_id must be 1-128 characters")
         if thread_id is not None and (
             not isinstance(thread_id, str)
             or not thread_id.strip()
