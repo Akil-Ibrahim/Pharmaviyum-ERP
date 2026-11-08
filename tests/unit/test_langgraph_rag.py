@@ -222,3 +222,50 @@ async def test_retrieval_fanout_respects_concurrency_limit(rag: LangGraphRAG):
     assert result["retrieved"] == []
     assert store.max_active == 2
     assert store.active == 0
+
+
+@pytest.mark.asyncio
+async def test_retrieval_propagates_task_cancellation(rag: LangGraphRAG):
+    import asyncio
+
+    class _Embeddings:
+        async def embed(self, query):
+            return [0.1, 0.2]
+
+    class _Store:
+        async def hybrid_search(self, query, query_embedding, top_k, filters):
+            raise asyncio.CancelledError()
+
+    rag.embeddings = _Embeddings()
+    rag.vector_store = _Store()
+    rag.max_retrieval_concurrency = 1
+    rag.retrieval_top_k = 5
+    rag.max_context_docs = 10
+
+    with pytest.raises(asyncio.CancelledError):
+        await rag.retrieve_node(
+            {
+                "question": "medicine question",
+                "context": QueryContext(user_id="user-1", pharmacy_id=7),
+                "transformed_queries": ["medicine question"],
+            }
+        )
+
+
+@pytest.mark.asyncio
+async def test_document_grading_propagates_task_cancellation(rag: LangGraphRAG):
+    import asyncio
+
+    async def cancel_grading(question, hit):
+        raise asyncio.CancelledError()
+
+    rag._grade_one = cancel_grading
+    rag.max_grading_concurrency = 1
+
+    with pytest.raises(asyncio.CancelledError):
+        await rag.grade_documents_node(
+            {
+                "question": "medicine question",
+                "retrieved": [SimpleNamespace()],
+            }
+        )
