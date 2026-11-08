@@ -205,7 +205,7 @@ async def test_planner_falls_back_to_alternate_model_without_leaking_error():
     primary.bind_tools.return_value = primary
     primary.ainvoke = AsyncMock(side_effect=RuntimeError("sensitive provider detail"))
 
-    fallback = MagicMock()
+    fallback = MagicMock(model_name="router-fallback")
     fallback.bind_tools.return_value = fallback
     fallback.ainvoke = AsyncMock(
         return_value=AIMessage(content="Fallback plan generated safely.")
@@ -231,7 +231,7 @@ async def test_planner_falls_back_to_alternate_model_without_leaking_error():
 
     assert fallback.ainvoke.await_count == 1
     assert result["messages"][0].content == "Fallback plan generated safely."
-    assert result["model_used"] == "configured-fallback"
+    assert result["model_used"] == "router-fallback"
     assert result["iteration"] == 1
     assert "model_fallback_used" in result["warnings"]
     assert "sensitive provider detail" not in str(result)
