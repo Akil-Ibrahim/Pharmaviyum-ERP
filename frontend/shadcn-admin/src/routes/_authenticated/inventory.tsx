@@ -17,12 +17,6 @@ import {
 import { RefreshCw } from 'lucide-react'
 import { apiFetch } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
-import {
-  DataTableColumnHeader,
-  DataTablePagination,
-  DataTableToolbar,
-} from '@/components/data-table'
-import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -34,6 +28,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  DataTableColumnHeader,
+  DataTablePagination,
+  DataTableToolbar,
+} from '@/components/data-table'
+import { PageHeader } from '@/components/page-header'
 type InventoryRow = {
   id: number
   product_id: number
