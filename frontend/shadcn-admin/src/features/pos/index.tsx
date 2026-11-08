@@ -131,7 +131,8 @@ export function Pos() {
       try {
         const [local, reference] = await Promise.all([
           apiFetch<LocalProduct[]>(
-            `/api/v1/pos/products/search?q=${encodeURIComponent(term)}&pharmacy_id=${pharmacyId}&limit=30`
+            `/api/v1/pos/products/search?q=${encodeURIComponent(term)}` +
+              `&pharmacy_id=${pharmacyId}&limit=30`
           ),
           apiFetch<DrugCatalogResult[]>(
             `/drug-catalog/search?q=${encodeURIComponent(term)}&limit=50`
@@ -255,11 +256,13 @@ export function Pos() {
       setReceivingExpiry('')
       setReceivingQuantity('')
       setNotice(
-        `Stock received. Batch ${received.lot_number}: available: ${received.available_quantity} units`
+        `Stock received. Batch ${received.lot_number}: ` +
+          `available: ${received.available_quantity} units`
       )
       if (query.trim().length >= 2) {
         const refreshed = await apiFetch<LocalProduct[]>(
-          `/api/v1/pos/products/search?q=${encodeURIComponent(query.trim())}&pharmacy_id=${pharmacyId}&limit=30`
+          `/api/v1/pos/products/search?q=${encodeURIComponent(query.trim())}` +
+            `&pharmacy_id=${pharmacyId}&limit=30`
         )
         setResults(refreshed)
       }
@@ -306,7 +309,8 @@ export function Pos() {
         setNotice(`Sale completed. Receipt # ${result.receipt_number}`)
       } else {
         setNotice(
-          `Payment is awaiting provider confirmation. Receipt ${result.receipt_number}; stock is reserved.`
+          `Payment is awaiting provider confirmation. Receipt ${result.receipt_number}; ` +
+            'stock is reserved.'
         )
       }
     } catch (error) {
@@ -591,7 +595,9 @@ export function Pos() {
                     setLoading(false)
                   }}
                   placeholder='Search medicines by name, INN, brand, strength or barcode…'
-                  className={`h-12 w-full pr-4 pl-12 text-base transition-shadow ${searchActive ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                  className={`h-12 w-full pr-4 pl-12 text-base transition-shadow ${
+                    searchActive ? 'ring-2 ring-primary ring-offset-2' : ''
+                  }`}
                   onFocus={() => setSearchActive(true)}
                 />{' '}
               </form>
@@ -776,7 +782,11 @@ export function Pos() {
                   type='button'
                   key={product.id}
                   onClick={() => setReceivingProductId(String(product.id))}
-                  className={`flex w-full items-center justify-between rounded-md p-2 text-left text-sm hover:bg-muted ${receivingProductId === String(product.id) ? 'bg-primary/10 outline outline-1 outline-primary' : ''}`}
+                  className={`flex w-full items-center justify-between rounded-md p-2 text-left text-sm hover:bg-muted ${
+                    receivingProductId === String(product.id)
+                      ? 'bg-primary/10 outline outline-1 outline-primary'
+                      : ''
+                  }`}
                 >
                   <span>
                     {product.name}
