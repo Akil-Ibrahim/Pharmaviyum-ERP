@@ -8,12 +8,24 @@ import {
   Pill,
   X,
   Receipt,
+  ScanBarcode,
+  Command as CommandIcon,
+  PackageCheck,
+  ShoppingCart,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/api-client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import {
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from '@/components/ui/command'
 
 type LocalProduct = {
   id: number
@@ -105,6 +117,7 @@ export function Pos() {
   const [sale, setSale] = useState<SaleResult | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const [searchActive, setSearchActive] = useState(false)
+  const [commandOpen, setCommandOpen] = useState(false)
   const idempotencyKey = useRef(crypto.randomUUID())
 
   const total = useMemo(
@@ -113,6 +126,22 @@ export function Pos() {
   )
   const cash = Number(cashReceived) || 0
   const units = cart.reduce((sum, item) => sum + item.quantity, 0)
+
+  useEffect(() => {
+    const handleShortcuts = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const typing = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setCommandOpen(true)
+      } else if (event.key === '/' && !typing) {
+        event.preventDefault()
+        setCommandOpen(true)
+      }
+    }
+    window.addEventListener('keydown', handleShortcuts)
+    return () => window.removeEventListener('keydown', handleShortcuts)
+  }, [])
 
   useEffect(() => {
     apiFetch<PharmacyOption[]>('/api/v1/pharmacies')
@@ -326,8 +355,8 @@ export function Pos() {
 
   return (
     <div className='w-full min-w-0 bg-muted/20 p-3 md:p-5'>
-      <div className='mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-[1920px] flex-col gap-4'>
-        <header className='flex flex-wrap items-center justify-between gap-3 border-b pb-4'>
+      <div className='mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-[1920px] flex-col gap-5'>
+        <header className='sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80'>
           <div className='flex items-center gap-3'>
             <span className='flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm'>
               <Pill className='size-5' />
@@ -337,22 +366,19 @@ export function Pos() {
                 Pharmacy POS
               </h1>
               <p className='text-sm text-muted-foreground'>
-                Point of sale · Inventory-aware checkout
+                Fast checkout · Live inventory · Batch traceability
               </p>
             </div>
           </div>
           <div className='flex flex-wrap items-center gap-2'>
-            <Badge variant='outline' className='h-9 px-3'>
-              Register active
+            <Badge variant='outline' className='h-9 gap-2 px-3'>
+              <span className='size-2 rounded-full bg-emerald-500' /> Register active
             </Badge>
             <Button
               variant='outline'
-              onClick={() => {
-                setSearchActive(true)
-                searchRef.current?.focus()
-              }}
+              onClick={() => setCommandOpen(true)}
             >
-              <Search className='mr-2 size-4' /> Scan / search barcode
+              <ScanBarcode className='mr-2 size-4' /> Scan / search
             </Button>
             <Button
               variant='outline'
@@ -398,20 +424,26 @@ export function Pos() {
           </div>
         )}
 
-        <div className='grid min-w-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] xl:items-start'>
-          {cart.length > 0 && (
-            <Card className='order-2 min-w-0 xl:sticky xl:top-4 xl:order-none xl:col-start-2 xl:row-start-1 xl:max-h-[calc(100svh-7rem)] xl:overflow-y-auto xl:shadow-lg'>
+        <div className='grid min-w-0 flex-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]'>
+          <Card className='order-2 min-w-0 lg:sticky lg:top-24 lg:order-none lg:col-start-2 lg:row-start-1 lg:max-h-[calc(100svh-8rem)] lg:overflow-y-auto lg:shadow-sm'>
               <CardHeader className='pb-3'>
                 <div className='flex items-center justify-between'>
-                  <CardTitle>Cart</CardTitle>
+                  <CardTitle className='flex items-center gap-2'><ShoppingCart className='size-4 text-muted-foreground' /> Current sale</CardTitle>
                   <Badge>{units} units</Badge>
                 </div>
                 <p className='text-sm text-muted-foreground'>
-                  Review the items and quantities before checkout.
+                  Review products, quantities and batch availability.
                 </p>
               </CardHeader>
               <CardContent className='space-y-3'>
-                {cart.map((item) => (
+                {cart.length === 0 ? (
+                  <div className='flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/20 px-5 py-8 text-center'>
+                    <span className='mb-3 flex size-12 items-center justify-center rounded-full bg-muted'><ShoppingCart className='size-5 text-muted-foreground' /></span>
+                    <p className='font-medium'>Your sale is empty</p>
+                    <p className='mt-1 max-w-56 text-sm text-muted-foreground'>Search the pharmacy catalog and add medicines to begin checkout.</p>
+                    <Button className='mt-4' variant='outline' onClick={() => setCommandOpen(true)}><Search className='mr-2 size-4' /> Find medicine <kbd className='ml-2 rounded border px-1.5 py-0.5 text-[10px]'>⌘ K</kbd></Button>
+                  </div>
+                ) : cart.map((item) => (
                   <div
                     key={item.id}
                     className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'
@@ -510,10 +542,9 @@ export function Pos() {
                 </div>
               </CardContent>
             </Card>
-          )}
 
           {sale?.status === 'completed' && (
-            <Card className='order-3 xl:col-span-2'>
+            <Card className='order-3 lg:col-span-2'>
               <CardContent className='flex items-center justify-between gap-3 p-4'>
                 <div className='flex items-center gap-2'>
                   <Receipt className='size-5 text-primary' />
@@ -542,18 +573,18 @@ export function Pos() {
 
           <section
             aria-label='Medicine search'
-            className='order-1 flex min-h-[60vh] min-w-0 flex-col justify-start py-5 xl:col-start-1 xl:row-start-1'
+            className='order-1 flex min-h-[calc(100svh-12rem)] min-w-0 flex-col justify-start py-1 lg:col-start-1 lg:row-start-1'
           >
             <div className='w-full'>
               <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
                 <div>
-                  <h2 className='text-base font-semibold'>Product catalog</h2>
+                  <h2 className='text-lg font-semibold tracking-tight'>Medicine catalog</h2>
                   <p className='text-xs text-muted-foreground'>
                     Search by product name, active ingredient, brand, strength
                     or barcode
                   </p>
                 </div>
-                <Badge variant='secondary'>Live pharmacy inventory</Badge>
+                <div className='flex items-center gap-2'><Badge variant='secondary' className='gap-1'><PackageCheck className='size-3' /> Live inventory</Badge><Badge variant='outline'>FEFO batches</Badge></div>
               </div>
               <form
                 aria-label='Medicine search'
@@ -576,12 +607,13 @@ export function Pos() {
                     setReferenceResults([])
                     setLoading(false)
                   }}
-                  placeholder='Search medicines by name, INN, brand, strength or barcode…'
-                  className={`h-12 w-full pr-4 pl-12 text-base transition-shadow ${
+                  placeholder='Search by medicine, active ingredient, brand, strength or barcode…'
+                  className={`h-14 w-full pr-24 pl-12 text-base shadow-sm transition-shadow ${
                     searchActive ? 'ring-2 ring-primary ring-offset-2' : ''
                   }`}
                   onFocus={() => setSearchActive(true)}
-                />{' '}
+                />
+                <kbd className='pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border bg-muted px-2 py-1 text-[10px] text-muted-foreground sm:inline-flex'>Ctrl K</kbd>
               </form>
               {loading && (
                 <p className='py-4 text-center text-sm text-muted-foreground'>
@@ -717,6 +749,23 @@ export function Pos() {
           </section>
         </div>
       </div>
+
+      <CommandDialog open={commandOpen} onOpenChange={setCommandOpen} title='Find a medicine' description='Search the active pharmacy assortment and add an item to the current sale.'>
+        <CommandInput placeholder='Search medicine, INN, brand, strength or barcode…' onValueChange={(value) => setQuery(value)} />
+        <CommandList>
+          <CommandEmpty>{loading ? 'Searching pharmacy catalog…' : 'No matching pharmacy products. Try another search term.'}</CommandEmpty>
+          <CommandGroup heading='Pharmacy inventory'>
+            {results.map((product) => (
+              <CommandItem key={product.id} value={`${product.name} ${product.inn_name || ''} ${product.dosage_strength || ''} ${product.barcode || ''}`} disabled={product.stock < 1} onSelect={() => { addProduct(product); setCommandOpen(false) }}>
+                <Pill className='size-4 text-muted-foreground' />
+                <div className='min-w-0 flex-1'><p className='truncate font-medium'>{product.name}</p><p className='truncate text-xs text-muted-foreground'>{[product.inn_name, product.dosage_strength, product.dosage_form].filter(Boolean).join(' · ')}</p></div>
+                <span className='text-xs tabular-nums'>{money(product.price)}</span>
+                <Badge variant={product.stock > 0 ? 'secondary' : 'destructive'}>{product.stock} in stock</Badge>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
 
       {receivingOpen && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'>
