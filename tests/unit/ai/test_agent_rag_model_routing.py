@@ -1,6 +1,7 @@
 """Regression tests for Mortarium RAG and model-router agent integration."""
 
 import json
+from typing import Any
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -304,13 +305,17 @@ def test_agent_checkpoint_thread_id_uses_unambiguous_scope_encoding(
         ("   ", {"pharmacy_id": 7, "user_id": "user-1"}),
         ("x" * 129, {"pharmacy_id": 7, "user_id": "user-1"}),
         ("session", {"pharmacy_id": 0, "user_id": "user-1"}),
+        ("session", {"pharmacy_id": True, "user_id": "user-1"}),
+        ("session", {"pharmacy_id": 7.5, "user_id": "user-1"}),
         ("session", {"pharmacy_id": 7, "user_id": "   "}),
+        ("session", {"pharmacy_id": 7, "user_id": True}),
         ("session", {"pharmacy_id": None, "user_id": "user-1"}),
+        (123, {"pharmacy_id": 7, "user_id": "user-1"}),
     ],
 )
 def test_agent_checkpoint_thread_id_rejects_invalid_scope(
-    thread_id: str,
-    context,
+    thread_id: Any,
+    context: dict[str, Any],
 ) -> None:
     with pytest.raises(ValueError):
         PharmacistAgent._thread_id(thread_id, context)
