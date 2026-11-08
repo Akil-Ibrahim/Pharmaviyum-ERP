@@ -85,8 +85,9 @@ The `v2` checkpoint identifiers and memory namespaces do not automatically
 resume/read records written with the former plaintext `rag:`, `agent:`, or
 `agent:memory:` formats. Existing checkpoint and memory records are not
 rewritten by application startup. The previous memory tiers have a bounded
-seven-day TTL and are allowed to expire naturally; no unsafe legacy-key
-fallback is performed. Before any compatibility migration, verify authenticated
+seven-day TTL and are allowed to expire naturally; an explicit memory purge
+also deletes the exact legacy keys for that authenticated session. No unsafe
+legacy-key read fallback is performed. Before any compatibility migration, verify authenticated
 tenant ownership and retention requirements. Checkpoint payload retention and
 deletion remain separate PHI lifecycle responsibilities.
 
