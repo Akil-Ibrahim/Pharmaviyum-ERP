@@ -1,23 +1,21 @@
 # OpenTelemetry
 
-Pharmaviyum uses the OpenTelemetry SDK for distributed tracing. The FastAPI
-application instruments inbound requests, SQLAlchemy database operations,
-Redis commands, and outbound HTTPX requests. Trace context propagation uses
-the standard W3C Trace Context headers (`traceparent` and `tracestate`).
+Pharmaviyum uses the OpenTelemetry SDK for distributed tracing. Tracing is
+disabled by default. When enabled, FastAPI request spans and bounded Mortarium
+AI spans are available without exporting prompts, patient data or tool payloads.
 
 ## Configuration
 
-Tracing is disabled by default to avoid adding instrumentation overhead when no trace backend is configured. Enable it explicitly together with an OTLP endpoint.
-
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `OTEL_ENABLED` | `false` | Enable/disable SDK and instrumentation |
-| `OTEL_SERVICE_NAME` | `pharmaviyum-ai` | Service identity in the trace backend |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset | Standard OTLP/gRPC collector endpoint |
-| `OTEL_EXPORTER_ENDPOINT` | unset | Backward-compatible endpoint variable |
-| `OTEL_SAMPLE_RATE` | `0.1` | Root trace sampling ratio, from 0.0 to 1.0 |
+| `OTEL_ENABLED` | `false` | Enable/disable SDK and tracing |
+| `OTEL_SERVICE_NAME` | `pharmaviyum-ai` | Service identity |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset | OTLP/gRPC collector endpoint |
+| `OTEL_EXPORTER_ENDPOINT` | unset | Backward-compatible endpoint |
+| `OTEL_SAMPLE_RATE` | `0.1` | Root trace sampling ratio, 0.0–1.0 |
+| `OTEL_ENABLE_SENSITIVE_CLIENT_INSTRUMENTATION` | `false` | Development-only SQLAlchemy, Redis and HTTPX spans |
 
-Set one endpoint on the FastAPI Cloud application, for example:
+Example production configuration:
 
 ```dotenv
 OTEL_ENABLED=true
@@ -26,35 +24,44 @@ OTEL_EXPORTER_OTLP_ENDPOINT=https://your-otlp-collector.example.com:4317
 OTEL_SAMPLE_RATE=0.1
 ```
 
-The local Docker Compose stack starts an OTLP Collector and Jaeger. After `docker compose up`, open `http://localhost:16686` to inspect traces. The collector forwards traces to Jaeger over OTLP/gRPC. For a local collector without TLS, use an `http://` endpoint. OTLP exporter
-authentication headers can be supplied through the standard
-`OTEL_EXPORTER_OTLP_HEADERS` environment variable. Never commit collector
-tokens or credentials to the repository.
+Production OTLP export requires TLS. Do not put collector credentials or
+tokens in source control. Configure authentication headers through the runtime
+environment or secret manager.
 
-When tracing is enabled without an endpoint, spans are created in-process but
-are not exported. The application logs a warning; the API remains available.
-If an exporter cannot initialize, observability setup is non-fatal and must not
-prevent the pharmacy API from starting.
+## Instrumentation and privacy defaults
 
-## Instrumented boundaries
+- FastAPI server spans are enabled when OpenTelemetry is enabled. Health,
+  readiness, metrics and documentation routes are excluded.
+- SQLAlchemy, Redis and HTTPX auto-instrumentation are **disabled by default**.
+  These instrumentations can capture SQL text, Redis keys/commands, URL paths
+  or query parameters. They may be enabled only in non-production environments
+  with `OTEL_ENABLE_SENSITIVE_CLIENT_INSTRUMENTATION=true`.
+- Production must not enable that development-only switch. Add reviewed,
+  bounded manual spans for database/cache/client operations where needed.
+- Mortarium spans should contain only bounded operational attributes such as
+  model name, source count, tool count, latency, cache outcome and execution
+  status. Never attach prompts, model outputs, retrieved clinical text,
+  patient/user identifiers, prescription data, raw tool arguments, credentials,
+  SQL statements or connection strings.
+- Error telemetry should record exception type and stable error codes, not
+  exception messages or stack traces that may include PHI.
 
-- FastAPI server requests (health, readiness, metrics and documentation routes
-  are excluded to reduce noise).
-- SQLAlchemy synchronous engine boundary used by the async SQLAlchemy engine.
-- Redis client operations.
-- Outbound HTTPX client requests.
-- Mortarium RAG retrieval and MCP tool execution, with bounded attributes for source counts, warning counts, tool names, and success state.
-- Mortarium model routing and agent execution, without recording prompts, patient data, tool arguments, or retrieved clinical text.
+## LangSmith
 
-The SDK uses a parent-based, ratio sampler. Child spans follow the sampled state
-of their parent. The provider is flushed and shut down during application
-lifespan shutdown.
+LangSmith manual runs are metadata-only by default. Automatic LangChain content
+tracing is forced off unless `AI_TELEMETRY_INCLUDE_CONTENT=true` is explicitly
+set in a non-production environment. Production always redacts content even if
+that variable is accidentally enabled. Session identifiers are not exported.
+Only allowlisted numeric/boolean operational metadata and fixed low-cardinality
+tags are sent.
 
-## Data protection
+## Local development
 
-Do not attach patient names, patient identifiers, prescription contents,
-access tokens, API keys, database connection strings, raw prompts, or retrieved
-clinical text to span attributes or events. Keep custom attributes bounded and
-prefer route templates over raw URL paths. Apply the collector retention,
-access-control, and regional data-residency policies before enabling export in
-production.
+The local Docker Compose stack starts an OTLP Collector and Jaeger. Open
+`http://localhost:16686` to inspect traces. Local collectors may use HTTP
+without TLS; this is not permitted for production endpoints.
+
+Before enabling production export, verify collector authentication, TLS,
+retention, access control, regional data residency and attribute filtering.
+A successful application startup does not prove that an OTLP collector is
+reachable or that exported data satisfies the privacy policy.
