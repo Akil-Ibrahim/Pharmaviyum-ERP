@@ -353,7 +353,7 @@ export function Pos() {
             <Button
               variant='outline'
               onClick={() => {
-                setReceivingOpen(true
+                setReceivingOpen(true)
                 setReceivingProductId('')
               }}
             >
