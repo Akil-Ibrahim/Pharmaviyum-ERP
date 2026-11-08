@@ -11,15 +11,15 @@ import {
   ShoppingCart,
   UsersRound,
 } from 'lucide-react'
+import { apiFetch } from '@/lib/api-client'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { apiFetch } from '@/lib/api-client'
 
 type DrugSalesCategory = {
   category: string
@@ -319,9 +319,7 @@ export function Dashboard() {
                     </div>
                   ))}
                   <div className='flex items-center justify-between border-t pt-3 text-sm'>
-                    <span className='text-muted-foreground'>
-                      Общая выручка
-                    </span>
+                    <span className='text-muted-foreground'>Общая выручка</span>
                     <span className='font-bold tabular-nums'>
                       {money(categoryTotalRevenue)}
                     </span>
