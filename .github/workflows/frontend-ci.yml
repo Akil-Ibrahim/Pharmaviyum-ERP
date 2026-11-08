@@ -60,18 +60,16 @@ jobs:
           else
             echo "No frontend files changed; skipping Prettier."
           fi
-      - name: Commit formatter output
+      - name: Print formatted dashboard files
         if: github.event_name == 'pull_request'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
+          for file in \
             src/components/layout/data/sidebar-data.ts \
             src/components/layout/data/sidebar-data.test.ts \
-            src/features/dashboard/index.tsx
-          if ! git diff --cached --quiet; then
-            git commit -m "style(dashboard): apply Prettier formatting"
-            git push origin "HEAD:${GITHUB_HEAD_REF}"
-          fi
+            src/features/dashboard/index.tsx; do
+            echo "===BEGIN:${file}==="
+            cat "${file}"
+            echo "===END:${file}==="
+          done
       - name: TypeScript and production build
         run: bun run build
