@@ -310,6 +310,10 @@ export function Pos() {
     event.preventDefault()
     const term = query.trim()
     if (term.length < 2) return
+    if (!pharmacyId) {
+      setNotice('Select a pharmacy before searching the catalog.')
+      return
+    }
 
     const normalized = term.replace(/\s+/g, '').toLowerCase()
     const findExact = (products: LocalProduct[]) =>
@@ -753,6 +757,7 @@ export function Pos() {
                   ref={searchRef}
                   value={query}
                   onChange={(e) => {
+                    pendingScanRef.current = ''
                     setQuery(e.target.value)
                     setResults([])
                     setReferenceResults([])
