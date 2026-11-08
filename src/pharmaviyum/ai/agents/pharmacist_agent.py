@@ -223,16 +223,26 @@ class PharmacistAgent:
                 "Verify safety-critical details against current evidence."
             )
         )
+        country = html.escape(
+            str(context.get("country", "VN"))[:32], quote=False
+        )
+        language = html.escape(
+            str(context.get("language", "vi"))[:16], quote=False
+        )
+        memory_context = html.escape(
+            str(context.get("memory_context", "")), quote=False
+        )
+        rag_context = html.escape(str(state.get("rag_context", "")), quote=False)
         reference_context = HumanMessage(
             content=(
                 "<untrusted_reference_context>\n"
-                f"Country: {html.escape(str(context.get('country', 'VN'))[:32], quote=False)}\n"
-                f"Language: {html.escape(str(context.get('language', 'vi'))[:16], quote=False)}\n"
+                f"Country: {country}\n"
+                f"Language: {language}\n"
                 "<historical_memory>\n"
-                f"{html.escape(str(context.get('memory_context', '')), quote=False)}"
+                f"{memory_context}"
                 "\n</historical_memory>\n"
                 "<retrieved_rag_evidence>\n"
-                f"{html.escape(str(state.get('rag_context', '')), quote=False)}"
+                f"{rag_context}"
                 "\n</retrieved_rag_evidence>\n"
                 "</untrusted_reference_context>"
             ),
