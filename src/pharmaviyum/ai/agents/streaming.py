@@ -49,6 +49,7 @@ class AgentStreamManager:
         - {"type": "complete", "final_state": {...}}
         """
         config = config or {}
+        final_state: dict[str, Any] | None = None
 
         try:
             async with asyncio.timeout(self.timeout_seconds):
@@ -71,6 +72,12 @@ class AgentStreamManager:
 
                     elif event_kind == "on_chain_end":
                         node_name = event.get("name", "unknown")
+                        output = event.get("data", {}).get("output")
+                        if isinstance(output, dict):
+                            # Keep the most recent graph state emitted by the
+                            # stream. Never invoke the graph a second time:
+                            # replaying it can duplicate MCP writes and side effects.
+                            final_state = output
                         yield {
                             "type": "node_end",
                             "node": node_name,
@@ -111,10 +118,6 @@ class AgentStreamManager:
                             "timestamp": event.get("timestamp"),
                         }
 
-                # Final state
-                final_state = await graph.ainvoke(
-                    initial_state, config=config, version="v2"
-                )
                 yield {
                     "type": "complete",
                     "final_state": final_state,
