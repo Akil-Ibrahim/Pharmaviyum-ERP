@@ -32,6 +32,8 @@ def test_otel_settings_accept_legacy_endpoint_name(monkeypatch: pytest.MonkeyPat
 def test_otel_sampling_rate_is_bounded():
     with pytest.raises(ValueError):
         OTelSettings(sample_rate=1.1)
+
+
 def test_agent_harness_trace_id_uses_active_w3c_trace():
     from opentelemetry.sdk.trace import TracerProvider
 
