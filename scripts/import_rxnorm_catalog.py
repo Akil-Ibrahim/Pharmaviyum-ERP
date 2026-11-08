@@ -28,6 +28,10 @@ RXNORM_FILES_URL = (
     "https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html"
 )
 RXNORM_DOWNLOAD_HOST = "download.nlm.nih.gov"
+RXNORM_RELEASES_URL = (
+    "https://uts-ws.nlm.nih.gov/releases?"
+    "releaseType=rxnorm-prescribable-content-monthly-release&current=true"
+)
 
 
 class _RxNormReleaseLinkParser(HTMLParser):
@@ -64,6 +68,80 @@ def resolve_current_rxnorm_url(page_html: str) -> str:
     ):
         raise ValueError("NLM release page returned an unexpected RxNorm download URL.")
     return url
+
+def _release_records(payload: object) -> list[dict[str, object]]:
+    """Extract release records from the NLM Release API response."""
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    if not isinstance(payload, dict):
+        return []
+    if "downloadUrl" in payload:
+        return [payload]
+    for key in ("result", "results", "releases", "releaseList"):
+        nested = payload.get(key)
+        records = _release_records(nested)
+        if records:
+            return records
+    return []
+
+
+def get_current_rxnorm_download_url() -> tuple[str, str]:
+    """Resolve the current prescribable RxNorm archive from NLM's Release API."""
+    response = httpx.get(
+        RXNORM_RELEASES_URL,
+        timeout=30,
+        follow_redirects=True,
+    )
+    response.raise_for_status()
+    releases = _release_records(response.json())
+    if not releases:
+        raise ValueError("NLM Release API returned no RxNorm prescribable releases")
+
+    current = next(
+        (
+            release
+            for release in releases
+            if str(release.get("current", "")).casefold() in {"true", "1", "yes"}
+        ),
+        releases[0],
+    )
+    download_url = str(current.get("downloadUrl") or "").strip()
+    parsed_url = urlparse(download_url)
+    if (
+        parsed_url.scheme != "https"
+        or parsed_url.hostname != "download.nlm.nih.gov"
+        or "rxnorm" not in parsed_url.path.casefold()
+        or not parsed_url.path.casefold().endswith(".zip")
+    ):
+        raise ValueError(
+            "NLM Release API returned an unexpected RxNorm download URL"
+        )
+
+    version = str(
+        current.get("releaseVersion")
+        or current.get("releaseDate")
+        or current.get("fileName")
+        or "current"
+    )
+    return download_url, version
+
+
+def validate_rxnorm_archive(
+    archive_path: Path,
+    content_type: str,
+    download_url: str,
+) -> None:
+    """Fail clearly if NLM returns an HTML error page instead of a ZIP archive."""
+    if zipfile.is_zipfile(archive_path):
+        return
+    with archive_path.open("rb") as archive_file:
+        prefix = archive_file.read(80)
+    raise ValueError(
+        "NLM RxNorm download did not return a ZIP archive "
+        f"(content-type={content_type or 'unknown'}, url={download_url}, "
+        f"first_bytes={prefix[:40]!r})"
+    )
+
 PRODUCT_TERMS = {"SCD", "SBD"}
 COMPONENT_TERMS = {"SCDC"}
 INGREDIENT_TERMS = {"IN", "PIN"}
@@ -325,43 +403,46 @@ async def main() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = Path(temp_dir) / "rxnorm.zip"
         headers = {"User-Agent": "Pharmaviyum-DrugCatalog/1.0"}
-        release_page = httpx.get(
-            RXNORM_FILES_URL,
-            headers=headers,
-            timeout=30,
-            follow_redirects=True,
-        )
-        release_page.raise_for_status()
-        archive_url = resolve_current_rxnorm_url(release_page.text)
+        try:
+            download_url, release_version = get_current_rxnorm_download_url()
+        except (httpx.HTTPError, ValueError):
+            release_page = httpx.get(
+                RXNORM_FILES_URL,
+                headers=headers,
+                timeout=30,
+                follow_redirects=True,
+            )
+            release_page.raise_for_status()
+            download_url = resolve_current_rxnorm_url(release_page.text)
+            release_version = "current"
 
+        content_type = ""
         with httpx.stream(
             "GET",
-            archive_url,
+            download_url,
             headers=headers,
             timeout=120,
             follow_redirects=True,
         ) as response:
             response.raise_for_status()
+            content_type = response.headers.get("content-type", "")
             with archive_path.open("wb") as archive_file:
                 for chunk in response.iter_bytes():
                     archive_file.write(chunk)
 
-        if not zipfile.is_zipfile(archive_path):
-            raise RuntimeError(
-                f"NLM RxNorm download did not return a ZIP archive: {archive_url}"
-            )
+        validate_rxnorm_archive(archive_path, content_type, download_url)
 
         if args.dry_run:
             references, products = parse_rxnorm_archive(archive_path)
             print(
-                f"RxNorm dry run: {len(references)} ingredient concepts and "
+                f"RxNorm dry run ({release_version}): {len(references)} ingredient concepts and "
                 f"{len(products)} single-ingredient products parsed; "
                 "database unchanged."
             )
             return
 
         references_added, products_added = await import_catalog(
-            archive_path, source_url=archive_url
+            archive_path, source_url=download_url
         )
 
     print(
