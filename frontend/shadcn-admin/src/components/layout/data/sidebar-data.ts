@@ -16,6 +16,7 @@ import {
   Palette,
   ReceiptText,
   RefreshCw,
+  Receipt,
   ServerCog,
   Settings,
   ShoppingCart,
@@ -58,6 +59,7 @@ export const sidebarData: SidebarData = {
           icon: ClipboardCheck,
         },
         { title: 'Patients', url: '/patients', icon: UserRound },
+        { title: 'Purchase Ledger', url: '/patient-purchases', icon: Receipt },
         { title: 'Orders', url: '/orders', icon: ClipboardList },
         { title: 'Prescriptions', url: '/prescriptions', icon: FileText },
         {
