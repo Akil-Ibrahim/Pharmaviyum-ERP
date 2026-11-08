@@ -633,8 +633,7 @@ export function Dashboard() {
                           {item.name}
                         </p>
                         <p className='text-xs text-muted-foreground'>
-                          Available: {item.available_packs} packs · threshold
-                          {' '}
+                          Available: {item.available_packs} packs · threshold{' '}
                           {item.reorder_level}
                         </p>
                       </div>
