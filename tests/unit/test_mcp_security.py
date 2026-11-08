@@ -77,3 +77,77 @@ def test_registry_rejects_unconfirmed_write_tool() -> None:
             execution_class="write",
             requires_pharmacist_confirmation=False,
         )
+
+
+@pytest.mark.asyncio
+async def test_write_tool_fails_closed_without_trusted_approval_verifier() -> None:
+    from src.pharmaviyum.ai.mcp.context import (
+        MCPAuthorizationContext,
+        reset_mcp_context,
+        set_mcp_context,
+    )
+
+    registry = MCPToolRegistry()
+
+    @registry.tool(
+        name="confirmed_write",
+        description="A write operation that requires pharmacist approval",
+        input_schema=SafeInput,
+        output_schema=EmptyOutput,
+        execution_class="write",
+        requires_pharmacist_confirmation=True,
+        required_roles=["pharmacist"],
+    )
+    async def confirmed_write(data: SafeInput) -> EmptyOutput:
+        return EmptyOutput(ok=True)
+
+    token = set_mcp_context(
+        MCPAuthorizationContext(user_id=10, pharmacy_id=20, user_role="pharmacist")
+    )
+    try:
+        with pytest.raises(PermissionError, match="approval workflow"):
+            await registry.call_tool(
+                "confirmed_write",
+                {"product_id": 5},
+                user_role="pharmacist",
+                user_id=10,
+                pharmacy_id=20,
+            )
+    finally:
+        reset_mcp_context(token)
+
+
+@pytest.mark.asyncio
+async def test_registry_rejects_caller_supplied_identity_mismatch() -> None:
+    from src.pharmaviyum.ai.mcp.context import (
+        MCPAuthorizationContext,
+        reset_mcp_context,
+        set_mcp_context,
+    )
+
+    registry = MCPToolRegistry()
+
+    @registry.tool(
+        name="patient_read",
+        description="A scoped read operation",
+        input_schema=SafeInput,
+        output_schema=EmptyOutput,
+        required_roles=["patient"],
+    )
+    async def patient_read(data: SafeInput) -> EmptyOutput:
+        return EmptyOutput(ok=True)
+
+    token = set_mcp_context(
+        MCPAuthorizationContext(user_id=10, pharmacy_id=20, user_role="patient")
+    )
+    try:
+        with pytest.raises(PermissionError, match="context mismatch"):
+            await registry.call_tool(
+                "patient_read",
+                {"product_id": 5},
+                user_role="pharmacist",
+                user_id=10,
+                pharmacy_id=20,
+            )
+    finally:
+        reset_mcp_context(token)
