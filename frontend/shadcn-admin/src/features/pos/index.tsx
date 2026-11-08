@@ -159,7 +159,7 @@ export function Pos() {
 
   const formatExpiry = (value?: string | null) =>
     value
-      ? new Date(`${value}T00:00:00`).toLocaleDateString('uk-UA')
+      ? new Date(`${value}T00:00:00`).toLocaleDateString('en-US')
       : 'Not specified — determined by batch'
 
   useEffect(() => {
@@ -321,31 +321,52 @@ export function Pos() {
   }
 
   return (
-    <div className='min-h-screen bg-muted/20 p-3 md:p-5'>
+    <div className='w-full min-w-0 bg-muted/20 p-3 md:p-5'>
       <div className='mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-[1920px] flex-col gap-4'>
-        <header className='flex items-center justify-end gap-3 bg-transparent py-2'>
-          <Button
-            onClick={() => {
-              setCart([])
-              setLotsByProduct({})
-              setResults([])
-              setReferenceResults([])
-              setLoading(false)
-              setSale(null)
-              setCheckoutOpen(false)
-              setQuery('')
-              setSearchActive(true)
-              setNotice('New sale. Search is active.')
-              window.requestAnimationFrame(() => searchRef.current?.focus())
-            }}
-          >
-            <Plus className='mr-2 size-4' /> Open Sale
-          </Button>
-          <div className='flex items-center gap-2'>
-            <span className='flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground'>
+        <header className='flex flex-wrap items-center justify-between gap-3 border-b pb-4'>
+          <div className='flex items-center gap-3'>
+            <span className='flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm'>
               <Pill className='size-5' />
             </span>
-            <h1 className='text-lg font-semibold'>Pharmaviyum POS</h1>
+            <div>
+              <h1 className='text-xl font-semibold tracking-tight'>
+                Pharmacy POS
+              </h1>
+              <p className='text-sm text-muted-foreground'>
+                Point of sale · Inventory-aware checkout
+              </p>
+            </div>
+          </div>
+          <div className='flex flex-wrap items-center gap-2'>
+            <Badge variant='outline' className='h-9 px-3'>
+              Register active
+            </Badge>
+            <Button
+              variant='outline'
+              onClick={() => {
+                setReceivingOpen(true)
+                setReceivingProductId('')
+              }}
+            >
+              <Plus className='mr-2 size-4' /> Receive stock
+            </Button>
+            <Button
+              onClick={() => {
+                setCart([])
+                setLotsByProduct({})
+                setResults([])
+                setReferenceResults([])
+                setLoading(false)
+                setSale(null)
+                setCheckoutOpen(false)
+                setQuery('')
+                setSearchActive(true)
+                setNotice('New sale. Search is active.')
+                window.requestAnimationFrame(() => searchRef.current?.focus())
+              }}
+            >
+              <Plus className='mr-2 size-4' /> New sale
+            </Button>
           </div>
         </header>
 
@@ -365,7 +386,7 @@ export function Pos() {
         )}
 
         {cart.length > 0 && (
-          <Card className='min-h-0 flex-1 overflow-y-auto'>
+          <Card className='min-h-0 flex-1 overflow-y-auto xl:sticky xl:top-4 xl:max-h-[calc(100vh-12rem)] xl:w-full xl:shadow-lg'>
             <CardHeader className='pb-3'>
               <div className='flex items-center justify-between'>
                 <CardTitle>Cart</CardTitle>
@@ -507,9 +528,9 @@ export function Pos() {
 
         <section
           aria-label='Medicine search'
-          className='flex min-h-[24vh] flex-1 flex-col justify-start py-5'
+          className='flex min-h-[60vh] min-w-0 flex-1 flex-col justify-start py-5'
         >
-          <div className='mx-auto w-full max-w-3xl'>
+          <div className='mx-auto w-full max-w-5xl'>
             <form
               aria-label='Medicine search'
               onSubmit={(e) => {
