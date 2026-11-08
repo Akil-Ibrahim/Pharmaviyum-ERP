@@ -63,6 +63,7 @@ class LangGraphRAG:
         token_budget_manager: TokenBudgetManager | None = None,
         max_retrieval_concurrency: int = MAX_RETRIEVAL_CONCURRENCY,
         max_grading_concurrency: int = MAX_GRADING_CONCURRENCY,
+        execution_timeout_seconds: float = 90.0,
     ) -> None:
         if checkpointer is None:
             raise ValueError(
