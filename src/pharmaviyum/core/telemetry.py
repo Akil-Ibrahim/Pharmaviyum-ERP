@@ -15,7 +15,6 @@ from src.pharmaviyum.core.config import settings
 trace: Any
 TracerProvider: Any
 BatchSpanProcessor: Any
-ConsoleSpanExporter: Any
 Resource: Any
 FastAPIInstrumentor: Any
 SQLAlchemyInstrumentor: Any
@@ -27,7 +26,7 @@ try:
     from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
     try:
         FastAPIInstrumentor = import_module(
@@ -39,7 +38,6 @@ except Exception:  # pragma: no cover - compatibility fallback for Python 3.14
     trace = None
     TracerProvider = None
     BatchSpanProcessor = None
-    ConsoleSpanExporter = None
     Resource = None
     FastAPIInstrumentor = None
     SQLAlchemyInstrumentor = None
@@ -86,16 +84,15 @@ def setup_telemetry(app=None, engine=None) -> None:
             )
 
             exporter = OTLPSpanExporter(endpoint=settings.OTEL_EXPORTER_ENDPOINT)
-        else:
-            exporter = ConsoleSpanExporter()
-
-        provider.add_span_processor(
-            BatchSpanProcessor(
-                exporter,
-                max_queue_size=2048,
-                schedule_delay_millis=5000,
+            provider.add_span_processor(
+                BatchSpanProcessor(
+                    exporter,
+                    max_queue_size=2048,
+                    schedule_delay_millis=5000,
+                )
             )
-        )
+        # Without an explicit OTLP endpoint, keep spans local and never emit
+        # potentially sensitive telemetry to stdout through a console exporter.
 
         trace.set_tracer_provider(provider)
 
