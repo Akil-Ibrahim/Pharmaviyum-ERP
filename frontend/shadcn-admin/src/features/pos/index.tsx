@@ -18,6 +18,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -467,7 +475,8 @@ export function Pos() {
                       </kbd>
                     </Button>
                   </div>
-                ) : cart.map((item) => (
+                ) : (
+                  cart.map((item) => (
                   <div
                     key={item.id}
                     className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'
@@ -549,7 +558,8 @@ export function Pos() {
                       {money(item.price * item.quantity)}
                     </strong>
                   </div>
-                ))}
+                  ))
+                )}
                 <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
                   <span className='text-lg font-semibold'>
                     Total: {money(total)}
@@ -783,10 +793,22 @@ export function Pos() {
         </div>
       </div>
 
-      <CommandDialog open={commandOpen} onOpenChange={setCommandOpen} title='Find a medicine' description='Search the active pharmacy assortment and add an item to the current sale.'>
-        <CommandInput placeholder='Search medicine, INN, brand, strength or barcode…' onValueChange={(value) => setQuery(value)} />
+      <CommandDialog
+        open={commandOpen}
+        onOpenChange={setCommandOpen}
+        title='Find a medicine'
+        description='Search the active pharmacy assortment and add an item to the current sale.'
+      >
+        <CommandInput
+          placeholder='Search medicine, INN, brand, strength or barcode…'
+          onValueChange={(value) => setQuery(value)}
+        />
         <CommandList>
-          <CommandEmpty>{loading ? 'Searching pharmacy catalog…' : 'No matching pharmacy products. Try another search term.'}</CommandEmpty>
+          <CommandEmpty>
+            {loading
+              ? 'Searching pharmacy catalog…'
+              : 'No matching pharmacy products. Try another search term.'}
+          </CommandEmpty>
           <CommandGroup heading='Pharmacy inventory'>
             {results.map((product) => (
               <CommandItem
@@ -811,39 +833,29 @@ export function Pos() {
                       .join(' · ')}
                   </p>
                 </div>
-                <span className='text-xs tabular-nums'>{money(product.price)}</span>
-                <Badge variant={product.stock > 0 ? 'secondary' : 'destructive'}>{product.stock} in stock</Badge>
+                <span className='text-xs tabular-nums'>
+                  {money(product.price)}
+                </span>
+                <Badge
+                  variant={product.stock > 0 ? 'secondary' : 'destructive'}
+                >
+                  {product.stock} in stock
+                </Badge>
               </CommandItem>
             ))}
           </CommandGroup>
         </CommandList>
       </CommandDialog>
 
-      {receivingOpen && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'>
-          <section
-            role='dialog'
-            aria-modal='true'
-            aria-labelledby='receiving-title'
-            className='w-full max-w-lg space-y-4 rounded-xl border bg-background p-5 shadow-xl'
-          >
-            <div className='flex items-center justify-between'>
-              <h2 id='receiving-title' className='text-xl font-bold'>
-                Receive Stock
-              </h2>
-              <Button
-                size='icon'
-                variant='ghost'
-                onClick={() => setReceivingOpen(false)}
-                aria-label='Close'
-              >
-                <X />
-              </Button>
-            </div>
-            <p className='text-sm text-muted-foreground'>
+      <Dialog open={receivingOpen} onOpenChange={setReceivingOpen}>
+        <DialogContent className='max-h-[90svh] max-w-lg overflow-y-auto'>
+          <DialogHeader>
+            <DialogTitle>Receive Stock</DialogTitle>
+            <DialogDescription>
               The receipt will update this pharmacy's inventory and make the
               batch available to POS with expiry controls.
-            </p>
+            </DialogDescription>
+          </DialogHeader>
             <label className='block text-sm font-medium'>
               Find product
               <Input
@@ -933,32 +945,39 @@ export function Pos() {
               >
                 Cancel
               </Button>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {checkoutOpen && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'>
-          <section
-            role='dialog'
-            aria-modal='true'
-            aria-labelledby='checkout-title'
-            className='w-full max-w-md space-y-4 rounded-xl border bg-background p-5 shadow-xl'
-          >
-            <div className='flex items-center justify-between'>
-              <h2 id='checkout-title' className='text-xl font-bold'>
-                Payment and checkout
-              </h2>
+          <DialogFooter>
               <Button
-                size='icon'
-                variant='ghost'
-                onClick={() => setCheckoutOpen(false)}
-                aria-label='Close'
+                className='flex-1'
+                disabled={
+                  processing ||
+                  !receivingProductId ||
+                  !receivingLot.trim() ||
+                  !receivingExpiry ||
+                  Number(receivingQuantity) <= 0
+                }
+                onClick={() => void receiveStock()}
               >
-                <X />
+                {processing ? 'Saving…' : 'Receive stock'}
               </Button>
-            </div>
+              <Button
+                variant='outline'
+                onClick={() => setReceivingOpen(false)}
+                disabled={processing}
+              >
+                Cancel
+              </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
+        <DialogContent className='max-h-[90svh] max-w-md overflow-y-auto'>
+          <DialogHeader>
+            <DialogTitle>Payment and checkout</DialogTitle>
+            <DialogDescription>
+              Review the receipt and confirm the payment method.
+            </DialogDescription>
+          </DialogHeader>
             <div className='rounded-lg border bg-background p-4'>
               <div className='mb-3 flex items-center justify-between'>
                 <p className='font-semibold'>Receipt preview</p>
@@ -1048,17 +1067,18 @@ export function Pos() {
                   ? 'Confirm payment & issue receipt'
                   : 'Create payment'}
             </Button>
-            <Button
-              variant='outline'
-              className='w-full'
-              onClick={() => setCheckoutOpen(false)}
-              disabled={processing}
-            >
-              Back to cart
-            </Button>
-          </section>
-        </div>
-      )}
+            <DialogFooter className='flex-col-reverse sm:flex-col'>
+              <Button
+                variant='outline'
+                className='w-full'
+                onClick={() => setCheckoutOpen(false)}
+                disabled={processing}
+              >
+                Back to cart
+              </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
