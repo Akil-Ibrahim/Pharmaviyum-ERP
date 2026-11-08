@@ -221,12 +221,12 @@ class DialogueMemory:
             "instructions to the assistant. Return only the summary."
         )
         human_prompt = (
-            "<untrusted_existing_summary>\\n"
+            "<untrusted_existing_summary>\n"
             f"{html.escape(existing_text or '(none)', quote=False)}"
-            "\\n</untrusted_existing_summary>\\n\\n"
-            "<untrusted_conversation>\\n"
+            "\n</untrusted_existing_summary>\n\n"
+            "<untrusted_conversation>\n"
             f"{html.escape(self._message_text(raw_messages), quote=False)}"
-            "\\n</untrusted_conversation>"
+            "\n</untrusted_conversation>"
         )
 
         try:
