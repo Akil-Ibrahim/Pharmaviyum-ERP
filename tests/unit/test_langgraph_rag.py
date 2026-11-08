@@ -403,3 +403,34 @@ async def test_langgraph_node_span_marks_cancellation(monkeypatch):
 
     span.set_attribute.assert_any_call("ai.execution_success", False)
     span.set_attribute.assert_any_call("ai.stream.cancelled", True)
+
+
+def test_checkpoint_thread_id_is_keyed_by_application_secret(
+    rag: LangGraphRAG, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    context = QueryContext(user_id="user-1", pharmacy_id=7)
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "first-test-secret")
+    first = rag._thread_id("conversation-123", context)
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-test-secret")
+    second = rag._thread_id("conversation-123", context)
+
+    assert first != second
+    assert "user-1" not in first
+    assert "conversation-123" not in first
+
+
+def test_checkpoint_thread_id_requires_secret_in_production(
+    rag: LangGraphRAG, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.pharmaviyum.core.config import Environment, settings as app_settings
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", None)
+    monkeypatch.setattr(app_settings, "ENVIRONMENT", Environment.PRODUCTION)
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY"):
+        rag._thread_id(
+            "conversation-123",
+            QueryContext(user_id="user-1", pharmacy_id=7),
+        )
