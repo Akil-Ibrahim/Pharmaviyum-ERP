@@ -38,6 +38,16 @@ class SaleCreate(BaseModel):
         return self
 
 
+class SaleItemAllocationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    inventory_id: int
+    lot_number: str | None
+    expires_at: datetime | None
+    quantity: int
+
+
 class SaleItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -48,6 +58,7 @@ class SaleItemResponse(BaseModel):
     quantity: int
     unit_price: Decimal
     line_total: Decimal
+    allocations: list[SaleItemAllocationResponse] = Field(default_factory=list)
 
 
 class PaymentResponse(BaseModel):
