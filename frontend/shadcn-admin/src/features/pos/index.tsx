@@ -269,7 +269,12 @@ export function Pos() {
     pendingScanRef.current = ''
     const normalized = pending.replace(/\s+/g, '').toLowerCase()
     const matches = results.filter((product) =>
-      [product.barcode, product.gtin, product.sku].some(
+      [
+        product.barcode,
+        product.gtin,
+        product.sku,
+        product.regulatory_id,
+      ].some(
         (value) => value?.replace(/\s+/g, '').toLowerCase() === normalized
       )
     )
