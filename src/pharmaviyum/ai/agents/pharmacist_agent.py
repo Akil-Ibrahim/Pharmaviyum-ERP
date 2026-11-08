@@ -285,7 +285,7 @@ class PharmacistAgent:
                             "error": result.error,
                         }
                     )
-            except Exception:
+            except Exception as exc:
                 content = "Tool execution failed safely."
                 results.append(
                     {
