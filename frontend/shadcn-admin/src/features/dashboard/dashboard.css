@@ -1,6 +1,14 @@
 .pharmaviyum-dashboard {
-  --pharmacy-blue-soft: color-mix(in oklab, var(--primary) 5%, var(--background));
-  --pharmacy-blue-border: color-mix(in oklab, var(--primary) 18%, var(--border));
+  --pharmacy-blue-soft: color-mix(
+    in oklab,
+    var(--primary) 5%,
+    var(--background)
+  );
+  --pharmacy-blue-border: color-mix(
+    in oklab,
+    var(--primary) 18%,
+    var(--border)
+  );
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -13,7 +21,11 @@
   overflow: hidden;
   border-color: var(--border);
   border-radius: 0.9rem;
-  background: linear-gradient(115deg, var(--pharmacy-blue-soft), var(--card) 66%);
+  background: linear-gradient(
+    115deg,
+    var(--pharmacy-blue-soft),
+    var(--card) 66%
+  );
 }
 
 .pharmacy-dashboard-hero::after {
@@ -25,8 +37,9 @@
   height: 14rem;
   border: 1px solid color-mix(in oklab, var(--primary) 12%, transparent);
   border-radius: 50%;
-  content: "";
-  box-shadow: 0 0 0 1.5rem color-mix(in oklab, var(--primary) 4%, transparent),
+  content: '';
+  box-shadow:
+    0 0 0 1.5rem color-mix(in oklab, var(--primary) 4%, transparent),
     0 0 0 3rem color-mix(in oklab, var(--primary) 2%, transparent);
   pointer-events: none;
 }
@@ -46,35 +59,63 @@
 
 .pharmaviyum-dashboard .space-y-5 > section > .rounded-2xl.border,
 .pharmaviyum-dashboard .space-y-5 > section > div.rounded-2xl.border,
-.pharmaviyum-dashboard .space-y-5 > section > div.grid > div.rounded-2xl.border {
+.pharmaviyum-dashboard
+  .space-y-5
+  > section
+  > div.grid
+  > div.rounded-2xl.border {
   border-color: var(--border);
   border-radius: 0.85rem;
   box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 3%, transparent);
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .pharmaviyum-dashboard .space-y-5 > section > .rounded-2xl.border:hover,
 .pharmaviyum-dashboard .space-y-5 > section > div.rounded-2xl.border:hover,
-.pharmaviyum-dashboard .space-y-5 > section > div.grid > div.rounded-2xl.border:hover {
+.pharmaviyum-dashboard
+  .space-y-5
+  > section
+  > div.grid
+  > div.rounded-2xl.border:hover {
   border-color: var(--pharmacy-blue-border);
-  box-shadow: 0 5px 16px -12px color-mix(in oklab, var(--primary) 32%, transparent);
+  box-shadow: 0 5px 16px -12px
+    color-mix(in oklab, var(--primary) 32%, transparent);
 }
 
 /* KPI scorecard: compact, high-contrast, and number-first. */
-.pharmaviyum-dashboard .space-y-5 > section:first-child > div.rounded-2xl.border {
+.pharmaviyum-dashboard
+  .space-y-5
+  > section:first-child
+  > div.rounded-2xl.border {
   position: relative;
   overflow: hidden;
   border-top: 2px solid color-mix(in oklab, var(--primary) 70%, var(--border));
-  background: linear-gradient(180deg, var(--pharmacy-blue-soft), var(--card) 54%);
-  box-shadow: 0 2px 5px -4px color-mix(in oklab, var(--foreground) 16%, transparent);
+  background: linear-gradient(
+    180deg,
+    var(--pharmacy-blue-soft),
+    var(--card) 54%
+  );
+  box-shadow: 0 2px 5px -4px
+    color-mix(in oklab, var(--foreground) 16%, transparent);
 }
 
-.pharmaviyum-dashboard .space-y-5 > section:first-child > div.rounded-2xl.border > div:first-child > div {
+.pharmaviyum-dashboard
+  .space-y-5
+  > section:first-child
+  > div.rounded-2xl.border
+  > div:first-child
+  > div {
   border: 1px solid color-mix(in oklab, var(--primary) 12%, transparent);
   border-radius: 0.65rem;
 }
 
-.pharmaviyum-dashboard .space-y-5 > section:first-child > div.rounded-2xl.border > p:nth-of-type(2) {
+.pharmaviyum-dashboard
+  .space-y-5
+  > section:first-child
+  > div.rounded-2xl.border
+  > p:nth-of-type(2) {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
 }
@@ -120,7 +161,8 @@
 }
 
 .pharmaviyum-dashboard .overflow-x-auto {
-  scrollbar-color: color-mix(in oklab, var(--primary) 28%, var(--muted)) transparent;
+  scrollbar-color: color-mix(in oklab, var(--primary) 28%, var(--muted))
+    transparent;
   scrollbar-width: thin;
 }
 
@@ -183,7 +225,8 @@
 .pharmacy-priority-panel {
   overflow: hidden;
   border-color: var(--pharmacy-blue-border);
-  box-shadow: 0 2px 8px -6px color-mix(in oklab, var(--primary) 28%, transparent);
+  box-shadow: 0 2px 8px -6px
+    color-mix(in oklab, var(--primary) 28%, transparent);
 }
 
 .pharmacy-priority-panel > div:first-child {
@@ -207,4 +250,3 @@
     border-top: 1px solid var(--border);
   }
 }
-
