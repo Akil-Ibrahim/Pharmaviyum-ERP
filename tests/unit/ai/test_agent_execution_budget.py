@@ -49,10 +49,10 @@ async def test_executor_enforces_cumulative_tool_call_budget():
     assert len(result["messages"]) == 12
     assert len(result["tool_results"]) == 12
     assert all("input_data" not in item for item in result["tool_results"])
-    assert [
-        item["error"]
-        for item in result["tool_results"][-2:]
-    ] == ["tool_call_budget_exceeded", "tool_call_budget_exceeded"]
+    assert [item["error"] for item in result["tool_results"][-2:]] == [
+        "tool_call_budget_exceeded",
+        "tool_call_budget_exceeded",
+    ]
 
 
 @pytest.mark.asyncio
@@ -75,6 +75,5 @@ async def test_executor_rejects_new_calls_after_budget_is_exhausted():
     assert agent.mcp_client.calls == []
     assert len(result["messages"]) == 2
     assert all(
-        item["error"] == "tool_call_budget_exceeded"
-        for item in result["tool_results"]
+        item["error"] == "tool_call_budget_exceeded" for item in result["tool_results"]
     )
