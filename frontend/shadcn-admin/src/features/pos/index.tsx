@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Search,
   Plus,
@@ -232,31 +232,34 @@ export function Pos() {
     }
   }, [cart, pharmacyId])
 
-  function addProduct(product: LocalProduct) {
-    if (product.stock < 1) {
-      setNotice('No available stock.')
-      return
-    }
-    if (cart.length === 0) setLotsByProduct({})
-    pendingScanRef.current = ''
-    setResults([])
-    setReferenceResults([])
-    setLoading(false)
-    setCart((items) => {
-      const found = items.find((item) => item.id === product.id)
-      if (found)
-        return items.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) }
-            : item
-        )
-      return [...items, { ...product, quantity: 1 }]
-    })
-    setNotice('')
-    setQuery('')
-    setSearchActive(true)
-    searchRef.current?.focus()
-  }
+  const addProduct = useCallback(
+    (product: LocalProduct) => {
+      if (product.stock < 1) {
+        setNotice('No available stock.')
+        return
+      }
+      if (cart.length === 0) setLotsByProduct({})
+      pendingScanRef.current = ''
+      setResults([])
+      setReferenceResults([])
+      setLoading(false)
+      setCart((items) => {
+        const found = items.find((item) => item.id === product.id)
+        if (found)
+          return items.map((item) =>
+            item.id === product.id
+              ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) }
+              : item
+          )
+        return [...items, { ...product, quantity: 1 }]
+      })
+      setNotice('')
+      setQuery('')
+      setSearchActive(true)
+      searchRef.current?.focus()
+    },
+    [cart.length]
+  )
 
   useEffect(() => {
     const pending = pendingScanRef.current
@@ -278,7 +281,7 @@ export function Pos() {
     } else {
       setNotice('No exact barcode match. Review the search results before adding.')
     }
-  }, [results, loading, query])
+  }, [results, loading, query, addProduct])
 
   const changeQuantity = (id: number, delta: number) =>
     setCart((items) =>
