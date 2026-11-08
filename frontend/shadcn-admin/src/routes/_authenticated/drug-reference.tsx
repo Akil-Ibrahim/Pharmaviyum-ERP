@@ -366,7 +366,7 @@ function Detail({ label, children }: { label: string; children: string }) {
   return (
     <div className='min-w-0'>
       <p className='text-xs text-muted-foreground'>{label}</p>
-      <p className='mt-0.5 break-words font-medium'>{children}</p>
+      <p className='mt-0.5 font-medium break-words'>{children}</p>
     </div>
   )
 }
