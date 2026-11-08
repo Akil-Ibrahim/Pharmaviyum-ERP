@@ -319,6 +319,8 @@ async def test_cached_harness_stream_emits_terminal_complete_event() -> None:
 
 
 def test_citation_validator_rejects_orphan_source_references():
+    from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+
     answer, warnings = AgentHarness._validate_rag_citations(
         "The medicine is safe [src-unknown].",
         [],
