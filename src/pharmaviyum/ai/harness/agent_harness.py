@@ -339,7 +339,7 @@ class AgentHarness:
                 yield event
         except Exception as exc:
             failed = True
-            span.record_exception(exc)
+            span.set_attribute("error.type", type(exc).__name__)
             raise
         finally:
             span.set_attribute("ai.rag.source_count", source_count)
@@ -353,7 +353,8 @@ class AgentHarness:
                 span.set_attribute("ai.stream.cancelled", True)
             span.end()
 
-    async def _astream_events(        self,
+    async def _astream_events(
+        self,
         session_id: str,
         query: str,
         context: dict[str, Any] | None = None,
