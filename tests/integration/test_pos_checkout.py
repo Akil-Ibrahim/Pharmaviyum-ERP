@@ -154,6 +154,24 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
 
 
 @pytest.mark.integration
+async def test_pos_product_search_returns_regulatory_identifier(
+    authenticated_client, test_db
+):
+    pharmacy, product, _, _ = await _create_pharmacy_product_and_stock(test_db)
+    product.regulatory_id = "REG-OMEP-2026"
+    await test_db.flush()
+
+    response = await authenticated_client.get(
+        "/api/v1/pos/products/search",
+        params={"q": "REG-OMEP-2026", "pharmacy_id": pharmacy.id},
+    )
+
+    assert response.status_code == 200, response.text
+    assert len(response.json()) == 1
+    assert response.json()[0]["regulatory_id"] == "REG-OMEP-2026"
+
+
+@pytest.mark.integration
 async def test_cash_checkout_records_receipt_and_allocates_fefo(
     authenticated_client, test_db
 ):
