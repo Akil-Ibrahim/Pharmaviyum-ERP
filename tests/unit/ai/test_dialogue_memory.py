@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.pharmaviyum.ai.harness.memory import DialogueMemory
 
@@ -77,8 +78,11 @@ class FakeRedis:
 
 
 class FakeSummarizer:
-    async def ainvoke(self, prompt):
-        assert "untrusted quoted data" in prompt
+    async def ainvoke(self, messages):
+        assert isinstance(messages[0], SystemMessage)
+        assert isinstance(messages[1], HumanMessage)
+        assert "untrusted quoted data" in messages[0].content
+        assert "<untrusted_conversation>" in messages[1].content
         return type("Result", (), {"content": "A factual rolling summary."})()
 
 
