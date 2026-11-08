@@ -279,11 +279,6 @@ class AgentHarness:
             final_warnings: list[str] = []
             tool_results: list[dict[str, Any]] = []
             rag_sources: list[dict[str, Any]] = []
-            selected_model_name = (
-                getattr(selected_model, "model_name", None)
-                or getattr(selected_model, "model", None)
-                or "configured-model"
-            )
 
             yield {
                 "event": "status",
@@ -302,6 +297,11 @@ class AgentHarness:
                 requires_safety_check=bool(
                     context.get("halal_filter") or context.get("prescription_id")
                 ),
+            )
+            selected_model_name = (
+                getattr(selected_model, "model_name", None)
+                or getattr(selected_model, "model", None)
+                or "configured-model"
             )
             async for stream_event in self.agent.astream(
                 query=safe_query,
