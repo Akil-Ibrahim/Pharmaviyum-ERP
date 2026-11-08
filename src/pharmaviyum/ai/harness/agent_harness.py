@@ -142,7 +142,7 @@ class AgentHarness:
 
         logger.info(
             "Agent harness execution started",
-            extra={"session_id": session_id, "trace_id": trace_id},
+            extra={"trace_id": trace_id},
         )
 
         try:
@@ -272,7 +272,6 @@ class AgentHarness:
             logger.info(
                 "Agent harness execution completed successfully",
                 extra={
-                    "session_id": session_id,
                     "trace_id": trace_id,
                     "latency_ms": latency_ms,
                     "warnings_count": len(agent_warnings),
@@ -290,12 +289,11 @@ class AgentHarness:
                 "latency_ms": latency_ms,
             }
 
-        except Exception:
+        except Exception as exc:
             latency_ms = (time.perf_counter() - start_time) * 1000
             logger.error(
                 "Agent harness execution failed",
-                extra={"session_id": session_id, "trace_id": trace_id},
-                exc_info=True,
+                extra={"trace_id": trace_id, "error_type": type(exc).__name__},
             )
             return {
                 "success": False,
@@ -466,10 +464,9 @@ class AgentHarness:
                 "latency_ms": (time.perf_counter() - start_time) * 1000,
             }
 
-        except Exception:
+        except Exception as exc:
             logger.error(
                 "Streaming failed",
-                extra={"session_id": session_id, "trace_id": trace_id},
-                exc_info=True,
+                extra={"trace_id": trace_id, "error_type": type(exc).__name__},
             )
             yield {"event": "error", "message": "An error occurred during processing."}
