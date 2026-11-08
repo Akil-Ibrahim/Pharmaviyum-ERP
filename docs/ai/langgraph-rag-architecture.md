@@ -55,13 +55,15 @@ arguments must never establish identity.
 - Concurrent document grading calls are limited by
   `max_grading_concurrency` (default: 4).
 - LangGraph receives an explicit recursion limit derived from the rewrite budget.
+- The entire graph invocation has a 90-second default deadline; cancellation is
+  propagated and marked in node spans rather than treated as an ordinary error.
 - Retrieval and grading failures are represented as bounded warning codes; raw
   exception text is not copied into application logs.
 
-These limits bound fan-out and graph loops. Per-node deadlines, cancellation
-propagation tests and graph-level checkpoint-resume fault injection remain
-follow-up work and must be completed before claiming full operational
-resilience.
+These limits bound fan-out and graph loops. Per-node deadlines and graph-level
+checkpoint-resume fault injection remain follow-up work and must be completed
+before claiming full operational resilience. Cancellation propagation is
+covered by regression tests.
 
 ## Persistence
 
