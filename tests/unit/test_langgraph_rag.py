@@ -37,22 +37,26 @@ def test_route_after_grade_rewrites_until_budget_is_exhausted(
     )
 
 
-def test_thread_id_is_namespaced_and_unique_without_caller_id(
-    rag: LangGraphRAG,
-) -> None:
+def test_thread_id_is_stable_opaque_and_tenant_scoped(rag: LangGraphRAG) -> None:
     context = QueryContext(user_id="user-1", pharmacy_id=7)
-    assert rag._thread_id("conversation-123", context) == (
-        "rag:7:user-1:conversation-123"
-    )
-    first = rag._thread_id(None, context)
-    second = rag._thread_id(None, context)
+    first = rag._thread_id("conversation-123", context)
+    assert first == rag._thread_id("conversation-123", context)
     assert first.startswith("rag:")
-    assert second.startswith("rag:")
-    assert first != second
+    assert "user-1" not in first
+    assert "conversation-123" not in first
+
     other_tenant = QueryContext(user_id="user-1", pharmacy_id=8)
-    assert rag._thread_id("conversation-123", other_tenant) != rag._thread_id(
-        "conversation-123", context
-    )
+    assert rag._thread_id("conversation-123", other_tenant) != first
+    other_user = QueryContext(user_id="user-2", pharmacy_id=7)
+    assert rag._thread_id("conversation-123", other_user) != first
+
+    assert rag._thread_id(None, context) != rag._thread_id(None, context)
+
+
+@pytest.mark.parametrize("thread_id", ["", "   ", "x" * 129])
+def test_thread_id_rejects_invalid_caller_values(rag: LangGraphRAG, thread_id: str):
+    with pytest.raises(ValueError):
+        rag._thread_id(thread_id, QueryContext(user_id="user-1", pharmacy_id=7))
 
 
 @pytest.mark.asyncio
