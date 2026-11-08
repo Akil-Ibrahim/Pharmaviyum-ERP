@@ -666,7 +666,9 @@ class LangGraphRAG:
     def _thread_id(thread_id: str | None, context: QueryContext) -> str:
         """Create a stable opaque checkpoint key without persisting raw identities."""
         if thread_id is not None and (
-            not thread_id.strip() or len(thread_id) > 128
+            not isinstance(thread_id, str)
+            or not thread_id.strip()
+            or len(thread_id) > 128
         ):
             raise ValueError(
                 "RAG thread identifier must be 1-128 non-whitespace characters"
