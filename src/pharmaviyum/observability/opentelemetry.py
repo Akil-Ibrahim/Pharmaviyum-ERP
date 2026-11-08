@@ -81,7 +81,9 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
                         or parsed_endpoint.hostname
                         not in {"localhost", "127.0.0.1", "::1", "otel-collector"}
                     ):
-                        raise ValueError("Production and non-local OTLP export require HTTPS")
+                        raise ValueError(
+                            "Production and non-local OTLP export require HTTPS"
+                        )
                 else:
                     target = endpoint
                     insecure = False
@@ -118,9 +120,11 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
             )
         ]
 
-        environment = str(
-            getattr(settings.environment, "value", settings.environment)
-        ).strip().lower()
+        environment = (
+            str(getattr(settings.environment, "value", settings.environment))
+            .strip()
+            .lower()
+        )
         allow_sensitive_client_spans = _allow_sensitive_client_instrumentation(
             environment,
             os.getenv("OTEL_ENABLE_SENSITIVE_CLIENT_INSTRUMENTATION", "false").lower()
