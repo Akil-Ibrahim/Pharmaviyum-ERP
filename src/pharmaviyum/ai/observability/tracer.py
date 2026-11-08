@@ -48,6 +48,49 @@ _SAFE_METADATA_KEYS = {
     "overall_score",
 }
 
+_SAFE_SPAN_NAMES = {
+    "mortarium.agent.execute",
+    "mortarium.agent.stream",
+    "mortarium.model_router.select",
+    "mortarium.rag.retrieve",
+    "mortarium.mcp.tool",
+    "pharmaviyum.ai.operation",
+}
+_SAFE_SPAN_ATTRIBUTES = {
+    "ai.model_name",
+    "ai.rag.source_count",
+    "ai.rag.rewrite_count",
+    "ai.rag.retrieved_count",
+    "ai.rag.graded_count",
+    "ai.rag.warning_count",
+    "ai.rag.input_source_count",
+    "ai.tool_result_count",
+    "ai.execution_success",
+    "ai.stream.cancelled",
+    "ai.history_length",
+    "ai.safety_check_required",
+    "mcp.tool_success",
+    "latency_ms",
+    "cache_hit",
+    "error.type",
+}
+
+
+def _safe_span_name(name: str) -> str:
+    """Keep span names static and low-cardinality."""
+    return name if name in _SAFE_SPAN_NAMES else "pharmaviyum.ai.operation"
+
+
+def _safe_span_attributes(attributes: dict[str, Any]) -> dict[str, bool | int | float | str]:
+    """Allow only reviewed, bounded operational span attributes."""
+    return {
+        key: value
+        for key, value in attributes.items()
+        if key in _SAFE_SPAN_ATTRIBUTES
+        and isinstance(value, (bool, int, float, str))
+        and (not isinstance(value, str) or len(value) <= 128)
+    }
+
 
 def _content_tracing_allowed() -> bool:
     environment = os.getenv("ENVIRONMENT", "").strip().lower()
