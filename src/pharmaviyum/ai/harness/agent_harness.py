@@ -208,7 +208,6 @@ class AgentHarness:
                 or getattr(selected_model, "model", None)
                 or "configured-model"
             )
-            model_used = selected_model_name
 
             with tracer.start_as_current_span("mortarium.agent.execute") as span:
                 span.set_attribute("ai.model_name", str(selected_model_name)[:64])
@@ -388,6 +387,7 @@ class AgentHarness:
                 or getattr(selected_model, "model", None)
                 or "configured-model"
             )
+            model_used = selected_model_name
             fallback_model = self.model_router.get_fallback()
             async for stream_event in self.agent.astream(
                 query=safe_query,
