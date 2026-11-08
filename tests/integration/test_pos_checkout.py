@@ -13,7 +13,7 @@ from sqlalchemy import select
 from src.pharmaviyum.models.drug_catalog import DrugReference, MedicinalProduct
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.pharmacy import Pharmacy
-from src.pharmaviyum.models.pos import Payment, Sale
+from src.pharmaviyum.models.pos import Payment, Sale, SaleItemAllocation
 from src.pharmaviyum.models.product import Product
 
 
@@ -154,6 +154,24 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
 
 
 @pytest.mark.integration
+async def test_pos_product_search_returns_regulatory_identifier(
+    authenticated_client, test_db
+):
+    pharmacy, product, _, _ = await _create_pharmacy_product_and_stock(test_db)
+    product.regulatory_id = "REG-OMEP-2026"
+    await test_db.flush()
+
+    response = await authenticated_client.get(
+        "/api/v1/pos/products/search",
+        params={"q": "REG-OMEP-2026", "pharmacy_id": pharmacy.id},
+    )
+
+    assert response.status_code == 200, response.text
+    assert len(response.json()) == 1
+    assert response.json()[0]["regulatory_id"] == "REG-OMEP-2026"
+
+
+@pytest.mark.integration
 async def test_cash_checkout_records_receipt_and_allocates_fefo(
     authenticated_client, test_db
 ):
@@ -177,6 +195,11 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
     assert receipt["cash_change"] == "8.50"
     assert receipt["payments"][0]["status"] == "succeeded"
     assert receipt["payments"][0]["cash_received"] == "40.00"
+    allocations = receipt["items"][0]["allocations"]
+    assert [(row["lot_number"], row["quantity"]) for row in allocations] == [
+        ("EARLY-LOT", 2),
+        ("LATE-LOT", 1),
+    ]
 
     duplicate = await authenticated_client.post(
         "/api/v1/pos/checkout",
@@ -197,6 +220,80 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
     assert second.quantity == 4
     assert first.reserved_quantity == 0
     assert second.reserved_quantity == 0
+
+
+@pytest.mark.integration
+async def test_fefo_skips_expired_lots_and_uses_undated_lots_last(
+    authenticated_client, test_db
+):
+    pharmacy = Pharmacy(name="POS FEFO Edge Pharmacy", code="POS-FEFO-EDGE")
+    product = Product(
+        name="Cetirizine 10 mg",
+        sku="POS-CET-10",
+        price=4.25,
+        stock=0,
+        is_active=True,
+    )
+    test_db.add_all([pharmacy, product])
+    await test_db.flush()
+
+    now = datetime.utcnow()
+    expired = Inventory(
+        product_id=product.id,
+        pharmacy_id=pharmacy.id,
+        quantity=10,
+        reserved_quantity=0,
+        lot_number="EXPIRED-LOT",
+        expires_at=now - timedelta(days=1),
+    )
+    undated = Inventory(
+        product_id=product.id,
+        pharmacy_id=pharmacy.id,
+        quantity=2,
+        reserved_quantity=0,
+        lot_number="UNDATED-LOT",
+        expires_at=None,
+    )
+    valid = Inventory(
+        product_id=product.id,
+        pharmacy_id=pharmacy.id,
+        quantity=1,
+        reserved_quantity=0,
+        lot_number="VALID-LOT",
+        expires_at=now + timedelta(days=30),
+    )
+    test_db.add_all([expired, undated, valid])
+    await test_db.flush()
+
+    response = await authenticated_client.post(
+        "/api/v1/pos/checkout",
+        json={
+            "pharmacy_id": pharmacy.id,
+            "idempotency_key": "pos-fefo-expiry-edge-0001",
+            "items": [{"product_id": product.id, "quantity": 3}],
+            "payment_method": "cash",
+            "cash_received": "20.00",
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    allocation_result = await test_db.execute(
+        select(SaleItemAllocation)
+        .where(SaleItemAllocation.sale_item.has(sale_id=response.json()["id"]))
+        .order_by(SaleItemAllocation.id.asc())
+    )
+    allocations = list(allocation_result.scalars().all())
+    assert [(row.lot_number, row.quantity) for row in allocations] == [
+        ("VALID-LOT", 1),
+        ("UNDATED-LOT", 2),
+    ]
+
+    await test_db.refresh(expired)
+    await test_db.refresh(valid)
+    await test_db.refresh(undated)
+    assert expired.quantity == 10
+    assert valid.quantity == 0
+    assert undated.quantity == 0
 
 
 @pytest.mark.integration

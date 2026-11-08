@@ -14,6 +14,7 @@ class POSProductResponse(BaseModel):
     inn_name: str | None = None
     gtin: str | None = None
     barcode: str | None = None
+    regulatory_id: str | None = None
     price: float
     stock: int
     medicinal_product_id: int | None = None

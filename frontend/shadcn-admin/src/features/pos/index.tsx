@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import {
   Search,
   Plus,
@@ -8,12 +15,38 @@ import {
   Pill,
   X,
   Receipt,
+  ScanBarcode,
+  PackageCheck,
+  ShoppingCart,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/api-client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from '@/components/ui/command'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 type LocalProduct = {
   id: number
@@ -26,6 +59,7 @@ type LocalProduct = {
   inn_name: string | null
   gtin: string | null
   barcode: string | null
+  regulatory_id?: string | null
   price: number
   stock: number
   medicinal_product_id: number | null
@@ -71,6 +105,18 @@ type SaleResult = {
   status: string
   total: string
   payments: { id: number; method: string; status: string }[]
+  items: {
+    id: number
+    product_name: string
+    quantity: number
+    allocations: {
+      id: number
+      inventory_id: number
+      lot_number: string | null
+      expires_at: string | null
+      quantity: number
+    }[]
+  }[]
 }
 const money = (value: number) =>
   new Intl.NumberFormat('en-US', {
@@ -78,11 +124,23 @@ const money = (value: number) =>
     maximumFractionDigits: 2,
   }).format(value)
 
+const getFefoAllocationPreview = (lots: InventoryLot[], quantity: number) => {
+  let remaining = quantity
+  return lots.map((lot) => {
+    const allocated_quantity = Math.min(lot.available_quantity, remaining)
+    remaining -= allocated_quantity
+    return { ...lot, allocated_quantity }
+  })
+}
+
 export function Pos() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<LocalProduct[]>([])
   const [lotsByProduct, setLotsByProduct] = useState<
     Record<number, InventoryLot[]>
+  >({})
+  const [lotsStatusByProduct, setLotsStatusByProduct] = useState<
+    Record<number, 'loading' | 'loaded' | 'error'>
   >({})
   const [referenceResults, setReferenceResults] = useState<DrugCatalogResult[]>(
     []
@@ -104,7 +162,9 @@ export function Pos() {
   const [processing, setProcessing] = useState(false)
   const [sale, setSale] = useState<SaleResult | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+  const pendingScanRef = useRef('')
   const [searchActive, setSearchActive] = useState(false)
+  const [commandOpen, setCommandOpen] = useState(false)
   const idempotencyKey = useRef(crypto.randomUUID())
 
   const total = useMemo(
@@ -113,6 +173,25 @@ export function Pos() {
   )
   const cash = Number(cashReceived) || 0
   const units = cart.reduce((sum, item) => sum + item.quantity, 0)
+
+  useEffect(() => {
+    const handleShortcuts = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const typing =
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.isContentEditable
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setCommandOpen(true)
+      } else if (event.key === '/' && !typing) {
+        event.preventDefault()
+        setCommandOpen(true)
+      }
+    }
+    window.addEventListener('keydown', handleShortcuts)
+    return () => window.removeEventListener('keydown', handleShortcuts)
+  }, [])
 
   useEffect(() => {
     apiFetch<PharmacyOption[]>('/api/v1/pharmacies')
@@ -172,45 +251,102 @@ export function Pos() {
           const lots = await apiFetch<InventoryLot[]>(
             `/api/v1/pos/products/${item.id}/lots?pharmacy_id=${pharmacyId}`
           )
-          return [item.id, lots] as const
+          return { productId: item.id, lots, status: 'loaded' as const }
         } catch {
-          return [item.id, []] as const
+          return { productId: item.id, lots: [], status: 'error' as const }
         }
       })
     ).then((entries) => {
-      if (!cancelled) setLotsByProduct(Object.fromEntries(entries))
+      if (cancelled) return
+      setLotsByProduct((current) => ({
+        ...current,
+        ...Object.fromEntries(
+          entries.map(({ productId, lots }) => [productId, lots])
+        ),
+      }))
+      setLotsStatusByProduct((current) => ({
+        ...current,
+        ...Object.fromEntries(
+          entries.map(({ productId, status }) => [productId, status])
+        ),
+      }))
     })
     return () => {
       cancelled = true
     }
   }, [cart, pharmacyId])
 
-  const addProduct = (product: LocalProduct) => {
-    if (product.stock < 1) {
-      setNotice('No available stock.')
-      return
-    }
-    if (cart.length === 0) setLotsByProduct({})
-    setResults([])
-    setReferenceResults([])
-    setLoading(false)
-    setCart((items) => {
-      const found = items.find((item) => item.id === product.id)
-      if (found)
-        return items.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) }
-            : item
-        )
-      return [...items, { ...product, quantity: 1 }]
-    })
-    setNotice('')
-    setQuery('')
-    setSearchActive(true)
-    searchRef.current?.focus()
-  }
+  const addProduct = useCallback(
+    (product: LocalProduct) => {
+      if (product.stock < 1) {
+        setNotice('No available stock.')
+        return
+      }
+      if (cart.length === 0) {
+        setLotsByProduct({})
+        setLotsStatusByProduct({ [product.id]: 'loading' })
+      } else {
+        setLotsStatusByProduct((current) => ({
+          ...current,
+          [product.id]: 'loading',
+        }))
+      }
+      pendingScanRef.current = ''
+      setResults([])
+      setReferenceResults([])
+      setLoading(false)
+      setCart((items) => {
+        const found = items.find((item) => item.id === product.id)
+        if (found)
+          return items.map((item) =>
+            item.id === product.id
+              ? {
+                  ...item,
+                  quantity: Math.min(item.quantity + 1, product.stock),
+                }
+              : item
+          )
+        return [...items, { ...product, quantity: 1 }]
+      })
+      setNotice('')
+      setQuery('')
+      setSearchActive(true)
+      searchRef.current?.focus()
+    },
+    [cart.length]
+  )
 
-  const changeQuantity = (id: number, delta: number) =>
+  useEffect(() => {
+    const pending = pendingScanRef.current
+    if (!pending || loading || query.trim() !== pending) return
+
+    pendingScanRef.current = ''
+    const normalized = pending.replace(/\s+/g, '').toLowerCase()
+    const matches = results.filter((product) =>
+      [product.barcode, product.gtin, product.sku, product.regulatory_id].some(
+        (value) => value?.replace(/\s+/g, '').toLowerCase() === normalized
+      )
+    )
+
+    if (matches.length === 1) {
+      addProduct(matches[0])
+      setNotice('Barcode matched. Medicine added to the sale.')
+    } else if (matches.length > 1) {
+      setNotice(
+        'This barcode matches multiple products. Select the correct item.'
+      )
+    } else {
+      setNotice(
+        'No exact barcode match. Review the search results before adding.'
+      )
+    }
+  }, [results, loading, query, addProduct])
+
+  const changeQuantity = (id: number, delta: number) => {
+    setLotsStatusByProduct((current) => ({
+      ...current,
+      [id]: 'loading',
+    }))
     setCart((items) =>
       items.flatMap((item) => {
         if (item.id !== id) return [item]
@@ -218,6 +354,95 @@ export function Pos() {
         return next > 0 ? [{ ...item, quantity: next }] : []
       })
     )
+  }
+
+  const setItemQuantity = (id: number, value: string) => {
+    if (!/^\d+$/.test(value)) return
+    const quantity = Number(value)
+    if (!Number.isSafeInteger(quantity)) return
+    setLotsStatusByProduct((current) => ({
+      ...current,
+      [id]: 'loading',
+    }))
+    setCart((items) =>
+      items.map((item) =>
+        item.id === id
+          ? { ...item, quantity: Math.max(1, Math.min(item.stock, quantity)) }
+          : item
+      )
+    )
+  }
+
+  const handleSearchSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const term = query.trim()
+    if (term.length < 2) return
+    if (!pharmacyId) {
+      setNotice('Select a pharmacy before searching the catalog.')
+      return
+    }
+
+    const normalized = term.replace(/\s+/g, '').toLowerCase()
+    const isBarcodeLike = /^(?:\d{8}|\d{12,14})$/.test(normalized)
+    const findExact = (products: LocalProduct[]) =>
+      products.filter((product) =>
+        [
+          product.barcode,
+          product.gtin,
+          product.sku,
+          product.regulatory_id,
+        ].some(
+          (value) => value?.replace(/\s+/g, '').toLowerCase() === normalized
+        )
+      )
+
+    const exact = findExact(results)
+    if (exact.length === 1) {
+      addProduct(exact[0])
+      return
+    }
+    if (exact.length > 1) {
+      setNotice(
+        'This barcode matches multiple products. Select the correct item.'
+      )
+      return
+    }
+    if (loading) {
+      pendingScanRef.current = term
+      setNotice('Barcode received. Looking up the exact match…')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const fresh = await apiFetch<LocalProduct[]>(
+        `/api/v1/pos/products/search?q=${encodeURIComponent(term)}` +
+          `&pharmacy_id=${pharmacyId}&limit=30`
+      )
+      setResults(fresh)
+      const freshExact = findExact(fresh)
+      if (freshExact.length === 1) {
+        addProduct(freshExact[0])
+        setNotice('Barcode matched. Medicine added to the sale.')
+      } else if (freshExact.length > 1) {
+        setNotice(
+          'This barcode matches multiple products. Select the correct item.'
+        )
+      } else if (fresh.length === 1 && !isBarcodeLike) {
+        addProduct(fresh[0])
+      } else if (isBarcodeLike) {
+        setNotice(
+          'No exact barcode match. Review the results before adding a medicine.'
+        )
+      } else {
+        setNotice('Select a medicine from the search results to add it.')
+      }
+    } catch {
+      setNotice('Unable to complete the medicine lookup. Try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const receiveStock = async () => {
     const quantity = Number(receivingQuantity)
@@ -305,6 +530,7 @@ export function Pos() {
       if (result.status === 'completed') {
         setCart([])
         setLotsByProduct({})
+        setLotsStatusByProduct({})
         setCheckoutOpen(false)
         setNotice(`Sale completed. Receipt # ${result.receipt_number}`)
       } else {
@@ -326,8 +552,8 @@ export function Pos() {
 
   return (
     <div className='w-full min-w-0 bg-muted/20 p-3 md:p-5'>
-      <div className='mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-[1920px] flex-col gap-4'>
-        <header className='flex flex-wrap items-center justify-between gap-3 border-b pb-4'>
+      <div className='mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-[1920px] flex-col gap-5'>
+        <header className='sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80'>
           <div className='flex items-center gap-3'>
             <span className='flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm'>
               <Pill className='size-5' />
@@ -337,22 +563,17 @@ export function Pos() {
                 Pharmacy POS
               </h1>
               <p className='text-sm text-muted-foreground'>
-                Point of sale · Inventory-aware checkout
+                Fast checkout · Live inventory · Batch traceability
               </p>
             </div>
           </div>
           <div className='flex flex-wrap items-center gap-2'>
-            <Badge variant='outline' className='h-9 px-3'>
+            <Badge variant='outline' className='h-9 gap-2 px-3'>
+              <span className='size-2 rounded-full bg-emerald-500' />
               Register active
             </Badge>
-            <Button
-              variant='outline'
-              onClick={() => {
-                setSearchActive(true)
-                searchRef.current?.focus()
-              }}
-            >
-              <Search className='mr-2 size-4' /> Scan / search barcode
+            <Button variant='outline' onClick={() => setCommandOpen(true)}>
+              <ScanBarcode className='mr-2 size-4' /> Scan / search
             </Button>
             <Button
               variant='outline'
@@ -367,6 +588,7 @@ export function Pos() {
               onClick={() => {
                 setCart([])
                 setLotsByProduct({})
+                setLotsStatusByProduct({})
                 setResults([])
                 setReferenceResults([])
                 setLoading(false)
@@ -398,20 +620,44 @@ export function Pos() {
           </div>
         )}
 
-        <div className='grid min-w-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] xl:items-start'>
-          {cart.length > 0 && (
-            <Card className='order-2 min-w-0 xl:sticky xl:top-4 xl:order-none xl:col-start-2 xl:row-start-1 xl:max-h-[calc(100svh-7rem)] xl:overflow-y-auto xl:shadow-lg'>
-              <CardHeader className='pb-3'>
-                <div className='flex items-center justify-between'>
-                  <CardTitle>Cart</CardTitle>
-                  <Badge>{units} units</Badge>
+        <div className='grid min-w-0 flex-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]'>
+          <Card className='order-2 min-w-0 lg:sticky lg:top-24 lg:order-none lg:col-start-2 lg:row-start-1 lg:max-h-[calc(100svh-8rem)] lg:overflow-y-auto lg:shadow-sm'>
+            <CardHeader className='pb-3'>
+              <div className='flex items-center justify-between'>
+                <CardTitle className='flex items-center gap-2'>
+                  <ShoppingCart className='size-4 text-muted-foreground' />
+                  Current sale
+                </CardTitle>
+                <Badge>{units} units</Badge>
+              </div>
+              <p className='text-sm text-muted-foreground'>
+                Review products, quantities and batch availability.
+              </p>
+            </CardHeader>
+            <CardContent className='space-y-3'>
+              {cart.length === 0 ? (
+                <div className='flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/20 px-5 py-8 text-center'>
+                  <span className='mb-3 flex size-12 items-center justify-center rounded-full bg-muted'>
+                    <ShoppingCart className='size-5 text-muted-foreground' />
+                  </span>
+                  <p className='font-medium'>Your sale is empty</p>
+                  <p className='mt-1 max-w-56 text-sm text-muted-foreground'>
+                    Search the pharmacy catalog and add medicines to begin
+                    checkout.
+                  </p>
+                  <Button
+                    className='mt-4'
+                    variant='outline'
+                    onClick={() => setCommandOpen(true)}
+                  >
+                    <Search className='mr-2 size-4' /> Find medicine
+                    <kbd className='ml-2 rounded border px-1.5 py-0.5 text-[10px]'>
+                      ⌘ K
+                    </kbd>
+                  </Button>
                 </div>
-                <p className='text-sm text-muted-foreground'>
-                  Review the items and quantities before checkout.
-                </p>
-              </CardHeader>
-              <CardContent className='space-y-3'>
-                {cart.map((item) => (
+              ) : (
+                cart.map((item) => (
                   <div
                     key={item.id}
                     className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'
@@ -436,12 +682,26 @@ export function Pos() {
                         <p className='font-medium text-foreground'>
                           Inventory lots (earliest expiry first):
                         </p>
-                        {(lotsByProduct[item.id] || []).length ? (
-                          lotsByProduct[item.id].map((lot) => (
+                        {lotsStatusByProduct[item.id] === 'loading' ||
+                        !lotsStatusByProduct[item.id] ? (
+                          <p>Loading batch availability…</p>
+                        ) : lotsStatusByProduct[item.id] === 'error' ? (
+                          <p>
+                            Batch availability could not be loaded. Checkout
+                            will verify stock on the server.
+                          </p>
+                        ) : (lotsByProduct[item.id] || []).length ? (
+                          getFefoAllocationPreview(
+                            lotsByProduct[item.id],
+                            item.quantity
+                          ).map((lot) => (
                             <p key={lot.inventory_id}>
                               Batch: {lot.lot_number || 'no number'} · Expires:{' '}
                               {formatExpiry(lot.expiry_date)} · Available:{' '}
-                              {lot.available_quantity} units
+                              {lot.available_quantity} · Allocate:{' '}
+                              <span className='font-semibold text-foreground'>
+                                {lot.allocated_quantity} units
+                              </span>
                             </p>
                           ))
                         ) : (
@@ -450,6 +710,19 @@ export function Pos() {
                             receipts.
                           </p>
                         )}
+                        {lotsStatusByProduct[item.id] === 'loaded' &&
+                          Math.max(
+                            0,
+                            item.quantity -
+                              (lotsByProduct[item.id] || []).reduce(
+                                (sum, lot) => sum + lot.available_quantity,
+                                0
+                              )
+                          ) > 0 && (
+                            <p className='font-medium text-destructive'>
+                              Insufficient batch stock for this quantity.
+                            </p>
+                          )}
                       </div>
                       <p className='text-xs text-muted-foreground'>
                         Barcode: {item.barcode || item.gtin || 'not specified'}
@@ -464,9 +737,18 @@ export function Pos() {
                       >
                         <Minus className='size-4' />
                       </Button>
-                      <span className='w-8 text-center font-semibold'>
-                        {item.quantity}
-                      </span>
+                      <Input
+                        aria-label={`Quantity for ${item.name}`}
+                        className='h-9 w-16 px-2 text-center tabular-nums'
+                        type='number'
+                        min={1}
+                        max={item.stock}
+                        step={1}
+                        value={item.quantity}
+                        onChange={(event) =>
+                          setItemQuantity(item.id, event.target.value)
+                        }
+                      />
                       <Button
                         size='icon'
                         variant='outline'
@@ -493,27 +775,28 @@ export function Pos() {
                       {money(item.price * item.quantity)}
                     </strong>
                   </div>
-                ))}
-                <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
-                  <span className='text-lg font-semibold'>
-                    Total: {money(total)}
-                  </span>
-                  <Button
-                    size='lg'
-                    onClick={() => {
-                      setCashReceived(total.toFixed(2))
-                      setCheckoutOpen(true)
-                    }}
-                  >
-                    <CreditCard className='mr-2 size-4' /> Proceed to checkout
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                ))
+              )}
+              <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
+                <span className='text-lg font-semibold'>
+                  Total: {money(total)}
+                </span>
+                <Button
+                  size='lg'
+                  disabled={cart.length === 0}
+                  onClick={() => {
+                    setCashReceived(total.toFixed(2))
+                    setCheckoutOpen(true)
+                  }}
+                >
+                  <CreditCard className='mr-2 size-4' /> Proceed to checkout
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {sale?.status === 'completed' && (
-            <Card className='order-3 xl:col-span-2'>
+            <Card className='order-3 lg:col-span-2'>
               <CardContent className='flex items-center justify-between gap-3 p-4'>
                 <div className='flex items-center gap-2'>
                   <Receipt className='size-5 text-primary' />
@@ -524,6 +807,27 @@ export function Pos() {
                     <p className='text-sm text-muted-foreground'>
                       Sale recorded · {money(Number(sale.total))}
                     </p>
+                    <div className='mt-2 space-y-1 text-xs text-muted-foreground'>
+                      {sale.items.map((item) => (
+                        <div key={item.id}>
+                          <p className='font-medium text-foreground'>
+                            {item.product_name} × {item.quantity}
+                          </p>
+                          {item.allocations.map((allocation) => (
+                            <p key={allocation.id}>
+                              Batch {allocation.lot_number || 'no number'} ·
+                              {allocation.expires_at
+                                ? ' expires ' +
+                                  new Date(
+                                    allocation.expires_at
+                                  ).toLocaleDateString('en-US')
+                                : ' no expiry date'}{' '}
+                              · {allocation.quantity} units
+                            </p>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <Button
@@ -542,25 +846,29 @@ export function Pos() {
 
           <section
             aria-label='Medicine search'
-            className='order-1 flex min-h-[60vh] min-w-0 flex-col justify-start py-5 xl:col-start-1 xl:row-start-1'
+            className='order-1 flex min-h-[calc(100svh-12rem)] min-w-0 flex-col justify-start py-1 lg:col-start-1 lg:row-start-1'
           >
             <div className='w-full'>
               <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
                 <div>
-                  <h2 className='text-base font-semibold'>Product catalog</h2>
+                  <h2 className='text-lg font-semibold tracking-tight'>
+                    Medicine catalog
+                  </h2>
                   <p className='text-xs text-muted-foreground'>
                     Search by product name, active ingredient, brand, strength
                     or barcode
                   </p>
                 </div>
-                <Badge variant='secondary'>Live pharmacy inventory</Badge>
+                <div className='flex items-center gap-2'>
+                  <Badge variant='secondary' className='gap-1'>
+                    <PackageCheck className='size-3' /> Live inventory
+                  </Badge>
+                  <Badge variant='outline'>FEFO batches</Badge>
+                </div>
               </div>
               <form
                 aria-label='Medicine search'
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  if (results.length === 1) addProduct(results[0])
-                }}
+                onSubmit={handleSearchSubmit}
                 className='relative w-full'
               >
                 <Search
@@ -571,17 +879,21 @@ export function Pos() {
                   ref={searchRef}
                   value={query}
                   onChange={(e) => {
+                    pendingScanRef.current = ''
                     setQuery(e.target.value)
                     setResults([])
                     setReferenceResults([])
                     setLoading(false)
                   }}
-                  placeholder='Search medicines by name, INN, brand, strength or barcode…'
-                  className={`h-12 w-full pr-4 pl-12 text-base transition-shadow ${
+                  placeholder='Search by medicine, active ingredient, brand, strength or barcode…'
+                  className={`h-14 w-full pr-24 pl-12 text-base shadow-sm transition-shadow ${
                     searchActive ? 'ring-2 ring-primary ring-offset-2' : ''
                   }`}
                   onFocus={() => setSearchActive(true)}
-                />{' '}
+                />
+                <kbd className='pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border bg-muted px-2 py-1 text-[10px] text-muted-foreground sm:inline-flex'>
+                  Ctrl K
+                </kbd>
               </form>
               {loading && (
                 <p className='py-4 text-center text-sm text-muted-foreground'>
@@ -718,31 +1030,82 @@ export function Pos() {
         </div>
       </div>
 
-      {receivingOpen && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'>
-          <section
-            role='dialog'
-            aria-modal='true'
-            aria-labelledby='receiving-title'
-            className='w-full max-w-lg space-y-4 rounded-xl border bg-background p-5 shadow-xl'
-          >
-            <div className='flex items-center justify-between'>
-              <h2 id='receiving-title' className='text-xl font-bold'>
-                Receive Stock
-              </h2>
-              <Button
-                size='icon'
-                variant='ghost'
-                onClick={() => setReceivingOpen(false)}
-                aria-label='Close'
+      <CommandDialog
+        open={commandOpen}
+        onOpenChange={setCommandOpen}
+        title='Find a medicine'
+        description='Search the active pharmacy assortment and add an item to the current sale.'
+      >
+        <CommandInput
+          placeholder='Search medicine, INN, brand, strength or barcode…'
+          onValueChange={(value) => setQuery(value)}
+        />
+        <CommandList>
+          <CommandEmpty>
+            {loading
+              ? 'Searching pharmacy catalog…'
+              : 'No matching pharmacy products. Try another search term.'}
+          </CommandEmpty>
+          <CommandGroup heading='Pharmacy inventory'>
+            {results.map((product) => (
+              <CommandItem
+                key={product.id}
+                value={[
+                  product.name,
+                  product.inn_name,
+                  product.dosage_strength,
+                  product.dosage_form,
+                  product.sku,
+                  product.manufacturer,
+                  product.regulatory_id,
+                  product.barcode,
+                  product.gtin,
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                disabled={product.stock < 1}
+                onSelect={() => {
+                  addProduct(product)
+                  setCommandOpen(false)
+                }}
               >
-                <X />
-              </Button>
-            </div>
-            <p className='text-sm text-muted-foreground'>
+                <Pill className='size-4 text-muted-foreground' />
+                <div className='min-w-0 flex-1'>
+                  <p className='truncate font-medium'>{product.name}</p>
+                  <p className='truncate text-xs text-muted-foreground'>
+                    {[
+                      product.inn_name,
+                      product.dosage_strength,
+                      product.dosage_form,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                </div>
+                <span className='text-xs tabular-nums'>
+                  {money(product.price)}
+                </span>
+                <Badge
+                  variant={product.stock > 0 ? 'secondary' : 'destructive'}
+                >
+                  {product.stock} in stock
+                </Badge>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
+
+      <Dialog open={receivingOpen} onOpenChange={setReceivingOpen}>
+        <DialogContent className='max-h-[90svh] max-w-lg overflow-y-auto'>
+          <DialogHeader>
+            <DialogTitle>Receive Stock</DialogTitle>
+            <DialogDescription>
               The receipt will update this pharmacy's inventory and make the
               batch available to POS with expiry controls.
-            </p>
+            </DialogDescription>
+          </DialogHeader>
+          <div className='space-y-4'>
             <label className='block text-sm font-medium'>
               Find product
               <Input
@@ -811,53 +1174,40 @@ export function Pos() {
                 onChange={(e) => setReceivingQuantity(e.target.value)}
               />
             </label>
-            <div className='flex gap-2'>
-              <Button
-                className='flex-1'
-                disabled={
-                  processing ||
-                  !receivingProductId ||
-                  !receivingLot.trim() ||
-                  !receivingExpiry ||
-                  Number(receivingQuantity) <= 0
-                }
-                onClick={() => void receiveStock()}
-              >
-                {processing ? 'Saving…' : 'Receive stock'}
-              </Button>
-              <Button
-                variant='outline'
-                onClick={() => setReceivingOpen(false)}
-                disabled={processing}
-              >
-                Cancel
-              </Button>
-            </div>
-          </section>
-        </div>
-      )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setReceivingOpen(false)}
+              disabled={processing}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={
+                processing ||
+                !receivingProductId ||
+                !receivingLot.trim() ||
+                !receivingExpiry ||
+                Number(receivingQuantity) <= 0
+              }
+              onClick={() => void receiveStock()}
+            >
+              {processing ? 'Saving…' : 'Receive stock'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {checkoutOpen && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'>
-          <section
-            role='dialog'
-            aria-modal='true'
-            aria-labelledby='checkout-title'
-            className='w-full max-w-md space-y-4 rounded-xl border bg-background p-5 shadow-xl'
-          >
-            <div className='flex items-center justify-between'>
-              <h2 id='checkout-title' className='text-xl font-bold'>
-                Payment and checkout
-              </h2>
-              <Button
-                size='icon'
-                variant='ghost'
-                onClick={() => setCheckoutOpen(false)}
-                aria-label='Close'
-              >
-                <X />
-              </Button>
-            </div>
+      <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
+        <DialogContent className='max-h-[90svh] max-w-md overflow-y-auto'>
+          <DialogHeader>
+            <DialogTitle>Payment and checkout</DialogTitle>
+            <DialogDescription>
+              Review the receipt and confirm the payment method.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='space-y-4'>
             <div className='rounded-lg border bg-background p-4'>
               <div className='mb-3 flex items-center justify-between'>
                 <p className='font-semibold'>Receipt preview</p>
@@ -893,17 +1243,21 @@ export function Pos() {
             </div>
             <label className='block text-sm font-medium'>
               Payment method
-              <select
-                className='mt-2 h-11 w-full rounded-md border bg-background px-3'
+              <Select
                 value={paymentMethod}
-                onChange={(e) =>
-                  setPaymentMethod(e.target.value as typeof paymentMethod)
+                onValueChange={(value) =>
+                  setPaymentMethod(value as typeof paymentMethod)
                 }
               >
-                <option value='cash'>Cash</option>
-                <option value='card_terminal'>Card terminal</option>
-                <option value='online'>Online payment</option>
-              </select>
+                <SelectTrigger className='mt-2 h-11 w-full'>
+                  <SelectValue placeholder='Choose a payment method' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='cash'>Cash</SelectItem>
+                  <SelectItem value='card_terminal'>Card terminal</SelectItem>
+                  <SelectItem value='online'>Online payment</SelectItem>
+                </SelectContent>
+              </Select>
             </label>
             {paymentMethod === 'cash' ? (
               <label className='block text-sm font-medium'>
@@ -927,12 +1281,21 @@ export function Pos() {
                 reserved.
               </p>
             )}
+          </div>
+          <DialogFooter className='flex-col-reverse sm:flex-row'>
             <Button
-              className='w-full'
+              variant='outline'
+              onClick={() => setCheckoutOpen(false)}
+              disabled={processing}
+            >
+              Back to cart
+            </Button>
+            <Button
               size='lg'
               disabled={
                 processing ||
                 !pharmacyId ||
+                cart.length === 0 ||
                 (paymentMethod === 'cash' && cash < total)
               }
               onClick={() => void completeSale()}
@@ -943,17 +1306,9 @@ export function Pos() {
                   ? 'Confirm payment & issue receipt'
                   : 'Create payment'}
             </Button>
-            <Button
-              variant='outline'
-              className='w-full'
-              onClick={() => setCheckoutOpen(false)}
-              disabled={processing}
-            >
-              Back to cart
-            </Button>
-          </section>
-        </div>
-      )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
