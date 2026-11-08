@@ -93,14 +93,21 @@ class AgentHarness:
         answer: str, sources: list[dict[str, Any]]
     ) -> tuple[str, list[str]]:
         """Revalidate citations after post-processing so provenance is not lost."""
+        cited = re.findall(r"\[(src-[^\]\s]+)\]", answer)
         if not sources:
-            return answer, []
+            if not cited:
+                return answer, []
+            return (
+                "I cannot provide a reliable answer because the final response does not "
+                "preserve verifiable citations to retrieved evidence. Please review the "
+                "source records with a pharmacist.",
+                ["citation_validation_failed"],
+            )
         allowed = {
             str(source.get("source_id"))
             for source in sources
             if source.get("source_id")
         }
-        cited = re.findall(r"\[(src-[^\]\s]+)\]", answer)
         if cited and all(citation in allowed for citation in cited):
             return answer, []
         return (
@@ -168,21 +175,45 @@ class AgentHarness:
             cached_response = await self.cache.get(safe_query, cache_key_context)
 
             if cached_response and not context.get("force_fresh"):
-                logger.info(
-                    "Cache HIT - returning validated response",
+                cached_sources = list(cached_response.get("rag_sources", []))
+                cached_tools = list(cached_response.get("tool_results", []))
+                cached_answer, cache_post_warnings = await self._post_process(
+                    answer=str(cached_response["answer"]),
+                    question=safe_query,
+                    sources=cached_tools + cached_sources,
+                )
+                cached_answer, cache_citation_warnings = self._validate_rag_citations(
+                    cached_answer, cached_sources
+                )
+                if (
+                    "output_safety_block" not in cache_post_warnings
+                    and "citation_validation_failed" not in cache_citation_warnings
+                ):
+                    logger.info(
+                        "Cache HIT - response passed current validation",
+                        extra={"trace_id": trace_id},
+                    )
+                    return {
+                        "success": True,
+                        "answer": cached_answer,
+                        "warnings": list(
+                            set(
+                                list(cached_response.get("warnings", []))
+                                + cache_post_warnings
+                                + cache_citation_warnings
+                            )
+                        ),
+                        "tool_results": cached_tools,
+                        "rag_sources": cached_sources,
+                        "model_used": cached_response.get("model_used", "cached"),
+                        "cache_hit": True,
+                        "trace_id": trace_id,
+                        "latency_ms": (time.perf_counter() - start_time) * 1000,
+                    }
+                logger.warning(
+                    "Cached response failed current safety validation; bypassing cache",
                     extra={"trace_id": trace_id},
                 )
-                return {
-                    "success": True,
-                    "answer": cached_response["answer"],
-                    "warnings": cached_response.get("warnings", []),
-                    "tool_results": cached_response.get("tool_results", []),
-                    "rag_sources": cached_response.get("rag_sources", []),
-                    "model_used": cached_response.get("model_used", "cached"),
-                    "cache_hit": True,
-                    "trace_id": trace_id,
-                    "latency_ms": (time.perf_counter() - start_time) * 1000,
-                }
 
             memory_context = "\n\n".join(
                 str(message.content)
@@ -338,21 +369,45 @@ class AgentHarness:
             yield {"event": "status", "message": "Checking knowledge cache..."}
             cached = await self.cache.get(safe_query, cache_key_context)
             if cached and not context.get("force_fresh"):
-                yield {
-                    "event": "answer",
-                    "text": cached["answer"],
-                    "warnings": cached.get("warnings", []),
-                    "sources": cached.get("rag_sources", []),
-                    "model_used": cached.get("model_used", "cached"),
-                    "tool_result_count": len(cached.get("tool_results", [])),
-                    "cache_hit": True,
-                }
-                yield {
-                    "event": "complete",
-                    "message": "Response ready",
-                    "latency_ms": (time.perf_counter() - start_time) * 1000,
-                }
-                return
+                cached_sources = list(cached.get("rag_sources", []))
+                cached_tools = list(cached.get("tool_results", []))
+                cached_answer, cache_post_warnings = await self._post_process(
+                    answer=str(cached["answer"]),
+                    question=safe_query,
+                    sources=cached_tools + cached_sources,
+                )
+                cached_answer, cache_citation_warnings = self._validate_rag_citations(
+                    cached_answer, cached_sources
+                )
+                if (
+                    "output_safety_block" not in cache_post_warnings
+                    and "citation_validation_failed" not in cache_citation_warnings
+                ):
+                    yield {
+                        "event": "answer",
+                        "text": cached_answer,
+                        "warnings": list(
+                            set(
+                                list(cached.get("warnings", []))
+                                + cache_post_warnings
+                                + cache_citation_warnings
+                            )
+                        ),
+                        "sources": cached_sources,
+                        "model_used": cached.get("model_used", "cached"),
+                        "tool_result_count": len(cached_tools),
+                        "cache_hit": True,
+                    }
+                    yield {
+                        "event": "complete",
+                        "message": "Response ready",
+                        "latency_ms": (time.perf_counter() - start_time) * 1000,
+                    }
+                    return
+                logger.warning(
+                    "Cached response failed current safety validation; bypassing cache",
+                    extra={"trace_id": trace_id},
+                )
 
             final_answer: str | None = None
             final_warnings: list[str] = []
