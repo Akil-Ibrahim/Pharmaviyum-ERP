@@ -138,7 +138,6 @@ async def test_failed_summarization_does_not_trim_or_archive_source_turns():
     assert await redis.get(f"{session_prefix}:summary") is None
 
 
-
 def test_memory_redis_namespace_is_opaque_and_keyed(monkeypatch):
     from src.pharmaviyum.core.config import settings as app_settings
 
