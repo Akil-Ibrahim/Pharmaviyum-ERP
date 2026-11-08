@@ -208,6 +208,7 @@ class AgentHarness:
                 or getattr(selected_model, "model", None)
                 or "configured-model"
             )
+            model_used = selected_model_name
 
             with tracer.start_as_current_span("mortarium.agent.execute") as span:
                 span.set_attribute("ai.model_name", str(selected_model_name)[:64])
@@ -348,7 +349,6 @@ class AgentHarness:
                 return
 
             final_answer: str | None = None
-            model_used = selected_model_name
             final_warnings: list[str] = []
             tool_results: list[dict[str, Any]] = []
             rag_sources: list[dict[str, Any]] = []
