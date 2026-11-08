@@ -8,6 +8,7 @@ startup when an optional exporter cannot be initialized.
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -82,7 +83,7 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
         _provider = provider
 
     if not _instrumented:
-        instrumentations = (
+        instrumentations = [
             (
                 "FastAPI",
                 lambda: FastAPIInstrumentor.instrument_app(
@@ -90,23 +91,47 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
                     tracer_provider=_provider,
                     excluded_urls="health,ready,metrics,openapi.json,docs,redoc",
                 ),
-            ),
-            (
-                "SQLAlchemy",
-                lambda: SQLAlchemyInstrumentor().instrument(
-                    engine=engine.sync_engine,
-                    tracer_provider=_provider,
-                ),
-            ),
-            (
-                "Redis",
-                lambda: RedisInstrumentor().instrument(tracer_provider=_provider),
-            ),
-            (
-                "HTTPX",
-                lambda: HTTPXClientInstrumentor().instrument(tracer_provider=_provider),
-            ),
+            )
+        ]
+
+        environment = str(
+            getattr(settings.environment, "value", settings.environment)
+        ).lower()
+        allow_sensitive_client_spans = (
+            os.getenv("OTEL_ENABLE_SENSITIVE_CLIENT_INSTRUMENTATION", "false").lower()
+            == "true"
+            and environment not in {"production", "prod"}
         )
+        if allow_sensitive_client_spans:
+            instrumentations.extend(
+                [
+                    (
+                        "SQLAlchemy",
+                        lambda: SQLAlchemyInstrumentor().instrument(
+                            engine=engine.sync_engine,
+                            tracer_provider=_provider,
+                        ),
+                    ),
+                    (
+                        "Redis",
+                        lambda: RedisInstrumentor().instrument(
+                            tracer_provider=_provider
+                        ),
+                    ),
+                    (
+                        "HTTPX",
+                        lambda: HTTPXClientInstrumentor().instrument(
+                            tracer_provider=_provider
+                        ),
+                    ),
+                ]
+            )
+        else:
+            logger.info(
+                "SQLAlchemy, Redis and HTTPX auto-instrumentation disabled by "
+                "telemetry privacy policy"
+            )
+
         for name, instrument in instrumentations:
             try:
                 instrument()
