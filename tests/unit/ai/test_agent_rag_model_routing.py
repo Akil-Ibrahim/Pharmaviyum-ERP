@@ -1,8 +1,8 @@
 """Regression tests for Mortarium RAG and model-router agent integration."""
 
 import json
-from typing import Any
 from types import SimpleNamespace
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -252,7 +252,6 @@ async def test_streaming_harness_marks_consumer_cancellation(monkeypatch) -> Non
     span.set_attribute.assert_any_call("ai.execution_success", False)
     span.set_attribute.assert_any_call("ai.stream.cancelled", True)
     span.end.assert_called_once()
-
 
 
 def test_agent_checkpoint_thread_id_is_opaque_and_tenant_scoped(
