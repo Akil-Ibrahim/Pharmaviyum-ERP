@@ -248,7 +248,6 @@ export function Pos() {
   useEffect(() => {
     if (!pharmacyId || cart.length === 0) return
     let cancelled = false
-    const productIds = cart.map((item) => item.id)
     Promise.all(
       cart.map(async (item) => {
         try {
