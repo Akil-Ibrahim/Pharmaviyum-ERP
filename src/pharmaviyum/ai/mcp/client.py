@@ -110,7 +110,8 @@ class MCPClient:
                 latency_ms=(time.perf_counter() - start) * 1000,
             )
 
-        if not registry.get_tool(tool_name):
+        tool_entry = registry.get_tool(tool_name)
+        if not tool_entry:
             return ToolExecutionResult(
                 tool_name=tool_name,
                 success=False,
@@ -118,9 +119,15 @@ class MCPClient:
                 latency_ms=(time.perf_counter() - start) * 1000,
             )
 
+        tool_metadata, _ = tool_entry
+        # A write may have succeeded even if the response timed out. Never
+        # automatically replay a potentially non-idempotent side effect.
+        max_attempts = (
+            0 if tool_metadata.execution_class == "write" else self.max_retries
+        )
         retry_count = 0
         last_error: str | None = None
-        for attempt in range(self.max_retries + 1):
+        for attempt in range(max_attempts + 1):
             try:
                 result = await asyncio.wait_for(
                     registry.call_tool(
@@ -181,7 +188,7 @@ class MCPClient:
                 )
 
             retry_count = attempt + 1
-            if attempt < self.max_retries:
+            if attempt < max_attempts:
                 await asyncio.sleep(min(2**attempt, 10.0))
 
         latency_ms = (time.perf_counter() - start) * 1000
