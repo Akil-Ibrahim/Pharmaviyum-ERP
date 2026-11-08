@@ -439,7 +439,7 @@ async def test_planner_keeps_memory_and_rag_evidence_out_of_system_message() -> 
     assert isinstance(capture.messages[0], SystemMessage)
     assert isinstance(capture.messages[1], HumanMessage)
     assert isinstance(capture.messages[2], HumanMessage)
-    assert capture.messages[1].name == "untrusted_reference_context"
+    assert "<untrusted_reference_context>" in capture.messages[1].content
     assert memory_text not in capture.messages[0].content
     assert rag_text not in capture.messages[0].content
     assert memory_text in capture.messages[1].content
