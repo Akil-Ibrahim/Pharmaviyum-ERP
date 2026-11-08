@@ -1,7 +1,8 @@
 """MCP client discovery must never trust caller-supplied roles."""
 
+import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from src.pharmaviyum.ai.mcp import client as client_module
 from src.pharmaviyum.ai.mcp.client import MCPClient
@@ -45,3 +46,28 @@ def test_tool_discovery_uses_authenticated_role(monkeypatch):
 
     assert MCPClient().list_tools() == []
     list_tools.assert_called_once_with("pharmacist")
+
+
+def test_write_tool_timeout_is_not_automatically_retried(monkeypatch):
+    context = SimpleNamespace(user_id=7, pharmacy_id=2, user_role="pharmacist")
+    monkeypatch.setattr(
+        client_module, "get_authorization_context", lambda: context
+    )
+    metadata = SimpleNamespace(execution_class="write")
+    monkeypatch.setattr(
+        client_module.registry,
+        "get_tool",
+        lambda name: (metadata, MagicMock()),
+    )
+    call_tool = AsyncMock(side_effect=asyncio.TimeoutError())
+    monkeypatch.setattr(client_module.registry, "call_tool", call_tool)
+
+    result = asyncio.run(
+        MCPClient(max_retries=3, timeout_seconds=1).call_tool(
+            "write_operation",
+            {},
+        )
+    )
+
+    assert result.success is False
+    assert call_tool.await_count == 1
