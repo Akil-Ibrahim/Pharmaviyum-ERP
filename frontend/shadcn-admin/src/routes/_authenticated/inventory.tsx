@@ -72,7 +72,9 @@ const columns: ColumnDef<InventoryRow>[] = [
       <DataTableColumnHeader column={column} title='Product ID' />
     ),
     cell: ({ row }) => (
-      <span className='font-medium tabular-nums'>{row.original.product_id}</span>
+      <span className='font-medium tabular-nums'>
+        {row.original.product_id}
+      </span>
     ),
   },
   {
@@ -150,7 +152,10 @@ const columns: ColumnDef<InventoryRow>[] = [
       }
 
       return (
-        <Badge variant='outline' className={cn('font-medium', variants[health])}>
+        <Badge
+          variant='outline'
+          className={cn('font-medium', variants[health])}
+        >
           {labels[health]}
         </Badge>
       )
