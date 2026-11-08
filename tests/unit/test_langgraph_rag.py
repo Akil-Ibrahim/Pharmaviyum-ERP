@@ -434,3 +434,36 @@ def test_checkpoint_thread_id_requires_secret_in_production(
             "conversation-123",
             QueryContext(user_id="user-1", pharmacy_id=7),
         )
+
+
+def test_thread_id_is_keyed_by_application_secret(
+    rag: LangGraphRAG, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.pharmaviyum.ai.mortarium_rag import graph as rag_graph
+
+    context = QueryContext(user_id="user-1", pharmacy_id=7)
+    monkeypatch.setattr(rag_graph.app_settings, "SECRET_KEY", "a" * 32)
+    first = rag._thread_id("conversation-123", context)
+
+    monkeypatch.setattr(rag_graph.app_settings, "SECRET_KEY", "b" * 32)
+    second = rag._thread_id("conversation-123", context)
+
+    assert first != second
+
+
+def test_thread_id_refuses_missing_secret_in_production(
+    rag: LangGraphRAG, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.pharmaviyum.ai.mortarium_rag import graph as rag_graph
+    from src.pharmaviyum.core.config import Environment
+
+    monkeypatch.setattr(rag_graph.app_settings, "SECRET_KEY", None)
+    monkeypatch.setattr(
+        rag_graph.app_settings, "ENVIRONMENT", Environment.PRODUCTION
+    )
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY"):
+        rag._thread_id(
+            "conversation-123",
+            QueryContext(user_id="user-1", pharmacy_id=7),
+        )
