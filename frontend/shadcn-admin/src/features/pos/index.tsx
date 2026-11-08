@@ -516,11 +516,11 @@ export function Pos() {
                         </p>
                       )}
                     </div>
-                    <p className='text-xs text-muted-foreground'>
-                      Barcode: {item.barcode || item.gtin || 'not specified'}
-                    </p>
-                  </div>
-                  <div className='flex items-center gap-2'>
+                      <p className='text-xs text-muted-foreground'>
+                        Barcode: {item.barcode || item.gtin || 'not specified'}
+                      </p>
+                    </div>
+                    <div className='flex items-center gap-2'>
                     <Button
                       size='icon'
                       variant='outline'
