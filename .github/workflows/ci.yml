@@ -31,14 +31,13 @@ jobs:
       - uses: actions/checkout@v4.4.0
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5.6.0
+      - name: Set up uv and managed Python
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
+          enable-cache: true
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install uv
           uv sync --frozen
       - name: Ruff diagnostics
         run: uv run ruff check src/ tests/
@@ -139,11 +138,11 @@ jobs:
           --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v4.4.0
-      - uses: actions/setup-python@v5.6.0
+      - name: Set up uv and managed Python
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-      - run: pip install uv
+          enable-cache: true
       - run: uv sync --frozen
       - name: Unit tests
         env:
@@ -175,11 +174,11 @@ jobs:
           --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v4.4.0
-      - uses: actions/setup-python@v5.6.0
+      - name: Set up uv and managed Python
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-      - run: pip install uv
+          enable-cache: true
       - run: uv sync --frozen
       - name: Apply Alembic migrations to a separate clean PostgreSQL database
         env:
@@ -203,14 +202,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4.4.0
-      - uses: actions/setup-python@v5.6.0
+      - name: Set up uv and managed Python
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
+          enable-cache: true
       - name: Install dependencies and scanners
         run: |
-          python -m pip install --upgrade pip
-          pip install uv
           uv sync --frozen
       - name: pip-audit diagnostics
         run: uv run pip-audit --skip-editable
@@ -226,11 +224,11 @@ jobs:
     needs: [test-unit, security]
     steps:
       - uses: actions/checkout@v4.4.0
-      - uses: actions/setup-python@v5.6.0
+      - name: Set up uv and managed Python
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-      - run: pip install uv
+          enable-cache: true
       - run: uv sync --frozen
       - name: Validate golden dataset
         run: uv run pytest tests/test_evaluation.py -v -m unit
