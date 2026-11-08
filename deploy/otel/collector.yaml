@@ -10,7 +10,8 @@ processors:
   memory_limiter:
     check_interval: 1s
     limit_mib: 256
-  batch:
+    spike_limit_mib: 64
+  batch: {}
 
 exporters:
   otlp/jaeger:
