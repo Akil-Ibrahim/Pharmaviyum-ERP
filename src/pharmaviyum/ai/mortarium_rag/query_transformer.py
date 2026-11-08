@@ -87,7 +87,8 @@ Hypothetical answer:"""
             hypothetical_doc = response_text(response).strip()
 
             logger.debug(
-                f"HyDE transformation: {query[:50]}... → {hypothetical_doc[:80]}..."
+                "HyDE query transformation completed",
+                extra={"output_length": len(hypothetical_doc)},
             )
 
             return QueryVariation(
