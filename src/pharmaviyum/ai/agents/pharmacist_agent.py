@@ -242,15 +242,43 @@ class PharmacistAgent:
                 "messages": [response],
                 "iteration": state.get("iteration", 0) + 1,
             }
-        except Exception as exc:
-            logger.error(
-                "Agent planner failed",
-                extra={"error_type": type(exc).__name__},
+        except Exception as primary_exc:
+            fallback_model = (
+                self.main_llm if planner_model is self.router_llm else self.router_llm
             )
-            return {
-                "messages": [AIMessage(content="Unable to safely plan the request.")],
-                "iteration": self.MAX_ITERATIONS,
-            }
+            try:
+                with tracer.start_as_current_span(
+                    "mortarium.model_router.fallback"
+                ) as span:
+                    span.set_attribute("ai.fallback_used", True)
+                    span.set_attribute("error.type", type(primary_exc).__name__)
+                    fallback_response = await fallback_model.bind_tools(
+                        self.mcp_client.to_openai_tools()
+                    ).ainvoke([system] + state["messages"])
+                logger.warning(
+                    "Planner fallback model used",
+                    extra={"primary_error_type": type(primary_exc).__name__},
+                )
+                return {
+                    "messages": [fallback_response],
+                    "iteration": state.get("iteration", 0) + 1,
+                    "warnings": list(state.get("warnings", []))
+                    + ["model_fallback_used"],
+                }
+            except Exception as fallback_exc:
+                logger.error(
+                    "Primary and fallback planner models failed",
+                    extra={
+                        "primary_error_type": type(primary_exc).__name__,
+                        "fallback_error_type": type(fallback_exc).__name__,
+                    },
+                )
+                return {
+                    "messages": [
+                        AIMessage(content="Unable to safely plan the request.")
+                    ],
+                    "iteration": self.MAX_ITERATIONS,
+                }
 
     async def executor_node(self, state: AgentState) -> dict[str, Any]:
         last = state["messages"][-1]
