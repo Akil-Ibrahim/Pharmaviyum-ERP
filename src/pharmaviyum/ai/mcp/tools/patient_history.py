@@ -186,5 +186,8 @@ async def _count_recent_orders(
         result = await session.execute(query)
         return result.scalar_one()
     except Exception as exc:
-        logger.warning("Could not count orders: %s", exc)
+        logger.warning(
+            "Could not count orders",
+            extra={"error_type": type(exc).__name__},
+        )
         return 0
