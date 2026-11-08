@@ -128,9 +128,12 @@ class AgentStreamManager:
                 "timeout_seconds": self.timeout_seconds,
             }
 
-        except Exception as e:
-            logger.error(f"Agent streaming failed: {e}", exc_info=True)
+        except Exception as exc:
+            logger.error(
+                "Agent streaming failed",
+                extra={"error_type": type(exc).__name__},
+            )
             yield {
                 "type": "error",
-                "error": str(e),
+                "error": "Agent execution failed",
             }
