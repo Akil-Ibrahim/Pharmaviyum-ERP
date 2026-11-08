@@ -231,6 +231,52 @@ async def test_planner_falls_back_to_alternate_model_without_leaking_error():
 
     assert fallback.ainvoke.await_count == 1
     assert result["messages"][0].content == "Fallback plan generated safely."
+    assert result["model_used"] == "configured-fallback"
     assert result["iteration"] == 1
     assert "model_fallback_used" in result["warnings"]
     assert "sensitive provider detail" not in str(result)
+
+
+@pytest.mark.asyncio
+async def test_planner_prefers_explicit_model_router_fallback() -> None:
+    primary = MagicMock()
+    primary.bind_tools.return_value = primary
+    primary.ainvoke = AsyncMock(side_effect=RuntimeError("primary unavailable"))
+
+    router_fallback = MagicMock()
+    router_fallback.bind_tools.return_value = router_fallback
+    router_fallback.ainvoke = AsyncMock(
+        return_value=AIMessage(content="Router fallback should not run")
+    )
+
+    configured_fallback = MagicMock(model_name="provider-fallback")
+    configured_fallback.bind_tools.return_value = configured_fallback
+    configured_fallback.ainvoke = AsyncMock(
+        return_value=AIMessage(content="Configured fallback answer")
+    )
+
+    agent = PharmacistAgent.__new__(PharmacistAgent)
+    agent.main_llm = primary
+    agent.router_llm = router_fallback
+    agent.mcp_client = MagicMock()
+    agent.mcp_client.to_openai_tools.return_value = []
+
+    result = await agent.planner_node(
+        {
+            "messages": [HumanMessage(content="Check this medicine safely.")],
+            "context": {"country": "VN", "language": "en"},
+            "rag_context": "",
+            "warnings": [],
+            "iteration": 0,
+        },
+        config={
+            "configurable": {
+                "selected_model": primary,
+                "fallback_model": configured_fallback,
+            }
+        },
+    )
+
+    assert configured_fallback.ainvoke.await_count == 1
+    assert router_fallback.ainvoke.await_count == 0
+    assert result["model_used"] == "provider-fallback"
