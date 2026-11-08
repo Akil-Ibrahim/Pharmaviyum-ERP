@@ -95,9 +95,9 @@ class AgentStreamManager:
                         yield {
                             "type": "tool_call",
                             "tool": tool_name,
-                            "argument_count": len(tool_input)
-                            if isinstance(tool_input, dict)
-                            else 0,
+                            "argument_count": (
+                                len(tool_input) if isinstance(tool_input, dict) else 0
+                            ),
                             "timestamp": event.get("timestamp"),
                         }
 
