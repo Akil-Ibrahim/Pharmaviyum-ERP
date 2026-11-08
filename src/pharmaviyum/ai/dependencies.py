@@ -188,7 +188,10 @@ class AIComponents:
             try:
                 await vector_store.initialize()
             except Exception as exc:
-                logger.warning("PgVectorStore initialize deferred: %s", exc)
+                logger.warning(
+                    "PgVectorStore initialization deferred",
+                    extra={"error_type": type(exc).__name__},
+                )
 
             embeddings_provider = _build_embeddings_provider()
             embeddings_api_key = (
