@@ -232,7 +232,7 @@ function PatientPurchasesPage() {
   const load = () => {
     setLoading(true)
     setError(null)
-    apiFetch<PatientPurchase[]>('/patient-purchases/?limit=50')
+    apiFetch<PatientPurchase[]>('/api/v1/patient-purchases/?limit=50')
       .then(setPurchases)
       .catch((reason: unknown) =>
         setError(
