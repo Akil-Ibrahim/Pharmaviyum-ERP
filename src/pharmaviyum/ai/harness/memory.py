@@ -69,7 +69,7 @@ class DialogueMemory:
 
         digest = hmac.new(
             secret.encode("utf-8"),
-            b"agent-memory:v2\\0" + session_id.encode("utf-8"),
+            f"agent-memory:v2:{session_id}".encode("utf-8"),
             hashlib.sha256,
         ).hexdigest()
         return f"agent:memory:v2:{digest}"
