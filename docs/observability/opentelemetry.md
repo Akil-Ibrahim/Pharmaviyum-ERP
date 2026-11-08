@@ -7,12 +7,11 @@ the standard W3C Trace Context headers (`traceparent` and `tracestate`).
 
 ## Configuration
 
-Tracing instrumentation is enabled by default. Export is optional until an
-OTLP endpoint is configured.
+Tracing is disabled by default to avoid adding instrumentation overhead when no trace backend is configured. Enable it explicitly together with an OTLP endpoint.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `OTEL_ENABLED` | `true` | Enable/disable SDK and instrumentation |
+| `OTEL_ENABLED` | `false` | Enable/disable SDK and instrumentation |
 | `OTEL_SERVICE_NAME` | `pharmaviyum-ai` | Service identity in the trace backend |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | unset | Standard OTLP/gRPC collector endpoint |
 | `OTEL_EXPORTER_ENDPOINT` | unset | Backward-compatible endpoint variable |
