@@ -34,7 +34,17 @@ jobs:
           ref: ${{ env.DEPLOY_SHA }}
 
       - name: Set up Bun
+        id: setup-bun
         uses: oven-sh/setup-bun@v2
+        continue-on-error: true
+        with:
+          bun-version: "1.4.4"
+
+      - name: Install Bun from npm if GitHub Releases is unavailable
+        if: steps.setup-bun.outcome == 'failure'
+        run: |
+          npm install --global bun@1.4.4
+          test "$(bun --version)" = "1.4.4"
 
       - name: Build React frontend
         working-directory: frontend/shadcn-admin
