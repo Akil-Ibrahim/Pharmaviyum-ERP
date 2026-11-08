@@ -129,6 +129,8 @@ class ToolCallingLayer:
             )
 
             for i, result in enumerate(parallel_results):
+                if isinstance(result, asyncio.CancelledError):
+                    raise result
                 if isinstance(result, Exception):
                     logger.error(
                         "Parallel MCP tool execution failed",
@@ -142,7 +144,7 @@ class ToolCallingLayer:
                             tool_name=parallel_tools[i]["name"],
                             input_data=parallel_tools[i].get("args", {}),
                             success=False,
-                            error=str(result),
+                            error="Tool execution failed",
                         )
                     )
                 else:
