@@ -294,7 +294,7 @@ export function Pos() {
     )
 
   const setItemQuantity = (id: number, value: string) => {
-    if (!/^\\d+$/.test(value)) return
+    if (!/^\d+$/.test(value)) return
     const quantity = Number(value)
     if (!Number.isSafeInteger(quantity)) return
     setCart((items) =>
