@@ -114,9 +114,7 @@ class LangGraphRAG:
                             "ai.rag.retrieved_count", len(result["retrieved"])
                         )
                     if "graded" in result:
-                        span.set_attribute(
-                            "ai.rag.graded_count", len(result["graded"])
-                        )
+                        span.set_attribute("ai.rag.graded_count", len(result["graded"]))
                     if "warnings" in result:
                         span.set_attribute(
                             "ai.rag.warning_count", len(result["warnings"])
