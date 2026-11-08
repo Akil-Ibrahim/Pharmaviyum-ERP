@@ -180,8 +180,8 @@ class PharmacistAgent:
                 "rag_sources": sources,
                 "warnings": list(response.warnings),
             }
-        except Exception:
-            logger.error("Mortarium RAG retrieval failed", exc_info=True)
+        except Exception as exc:
+            logger.error("Mortarium RAG retrieval failed", extra={"error_type": type(exc).__name__})
             return {
                 "rag_context": "",
                 "rag_sources": [],
@@ -223,8 +223,8 @@ class PharmacistAgent:
                 "messages": [response],
                 "iteration": state.get("iteration", 0) + 1,
             }
-        except Exception:
-            logger.error("Agent planner failed", exc_info=True)
+        except Exception as exc:
+            logger.error("Agent planner failed", extra={"error_type": type(exc).__name__})
             return {
                 "messages": [AIMessage(content="Unable to safely plan the request.")],
                 "iteration": self.MAX_ITERATIONS,
@@ -276,7 +276,7 @@ class PharmacistAgent:
                             "error": result.error,
                         }
                     )
-            except Exception:
+            except Exception as exc:
                 content = "Tool execution failed safely."
                 results.append(
                     {
@@ -286,7 +286,7 @@ class PharmacistAgent:
                         "error": "tool_execution_failed",
                     }
                 )
-                logger.error("MCP execution failed", exc_info=True)
+                logger.error("MCP execution failed", extra={"error_type": type(exc).__name__})
             messages.append(
                 ToolMessage(content=content, tool_call_id=tool_id, name=name)
             )
@@ -338,8 +338,8 @@ class PharmacistAgent:
                 final = review.revised_response
             else:
                 final = draft
-        except Exception:
-            logger.error("Structured safety review failed closed", exc_info=True)
+        except Exception as exc:
+            logger.error("Structured safety review failed closed", extra={"error_type": type(exc).__name__})
             return {
                 "final_answer": (
                     "The response could not be safety-validated. "
@@ -428,7 +428,7 @@ class PharmacistAgent:
                 "rag_sources": final_state.get("rag_sources", []),
             }
         except Exception as exc:
-            logger.error("Agent execution failed", exc_info=True)
+            logger.error("Agent execution failed", extra={"error_type": type(exc).__name__})
             return {
                 "success": False,
                 "answer": "Unable to safely process the request.",
