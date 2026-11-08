@@ -27,7 +27,7 @@ OTEL_EXPORTER_OTLP_ENDPOINT=https://your-otlp-collector.example.com:4317
 OTEL_SAMPLE_RATE=0.1
 ```
 
-For a local collector without TLS, use an `http://` endpoint. OTLP exporter
+The local Docker Compose stack starts an OTLP Collector and Jaeger. After `docker compose up`, open `http://localhost:16686` to inspect traces. The collector forwards traces to Jaeger over OTLP/gRPC. For a local collector without TLS, use an `http://` endpoint. OTLP exporter
 authentication headers can be supplied through the standard
 `OTEL_EXPORTER_OTLP_HEADERS` environment variable. Never commit collector
 tokens or credentials to the repository.
