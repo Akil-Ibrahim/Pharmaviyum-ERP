@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, Boxes, ClipboardList, RefreshCw, ShoppingCart, UsersRound } from 'lucide-react'
 import { ConfigDrawer } from '@/components/config-drawer'
@@ -41,11 +41,14 @@ export function Dashboard() {
   const inventory = data?.inventory
   const expiryTotal = (inventory?.expired ?? 0) + (inventory?.critical_expiry ?? 0) + (inventory?.warning_expiry ?? 0) + (inventory?.expiry_green ?? 0)
   const cards = [
-    { label: 'Продажи сегодня', value: money(data?.sales.today ?? 0), hint: 'Фактические продажи', progress: (data?.sales.today ?? 0) > 0 ? 100 : 0, color: '#f59e0b', track: '#fef3c7', icon: ShoppingCart },
-    { label: 'Выручка за месяц', value: money(data?.revenue.month ?? 0), hint: `${number(data?.orders.completed_month ?? 0)} заказов выполнено`, progress: (data?.revenue.month ?? 0) > 0 ? 100 : 0, color: '#f97316', track: '#ffedd5', icon: Activity },
-    { label: 'Товары на складе', value: number(inventory?.items ?? 0), hint: `${number(inventory?.low_stock ?? 0)} требуют пополнения`, progress: inventory?.items ? Math.max(5, 100 - (inventory.low_stock / inventory.items) * 100) : 0, color: '#10b981', track: '#d1fae5', icon: Boxes },
-    { label: 'Активные пациенты', value: number(data?.patients.active ?? 0), hint: `${number(data?.prescriptions.month ?? 0)} рецептов за месяц`, progress: (data?.patients.active ?? 0) > 0 ? 100 : 0, color: '#d946ef', track: '#fae8ff', icon: UsersRound },
+    { label: 'Продажи сегодня', value: money(data?.sales.today ?? 0), hint: 'Реализованная выручка за сегодня', icon: ShoppingCart, tone: 'bg-amber-500/10 text-amber-600' },
+    { label: 'Выручка за месяц', value: money(data?.revenue.month ?? 0), hint: `${number(data?.orders.completed_month ?? 0)} завершённых заказов`, icon: Activity, tone: 'bg-orange-500/10 text-orange-600' },
+    { label: 'Товары на складе', value: number(inventory?.items ?? 0), hint: `${money(inventory?.retail_value ?? 0)} розничная стоимость · ${number(inventory?.low_stock ?? 0)} низкий остаток`, icon: Boxes, tone: 'bg-emerald-500/10 text-emerald-600' },
+    { label: 'Активные пациенты', value: number(data?.patients.active ?? 0), hint: `${number(data?.prescriptions.month ?? 0)} рецептов с начала месяца`, icon: UsersRound, tone: 'bg-violet-500/10 text-violet-600' },
   ]
+  const categoryRows = data?.sales.by_category ?? []
+  const categoryMaxRevenue = Math.max(...categoryRows.map((row) => row.revenue), 1)
+  const categoryTotalRevenue = categoryRows.reduce((total, row) => total + row.revenue, 0)
   return <>
     <Header><Search/><ThemeSwitch/><ConfigDrawer/><ProfileDropdown/></Header>
     <Main>
@@ -56,7 +59,33 @@ export function Dashboard() {
         </section>
         {error && <div role='alert' className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm'><span>Не удалось загрузить реальные показатели: {error}</span><Button variant='outline' size='sm' onClick={load}>Повторить</Button></div>}
         <section><div className='mb-3 flex items-end justify-between gap-3'><div><h2 className='text-base font-bold'>Показатели аптеки</h2><p className='text-sm text-muted-foreground'>Данные из API · без демонстрационных продаж</p></div><span className='text-xs text-muted-foreground'>{data?.as_of ? new Date(data.as_of).toLocaleString('uk-UA') : '—'}</span></div>
-          <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>{cards.map(card => <div key={card.label} className='pharmacy-metric-card flex min-w-0 items-center gap-4 rounded-2xl border bg-card p-4 sm:p-5'><RingMetric progress={card.progress} color={card.color} track={card.track} value={card.value} icon={<card.icon className='size-5'/>}/><div className='min-w-0 flex-1'><p className='text-sm font-medium text-muted-foreground'>{card.label}</p><p className='mt-1 truncate text-xl font-bold tracking-tight tabular-nums'>{loading ? '…' : card.value}</p><p className='mt-1 text-xs text-muted-foreground'>{card.hint}</p></div></div>)}</div>
+          <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>{cards.map(card => <div key={card.label} className='min-w-0 rounded-xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md'><div className='flex items-center justify-between gap-3'><p className='text-sm font-medium text-muted-foreground'>{card.label}</p><span className={'flex size-9 shrink-0 items-center justify-center rounded-lg '+card.tone}><card.icon className='size-4'/></span></div><p className='mt-3 truncate text-2xl font-semibold tracking-tight tabular-nums'>{loading ? '—' : card.value}</p><p className='mt-1 min-h-8 text-xs leading-4 text-muted-foreground'>{card.hint}</p></div>)}</div>
+        </section>
+        <section className='grid gap-4 xl:grid-cols-2'>
+          <div className='rounded-xl border bg-card p-4 shadow-sm sm:p-5'>
+            <div className='mb-5 flex items-center justify-between gap-3'>
+              <div><h2 className='font-semibold'>Структура продаж</h2><p className='text-xs text-muted-foreground'>Rx и OTC · по всей истории операций</p></div>
+              <Activity className='size-5 text-muted-foreground'/>
+            </div>
+            {loading ? <p className='py-6 text-center text-sm text-muted-foreground'>Загрузка…</p> : categoryRows.length === 0 ? <EmptyState text='Нет данных о продажах по категориям.'/> : <div className='space-y-5'>
+              {categoryRows.map((row) => <div key={row.category} className='space-y-2'>
+                <div className='flex items-center justify-between gap-3 text-sm'><span className='font-medium'>{row.category === 'Rx' ? 'Рецептурные (Rx)' : row.category === 'OTC' ? 'Без рецепта (OTC)' : row.category}</span><span className='font-semibold tabular-nums'>{money(row.revenue)}</span></div>
+                <div className='h-2.5 overflow-hidden rounded-full bg-muted'><div className={'h-full rounded-full '+(row.category === 'Rx' ? 'bg-primary' : 'bg-chart-2')} style={{width: `${Math.max(0, Math.min(100, (row.revenue / categoryMaxRevenue) * 100))}%`}}/></div>
+                <p className='text-xs text-muted-foreground'>{number(row.lines)} строк · {number(row.packs)} упаковок</p>
+              </div>)}
+              <div className='flex items-center justify-between border-t pt-3 text-sm'><span className='text-muted-foreground'>Общая выручка</span><span className='font-bold tabular-nums'>{money(categoryTotalRevenue)}</span></div>
+            </div>}
+          </div>
+          <div className='rounded-xl border bg-card p-4 shadow-sm sm:p-5'>
+            <div className='mb-5 flex items-center justify-between gap-3'><div><h2 className='font-semibold'>Ключевые показатели</h2><p className='text-xs text-muted-foreground'>Текущий календарный месяц</p></div><ClipboardList className='size-5 text-muted-foreground'/></div>
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='rounded-lg bg-muted/50 p-3'><p className='text-xs text-muted-foreground'>Заказов создано</p><p className='mt-1 text-2xl font-semibold tabular-nums'>{loading ? '—' : number(data?.orders.month ?? 0)}</p></div>
+              <div className='rounded-lg bg-muted/50 p-3'><p className='text-xs text-muted-foreground'>Заказов завершено</p><p className='mt-1 text-2xl font-semibold tabular-nums'>{loading ? '—' : number(data?.orders.completed_month ?? 0)}</p></div>
+              <div className='rounded-lg bg-muted/50 p-3'><p className='text-xs text-muted-foreground'>Рецептов</p><p className='mt-1 text-2xl font-semibold tabular-nums'>{loading ? '—' : number(data?.prescriptions.month ?? 0)}</p></div>
+              <div className='rounded-lg bg-muted/50 p-3'><p className='text-xs text-muted-foreground'>Запас в днях</p><p className='mt-1 text-2xl font-semibold tabular-nums'>{loading ? '—' : inventory?.days_on_hand == null ? '—' : number(inventory.days_on_hand)}</p></div>
+            </div>
+            <p className='mt-3 text-xs text-muted-foreground'>Запас рассчитан по доступному остатку и фактическому отпуску за последние 30 дней.</p>
+          </div>
         </section>
         <section className='grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,.75fr)]'>
           <div className='rounded-2xl border bg-card p-4 sm:p-5'><div className='mb-4 flex items-center justify-between gap-3'><div><h2 className='font-bold'>Состояние запасов</h2><p className='text-xs text-muted-foreground'>Остатки и контроль сроков годности</p></div><Boxes className='size-5 text-muted-foreground'/></div>
@@ -84,13 +113,4 @@ export function Dashboard() {
   </>
 }
 
-function RingMetric({ progress, color, track, value, icon, size = 88 }: { progress: number; color: string; track: string; value: string; icon: ReactNode; size?: number }) {
-  const radius = 34
-  const circumference = 2 * Math.PI * radius
-  const safeProgress = Math.max(0, Math.min(100, progress))
-  return <div className='relative shrink-0' style={{ width: size, height: size }} aria-label={`Показатель ${value}`}>
-    <svg viewBox='0 0 88 88' className='size-full -rotate-90' role='img' aria-hidden='true'><circle cx='44' cy='44' r={radius} fill='none' stroke={track} strokeWidth='7'/><circle cx='44' cy='44' r={radius} fill='none' stroke={color} strokeWidth='7' strokeLinecap='round' strokeDasharray={circumference} strokeDashoffset={circumference * (1 - safeProgress / 100)} style={{transition:'stroke-dashoffset 500ms ease'}}/></svg>
-    <div className='absolute inset-0 flex items-center justify-center' style={{color}}>{icon}</div>
-  </div>
-}
 function EmptyState({ text }: { text: string }) { return <div className='rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground'>{text}</div> }
