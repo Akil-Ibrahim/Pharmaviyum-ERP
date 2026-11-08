@@ -14,6 +14,7 @@ from langchain_core.messages import (
 )
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, StateGraph
+from opentelemetry import trace
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.pharmaviyum.ai.llm_utils import response_text
@@ -21,6 +22,8 @@ from src.pharmaviyum.ai.mortarium_rag.schemas import QueryContext
 from src.pharmaviyum.core.logging import logger
 
 from .state import AgentState
+
+tracer = trace.get_tracer(__name__)
 
 
 class SafetyReview(BaseModel):
@@ -133,11 +136,14 @@ class PharmacistAgent:
                 halal_filter=bool(context.get("halal_filter", False)),
                 force_fresh=bool(context.get("force_fresh", False)),
             )
-            response = await self.rag_pipeline.run(
-                question=query,
-                context=rag_context,
-                thread_id=context.get("session_id"),
-            )
+            with tracer.start_as_current_span("mortarium.rag.retrieve") as span:
+                response = await self.rag_pipeline.run(
+                    question=query,
+                    context=rag_context,
+                    thread_id=context.get("session_id"),
+                )
+                span.set_attribute("ai.rag.source_count", len(response.sources))
+                span.set_attribute("ai.rag.warning_count", len(response.warnings))
             sources = [
                 {
                     "source_id": f"src-{item.chunk.id}",
@@ -239,14 +245,17 @@ class PharmacistAgent:
                 call["id"],
             )
             try:
-                result = await self.mcp_client.call_tool(
-                    tool_name=name,
-                    input_data=args,
-                    trace_id=context.get("trace_id"),
-                    user_id=context.get("user_id"),
-                    pharmacy_id=context.get("pharmacy_id"),
-                    user_role=context.get("user_role"),
-                )
+                with tracer.start_as_current_span("mortarium.mcp.tool") as span:
+                    span.set_attribute("mcp.tool_name", str(name)[:64])
+                    result = await self.mcp_client.call_tool(
+                        tool_name=name,
+                        input_data=args,
+                        trace_id=context.get("trace_id"),
+                        user_id=context.get("user_id"),
+                        pharmacy_id=context.get("pharmacy_id"),
+                        user_role=context.get("user_role"),
+                    )
+                    span.set_attribute("mcp.tool_success", bool(result.success))
                 if result.success:
                     content = json.dumps(result.data, default=str)
                     results.append(
