@@ -11,15 +11,16 @@ import logging
 from typing import Any
 
 from opentelemetry import trace
+from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.redis import RedisInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
 
 from src.pharmaviyum.ai.config import settings
 from src.pharmaviyum.database import engine
@@ -46,9 +47,7 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
                 "deployment.environment.name": settings.environment,
             }
         )
-        sampler = ParentBased(
-            root=TraceIdRatioBased(settings.otel.sample_rate)
-        )
+        sampler = ParentBased(root=TraceIdRatioBased(settings.otel.sample_rate))
         provider = TracerProvider(resource=resource, sampler=sampler)
 
         endpoint = settings.otel.exporter_endpoint
@@ -90,7 +89,9 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
             RedisInstrumentor().instrument(tracer_provider=_provider)
             HTTPXClientInstrumentor().instrument(tracer_provider=_provider)
             _instrumented = True
-            logger.info("OpenTelemetry FastAPI, SQLAlchemy, Redis and HTTPX instrumentation enabled")
+            logger.info(
+                "OpenTelemetry FastAPI, SQLAlchemy, Redis and HTTPX instrumentation enabled"
+            )
         except Exception:
             logger.exception("OpenTelemetry instrumentation setup failed")
     return _provider
