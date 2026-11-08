@@ -40,6 +40,7 @@ class PharmacistAgent:
     """Tenant-scoped LangGraph agent with durable PostgreSQL checkpoints."""
 
     MAX_ITERATIONS = 5
+    MAX_TOOL_CALLS_PER_EXECUTION = 10
 
     def __init__(self, router_llm, main_llm, mcp_client, rag_pipeline, checkpointer):
         if checkpointer is None:
@@ -244,7 +245,14 @@ class PharmacistAgent:
         context = state.get("context", {})
         results: list[dict[str, Any]] = []
         messages: list[ToolMessage] = []
-        for call in calls[:10]:
+        previous_results = state.get("tool_results", [])
+        remaining_budget = max(
+            0, self.MAX_TOOL_CALLS_PER_EXECUTION - len(previous_results)
+        )
+        allowed_calls = calls[:remaining_budget]
+        rejected_calls = calls[remaining_budget:]
+
+        for call in allowed_calls:
             name, args, tool_id = (
                 call["name"],
                 call.get("args", {}),
@@ -267,7 +275,6 @@ class PharmacistAgent:
                     results.append(
                         {
                             "tool": name,
-                            "input_data": args,
                             "success": True,
                             "data": result.data,
                         }
@@ -277,7 +284,6 @@ class PharmacistAgent:
                     results.append(
                         {
                             "tool": name,
-                            "input_data": args,
                             "success": False,
                             "error": result.error,
                         }
@@ -287,7 +293,6 @@ class PharmacistAgent:
                 results.append(
                     {
                         "tool": name,
-                        "input_data": args,
                         "success": False,
                         "error": "tool_execution_failed",
                     }
@@ -299,6 +304,25 @@ class PharmacistAgent:
             messages.append(
                 ToolMessage(content=content, tool_call_id=tool_id, name=name)
             )
+
+        for call in rejected_calls:
+            name = call.get("name", "unknown")
+            tool_id = call.get("id", "")
+            messages.append(
+                ToolMessage(
+                    content="Tool call budget exceeded; no additional tool was executed.",
+                    tool_call_id=tool_id,
+                    name=name,
+                )
+            )
+            results.append(
+                {
+                    "tool": name,
+                    "success": False,
+                    "error": "tool_call_budget_exceeded",
+                }
+            )
+
         return {"messages": messages, "tool_results": results}
 
     async def reviewer_node(self, state: AgentState) -> dict[str, Any]:
