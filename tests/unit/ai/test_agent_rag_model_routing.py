@@ -243,6 +243,7 @@ async def test_streaming_harness_marks_consumer_cancellation(monkeypatch) -> Non
         }
         yield {"event": "complete", "message": "Should not be consumed"}
 
+    harness._astream_events = events
     stream = harness.astream("session", "sensitive query")
     first_event = await stream.__anext__()
     assert first_event["event"] == "answer"
