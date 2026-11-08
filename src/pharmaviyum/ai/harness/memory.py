@@ -226,7 +226,7 @@ class DialogueMemory:
         episodic_key = f"{self._prefix}:{session_id}:episodic"
         await self.redis.hset(episodic_key, fact_type, fact_value)
         await self.redis.expire(episodic_key, self.ttl)
-        logger.info("Saved episodic fact type=%s for session %s", fact_type, session_id)
+        logger.info("Saved episodic memory fact")
 
     async def get_episodic_facts(self, session_id: str) -> dict[str, str]:
         """Retrieve all episodic facts for a session."""
