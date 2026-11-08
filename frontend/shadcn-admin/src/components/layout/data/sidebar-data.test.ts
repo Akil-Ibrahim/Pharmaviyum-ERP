@@ -14,6 +14,7 @@ describe('Pharmaviyum sidebar navigation', () => {
       'Drug Reference',
       'Catalog Review',
       'Patients',
+      'Purchase Ledger',
       'Orders',
       'Prescriptions',
       'Pharmacy',
