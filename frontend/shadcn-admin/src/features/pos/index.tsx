@@ -23,22 +23,6 @@ import { apiFetch } from '@/lib/api-client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   CommandDialog,
   CommandInput,
@@ -47,6 +31,22 @@ import {
   CommandGroup,
   CommandItem,
 } from '@/components/ui/command'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 type LocalProduct = {
   id: number
@@ -124,7 +124,10 @@ const money = (value: number) =>
     maximumFractionDigits: 2,
   }).format(value)
 
-const getFefoAllocationPreview = (lots: InventoryLot[], quantity: number) => {
+const getFefoAllocationPreview = (
+  lots: InventoryLot[],
+  quantity: number
+) => {
   let remaining = quantity
   return lots.map((lot) => {
     const allocated_quantity = Math.min(lot.available_quantity, remaining)
@@ -688,51 +691,51 @@ export function Pos() {
                       </p>
                     </div>
                     <div className='flex items-center gap-2'>
-                    <Button
-                      size='icon'
-                      variant='outline'
-                      aria-label='Decrease quantity'
-                      onClick={() => changeQuantity(item.id, -1)}
-                    >
-                      <Minus className='size-4' />
-                    </Button>
-                    <Input
-                      aria-label={`Quantity for ${item.name}`}
-                      className='h-9 w-16 px-2 text-center tabular-nums'
-                      type='number'
-                      min={1}
-                      max={item.stock}
-                      step={1}
-                      value={item.quantity}
-                      onChange={(event) =>
-                        setItemQuantity(item.id, event.target.value)
-                      }
-                    />
-                    <Button
-                      size='icon'
-                      variant='outline'
-                      aria-label='Increase quantity'
-                      disabled={item.quantity >= item.stock}
-                      onClick={() => changeQuantity(item.id, 1)}
-                    >
-                      <Plus className='size-4' />
-                    </Button>
-                    <Button
-                      size='icon'
-                      variant='ghost'
-                      aria-label='Remove item'
-                      onClick={() =>
-                        setCart((rows) =>
-                          rows.filter((row) => row.id !== item.id)
-                        )
-                      }
-                    >
-                      <Trash2 className='size-4' />
-                    </Button>
-                  </div>
-                  <strong className='w-28 text-right'>
-                    {money(item.price * item.quantity)}
-                  </strong>
+                      <Button
+                        size='icon'
+                        variant='outline'
+                        aria-label='Decrease quantity'
+                        onClick={() => changeQuantity(item.id, -1)}
+                      >
+                        <Minus className='size-4' />
+                      </Button>
+                      <Input
+                        aria-label={`Quantity for ${item.name}`}
+                        className='h-9 w-16 px-2 text-center tabular-nums'
+                        type='number'
+                        min={1}
+                        max={item.stock}
+                        step={1}
+                        value={item.quantity}
+                        onChange={(event) =>
+                          setItemQuantity(item.id, event.target.value)
+                        }
+                      />
+                      <Button
+                        size='icon'
+                        variant='outline'
+                        aria-label='Increase quantity'
+                        disabled={item.quantity >= item.stock}
+                        onClick={() => changeQuantity(item.id, 1)}
+                      >
+                        <Plus className='size-4' />
+                      </Button>
+                      <Button
+                        size='icon'
+                        variant='ghost'
+                        aria-label='Remove item'
+                        onClick={() =>
+                          setCart((rows) =>
+                            rows.filter((row) => row.id !== item.id)
+                          )
+                        }
+                      >
+                        <Trash2 className='size-4' />
+                      </Button>
+                    </div>
+                    <strong className='w-28 text-right'>
+                      {money(item.price * item.quantity)}
+                    </strong>
                 </div>
                 ))
               )}
