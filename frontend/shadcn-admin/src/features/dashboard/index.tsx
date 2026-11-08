@@ -128,21 +128,21 @@ export function Dashboard() {
     {
       label: 'Monthly Revenue',
       value: money(data?.revenue.month ?? 0),
-      hint: `${number(data?.orders.completed_month ?? 0)} завершённых заказов`,
+      hint: `${number(data?.orders.completed_month ?? 0)} completed orders`,
       icon: Activity,
       tone: 'bg-orange-500/10 text-orange-600',
     },
     {
       label: 'Inventory Items',
       value: number(inventory?.items ?? 0),
-      hint: `${money(inventory?.retail_value ?? 0)} розничная стоимость · ${number(inventory?.low_stock ?? 0)} низкий остаток`,
+      hint: `${money(inventory?.retail_value ?? 0)} retail value · ${number(inventory?.low_stock ?? 0)} low stock`,
       icon: Boxes,
       tone: 'bg-emerald-500/10 text-emerald-600',
     },
     {
       label: 'Active Patients',
       value: number(data?.patients.active ?? 0),
-      hint: `${number(data?.prescriptions.month ?? 0)} рецептов с начала месяца`,
+      hint: `${number(data?.prescriptions.month ?? 0)} prescriptions this month`,
       icon: UsersRound,
       tone: 'bg-violet-500/10 text-violet-600',
     },
@@ -608,7 +608,7 @@ export function Dashboard() {
                 <div>
                   <h2 className='font-bold'>Reorder Recommendations</h2>
                   <p className='text-xs text-muted-foreground'>
-                    Productы на уровне точки заказа
+                    Items at or below reorder point
                   </p>
                 </div>
                 <ClipboardList className='size-5 text-muted-foreground' />
@@ -694,7 +694,7 @@ function RingMetric({
     <div
       className='relative shrink-0'
       style={{ width: size, height: size }}
-      aria-label={`Показатель ${value}`}
+      aria-label={`Metric ${value}`}
     >
       <svg
         viewBox='0 0 88 88'
