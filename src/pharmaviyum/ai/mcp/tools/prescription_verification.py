@@ -210,10 +210,8 @@ async def verify_prescription(
         latency_ms = (time.perf_counter() - start) * 1000
 
         logger.info(
-            f"Prescription verification: {input.prescription_number} — {'VALID ✅' if is_valid else 'INVALID ❌'}",
+            "Prescription verification completed",
             extra={
-                "prescription_number": input.prescription_number,
-                "pharmacy_id": auth_context.pharmacy_id,
                 "is_valid": is_valid,
                 "checks_passed": sum(1 for c in checks if c.passed),
                 "checks_total": len(checks),
