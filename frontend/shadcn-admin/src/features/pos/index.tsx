@@ -515,7 +515,7 @@ export function Pos() {
                           receipts.
                         </p>
                       )}
-                    </div>
+                      </div>
                       <p className='text-xs text-muted-foreground'>
                         Barcode: {item.barcode || item.gtin || 'not specified'}
                       </p>
