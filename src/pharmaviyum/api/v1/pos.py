@@ -457,9 +457,9 @@ async def checkout(
                 Sale.idempotency_key == payload.idempotency_key,
             )
             .options(
-            selectinload(Sale.items).selectinload(SaleItem.allocations),
-            selectinload(Sale.payments),
-        )
+                selectinload(Sale.items).selectinload(SaleItem.allocations),
+                selectinload(Sale.payments),
+            )
         )
         duplicate = duplicate_result.scalar_one_or_none()
         if duplicate is None:
