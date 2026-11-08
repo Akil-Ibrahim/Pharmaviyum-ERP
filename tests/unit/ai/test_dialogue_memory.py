@@ -171,3 +171,20 @@ def test_memory_redis_namespace_fails_closed_without_production_secret(monkeypat
 def test_memory_redis_namespace_rejects_invalid_session_id(session_id):
     with pytest.raises(ValueError, match="session identifier"):
         DialogueMemory._session_prefix(session_id)
+
+
+@pytest.mark.asyncio
+async def test_clear_removes_current_and_exact_legacy_memory_keys():
+    redis = FakeRedis()
+    memory = DialogueMemory(redis)
+    session_id = "session-1"
+    current_prefix = memory._session_prefix(session_id)
+    legacy_prefix = f"agent:memory:{session_id}"
+
+    await redis.rpush(f"{current_prefix}:messages", "current")
+    await redis.rpush(f"{legacy_prefix}:messages", "legacy")
+
+    await memory.clear(session_id)
+
+    assert await redis.llen(f"{current_prefix}:messages") == 0
+    assert await redis.llen(f"{legacy_prefix}:messages") == 0
