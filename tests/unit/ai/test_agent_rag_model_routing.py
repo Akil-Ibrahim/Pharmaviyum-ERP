@@ -101,3 +101,28 @@ async def test_planner_uses_model_selected_by_router() -> None:
     selected_model.bind_tools.assert_called_once_with([])
     agent.main_llm.bind_tools.assert_not_called()
     assert result["messages"][0].content == "Grounded answer"
+
+
+def test_harness_accepts_only_citations_from_retrieved_rag_sources() -> None:
+    from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+
+    source_id = "src-chunk-123"
+    source = {"source_id": source_id}
+    answer, warnings = AgentHarness._validate_rag_citations(
+        f"Evidence-backed answer [{source_id}].", [source]
+    )
+
+    assert answer == f"Evidence-backed answer [{source_id}]."
+    assert warnings == []
+
+
+def test_harness_blocks_missing_or_fabricated_rag_citations() -> None:
+    from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+
+    answer, warnings = AgentHarness._validate_rag_citations(
+        "Unsupported answer [src-not-retrieved].",
+        [{"source_id": "src-chunk-123"}],
+    )
+
+    assert "does not preserve verifiable citations" in answer
+    assert warnings == ["citation_validation_failed"]
