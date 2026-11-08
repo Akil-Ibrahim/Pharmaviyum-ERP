@@ -37,6 +37,8 @@ class LangGraphRAG:
     RETRIEVAL_TOP_K = 10
     MAX_CONTEXT_DOCS = 12
     MIN_RELEVANT_DOCS = 1
+    MAX_RETRIEVAL_CONCURRENCY = 6
+    MAX_GRADING_CONCURRENCY = 4
 
     def __init__(
         self,
@@ -50,6 +52,8 @@ class LangGraphRAG:
         max_context_docs: int = MAX_CONTEXT_DOCS,
         max_rewrites: int = MAX_REWRITES,
         max_query_variations: int = 2,
+        max_retrieval_concurrency: int = MAX_RETRIEVAL_CONCURRENCY,
+        max_grading_concurrency: int = MAX_GRADING_CONCURRENCY,
         enable_multi_query: bool = True,
         enable_hyde: bool = True,
         token_budget_manager: TokenBudgetManager | None = None,
@@ -67,10 +71,14 @@ class LangGraphRAG:
             raise ValueError("RAG retrieval and context limits must be positive")
         if max_rewrites < 0 or max_query_variations < 1:
             raise ValueError("RAG rewrite/query variation limits are invalid")
+        if max_retrieval_concurrency < 1 or max_grading_concurrency < 1:
+            raise ValueError("RAG concurrency limits must be positive")
         self.retrieval_top_k = retrieval_top_k
         self.max_context_docs = max_context_docs
         self.max_rewrites = max_rewrites
         self.max_query_variations = max_query_variations
+        self.max_retrieval_concurrency = max_retrieval_concurrency
+        self.max_grading_concurrency = max_grading_concurrency
         self.enable_multi_query = enable_multi_query
         self.enable_hyde = enable_hyde
         self.token_budget_manager = token_budget_manager or TokenBudgetManager()
@@ -158,11 +166,14 @@ class LangGraphRAG:
                     num_variations=self.max_query_variations,
                     context=ctx_dict,
                 )
-                queries = [
-                    item.transformed_query
-                    for item in variations
-                    if item.transformed_query
-                ] or [question]
+                # Always retain the original query as a retrieval candidate.
+                # Generated rewrites supplement the original; they must never
+                # replace it because a rewrite can lose a critical drug name,
+                # strength, formulation or negation.
+                for item in variations:
+                    candidate = item.transformed_query.strip()
+                    if candidate and candidate not in queries:
+                        queries.append(candidate)
             if self.enable_hyde:
                 try:
                     hyde = await self.transformer.transform_with_hyde(
@@ -171,7 +182,10 @@ class LangGraphRAG:
                     if hyde.transformed_query and hyde.transformed_query not in queries:
                         queries.append(hyde.transformed_query)
                 except Exception as exc:
-                    logger.warning("HyDE skipped: %s", exc)
+                    logger.warning(
+                        "HyDE query transformation failed",
+                        extra={"error_type": type(exc).__name__},
+                    )
             success = True
             return {
                 "transformed_queries": queries,
@@ -210,9 +224,17 @@ class LangGraphRAG:
         started = time.perf_counter()
         filter_sets = self._build_filter_sets(state["context"])
         queries = state["transformed_queries"] or [state["question"]]
+        semaphore = asyncio.Semaphore(self.max_retrieval_concurrency)
+
+        async def retrieve_bounded(
+            query: str, filters: dict[str, Any]
+        ) -> list[RetrievalResult]:
+            async with semaphore:
+                return await self._retrieve_one(query, filters)
+
         results = await asyncio.gather(
             *[
-                self._retrieve_one(query, filters)
+                retrieve_bounded(query, filters)
                 for query in queries
                 for filters in filter_sets
             ],
@@ -223,7 +245,10 @@ class LangGraphRAG:
         for result in results:
             if isinstance(result, BaseException):
                 failed += 1
-                logger.warning("RAG retrieval variant failed: %s", result)
+                logger.warning(
+                    "RAG retrieval variant failed",
+                    extra={"error_type": type(result).__name__},
+                )
                 continue
             all_hits.extend(result)
         best: dict[str, RetrievalResult] = {}
@@ -259,11 +284,14 @@ class LangGraphRAG:
         started = time.perf_counter()
         success = False
         try:
+            semaphore = asyncio.Semaphore(self.max_grading_concurrency)
+
+            async def grade_bounded(hit: RetrievalResult) -> RetrievalResult | None:
+                async with semaphore:
+                    return await self._grade_one(state["question"], hit)
+
             results = await asyncio.gather(
-                *[
-                    self._grade_one(state["question"], hit)
-                    for hit in state["retrieved"]
-                ],
+                *[grade_bounded(hit) for hit in state["retrieved"]],
                 return_exceptions=True,
             )
             graded: list[RetrievalResult] = []
@@ -351,7 +379,10 @@ class LangGraphRAG:
                 )
                 token_budget_manager.check_input(prompt)
             except TokenBudgetExceeded as exc:
-                logger.warning("RAG generation skipped by token budget: %s", exc)
+                logger.warning(
+                    "RAG generation skipped by token budget",
+                    extra={"error_type": type(exc).__name__},
+                )
                 success = True
                 return {
                     "answer": (
@@ -483,7 +514,11 @@ class LangGraphRAG:
                 "input_blocked": False,
             }
             config: dict[str, Any] = {
-                "configurable": {"thread_id": self._thread_id(thread_id, context)}
+                "configurable": {"thread_id": self._thread_id(thread_id, context)},
+                # The graph has a bounded rewrite loop. Keep an explicit
+                # recursion ceiling as a second guard against accidental
+                # future cycles introduced during graph evolution.
+                "recursion_limit": 12 + (self.max_rewrites * 3),
             }
             usage_callback = UsageMetadataCallbackHandler()
             config["callbacks"] = [usage_callback]
