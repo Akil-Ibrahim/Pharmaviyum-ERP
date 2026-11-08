@@ -43,7 +43,10 @@ async def _load_sale(db: SessionDep, sale_id: int) -> Sale:
     result = await db.execute(
         select(Sale)
         .where(Sale.id == sale_id)
-        .options(selectinload(Sale.items), selectinload(Sale.payments))
+        .options(
+            selectinload(Sale.items).selectinload(SaleItem.allocations),
+            selectinload(Sale.payments),
+        )
     )
     sale = result.scalar_one_or_none()
     if sale is None:
@@ -266,7 +269,10 @@ async def checkout(
             Sale.pharmacy_id == payload.pharmacy_id,
             Sale.idempotency_key == payload.idempotency_key,
         )
-        .options(selectinload(Sale.items), selectinload(Sale.payments))
+        .options(
+            selectinload(Sale.items).selectinload(SaleItem.allocations),
+            selectinload(Sale.payments),
+        )
     )
     existing = existing_result.scalar_one_or_none()
     if existing is not None:
@@ -450,7 +456,10 @@ async def checkout(
                 Sale.pharmacy_id == payload.pharmacy_id,
                 Sale.idempotency_key == payload.idempotency_key,
             )
-            .options(selectinload(Sale.items), selectinload(Sale.payments))
+            .options(
+            selectinload(Sale.items).selectinload(SaleItem.allocations),
+            selectinload(Sale.payments),
+        )
         )
         duplicate = duplicate_result.scalar_one_or_none()
         if duplicate is None:
