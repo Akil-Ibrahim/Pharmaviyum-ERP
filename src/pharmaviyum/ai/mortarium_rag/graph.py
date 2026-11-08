@@ -355,10 +355,10 @@ class LangGraphRAG:
             "Return exactly YES or NO."
         )
         human_prompt = (
-            f"<question>\\n{html.escape(question, quote=False)}\\n</question>\\n"
-            f"<untrusted_document>\\n"
+            f"<question>\n{html.escape(question, quote=False)}\n</question>\n"
+            f"<untrusted_document>\n"
             f"{html.escape(hit.chunk.content[:800], quote=False)}"
-            "\\n</untrusted_document>"
+            "\n</untrusted_document>"
         )
         resp = await self.fast_llm.ainvoke(
             [
@@ -425,9 +425,9 @@ class LangGraphRAG:
                 "Return only one concise retrieval-oriented rewrite."
             )
             human_prompt = (
-                "<untrusted_question>\\n"
+                "<untrusted_question>\n"
                 f"{html.escape(original, quote=False)}"
-                "\\n</untrusted_question>"
+                "\n</untrusted_question>"
             )
             resp = await self.fast_llm.ainvoke(
                 [
@@ -488,11 +488,11 @@ class LangGraphRAG:
                 "citation IDs or cite sources that are not supplied."
             )
             human_prompt = (
-                f"<user_question>\\n{question}\\n</user_question>\\n\\n"
-                f"<retrieved_evidence>\\n{context}\\n</retrieved_evidence>"
+                f"<user_question>\n{question}\n</user_question>\n\n"
+                f"<retrieved_evidence>\n{context}\n</retrieved_evidence>"
             )
             # Budget the combined message content before sending separate roles.
-            prompt = f"{system_prompt}\\n\\n{human_prompt}"
+            prompt = f"{system_prompt}\n\n{human_prompt}"
             messages = [
                 SystemMessage(content=system_prompt),
                 HumanMessage(content=human_prompt),
