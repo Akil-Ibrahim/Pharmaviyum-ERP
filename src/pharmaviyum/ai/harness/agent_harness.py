@@ -211,6 +211,7 @@ class AgentHarness:
 
             with tracer.start_as_current_span("mortarium.agent.execute") as span:
                 span.set_attribute("ai.model_name", str(selected_model_name)[:64])
+                fallback_model = self.model_router.get_fallback()
                 agent_result = await self.agent.run(
                     query=safe_query,
                     context={
@@ -221,6 +222,7 @@ class AgentHarness:
                     },
                     thread_id=session_id,
                     selected_model=selected_model,
+                    fallback_model=fallback_model,
                 )
                 span.set_attribute(
                     "ai.rag.source_count", len(agent_result.get("rag_sources", []))
@@ -378,6 +380,7 @@ class AgentHarness:
                 or getattr(selected_model, "model", None)
                 or "configured-model"
             )
+            fallback_model = self.model_router.get_fallback()
             async for stream_event in self.agent.astream(
                 query=safe_query,
                 context={
@@ -388,6 +391,7 @@ class AgentHarness:
                 },
                 thread_id=session_id,
                 selected_model=selected_model,
+                fallback_model=fallback_model,
             ):
                 node = stream_event.get("node")
                 data = stream_event.get("data", {})
