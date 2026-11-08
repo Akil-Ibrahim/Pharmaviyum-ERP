@@ -108,6 +108,7 @@ async def search_pos_products(
             inn_name=product.inn_name,
             gtin=product.gtin,
             barcode=product.barcode,
+            regulatory_id=product.regulatory_id,
             price=product.price,
             stock=int(available_stock),
             medicinal_product_id=product.medicinal_product_id,
