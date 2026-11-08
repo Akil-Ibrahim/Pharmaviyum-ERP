@@ -76,24 +76,38 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
         _provider = provider
 
     if not _instrumented:
-        try:
-            FastAPIInstrumentor.instrument_app(
-                app,
-                tracer_provider=_provider,
-                excluded_urls="health,ready,metrics,openapi.json,docs,redoc",
-            )
-            SQLAlchemyInstrumentor().instrument(
-                engine=engine.sync_engine,
-                tracer_provider=_provider,
-            )
-            RedisInstrumentor().instrument(tracer_provider=_provider)
-            HTTPXClientInstrumentor().instrument(tracer_provider=_provider)
-            _instrumented = True
-            logger.info(
-                "OpenTelemetry FastAPI, SQLAlchemy, Redis and HTTPX instrumentation enabled"
-            )
-        except Exception:
-            logger.exception("OpenTelemetry instrumentation setup failed")
+        instrumentations = (
+            (
+                "FastAPI",
+                lambda: FastAPIInstrumentor.instrument_app(
+                    app,
+                    tracer_provider=_provider,
+                    excluded_urls="health,ready,metrics,openapi.json,docs,redoc",
+                ),
+            ),
+            (
+                "SQLAlchemy",
+                lambda: SQLAlchemyInstrumentor().instrument(
+                    engine=engine.sync_engine,
+                    tracer_provider=_provider,
+                ),
+            ),
+            (
+                "Redis",
+                lambda: RedisInstrumentor().instrument(tracer_provider=_provider),
+            ),
+            (
+                "HTTPX",
+                lambda: HTTPXClientInstrumentor().instrument(tracer_provider=_provider),
+            ),
+        )
+        for name, instrument in instrumentations:
+            try:
+                instrument()
+                logger.info("OpenTelemetry %s instrumentation enabled", name)
+            except Exception:
+                logger.exception("OpenTelemetry %s instrumentation setup failed", name)
+        _instrumented = True
     return _provider
 
 
