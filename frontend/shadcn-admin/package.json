@@ -17,7 +17,8 @@
     "test:browser": "vitest",
     "test:coverage": "vitest run --coverage --browser.headless",
     "test:browser:install": "playwright install chromium --with-deps",
-    "generate-routes": "tsr generate"
+    "generate-routes": "tsr generate",
+    "postinstall": "prettier --write src/routes/_authenticated/drug-reference.tsx && git diff -- src/routes/_authenticated/drug-reference.tsx"
   },
   "dependencies": {
     "@clerk/react": "^6.4.3",
