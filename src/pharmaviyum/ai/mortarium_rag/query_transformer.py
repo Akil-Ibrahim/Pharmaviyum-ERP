@@ -53,19 +53,9 @@ class QueryTransformer:
         query: str,
         context: dict[str, Any] | None = None,
     ) -> QueryVariation:
-        """
-        HyDE: Generate hypothetical document that answers the query,
-        then use that document's embedding for retrieval.
-
-        Why it works:
-        - Query: "What is the dosage of Paracetamol?"
-        - HyDE doc: "Paracetamol dosage for adults is 500mg-1000mg every 4-6 hours..."
-        - The HyDE doc embedding is closer to actual documents than query embedding
-        """
+        """Generate a hypothetical retrieval aid without treating it as evidence."""
         context = context or {}
         language = context.get("language", "en")
-
-        # Language-specific prompt
         lang_instruction = {
             "vi": "Trả lời bằng tiếng Việt.",
             "ar": "أجب باللغة العربية.",
@@ -97,10 +87,7 @@ class QueryTransformer:
                     HumanMessage(content=human_prompt),
                 ]
             )
-        try:
-            response = await self.llm.ainvoke(prompt)
             hypothetical_doc = response_text(response).strip()
-
             logger.debug(
                 "HyDE transformation completed",
                 extra={
@@ -108,20 +95,18 @@ class QueryTransformer:
                     "output_length": len(hypothetical_doc),
                 },
             )
-
             return QueryVariation(
                 original_query=query,
-                transformed_query=hypothetical_doc,
-                transformation_type="hyde",
+                transformed_query=hypothetical_doc or query,
+                transformation_type="hyde" if hypothetical_doc else "original",
                 language=language,
-                confidence=0.85,
+                confidence=0.85 if hypothetical_doc else 1.0,
             )
         except Exception as exc:
             logger.warning(
                 "HyDE transformation failed",
                 extra={"error_type": type(exc).__name__},
             )
-            # Fallback to original query
             return QueryVariation(
                 original_query=query,
                 transformed_query=query,
@@ -136,18 +121,9 @@ class QueryTransformer:
         num_variations: int = 3,
         context: dict[str, Any] | None = None,
     ) -> list[QueryVariation]:
-        """
-        Generate multiple query variations to improve recall.
-
-        Example:
-        - Original: "drug interactions between Warfarin and Aspirin"
-        - Variation 1: "Warfarin Aspirin interaction risks"
-        - Variation 2: "Can I take Warfarin with Aspirin safely?"
-        - Variation 3: "Warfarin and Aspirin combined effects"
-        """
+        """Generate search rewrites while preserving the original medical intent."""
         context = context or {}
         language = context.get("language", "en")
-
         lang_instruction = {
             "vi": "Viết bằng tiếng Việt.",
             "ar": "اكتب باللغة العربية.",
@@ -178,23 +154,18 @@ class QueryTransformer:
                     HumanMessage(content=human_prompt),
                 ]
             )
-        try:
-            response = await self.llm.ainvoke(prompt)
             variations_text = response_text(response).strip().split("\n")
-
             variations = [
                 QueryVariation(
                     original_query=query,
-                    transformed_query=v.strip(),
+                    transformed_query=value.strip(),
                     transformation_type="multi_query",
                     language=language,
                     confidence=0.9,
                 )
-                for v in variations_text[:num_variations]
-                if v.strip()
+                for value in variations_text[:num_variations]
+                if value.strip()
             ]
-
-            # Always include original
             variations.insert(
                 0,
                 QueryVariation(
@@ -205,10 +176,11 @@ class QueryTransformer:
                     confidence=1.0,
                 ),
             )
-
-            logger.debug(f"Generated {len(variations)} query variations")
+            logger.debug(
+                "Generated pharmaceutical query variations",
+                extra={"variation_count": len(variations)},
+            )
             return variations
-
         except Exception as exc:
             logger.warning(
                 "Multi-query generation failed",
@@ -229,20 +201,12 @@ class QueryTransformer:
         query: str,
         context: dict[str, Any] | None = None,
     ) -> list[QueryVariation]:
-        """
-        Decompose complex queries into sub-queries.
-
-        Example:
-        - Original: "What are the interactions between Warfarin and Aspirin, and what are the alternatives?"
-        - Sub-query 1: "Warfarin Aspirin drug interactions"
-        - Sub-query 2: "Warfarin Aspirin alternatives"
-        """
+        """Decompose complex search questions without answering them."""
         context = context or {}
         language = context.get("language", "en")
-
-        # Only decompose if query is complex (contains "and", "or", multiple questions)
         if not any(
-            kw in query.lower() for kw in [" and ", " or ", " also ", " additionally "]
+            keyword in query.lower()
+            for keyword in (" and ", " or ", " also ", " additionally ")
         ):
             return [
                 QueryVariation(
@@ -261,7 +225,6 @@ class QueryTransformer:
             "id": "Tulis dalam bahasa Indonesia.",
             "en": "Write in English.",
         }.get(language, "Write in English.")
-
         system_prompt = (
             "You decompose complex pharmaceutical search questions. "
             f"{lang_instruction} "
@@ -284,25 +247,33 @@ class QueryTransformer:
                     HumanMessage(content=human_prompt),
                 ]
             )
-        try:
-            response = await self.llm.ainvoke(prompt)
             subqueries_text = response_text(response).strip().split("\n")
-
             subqueries = [
                 QueryVariation(
                     original_query=query,
-                    transformed_query=sq.strip(),
+                    transformed_query=value.strip(),
                     transformation_type="decomposition",
                     language=language,
                     confidence=0.85,
                 )
-                for sq in subqueries_text[:3]
-                if sq.strip()
+                for value in subqueries_text[:3]
+                if value.strip()
             ]
-
-            logger.debug(f"Decomposed query into {len(subqueries)} sub-queries")
+            if not subqueries:
+                return [
+                    QueryVariation(
+                        original_query=query,
+                        transformed_query=query,
+                        transformation_type="original",
+                        language=language,
+                        confidence=1.0,
+                    )
+                ]
+            logger.debug(
+                "Decomposed pharmaceutical search query",
+                extra={"subquery_count": len(subqueries)},
+            )
             return subqueries
-
         except Exception as exc:
             logger.warning(
                 "Query decomposition failed",
