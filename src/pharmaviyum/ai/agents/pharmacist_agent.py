@@ -460,22 +460,21 @@ class PharmacistAgent:
                 "warnings": warnings + ["reviewer_failed_closed"],
             }
         rag_sources = state.get("rag_sources", [])
-        if rag_sources:
-            allowed_citations = {
-                str(source.get("source_id"))
-                for source in rag_sources
-                if source.get("source_id")
-            }
-            cited = re.findall(r"\[(src-[^\]\s]+)\]", final)
-            if not cited or any(
-                citation not in allowed_citations for citation in cited
-            ):
-                final = (
-                    "I cannot provide a reliable answer because the final response "
-                    "does not preserve verifiable citations to the retrieved evidence. "
-                    "Please review the source records with a pharmacist."
-                )
-                warnings.append("citation_validation_failed")
+        allowed_citations = {
+            str(source.get("source_id"))
+            for source in rag_sources
+            if source.get("source_id")
+        }
+        cited = re.findall(r"\[(src-[^\]\s]+)\]", final)
+        if (rag_sources and not cited) or any(
+            citation not in allowed_citations for citation in cited
+        ):
+            final = (
+                "I cannot provide a reliable answer because the final response "
+                "does not preserve verifiable citations to the retrieved evidence. "
+                "Please review the source records with a pharmacist."
+            )
+            warnings.append("citation_validation_failed")
 
         if (
             "consult a licensed pharmacist" not in final.lower()
