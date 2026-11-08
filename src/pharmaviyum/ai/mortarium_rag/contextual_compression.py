@@ -126,8 +126,8 @@ class ContextualCompressor:
             "descending. Use only the supplied sentence indices."
         )
         human_prompt = (
-            f"<query_data>\\n{safe_query}\\n</query_data>\\n\\n"
-            f"<retrieved_sentences>\\n{sentences_text}\\n</retrieved_sentences>"
+            f"<query_data>\n{safe_query}\n</query_data>\n\n"
+            f"<retrieved_sentences>\n{sentences_text}\n</retrieved_sentences>"
         )
         try:
             response = await self.llm.ainvoke(
