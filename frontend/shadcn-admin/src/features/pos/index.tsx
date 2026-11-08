@@ -566,6 +566,7 @@ export function Pos() {
                 </span>
                 <Button
                   size='lg'
+                  disabled={cart.length === 0}
                   onClick={() => {
                     setCashReceived(total.toFixed(2))
                     setCheckoutOpen(true)
@@ -813,7 +814,18 @@ export function Pos() {
             {results.map((product) => (
               <CommandItem
                 key={product.id}
-                value={`${product.name} ${product.inn_name || ''} ${product.dosage_strength || ''} ${product.barcode || ''}`}
+                value={[
+                  product.name,
+                  product.inn_name,
+                  product.dosage_strength,
+                  product.dosage_form,
+                  product.sku,
+                  product.manufacturer,
+                  product.barcode,
+                  product.gtin,
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
                 disabled={product.stock < 1}
                 onSelect={() => {
                   addProduct(product)
@@ -1046,6 +1058,7 @@ export function Pos() {
               disabled={
                 processing ||
                 !pharmacyId ||
+                cart.length === 0 ||
                 (paymentMethod === 'cash' && cash < total)
               }
               onClick={() => void completeSale()}
