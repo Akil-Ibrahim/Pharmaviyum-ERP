@@ -302,6 +302,63 @@ export function Pos() {
     )
   }
 
+  const handleSearchSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const term = query.trim()
+    if (term.length < 2) return
+
+    const normalized = term.replace(/\s+/g, '').toLowerCase()
+    const findExact = (products: LocalProduct[]) =>
+      products.filter((product) =>
+        [product.barcode, product.gtin, product.sku].some(
+          (value) => value?.replace(/\s+/g, '').toLowerCase() === normalized
+        )
+      )
+
+    const exact = findExact(results)
+    if (exact.length === 1) {
+      addProduct(exact[0])
+      return
+    }
+    if (exact.length > 1) {
+      setNotice(
+        'This barcode matches multiple products. Select the correct item.'
+      )
+      return
+    }
+    if (loading) {
+      pendingScanRef.current = term
+      setNotice('Barcode received. Looking up the exact match…')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const fresh = await apiFetch<LocalProduct[]>(
+        `/api/v1/pos/products/search?q=${encodeURIComponent(term)}` +
+          `&pharmacy_id=${pharmacyId}&limit=30`
+      )
+      setResults(fresh)
+      const freshExact = findExact(fresh)
+      if (freshExact.length === 1) {
+        addProduct(freshExact[0])
+        setNotice('Barcode matched. Medicine added to the sale.')
+      } else if (freshExact.length > 1) {
+        setNotice(
+          'This barcode matches multiple products. Select the correct item.'
+        )
+      } else if (fresh.length === 1) {
+        addProduct(fresh[0])
+      } else {
+        setNotice('Select a medicine from the search results to add it.')
+      }
+    } catch {
+      setNotice('Unable to complete the medicine lookup. Try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const receiveStock = async () => {
     const quantity = Number(receivingQuantity)
     if (
@@ -676,33 +733,7 @@ export function Pos() {
               </div>
               <form
                 aria-label='Medicine search'
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  const term = query.trim()
-                  const normalized = term.replace(/\s+/g, '').toLowerCase()
-                  const exact = results.filter((product) =>
-                    [product.barcode, product.gtin, product.sku].some(
-                      (value) =>
-                        value?.replace(/\s+/g, '').toLowerCase() === normalized
-                    )
-                  )
-                  if (exact.length === 1) {
-                    addProduct(exact[0])
-                  } else if (loading) {
-                    pendingScanRef.current = term
-                    setNotice(
-                      'Barcode received. Looking up the exact match…'
-                    )
-                  } else if (results.length === 1) {
-                    addProduct(results[0])
-                  } else if (exact.length > 1) {
-                    setNotice(
-                      'This barcode matches multiple products. Select the correct item.'
-                    )
-                  } else {
-                    setNotice('Select a medicine from the search results to add it.')
-                  }
-                }}
+                onSubmit={handleSearchSubmit}
                 className='relative w-full'
               >
                 <Search
