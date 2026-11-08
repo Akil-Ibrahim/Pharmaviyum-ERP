@@ -293,9 +293,9 @@ class PharmacistAgent:
                     }
                 )
                 logger.error(
-                "MCP execution failed",
-                extra={"error_type": type(exc).__name__},
-            )
+                    "MCP execution failed",
+                    extra={"error_type": type(exc).__name__},
+                )
             messages.append(
                 ToolMessage(content=content, tool_call_id=tool_id, name=name)
             )
