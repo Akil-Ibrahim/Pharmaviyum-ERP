@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page-header'
 
 type EntityPageProps = {
   title: string
@@ -89,19 +91,24 @@ export function EntityPage({
   }, [rows])
 
   return (
-    <div className='space-y-6 p-6'>
-      <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>
-        <div>
-          <h1 className='text-2xl font-bold tracking-tight'>{title}</h1>
-          <p className='text-muted-foreground'>{description}</p>
-        </div>
-        {endpoint && (
-          <Button variant='outline' size='sm' onClick={load} disabled={loading}>
-            <RefreshCw className='mr-2 size-4' />
-            Refresh
-          </Button>
-        )}
-      </div>
+    <Main className='flex flex-col gap-6'>
+      <PageHeader
+        title={title}
+        description={description}
+        actions={
+          endpoint && (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={load}
+              disabled={loading}
+            >
+              <RefreshCw className='mr-2 size-4' />
+              Refresh
+            </Button>
+          )
+        }
+      />
 
       {status && <Badge variant='secondary'>{status}</Badge>}
 
@@ -199,7 +206,7 @@ export function EntityPage({
           )}
         </CardContent>
       </Card>
-    </div>
+    </Main>
   )
 }
 
