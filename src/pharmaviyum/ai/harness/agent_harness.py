@@ -348,6 +348,7 @@ class AgentHarness:
                 return
 
             final_answer: str | None = None
+            model_used = selected_model_name
             final_warnings: list[str] = []
             tool_results: list[dict[str, Any]] = []
             rag_sources: list[dict[str, Any]] = []
@@ -409,6 +410,7 @@ class AgentHarness:
                         "message": "Retrieving pharmacy knowledge...",
                     }
                 elif node == "planner":
+                    model_used = data.get("model_used") or model_used
                     yield {"event": "status", "message": "Planning tool usage..."}
                 elif node == "executor":
                     tool_results.extend(data.get("tool_results", []))
@@ -448,7 +450,7 @@ class AgentHarness:
                         "answer": final_answer,
                         "warnings": final_warnings,
                         "rag_sources": rag_sources,
-                        "model_used": selected_model_name,
+                        "model_used": model_used,
                     },
                     context=cache_key_context,
                 )
@@ -459,7 +461,7 @@ class AgentHarness:
                 "text": final_answer,
                 "warnings": list(set(final_warnings)),
                 "sources": rag_sources,
-                "model_used": selected_model_name,
+                "model_used": model_used,
                 "cache_hit": False,
             }
             yield {
