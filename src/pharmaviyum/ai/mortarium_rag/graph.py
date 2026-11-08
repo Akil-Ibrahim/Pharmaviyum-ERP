@@ -56,11 +56,11 @@ class LangGraphRAG:
         max_context_docs: int = MAX_CONTEXT_DOCS,
         max_rewrites: int = MAX_REWRITES,
         max_query_variations: int = 2,
-        max_retrieval_concurrency: int = MAX_RETRIEVAL_CONCURRENCY,
-        max_grading_concurrency: int = MAX_GRADING_CONCURRENCY,
         enable_multi_query: bool = True,
         enable_hyde: bool = True,
         token_budget_manager: TokenBudgetManager | None = None,
+        max_retrieval_concurrency: int = MAX_RETRIEVAL_CONCURRENCY,
+        max_grading_concurrency: int = MAX_GRADING_CONCURRENCY,
     ) -> None:
         if checkpointer is None:
             raise ValueError(
