@@ -34,6 +34,7 @@ import {
   DataTableToolbar,
 } from '@/components/data-table'
 import { PageHeader } from '@/components/page-header'
+
 type InventoryRow = {
   id: number
   product_id: number
