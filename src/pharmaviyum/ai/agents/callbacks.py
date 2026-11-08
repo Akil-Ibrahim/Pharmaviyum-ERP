@@ -39,7 +39,6 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
         logger.debug(
             "LLM generation started",
             extra={
-                "session_id": self.session_id,
                 "trace_id": self.trace_id,
                 "model": serialized.get("name", "unknown"),
             },
