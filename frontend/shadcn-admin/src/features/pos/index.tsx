@@ -385,8 +385,9 @@ export function Pos() {
           </div>
         )}
 
+        <div className='grid min-w-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] xl:items-start'>
         {cart.length > 0 && (
-          <Card className='min-h-0 flex-1 overflow-y-auto xl:sticky xl:top-4 xl:max-h-[calc(100vh-12rem)] xl:w-full xl:shadow-lg'>
+          <Card className='min-w-0 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto xl:col-start-2 xl:row-start-1 xl:shadow-lg'>
             <CardHeader className='pb-3'>
               <div className='flex items-center justify-between'>
                 <CardTitle>Cart</CardTitle>
@@ -499,7 +500,7 @@ export function Pos() {
         )}
 
         {sale?.status === 'completed' && (
-          <Card>
+          <Card className='xl:col-span-2'>
             <CardContent className='flex items-center justify-between gap-3 p-4'>
               <div className='flex items-center gap-2'>
                 <Receipt className='size-5 text-primary' />
@@ -528,9 +529,9 @@ export function Pos() {
 
         <section
           aria-label='Medicine search'
-          className='flex min-h-[60vh] min-w-0 flex-1 flex-col justify-start py-5'
+          className='flex min-h-[60vh] min-w-0 flex-col justify-start py-5 xl:col-start-1 xl:row-start-1'
         >
-          <div className='mx-auto w-full max-w-5xl'>
+          <div className='w-full max-w-5xl'>
             <form
               aria-label='Medicine search'
               onSubmit={(e) => {
@@ -647,6 +648,7 @@ export function Pos() {
             )}
           </div>
         </section>
+        </div>
       </div>
 
       {receivingOpen && (
