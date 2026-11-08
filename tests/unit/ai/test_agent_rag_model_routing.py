@@ -214,8 +214,7 @@ async def test_cached_stream_emits_complete_event() -> None:
     )
 
     events = [
-        event
-        async for event in harness._astream_events("session", "original query")
+        event async for event in harness._astream_events("session", "original query")
     ]
 
     assert events[-2]["event"] == "answer"
