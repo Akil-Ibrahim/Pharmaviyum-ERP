@@ -59,3 +59,120 @@
   from { height: var(--radix-collapsible-content-height); }
   to { height: 0; }
 }
+
+
+/* Pharmaviyum dashboard refinement: preserve the existing Vite/Radix/TanStack stack. */
+.pharmacy-dashboard-page {
+  --pharmacy-card-shadow: 0 1px 2px oklch(0.2 0.02 260 / 4%), 0 8px 24px oklch(0.2 0.02 260 / 3%);
+}
+.pharmacy-dashboard-hero {
+  overflow: hidden;
+  isolation: isolate;
+  border-color: color-mix(in oklab, var(--primary) 18%, var(--border));
+  background:
+    radial-gradient(ellipse at 88% 8%, color-mix(in oklab, var(--primary) 14%, transparent), transparent 42%),
+    linear-gradient(125deg, color-mix(in oklab, var(--primary) 7%, var(--card)), var(--card) 68%);
+  box-shadow: var(--pharmacy-card-shadow);
+}
+.pharmacy-dashboard-hero::after {
+  position: absolute;
+  z-index: -1;
+  right: -3.5rem;
+  bottom: -5.5rem;
+  width: 17rem;
+  height: 17rem;
+  border: 1px solid color-mix(in oklab, var(--primary) 13%, transparent);
+  border-radius: 9999px;
+  content: '';
+  box-shadow: 0 0 0 2rem color-mix(in oklab, var(--primary) 3%, transparent), 0 0 0 4rem color-mix(in oklab, var(--primary) 2%, transparent);
+}
+.pharmacy-metric-card {
+  min-height: 7.25rem;
+  box-shadow: var(--pharmacy-card-shadow);
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+.pharmacy-metric-card:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in oklab, var(--primary) 28%, var(--border));
+  box-shadow: 0 8px 24px oklch(0.2 0.02 260 / 7%);
+}
+.pharmacy-dashboard-page section > .rounded-2xl.border.bg-card,
+.pharmacy-dashboard-page section .rounded-2xl.border.bg-card {
+  box-shadow: var(--pharmacy-card-shadow);
+}
+.pharmacy-data-page > div:first-child h1 {
+  letter-spacing: -0.035em;
+}
+.pharmacy-data-page > div:first-child p {
+  margin-top: .35rem;
+  max-width: 48rem;
+  font-size: .875rem;
+  line-height: 1.5;
+}
+.pharmacy-data-page [data-slot='card'] {
+  overflow: hidden;
+  gap: 1rem;
+  border-color: color-mix(in oklab, var(--border) 88%, var(--foreground) 12%);
+  box-shadow: 0 1px 2px oklch(0.2 0.02 260 / 4%), 0 6px 20px oklch(0.2 0.02 260 / 3%);
+}
+.pharmacy-data-page [data-slot='card-header'] {
+  padding-bottom: .25rem;
+}
+.pharmacy-data-page [data-slot='card-title'] {
+  font-size: .95rem;
+  letter-spacing: -.015em;
+}
+.pharmacy-data-page [data-slot='card-content'] {
+  padding-bottom: 1.25rem;
+}
+.pharmacy-data-page input {
+  min-height: 2.5rem;
+  border-radius: calc(var(--radius) + 1px);
+}
+.pharmacy-data-page table {
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 42rem;
+}
+.pharmacy-data-page table thead {
+  background: var(--muted);
+}
+.pharmacy-data-page table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: .8rem .9rem;
+  color: var(--muted-foreground);
+  font-size: .7rem;
+  font-weight: 650;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pharmacy-data-page table td {
+  padding: .85rem .9rem;
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.pharmacy-data-page table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.pharmacy-data-page table tbody tr {
+  transition: background-color 120ms ease;
+}
+.pharmacy-data-page table tbody tr:hover {
+  background: color-mix(in oklab, var(--primary) 4%, var(--card));
+}
+.pharmacy-data-page .overflow-x-auto.rounded-md.border {
+  border-color: var(--border);
+  border-radius: calc(var(--radius) + 3px);
+}
+@media (max-width: 640px) {
+  .pharmacy-data-page { padding: 1rem; }
+  .pharmacy-dashboard-hero { padding: 1.25rem; }
+}
+.dark .pharmacy-dashboard-hero {
+  background:
+    radial-gradient(ellipse at 88% 8%, color-mix(in oklab, var(--primary) 18%, transparent), transparent 42%),
+    linear-gradient(125deg, color-mix(in oklab, var(--primary) 10%, var(--card)), var(--card) 68%);
+}
