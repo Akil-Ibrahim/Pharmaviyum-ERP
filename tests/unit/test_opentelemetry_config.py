@@ -66,6 +66,8 @@ def test_sensitive_client_spans_are_opt_in_and_never_enabled_in_production():
     assert _allow_sensitive_client_instrumentation("development", False) is False
     assert _allow_sensitive_client_instrumentation("production", True) is False
     assert _allow_sensitive_client_instrumentation("prod", True) is False
+    assert _allow_sensitive_client_instrumentation("", True) is False
+    assert _allow_sensitive_client_instrumentation("staging", True) is False
 
 
 def test_custom_span_attributes_are_allowlisted():
@@ -92,3 +94,25 @@ def test_custom_span_attributes_are_allowlisted():
 
     recorded = {call.args[0] for call in span.set_attribute.call_args_list}
     assert recorded == {"ai.rag.source_count", "ai.model_name"}
+
+
+def test_ai_spans_only_allow_reviewed_names_and_operational_attributes():
+    from src.pharmaviyum.ai.observability.tracer import (
+        _safe_span_attributes,
+        _safe_span_name,
+    )
+
+    assert _safe_span_name("mortarium.agent.execute") == "mortarium.agent.execute"
+    assert _safe_span_name("patient-123-query") == "pharmaviyum.ai.operation"
+    assert _safe_span_attributes(
+        {
+            "ai.model_name": "approved-model",
+            "ai.execution_success": True,
+            "patient.id": 123,
+            "ai.prompt": "patient clinical details",
+            "http.url": "https://example.test/?token=secret",
+        }
+    ) == {
+        "ai.model_name": "approved-model",
+        "ai.execution_success": True,
+    }
