@@ -97,8 +97,11 @@ Hypothetical answer:"""
                 language=language,
                 confidence=0.85,
             )
-        except Exception as e:
-            logger.warning(f"HyDE transformation failed: {e}")
+        except Exception as exc:
+            logger.warning(
+                "HyDE transformation failed",
+                extra={"error_type": type(exc).__name__},
+            )
             # Fallback to original query
             return QueryVariation(
                 original_query=query,
@@ -176,8 +179,11 @@ Generate {num_variations} variations (one per line, no numbering):"""
             logger.debug(f"Generated {len(variations)} query variations")
             return variations
 
-        except Exception as e:
-            logger.warning(f"Multi-query generation failed: {e}")
+        except Exception as exc:
+            logger.warning(
+                "Multi-query generation failed",
+                extra={"error_type": type(exc).__name__},
+            )
             return [
                 QueryVariation(
                     original_query=query,
@@ -255,8 +261,11 @@ Sub-questions (one per line, no numbering):"""
             logger.debug(f"Decomposed query into {len(subqueries)} sub-queries")
             return subqueries
 
-        except Exception as e:
-            logger.warning(f"Query decomposition failed: {e}")
+        except Exception as exc:
+            logger.warning(
+                "Query decomposition failed",
+                extra={"error_type": type(exc).__name__},
+            )
             return [
                 QueryVariation(
                     original_query=query,
