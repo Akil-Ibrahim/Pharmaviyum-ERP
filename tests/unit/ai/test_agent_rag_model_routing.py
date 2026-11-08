@@ -161,7 +161,9 @@ async def test_streaming_harness_records_phi_safe_execution_span(monkeypatch) ->
     span.set_attribute.assert_any_call("ai.tool_result_count", 2)
     span.set_attribute.assert_any_call("ai.execution_success", True)
     attribute_names = {call.args[0] for call in span.set_attribute.call_args_list}
-    assert attribute_names.isdisjoint({"ai.prompt", "ai.query", "user.id", "patient.id"})
+    assert attribute_names.isdisjoint(
+        {"ai.prompt", "ai.query", "user.id", "patient.id"}
+    )
     span.end.assert_called_once()
 
 
