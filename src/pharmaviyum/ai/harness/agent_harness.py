@@ -31,6 +31,14 @@ from .model_router import ModelRouter
 tracer = trace.get_tracer(__name__)
 
 
+def _current_trace_id() -> str:
+    """Return the active W3C trace ID, or a fallback ID outside traced requests."""
+    span_context = trace.get_current_span().get_span_context()
+    if span_context.is_valid:
+        return f"{span_context.trace_id:032x}"
+    return uuid.uuid4().hex
+
+
 class AgentHarness:
     """Production-ready wrapper around the LangGraph Pharmacist Agent."""
 
@@ -130,7 +138,7 @@ class AgentHarness:
     ) -> dict[str, Any]:
         start_time = time.perf_counter()
         context = {**(context or {}), "session_id": session_id}
-        trace_id = str(uuid.uuid4())
+        trace_id = _current_trace_id()
 
         logger.info(
             "Agent harness execution started",
@@ -313,7 +321,7 @@ class AgentHarness:
         context["memory_fingerprint"] = hashlib.sha256(
             memory_snapshot.encode("utf-8")
         ).hexdigest()
-        trace_id = str(uuid.uuid4())
+        trace_id = _current_trace_id()
         yield {"event": "start", "trace_id": trace_id}
 
         try:
