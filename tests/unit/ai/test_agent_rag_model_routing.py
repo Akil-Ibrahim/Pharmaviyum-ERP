@@ -5,9 +5,9 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
-from pydantic import ValidationError
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
+from pydantic import ValidationError
 
 from src.pharmaviyum.ai.agents.pharmacist_agent import PharmacistAgent
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
