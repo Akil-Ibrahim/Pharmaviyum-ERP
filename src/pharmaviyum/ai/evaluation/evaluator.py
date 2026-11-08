@@ -197,8 +197,11 @@ Respond ONLY with a valid JSON object in this exact format:
 
             return result
 
-        except Exception as e:
-            logger.error(f"Evaluation failed: {e}", exc_info=True)
+        except Exception as exc:
+            logger.error(
+                "Evaluation failed",
+                extra={"error_type": type(exc).__name__},
+            )
             # Return a conservative failing result on evaluator error
             return EvaluationResult(
                 query=query,
@@ -209,6 +212,6 @@ Respond ONLY with a valid JSON object in this exact format:
                 compliance=0.5,
                 overall_score=0.5,
                 passed=False,
-                feedback=f"Evaluation system error: {str(e)}",
+                feedback="Evaluation system error; manual review required.",
                 evaluator_model=self.model_name,
             )
