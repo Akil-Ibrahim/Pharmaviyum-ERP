@@ -134,16 +134,22 @@ def test_harness_blocks_missing_or_fabricated_rag_citations() -> None:
 
 @pytest.mark.asyncio
 async def test_streaming_harness_records_phi_safe_execution_span(monkeypatch) -> None:
-    from src.pharmaviyum.ai.harness import agent_harness as harness_module
+    import src.pharmaviyum.ai.harness.agent_harness as harness_module
     from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
 
     span = MagicMock()
-    monkeypatch.setattr(harness_module.tracer, "start_span", MagicMock(return_value=span))
+    tracer = MagicMock()
+    tracer.start_span.return_value = span
+    monkeypatch.setattr(harness_module, "tracer", tracer)
     harness = AgentHarness.__new__(AgentHarness)
 
     async def events(*args, **kwargs):
-        yield {"event": "answer", "sources": [{"source_id": "src-1"}],
-               "model_used": "test-model", "tool_result_count": 2}
+        yield {
+            "event": "answer",
+            "sources": [{"source_id": "src-1"}],
+            "model_used": "test-model",
+            "tool_result_count": 2,
+        }
 
     harness._astream_events = events
     streamed = [event async for event in harness.astream("session", "sensitive query")]
@@ -160,11 +166,13 @@ async def test_streaming_harness_records_phi_safe_execution_span(monkeypatch) ->
 
 @pytest.mark.asyncio
 async def test_streaming_harness_marks_error_span(monkeypatch) -> None:
-    from src.pharmaviyum.ai.harness import agent_harness as harness_module
+    import src.pharmaviyum.ai.harness.agent_harness as harness_module
     from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
 
     span = MagicMock()
-    monkeypatch.setattr(harness_module.tracer, "start_span", MagicMock(return_value=span))
+    tracer = MagicMock()
+    tracer.start_span.return_value = span
+    monkeypatch.setattr(harness_module, "tracer", tracer)
     harness = AgentHarness.__new__(AgentHarness)
 
     async def events(*args, **kwargs):
