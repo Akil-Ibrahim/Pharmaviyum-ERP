@@ -76,7 +76,7 @@ const money = (value: number) =>
     maximumFractionDigits: 2,
   }).format(value)
 
-const formatDate = (value: string | null) => {
+const formatDateTime = (value: string | null) => {
   if (!value) return '—'
   const date = new Date(value)
   return Number.isNaN(date.getTime())
@@ -87,6 +87,23 @@ const formatDate = (value: string | null) => {
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
+      })
+}
+
+// The API returns expiry_date as a calendar date, not a timestamp.
+// Parse its components directly so the displayed day cannot shift by timezone.
+const formatCalendarDate = (value: string | null) => {
+  if (!value) return '—'
+  const match = /^(\\d{4})-(\\d{2})-(\\d{2})/.exec(value)
+  if (!match) return '—'
+  const [, year, month, day] = match
+  const date = new Date(Number(year), Number(month) - 1, Number(day))
+  return Number.isNaN(date.getTime())
+    ? '—'
+    : date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
       })
 }
 
@@ -172,7 +189,7 @@ const columns: ColumnDef<PatientPurchase>[] = [
     ),
     cell: ({ row }) => (
       <span className='whitespace-nowrap text-muted-foreground'>
-        {formatDate(row.original.purchased_at)}
+        {formatDateTime(row.original.purchased_at)}
       </span>
     ),
   },
@@ -363,7 +380,7 @@ function PatientPurchasesPage() {
                           <TableHead
                             key={header.id}
                             className={cn(
-                              header.column.columnDef.meta &&
+                              ['quantity', 'total_amount'].includes(header.column.id) &&
                                 'text-right'
                             )}
                           >
@@ -395,7 +412,13 @@ function PatientPurchasesPage() {
                           }}
                         >
                           {row.getVisibleCells().map((cell) => (
-                            <TableCell key={cell.id}>
+                            <TableCell
+                              key={cell.id}
+                              className={cn(
+                                ['quantity', 'total_amount'].includes(cell.column.id) &&
+                                  'text-right'
+                              )}
+                            >
                               {flexRender(
                                 cell.column.columnDef.cell,
                                 cell.getContext()
@@ -442,7 +465,7 @@ function PatientPurchasesPage() {
                   {selectedPurchase.receipt_number}
                 </SheetTitle>
                 <SheetDescription>
-                  Recorded {formatDate(selectedPurchase.purchased_at)}
+                  Recorded {formatDateTime(selectedPurchase.purchased_at)}
                 </SheetDescription>
                 <div className='pt-2'>
                   <Badge variant='outline'>{selectedPurchase.category}</Badge>
@@ -511,7 +534,7 @@ function PatientPurchasesPage() {
                     label='Expiry'
                     value={
                       selectedPurchase.expiry_date
-                        ? formatDate(selectedPurchase.expiry_date)
+                        ? formatCalendarDate(selectedPurchase.expiry_date)
                         : '—'
                     }
                   />
