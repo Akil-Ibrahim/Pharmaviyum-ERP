@@ -23,6 +23,7 @@ async def test_registry_filters_tools_by_role() -> None:
         input_schema=_Input,
         output_schema=_Output,
         required_roles=["pharmacist"],
+        execution_class="read",
     )
     async def pharmacist_only(data: _Input) -> _Output:
         return _Output(value=data.value)
@@ -33,6 +34,7 @@ async def test_registry_filters_tools_by_role() -> None:
         input_schema=_Input,
         output_schema=_Output,
         required_roles=["patient"],
+        execution_class="read",
     )
     async def patient_tool(data: _Input) -> _Output:
         return _Output(value=data.value)
