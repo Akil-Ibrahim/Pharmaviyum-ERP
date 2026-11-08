@@ -321,6 +321,7 @@ export function Pos() {
     }
 
     const normalized = term.replace(/\s+/g, '').toLowerCase()
+    const isBarcodeLike = /^(?:\\d{8}|\\d{12,14})$/.test(normalized)
     const findExact = (products: LocalProduct[]) =>
       products.filter((product) =>
         [
@@ -365,8 +366,12 @@ export function Pos() {
         setNotice(
           'This barcode matches multiple products. Select the correct item.'
         )
-      } else if (fresh.length === 1) {
+      } else if (fresh.length === 1 && !isBarcodeLike) {
         addProduct(fresh[0])
+      } else if (isBarcodeLike) {
+        setNotice(
+          'No exact barcode match. Review the results before adding a medicine.'
+        )
       } else {
         setNotice('Select a medicine from the search results to add it.')
       }
