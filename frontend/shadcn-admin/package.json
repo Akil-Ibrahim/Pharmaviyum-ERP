@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "bun run generate-routes && vite build && tsc -b",
+    "build": "prettier --write src/routes/_authenticated/drug-reference.tsx && git diff -- src/routes/_authenticated/drug-reference.tsx && bun run generate-routes && vite build && tsc -b",
     "lint": "eslint .",
     "preview": "vite preview",
     "format:check": "prettier --check .",
@@ -17,8 +17,7 @@
     "test:browser": "vitest",
     "test:coverage": "vitest run --coverage --browser.headless",
     "test:browser:install": "playwright install chromium --with-deps",
-    "generate-routes": "tsr generate",
-    "postinstall": "prettier --write src/routes/_authenticated/drug-reference.tsx && git diff -- src/routes/_authenticated/drug-reference.tsx"
+    "generate-routes": "tsr generate"
   },
   "dependencies": {
     "@clerk/react": "^6.4.3",
