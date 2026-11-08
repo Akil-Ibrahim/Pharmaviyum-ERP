@@ -56,7 +56,9 @@ class MCPServer:
         except LookupError:
             return self._error_response(request_id, -32601, "Method not found")
         except ValueError:
-            logger.warning("MCP request has invalid parameters", extra={"method": method})
+            logger.warning(
+                "MCP request has invalid parameters", extra={"method": method}
+            )
             return self._error_response(request_id, -32602, "Invalid params")
         except Exception as exc:
             # Exception strings and tracebacks may contain clinical data.
