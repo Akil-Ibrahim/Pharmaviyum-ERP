@@ -136,8 +136,8 @@ class DialogueMemory:
         assistant_message: str,
     ) -> None:
         """Save a turn and compact older turns when the threshold is reached."""
-        short_term_key = f"{session_prefix}:messages"
         session_prefix = self._session_prefix(session_id)
+        short_term_key = f"{session_prefix}:messages"
         summary_key = f"{session_prefix}:summary"
         now = datetime.now(timezone.utc).isoformat()
 
@@ -158,7 +158,9 @@ class DialogueMemory:
 
         length = await self.redis.llen(short_term_key)
         if length >= self.summarization_threshold * 2:
-            await self._summarize_and_compress(session_prefix, short_term_key, summary_key)
+            await self._summarize_and_compress(
+                session_prefix, short_term_key, summary_key
+            )
 
     @staticmethod
     def _message_text(raw_messages: list[Any]) -> str:
