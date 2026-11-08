@@ -211,7 +211,7 @@ async def review_drug_catalog_source(
         )
         existing_product = existing_product_result.scalar_one_or_none()
         if existing_product is not None:
-            matched_reference_id = existing_product.drug_reference_id
+            matched_reference_id = None
             matched_product_id = existing_product.id
         else:
             reference_result = await db.execute(
@@ -282,7 +282,7 @@ async def review_drug_catalog_source(
             )
             db.add(medicinal_product)
             await db.flush()
-            matched_reference_id = reference.id
+            matched_reference_id = None
             matched_product_id = medicinal_product.id
 
     record.review_status = payload.review_status
