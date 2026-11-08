@@ -31,7 +31,7 @@ export function Products() {
   const lowStock=products.filter((p)=>p.stock <= 10).length
   const catalogValue=products.reduce((sum,p)=>sum+p.price*p.stock,0)
 
-  return <div className='space-y-6 p-6'>
+  return <div className='pharmacy-data-page pharmacy-products-page space-y-6 p-6'>
     <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'><div><h1 className='text-2xl font-bold tracking-tight'>Products</h1><p className='text-muted-foreground'>Medicines and pharmacy products with catalog, stock, and pricing data.</p></div><Button variant='outline' size='sm' onClick={load} disabled={loading}><RefreshCw className='mr-2 size-4'/>Refresh</Button></div>
     <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
       <Metric label='Products' value={products.length} icon={<Package className='size-4'/>}/>
