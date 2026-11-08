@@ -387,25 +387,32 @@ class PharmacistAgent:
         """
         pharmacy_id = context.get("pharmacy_id")
         user_id = context.get("user_id")
-        if pharmacy_id is None or user_id is None:
-            raise ValueError(
-                "Agent checkpoint namespace requires pharmacy_id and user_id"
-            )
-        try:
-            normalized_pharmacy_id = int(pharmacy_id)
-        except (TypeError, ValueError) as exc:
-            raise ValueError("Agent checkpoint pharmacy_id must be positive") from exc
+        if (
+            isinstance(pharmacy_id, bool)
+            or not isinstance(pharmacy_id, int)
+            or pharmacy_id <= 0
+        ):
+            raise ValueError("Agent checkpoint pharmacy_id must be a positive integer")
+
+        # Authenticated tenant IDs are integers in the API, while tests and
+        # internal integrations may supply their canonical string form.
+        if isinstance(user_id, bool) or not isinstance(user_id, (int, str)):
+            raise ValueError("Agent checkpoint user_id must be a positive integer or string")
+        if isinstance(user_id, int) and user_id <= 0:
+            raise ValueError("Agent checkpoint user_id must be positive")
         normalized_user_id = str(user_id)
-        if normalized_pharmacy_id <= 0:
-            raise ValueError("Agent checkpoint pharmacy_id must be positive")
         if not normalized_user_id.strip() or len(normalized_user_id) > 128:
             raise ValueError("Agent checkpoint user_id must be 1-128 characters")
+
         if thread_id is not None and (
-            not thread_id.strip() or len(thread_id) > 128
+            not isinstance(thread_id, str)
+            or not thread_id.strip()
+            or len(thread_id) > 128
         ):
             raise ValueError(
                 "Agent checkpoint thread identifier must be 1-128 non-whitespace characters"
             )
+        normalized_pharmacy_id = pharmacy_id
 
         scope = json.dumps(
             [
@@ -477,12 +484,16 @@ class PharmacistAgent:
                 "rag_sources": final_state.get("rag_sources", []),
             }
         except Exception as exc:
-            logger.error("Agent execution failed", exc_info=True)
+            # Exception messages can contain user prompts, tool payloads, or PHI.
+            # Keep operational diagnostics to a bounded error class only.
+            logger.error(
+                "Agent execution failed",
+                extra={"error_type": type(exc).__name__},
+            )
             return {
                 "success": False,
                 "answer": "Unable to safely process the request.",
                 "warnings": ["agent_execution_error"],
-                "error": str(exc),
             }
 
     async def astream(
