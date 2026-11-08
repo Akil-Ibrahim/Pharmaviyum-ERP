@@ -101,9 +101,13 @@ function DrugReferencePage() {
 
   return (
     <div className='pharmacy-data-page space-y-6 p-4 md:p-6'>
-      <header className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+      <header
+        className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'
+      >
         <div className='flex items-start gap-3'>
-          <span className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+          <span
+            className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary'
+          >
             <BookOpen className='size-5' />
           </span>
           <div>
@@ -140,11 +144,15 @@ function DrugReferencePage() {
           </p>
         </CardHeader>
         <CardContent>
-          <div className='grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.38fr)]'>
+          <div
+            className='grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.38fr)]'
+          >
             <label className='space-y-2 text-sm font-medium'>
               Medicine, INN, ingredient, brand, strength, ATC or GTIN
               <div className='relative'>
-                <Search className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
+                <Search
+                  className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground'
+                />
                 <Input
                   value={query}
                   onChange={(event) => {
@@ -162,7 +170,9 @@ function DrugReferencePage() {
             <label className='space-y-2 text-sm font-medium'>
               Authorization country
               <div className='relative'>
-                <Globe2 className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
+                <Globe2
+                  className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground'
+                />
                 <Input
                   value={country}
                   onChange={(event) => {
@@ -181,7 +191,9 @@ function DrugReferencePage() {
               </span>
             </label>
           </div>
-          <div className='mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground'>
+          <div
+            className='mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground'
+          >
             <span>
               Search is performed against the authenticated catalog API.
             </span>
@@ -222,7 +234,9 @@ function DrugReferencePage() {
 
         {!hasQuery && !loading && (
           <Card className='border-dashed'>
-            <CardContent className='flex min-h-44 flex-col items-center justify-center gap-2 p-6 text-center'>
+            <CardContent
+              className='flex min-h-44 flex-col items-center justify-center gap-2 p-6 text-center'
+            >
               <Database className='size-8 text-muted-foreground/60' />
               <p className='font-medium'>Search the international catalog</p>
               <p className='max-w-lg text-sm text-muted-foreground'>
@@ -236,7 +250,9 @@ function DrugReferencePage() {
 
         {hasQuery && !loading && !error && results.length === 0 && (
           <Card className='border-dashed'>
-            <CardContent className='flex min-h-36 flex-col items-center justify-center gap-2 p-6 text-center'>
+            <CardContent
+              className='flex min-h-36 flex-col items-center justify-center gap-2 p-6 text-center'
+            >
               <Pill className='size-7 text-muted-foreground/60' />
               <p className='font-medium'>No reference records found</p>
               <p className='text-sm text-muted-foreground'>
@@ -257,7 +273,9 @@ function DrugReferencePage() {
               return (
                 <Card key={identity} className='min-w-0'>
                   <CardHeader className='space-y-2 pb-3'>
-                    <div className='flex flex-wrap items-start justify-between gap-2'>
+                    <div
+                      className='flex flex-wrap items-start justify-between gap-2'
+                    >
                       <div className='min-w-0'>
                         <CardTitle className='text-base leading-snug'>
                           {displayName}
@@ -312,7 +330,9 @@ function DrugReferencePage() {
                     {(item.package_description ||
                       item.regulatory_id ||
                       item.source_name) && (
-                      <div className='flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 text-xs text-muted-foreground'>
+                      <div
+                        className='flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 text-xs text-muted-foreground'
+                      >
                         {item.package_description && (
                           <span>Pack: {item.package_description}</span>
                         )}
@@ -324,7 +344,9 @@ function DrugReferencePage() {
                         )}
                       </div>
                     )}
-                    <p className='rounded-md bg-muted/60 p-2.5 text-xs text-muted-foreground'>
+                    <p
+                      className='rounded-md bg-muted/60 p-2.5 text-xs text-muted-foreground'
+                    >
                       Reference record only. It does not create a local
                       pharmacy product, price, stock balance, batch, or expiry
                       date and does not establish local market authorization.
