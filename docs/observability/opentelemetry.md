@@ -73,3 +73,10 @@ clinical text to span attributes or events. Keep custom attributes bounded and
 prefer route templates over raw URL paths. Apply the collector retention,
 access-control, and regional data-residency policies before enabling export in
 production.
+
+AI spans use a reviewed name/attribute allowlist. Exception events retain only
+the exception type; exception messages and tracebacks are not exported. Manual
+LangSmith runs redact payloads, allowlist operational metadata/tags, and omit
+session identifiers. Automatic LangChain content tracing is disabled outside
+explicit development/test opt-in. Do not add tenant, user, patient, prescription,
+session, prompt, or arbitrary tool-argument fields to the allowlists.
