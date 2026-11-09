@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -72,7 +72,10 @@ def test_multilingual_retrieval_reports_language_specific_recall(language, expec
 async def test_citation_correctness_requires_real_source_and_entailment():
     judge = AsyncMock(side_effect=lambda claim, source: source in claim)
     result = await citation_correctness(
-        answer="Amoxicillin treats infection [src-00000000-0000-0000-0000-000000000001].",
+        answer=(
+            "Amoxicillin treats infection "
+            "[src-00000000-0000-0000-0000-000000000001]."
+        ),
         sources={
             "src-00000000-0000-0000-0000-000000000001": (
                 "Amoxicillin treats infection"
