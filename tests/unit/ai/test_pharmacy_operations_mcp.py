@@ -82,3 +82,27 @@ def test_operational_tool_schemas_do_not_accept_caller_supplied_identity():
     ):
         metadata, _ = tool_registry.get_tool(tool_name)
         assert protected_fields.isdisjoint(metadata.input_schema.model_fields)
+
+
+
+@pytest.mark.unit
+def test_expired_inventory_is_never_reported_as_available():
+    now = datetime(2026, 11, 9, 12, 0, 0)
+
+    expired, expired_available = _inventory_availability(
+        quantity=12,
+        reserved_quantity=2,
+        expires_at=now - timedelta(seconds=1),
+        now=now,
+    )
+    assert expired is True
+    assert expired_available == 0
+
+    current, current_available = _inventory_availability(
+        quantity=12,
+        reserved_quantity=2,
+        expires_at=now + timedelta(days=1),
+        now=now,
+    )
+    assert current is False
+    assert current_available == 10
