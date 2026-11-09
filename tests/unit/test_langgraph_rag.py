@@ -425,7 +425,8 @@ def test_checkpoint_thread_id_is_keyed_by_application_secret(
 def test_checkpoint_thread_id_requires_secret_in_production(
     rag: LangGraphRAG, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from src.pharmaviyum.core.config import Environment, settings as app_settings
+    from src.pharmaviyum.core.config import Environment
+    from src.pharmaviyum.core.config import settings as app_settings
 
     monkeypatch.setattr(app_settings, "SECRET_KEY", None)
     monkeypatch.setattr(app_settings, "ENVIRONMENT", Environment.PRODUCTION)
