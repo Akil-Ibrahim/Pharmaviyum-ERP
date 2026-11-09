@@ -121,6 +121,13 @@ It provides a JSON-RPC 2.0 server and a registry for tools/resources. MCP author
 
 MCP is an internal application component; it is not a separate top-level deployment service.
 
+The JSON-RPC server permits public protocol initialization only. Tool, resource,
+and prompt discovery/execution require a trusted authenticated tenant context.
+Write tools are denied unless a trusted one-time approval verifier is configured;
+a role flag or model-supplied argument is not sufficient approval. The active
+MCP tool set is read-only until that approval workflow is implemented and
+verified.
+
 ## API surface
 
 AI endpoints are implemented under `src/pharmaviyum/api/v1/ai.py`.
