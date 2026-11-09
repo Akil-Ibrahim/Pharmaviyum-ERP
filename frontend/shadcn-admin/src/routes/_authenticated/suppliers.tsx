@@ -1,3 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { EntityPage } from '@/features/pharmaviyum/entity-page'
-export const Route=createFileRoute('/_authenticated/suppliers')({component:()=> <EntityPage title='Suppliers' description='Suppliers operational directory and status.' endpoint='/api/v1/suppliers' columns={['id','name','code','contact_name','email','phone','is_active']} />})
+
+// The entity remains available in the sidebar, but its standalone UI is intentionally removed.
+// Domain data, API endpoints, and backend workflows are unchanged.
+export const Route = createFileRoute('/_authenticated/suppliers')({
+  component: () => null,
+})
