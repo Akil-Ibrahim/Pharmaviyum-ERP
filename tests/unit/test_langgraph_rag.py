@@ -459,9 +459,7 @@ def test_thread_id_refuses_missing_secret_in_production(
     from src.pharmaviyum.core.config import Environment
 
     monkeypatch.setattr(rag_graph.app_settings, "SECRET_KEY", None)
-    monkeypatch.setattr(
-        rag_graph.app_settings, "ENVIRONMENT", Environment.PRODUCTION
-    )
+    monkeypatch.setattr(rag_graph.app_settings, "ENVIRONMENT", Environment.PRODUCTION)
 
     with pytest.raises(RuntimeError, match="SECRET_KEY"):
         rag._thread_id(
