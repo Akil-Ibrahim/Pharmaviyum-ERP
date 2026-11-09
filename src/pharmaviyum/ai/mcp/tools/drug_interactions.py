@@ -199,6 +199,7 @@ def aggregate_severity(interactions: list[DrugInteraction]) -> Severity:
     latency_estimate_ms=150,
     requires_db=True,
     requires_rag=True,
+    execution_class="read",
     tags=["safety", "clinical", "pharmacist", "sea"],
 )
 async def check_drug_interactions(
