@@ -95,6 +95,14 @@ RAG tests should cover the production invariants of the current pipeline, especi
 
 Do not write tests that assume a separate Kubernetes RAG deployment; the current architecture is an application-level RAG pipeline.
 
+## Benchmark and AI quality evaluation
+
+Use [`../devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md`](../devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md) as the canonical specification for metric definitions, evidence labels, workload profiles and release gates.
+
+The evaluation suite must keep separate dimensions for retrieval ranking (Recall@K, Precision@K, Hit Rate@K, MRR, nDCG), supported Ragas answer/context metrics, deterministic citation validation, pharmacist-reviewed medication/clinical metrics, agent/MCP correctness, tenant/security tests and operational performance. Ragas metric availability and APIs are version-dependent; verify the pinned installed version. Pharmacy-specific measures such as medication entity accuracy, dosage accuracy, negation preservation and clinical hallucination rate require custom evaluators and expert-reviewed ground truth.
+
+For every run, record commit SHA, environment, command, workload, dataset/version, sample count, model/prompt/index versions and raw artifact. Label each result MEASURED, HISTORICAL, ESTIMATED, NOT TESTED or UNAVAILABLE. Do not report missing measurements as zero or PASS. Codespaces is suitable for repository checks and deterministic synthetic tests; production-like capacity and managed-service performance require isolated staging.
+
 ## Security tests
 
 Security checks are part of CI and include dependency auditing and Bandit. Repository security tests live under `tests/security`.
