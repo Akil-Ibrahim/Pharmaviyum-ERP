@@ -18,6 +18,9 @@ from .health import get_mcp_health_status
 from .prompts import PromptRegistry, prompt_registry
 from .registry import MCPToolRegistry
 from .registry import registry as tool_registry
+
+# Import tool modules once so decorators register the server's complete tool set.
+from . import tools as _registered_tools  # noqa: F401,E402
 from .resources import ResourceRegistry, resource_registry
 from .server import MCPServer, mcp_server
 from .tool_management import (
