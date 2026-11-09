@@ -218,9 +218,9 @@ export function AppearanceForm() {
               <FormLabel>Theme preset</FormLabel>
               <FormDescription>
                 Choose a complete shadcn color palette for the Pharmaviyum admin
-                interface. It updates surfaces, text, controls, borders, charts,
-                and navigation icon colors while preserving the navigation
-                layout and icon style.
+                interface. It updates surfaces, text, controls, borders, and
+                charts while preserving the navigation layout, icon color
+                selection, and icon style.
               </FormDescription>
               <FormMessage />
               <RadioGroup
@@ -316,7 +316,9 @@ export function AppearanceForm() {
                       <div className='flex items-center gap-2 rounded-lg border-2 border-muted bg-card p-3 hover:border-accent'>
                         <span
                           className='size-4 rounded-full border border-border'
-                          style={{ backgroundColor: NAVIGATION_ICON_COLORS[color] }}
+                          style={{
+                            backgroundColor: NAVIGATION_ICON_COLORS[color],
+                          }}
                         />
                         <span className='font-normal capitalize'>{color}</span>
                       </div>
