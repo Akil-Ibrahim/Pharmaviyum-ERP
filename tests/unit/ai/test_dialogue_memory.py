@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.pharmaviyum.ai.harness.memory import DialogueMemory
 
@@ -78,8 +79,11 @@ class FakeRedis:
 
 
 class FakeSummarizer:
-    async def ainvoke(self, prompt):
-        assert "untrusted quoted data" in prompt
+    async def ainvoke(self, messages):
+        assert isinstance(messages[0], SystemMessage)
+        assert isinstance(messages[1], HumanMessage)
+        assert "untrusted quoted data" in messages[0].content
+        assert "<untrusted_conversation>" in messages[1].content
         return type("Result", (), {"content": "A factual rolling summary."})()
 
 
@@ -96,9 +100,9 @@ async def test_raw_turns_are_retained_when_summarizer_is_not_configured():
     await memory.save("session-1", "first question", "first answer")
     await memory.save("session-1", "second question", "second answer")
 
-    key = "agent:memory:session-1:messages"
+    key = f"{memory._session_prefix('session-1')}:messages"
     assert await redis.llen(key) == 4
-    assert not redis.lists.get("agent:memory:session-1:archive")
+    assert not redis.lists.get(f"{memory._session_prefix('session-1')}:archive")
 
 
 @pytest.mark.asyncio
@@ -111,9 +115,10 @@ async def test_successful_compaction_archives_verbatim_turns_before_trimming():
     await memory.save("session-1", "first question", "first answer")
     await memory.save("session-1", "second question", "second answer")
 
-    active_key = "agent:memory:session-1:messages"
-    archive_key = "agent:memory:session-1:archive"
-    summary_key = "agent:memory:session-1:summary"
+    session_prefix = memory._session_prefix("session-1")
+    active_key = f"{session_prefix}:messages"
+    archive_key = f"{session_prefix}:archive"
+    summary_key = f"{session_prefix}:summary"
     assert await redis.llen(active_key) == 2
     assert len(redis.lists[archive_key]) == 2
     archived = [json.loads(item) for item in redis.lists[archive_key]]
@@ -132,6 +137,60 @@ async def test_failed_summarization_does_not_trim_or_archive_source_turns():
     await memory.save("session-1", "first question", "first answer")
     await memory.save("session-1", "second question", "second answer")
 
-    assert await redis.llen("agent:memory:session-1:messages") == 4
-    assert not redis.lists.get("agent:memory:session-1:archive")
-    assert await redis.get("agent:memory:session-1:summary") is None
+    session_prefix = memory._session_prefix("session-1")
+    assert await redis.llen(f"{session_prefix}:messages") == 4
+    assert not redis.lists.get(f"{session_prefix}:archive")
+    assert await redis.get(f"{session_prefix}:summary") is None
+
+
+def test_memory_redis_namespace_is_opaque_and_keyed(monkeypatch):
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "first-memory-secret")
+    first = DialogueMemory._session_prefix(
+        "pharmacy:7:user:42:session:conversation-123"
+    )
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-memory-secret")
+    second = DialogueMemory._session_prefix(
+        "pharmacy:7:user:42:session:conversation-123"
+    )
+
+    assert first.startswith("agent:memory:v2:")
+    assert first != second
+    assert "pharmacy" not in first
+    assert "user" not in first
+    assert "conversation-123" not in first
+
+
+def test_memory_redis_namespace_fails_closed_without_production_secret(monkeypatch):
+    from src.pharmaviyum.core.config import Environment
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", None)
+    monkeypatch.setattr(app_settings, "ENVIRONMENT", Environment.PRODUCTION)
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY"):
+        DialogueMemory._session_prefix("session-1")
+
+
+@pytest.mark.parametrize("session_id", ["", "   ", "x" * 513, 123])
+def test_memory_redis_namespace_rejects_invalid_session_id(session_id):
+    with pytest.raises(ValueError, match="session identifier"):
+        DialogueMemory._session_prefix(session_id)
+
+
+@pytest.mark.asyncio
+async def test_clear_removes_current_and_exact_legacy_memory_keys():
+    redis = FakeRedis()
+    memory = DialogueMemory(redis)
+    session_id = "session-1"
+    current_prefix = memory._session_prefix(session_id)
+    legacy_prefix = f"agent:memory:{session_id}"
+
+    await redis.rpush(f"{current_prefix}:messages", "current")
+    await redis.rpush(f"{legacy_prefix}:messages", "legacy")
+
+    await memory.clear(session_id)
+
+    assert await redis.llen(f"{current_prefix}:messages") == 0
+    assert await redis.llen(f"{legacy_prefix}:messages") == 0

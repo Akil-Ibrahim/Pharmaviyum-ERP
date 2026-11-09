@@ -53,6 +53,18 @@ The current RAG implementation is under `src/pharmaviyum/ai/mortarium_rag/`.
 - `RAGResponse` materializes citations from returned sources when appropriate.
 - Retrieval metrics do not include high-cardinality tenant, user, or session identifiers.
 
+
+### Agent and memory prompt boundaries
+
+Agent policy is sent in a dedicated `SystemMessage`. Authenticated request
+metadata, historical Redis memory, retrieved RAG evidence, and tool results
+remain untrusted content in human/tool messages; they must never be interpolated
+into the system-policy message. The agent inserts a separately marked
+`untrusted_reference_context` message before the latest user request.
+Intent routing and memory summarization also use separate system and data
+messages. User-controlled delimiters are escaped before structured context is
+assembled.
+
 ### Pipeline
 
 ```text
@@ -66,6 +78,31 @@ Query
 ```
 
 The graph requires an explicit checkpointer and derives the checkpoint/thread scope from the authenticated pharmacy and user context.
+
+
+Both the Mortarium RAG graph and the pharmacist Agent Harness use opaque,
+versioned HMAC-SHA-256 checkpoint thread identifiers. The digest is keyed with
+the application `SECRET_KEY`; raw pharmacy, user, and conversation identifiers
+must not be embedded in checkpoint metadata. Keep `SECRET_KEY` stable across
+deployments to preserve checkpoint continuity. Rotating it changes derived
+thread identifiers.
+
+Agent Harness Redis dialogue-memory namespaces also use versioned HMAC-SHA-256
+keys. Raw API-scoped session IDs are not embedded in Redis key names or
+application log fields. The same `SECRET_KEY` stability requirement applies to
+memory continuity. This pseudonymizes Redis key names only; it does not encrypt
+conversation payloads. Redis transport security, access control, encryption at
+rest, and retention controls remain mandatory infrastructure responsibilities.
+
+The `v2` checkpoint identifiers and memory namespaces do not automatically
+resume/read records written with the former plaintext `rag:`, `agent:`, or
+`agent:memory:` formats. Existing checkpoint and memory records are not
+rewritten by application startup. The previous memory tiers have a bounded
+seven-day TTL and are allowed to expire naturally; an explicit memory purge
+also deletes the exact legacy keys for that authenticated session. No unsafe
+legacy-key read fallback is performed. Before any compatibility migration, verify authenticated
+tenant ownership and retention requirements. Checkpoint payload retention and
+deletion remain separate PHI lifecycle responsibilities.
 
 ### Ingestion
 

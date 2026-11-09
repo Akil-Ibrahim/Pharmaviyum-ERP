@@ -41,7 +41,7 @@ prevent the pharmacy API from starting.
 - FastAPI server requests (health, readiness, metrics and documentation routes
   are excluded to reduce noise).
 - SQLAlchemy synchronous engine boundary used by the async SQLAlchemy engine.
-- Redis client operations.
+- Redis auto-instrumentation is intentionally disabled. The Redis instrumentor records command statements built from command arguments; those arguments can contain prompts, memory content, and clinical payloads. Do not enable it for this application without a tested redaction strategy that also covers pipelines. Use only bounded application-level operation metrics/spans that never include Redis keys, values, or command arguments.
 - Outbound HTTPX client requests.
 - Mortarium RAG retrieval and MCP tool execution, with bounded attributes for source counts, warning counts, tool names, and success state.
 - Mortarium model routing and agent execution, without recording prompts, patient data, tool arguments, or retrieved clinical text.
