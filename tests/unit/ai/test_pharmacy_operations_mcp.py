@@ -68,3 +68,17 @@ def test_workflow_guide_is_general_guidance_not_transaction_execution():
     assert guide.requires_local_sop is True
     assert "does not execute" in guide.execution_note
     assert any("physical verification" in item for item in guide.critical_controls)
+
+
+
+@pytest.mark.unit
+def test_operational_tool_schemas_do_not_accept_caller_supplied_identity():
+    protected_fields = {"pharmacy_id", "user_id", "user_role"}
+    for tool_name in (
+        "search_pharmacy_products",
+        "get_inventory_overview",
+        "get_expiring_inventory",
+        "get_sales_summary",
+    ):
+        metadata, _ = tool_registry.get_tool(tool_name)
+        assert protected_fields.isdisjoint(metadata.input_schema.model_fields)
