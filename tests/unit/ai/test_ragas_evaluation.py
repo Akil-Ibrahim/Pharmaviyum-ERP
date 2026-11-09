@@ -169,3 +169,16 @@ async def test_ragas_adapter_scores_standard_metrics_with_reference(monkeypatch)
         "context_recall",
     }
     assert all(score == 0.9 for score in report.available_scores.values())
+
+
+@pytest.mark.unit
+def test_patient_context_isolation_fails_closed_on_unknown_access_level():
+    result = patient_context_isolation(
+        expected_pharmacy_id=10,
+        expected_patient_id=42,
+        source_metadata=[
+            {"access_level": "unknown", "pharmacy_id": 10, "patient_id": None}
+        ],
+    )
+    assert result.passed is False
+    assert "invalid_access_level" in result.details["violations"]
