@@ -46,6 +46,7 @@ def calculate_age(dob: date | None) -> int | None:
     category="clinical",
     latency_estimate_ms=80,
     requires_db=True,
+    execution_class="read",
     tags=["patient", "clinical", "safety", "context"],
 )
 async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
