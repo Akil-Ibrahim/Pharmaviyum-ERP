@@ -148,7 +148,19 @@ class TestMCPServer:
             {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}
         )
 
-        response = await server.handle_request(request)
+        from src.pharmaviyum.ai.mcp.context import (
+            MCPAuthorizationContext,
+            reset_mcp_context,
+            set_mcp_context,
+        )
+
+        token = set_mcp_context(
+            MCPAuthorizationContext(user_id=1, pharmacy_id=1, user_role="pharmacist")
+        )
+        try:
+            response = await server.handle_request(request)
+        finally:
+            reset_mcp_context(token)
         response_data = json.loads(response)
 
         assert response_data["jsonrpc"] == "2.0"
