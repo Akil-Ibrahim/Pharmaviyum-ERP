@@ -239,3 +239,47 @@
 .bg-theme-cyan {
   background: oklch(0.56 0.17 205);
 }
+
+
+/* Shadcn Admin visual language: consistent typography and semantic status colors. */
+:root {
+  --success: oklch(0.62 0.17 150);
+  --success-foreground: oklch(0.28 0.08 150);
+  --warning: oklch(0.72 0.16 75);
+  --warning-foreground: oklch(0.32 0.08 65);
+  --info: oklch(0.62 0.16 245);
+  --info-foreground: oklch(0.28 0.08 245);
+}
+.dark {
+  --success: oklch(0.72 0.15 150);
+  --success-foreground: oklch(0.2 0.04 150);
+  --warning: oklch(0.8 0.14 78);
+  --warning-foreground: oklch(0.22 0.05 70);
+  --info: oklch(0.74 0.14 245);
+  --info-foreground: oklch(0.2 0.04 245);
+}
+
+@theme inline {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Manrope', 'Inter', ui-sans-serif, sans-serif;
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+  :where(button, input, select, textarea) {
+    font: inherit;
+  }
+}
