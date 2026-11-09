@@ -36,11 +36,17 @@ class QueryRequest(BaseModel):
         max_length=2000,
         description="User's question",
     )
-    session_id: str | None = Field(default=None, description="Conversation session ID")
-    patient_id: int | None = Field(
-        default=None, description="Patient ID for history lookup"
+    session_id: str | None = Field(
+        default=None,
+        max_length=64,
+        description="Conversation session ID (max 64 characters)",
     )
-    pharmacy_id: int = Field(..., gt=0, description="Authorized pharmacy tenant")
+    patient_id: int | None = Field(
+        default=None, strict=True, description="Patient ID for history lookup"
+    )
+    pharmacy_id: int = Field(
+        ..., strict=True, gt=0, description="Authorized pharmacy tenant"
+    )
     country: str | None = Field(
         default=None,
         description="Explicit market jurisdiction; omit when not known",
@@ -227,12 +233,15 @@ async def query_agent(
             )
         except HTTPException:
             raise
-        except Exception as e:
-            logger.error("Query endpoint failed: %s", e, exc_info=True)
+        except Exception as exc:
+            logger.error(
+                "Query endpoint failed",
+                extra={"error_type": type(exc).__name__},
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Internal server error during AI processing",
-            ) from e
+            ) from exc
     finally:
         reset_mcp_context(token)
 
@@ -269,8 +278,11 @@ async def query_agent_stream(
             ):
                 yield f"data: {json.dumps(event)}\\n\\n"
             yield "data: [DONE]\\n\\n"
-        except Exception as e:
-            logger.error("Stream endpoint failed: %s", e, exc_info=True)
+        except Exception as exc:
+            logger.error(
+                "Stream endpoint failed",
+                extra={"error_type": type(exc).__name__},
+            )
             yield (
                 "data: "
                 + f"{json.dumps({'event': 'error', 'message': 'AI processing failed'})}"
