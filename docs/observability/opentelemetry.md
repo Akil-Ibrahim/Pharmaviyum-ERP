@@ -1,9 +1,11 @@
 # OpenTelemetry
 
-Pharmaviyum uses the OpenTelemetry SDK for distributed tracing. The FastAPI
-application instruments inbound requests, SQLAlchemy database operations,
-Redis commands, and outbound HTTPX requests. Trace context propagation uses
-the standard W3C Trace Context headers (`traceparent` and `tracestate`).
+Pharmaviyum uses the OpenTelemetry SDK for distributed tracing. AI/RAG/MCP
+application spans use reviewed, bounded attributes. Automatic FastAPI request,
+SQLAlchemy, and HTTPX instrumentation is disabled by default and can be enabled
+only in development/test after checking URL, SQL, and request-data redaction.
+Redis command auto-instrumentation remains disabled. Trace context propagation
+uses the standard W3C Trace Context headers (`traceparent` and `tracestate`).
 
 ## Configuration
 
@@ -16,6 +18,8 @@ Tracing is disabled by default to avoid adding instrumentation overhead when no 
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | unset | Standard OTLP/gRPC collector endpoint |
 | `OTEL_EXPORTER_ENDPOINT` | unset | Backward-compatible endpoint variable |
 | `OTEL_SAMPLE_RATE` | `0.1` | Root trace sampling ratio, from 0.0 to 1.0 |
+| `OTEL_INCLUDE_FASTAPI_REQUEST_SPANS` | `false` | Development/test-only opt-in for FastAPI request auto-spans |
+| `OTEL_INCLUDE_SENSITIVE_CLIENT_SPANS` | `false` | Development/test-only opt-in for SQLAlchemy and HTTPX auto-spans |
 
 Set one endpoint on the FastAPI Cloud application, for example:
 
@@ -38,11 +42,17 @@ prevent the pharmacy API from starting.
 
 ## Instrumented boundaries
 
-- FastAPI server requests (health, readiness, metrics and documentation routes
-  are excluded to reduce noise).
-- SQLAlchemy synchronous engine boundary used by the async SQLAlchemy engine.
-- Redis auto-instrumentation is intentionally disabled. The Redis instrumentor records command statements built from command arguments; those arguments can contain prompts, memory content, and clinical payloads. Do not enable it for this application without a tested redaction strategy that also covers pipelines. Use only bounded application-level operation metrics/spans that never include Redis keys, values, or command arguments.
-- Outbound HTTPX client requests.
+- FastAPI request auto-spans are disabled by default. The
+  `OTEL_INCLUDE_FASTAPI_REQUEST_SPANS` opt-in is accepted only in development
+  and test; verify that URL paths and headers cannot expose patient or tenant
+  identifiers before enabling it.
+- SQLAlchemy and HTTPX auto-instrumentation are disabled by default. The
+  `OTEL_INCLUDE_SENSITIVE_CLIENT_SPANS` opt-in is accepted only in development
+  and test; do not enable it against production or PHI-bearing data.
+- Redis command auto-instrumentation is always disabled. Command arguments can
+  contain prompts, memory content, and clinical payloads. Use only bounded
+  application-level operation metrics/spans that never include Redis keys,
+  values, or command arguments.
 - Mortarium RAG retrieval and MCP tool execution, with bounded attributes for source counts, warning counts, tool names, and success state.
 - Mortarium model routing and agent execution, without recording prompts, patient data, tool arguments, or retrieved clinical text.
 
@@ -68,7 +78,9 @@ Measure p50/p95/p99 for defined API and AI workflow stages. Keep metric labels b
 
 Do not attach patient names, patient identifiers, prescription contents,
 access tokens, API keys, database connection strings, raw prompts, or retrieved
-clinical text to span attributes or events. Keep custom attributes bounded and
-prefer route templates over raw URL paths. Apply the collector retention,
+clinical text to span attributes or events. Do not enable automatic request or
+client instrumentation in production; prefer explicit application spans with
+allowlisted attributes over raw URLs, SQL statements, headers, or request
+bodies. Apply the collector retention,
 access-control, and regional data-residency policies before enabling export in
 production.
