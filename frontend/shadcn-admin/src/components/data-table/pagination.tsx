@@ -47,7 +47,10 @@ export function DataTablePagination<TData>({
     >
       <div className='flex w-full flex-wrap items-center justify-between gap-3'>
         <p className='text-sm text-muted-foreground tabular-nums'>
-          Showing <span className='font-medium text-foreground'>{firstRow}–{lastRow}</span>{' '}
+          Showing{' '}
+          <span className='font-medium text-foreground'>
+            {firstRow}–{lastRow}
+          </span>{' '}
           of <span className='font-medium text-foreground'>{rowCount}</span>
         </p>
         <div className='flex items-center gap-2'>
@@ -73,7 +76,7 @@ export function DataTablePagination<TData>({
       </div>
 
       <div className='flex shrink-0 items-center gap-2'>
-        <span className='hidden whitespace-nowrap text-sm font-medium text-muted-foreground @max-3xl/content:hidden'>
+        <span className='hidden text-sm font-medium whitespace-nowrap text-muted-foreground @max-3xl/content:hidden'>
           Page {currentPage} of {totalPages}
         </span>
         <div className='flex items-center gap-1'>
