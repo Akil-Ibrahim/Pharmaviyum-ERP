@@ -49,6 +49,7 @@ class AgentStreamManager:
         - {"type": "complete", "final_state": {...}}
         """
         config = config or {}
+        final_state: dict[str, Any] | None = None
 
         try:
             async with asyncio.timeout(self.timeout_seconds):
@@ -71,6 +72,12 @@ class AgentStreamManager:
 
                     elif event_kind == "on_chain_end":
                         node_name = event.get("name", "unknown")
+                        output = event.get("data", {}).get("output")
+                        if isinstance(output, dict):
+                            # Keep the most recent graph state emitted by the
+                            # stream. Never invoke the graph a second time:
+                            # replaying it can duplicate MCP writes and side effects.
+                            final_state = output
                         yield {
                             "type": "node_end",
                             "node": node_name,
@@ -95,24 +102,22 @@ class AgentStreamManager:
                         yield {
                             "type": "tool_call",
                             "tool": tool_name,
-                            "args": tool_input,
+                            "argument_count": (
+                                len(tool_input) if isinstance(tool_input, dict) else 0
+                            ),
                             "timestamp": event.get("timestamp"),
                         }
 
                     elif event_kind == "on_tool_end":
                         tool_name = event.get("name", "unknown")
-                        tool_output = event.get("data", {}).get("output", "")
+                        tool_output = event.get("data", {}).get("output")
                         yield {
                             "type": "tool_result",
                             "tool": tool_name,
-                            "output_summary": str(tool_output)[:200],
+                            "output_type": type(tool_output).__name__,
                             "timestamp": event.get("timestamp"),
                         }
 
-                # Final state
-                final_state = await graph.ainvoke(
-                    initial_state, config=config, version="v2"
-                )
                 yield {
                     "type": "complete",
                     "final_state": final_state,
@@ -126,9 +131,12 @@ class AgentStreamManager:
                 "timeout_seconds": self.timeout_seconds,
             }
 
-        except Exception as e:
-            logger.error(f"Agent streaming failed: {e}", exc_info=True)
+        except Exception as exc:
+            logger.error(
+                "Agent streaming failed",
+                extra={"error_type": type(exc).__name__},
+            )
             yield {
                 "type": "error",
-                "error": str(e),
+                "error": "Agent execution failed",
             }
