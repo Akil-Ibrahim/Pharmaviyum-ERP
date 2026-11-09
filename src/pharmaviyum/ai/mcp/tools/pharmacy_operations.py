@@ -20,6 +20,32 @@ from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.services.catalog_exclusions import allowed_pharmacy_product_conditions
 
 
+class PharmacyWorkflowGuideRequest(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    workflow: Literal[
+        "pos_sale",
+        "inventory_receiving",
+        "stocktake",
+        "inter_branch_transfer",
+        "customer_return",
+        "supplier_return",
+        "expiry_quarantine_recall",
+        "procurement",
+        "cash_shift",
+        "prescription_dispensing",
+    ]
+
+
+class PharmacyWorkflowGuide(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    workflow: str
+    title: str
+    steps: list[str]
+    critical_controls: list[str]
+    requires_local_sop: bool = True
+    execution_note: str = "Guidance only; this tool does not execute ERP transactions."
+
+
 class ProductSearchRequest(BaseModel):
     model_config = ConfigDict(frozen=True)
     query: str = Field(min_length=2, max_length=100)
@@ -366,4 +392,84 @@ async def get_sales_summary(input: SalesSummaryRequest) -> SalesSummaryResult:
         pending_sales=counts.get("awaiting_payment", 0),
         cancelled_sales=counts.get("cancelled", 0),
         refunded_sales=counts.get("refunded", 0),
+    )
+
+
+
+_WORKFLOW_GUIDES: dict[str, tuple[str, list[str], list[str]]] = {
+    "pos_sale": (
+        "POS sale",
+        ["Identify the pharmacy product", "Check eligible stock lots and expiry", "Apply ERP FEFO allocation", "Attach patient or prescription when required", "Confirm cart and payment through POS", "Issue receipt and reconcile inventory movement"],
+        ["ERP calculates prices and discounts", "Expired, recalled and quarantined stock must be blocked", "Payment and receipt status must come from POS", "Record the sale and inventory movement in one auditable transaction"],
+    ),
+    "inventory_receiving": (
+        "Inventory receiving",
+        ["Match the delivery to an approved purchase document", "Verify product identity and received quantity", "Capture batch or lot number and expiry date", "Record discrepancies before accepting stock", "Post the receipt through the authorized ERP receiving workflow"],
+        ["Do not convert ordered quantity into stock before physical verification", "Reject expired or unidentifiable lots", "Preserve supplier, lot, expiry and receiving audit data"],
+    ),
+    "stocktake": (
+        "Stocktake",
+        ["Define the pharmacy, location and product scope", "Capture physical counts by product and lot", "Compare physical counts with ERP quantities", "Investigate and document discrepancies", "Obtain required approval", "Post adjustments as auditable inventory movements"],
+        ["Never silently overwrite inventory quantities", "Use role separation for count and approval where configured", "Retain count evidence and adjustment reasons"],
+    ),
+    "inter_branch_transfer": (
+        "Inter-branch transfer",
+        ["Create a transfer request for source and destination branches", "Validate source availability and destination authorization", "Approve and dispatch the identified lots", "Track stock as in transit", "Receive and reconcile quantities at destination", "Resolve discrepancies with an audit record"],
+        ["A lot in transit must not be available at both branches", "Preserve batch and expiry identity", "Require approval and reconciliation for quantity differences"],
+    ),
+    "customer_return": (
+        "Customer return",
+        ["Locate the original sale and receipt", "Verify the returned product, quantity and applicable return policy", "Inspect packaging, integrity and storage history", "Determine whether the item is eligible for resale or must be quarantined", "Process the authorized refund or reversal", "Record inventory disposition and audit history"],
+        ["Do not delete or rewrite the original sale", "Do not return suspect medicines directly to sellable stock", "Refund and inventory reversal must be authorized and auditable"],
+    ),
+    "supplier_return": (
+        "Supplier return",
+        ["Identify the supplier and original receipt or purchase reference", "Identify affected products and lots", "Record the reason and quantity", "Quarantine stock pending approval where required", "Obtain supplier return authorization", "Record dispatch, credit or replacement and reconcile inventory"],
+        ["Maintain traceability to original lot and receipt", "Do not adjust stock without an auditable movement", "Track supplier credit or replacement separately from customer refunds"],
+    ),
+    "expiry_quarantine_recall": (
+        "Expiry, quarantine and recall",
+        ["Identify affected product and lot using authoritative batch data", "Block affected stock from sale or dispensing", "Locate all pharmacy locations holding the lot", "Quarantine and reconcile physical quantities", "Follow the applicable recall or disposal instruction", "Record notifications, disposition and final audit evidence"],
+        ["A recalled or quarantined lot must not be sellable", "Use jurisdiction-specific recall instructions", "Never infer recall status from an LLM answer"],
+    ),
+    "procurement": (
+        "Procurement",
+        ["Review demand, stock position and open purchase commitments", "Calculate replenishment using approved business rules", "Compare approved suppliers, lead times and terms", "Prepare a purchase order for authorized review", "Approve and transmit the order through the ERP", "Reconcile supplier confirmation and subsequent receiving"],
+        ["Forecasts are recommendations, not purchase commitments", "Respect formulary, licensing and supplier authorization", "Purchase orders require authorized approval and audit history"],
+    ),
+    "cash_shift": (
+        "Cash shift",
+        ["Open the cashier shift with an opening balance", "Record sales and permitted cash movements", "Record refunds and other adjustments separately", "Count physical cash and reconcile payment methods", "Investigate variances", "Close the shift with an auditable reconciliation"],
+        ["Payment provider status is authoritative", "Do not infer settlement from a POS draft", "Restrict cash adjustments and closure to authorized roles"],
+    ),
+    "prescription_dispensing": (
+        "Prescription dispensing",
+        ["Identify the patient and verify access authorization", "Validate prescription identity, prescriber and legal status", "Check medicine, strength, dosage form and prescribed quantity", "Review patient allergies and relevant safety information", "Check current jurisdiction-specific dispensing restrictions", "Select eligible stock using ERP batch and FEFO rules", "Record the dispensing event and required audit data"],
+        ["Do not invent prescription rules or infer jurisdiction", "Do not dispense when required checks are incomplete or fail", "Clinical judgment and pharmacist authorization remain mandatory"],
+    ),
+}
+
+
+@registry.tool(
+    name="get_pharmacy_workflow_guide",
+    description=(
+        "Explain a general pharmacy operating workflow: POS sale, receiving, stocktake, "
+        "branch transfer, customer/supplier returns, expiry/recall, procurement, cash "
+        "shift or prescription dispensing. Returns approved baseline steps and controls; "
+        "it is guidance only, not jurisdiction-specific legal advice and does not execute actions."
+    ),
+    input_schema=PharmacyWorkflowGuideRequest,
+    output_schema=PharmacyWorkflowGuide,
+    category="pharmacy_workflow",
+    tags=["pharmacy", "workflow", "sop", "operations", "read"],
+)
+async def get_pharmacy_workflow_guide(
+    input: PharmacyWorkflowGuideRequest,
+) -> PharmacyWorkflowGuide:
+    title, steps, controls = _WORKFLOW_GUIDES[input.workflow]
+    return PharmacyWorkflowGuide(
+        workflow=input.workflow,
+        title=title,
+        steps=steps,
+        critical_controls=controls,
     )
