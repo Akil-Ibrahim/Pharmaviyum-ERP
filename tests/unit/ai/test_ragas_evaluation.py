@@ -182,3 +182,43 @@ def test_patient_context_isolation_fails_closed_on_unknown_access_level():
     )
     assert result.passed is False
     assert "invalid_access_level" in result.details["violations"]
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_ragas_adapter_accepts_negative_answer_relevancy(monkeypatch):
+    class FakeMetric:
+        def __init__(self, **kwargs):
+            self.metric_name = type(self).__name__
+
+        async def ascore(self, **kwargs):
+            value = -0.2 if self.metric_name == "AnswerRelevancy" else 0.8
+            return SimpleNamespace(value=value, reason="test")
+
+    collections = ModuleType("ragas.metrics.collections")
+    for metric_name in (
+        "AnswerRelevancy",
+        "ContextPrecisionWithReference",
+        "ContextRecall",
+        "Faithfulness",
+    ):
+        setattr(collections, metric_name, type(metric_name, (FakeMetric,), {}))
+    monkeypatch.setitem(__import__("sys").modules, "ragas", ModuleType("ragas"))
+    monkeypatch.setitem(
+        __import__("sys").modules, "ragas.metrics", ModuleType("ragas.metrics")
+    )
+    monkeypatch.setitem(
+        __import__("sys").modules, "ragas.metrics.collections", collections
+    )
+
+    adapter = RagasEvaluationAdapter(llm=object(), embeddings=object())
+    report = await adapter.evaluate(
+        RagasSample(
+            user_input="What is the medicine?",
+            response="It is a tablet.",
+            retrieved_contexts=["The medicine is a tablet."],
+        )
+    )
+
+    assert report.scores["answer_relevancy"].value == -0.2
+    assert report.scores["faithfulness"].value == 0.8
+
