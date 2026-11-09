@@ -44,6 +44,7 @@ def calculate_age(dob: date | None) -> int | None:
     input_schema=PatientHistoryRequest,
     output_schema=PatientHistory,
     category="clinical",
+    execution_class="read",
     latency_estimate_ms=80,
     requires_db=True,
     tags=["patient", "clinical", "safety", "context"],
@@ -117,10 +118,8 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
         logger.info(
             "Patient history loaded",
             extra={
-                "patient_id": patient.id,
-                "pharmacy_id": auth_context.pharmacy_id,
-                "allergies": len(allergies),
-                "conditions": len(conditions),
+                "allergy_count": len(allergies),
+                "condition_count": len(conditions),
                 "latency_ms": (time.perf_counter() - start) * 1000,
             },
         )
@@ -161,7 +160,10 @@ async def _count_active_prescriptions(
         result = await session.execute(query)
         return result.scalar_one()
     except Exception as exc:
-        logger.warning("Could not count prescriptions: %s", exc)
+        logger.warning(
+            "Could not count prescriptions",
+            extra={"error_type": type(exc).__name__},
+        )
         return 0
 
 
@@ -185,5 +187,8 @@ async def _count_recent_orders(
         result = await session.execute(query)
         return result.scalar_one()
     except Exception as exc:
-        logger.warning("Could not count orders: %s", exc)
+        logger.warning(
+            "Could not count orders",
+            extra={"error_type": type(exc).__name__},
+        )
         return 0
