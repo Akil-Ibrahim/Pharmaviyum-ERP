@@ -36,6 +36,18 @@ jobs:
           test "$(bun --version)" = "1.4.2"
       - name: Install dependencies
         run: bun install
+      - name: Export Prettier-formatted files for diagnostics
+        run: |
+          bunx prettier --write "src/components/data-table/pagination.tsx" "src/components/data-table/view-options.tsx" "src/components/layout/app-sidebar.tsx" "src/components/ui/table.tsx" "src/features/dashboard/dashboard.css" "src/routes/_authenticated/patient-purchases.tsx" "src/styles/theme.css"
+          mkdir -p /tmp/prettier-formatted
+          cp --parents "src/components/data-table/pagination.tsx" "src/components/data-table/view-options.tsx" "src/components/layout/app-sidebar.tsx" "src/components/ui/table.tsx" "src/features/dashboard/dashboard.css" "src/routes/_authenticated/patient-purchases.tsx" "src/styles/theme.css" /tmp/prettier-formatted/
+          tar -czf /tmp/prettier-formatted.tar.gz -C /tmp/prettier-formatted .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prettier-formatted-files
+          path: /tmp/prettier-formatted.tar.gz
+      - name: Stop after exporting formatter output
+        run: exit 1
       - name: ESLint
         run: bun run lint
       - name: Prettier
