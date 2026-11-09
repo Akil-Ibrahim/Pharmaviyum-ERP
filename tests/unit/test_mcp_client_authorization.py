@@ -1,7 +1,7 @@
 """MCP client discovery must never trust caller-supplied roles."""
 
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -65,3 +65,50 @@ async def test_registry_rejects_caller_supplied_identity_mismatch():
             )
     finally:
         reset_mcp_context(token)
+
+@pytest.mark.asyncio
+async def test_write_tool_timeout_is_not_automatically_retried(monkeypatch):
+    context = SimpleNamespace(user_id=7, pharmacy_id=2, user_role="pharmacist")
+    monkeypatch.setattr(client_module, "get_authorization_context", lambda: context)
+    metadata = SimpleNamespace(name="write_operation", execution_class="write")
+    monkeypatch.setattr(
+        client_module.registry,
+        "get_tool",
+        lambda name: (metadata, MagicMock()),
+    )
+    call_tool = AsyncMock(side_effect=asyncio.TimeoutError())
+    monkeypatch.setattr(client_module.registry, "call_tool", call_tool)
+
+    result = await MCPClient(max_retries=3, timeout_seconds=1).call_tool(
+        "write_operation",
+        {},
+    )
+
+    assert result.success is False
+    assert result.error == "Tool execution timed out"
+    assert call_tool.await_count == 1
+
+@pytest.mark.asyncio
+async def test_tool_exception_details_are_not_returned_to_callers(monkeypatch):
+    context = SimpleNamespace(user_id=7, pharmacy_id=2, user_role="pharmacist")
+    monkeypatch.setattr(client_module, "get_authorization_context", lambda: context)
+    metadata = SimpleNamespace(name="patient_lookup", execution_class="read")
+    monkeypatch.setattr(
+        client_module.registry,
+        "get_tool",
+        lambda name: (metadata, MagicMock()),
+    )
+    call_tool = AsyncMock(
+        side_effect=RuntimeError("patient_name=Alice diagnosis=private")
+    )
+    monkeypatch.setattr(client_module.registry, "call_tool", call_tool)
+
+    result = await MCPClient(max_retries=0, timeout_seconds=1).call_tool(
+        "patient_lookup",
+        {},
+    )
+
+    assert result.success is False
+    assert result.error == "Tool execution failed"
+    assert "Alice" not in str(result)
+    assert "diagnosis=private" not in str(result)
