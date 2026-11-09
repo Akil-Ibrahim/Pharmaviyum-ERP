@@ -3,6 +3,7 @@
 Ragas is deliberately loaded lazily: it is an evaluation-only dependency and is
 never imported by the production request path.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
