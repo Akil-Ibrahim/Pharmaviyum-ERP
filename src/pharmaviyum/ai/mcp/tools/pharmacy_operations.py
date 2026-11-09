@@ -328,8 +328,8 @@ async def get_expiring_inventory(input: ExpiringInventoryRequest) -> ExpiringInv
 
     # Inventory timestamps are stored as naive UTC datetimes; use the same
     # UTC calendar date so container-local timezone settings cannot shift expiry.
-    today = datetime.utcnow().date()
     now = datetime.utcnow()
+    today = now.date()
     cutoff = datetime.combine(today + timedelta(days=input.days_ahead), time.max)
     statement = (
         select(Inventory, Product)
@@ -352,6 +352,9 @@ async def get_expiring_inventory(input: ExpiringInventoryRequest) -> ExpiringInv
     for lot, product in rows:
         expiry = lot.expires_at.date()
         days_left = (expiry - today).days
+        is_expired, available_quantity = _inventory_availability(
+            lot.quantity, lot.reserved_quantity, lot.expires_at, now
+        )
         items.append(
             ExpiringInventoryItem(
                 product_id=product.id,
@@ -362,10 +365,8 @@ async def get_expiring_inventory(input: ExpiringInventoryRequest) -> ExpiringInv
                 days_until_expiry=days_left,
                 on_hand_quantity=lot.quantity,
                 reserved_quantity=lot.reserved_quantity,
-                available_quantity=_inventory_availability(
-                    lot.quantity, lot.reserved_quantity, lot.expires_at, now
-                )[1],
-                status="expired" if days_left <= 0 else "expiring",
+                available_quantity=available_quantity,
+                status="expired" if is_expired else "expiring",
             )
         )
     return ExpiringInventoryResult(
