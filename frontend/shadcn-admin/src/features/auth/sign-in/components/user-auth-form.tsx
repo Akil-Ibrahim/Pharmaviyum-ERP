@@ -41,8 +41,8 @@ export function UserAuthForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: 'admin',
-      password: 'admin',
+      username: '',
+      password: '',
     },
   })
 
@@ -51,19 +51,16 @@ export function UserAuthForm({
 
     try {
       const apiBaseUrl = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
-      const response = await fetch(
-        `${apiBaseUrl}/api/v1/auth/token`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            username: data.username.trim(),
-            password: data.password,
-          }).toString(),
-        }
-      )
+      const response = await fetch(`${apiBaseUrl}/api/v1/auth/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          username: data.username.trim(),
+          password: data.password,
+        }).toString(),
+      })
 
       const result = await response.json().catch(() => ({}))
 
@@ -77,14 +74,11 @@ export function UserAuthForm({
 
       auth.setAccessToken(result.access_token)
 
-      const meResponse = await fetch(
-        `${apiBaseUrl}/api/v1/auth/me`,
-        {
-          headers: {
-            Authorization: `Bearer ${result.access_token}`,
-          },
-        }
-      )
+      const meResponse = await fetch(`${apiBaseUrl}/api/v1/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${result.access_token}`,
+        },
+      })
       const me = await meResponse.json().catch(() => ({}))
 
       if (!meResponse.ok) {
@@ -103,7 +97,9 @@ export function UserAuthForm({
       toast.success(`Welcome back, ${data.username}!`)
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'Unable to sign in. Please check the API connection and try again.'
+        error instanceof Error
+          ? error.message
+          : 'Unable to sign in. Please check the API connection and try again.'
       )
     } finally {
       setIsLoading(false)
@@ -165,7 +161,12 @@ export function UserAuthForm({
           </div>
         </div>
 
-        <Button variant='outline' type='button' disabled={isLoading} className='w-full'>
+        <Button
+          variant='outline'
+          type='button'
+          disabled={isLoading}
+          className='w-full'
+        >
           <IconGoogle className='h-4 w-4' /> Google
         </Button>
       </form>
