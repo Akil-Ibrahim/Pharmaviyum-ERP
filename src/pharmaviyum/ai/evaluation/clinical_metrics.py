@@ -198,6 +198,8 @@ def patient_context_isolation(
         if access_level == "public":
             continue
         checked += 1
+        if access_level not in {"pharmacy", "patient"}:
+            violations.append("invalid_access_level")
         if pharmacy_id != expected_pharmacy_id:
             violations.append("pharmacy_scope_mismatch")
         if access_level == "patient":
