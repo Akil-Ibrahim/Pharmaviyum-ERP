@@ -4,7 +4,6 @@ import {
   BookOpenCheck,
   Bot,
   Boxes,
-  Building2,
   CalendarClock,
   ClipboardCheck,
   ClipboardList,
