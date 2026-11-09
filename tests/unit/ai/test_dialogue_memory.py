@@ -96,9 +96,9 @@ async def test_raw_turns_are_retained_when_summarizer_is_not_configured():
     await memory.save("session-1", "first question", "first answer")
     await memory.save("session-1", "second question", "second answer")
 
-    key = f"{memory._session_prefix('session-1')}:{tier}"
+    key = f"{memory._session_prefix('session-1')}:messages"
     assert await redis.llen(key) == 4
-    assert not redis.lists.get(f"{memory._session_prefix('session-1')}:{tier}")
+    assert not redis.lists.get(f"{memory._session_prefix('session-1')}:archive")
 
 
 @pytest.mark.asyncio
@@ -111,9 +111,9 @@ async def test_successful_compaction_archives_verbatim_turns_before_trimming():
     await memory.save("session-1", "first question", "first answer")
     await memory.save("session-1", "second question", "second answer")
 
-    active_key = f"{memory._session_prefix('session-1')}:{tier}"
-    archive_key = f"{memory._session_prefix('session-1')}:{tier}"
-    summary_key = f"{memory._session_prefix('session-1')}:{tier}"
+    active_key = f"{memory._session_prefix('session-1')}:messages"
+    archive_key = f"{memory._session_prefix('session-1')}:archive"
+    summary_key = f"{memory._session_prefix('session-1')}:summary"
     assert await redis.llen(active_key) == 2
     assert len(redis.lists[archive_key]) == 2
     archived = [json.loads(item) for item in redis.lists[archive_key]]
@@ -132,9 +132,9 @@ async def test_failed_summarization_does_not_trim_or_archive_source_turns():
     await memory.save("session-1", "first question", "first answer")
     await memory.save("session-1", "second question", "second answer")
 
-    assert await redis.llen(f"{memory._session_prefix('session-1')}:{tier}") == 4
-    assert not redis.lists.get(f"{memory._session_prefix('session-1')}:{tier}")
-    assert await redis.get(f"{memory._session_prefix('session-1')}:{tier}") is None
+    assert await redis.llen(f"{memory._session_prefix('session-1')}:messages") == 4
+    assert not redis.lists.get(f"{memory._session_prefix('session-1')}:archive")
+    assert await redis.get(f"{memory._session_prefix('session-1')}:summary") is None
 
 
 @pytest.mark.asyncio
