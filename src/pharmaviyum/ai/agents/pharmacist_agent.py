@@ -233,7 +233,9 @@ class PharmacistAgent:
                 "against current evidence."
             )
         )
-        country = html.escape(str(context.get("country", "unspecified"))[:32], quote=False)
+        country = html.escape(
+            str(context.get("country", "unspecified"))[:32], quote=False
+        )
         language = html.escape(str(context.get("language", "en"))[:16], quote=False)
         memory_context = html.escape(
             str(context.get("memory_context", "")), quote=False
@@ -340,7 +342,9 @@ class PharmacistAgent:
                         "error": "tool_execution_failed",
                     }
                 )
-                logger.error("MCP execution failed", extra={"error_type": type(exc).__name__})
+                logger.error(
+                    "MCP execution failed", extra={"error_type": type(exc).__name__}
+                )
             messages.append(
                 ToolMessage(content=content, tool_call_id=tool_id, name=name)
             )
