@@ -73,6 +73,14 @@ Document ingestion is implemented under `src/pharmaviyum/ai/rag/ingestion` and i
 
 Do not document a separate Kubernetes ingestion deployment; the repository no longer maintains a Kubernetes manifest tree.
 
+## RAG and pharmacy AI evaluation
+
+Retrieval ranking metrics and the offline synthetic benchmark are documented in [`devops/STAGE_1_AI_RAG_OFFLINE_RESULTS.md`](./devops/STAGE_1_AI_RAG_OFFLINE_RESULTS.md). The reusable retrieval evaluator currently covers Recall@K, Precision@K, MRR and nDCG using labelled relevant chunk IDs. The expanded evaluation contract is maintained in [`devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md`](./devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md).
+
+Ragas may be used for answer/context metrics supported by the pinned installed version. Pharmacy-specific checks—including medication entity, ingredient, strength, dosage, dosage-form and route accuracy; negation preservation; contraindication and interaction accuracy; citation correctness; and clinical hallucination rate—require project-specific evaluators and pharmacist-reviewed ground truth. Do not present these custom measures as built-in Ragas metrics or treat an LLM judge as clinical ground truth.
+
+Evaluation results must identify dataset, model, prompt, embedding and index versions, sample size and execution environment. Security and tenant-isolation failures are independent release blockers and must not be averaged into a composite quality score.
+
 ## Agent Harness and memory
 
 The Agent Harness provides the application-level orchestration around LLM calls.
@@ -116,7 +124,7 @@ The AI/RAG layer uses application metrics and optional tracing integrations.
 
 Important RAG metrics include retrieval totals and retrieval latency. Metric labels are deliberately kept low-cardinality; do not add `session_id`, user IDs, pharmacy IDs, or similar identifiers to Prometheus labels.
 
-The repository also contains Prometheus/Grafana configuration under `docker/`.
+The repository also contains Prometheus/Grafana configuration under `docker/`. OpenTelemetry instrumentation boundaries, trace-context propagation, data-protection rules and observability acceptance criteria are documented in [`observability/opentelemetry.md`](./observability/opentelemetry.md).
 
 ## Data and infrastructure
 

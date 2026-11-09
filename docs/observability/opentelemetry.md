@@ -50,6 +50,20 @@ The SDK uses a parent-based, ratio sampler. Child spans follow the sampled state
 of their parent. The provider is flushed and shut down during application
 lifespan shutdown.
 
+## Observability acceptance criteria
+
+Instrumentation is not considered complete merely because the SDK initializes. Validate the critical request path end to end and report:
+
+- trace coverage for defined FastAPI, database, Redis, Celery and Mortarium workflows;
+- W3C trace-context propagation across process/service boundaries;
+- parent/child span relationships and error status;
+- exporter/collector delivery failures and dropped telemetry;
+- log/trace correlation;
+- metrics coverage for API, data services, workers, RAG, model calls and MCP tools;
+- alert rule evaluation and notification delivery in a controlled test.
+
+Measure p50/p95/p99 for defined API and AI workflow stages. Keep metric labels bounded; do not use pharmacy, user, patient, session, prompt or raw URL identifiers as Prometheus labels. Full metric definitions and benchmark evidence requirements live in [`../devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md`](../devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md).
+
 ## Data protection
 
 Do not attach patient names, patient identifiers, prescription contents,
