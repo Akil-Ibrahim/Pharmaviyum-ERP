@@ -1,64 +1,56 @@
-"""
-Script to create admin user in database.
-Best Practice: Use password hashing (bcrypt) for security.
-"""
+"""Create or synchronize the configured superuser without unsafe defaults."""
 
 import asyncio
-import structlog
+
 from passlib.context import CryptContext
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from src.pharmaviyum.config import settings
-from src.pharmaviyum.database import AsyncSessionLocal, engine, Base
+from src.pharmaviyum.database import AsyncSessionLocal
+from src.pharmaviyum.models.user import User
 
-logger = structlog.get_logger()
-
-# Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-async def create_admin():
-    """Create admin user if not exists."""
-    logger.info("creating_admin_user")
+async def create_admin() -> None:
+    """Create or update only the configured admin account."""
+    if not settings.ADMIN_PASSWORD:
+        raise RuntimeError(
+            "ADMIN_PASSWORD must be explicitly configured before bootstrapping an admin."
+        )
 
     async with AsyncSessionLocal() as db:
-        # Check if admin already exists
-        # Replace 'User' with your actual model import
-        try:
-            from src.pharmaviyum.models.user import User
-
-            result = await db.execute(
-                select(User).where(User.email == settings.ADMIN_EMAIL)
+        result = await db.execute(
+            select(User).where(
+                or_(
+                    User.email == settings.ADMIN_EMAIL,
+                    User.username == settings.ADMIN_USER,
+                )
             )
-            existing_user = result.scalar_one_or_none()
+        )
+        admin = result.scalar_one_or_none()
 
-            if existing_user:
-                logger.info("admin_already_exists", email=settings.ADMIN_EMAIL)
-                return
+        if admin is not None and not admin.is_superuser:
+            raise RuntimeError(
+                "The configured admin identity belongs to a non-superuser; "
+                "refusing to elevate it automatically."
+            )
 
-            # Create new admin
+        if admin is None:
             admin = User(
                 email=settings.ADMIN_EMAIL,
+                username=settings.ADMIN_USER,
                 hashed_password=pwd_context.hash(settings.ADMIN_PASSWORD),
                 is_active=True,
                 is_superuser=True,
-                username="Admin",
             )
             db.add(admin)
-            await db.commit()
-            await db.refresh(admin)
+        else:
+            admin.hashed_password = pwd_context.hash(settings.ADMIN_PASSWORD)
+            admin.is_active = True
 
-            logger.info("admin_created", email=settings.ADMIN_EMAIL)
-            print(f"✅ Admin created: {settings.ADMIN_EMAIL}")
-
-        except ImportError:
-            logger.error("user_model_not_found")
-            print("❌ User model not found. Check src/pharmaviyum/models/user.py")
-        except Exception as e:
-            logger.error("admin_creation_failed", error=str(e))
-            await db.rollback()
-            raise
+        await db.commit()
+        print("Configured administrator account is ready.")
 
 
 if __name__ == "__main__":
