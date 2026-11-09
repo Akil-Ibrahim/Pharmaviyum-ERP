@@ -21,8 +21,9 @@ The following tools are registered in the single Pharmaviyum MCP server:
 | `get_inventory_overview` | Inventory | Read lot-level on-hand, reserved, available quantity and reorder level |
 | `get_expiring_inventory` | Batch / expiry | Find expired or soon-to-expire available lots |
 | `get_sales_summary` | POS / sales | Read completed revenue and transaction counts for an inclusive date range |
+| `get_pharmacy_workflow_guide` | Pharmacy workflows | Explain baseline steps and critical controls for sale, receiving, stocktake, transfers, returns, recall, procurement, cash shifts and prescription dispensing |
 
-All four tools are read-only. Pharmacy and user identity are taken from the
+All five tools are read-only. Pharmacy and user identity are taken from the
 trusted request-scoped MCP authorization context, never from LLM-supplied tool
 arguments. Product search applies the existing sellable-catalog exclusions.
 Inventory and sales queries are filtered by the authenticated pharmacy.
@@ -49,10 +50,10 @@ the database or infer that a transaction succeeded.
 
 ## Not yet exposed to Mortarium as operational tools
 
-The current domain model and API coverage must be audited before adding tools
-for purchase-order creation, supplier receiving, inter-branch transfers,
-stocktakes, returns/refunds, recall/quarantine, cash-shift management or
-financial posting. A workflow described in documentation is not proof that a
+The current domain model and API coverage must be audited before adding write
+or transaction tools for purchase-order creation, supplier receiving,
+inter-branch transfers, stocktakes, returns/refunds, recall/quarantine,
+cash-shift management or financial posting. A workflow described in documentation is not proof that a
 corresponding executable API exists.
 
 The procurement domain currently has supplier records, but a complete
