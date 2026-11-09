@@ -20,6 +20,15 @@ class MCPAuthorizationContext:
     pharmacy_id: int
     user_role: UserRole
 
+    def __post_init__(self) -> None:
+        """Reject invalid identities before they enter request-scoped authority."""
+        if type(self.user_id) is not int or self.user_id <= 0:
+            raise ValueError("MCP context requires a positive authenticated user_id")
+        if type(self.pharmacy_id) is not int or self.pharmacy_id <= 0:
+            raise ValueError("MCP context requires a positive pharmacy_id")
+        if self.user_role not in {"patient", "pharmacist", "admin", "system"}:
+            raise ValueError("MCP context requires a recognized user role")
+
 
 _current_context: ContextVar[MCPAuthorizationContext | None] = ContextVar(
     "mcp_authorization_context", default=None
