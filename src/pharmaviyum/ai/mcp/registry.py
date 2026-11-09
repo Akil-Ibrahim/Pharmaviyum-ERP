@@ -160,10 +160,6 @@ class MCPToolRegistry:
                 f"Required: {metadata.required_roles}"
             )
 
-        health = await health_checker.check_tool_health(resolved_name)
-        if health.get("status") != "healthy":
-            raise RuntimeError("MCP tool dependency is unavailable")
-
         try:
             validated_input = metadata.input_schema.model_validate(input_data)
         except Exception:
@@ -180,6 +176,10 @@ class MCPToolRegistry:
             approved = await verifier(context, metadata, validated_input)
             if approved is not True:
                 raise PermissionError("MCP write action has no valid approval")
+
+        health = await health_checker.check_tool_health(resolved_name)
+        if health.get("status") != "healthy":
+            raise RuntimeError("MCP tool dependency is unavailable")
 
         start = time.perf_counter()
         try:
