@@ -67,6 +67,21 @@ Query
 
 The graph requires an explicit checkpointer and derives the checkpoint/thread scope from the authenticated pharmacy and user context.
 
+Both the LangGraph pharmacist agent and RAG graph use opaque, versioned
+HMAC-SHA-256 checkpoint thread identifiers derived from the authenticated
+pharmacy, user, and conversation scope. The Redis dialogue-memory namespace
+uses the same application secret to pseudonymize API-scoped session IDs. Keep
+the application `SECRET_KEY` stable across deployments to preserve continuity;
+rotating it changes derived identifiers.
+
+Pseudonymizing keys does not encrypt checkpoint or Redis payloads. Checkpoint
+state, conversation turns, summaries, and retrieved clinical context may still
+contain sensitive data. Apply database/Redis access controls, encryption,
+retention, backup protection, and deletion policies independently. New
+application code does not read legacy plaintext Redis keys; their configured
+seven-day TTL allows them to expire. An explicit memory-clear operation removes
+the exact legacy keys for that authenticated session.
+
 ### Ingestion
 
 Document ingestion is implemented under `src/pharmaviyum/ai/rag/ingestion` and is integrated with the project's Celery worker in the development Docker Compose stack.
