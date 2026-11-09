@@ -96,7 +96,6 @@ CONTROLLED_PRESCRIPTION_VALIDITY: dict[str, int] = {
     execution_class="read",
     latency_estimate_ms=120,
     requires_db=True,
-    execution_class="read",
     tags=["prescription", "regulatory", "compliance", "safety"],
 )
 async def verify_prescription(
