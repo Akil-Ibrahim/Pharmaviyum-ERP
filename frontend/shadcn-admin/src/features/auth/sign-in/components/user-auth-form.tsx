@@ -52,16 +52,15 @@ export function UserAuthForm({
     try {
       const apiBaseUrl = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
       const response = await fetch(`${apiBaseUrl}/api/v1/auth/token`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            username: data.username.trim(),
-            password: data.password,
-          }).toString(),
-        }
-      )
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          username: data.username.trim(),
+          password: data.password,
+        }).toString(),
+      })
 
       const result = await response.json().catch(() => ({}))
 
@@ -76,11 +75,10 @@ export function UserAuthForm({
       auth.setAccessToken(result.access_token)
 
       const meResponse = await fetch(`${apiBaseUrl}/api/v1/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${result.access_token}`,
-          },
-        }
-      )
+        headers: {
+          Authorization: `Bearer ${result.access_token}`,
+        },
+      })
       const me = await meResponse.json().catch(() => ({}))
 
       if (!meResponse.ok) {
