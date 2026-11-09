@@ -1,4 +1,4 @@
-import { Cross2Icon } from '@radix-ui/react-icons'
+import { Cross2Icon, MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import { type Table } from '@tanstack/react-table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,45 +26,55 @@ export function DataTableToolbar<TData>({
   searchKey,
   filters = [],
 }: DataTableToolbarProps<TData>) {
+  const searchColumn = searchKey ? table.getColumn(searchKey) : undefined
+  const searchValue = searchKey
+    ? ((searchColumn?.getFilterValue() as string) ?? '')
+    : ((table.getState().globalFilter as string) ?? '')
   const isFiltered =
-    table.getState().columnFilters.length > 0 || table.getState().globalFilter
+    table.getState().columnFilters.length > 0 || Boolean(searchValue)
+
+  const setSearchValue = (value: string) => {
+    if (searchKey) {
+      searchColumn?.setFilterValue(value)
+      return
+    }
+    table.setGlobalFilter(value)
+  }
 
   return (
-    <div className='flex items-center justify-between'>
-      <div className='flex flex-1 flex-col-reverse items-start gap-y-2 sm:flex-row sm:items-center sm:space-x-2'>
-        {searchKey ? (
-          <Input
-            placeholder={searchPlaceholder}
-            value={
-              (table.getColumn(searchKey)?.getFilterValue() as string) ?? ''
-            }
-            onChange={(event) =>
-              table.getColumn(searchKey)?.setFilterValue(event.target.value)
-            }
-            className='h-8 w-37.5 lg:w-62.5'
+    <div className='flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+      <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
+        <div className='relative w-full min-w-48 sm:max-w-64'>
+          <MagnifyingGlassIcon
+            aria-hidden='true'
+            className='pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground'
           />
-        ) : (
           <Input
+            aria-label='Search table'
             placeholder={searchPlaceholder}
-            value={table.getState().globalFilter ?? ''}
-            onChange={(event) => table.setGlobalFilter(event.target.value)}
-            className='h-8 w-37.5 lg:w-62.5'
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
+            className='h-9 w-full ps-9'
           />
-        )}
-        <div className='flex gap-x-2'>
-          {filters.map((filter) => {
-            const column = table.getColumn(filter.columnId)
-            if (!column) return null
-            return (
-              <DataTableFacetedFilter
-                key={filter.columnId}
-                column={column}
-                title={filter.title}
-                options={filter.options}
-              />
-            )
-          })}
         </div>
+
+        {filters.length > 0 && (
+          <div className='flex min-w-0 flex-wrap items-center gap-2'>
+            {filters.map((filter) => {
+              const column = table.getColumn(filter.columnId)
+              if (!column) return null
+              return (
+                <DataTableFacetedFilter
+                  key={filter.columnId}
+                  column={column}
+                  title={filter.title}
+                  options={filter.options}
+                />
+              )
+            })}
+          </div>
+        )}
+
         {isFiltered && (
           <Button
             variant='ghost'
@@ -72,13 +82,14 @@ export function DataTableToolbar<TData>({
               table.resetColumnFilters()
               table.setGlobalFilter('')
             }}
-            className='h-8 px-2 lg:px-3'
+            className='h-9 px-2'
           >
-            Reset
-            <Cross2Icon className='ms-2 h-4 w-4' />
+            Reset filters
+            <Cross2Icon className='ms-2 size-4' />
           </Button>
         )}
       </div>
+
       <DataTableViewOptions table={table} />
     </div>
   )
