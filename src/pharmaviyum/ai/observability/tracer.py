@@ -170,7 +170,7 @@ class ObservabilityTracer:
     @contextmanager
     def start_span(self, name: str, **attributes: Any) -> Iterator[Span]:
         """Create a span; record only exception type, never exception content."""
-        with self.tracer.start_as_current_span(name) as span:
+        with self.tracer.start_as_current_span(_safe_span_name(name)) as span:
             for key, value in attributes.items():
                 if key in _SAFE_SPAN_ATTRIBUTE_KEYS and isinstance(
                     value, (bool, int, float)
