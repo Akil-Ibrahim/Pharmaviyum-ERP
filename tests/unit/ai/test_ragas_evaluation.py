@@ -58,13 +58,14 @@ def test_patient_context_isolation_rejects_other_patient():
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize(("language", "expected"), [("ru", 0.5), ("en", 1.0)])
+@pytest.mark.parametrize(("language", "expected"), [("ru", 0.5), ("en", 0.5)])
 def test_multilingual_retrieval_reports_language_specific_recall(language, expected):
     result = multilingual_retrieval(
         language=language,
         expected_source_ids=["a", "b"],
         retrieved_source_ids=["a"],
     )
+    assert result.name == f"multilingual_retrieval_{language}"
     assert result.score == expected
 
 
