@@ -20,11 +20,7 @@ export function DataTableViewOptions<TData>({
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant='outline'
-          size='sm'
-          className='h-9 shrink-0'
-        >
+        <Button variant='outline' size='sm' className='h-9 shrink-0'>
           <MixerHorizontalIcon className='size-4' />
           <span className='hidden sm:inline'>View</span>
           <span className='sr-only sm:hidden'>Toggle columns</span>
