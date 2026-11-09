@@ -474,9 +474,7 @@ class LangGraphRAG:
         started = time.perf_counter()
         success = False
         try:
-            context = html.escape(
-                str(state.get("compressed_context", "")), quote=False
-            )
+            context = html.escape(str(state.get("compressed_context", "")), quote=False)
             question = html.escape(str(state["question"]), quote=False)
             system_prompt = (
                 "You are Pharmaviyum's pharmaceutical AI assistant. "
