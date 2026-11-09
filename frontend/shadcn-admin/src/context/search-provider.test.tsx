@@ -62,7 +62,7 @@ describe('SearchProvider and CommandMenu', () => {
 
   it('renders the command palette when the palette is open', async () => {
     const screen = await renderWithSearchProvider()
-    const { getByPlaceholder, getByText } = screen
+    const { getByPlaceholder, getByRole, getByText } = screen
 
     await openCommandPalette(screen)
 
@@ -72,7 +72,9 @@ describe('SearchProvider and CommandMenu', () => {
     await expect.element(getByText('Theme')).toBeInTheDocument()
     await expect.element(getByText('Light')).toBeInTheDocument()
     await expect.element(getByText('Dark')).toBeInTheDocument()
-    await expect.element(getByText('System', { exact: true })).toBeInTheDocument()
+    await expect
+      .element(getByRole('option', { name: 'System' }))
+      .toBeInTheDocument()
     await expect.element(getByText('Dashboard')).toBeInTheDocument()
   })
 
