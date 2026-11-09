@@ -15,6 +15,7 @@ from .prescription_verification import verify_prescription
 from .pharmacy_operations import (
     get_expiring_inventory,
     get_inventory_overview,
+    get_pharmacy_workflow_guide,
     get_sales_summary,
     search_pharmacy_products,
 )
@@ -26,6 +27,7 @@ __all__ = [
     "verify_prescription",
     "search_pharmacy_products",
     "get_inventory_overview",
+    "get_pharmacy_workflow_guide",
     "get_expiring_inventory",
     "get_sales_summary",
 ]
