@@ -181,6 +181,7 @@ def test_patient_context_isolation_fails_closed_on_unknown_access_level():
     assert result.passed is False
     assert "invalid_access_level" in result.details["violations"]
 
+
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_ragas_adapter_accepts_negative_answer_relevancy(monkeypatch):
