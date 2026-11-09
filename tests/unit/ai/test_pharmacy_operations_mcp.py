@@ -13,6 +13,7 @@ from src.pharmaviyum.ai.mcp.tools.pharmacy_operations import (  # noqa: E402
     _inventory_availability,
 )
 
+
 @pytest.mark.unit
 def test_pharmacy_operations_tools_are_registered_and_read_only():
     expected = {
@@ -30,6 +31,7 @@ def test_pharmacy_operations_tools_are_registered_and_read_only():
         assert registered[name].execution_class == "read"
         assert registered[name].requires_pharmacist_confirmation is False
 
+
 @pytest.mark.unit
 def test_pharmacy_operation_tool_inputs_are_bounded():
     assert ProductSearchRequest(query="omeprazole").limit == 10
@@ -40,6 +42,7 @@ def test_pharmacy_operation_tool_inputs_are_bounded():
     with pytest.raises(ValueError):
         InventoryOverviewRequest(limit=101)
 
+
 @pytest.mark.unit
 def test_sales_summary_rejects_invalid_or_unbounded_date_ranges():
     with pytest.raises(ValueError, match="end_date"):
@@ -47,6 +50,7 @@ def test_sales_summary_rejects_invalid_or_unbounded_date_ranges():
 
     with pytest.raises(ValueError, match="367"):
         SalesSummaryRequest(start_date="2025-01-01", end_date="2026-01-04")
+
 
 @pytest.mark.unit
 def test_workflow_guide_is_general_guidance_not_transaction_execution():
@@ -67,6 +71,7 @@ def test_workflow_guide_is_general_guidance_not_transaction_execution():
     assert "does not execute" in guide.execution_note
     assert any("physical verification" in item for item in guide.critical_controls)
 
+
 @pytest.mark.unit
 def test_operational_tool_schemas_do_not_accept_caller_supplied_identity():
     protected_fields = {"pharmacy_id", "user_id", "user_role"}
@@ -78,6 +83,7 @@ def test_operational_tool_schemas_do_not_accept_caller_supplied_identity():
     ):
         metadata, _ = tool_registry.get_tool(tool_name)
         assert protected_fields.isdisjoint(metadata.input_schema.model_fields)
+
 
 @pytest.mark.unit
 def test_expired_inventory_is_never_reported_as_available():
