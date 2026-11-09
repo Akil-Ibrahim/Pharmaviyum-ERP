@@ -54,12 +54,12 @@ def test_sales_summary_rejects_invalid_or_unbounded_date_ranges():
 
 @pytest.mark.unit
 def test_workflow_guide_is_general_guidance_not_transaction_execution():
+    import asyncio
+
     from src.pharmaviyum.ai.mcp.tools.pharmacy_operations import (
         PharmacyWorkflowGuideRequest,
         get_pharmacy_workflow_guide,
     )
-
-    import asyncio
 
     guide = asyncio.run(
         get_pharmacy_workflow_guide(
