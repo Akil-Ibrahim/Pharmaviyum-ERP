@@ -122,7 +122,7 @@ def _record_batch_result(
         tracker = IngestionProgressTracker(redis_client)
         loop.run_until_complete(tracker.record_batch_result(batch_job_id, success))
     except Exception:
-        logger.exception("Failed to update parent batch job %s", batch_job_id)
+        logger.error("Failed to update parent batch job")
 
 
 async def _ingest_document_async(
@@ -246,9 +246,7 @@ async def _ingest_document_async(
             try:
                 await ObjectStorage().delete(source)
             except Exception:
-                logger.exception(
-                    "Failed to delete completed ingestion object %s", source
-                )
+                logger.error("Failed to delete completed ingestion object")
 
         await tracker.update_status(job_id, "completed", processed=len(all_chunks))
         return {
@@ -290,7 +288,10 @@ def ingest_document(
         _record_batch_result(loop, config, True, job_id)
         return result
     except Exception as exc:
-        logger.error("Task failed: %s", exc, exc_info=True)
+        logger.error(
+            "Document ingestion task failed",
+            extra={"error_type": type(exc).__name__},
+        )
         if self.request.retries < self.max_retries:
             raise self.retry(exc=exc)
         try:
@@ -304,7 +305,7 @@ def ingest_document(
             )
             _record_batch_result(loop, config, False, job_id)
         except Exception:
-            logger.exception("Failed to mark ingestion job %s as failed", job_id)
+            logger.error("Failed to mark ingestion job as failed")
         return {
             "success": False,
             "error": "Document ingestion failed",

@@ -8,12 +8,12 @@ startup when an optional exporter cannot be initialized.
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 from urllib.parse import urlsplit
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from opentelemetry.sdk.resources import Resource
@@ -28,6 +28,21 @@ logger = logging.getLogger(__name__)
 
 _provider: TracerProvider | None = None
 _instrumented = False
+
+
+def _is_production_environment(environment: str | None) -> bool:
+    return (environment or "").strip().lower() in {"production", "prod", "staging"}
+
+
+def _allow_sensitive_client_instrumentation(
+    environment: str | None, opt_in: bool
+) -> bool:
+    normalized = (environment or "").strip().lower()
+    return (
+        bool(opt_in)
+        and normalized in {"development", "dev", "test"}
+        and not (_is_production_environment(normalized))
+    )
 
 
 def configure_opentelemetry(app: Any) -> TracerProvider | None:
@@ -81,29 +96,56 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
         _provider = provider
 
     if not _instrumented:
-        instrumentations = (
-            (
-                "FastAPI",
-                lambda: FastAPIInstrumentor.instrument_app(
-                    app,
-                    tracer_provider=_provider,
-                    excluded_urls="health,ready,metrics,openapi.json,docs,redoc",
-                ),
-            ),
-            (
-                "SQLAlchemy",
-                lambda: SQLAlchemyInstrumentor().instrument(
-                    engine=engine.sync_engine,
-                    tracer_provider=_provider,
-                ),
-            ),
-            # Redis auto-instrumentation is deliberately omitted: db.statement
-            # can contain command arguments, prompts, and clinical memory payloads.
-            (
-                "HTTPX",
-                lambda: HTTPXClientInstrumentor().instrument(tracer_provider=_provider),
-            ),
+        instrumentations = []
+        environment = getattr(settings.environment, "value", settings.environment)
+        server_opt_in = (
+            os.getenv("OTEL_INCLUDE_FASTAPI_REQUEST_SPANS", "false").lower() == "true"
         )
+        if _allow_sensitive_client_instrumentation(str(environment), server_opt_in):
+            from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
+            instrumentations.append(
+                (
+                    "FastAPI",
+                    lambda: FastAPIInstrumentor.instrument_app(
+                        app,
+                        tracer_provider=_provider,
+                        excluded_urls="health,ready,metrics,openapi.json,docs,redoc",
+                    ),
+                )
+            )
+        else:
+            logger.info(
+                "FastAPI request auto-instrumentation disabled; enable only in "
+                "development/test after verifying route and URL redaction"
+            )
+
+        sensitive_opt_in = (
+            os.getenv("OTEL_INCLUDE_SENSITIVE_CLIENT_SPANS", "false").lower() == "true"
+        )
+        if _allow_sensitive_client_instrumentation(str(environment), sensitive_opt_in):
+            instrumentations.extend(
+                [
+                    (
+                        "SQLAlchemy",
+                        lambda: SQLAlchemyInstrumentor().instrument(
+                            engine=engine.sync_engine,
+                            tracer_provider=_provider,
+                        ),
+                    ),
+                    (
+                        "HTTPX",
+                        lambda: HTTPXClientInstrumentor().instrument(
+                            tracer_provider=_provider
+                        ),
+                    ),
+                ]
+            )
+        else:
+            logger.info(
+                "Sensitive SQLAlchemy/HTTPX auto-instrumentation disabled; "
+                "enable only in development/test with explicit opt-in"
+            )
         for name, instrument in instrumentations:
             try:
                 instrument()
