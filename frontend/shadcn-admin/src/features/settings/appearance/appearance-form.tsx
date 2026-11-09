@@ -21,7 +21,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 const appearanceFormSchema = z.object({
   theme: z.enum(['light', 'dark']),
-  preset: z.enum(['default', 'blue', 'green', 'red', 'rose', 'orange', 'yellow', 'violet', 'amber', 'purple', 'teal', 'cyan']),
+  preset: z.enum(['default', 'neutral', 'stone', 'zinc', 'slate', 'gray', 'mauve', 'olive', 'mist', 'taupe', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose']),
   font: z.enum(fonts),
 })
 
@@ -164,10 +164,10 @@ export function AppearanceForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Theme preset</FormLabel>
-              <FormDescription>Choose the accent palette for the Pharmaviyum admin interface.</FormDescription>
+              <FormDescription>Choose a shadcn color palette for the Pharmaviyum admin interface. This changes semantic accent colors while preserving the navigation layout and icon style.</FormDescription>
               <FormMessage />
               <RadioGroup onValueChange={field.onChange} value={field.value} className='grid max-w-2xl grid-cols-2 gap-3 pt-2 sm:grid-cols-3'>
-                {(['default','blue','green','red','rose','orange','yellow','violet','amber','purple','teal','cyan'] as const).map((value) => (
+                {(['default','neutral','stone','zinc','slate','gray','mauve','olive','mist','taupe','red','orange','amber','yellow','lime','green','emerald','teal','cyan','sky','blue','indigo','violet','purple','fuchsia','pink','rose'] as const).map((value) => (
                   <FormItem key={value}>
                     <FormLabel className='[&:has([data-state=checked])>div]:border-primary'>
                       <FormControl><RadioGroupItem value={value} className='sr-only' /></FormControl>
