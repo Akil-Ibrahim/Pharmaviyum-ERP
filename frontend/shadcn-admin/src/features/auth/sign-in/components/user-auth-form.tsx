@@ -51,9 +51,7 @@ export function UserAuthForm({
 
     try {
       const apiBaseUrl = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
-      const response = await fetch(
-        `${apiBaseUrl}/api/v1/auth/token`,
-        {
+      const response = await fetch(`${apiBaseUrl}/api/v1/auth/token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -77,9 +75,7 @@ export function UserAuthForm({
 
       auth.setAccessToken(result.access_token)
 
-      const meResponse = await fetch(
-        `${apiBaseUrl}/api/v1/auth/me`,
-        {
+      const meResponse = await fetch(`${apiBaseUrl}/api/v1/auth/me`, {
           headers: {
             Authorization: `Bearer ${result.access_token}`,
           },
@@ -103,7 +99,9 @@ export function UserAuthForm({
       toast.success(`Welcome back, ${data.username}!`)
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'Unable to sign in. Please check the API connection and try again.'
+        error instanceof Error
+          ? error.message
+          : 'Unable to sign in. Please check the API connection and try again.'
       )
     } finally {
       setIsLoading(false)
@@ -165,7 +163,12 @@ export function UserAuthForm({
           </div>
         </div>
 
-        <Button variant='outline' type='button' disabled={isLoading} className='w-full'>
+        <Button
+          variant='outline'
+          type='button'
+          disabled={isLoading}
+          className='w-full'
+        >
           <IconGoogle className='h-4 w-4' /> Google
         </Button>
       </form>
