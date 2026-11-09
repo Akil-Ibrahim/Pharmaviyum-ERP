@@ -241,7 +241,7 @@ async def query_agent(
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Internal server error during AI processing",
-            ) from e
+            ) from exc
     finally:
         reset_mcp_context(token)
 
