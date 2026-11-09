@@ -14,7 +14,6 @@ from urllib.parse import urlsplit
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from opentelemetry.sdk.resources import Resource
@@ -97,17 +96,30 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
         _provider = provider
 
     if not _instrumented:
-        instrumentations = [
-            (
-                "FastAPI",
-                lambda: FastAPIInstrumentor.instrument_app(
-                    app,
-                    tracer_provider=_provider,
-                    excluded_urls="health,ready,metrics,openapi.json,docs,redoc",
-                ),
-            ),
-        ]
+        instrumentations = []
         environment = getattr(settings.environment, "value", settings.environment)
+        server_opt_in = (
+            os.getenv("OTEL_INCLUDE_FASTAPI_REQUEST_SPANS", "false").lower() == "true"
+        )
+        if _allow_sensitive_client_instrumentation(str(environment), server_opt_in):
+            from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
+            instrumentations.append(
+                (
+                    "FastAPI",
+                    lambda: FastAPIInstrumentor.instrument_app(
+                        app,
+                        tracer_provider=_provider,
+                        excluded_urls="health,ready,metrics,openapi.json,docs,redoc",
+                    ),
+                )
+            )
+        else:
+            logger.info(
+                "FastAPI request auto-instrumentation disabled; enable only in "
+                "development/test after verifying route and URL redaction"
+            )
+
         sensitive_opt_in = (
             os.getenv("OTEL_INCLUDE_SENSITIVE_CLIENT_SPANS", "false").lower() == "true"
         )
