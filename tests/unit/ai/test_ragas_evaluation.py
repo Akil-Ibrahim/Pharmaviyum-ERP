@@ -1,3 +1,4 @@
+from types import ModuleType, SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
@@ -123,3 +124,48 @@ async def test_ragas_adapter_rejects_blank_input():
         await adapter.evaluate(
             RagasSample(user_input=" ", response="answer", retrieved_contexts=["doc"])
         )
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_ragas_adapter_scores_standard_metrics_with_reference(monkeypatch):
+    class FakeMetric:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+        async def ascore(self, **kwargs):
+            return SimpleNamespace(value=0.9, reason="supported")
+
+    collections = ModuleType("ragas.metrics.collections")
+    for metric_name in (
+        "AnswerRelevancy",
+        "ContextPrecisionWithReference",
+        "ContextRecall",
+        "Faithfulness",
+    ):
+        setattr(collections, metric_name, FakeMetric)
+    ragas_module = ModuleType("ragas")
+    metrics_module = ModuleType("ragas.metrics")
+    monkeypatch.setitem(__import__("sys").modules, "ragas", ragas_module)
+    monkeypatch.setitem(__import__("sys").modules, "ragas.metrics", metrics_module)
+    monkeypatch.setitem(
+        __import__("sys").modules, "ragas.metrics.collections", collections
+    )
+
+    adapter = RagasEvaluationAdapter(llm=object(), embeddings=object())
+    report = await adapter.evaluate(
+        RagasSample(
+            user_input="What is the medicine?",
+            response="It is a tablet.",
+            retrieved_contexts=["The medicine is a tablet."],
+            reference="The medicine is a tablet.",
+        )
+    )
+
+    assert set(report.available_scores) == {
+        "faithfulness",
+        "answer_relevancy",
+        "context_precision",
+        "context_recall",
+    }
+    assert all(score == 0.9 for score in report.available_scores.values())
