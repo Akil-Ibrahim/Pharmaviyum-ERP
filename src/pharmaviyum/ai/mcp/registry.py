@@ -110,6 +110,7 @@ class MCPToolRegistry:
         pharmacy_id: int | None = None,
     ) -> Any:
         """Call a registered tool with RBAC and trusted tenant context."""
+        from .context import require_mcp_context
         from .tool_management import (
             analytics_tracker,
             check_rbac,
@@ -117,8 +118,15 @@ class MCPToolRegistry:
             resolve_tool_version,
         )
 
-        if user_id is None or pharmacy_id is None:
-            raise PermissionError("MCP tenant authorization context is required")
+        context = require_mcp_context()
+        if (
+            user_id is None
+            or pharmacy_id is None
+            or context.user_id != user_id
+            or context.pharmacy_id != pharmacy_id
+            or context.user_role != user_role
+        ):
+            raise PermissionError("MCP authorization context mismatch")
 
         resolved_name = resolve_tool_version(name)
         if resolved_name not in self._tools:
