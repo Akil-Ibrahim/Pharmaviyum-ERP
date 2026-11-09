@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import hashlib
-import html
 import hmac
+import html
 import json
 import re
 from typing import Any
