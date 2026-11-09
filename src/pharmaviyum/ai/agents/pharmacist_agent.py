@@ -417,6 +417,7 @@ class PharmacistAgent:
             "rag_context": "",
             "rag_sources": [],
             "iteration": 0,
+            "model_used": "",
         }
         configurable: dict[str, Any] = {
             "thread_id": self._thread_id(thread_id, context)
