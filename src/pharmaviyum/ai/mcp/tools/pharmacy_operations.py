@@ -9,7 +9,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import func, or_, select
 
 from src.pharmaviyum.ai.mcp.context import require_mcp_context
@@ -105,14 +105,13 @@ class SalesSummaryRequest(BaseModel):
     start_date: date
     end_date: date
 
-    @classmethod
-    def model_validate(cls, obj, **kwargs):
-        result = super().model_validate(obj, **kwargs)
-        if result.end_date < result.start_date:
+    @model_validator(mode="after")
+    def validate_date_range(self):
+        if self.end_date < self.start_date:
             raise ValueError("end_date must be on or after start_date")
-        if (result.end_date - result.start_date).days > 366:
+        if (self.end_date - self.start_date).days > 366:
             raise ValueError("date range must not exceed 367 calendar days")
-        return result
+        return self
 
 
 class SalesSummaryResult(BaseModel):
