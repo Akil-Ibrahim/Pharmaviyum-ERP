@@ -78,7 +78,7 @@ class RagasEvaluationAdapter:
             )
 
         try:
-            from ragas.metrics.collections import (
+            from ragas.metrics.collections import (  # type: ignore[import-not-found]
                 AnswerRelevancy,
                 ContextPrecisionWithReference,
                 ContextRecall,
