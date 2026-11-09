@@ -24,13 +24,11 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend/shadcn-admin
         run: bun install --frozen-lockfile
-      - name: Format frontend files changed in the triggering commit
+      - name: Format all frontend files changed in this PR
         working-directory: frontend/shadcn-admin
-        env:
-          BEFORE_SHA: ${{ github.event.before }}
-          AFTER_SHA: ${{ github.sha }}
         run: |
-          mapfile -t FILES < <(git -C "$GITHUB_WORKSPACE" diff --name-only "$BEFORE_SHA" "$AFTER_SHA" -- frontend/shadcn-admin | sed 's#^frontend/shadcn-admin/##' | grep -E '\.(ts|tsx|js|jsx|json|css|html)$' || true)
+          git fetch origin main
+          mapfile -t FILES < <(git -C "$GITHUB_WORKSPACE" diff --name-only "origin/main...HEAD" -- frontend/shadcn-admin | sed 's#^frontend/shadcn-admin/##' | grep -E '\.(ts|tsx|js|jsx|json|css|html)$' || true)
           if (("${#FILES[@]}" > 0)); then
             bunx prettier --write "${FILES[@]}"
           fi
