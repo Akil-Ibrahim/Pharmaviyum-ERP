@@ -136,6 +136,7 @@ class DialogueMemory:
         assistant_message: str,
     ) -> None:
         """Save a turn and compact older turns when the threshold is reached."""
+        session_prefix = self._session_prefix(session_id)
         short_term_key = f"{session_prefix}:messages"
         summary_key = f"{session_prefix}:summary"
         now = datetime.now(timezone.utc).isoformat()
