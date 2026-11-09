@@ -19,14 +19,14 @@ The following tools are registered in the single Pharmaviyum MCP server:
 |---|---|---|
 | `search_pharmacy_products` | Medicine / sellable catalog | Search active pharmacy products by name, INN, SKU, barcode, manufacturer, strength or form; returns available stock |
 | `get_inventory_overview` | Inventory | Read lot-level on-hand, reserved, available quantity and reorder level |
-| `get_expiring_inventory` | Batch / expiry | Find expired or soon-to-expire available lots |
+| `get_expiring_inventory` | Batch / expiry | Find expired or soon-to-expire lots; reports on-hand and reserved stock separately from sellable availability |
 | `get_sales_summary` | POS / sales | Read completed revenue and transaction counts for an inclusive date range |
 | `get_pharmacy_workflow_guide` | Pharmacy workflows | Explain baseline steps and critical controls for sale, receiving, stocktake, transfers, returns, recall, procurement, cash shifts and prescription dispensing |
 
 All five tools are read-only. Pharmacy and user identity are taken from the
 trusted request-scoped MCP authorization context, never from LLM-supplied tool
 arguments. Product search applies the existing sellable-catalog exclusions.
-Inventory and sales queries are filtered by the authenticated pharmacy.
+Inventory and sales queries are filtered by the authenticated pharmacy. Expired lots remain visible for reconciliation, but their `available_quantity` is always zero; `on_hand_quantity` and `reserved_quantity` report the physical/reserved amounts separately. Expiry comparisons use UTC to match the inventory timestamp convention.
 
 The tool schemas bound query length, result limits and date ranges. These tools
 do not create orders, receive stock, complete sales, issue refunds, write off
