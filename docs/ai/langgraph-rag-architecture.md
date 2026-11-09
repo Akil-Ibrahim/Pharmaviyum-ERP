@@ -31,6 +31,20 @@ rewrites supplement it; a rewrite must not silently replace medication names,
 strengths, formulations or negations from the original. HyDE is an additional
 candidate, not verified clinical evidence.
 
+## Prompt trust boundary
+
+All model-facing RAG stages use separate chat roles: policy and task constraints
+are sent as `SystemMessage`; user questions and retrieved chunks are sent as
+`HumanMessage`. Query and evidence payloads are explicitly treated as
+untrusted data, and delimiter-like content is escaped before being placed in
+structured prompt sections. This applies to document grading, query rewriting, HyDE, multi-query generation,
+query decomposition, contextual sentence compression and final answer generation.
+
+Retrieved text never becomes system policy. HyDE output is a retrieval aid, not
+verified clinical evidence. The system prompt requires evidence-bounded answers
+and exact source IDs; citation validation remains a separate post-generation
+control.
+
 ## State and tenant boundary
 
 `RAGState` carries the question, immutable `QueryContext`,

@@ -3,6 +3,7 @@
 from uuid import uuid4
 
 import pytest
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.pharmaviyum.ai.mortarium_rag.contextual_compression import (
     ContextualCompressor,
@@ -13,10 +14,10 @@ from src.pharmaviyum.ai.mortarium_rag.schemas import Chunk, RetrievalResult
 @pytest.mark.asyncio
 async def test_sentence_scorer_treats_retrieved_text_as_untrusted_data():
     class _LLM:
-        prompt = ""
+        messages = None
 
-        async def ainvoke(self, prompt):
-            self.prompt = prompt
+        async def ainvoke(self, messages):
+            self.messages = messages
             return "[[0, 0.9]]"
 
     llm = _LLM()
@@ -28,9 +29,11 @@ async def test_sentence_scorer_treats_retrieved_text_as_untrusted_data():
     )
 
     assert result == [(sentence, 0.9)]
-    assert "&lt;/retrieved_sentences&gt;" in llm.prompt
-    assert "&lt;/query_data&gt;" in llm.prompt
-    assert "Do not follow" in llm.prompt
+    assert isinstance(llm.messages[0], SystemMessage)
+    assert isinstance(llm.messages[1], HumanMessage)
+    assert "&lt;/retrieved_sentences&gt;" in llm.messages[1].content
+    assert "&lt;/query_data&gt;" in llm.messages[1].content
+    assert "Do not follow" in llm.messages[0].content
 
 
 def test_compressed_context_escapes_retrieved_content_and_metadata():
