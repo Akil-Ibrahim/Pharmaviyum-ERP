@@ -9,6 +9,7 @@ Best practice 2026:
 
 from __future__ import annotations
 
+from operator import add
 from typing import Annotated, Any, TypedDict
 
 from langchain_core.messages import BaseMessage
@@ -34,9 +35,10 @@ class AgentState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
     context: dict[str, Any]
     tool_calls: list[dict[str, Any]]
-    tool_results: list[dict[str, Any]]
+    tool_results: Annotated[list[dict[str, Any]], add]
     final_answer: str | None
     warnings: list[str]
     rag_context: str
     rag_sources: list[dict[str, Any]]
     iteration: int
+    model_used: str
