@@ -117,16 +117,19 @@ class IngestionOrchestrator:
             )
 
             if not documents:
-                raise ValueError(f"No documents loaded from {source}")
+                raise ValueError("No documents loaded")
 
             processed_docs: list[Any] = []
             for doc in documents:
                 try:
                     processed = self.preprocessor.process(doc)
                     processed_docs.append(processed)
-                except Exception as e:
-                    logger.warning(f"Preprocessing failed for doc: {e}")
-                    stats["errors"].append(f"preprocess_error: {e}")
+                except Exception as exc:
+                    logger.warning(
+                        "Document preprocessing failed",
+                        extra={"error_type": type(exc).__name__},
+                    )
+                    stats["errors"].append("preprocess_error")
 
             stats["documents_preprocessed"] = len(processed_docs)
 
@@ -220,7 +223,7 @@ class IngestionOrchestrator:
             stats["latency_ms"] = latency_ms
 
             logger.info(
-                f"Ingestion completed: {source}",
+                "Ingestion completed",
                 extra={
                     "job_id": job_id,
                     "chunks_stored": stored_count,
@@ -230,11 +233,14 @@ class IngestionOrchestrator:
 
             return {**stats, "success": True}
 
-        except Exception as e:
-            logger.error("Ingestion failed", extra={"job_id": job_id}, exc_info=True)
-            stats["errors"].append(f"fatal: {str(e)}")
+        except Exception as exc:
+            logger.error(
+                "Ingestion failed",
+                extra={"error_type": type(exc).__name__},
+            )
+            stats["errors"].append("fatal: ingestion_failed")
             stats["latency_ms"] = (time.perf_counter() - start_time) * 1000
-            return {**stats, "success": False, "error": str(e)}
+            return {**stats, "success": False, "error": "Document ingestion failed"}
 
     async def ingest_batch(
         self,
