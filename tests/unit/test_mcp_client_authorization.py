@@ -8,7 +8,6 @@ import pytest
 from src.pharmaviyum.ai.mcp import client as client_module
 from src.pharmaviyum.ai.mcp.client import MCPClient
 
-
 def test_tool_discovery_denies_without_authenticated_context(monkeypatch):
     monkeypatch.setattr(client_module, "get_authorization_context", lambda: None)
     list_tools = MagicMock(return_value=[])
@@ -17,7 +16,6 @@ def test_tool_discovery_denies_without_authenticated_context(monkeypatch):
     assert MCPClient().list_tools(user_role="admin") == []
     assert MCPClient().to_openai_tools(user_role="admin") == []
     list_tools.assert_not_called()
-
 
 def test_tool_discovery_rejects_role_escalation(monkeypatch):
     context = SimpleNamespace(user_id=7, pharmacy_id=2, user_role="patient")
@@ -34,7 +32,6 @@ def test_tool_discovery_rejects_role_escalation(monkeypatch):
     list_tools.assert_not_called()
     to_openai_tools.assert_not_called()
 
-
 def test_tool_discovery_uses_authenticated_role(monkeypatch):
     context = SimpleNamespace(user_id=7, pharmacy_id=2, user_role="pharmacist")
     monkeypatch.setattr(client_module, "get_authorization_context", lambda: context)
@@ -43,7 +40,6 @@ def test_tool_discovery_uses_authenticated_role(monkeypatch):
 
     assert MCPClient().list_tools() == []
     list_tools.assert_called_once_with("pharmacist")
-
 
 @pytest.mark.asyncio
 async def test_registry_rejects_caller_supplied_identity_mismatch():
