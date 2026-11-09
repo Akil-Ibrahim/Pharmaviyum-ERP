@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Awaitable, Callable, Collection, Iterable, Mapping, Sequence
+from typing import Awaitable, Callable, Iterable, Mapping, Sequence
 
 
 @dataclass(frozen=True)
@@ -45,15 +45,17 @@ ClaimSupportJudge = Callable[[str, str], Awaitable[bool]]
 
 
 def _f1(
-    expected: Collection[tuple[str, ...]], predicted: Collection[tuple[str, ...]]
+    expected: Iterable[tuple[str, ...]], predicted: Iterable[tuple[str, ...]]
 ) -> float:
-    if not expected and not predicted:
+    expected_items = set(expected)
+    predicted_items = set(predicted)
+    if not expected_items and not predicted_items:
         return 1.0
-    if not expected or not predicted:
+    if not expected_items or not predicted_items:
         return 0.0
-    true_positive = len(expected & predicted)
-    precision = true_positive / len(predicted)
-    recall = true_positive / len(expected)
+    true_positive = len(expected_items & predicted_items)
+    precision = true_positive / len(predicted_items)
+    recall = true_positive / len(expected_items)
     return 2 * precision * recall / (precision + recall) if precision + recall else 0.0
 
 
