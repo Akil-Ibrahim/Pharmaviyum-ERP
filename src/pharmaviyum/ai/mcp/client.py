@@ -225,29 +225,44 @@ class MCPClient:
         state["failures"] = int(state["failures"]) + 1
         state["last_failure"] = time.time()
 
+    def _authorized_role(self, requested_role: UserRole | None) -> UserRole | None:
+        """Resolve tool-discovery role exclusively from trusted request context."""
+        context = get_authorization_context()
+        if context is None:
+            return None
+        if requested_role is not None and requested_role != context.user_role:
+            return None
+        return context.user_role
+
     def list_tools(self, user_role: UserRole | None = None) -> list[Any]:
-        """Return only tools authorized for the supplied role."""
-        if user_role is None:
-            context = get_authorization_context()
-            user_role = context.user_role if context else None
-        if user_role is None:
+        """Return tools authorized for the authenticated request role only."""
+        authorized_role = self._authorized_role(user_role)
+        if authorized_role is None:
             return []
-        return registry.list_tools_for_role(user_role)
+        return registry.list_tools_for_role(authorized_role)
 
     def get_tool_metadata(self, tool_name: str) -> Any | None:
-        tool_info = registry.get_tool(tool_name)
-        return tool_info[0] if tool_info else None
+        """Return metadata only when the authenticated role may discover the tool."""
+        authorized_role = self._authorized_role(None)
+        if authorized_role is None:
+            return None
+        return next(
+            (
+                metadata
+                for metadata in registry.list_tools_for_role(authorized_role)
+                if metadata.name == tool_name
+            ),
+            None,
+        )
 
     def to_openai_tools(
         self, user_role: UserRole | None = None
     ) -> list[dict[str, Any]]:
-        """Expose only tools the caller is authorized to invoke."""
-        if user_role is None:
-            context = get_authorization_context()
-            user_role = context.user_role if context else None
-        if user_role is None:
+        """Expose only tools the authenticated role is authorized to invoke."""
+        authorized_role = self._authorized_role(user_role)
+        if authorized_role is None:
             return []
-        return registry.to_openai_tools(user_role=user_role)
+        return registry.to_openai_tools(user_role=authorized_role)
 
     def get_tools_by_category(
         self, category: str, user_role: UserRole | None = None
