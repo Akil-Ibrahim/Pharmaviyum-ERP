@@ -136,7 +136,10 @@ class RagasEvaluationAdapter:
         for name, metric, kwargs in metric_specs:
             result = await metric.ascore(**kwargs)
             value = float(result.value)
-            if not 0.0 <= value <= 1.0:
+            # AnswerRelevancy is cosine similarity and may legitimately be
+            # negative; the other Ragas metrics used here are normalized to [0, 1].
+            lower_bound = -1.0 if name == "answer_relevancy" else 0.0
+            if not lower_bound <= value <= 1.0:
                 raise ValueError(f"Ragas metric {name} returned an invalid score")
             scores[name] = RagasMetricScore(
                 name=name,
