@@ -30,11 +30,31 @@ export type ThemePreset =
   | 'fuchsia'
   | 'pink'
   | 'rose'
+export type NavigationIconColor =
+  | 'blue'
+  | 'slate'
+  | 'green'
+  | 'violet'
+  | 'orange'
+  | 'rose'
+  | 'cyan'
+
+export const NAVIGATION_ICON_COLORS: Record<NavigationIconColor, string> = {
+  blue: '#2563eb',
+  slate: '#64748b',
+  green: '#16a34a',
+  violet: '#7c3aed',
+  orange: '#ea580c',
+  rose: '#e11d48',
+  cyan: '#0891b2',
+}
+
 type ResolvedTheme = Exclude<Theme, 'system'>
 
 const DEFAULT_THEME = 'system'
 const THEME_COOKIE_NAME = 'vite-ui-theme'
 const PRESET_COOKIE_NAME = 'pharmaviyum-theme-preset'
+const NAVIGATION_ICON_COLOR_COOKIE_NAME = 'pharmaviyum-navigation-icon-color'
 const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 type ThemeProviderProps = {
@@ -51,6 +71,8 @@ type ThemeProviderState = {
   resetTheme: () => void
   preset: ThemePreset
   setPreset: (preset: ThemePreset) => void
+  navigationIconColor: NavigationIconColor
+  setNavigationIconColor: (color: NavigationIconColor) => void
 }
 
 const initialState: ThemeProviderState = {
@@ -61,6 +83,8 @@ const initialState: ThemeProviderState = {
   resetTheme: () => null,
   preset: 'blue',
   setPreset: () => null,
+  navigationIconColor: 'blue',
+  setNavigationIconColor: () => null,
 }
 
 const ThemeContext = createContext<ThemeProviderState>(initialState)
@@ -75,6 +99,11 @@ export function ThemeProvider({
     const savedPreset = getCookie(PRESET_COOKIE_NAME) as ThemePreset | null
     return savedPreset || 'blue'
   })
+  const [navigationIconColor, _setNavigationIconColor] =
+    useState<NavigationIconColor>(() => {
+      const savedColor = getCookie(NAVIGATION_ICON_COLOR_COOKIE_NAME)
+      return (savedColor as NavigationIconColor) || 'blue'
+    })
   const [theme, _setTheme] = useState<Theme>(
     () => (getCookie(storageKey) as Theme) || defaultTheme
   )
@@ -120,11 +149,18 @@ export function ThemeProvider({
     _setPreset(nextPreset)
   }
 
+  const setNavigationIconColor = (color: NavigationIconColor) => {
+    setCookie(NAVIGATION_ICON_COLOR_COOKIE_NAME, color, THEME_COOKIE_MAX_AGE)
+    _setNavigationIconColor(color)
+  }
+
   const resetTheme = () => {
     removeCookie(storageKey)
     removeCookie(PRESET_COOKIE_NAME)
+    removeCookie(NAVIGATION_ICON_COLOR_COOKIE_NAME)
     _setTheme(DEFAULT_THEME)
     _setPreset('blue')
+    _setNavigationIconColor('blue')
   }
 
   const contextValue = {
@@ -135,6 +171,8 @@ export function ThemeProvider({
     setTheme,
     preset,
     setPreset,
+    navigationIconColor,
+    setNavigationIconColor,
   }
 
   return (
