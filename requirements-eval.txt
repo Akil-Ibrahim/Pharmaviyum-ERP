@@ -1,0 +1,5 @@
+# Offline evaluation only. Do not install in the production runtime image.
+# Ragas 0.4.3 imports the legacy langchain_community VertexAI module at import time.
+# Pin the last compatible 0.3.x community release until Ragas fixes that upstream import.
+ragas==0.4.3
+langchain-community==0.3.31
