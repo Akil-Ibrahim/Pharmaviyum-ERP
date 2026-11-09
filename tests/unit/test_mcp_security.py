@@ -181,3 +181,52 @@ async def test_registry_redacts_dependency_health_details(monkeypatch):
         assert str(error.value) == "MCP tool dependency is unavailable"
     finally:
         reset_mcp_context(token)
+
+
+@pytest.mark.asyncio
+async def test_write_tool_fails_closed_without_trusted_approval_verifier():
+    from src.pharmaviyum.ai.mcp.context import (
+        MCPAuthorizationContext,
+        reset_mcp_context,
+        set_mcp_context,
+    )
+
+    registry = MCPToolRegistry()
+
+    @registry.tool(
+        name="unapproved_write",
+        description="A write tool that requires explicit approval",
+        input_schema=SafeInput,
+        output_schema=EmptyOutput,
+        execution_class="write",
+        requires_pharmacist_confirmation=True,
+        required_roles=["pharmacist"],
+    )
+    async def unapproved_write(data: SafeInput) -> EmptyOutput:
+        return EmptyOutput(ok=True)
+
+    token = set_mcp_context(
+        MCPAuthorizationContext(user_id=7, pharmacy_id=2, user_role="pharmacist")
+    )
+    try:
+        with pytest.raises(PermissionError, match="trusted approval workflow"):
+            await registry.call_tool(
+                "unapproved_write",
+                {"product_id": 5},
+                user_role="pharmacist",
+                user_id=7,
+                pharmacy_id=2,
+            )
+    finally:
+        reset_mcp_context(token)
+
+
+def test_mcp_authorization_context_rejects_invalid_identity():
+    from src.pharmaviyum.ai.mcp.context import MCPAuthorizationContext
+
+    with pytest.raises(ValueError, match="positive authenticated user_id"):
+        MCPAuthorizationContext(user_id=True, pharmacy_id=2, user_role="pharmacist")
+    with pytest.raises(ValueError, match="positive pharmacy_id"):
+        MCPAuthorizationContext(user_id=7, pharmacy_id=0, user_role="pharmacist")
+    with pytest.raises(ValueError, match="recognized user role"):
+        MCPAuthorizationContext(user_id=7, pharmacy_id=2, user_role="owner")
