@@ -60,7 +60,6 @@ export function Chats() {
 
   return (
     <>
-
       <Main fixed>
         <section className='flex h-full gap-6'>
           {/* Left Side */}

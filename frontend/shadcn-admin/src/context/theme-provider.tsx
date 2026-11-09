@@ -2,7 +2,34 @@ import { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 
 type Theme = 'dark' | 'light' | 'system'
-export type ThemePreset = 'default' | 'neutral' | 'stone' | 'zinc' | 'slate' | 'gray' | 'mauve' | 'olive' | 'mist' | 'taupe' | 'red' | 'orange' | 'amber' | 'yellow' | 'lime' | 'green' | 'emerald' | 'teal' | 'cyan' | 'sky' | 'blue' | 'indigo' | 'violet' | 'purple' | 'fuchsia' | 'pink' | 'rose'
+export type ThemePreset =
+  | 'default'
+  | 'neutral'
+  | 'stone'
+  | 'zinc'
+  | 'slate'
+  | 'gray'
+  | 'mauve'
+  | 'olive'
+  | 'mist'
+  | 'taupe'
+  | 'red'
+  | 'orange'
+  | 'amber'
+  | 'yellow'
+  | 'lime'
+  | 'green'
+  | 'emerald'
+  | 'teal'
+  | 'cyan'
+  | 'sky'
+  | 'blue'
+  | 'indigo'
+  | 'violet'
+  | 'purple'
+  | 'fuchsia'
+  | 'pink'
+  | 'rose'
 type ResolvedTheme = Exclude<Theme, 'system'>
 
 const DEFAULT_THEME = 'system'
@@ -44,12 +71,10 @@ export function ThemeProvider({
   storageKey = THEME_COOKIE_NAME,
   ...props
 }: ThemeProviderProps) {
-  const [preset, _setPreset] = useState<ThemePreset>(
-    () => {
-      const savedPreset = getCookie(PRESET_COOKIE_NAME) as ThemePreset | null
-      return savedPreset || 'blue'
-    }
-  )
+  const [preset, _setPreset] = useState<ThemePreset>(() => {
+    const savedPreset = getCookie(PRESET_COOKIE_NAME) as ThemePreset | null
+    return savedPreset || 'blue'
+  })
   const [theme, _setTheme] = useState<Theme>(
     () => (getCookie(storageKey) as Theme) || defaultTheme
   )

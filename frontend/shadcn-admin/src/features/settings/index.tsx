@@ -36,7 +36,6 @@ const sidebarNavItems = [
 export function Settings() {
   return (
     <>
-
       <Main fixed>
         <PageHeader
           title='Settings'

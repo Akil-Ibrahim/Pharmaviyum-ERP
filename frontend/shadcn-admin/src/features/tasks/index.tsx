@@ -9,7 +9,6 @@ import { tasks } from './data/tasks'
 export function Tasks() {
   return (
     <TasksProvider>
-
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
         <PageHeader
           title='Tasks'
