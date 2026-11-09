@@ -115,6 +115,8 @@ class ExpiringInventoryItem(BaseModel):
     lot_number: str | None = None
     expiry_date: date
     days_until_expiry: int
+    on_hand_quantity: int
+    reserved_quantity: int
     available_quantity: int
     status: Literal["expired", "expiring"]
 
@@ -151,6 +153,17 @@ class SalesSummaryResult(BaseModel):
     pending_sales: int
     cancelled_sales: int
     refunded_sales: int
+
+
+def _inventory_availability(
+    quantity: int, reserved_quantity: int, expires_at: datetime | None, now: datetime
+) -> tuple[bool, int]:
+    """Return expiry state and sellable quantity for a lot."""
+    is_expired = expires_at is not None and expires_at <= now
+    available_quantity = (
+        0 if is_expired else max(0, quantity - reserved_quantity)
+    )
+    return is_expired, available_quantity
 
 
 @registry.tool(
@@ -270,9 +283,8 @@ async def get_inventory_overview(input: InventoryOverviewRequest) -> InventoryOv
 
     items = []
     for lot, product in rows:
-        is_expired = lot.expires_at is not None and lot.expires_at <= now
-        available_quantity = (
-            0 if is_expired else max(0, lot.quantity - lot.reserved_quantity)
+        is_expired, available_quantity = _inventory_availability(
+            lot.quantity, lot.reserved_quantity, lot.expires_at, now
         )
         items.append(
             InventoryOverviewItem(
@@ -314,7 +326,10 @@ async def get_expiring_inventory(input: ExpiringInventoryRequest) -> ExpiringInv
     auth = require_mcp_context()
     from src.pharmaviyum.shared.core.database import async_session_factory
 
-    today = date.today()
+    # Inventory timestamps are stored as naive UTC datetimes; use the same
+    # UTC calendar date so container-local timezone settings cannot shift expiry.
+    today = datetime.utcnow().date()
+    now = datetime.utcnow()
     cutoff = datetime.combine(today + timedelta(days=input.days_ahead), time.max)
     statement = (
         select(Inventory, Product)
@@ -345,7 +360,11 @@ async def get_expiring_inventory(input: ExpiringInventoryRequest) -> ExpiringInv
                 lot_number=lot.lot_number,
                 expiry_date=expiry,
                 days_until_expiry=days_left,
-                available_quantity=max(0, lot.quantity - lot.reserved_quantity),
+                on_hand_quantity=lot.quantity,
+                reserved_quantity=lot.reserved_quantity,
+                available_quantity=_inventory_availability(
+                    lot.quantity, lot.reserved_quantity, lot.expires_at, now
+                )[1],
                 status="expired" if days_left <= 0 else "expiring",
             )
         )
