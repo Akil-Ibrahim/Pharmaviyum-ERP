@@ -267,13 +267,18 @@ class PharmacistAgent:
                     )
                     span.set_attribute("mcp.tool_success", bool(result.success))
                 if result.success:
-                    content = json.dumps(result.data, default=str)
+                    tool_data = (
+                        result.data.model_dump(mode="json")
+                        if hasattr(result.data, "model_dump")
+                        else result.data
+                    )
+                    content = json.dumps(tool_data, ensure_ascii=False, default=str)
                     results.append(
                         {
                             "tool": name,
                             "input_data": args,
                             "success": True,
-                            "data": result.data,
+                            "data": tool_data,
                         }
                     )
                 else:
