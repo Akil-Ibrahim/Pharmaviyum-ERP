@@ -163,7 +163,8 @@ def test_memory_redis_namespace_is_opaque_and_keyed(monkeypatch):
 
 
 def test_memory_redis_namespace_fails_closed_without_production_secret(monkeypatch):
-    from src.pharmaviyum.core.config import Environment, settings as app_settings
+    from src.pharmaviyum.core.config import Environment
+    from src.pharmaviyum.core.config import settings as app_settings
 
     monkeypatch.setattr(app_settings, "SECRET_KEY", None)
     monkeypatch.setattr(app_settings, "ENVIRONMENT", Environment.PRODUCTION)
