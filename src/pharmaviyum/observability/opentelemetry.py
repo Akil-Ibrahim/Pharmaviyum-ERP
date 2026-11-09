@@ -39,8 +39,10 @@ def _allow_sensitive_client_instrumentation(
     environment: str | None, opt_in: bool
 ) -> bool:
     normalized = (environment or "").strip().lower()
-    return bool(opt_in) and normalized in {"development", "dev", "test"} and not (
-        _is_production_environment(normalized)
+    return (
+        bool(opt_in)
+        and normalized in {"development", "dev", "test"}
+        and not (_is_production_environment(normalized))
     )
 
 
@@ -107,8 +109,7 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
         ]
         environment = getattr(settings.environment, "value", settings.environment)
         sensitive_opt_in = (
-            os.getenv("OTEL_INCLUDE_SENSITIVE_CLIENT_SPANS", "false").lower()
-            == "true"
+            os.getenv("OTEL_INCLUDE_SENSITIVE_CLIENT_SPANS", "false").lower() == "true"
         )
         if _allow_sensitive_client_instrumentation(str(environment), sensitive_opt_in):
             instrumentations.extend(
