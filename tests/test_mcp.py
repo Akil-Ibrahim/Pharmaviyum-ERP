@@ -148,11 +148,38 @@ class TestMCPServer:
             {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}
         )
 
-        response = await server.handle_request(request)
+        from src.pharmaviyum.ai.mcp.context import (
+            MCPAuthorizationContext,
+            reset_mcp_context,
+            set_mcp_context,
+        )
+
+        token = set_mcp_context(
+            MCPAuthorizationContext(user_id=1, pharmacy_id=1, user_role="pharmacist")
+        )
+        try:
+            response = await server.handle_request(request)
+        finally:
+            reset_mcp_context(token)
         response_data = json.loads(response)
 
         assert response_data["jsonrpc"] == "2.0"
         assert "tools" in response_data["result"]
+
+    @pytest.mark.asyncio
+    async def test_tools_list_requires_authenticated_tenant_context(self):
+        from src.pharmaviyum.ai.mcp.server import MCPServer
+
+        server = MCPServer()
+        request = json.dumps(
+            {"jsonrpc": "2.0", "id": 4, "method": "tools/list", "params": {}}
+        )
+
+        response = await server.handle_request(request)
+        response_data = json.loads(response)
+
+        assert response_data["error"]["code"] == -32001
+        assert response_data["error"]["message"] == "Unauthorized"
 
     @pytest.mark.asyncio
     async def test_invalid_json(self):
