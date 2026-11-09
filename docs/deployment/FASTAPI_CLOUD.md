@@ -38,7 +38,8 @@ Configure these in the FastAPI Cloud app environment before deploying:
 - `DATABASE_URL`: async SQLAlchemy URL for the production PostgreSQL database, using `postgresql+asyncpg://...`.
 - `PGVECTOR_DATABASE_URL`: async PostgreSQL URL for the vector store. It can point to the same database if the schema and permissions are suitable.
 - `REDIS_URL`: URL of a reachable Redis-compatible service.
-- `SECRET_KEY`: a newly generated random secret of at least 32 characters. This is required by the active API configuration in production.
+- `SECRET_KEY`: a newly generated random secret of at least 32 characters. The API accepts this documented name and the legacy `API_SECRET_KEY` alias. Production/staging startup fails if neither is configured.
+- `ADMIN_PASSWORD` (optional): an explicit bootstrap-admin password, at least 16 characters. If omitted, the bootstrap login path is disabled; existing users authenticate only against their stored password hashes. Never rely on a default admin password.
 - `USE_CLOUD_LLM=true`
 - `CLOUD_LLM_PROVIDER=gemini`
 - `GEMINI_API_KEY`: Gemini API key, stored as a secret.
