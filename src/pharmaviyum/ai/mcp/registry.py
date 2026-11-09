@@ -110,6 +110,7 @@ class MCPToolRegistry:
         pharmacy_id: int | None = None,
     ) -> Any:
         """Call a registered tool with RBAC and trusted tenant context."""
+        from .context import require_mcp_context
         from .tool_management import (
             analytics_tracker,
             check_rbac,
@@ -117,8 +118,15 @@ class MCPToolRegistry:
             resolve_tool_version,
         )
 
-        if user_id is None or pharmacy_id is None:
-            raise PermissionError("MCP tenant authorization context is required")
+        context = require_mcp_context()
+        if (
+            user_id is None
+            or pharmacy_id is None
+            or context.user_id != user_id
+            or context.pharmacy_id != pharmacy_id
+            or context.user_role != user_role
+        ):
+            raise PermissionError("MCP authorization context mismatch")
 
         resolved_name = resolve_tool_version(name)
         if resolved_name not in self._tools:
@@ -140,13 +148,14 @@ class MCPToolRegistry:
             )
 
         health = await health_checker.check_tool_health(resolved_name)
-        if health["status"] == "unhealthy":
-            raise RuntimeError(f"Tool dependency unhealthy: {health['details']}")
+        if health.get("status") != "healthy":
+            raise RuntimeError("MCP tool dependency is unavailable")
 
         try:
-            validated_input = metadata.input_schema(**input_data)
-        except Exception as exc:
-            raise ValueError(f"Invalid input for tool {resolved_name}: {exc}") from exc
+            validated_input = metadata.input_schema.model_validate(input_data)
+        except Exception:
+            # Pydantic validation errors can echo submitted clinical values.
+            raise ValueError(f"Invalid input for MCP tool {resolved_name}") from None
 
         start = time.perf_counter()
         try:
@@ -193,10 +202,12 @@ class MCPToolRegistry:
         except Exception as exc:
             latency_ms = (time.perf_counter() - start) * 1000
             logger.error(
-                "Tool %s failed: %s",
-                resolved_name,
-                exc,
-                extra={"tool": resolved_name, "role": user_role},
+                "MCP tool execution failed",
+                extra={
+                    "tool": resolved_name,
+                    "role": user_role,
+                    "error_type": type(exc).__name__,
+                },
             )
             from .tool_management import ToolUsageRecord
 

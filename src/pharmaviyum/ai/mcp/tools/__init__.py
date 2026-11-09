@@ -11,6 +11,13 @@ Available tools:
 from .drug_interactions import check_drug_interactions
 from .halal_compliance import check_halal_compliance
 from .patient_history import get_patient_history
+from .pharmacy_operations import (
+    get_expiring_inventory,
+    get_inventory_overview,
+    get_pharmacy_workflow_guide,
+    get_sales_summary,
+    search_pharmacy_products,
+)
 from .prescription_verification import verify_prescription
 
 __all__ = [
@@ -18,4 +25,9 @@ __all__ = [
     "get_patient_history",
     "check_halal_compliance",
     "verify_prescription",
+    "search_pharmacy_products",
+    "get_inventory_overview",
+    "get_pharmacy_workflow_guide",
+    "get_expiring_inventory",
+    "get_sales_summary",
 ]

@@ -12,7 +12,9 @@ Public API:
 - get_mcp_health_status: Liveness/readiness probe data
 """
 
+# Import tool modules once so decorators register the server's complete tool set.
 from . import schemas
+from . import tools as _registered_tools  # noqa: F401,E402
 from .client import MCPClient, mcp_client
 from .health import get_mcp_health_status
 from .prompts import PromptRegistry, prompt_registry
