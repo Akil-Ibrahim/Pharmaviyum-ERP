@@ -1,5 +1,6 @@
 """MCP client discovery must never trust caller-supplied roles."""
 
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
