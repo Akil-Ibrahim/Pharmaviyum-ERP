@@ -240,7 +240,6 @@
   background: oklch(0.56 0.17 205);
 }
 
-
 /* Shadcn Admin visual language: consistent typography and semantic status colors. */
 :root {
   --success: oklch(0.62 0.17 150);
