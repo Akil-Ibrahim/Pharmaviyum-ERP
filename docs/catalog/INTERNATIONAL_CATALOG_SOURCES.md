@@ -43,6 +43,12 @@ Each importer records source identity, source version, extraction time, source U
 - The current canonical product model represents one active ingredient per medicinal product. Combination products are excluded by the current importers rather than silently misrepresented.
 - Data source licenses and redistribution terms must be checked before redistributing any imported dataset.
 
+## Running through GitHub Actions
+
+The manual workflow `.github/workflows/stage-medicine-reference-catalog.yml` runs the three dry-runs against the configured production database connection without writing records. It can optionally stage eligible records only when the operator explicitly starts the workflow on `main` with `stage_records=true`. The workflow stages source records as `pending_review`; it never approves medicines or creates pharmacy products, prices, batches, or stock.
+
+The shared exclusion policy is applied by each importer. Teva brands/manufacturers and Israeli authorization/manufacturing origins are excluded. RxNorm staging is limited to unbranded single-ingredient clinical drugs; EMA and Health Canada staging require verified manufacturer origin. Review the dry-run counts and source coverage before enabling the write input. The workflow requires the repository Actions secret `DATABASE_URL`.
+
 ## Expanding coverage
 
 Additional regulator-specific adapters can be added without changing the POS product/stock model. Candidate sources should be assessed individually for data completeness, API stability, licensing, refresh cadence, authorization-status semantics, and ingredient/strength normalization. Examples include the FDA NDC Directory (United States) and other national regulator product databases. Their records must remain explicitly country-scoped and provenance-backed.
