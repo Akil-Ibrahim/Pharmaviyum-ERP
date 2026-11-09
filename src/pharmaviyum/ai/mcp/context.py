@@ -26,6 +26,8 @@ class MCPAuthorizationContext:
             raise ValueError("MCP context requires a positive authenticated user_id")
         if type(self.pharmacy_id) is not int or self.pharmacy_id <= 0:
             raise ValueError("MCP context requires a positive pharmacy_id")
+        if self.user_role not in {"patient", "pharmacist", "admin", "system"}:
+            raise ValueError("MCP context requires a recognized user role")
 
 
 _current_context: ContextVar[MCPAuthorizationContext | None] = ContextVar(
