@@ -34,7 +34,7 @@ class MCPServer:
         """Process a JSON-RPC request without leaking exception details."""
         try:
             request = json.loads(request_body)
-        except json.JSONDecodeError, TypeError:
+        except (json.JSONDecodeError, TypeError):
             return self._error_response(None, -32700, "Parse error")
 
         if not isinstance(request, dict):
