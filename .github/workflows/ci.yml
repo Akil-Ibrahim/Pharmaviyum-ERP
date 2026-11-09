@@ -230,6 +230,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - run: uv sync --frozen
+      - name: Install isolated Ragas evaluation dependency and run pharma metrics
+        run: |
+          uv run --with-requirements requirements-eval.txt python -c "from ragas.metrics.collections import Faithfulness, AnswerRelevancy, ContextPrecisionWithReference, ContextRecall; print('Ragas collections API ready')"
+          uv run pytest tests/unit/ai/test_ragas_evaluation.py -v -m unit
       - name: Validate golden dataset
         run: uv run pytest tests/test_evaluation.py -v -m unit
 
