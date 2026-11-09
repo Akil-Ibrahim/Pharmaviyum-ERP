@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import hmac
 import html
+import json
 import re
 import time
 from typing import Any, Awaitable, Callable, Literal
@@ -26,6 +29,7 @@ from src.pharmaviyum.ai.optimization.token_budget import (
     TokenBudgetExceeded,
     TokenBudgetManager,
 )
+from src.pharmaviyum.core.config import settings as app_settings
 from src.pharmaviyum.core.logging import logger
 
 from .contextual_compression import ContextualCompressor
@@ -698,5 +702,43 @@ class LangGraphRAG:
 
     @staticmethod
     def _thread_id(thread_id: str | None, context: QueryContext) -> str:
+        """Create a stable opaque checkpoint key without persisting raw identities."""
+        if (
+            isinstance(context.pharmacy_id, bool)
+            or not isinstance(context.pharmacy_id, int)
+            or context.pharmacy_id <= 0
+        ):
+            raise ValueError("RAG checkpoint pharmacy_id must be a positive integer")
+        if (
+            not isinstance(context.user_id, str)
+            or not context.user_id.strip()
+            or len(context.user_id) > 128
+        ):
+            raise ValueError("RAG checkpoint user_id must be 1-128 characters")
+        if thread_id is not None and (
+            not isinstance(thread_id, str)
+            or not thread_id.strip()
+            or len(thread_id) > 128
+        ):
+            raise ValueError(
+                "RAG thread identifier must be 1-128 non-whitespace characters"
+            )
         raw = thread_id or str(uuid4())
-        return f"rag:{context.pharmacy_id}:{context.user_id}:{raw}"
+        scope = json.dumps(
+            [context.pharmacy_id, context.user_id, raw],
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        # SECRET_KEY is mandatory in staging/production. A fixed development-only
+        # fallback keeps local tests/dev usable; it must never be used in prod.
+        secret = app_settings.SECRET_KEY or "local-development-only-rag-key"
+        if (
+            getattr(app_settings.ENVIRONMENT, "value", app_settings.ENVIRONMENT)
+            in {"staging", "production"}
+            and not app_settings.SECRET_KEY
+        ):
+            raise RuntimeError("Application SECRET_KEY is required for RAG checkpoints")
+        digest = hmac.new(
+            secret.encode("utf-8"), scope.encode("utf-8"), hashlib.sha256
+        ).hexdigest()
+        return f"rag:v2:{digest}"
