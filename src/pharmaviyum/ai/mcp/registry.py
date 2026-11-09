@@ -21,6 +21,7 @@ from src.pharmaviyum.core.logging import logger
 from .security import ExecutionClass, validate_execution_policy, validate_tool_schema
 
 UserRole = Literal["patient", "pharmacist", "admin", "system"]
+ApprovalVerifier = Callable[[Any, "ToolMetadata", BaseModel], Awaitable[bool]]
 
 
 @dataclass
@@ -48,8 +49,20 @@ class ToolMetadata:
 
 
 class MCPToolRegistry:
-    def __init__(self):
+    def __init__(self, approval_verifier: ApprovalVerifier | None = None):
         self._tools: dict[str, tuple[ToolMetadata, Callable]] = {}
+        self._approval_verifier = approval_verifier
+
+    def configure_approval_verifier(
+        self, verifier: ApprovalVerifier | None
+    ) -> None:
+        """Install a trusted verifier that atomically consumes human approvals.
+
+        The verifier must validate the authenticated actor, tenant, exact
+        canonical action payload, expiry and one-time approval state. Until
+        such a verifier is configured, every write tool is denied.
+        """
+        self._approval_verifier = verifier
 
     def tool(
         self,
@@ -155,7 +168,18 @@ class MCPToolRegistry:
             validated_input = metadata.input_schema.model_validate(input_data)
         except Exception:
             # Pydantic validation errors can echo submitted clinical values.
-            raise ValueError(f"Invalid input for MCP tool {resolved_name}") from None
+            raise ValueError("Invalid MCP tool input") from None
+
+        if metadata.execution_class == "write":
+            verifier = self._approval_verifier
+            if not metadata.requires_pharmacist_confirmation or verifier is None:
+                raise PermissionError(
+                    "MCP write execution is disabled until a trusted approval "
+                    "workflow is configured"
+                )
+            approved = await verifier(context, metadata, validated_input)
+            if approved is not True:
+                raise PermissionError("MCP write action has no valid approval")
 
         start = time.perf_counter()
         try:
