@@ -127,3 +127,12 @@ def test_production_environment_aliases_are_recognized():
     assert _is_production_environment("prod") is True
     assert _is_production_environment("development") is False
     assert _is_production_environment("test") is False
+
+
+def test_sensitive_redis_and_console_exporters_are_not_registered():
+    from src.pharmaviyum.core import telemetry as legacy_telemetry
+    from src.pharmaviyum.observability import opentelemetry as app_telemetry
+
+    assert not hasattr(legacy_telemetry, "RedisInstrumentor")
+    assert not hasattr(legacy_telemetry, "ConsoleSpanExporter")
+    assert not hasattr(app_telemetry, "RedisInstrumentor")
