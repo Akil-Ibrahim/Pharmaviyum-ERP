@@ -498,6 +498,7 @@ class PharmacistAgent:
             "rag_context": "",
             "rag_sources": [],
             "iteration": 0,
+            "model_used": "",
         }
         configurable: dict[str, Any] = {
             "thread_id": self._thread_id(thread_id, context)
@@ -553,6 +554,7 @@ class PharmacistAgent:
             "rag_context": "",
             "rag_sources": [],
             "iteration": 0,
+            "model_used": "",
         }
         configurable = {"thread_id": self._thread_id(thread_id, context)}
         if selected_model is not None:
