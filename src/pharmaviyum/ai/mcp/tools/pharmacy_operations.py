@@ -90,6 +90,7 @@ class InventoryOverviewItem(BaseModel):
     available_quantity: int
     reorder_level: int
     below_reorder_level: bool
+    is_expired: bool
 
 
 class InventoryOverviewResult(BaseModel):
@@ -248,10 +249,17 @@ async def get_inventory_overview(input: InventoryOverviewRequest) -> InventoryOv
             *allowed_pharmacy_product_conditions(),
         )
     )
+    now = datetime.utcnow()
     if input.low_stock_only:
         statement = statement.where(
-            (Inventory.quantity - Inventory.reserved_quantity)
-            <= Inventory.reorder_level
+            or_(
+                (
+                    Inventory.expires_at.is_not(None)
+                    & (Inventory.expires_at <= now)
+                ),
+                (Inventory.quantity - Inventory.reserved_quantity)
+                <= Inventory.reorder_level,
+            )
         )
     statement = statement.order_by(
         Inventory.expires_at.asc().nullslast(), Product.name.asc()
@@ -260,21 +268,27 @@ async def get_inventory_overview(input: InventoryOverviewRequest) -> InventoryOv
     async with async_session_factory() as session:
         rows = (await session.execute(statement)).all()
 
-    items = [
-        InventoryOverviewItem(
-            product_id=product.id,
-            product_name=product.name,
-            sku=product.sku,
-            lot_number=lot.lot_number,
-            expiry_date=lot.expires_at.date() if lot.expires_at else None,
-            quantity=lot.quantity,
-            reserved_quantity=lot.reserved_quantity,
-            available_quantity=max(0, lot.quantity - lot.reserved_quantity),
-            reorder_level=lot.reorder_level,
-            below_reorder_level=(lot.quantity - lot.reserved_quantity) <= lot.reorder_level,
+    items = []
+    for lot, product in rows:
+        is_expired = lot.expires_at is not None and lot.expires_at <= now
+        available_quantity = (
+            0 if is_expired else max(0, lot.quantity - lot.reserved_quantity)
         )
-        for lot, product in rows
-    ]
+        items.append(
+            InventoryOverviewItem(
+                product_id=product.id,
+                product_name=product.name,
+                sku=product.sku,
+                lot_number=lot.lot_number,
+                expiry_date=lot.expires_at.date() if lot.expires_at else None,
+                quantity=lot.quantity,
+                reserved_quantity=lot.reserved_quantity,
+                available_quantity=available_quantity,
+                reorder_level=lot.reorder_level,
+                below_reorder_level=available_quantity <= lot.reorder_level,
+                is_expired=is_expired,
+            )
+        )
     return InventoryOverviewResult(
         pharmacy_id=auth.pharmacy_id,
         count=len(items),
@@ -332,7 +346,7 @@ async def get_expiring_inventory(input: ExpiringInventoryRequest) -> ExpiringInv
                 expiry_date=expiry,
                 days_until_expiry=days_left,
                 available_quantity=max(0, lot.quantity - lot.reserved_quantity),
-                status="expired" if days_left < 0 else "expiring",
+                status="expired" if days_left <= 0 else "expiring",
             )
         )
     return ExpiringInventoryResult(
