@@ -148,13 +148,14 @@ class MCPToolRegistry:
             )
 
         health = await health_checker.check_tool_health(resolved_name)
-        if health["status"] == "unhealthy":
-            raise RuntimeError(f"Tool dependency unhealthy: {health['details']}")
+        if health.get("status") != "healthy":
+            raise RuntimeError("MCP tool dependency is unavailable")
 
         try:
-            validated_input = metadata.input_schema(**input_data)
-        except Exception as exc:
-            raise ValueError(f"Invalid input for tool {resolved_name}: {exc}") from exc
+            validated_input = metadata.input_schema.model_validate(input_data)
+        except Exception:
+            # Pydantic validation errors can echo submitted clinical values.
+            raise ValueError(f"Invalid input for MCP tool {resolved_name}") from None
 
         start = time.perf_counter()
         try:
@@ -201,10 +202,12 @@ class MCPToolRegistry:
         except Exception as exc:
             latency_ms = (time.perf_counter() - start) * 1000
             logger.error(
-                "Tool %s failed: %s",
-                resolved_name,
-                exc,
-                extra={"tool": resolved_name, "role": user_role},
+                "MCP tool execution failed",
+                extra={
+                    "tool": resolved_name,
+                    "role": user_role,
+                    "error_type": type(exc).__name__,
+                },
             )
             from .tool_management import ToolUsageRecord
 
