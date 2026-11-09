@@ -240,6 +240,189 @@
   background: oklch(0.56 0.17 205);
 }
 
+:root[data-color-theme='neutral'] {
+  --primary: oklch(0.35 0 0);
+  --ring: oklch(0.62 0 0);
+}
+:root[data-color-theme='stone'] {
+  --primary: oklch(0.55 0.025 55);
+  --ring: oklch(0.65 0.000 55);
+}
+:root[data-color-theme='zinc'] {
+  --primary: oklch(0.55 0.025 285);
+  --ring: oklch(0.65 0.000 285);
+}
+:root[data-color-theme='slate'] {
+  --primary: oklch(0.55 0.040 255);
+  --ring: oklch(0.65 0.015 255);
+}
+:root[data-color-theme='gray'] {
+  --primary: oklch(0.55 0.015 260);
+  --ring: oklch(0.65 0.000 260);
+}
+:root[data-color-theme='mauve'] {
+  --primary: oklch(0.55 0.045 310);
+  --ring: oklch(0.65 0.020 310);
+}
+:root[data-color-theme='olive'] {
+  --primary: oklch(0.55 0.060 115);
+  --ring: oklch(0.65 0.035 115);
+}
+:root[data-color-theme='mist'] {
+  --primary: oklch(0.55 0.025 220);
+  --ring: oklch(0.65 0.000 220);
+}
+:root[data-color-theme='taupe'] {
+  --primary: oklch(0.55 0.035 65);
+  --ring: oklch(0.65 0.010 65);
+}
+:root[data-color-theme='lime'] {
+  --primary: oklch(0.55 0.190 125);
+  --ring: oklch(0.65 0.165 125);
+}
+:root[data-color-theme='emerald'] {
+  --primary: oklch(0.55 0.170 160);
+  --ring: oklch(0.65 0.145 160);
+}
+:root[data-color-theme='sky'] {
+  --primary: oklch(0.55 0.170 225);
+  --ring: oklch(0.65 0.145 225);
+}
+:root[data-color-theme='indigo'] {
+  --primary: oklch(0.55 0.190 275);
+  --ring: oklch(0.65 0.165 275);
+}
+:root[data-color-theme='fuchsia'] {
+  --primary: oklch(0.55 0.200 330);
+  --ring: oklch(0.65 0.175 330);
+}
+:root[data-color-theme='pink'] {
+  --primary: oklch(0.55 0.180 5);
+  --ring: oklch(0.65 0.155 5);
+}
+
+.dark[data-color-theme='neutral'] {
+  --primary: oklch(0.78 0 0);
+  --primary-foreground: oklch(0.18 0 0);
+  --ring: oklch(0.66 0 0);
+}
+.dark[data-color-theme='stone'] {
+  --primary: oklch(0.74 0.000 55);
+  --primary-foreground: oklch(0.18 0.03 55);
+  --ring: oklch(0.64 0.000 55);
+}
+.dark[data-color-theme='zinc'] {
+  --primary: oklch(0.74 0.000 285);
+  --primary-foreground: oklch(0.18 0.03 285);
+  --ring: oklch(0.64 0.000 285);
+}
+.dark[data-color-theme='slate'] {
+  --primary: oklch(0.74 0.015 255);
+  --primary-foreground: oklch(0.18 0.03 255);
+  --ring: oklch(0.64 0.000 255);
+}
+.dark[data-color-theme='gray'] {
+  --primary: oklch(0.74 0.000 260);
+  --primary-foreground: oklch(0.18 0.03 260);
+  --ring: oklch(0.64 0.000 260);
+}
+.dark[data-color-theme='mauve'] {
+  --primary: oklch(0.74 0.020 310);
+  --primary-foreground: oklch(0.18 0.03 310);
+  --ring: oklch(0.64 0.000 310);
+}
+.dark[data-color-theme='olive'] {
+  --primary: oklch(0.74 0.035 115);
+  --primary-foreground: oklch(0.18 0.03 115);
+  --ring: oklch(0.64 0.010 115);
+}
+.dark[data-color-theme='mist'] {
+  --primary: oklch(0.74 0.000 220);
+  --primary-foreground: oklch(0.18 0.03 220);
+  --ring: oklch(0.64 0.000 220);
+}
+.dark[data-color-theme='taupe'] {
+  --primary: oklch(0.74 0.010 65);
+  --primary-foreground: oklch(0.18 0.03 65);
+  --ring: oklch(0.64 0.000 65);
+}
+.dark[data-color-theme='lime'] {
+  --primary: oklch(0.74 0.165 125);
+  --primary-foreground: oklch(0.18 0.03 125);
+  --ring: oklch(0.64 0.140 125);
+}
+.dark[data-color-theme='emerald'] {
+  --primary: oklch(0.74 0.145 160);
+  --primary-foreground: oklch(0.18 0.03 160);
+  --ring: oklch(0.64 0.120 160);
+}
+.dark[data-color-theme='sky'] {
+  --primary: oklch(0.74 0.145 225);
+  --primary-foreground: oklch(0.18 0.03 225);
+  --ring: oklch(0.64 0.120 225);
+}
+.dark[data-color-theme='indigo'] {
+  --primary: oklch(0.74 0.165 275);
+  --primary-foreground: oklch(0.18 0.03 275);
+  --ring: oklch(0.64 0.140 275);
+}
+.dark[data-color-theme='fuchsia'] {
+  --primary: oklch(0.74 0.175 330);
+  --primary-foreground: oklch(0.18 0.03 330);
+  --ring: oklch(0.64 0.150 330);
+}
+.dark[data-color-theme='pink'] {
+  --primary: oklch(0.74 0.155 5);
+  --primary-foreground: oklch(0.18 0.03 5);
+  --ring: oklch(0.64 0.130 5);
+}
+
+.bg-theme-neutral {
+  background: oklch(0.35 0 0);
+}
+.bg-theme-stone {
+  background: oklch(0.55 0.025 55);
+}
+.bg-theme-zinc {
+  background: oklch(0.55 0.025 285);
+}
+.bg-theme-slate {
+  background: oklch(0.55 0.040 255);
+}
+.bg-theme-gray {
+  background: oklch(0.55 0.015 260);
+}
+.bg-theme-mauve {
+  background: oklch(0.55 0.045 310);
+}
+.bg-theme-olive {
+  background: oklch(0.55 0.060 115);
+}
+.bg-theme-mist {
+  background: oklch(0.55 0.025 220);
+}
+.bg-theme-taupe {
+  background: oklch(0.55 0.035 65);
+}
+.bg-theme-lime {
+  background: oklch(0.55 0.190 125);
+}
+.bg-theme-emerald {
+  background: oklch(0.55 0.170 160);
+}
+.bg-theme-sky {
+  background: oklch(0.55 0.170 225);
+}
+.bg-theme-indigo {
+  background: oklch(0.55 0.190 275);
+}
+.bg-theme-fuchsia {
+  background: oklch(0.55 0.200 330);
+}
+.bg-theme-pink {
+  background: oklch(0.55 0.180 5);
+}
+
 /* Shadcn Admin visual language: consistent typography and semantic status colors. */
 :root {
   --success: oklch(0.62 0.17 150);
