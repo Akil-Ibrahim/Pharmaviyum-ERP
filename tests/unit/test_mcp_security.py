@@ -9,30 +9,38 @@ from src.pharmaviyum.ai.mcp.security import (
     validate_tool_schema,
 )
 
+
 class SafeInput(BaseModel):
     product_id: int
+
 
 class SqlInput(BaseModel):
     sql: str
 
+
 class CommandInput(BaseModel):
     command: str
+
 
 class NestedInput(BaseModel):
     payload: SafeInput
 
+
 class EmptyOutput(BaseModel):
     ok: bool
+
 
 @pytest.mark.unit
 def test_forbids_arbitrary_sql_schema() -> None:
     with pytest.raises(ValueError, match="forbidden execution input"):
         validate_tool_schema(SqlInput.model_json_schema())
 
+
 @pytest.mark.unit
 def test_forbids_arbitrary_command_schema() -> None:
     with pytest.raises(ValueError, match="forbidden execution input"):
         validate_tool_schema(CommandInput.model_json_schema())
+
 
 @pytest.mark.unit
 def test_write_tool_requires_confirmation_at_registration() -> None:
@@ -42,13 +50,16 @@ def test_write_tool_requires_confirmation_at_registration() -> None:
     ):
         validate_execution_policy("write", False)
 
+
 @pytest.mark.unit
 def test_safe_read_schema_is_allowed() -> None:
     validate_tool_schema(SafeInput.model_json_schema())
 
+
 @pytest.mark.unit
 def test_nested_schema_is_allowed() -> None:
     validate_tool_schema(NestedInput.model_json_schema())
+
 
 @pytest.mark.unit
 def test_registry_rejects_unconfirmed_write_tool() -> None:
@@ -67,8 +78,11 @@ def test_registry_rejects_unconfirmed_write_tool() -> None:
             requires_pharmacist_confirmation=False,
         )
 
+
 @pytest.mark.asyncio
-async def test_registry_redacts_invalid_clinical_input_from_validation_errors(monkeypatch):
+async def test_registry_redacts_invalid_clinical_input_from_validation_errors(
+    monkeypatch,
+):
     from unittest.mock import AsyncMock
 
     from src.pharmaviyum.ai.mcp.context import (
@@ -115,6 +129,7 @@ async def test_registry_redacts_invalid_clinical_input_from_validation_errors(mo
         assert str(error.value) == "Invalid input for MCP tool bounded_lookup"
     finally:
         reset_mcp_context(token)
+
 
 @pytest.mark.asyncio
 async def test_registry_redacts_dependency_health_details(monkeypatch):
