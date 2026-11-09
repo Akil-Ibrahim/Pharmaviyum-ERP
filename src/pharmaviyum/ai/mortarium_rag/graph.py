@@ -68,7 +68,8 @@ class LangGraphRAG:
     ) -> None:
         if checkpointer is None:
             raise ValueError(
-                "LangGraphRAG requires an explicit production checkpointer; do not use an implicit in-memory saver."
+                "LangGraphRAG requires an explicit production checkpointer; "
+                "do not use an implicit in-memory saver."
             )
         self.vector_store = vector_store
         self.embeddings = embeddings
