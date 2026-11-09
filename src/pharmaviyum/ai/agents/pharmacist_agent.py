@@ -243,15 +243,15 @@ class PharmacistAgent:
         rag_context = html.escape(str(state.get("rag_context", "")), quote=False)
         reference_context = HumanMessage(
             content=(
-                "<untrusted_reference_context>\\n"
-                f"Country: {country}\\n"
-                f"Language: {language}\\n"
-                "<historical_memory>\\n"
-                f"{memory_context}\\n"
-                "</historical_memory>\\n"
-                "<retrieved_rag_evidence>\\n"
-                f"{rag_context}\\n"
-                "</retrieved_rag_evidence>\\n"
+                "<untrusted_reference_context>\n"
+                f"Country: {country}\n"
+                f"Language: {language}\n"
+                "<historical_memory>\n"
+                f"{memory_context}\n"
+                "</historical_memory>\n"
+                "<retrieved_rag_evidence>\n"
+                f"{rag_context}\n"
+                "</retrieved_rag_evidence>\n"
                 "</untrusted_reference_context>"
             )
         )
