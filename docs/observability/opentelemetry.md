@@ -54,7 +54,7 @@ lifespan shutdown.
 
 Instrumentation is not considered complete merely because the SDK initializes. Validate the critical request path end to end and report:
 
-- trace coverage for defined FastAPI, database, Redis, Cel​​ery and Mortarium workflows;
+- trace coverage for defined FastAPI, database, Redis, Celery and Mortarium workflows;
 - W3C trace-context propagation across process/service boundaries;
 - parent/child span relationships and error status;
 - exporter/collector delivery failures and dropped telemetry;
