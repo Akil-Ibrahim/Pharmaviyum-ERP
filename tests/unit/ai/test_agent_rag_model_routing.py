@@ -289,12 +289,8 @@ def test_agent_checkpoint_thread_id_uses_unambiguous_scope_encoding(
     from src.pharmaviyum.core.config import settings as app_settings
 
     monkeypatch.setattr(app_settings, "SECRET_KEY", "agent-checkpoint-test-secret")
-    first = PharmacistAgent._thread_id(
-        "c:d", {"pharmacy_id": 7, "user_id": "a:b"}
-    )
-    second = PharmacistAgent._thread_id(
-        "b:c:d", {"pharmacy_id": 7, "user_id": "a"}
-    )
+    first = PharmacistAgent._thread_id("c:d", {"pharmacy_id": 7, "user_id": "a:b"})
+    second = PharmacistAgent._thread_id("b:c:d", {"pharmacy_id": 7, "user_id": "a"})
 
     assert first != second
 
