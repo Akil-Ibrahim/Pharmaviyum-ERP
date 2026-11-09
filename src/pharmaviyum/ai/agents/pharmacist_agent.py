@@ -223,12 +223,8 @@ class PharmacistAgent:
                 "Verify safety-critical details against current evidence."
             )
         )
-        country = html.escape(
-            str(context.get("country", "VN"))[:32], quote=False
-        )
-        language = html.escape(
-            str(context.get("language", "vi"))[:16], quote=False
-        )
+        country = html.escape(str(context.get("country", "VN"))[:32], quote=False)
+        language = html.escape(str(context.get("language", "vi"))[:16], quote=False)
         memory_context = html.escape(
             str(context.get("memory_context", "")), quote=False
         )
