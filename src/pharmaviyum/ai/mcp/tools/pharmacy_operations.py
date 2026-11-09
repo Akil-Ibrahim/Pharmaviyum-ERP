@@ -178,6 +178,7 @@ def _inventory_availability(
     output_schema=ProductSearchResult,
     category="pharmacy_catalog",
     requires_db=True,
+    execution_class="read",
     tags=["pharmacy", "catalog", "medicine", "search", "read"],
 )
 async def search_pharmacy_products(input: ProductSearchRequest) -> ProductSearchResult:
@@ -248,6 +249,7 @@ async def search_pharmacy_products(input: ProductSearchRequest) -> ProductSearch
     output_schema=InventoryOverviewResult,
     category="pharmacy_inventory",
     requires_db=True,
+    execution_class="read",
     tags=["pharmacy", "inventory", "stock", "reorder", "read"],
 )
 async def get_inventory_overview(
@@ -320,6 +322,7 @@ async def get_inventory_overview(
     output_schema=ExpiringInventoryResult,
     category="pharmacy_inventory",
     requires_db=True,
+    execution_class="read",
     tags=["pharmacy", "inventory", "batch", "expiry", "fefo", "read"],
 )
 async def get_expiring_inventory(
@@ -390,6 +393,7 @@ async def get_expiring_inventory(
     output_schema=SalesSummaryResult,
     category="pharmacy_sales",
     requires_db=True,
+    execution_class="read",
     tags=["pharmacy", "sales", "pos", "revenue", "read"],
 )
 async def get_sales_summary(input: SalesSummaryRequest) -> SalesSummaryResult:
@@ -611,6 +615,7 @@ _WORKFLOW_GUIDES: dict[str, tuple[str, list[str], list[str]]] = {
     input_schema=PharmacyWorkflowGuideRequest,
     output_schema=PharmacyWorkflowGuide,
     category="pharmacy_workflow",
+    execution_class="read",
     tags=["pharmacy", "workflow", "sop", "operations", "read"],
 )
 async def get_pharmacy_workflow_guide(
