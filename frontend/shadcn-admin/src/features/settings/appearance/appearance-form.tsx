@@ -193,9 +193,10 @@ export function AppearanceForm() {
             <FormItem>
               <FormLabel>Theme preset</FormLabel>
               <FormDescription>
-                Choose a shadcn color palette for the Pharmaviyum admin
-                interface. This changes semantic accent colors while preserving
-                the navigation layout and icon style.
+                Choose a complete shadcn color palette for the Pharmaviyum
+                admin interface. It updates surfaces, text, controls, borders,
+                charts, and navigation icon colors while preserving the
+                navigation layout and icon style.
               </FormDescription>
               <FormMessage />
               <RadioGroup
