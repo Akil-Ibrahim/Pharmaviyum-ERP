@@ -41,7 +41,7 @@ prevent the pharmacy API from starting.
 - FastAPI server requests (health, readiness, metrics and documentation routes
   are excluded to reduce noise).
 - SQLAlchemy synchronous engine boundary used by the async SQLAlchemy engine.
-- Redis client operations.
+- Redis auto-instrumentation is intentionally disabled. The Redis instrumentor records command statements built from command arguments; those arguments can contain prompts, memory content, and clinical payloads. Do not enable it for this application without a tested redaction strategy that also covers pipelines. Use only bounded application-level operation metrics/spans that never include Redis keys, values, or command arguments.
 - Outbound HTTPX client requests.
 - Mortarium RAG retrieval and MCP tool execution, with bounded attributes for source counts, warning counts, tool names, and success state.
 - Mortarium model routing and agent execution, without recording prompts, patient data, tool arguments, or retrieved clinical text.
@@ -49,20 +49,6 @@ prevent the pharmacy API from starting.
 The SDK uses a parent-based, ratio sampler. Child spans follow the sampled state
 of their parent. The provider is flushed and shut down during application
 lifespan shutdown.
-
-## Observability acceptance criteria
-
-Instrumentation is not considered complete merely because the SDK initializes. Validate the critical request path end to end and report:
-
-- trace coverage for defined FastAPI, database, Redis, Celery and Mortarium workflows;
-- W3C trace-context propagation across process/service boundaries;
-- parent/child span relationships and error status;
-- exporter/collector delivery failures and dropped telemetry;
-- log/trace correlation;
-- metrics coverage for API, data services, workers, RAG, model calls and MCP tools;
-- alert rule evaluation and notification delivery in a controlled test.
-
-Measure p50/p95/p99 for defined API and AI workflow stages. Keep metric labels bounded; do not use pharmacy, user, patient, session, prompt or raw URL identifiers as Prometheus labels. Full metric definitions and benchmark evidence requirements live in [`../devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md`](../devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md).
 
 ## Data protection
 
