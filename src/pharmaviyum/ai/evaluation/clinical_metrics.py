@@ -3,6 +3,7 @@
 These metrics complement Ragas. They are offline evaluation utilities, not
 runtime clinical guardrails or a substitute for pharmacist/clinical review.
 """
+
 from __future__ import annotations
 
 import re
@@ -74,9 +75,7 @@ async def citation_correctness(
             {"reason": "An entailment judge is required to verify claim support"},
         )
     sentences = [
-        part.strip()
-        for part in re.split(r"(?<=[.!?])\s+", answer)
-        if part.strip()
+        part.strip() for part in re.split(r"(?<=[.!?])\s+", answer) if part.strip()
     ]
     factual = [part for part in sentences if re.search(r"\w", part)]
     if not factual:
