@@ -74,10 +74,20 @@ conversation identifier, keyed with the application's SECRET_KEY; raw identity
 and caller conversation strings are not stored in the checkpoint key. All
 application replicas must share the same SECRET_KEY to preserve checkpoint
 continuity. A development-only fallback is never accepted in staging/production. Caller-supplied conversation identifiers are bounded to 128
-characters and blank values are rejected. Checkpoint payloads can contain user questions and
-retrieved clinical context. Production retention, deletion, access-control and
-backup policies must therefore be reviewed as part of the application's PHI
-data lifecycle; database persistence alone is not a complete retention policy.
+characters and blank values are rejected.
+
+**Privacy scope limitation:** this change pseudonymizes the checkpoint thread
+key only. The current RAGState still stores the QueryContext object, which
+contains user_id, pharmacy_id and, when present, patient_id and
+prescription_id; checkpoint payloads can also contain the user question and
+retrieved clinical context. Those values are therefore still present in
+PostgreSQL checkpoint state and are not anonymized by the HMAC thread key.
+Treat checkpoint storage as sensitive PHI-bearing data: restrict database and
+backup access, define retention/deletion procedures, and protect backups.
+Removing identity fields from persisted state requires a separate design that
+passes authorization and retrieval scope through a non-checkpointed runtime
+context while preserving tenant isolation. Do not describe HMAC thread IDs as
+full checkpoint-payload pseudonymization or anonymization.
 
 ## Observability
 
