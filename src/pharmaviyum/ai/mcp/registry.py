@@ -78,13 +78,17 @@ class MCPToolRegistry:
         version: str = "1.0.0",
         deprecated: bool = False,
         deprecation_message: str | None = None,
-        execution_class: ExecutionClass = "read",
+        execution_class: ExecutionClass | None = None,
         requires_pharmacist_confirmation: bool = False,
     ) -> Callable:
         """Decorator to register a tool."""
         # Validate the contract at decorator creation time so invalid tools
         # fail closed even before a function is registered.
         validate_tool_schema(input_schema.model_json_schema())
+        if execution_class is None:
+            raise ValueError(
+                "MCP tools must explicitly declare execution_class='read' or 'write'"
+            )
         validate_execution_policy(execution_class, requires_pharmacist_confirmation)
 
         def decorator(func: Callable[..., Awaitable[Any]]) -> Callable:
