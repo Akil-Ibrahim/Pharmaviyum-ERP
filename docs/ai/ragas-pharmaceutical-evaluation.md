@@ -19,7 +19,8 @@ signals, not clinical validation, regulatory certification, or proof of safety.
 ## Standard Ragas metrics
 
 - **Faithfulness** — fraction of answer claims supported by retrieved context.
-- **Answer relevancy** — whether the response addresses the query.
+- **Answer relevancy** — cosine similarity between the query and questions inferred from the response; its valid range is `[-1, 1]`, so negative scores are valid and must not be clamped or rejected.
+- **Faithfulness, context precision and context recall** — normalized scores in `[0, 1]`.
 - **Context precision** — whether relevant retrieved chunks rank above noise.
 - **Context recall** — whether retrieved context covers the reference answer.
 
