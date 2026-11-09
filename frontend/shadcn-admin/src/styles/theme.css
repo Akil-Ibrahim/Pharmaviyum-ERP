@@ -471,7 +471,7 @@
   }
 }
 
-/* Complete semantic token sets for every selectable shadcn palette. */
+/* Complete semantic token sets for every selectable shadcn palette, including sidebar and chart tokens. */
 /* Theme presets recolor surfaces, text, borders, controls, charts and sidebar together. */
 :root[data-color-theme='neutral'] {
   --background: oklch(0.99 0.002 0);
