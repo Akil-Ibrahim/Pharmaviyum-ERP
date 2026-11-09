@@ -78,9 +78,7 @@ async def test_citation_correctness_requires_real_source_and_entailment():
             "[src-00000000-0000-0000-0000-000000000001]."
         ),
         sources={
-            "src-00000000-0000-0000-0000-000000000001": (
-                "Amoxicillin treats infection"
-            )
+            "src-00000000-0000-0000-0000-000000000001": ("Amoxicillin treats infection")
         },
         supports_claim=judge,
     )
@@ -221,4 +219,3 @@ async def test_ragas_adapter_accepts_negative_answer_relevancy(monkeypatch):
 
     assert report.scores["answer_relevancy"].value == -0.2
     assert report.scores["faithfulness"].value == 0.8
-
