@@ -1,0 +1,46 @@
+name: Format PR frontend changes
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - "frontend/shadcn-admin/**"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: chore/compact-sidebar-mortarium-only
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.2"
+      - name: Install frontend dependencies
+        working-directory: frontend/shadcn-admin
+        run: bun install --frozen-lockfile
+      - name: Format all frontend files changed in this PR
+        working-directory: frontend/shadcn-admin
+        run: |
+          git fetch origin main
+          mapfile -t FILES < <(git -C "$GITHUB_WORKSPACE" diff --name-only "origin/main...HEAD" -- frontend/shadcn-admin | sed 's#^frontend/shadcn-admin/##' | grep -E '\.(ts|tsx|js|jsx|json|css|html)$' || true)
+          if (("${#FILES[@]}" > 0)); then
+            bunx prettier --write "${FILES[@]}"
+          fi
+      - name: Commit formatting changes
+        run: |
+          if git diff --quiet -- frontend/shadcn-admin; then
+            echo "No formatting changes required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/shadcn-admin
+          git commit -m "style(frontend): apply Prettier formatting"
+          git push origin HEAD:chore/compact-sidebar-mortarium-only
