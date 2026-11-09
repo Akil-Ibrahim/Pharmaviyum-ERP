@@ -1,11 +1,8 @@
 """
-MCP Server — JSON-RPC 2.0 Protocol Implementation.
+MCP Server — authenticated JSON-RPC 2.0 protocol implementation.
 
-Best practice 2026:
-- Compliant with Anthropic Model Context Protocol specification
-- Supports tools/list, tools/call, resources/list, resources/read, prompts/list, prompts/get
-- Stateless JSON-RPC request/response handling
-- Ready for STDIO or SSE transport layers
+Initialization is public. Tool, resource, and prompt capabilities require
+trusted request-scoped identity and tenant context.
 """
 
 from __future__ import annotations
@@ -15,17 +12,14 @@ from typing import Any
 
 from src.pharmaviyum.core.logging import logger
 
+from .context import require_mcp_context
 from .prompts import prompt_registry
 from .registry import registry as tool_registry
 from .resources import resource_registry
 
 
 class MCPServer:
-    """
-    Core MCP Server implementing JSON-RPC 2.0.
-
-    Can be wrapped in FastAPI (SSE/HTTP) or run as a standalone STDIO process.
-    """
+    """JSON-RPC MCP server with fail-closed authorization boundaries."""
 
     def __init__(self, name: str = "pharmaviyum-mcp", version: str = "1.0.0"):
         self.name = name
@@ -37,32 +31,44 @@ class MCPServer:
         }
 
     async def handle_request(self, request_body: str) -> str:
-        """
-        Process a JSON-RPC 2.0 request and return a JSON-RPC response.
-        """
+        """Process a JSON-RPC request without leaking exception details."""
         try:
             request = json.loads(request_body)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, TypeError):
             return self._error_response(None, -32700, "Parse error")
 
+        if not isinstance(request, dict):
+            return self._error_response(None, -32600, "Invalid Request")
         if request.get("jsonrpc") != "2.0":
             return self._error_response(request.get("id"), -32600, "Invalid Request")
 
         method = request.get("method")
         params = request.get("params", {})
         request_id = request.get("id")
+        if not isinstance(method, str) or not isinstance(params, dict):
+            return self._error_response(request_id, -32600, "Invalid Request")
 
         try:
             result = await self._route_method(method, params)
             return self._success_response(request_id, result)
-        except Exception as e:
-            logger.error(f"MCP method {method} failed: {e}", exc_info=True)
-            return self._error_response(request_id, -32603, str(e))
+        except PermissionError:
+            logger.warning("MCP request denied")
+            return self._error_response(request_id, -32001, "Unauthorized")
+        except LookupError:
+            return self._error_response(request_id, -32601, "Method not found")
+        except ValueError:
+            logger.warning("MCP request has invalid parameters")
+            return self._error_response(request_id, -32602, "Invalid params")
+        except Exception as exc:
+            # Exception strings and tracebacks may contain clinical data.
+            logger.error(
+                "MCP request failed",
+                extra={"error_type": type(exc).__name__},
+            )
+            return self._error_response(request_id, -32603, "Internal error")
 
     async def _route_method(self, method: str, params: dict[str, Any]) -> Any:
-        """Route JSON-RPC method to appropriate handler."""
-
-        # 1. Initialization
+        """Route methods after authenticating all data capabilities."""
         if method == "initialize":
             return {
                 "protocolVersion": "2024-11-05",
@@ -71,32 +77,31 @@ class MCPServer:
             }
 
         if method == "initialized":
-            return {}  # No response required for notification
+            return {}
 
-        # 2. Tools
-        elif method == "tools/list":
-            tools = []
-            for meta in tool_registry.list_tools():
-                tools.append(
-                    {
-                        "name": meta.name,
-                        "description": meta.description,
-                        "inputSchema": meta.input_schema.model_json_schema(),
-                    }
-                )
+        # Every data capability, including discovery, requires trusted context.
+        context = require_mcp_context()
+
+        if method == "tools/list":
+            tools = [
+                {
+                    "name": meta.name,
+                    "description": meta.description,
+                    "inputSchema": meta.input_schema.model_json_schema(),
+                }
+                for meta in tool_registry.list_tools_for_role(context.user_role)
+            ]
             return {"tools": tools}
 
-        elif method == "tools/call":
+        if method == "tools/call":
             tool_name = params.get("name")
-            if not isinstance(tool_name, str):
-                raise ValueError("tools/call requires a string name")
             tool_args = params.get("arguments", {})
+            if not isinstance(tool_name, str) or not isinstance(tool_args, dict):
+                raise ValueError("Invalid tool call parameters")
 
-            # Execute via MCP Client (which handles validation, retry, circuit breaker)
             from .client import mcp_client
 
             result = await mcp_client.call_tool(tool_name, tool_args)
-
             if result.success:
                 return {
                     "content": [
@@ -104,24 +109,24 @@ class MCPServer:
                     ],
                     "isError": False,
                 }
-            else:
-                return {
-                    "content": [{"type": "text", "text": f"Error: {result.error}"}],
-                    "isError": True,
-                }
+            # Do not expose exception messages, SQL fragments or PHI to the model.
+            return {
+                "content": [{"type": "text", "text": "Tool execution failed"}],
+                "isError": True,
+            }
 
-        # 3. Resources
-        elif method == "resources/list":
-            resources = []
-            for res in resource_registry.list_resources():
-                resources.append(res.model_dump())
-            return {"resources": resources}
+        if method == "resources/list":
+            return {
+                "resources": [
+                    resource.model_dump()
+                    for resource in resource_registry.list_resources()
+                ]
+            }
 
-        elif method == "resources/read":
+        if method == "resources/read":
             uri = params.get("uri")
             if not isinstance(uri, str):
-                raise ValueError("resources/read requires a string uri")
-            # Extract kwargs from URI (simplified)
+                raise ValueError("Invalid resource URI")
             content = await resource_registry.read_resource(uri)
             return {
                 "contents": [
@@ -133,48 +138,42 @@ class MCPServer:
                 ]
             }
 
-        # 4. Prompts
-        elif method == "prompts/list":
-            prompts = []
-            for p in prompt_registry.list_prompts():
-                prompts.append(
+        if method == "prompts/list":
+            return {
+                "prompts": [
                     {
-                        "name": p.name,
-                        "description": p.description,
-                        "arguments": [arg.model_dump() for arg in p.arguments],
+                        "name": prompt.name,
+                        "description": prompt.description,
+                        "arguments": [
+                            argument.model_dump() for argument in prompt.arguments
+                        ],
                     }
-                )
-            return {"prompts": prompts}
+                    for prompt in prompt_registry.list_prompts()
+                ]
+            }
 
-        elif method == "prompts/get":
+        if method == "prompts/get":
             name = params.get("name")
-            if not isinstance(name, str):
-                raise ValueError("prompts/get requires a string name")
             arguments = params.get("arguments", {})
+            if not isinstance(name, str) or not isinstance(arguments, dict):
+                raise ValueError("Invalid prompt parameters")
             template_text = await prompt_registry.get_prompt(name, arguments)
             return {
-                "description": f"Generated prompt: {name}",
+                "description": "Generated MCP prompt",
                 "messages": [
                     {
                         "role": "user",
-                        "content": {
-                            "type": "text",
-                            "text": template_text,
-                        },
+                        "content": {"type": "text", "text": template_text},
                     }
                 ],
             }
 
-        else:
-            raise ValueError(f"Method not found: {method}")
+        raise LookupError("Method not found")
 
     def _success_response(self, request_id: Any, result: Any) -> str:
         return json.dumps(
-            {
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "result": result,
-            }
+            {"jsonrpc": "2.0", "id": request_id, "result": result},
+            default=str,
         )
 
     def _error_response(self, request_id: Any, code: int, message: str) -> str:
@@ -182,13 +181,9 @@ class MCPServer:
             {
                 "jsonrpc": "2.0",
                 "id": request_id,
-                "error": {
-                    "code": code,
-                    "message": message,
-                },
+                "error": {"code": code, "message": message},
             }
         )
 
 
-# Global server instance
 mcp_server = MCPServer()
