@@ -129,16 +129,19 @@ class ToolCallingLayer:
             )
 
             for i, result in enumerate(parallel_results):
+                if isinstance(result, asyncio.CancelledError):
+                    raise result
                 if isinstance(result, Exception):
                     logger.error(
-                        f"Parallel tool {parallel_tools[i]['name']} failed: {result}"
+                        "Parallel MCP tool execution failed",
+                        extra={"error_type": type(result).__name__},
                     )
                     results.append(
                         ToolCallRecord(
                             tool_name=parallel_tools[i]["name"],
                             input_data=parallel_tools[i].get("args", {}),
                             success=False,
-                            error=str(result),
+                            error="Tool execution failed",
                         )
                     )
                 else:
@@ -163,7 +166,7 @@ class ToolCallingLayer:
 
         # Check circuit breaker
         if self._is_circuit_open(tool_name):
-            logger.warning(f"Circuit breaker open for {tool_name}")
+            logger.warning("MCP tool circuit breaker is open")
             return ToolCallRecord(
                 tool_name=tool_name,
                 input_data=tool_args,
@@ -174,7 +177,6 @@ class ToolCallingLayer:
 
         # Try primary tool, then fallbacks
         tools_to_try = [tool_name] + (spec.fallback_tools if spec else [])
-        last_error = None
         total_latency = 0.0
 
         for attempt_tool in tools_to_try:
@@ -196,9 +198,9 @@ class ToolCallingLayer:
                             spec.result_schema.model_validate(result.data)
                         except ValidationError as e:
                             logger.warning(
-                                f"Tool {attempt_tool} result validation failed: {e}"
+                                "MCP tool result validation failed",
+                                extra={"error_type": type(e).__name__},
                             )
-                            last_error = f"Result validation failed: {e}"
                             continue
 
                     # Reset circuit breaker on success
@@ -213,14 +215,15 @@ class ToolCallingLayer:
                         latency_ms=latency_ms,
                     )
                 else:
-                    last_error = result.error
-                    logger.warning(f"Tool {attempt_tool} failed: {result.error}")
+                    logger.warning("MCP tool returned an unsuccessful result")
 
-            except Exception as e:
+            except Exception as exc:
                 latency_ms = (time.perf_counter() - start) * 1000
                 total_latency += latency_ms
-                last_error = str(e)
-                logger.error(f"Tool {attempt_tool} exception: {e}", exc_info=True)
+                logger.error(
+                    "MCP tool execution raised an exception",
+                    extra={"error_type": type(exc).__name__},
+                )
 
         # All tools in fallback chain failed
         self._record_failure(tool_name)
@@ -229,7 +232,7 @@ class ToolCallingLayer:
             tool_name=tool_name,
             input_data=tool_args,
             success=False,
-            error=f"All tools failed. Last error: {last_error}",
+            error="All configured tool attempts failed.",
             latency_ms=total_latency,
         )
 
