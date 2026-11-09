@@ -195,6 +195,7 @@ def aggregate_severity(interactions: list[DrugInteraction]) -> Severity:
     input_schema=DrugInteractionCheck,
     output_schema=InteractionCheckResult,
     category="clinical",
+    execution_class="read",
     latency_estimate_ms=150,
     requires_db=True,
     requires_rag=True,
@@ -247,11 +248,10 @@ async def check_drug_interactions(
     latency_ms = (time.perf_counter() - start) * 1000
 
     logger.info(
-        f"Drug interaction check: {len(drugs)} drugs, {len(interactions)} interactions found",
+        "Drug interaction check completed",
         extra={
-            "drugs": drugs,
-            "interactions": len(interactions),
-            "country": input.country,
+            "drug_count": len(drugs),
+            "interaction_count": len(interactions),
             "latency_ms": latency_ms,
         },
     )
