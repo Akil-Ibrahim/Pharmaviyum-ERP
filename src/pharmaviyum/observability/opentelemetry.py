@@ -32,7 +32,9 @@ _instrumented = False
 
 
 def _is_production_environment(environment: str | None) -> bool:
-    return (\n        (environment or "").strip().lower() in {"production", "prod", "staging"}\n    )
+    return (
+        (environment or "").strip().lower() in {"production", "prod", "staging"}
+    )
 
 
 def _allow_sensitive_client_instrumentation(
