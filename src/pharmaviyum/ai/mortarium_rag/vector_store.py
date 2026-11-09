@@ -237,7 +237,10 @@ class PgVectorStore:
                     query=query, results=fused[: top_k * 3], top_k=top_k
                 )
             except Exception as exc:
-                logger.warning("Reranking failed, using fused results: %s", exc)
+                logger.warning(
+                    "Reranking failed; using fused retrieval results",
+                    extra={"error_type": type(exc).__name__},
+                )
         return fused[:top_k]
 
     def _reciprocal_rank_fusion(
