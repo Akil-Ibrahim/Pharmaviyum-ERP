@@ -219,3 +219,27 @@ async def test_write_tool_fails_closed_without_trusted_approval_verifier() -> No
             )
     finally:
         reset_mcp_context(token)
+
+
+@pytest.mark.unit
+def test_registry_rejects_empty_tool_name_and_role_allowlist() -> None:
+    registry = MCPToolRegistry()
+
+    with pytest.raises(ValueError, match="tool name must not be empty"):
+        registry.tool(
+            name=" ",
+            description="Invalid tool",
+            input_schema=SafeInput,
+            output_schema=EmptyOutput,
+            execution_class="read",
+        )
+
+    with pytest.raises(ValueError, match="required_roles must not be empty"):
+        registry.tool(
+            name="no_roles",
+            description="Invalid role allowlist",
+            input_schema=SafeInput,
+            output_schema=EmptyOutput,
+            execution_class="read",
+            required_roles=[],
+        )
