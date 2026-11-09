@@ -90,6 +90,10 @@ class MCPToolRegistry:
                 "MCP tools must explicitly declare execution_class='read' or 'write'"
             )
         validate_execution_policy(execution_class, requires_pharmacist_confirmation)
+        if not name or not name.strip():
+            raise ValueError("MCP tool name must not be empty")
+        if required_roles is not None and not required_roles:
+            raise ValueError("MCP tool required_roles must not be empty")
 
         def decorator(func: Callable[..., Awaitable[Any]]) -> Callable:
             metadata = ToolMetadata(
@@ -103,7 +107,11 @@ class MCPToolRegistry:
                 requires_rag=requires_rag,
                 requires_external_api=requires_external_api,
                 tags=tags or [],
-                required_roles=required_roles or ["pharmacist", "admin", "system"],
+                required_roles=(
+                    required_roles
+                    if required_roles is not None
+                    else ["pharmacist", "admin", "system"]
+                ),
                 version=version,
                 deprecated=deprecated,
                 deprecation_message=deprecation_message,
