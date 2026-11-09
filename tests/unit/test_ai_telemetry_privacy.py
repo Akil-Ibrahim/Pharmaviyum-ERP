@@ -56,9 +56,7 @@ def test_ai_span_records_exception_type_without_exception_content():
             raise RuntimeError("private clinical value")
 
     span.set_attribute.assert_any_call("error.type", "RuntimeError")
-    span.set_status.assert_any_call(
-        Status(StatusCode.ERROR, "RuntimeError")
-    )
+    span.set_status.assert_any_call(Status(StatusCode.ERROR, "RuntimeError"))
     span.record_exception.assert_not_called()
 
 
