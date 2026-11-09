@@ -96,9 +96,9 @@ async def test_raw_turns_are_retained_when_summarizer_is_not_configured():
     await memory.save("session-1", "first question", "first answer")
     await memory.save("session-1", "second question", "second answer")
 
-    key = "agent:memory:session-1:messages"
+    key = f"{memory._session_prefix('session-1')}:{tier}"
     assert await redis.llen(key) == 4
-    assert not redis.lists.get("agent:memory:session-1:archive")
+    assert not redis.lists.get(f"{memory._session_prefix('session-1')}:{tier}")
 
 
 @pytest.mark.asyncio
@@ -111,9 +111,9 @@ async def test_successful_compaction_archives_verbatim_turns_before_trimming():
     await memory.save("session-1", "first question", "first answer")
     await memory.save("session-1", "second question", "second answer")
 
-    active_key = "agent:memory:session-1:messages"
-    archive_key = "agent:memory:session-1:archive"
-    summary_key = "agent:memory:session-1:summary"
+    active_key = f"{memory._session_prefix('session-1')}:{tier}"
+    archive_key = f"{memory._session_prefix('session-1')}:{tier}"
+    summary_key = f"{memory._session_prefix('session-1')}:{tier}"
     assert await redis.llen(active_key) == 2
     assert len(redis.lists[archive_key]) == 2
     archived = [json.loads(item) for item in redis.lists[archive_key]]
@@ -132,6 +132,28 @@ async def test_failed_summarization_does_not_trim_or_archive_source_turns():
     await memory.save("session-1", "first question", "first answer")
     await memory.save("session-1", "second question", "second answer")
 
-    assert await redis.llen("agent:memory:session-1:messages") == 4
-    assert not redis.lists.get("agent:memory:session-1:archive")
-    assert await redis.get("agent:memory:session-1:summary") is None
+    assert await redis.llen(f"{memory._session_prefix('session-1')}:{tier}") == 4
+    assert not redis.lists.get(f"{memory._session_prefix('session-1')}:{tier}")
+    assert await redis.get(f"{memory._session_prefix('session-1')}:{tier}") is None
+
+
+@pytest.mark.asyncio
+async def test_memory_keys_are_pseudonymous_and_clear_removes_legacy_keys():
+    redis = FakeRedis()
+    memory = DialogueMemory(redis)
+    session_id = "pharmacy:42:user:7:session:raw-session-id"
+    prefix = memory._session_prefix(session_id)
+
+    assert session_id not in prefix
+    assert prefix.startswith("agent:memory:v2:")
+
+    await memory.save(session_id, "question", "answer")
+    active_key = f"{prefix}:messages"
+    assert await redis.llen(active_key) == 2
+
+    legacy_key = f"agent:memory:{session_id}:messages"
+    redis.lists[legacy_key] = ["legacy data"]
+    await memory.clear(session_id)
+
+    assert active_key not in redis.lists
+    assert legacy_key not in redis.lists
