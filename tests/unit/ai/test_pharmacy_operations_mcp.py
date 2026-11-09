@@ -14,6 +14,7 @@ from src.pharmaviyum.ai.mcp.tools.pharmacy_operations import (  # noqa: E402
 @pytest.mark.unit
 def test_pharmacy_operations_tools_are_registered_and_read_only():
     expected = {
+        "get_pharmacy_workflow_guide": "pharmacy_workflow",
         "search_pharmacy_products": "pharmacy_catalog",
         "get_inventory_overview": "pharmacy_inventory",
         "get_expiring_inventory": "pharmacy_inventory",
@@ -46,3 +47,24 @@ def test_sales_summary_rejects_invalid_or_unbounded_date_ranges():
 
     with pytest.raises(ValueError, match="367"):
         SalesSummaryRequest(start_date="2025-01-01", end_date="2026-01-04")
+
+
+
+@pytest.mark.unit
+def test_workflow_guide_is_general_guidance_not_transaction_execution():
+    from src.pharmaviyum.ai.mcp.tools.pharmacy_operations import (
+        PharmacyWorkflowGuideRequest,
+        get_pharmacy_workflow_guide,
+    )
+
+    import asyncio
+
+    guide = asyncio.run(
+        get_pharmacy_workflow_guide(
+            PharmacyWorkflowGuideRequest(workflow="inventory_receiving")
+        )
+    )
+    assert guide.workflow == "inventory_receiving"
+    assert guide.requires_local_sop is True
+    assert "does not execute" in guide.execution_note
+    assert any("physical verification" in item for item in guide.critical_controls)
