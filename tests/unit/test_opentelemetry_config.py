@@ -53,3 +53,12 @@ def test_otel_is_disabled_by_default(monkeypatch: pytest.MonkeyPatch):
     settings = OTelSettings(_env_file=None)
 
     assert settings.enabled is False
+
+
+def test_telemetry_does_not_enable_sensitive_redis_or_console_exporters():
+    from src.pharmaviyum.core import telemetry as legacy_telemetry
+    from src.pharmaviyum.observability import opentelemetry as app_telemetry
+
+    assert not hasattr(legacy_telemetry, "RedisInstrumentor")
+    assert not hasattr(legacy_telemetry, "ConsoleSpanExporter")
+    assert not hasattr(app_telemetry, "RedisInstrumentor")
