@@ -77,11 +77,7 @@ export const sidebarData: SidebarData = {
           icon: ShoppingCart,
           items: [
             { title: 'Suppliers', url: '/suppliers', icon: Truck },
-            {
-              title: 'Purchase Orders',
-              url: '/orders',
-              icon: ClipboardList,
-            },
+            { title: 'Purchase Orders', url: '/orders', icon: ClipboardList },
             { title: 'Receiving', url: '/procurement', icon: PackageCheck },
           ],
         },
@@ -98,11 +94,7 @@ export const sidebarData: SidebarData = {
           items: [
             { title: 'Profile', url: '/settings', icon: UserCog },
             { title: 'Account', url: '/settings/account', icon: UserRound },
-            {
-              title: 'Appearance',
-              url: '/settings/appearance',
-              icon: Palette,
-            },
+            { title: 'Appearance', url: '/settings/appearance', icon: Palette },
             {
               title: 'Notifications',
               url: '/settings/notifications',
