@@ -1,0 +1,42 @@
+name: One-time Python Black formatting
+
+on:
+  push:
+    branches:
+      - chore/black-format-main
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4.4.0
+        with:
+          fetch-depth: 0
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.14.7"
+          enable-cache: true
+      - name: Install locked project dependencies
+        run: uv sync --frozen
+      - name: Apply Black formatting
+        run: uv run black src/ tests/
+      - name: Commit formatting and remove this one-time workflow
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          rm .github/workflows/format-python-black-once.yml
+          if git diff --quiet; then
+            echo "No formatting changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/ tests/ .github/workflows/format-python-black-once.yml
+          git commit -m "style: format Python source and tests with Black"
+          git push origin HEAD
