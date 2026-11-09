@@ -1,5 +1,7 @@
 """Registration and contract tests for Mortarium pharmacy operations tools."""
 
+from datetime import datetime, timedelta
+
 import pytest
 
 # Importing the public MCP package must register every shipped tool exactly once.
@@ -8,6 +10,7 @@ from src.pharmaviyum.ai.mcp.tools.pharmacy_operations import (  # noqa: E402
     InventoryOverviewRequest,
     ProductSearchRequest,
     SalesSummaryRequest,
+    _inventory_availability,
 )
 
 
