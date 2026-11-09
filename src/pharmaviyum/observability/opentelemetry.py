@@ -97,8 +97,8 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
                     tracer_provider=_provider,
                 ),
             ),
-            # Redis auto-instrumentation is deliberately omitted: db.statement
-            # can contain command arguments, prompts, and clinical memory payloads.
+            # Redis command auto-instrumentation is disabled: db.statement
+            # can include prompt, memory, and clinical payload values.
             (
                 "HTTPX",
                 lambda: HTTPXClientInstrumentor().instrument(tracer_provider=_provider),
