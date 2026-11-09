@@ -12,8 +12,8 @@ Best practice 2026:
 from __future__ import annotations
 
 import hashlib
-import html
 import hmac
+import html
 import json
 from datetime import datetime, timezone
 from typing import Any
