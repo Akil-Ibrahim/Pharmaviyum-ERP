@@ -251,7 +251,6 @@
   }
 }
 
-
 /* Payment-transactions-inspired KPI scorecards: restrained surfaces, clear hierarchy. */
 .pharmaviyum-dashboard section:has(> div.mb-3) > div.grid.gap-4 {
   align-items: stretch;
@@ -261,23 +260,40 @@
   padding: 1.125rem;
   border-color: color-mix(in oklab, var(--border) 84%, var(--primary) 16%);
   border-radius: calc(var(--radius) + 3px);
-  background:
-    linear-gradient(145deg, color-mix(in oklab, var(--primary) 3.5%, var(--card)), var(--card) 62%);
-  box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 4%, transparent),
+  background: linear-gradient(
+    145deg,
+    color-mix(in oklab, var(--primary) 3.5%, var(--card)),
+    var(--card) 62%
+  );
+  box-shadow:
+    0 1px 2px color-mix(in oklab, var(--foreground) 4%, transparent),
     0 8px 22px -18px color-mix(in oklab, var(--foreground) 18%, transparent);
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 .pharmaviyum-dashboard section:has(> div.mb-3) > div.grid.gap-4 > div:hover {
   transform: translateY(-2px);
   border-color: color-mix(in oklab, var(--primary) 34%, var(--border));
-  box-shadow: 0 10px 24px -18px color-mix(in oklab, var(--primary) 35%, transparent);
+  box-shadow: 0 10px 24px -18px
+    color-mix(in oklab, var(--primary) 35%, transparent);
 }
-.pharmaviyum-dashboard section:has(> div.mb-3) > div.grid.gap-4 > div > div:first-child > p {
+.pharmaviyum-dashboard
+  section:has(> div.mb-3)
+  > div.grid.gap-4
+  > div
+  > div:first-child
+  > p {
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.005em;
 }
-.pharmaviyum-dashboard section:has(> div.mb-3) > div.grid.gap-4 > div > p:first-of-type {
+.pharmaviyum-dashboard
+  section:has(> div.mb-3)
+  > div.grid.gap-4
+  > div
+  > p:first-of-type {
   margin-top: 1rem;
   font-size: clamp(1.55rem, 2vw, 1.9rem);
   font-weight: 750;
@@ -285,7 +301,11 @@
   letter-spacing: -0.045em;
   font-variant-numeric: tabular-nums;
 }
-.pharmaviyum-dashboard section:has(> div.mb-3) > div.grid.gap-4 > div > p:last-child {
+.pharmaviyum-dashboard
+  section:has(> div.mb-3)
+  > div.grid.gap-4
+  > div
+  > p:last-child {
   margin-top: 0.45rem;
   min-height: 2rem;
   font-size: 0.72rem;
