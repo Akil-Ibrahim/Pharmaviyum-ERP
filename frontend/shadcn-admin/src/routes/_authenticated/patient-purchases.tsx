@@ -328,8 +328,8 @@ function PatientPurchasesPage() {
           <div className='flex flex-col gap-1'>
             <CardTitle>Purchase ledger</CardTitle>
             <CardDescription>
-              Showing the latest 50 records returned by the purchase API.
-              Select a row to inspect its receipt and batch details.
+              Showing the latest 50 records returned by the purchase API. Select
+              a row to inspect its receipt and batch details.
             </CardDescription>
           </div>
           <DataTableToolbar
@@ -380,8 +380,9 @@ function PatientPurchasesPage() {
                           <TableHead
                             key={header.id}
                             className={cn(
-                              ['quantity', 'total_amount'].includes(header.column.id) &&
-                                'text-right'
+                              ['quantity', 'total_amount'].includes(
+                                header.column.id
+                              ) && 'text-right'
                             )}
                           >
                             {header.isPlaceholder
@@ -415,8 +416,9 @@ function PatientPurchasesPage() {
                             <TableCell
                               key={cell.id}
                               className={cn(
-                                ['quantity', 'total_amount'].includes(cell.column.id) &&
-                                  'text-right'
+                                ['quantity', 'total_amount'].includes(
+                                  cell.column.id
+                                ) && 'text-right'
                               )}
                             >
                               {flexRender(
@@ -486,7 +488,10 @@ function PatientPurchasesPage() {
                 </section>
 
                 <DetailSection title='Purchase details'>
-                  <Detail label='Patient' value={`#${selectedPurchase.patient_id}`} />
+                  <Detail
+                    label='Patient'
+                    value={`#${selectedPurchase.patient_id}`}
+                  />
                   <Detail
                     label='Product'
                     value={
