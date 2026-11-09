@@ -1,12 +1,12 @@
 import { useState, type ElementType, type ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
+import { NAVIGATION_ICON_COLORS, useTheme } from '@/context/theme-provider'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import { NAVIGATION_ICON_COLORS, useTheme } from '@/context/theme-provider'
 import {
   SidebarGroup,
   SidebarGroupLabel,
