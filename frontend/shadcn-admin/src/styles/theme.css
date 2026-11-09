@@ -204,7 +204,7 @@
 }
 
 .bg-theme-default {
-  background: var(--muted);
+  background: oklch(0.208 0.042 265.755);
 }
 .bg-theme-blue {
   background: oklch(0.55 0.22 260);
