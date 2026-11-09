@@ -52,11 +52,23 @@ export const sidebarData: SidebarData = {
           title: 'Inventory',
           icon: Boxes,
           items: [
-            { title: 'Drug Catalog', url: '/drug-reference', icon: BookOpenCheck },
-            { title: 'Catalog Review', url: '/drug-catalog-review', icon: ClipboardCheck },
+            {
+              title: 'Drug Catalog',
+              url: '/drug-reference',
+              icon: BookOpenCheck,
+            },
+            {
+              title: 'Catalog Review',
+              url: '/drug-catalog-review',
+              icon: ClipboardCheck,
+            },
             { title: 'Stock Overview', url: '/inventory', icon: Boxes },
             { title: 'Batches', url: '/batches', icon: PackageCheck },
-            { title: 'Expiry Management', url: '/expiry-control', icon: CalendarClock },
+            {
+              title: 'Expiry Management',
+              url: '/expiry-control',
+              icon: CalendarClock,
+            },
             { title: 'Transfers', url: '/transfers', icon: ArrowLeftRight },
           ],
         },
@@ -65,7 +77,11 @@ export const sidebarData: SidebarData = {
           icon: ShoppingCart,
           items: [
             { title: 'Suppliers', url: '/suppliers', icon: Truck },
-            { title: 'Purchase Orders', url: '/orders', icon: ClipboardList },
+            {
+              title: 'Purchase Orders',
+              url: '/orders',
+              icon: ClipboardList,
+            },
             { title: 'Receiving', url: '/procurement', icon: PackageCheck },
           ],
         },
@@ -82,9 +98,21 @@ export const sidebarData: SidebarData = {
           items: [
             { title: 'Profile', url: '/settings', icon: UserCog },
             { title: 'Account', url: '/settings/account', icon: UserRound },
-            { title: 'Appearance', url: '/settings/appearance', icon: Palette },
-            { title: 'Notifications', url: '/settings/notifications', icon: Bell },
-            { title: 'Developer Tools', url: '/settings/developer', icon: Code2 },
+            {
+              title: 'Appearance',
+              url: '/settings/appearance',
+              icon: Palette,
+            },
+            {
+              title: 'Notifications',
+              url: '/settings/notifications',
+              icon: Bell,
+            },
+            {
+              title: 'Developer Tools',
+              url: '/settings/developer',
+              icon: Code2,
+            },
           ],
         },
       ],
