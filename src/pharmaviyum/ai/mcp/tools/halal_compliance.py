@@ -233,6 +233,7 @@ def check_istihalah(ingredient: str, final_product: str) -> dict[str, str] | Non
     category="regulatory",
     latency_estimate_ms=80,
     requires_db=True,
+    execution_class="read",
     tags=["halal", "fiqh", "shia", "sunni", "regulatory", "mena", "sea"],
 )
 async def check_halal_compliance(input: HalalCheckRequest) -> HalalCertification:
