@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Awaitable, Callable, Iterable, Mapping, Sequence
+from typing import Awaitable, Callable, Collection, Iterable, Mapping, Sequence
 
 
 @dataclass(frozen=True)
@@ -44,7 +44,9 @@ class NegationExpectation:
 ClaimSupportJudge = Callable[[str, str], Awaitable[bool]]
 
 
-def _f1(expected: set[tuple[str, ...]], predicted: set[tuple[str, ...]]) -> float:
+def _f1(
+    expected: Collection[tuple[str, ...]], predicted: Collection[tuple[str, ...]]
+) -> float:
     if not expected and not predicted:
         return 1.0
     if not expected or not predicted:
