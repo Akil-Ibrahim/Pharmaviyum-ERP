@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from langchain_core.messages import HumanMessage, SystemMessage
+from pydantic import ValidationError
 
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
 from src.pharmaviyum.ai.mortarium_rag.schemas import QueryContext
@@ -38,22 +39,33 @@ def test_route_after_grade_rewrites_until_budget_is_exhausted(
     )
 
 
-def test_thread_id_is_namespaced_and_unique_without_caller_id(
-    rag: LangGraphRAG,
-) -> None:
+def test_thread_id_is_stable_opaque_and_tenant_scoped(rag: LangGraphRAG) -> None:
     context = QueryContext(user_id="user-1", pharmacy_id=7)
-    assert rag._thread_id("conversation-123", context) == (
-        "rag:7:user-1:conversation-123"
-    )
-    first = rag._thread_id(None, context)
-    second = rag._thread_id(None, context)
-    assert first.startswith("rag:")
-    assert second.startswith("rag:")
-    assert first != second
+    first = rag._thread_id("conversation-123", context)
+    assert first == rag._thread_id("conversation-123", context)
+    assert first.startswith("rag:v2:")
+    assert "user-1" not in first
+    assert "conversation-123" not in first
+
     other_tenant = QueryContext(user_id="user-1", pharmacy_id=8)
-    assert rag._thread_id("conversation-123", other_tenant) != rag._thread_id(
-        "conversation-123", context
+    assert rag._thread_id("conversation-123", other_tenant) != first
+    other_user = QueryContext(user_id="user-2", pharmacy_id=7)
+    assert rag._thread_id("conversation-123", other_user) != first
+
+    # Delimiter-containing values must not create ambiguous HMAC scopes.
+    left = QueryContext(user_id="user:segment", pharmacy_id=7)
+    right = QueryContext(user_id="user", pharmacy_id=7)
+    assert rag._thread_id("conversation", left) != rag._thread_id(
+        "segment:conversation", right
     )
+
+    assert rag._thread_id(None, context) != rag._thread_id(None, context)
+
+
+@pytest.mark.parametrize("thread_id", ["", "   ", "x" * 129])
+def test_thread_id_rejects_invalid_caller_values(rag: LangGraphRAG, thread_id: str):
+    with pytest.raises(ValueError):
+        rag._thread_id(thread_id, QueryContext(user_id="user-1", pharmacy_id=7))
 
 
 @pytest.mark.asyncio
@@ -396,3 +408,89 @@ async def test_langgraph_node_span_marks_cancellation(monkeypatch):
 
     span.set_attribute.assert_any_call("ai.execution_success", False)
     span.set_attribute.assert_any_call("ai.stream.cancelled", True)
+
+
+def test_checkpoint_thread_id_is_keyed_by_application_secret(
+    rag: LangGraphRAG, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    context = QueryContext(user_id="user-1", pharmacy_id=7)
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "first-test-secret")
+    first = rag._thread_id("conversation-123", context)
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-test-secret")
+    second = rag._thread_id("conversation-123", context)
+
+    assert first != second
+    assert "user-1" not in first
+    assert "conversation-123" not in first
+
+
+def test_checkpoint_thread_id_requires_secret_in_production(
+    rag: LangGraphRAG, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.pharmaviyum.core.config import Environment
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", None)
+    monkeypatch.setattr(app_settings, "ENVIRONMENT", Environment.PRODUCTION)
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY"):
+        rag._thread_id(
+            "conversation-123",
+            QueryContext(user_id="user-1", pharmacy_id=7),
+        )
+
+
+def test_thread_id_is_keyed_by_application_secret(
+    rag: LangGraphRAG, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.pharmaviyum.ai.mortarium_rag import graph as rag_graph
+
+    context = QueryContext(user_id="user-1", pharmacy_id=7)
+    monkeypatch.setattr(rag_graph.app_settings, "SECRET_KEY", "a" * 32)
+    first = rag._thread_id("conversation-123", context)
+
+    monkeypatch.setattr(rag_graph.app_settings, "SECRET_KEY", "b" * 32)
+    second = rag._thread_id("conversation-123", context)
+
+    assert first != second
+
+
+def test_thread_id_refuses_missing_secret_in_production(
+    rag: LangGraphRAG, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.pharmaviyum.ai.mortarium_rag import graph as rag_graph
+    from src.pharmaviyum.core.config import Environment
+
+    monkeypatch.setattr(rag_graph.app_settings, "SECRET_KEY", None)
+    monkeypatch.setattr(rag_graph.app_settings, "ENVIRONMENT", Environment.PRODUCTION)
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY"):
+        rag._thread_id(
+            "conversation-123",
+            QueryContext(user_id="user-1", pharmacy_id=7),
+        )
+
+
+def test_checkpoint_thread_id_rejects_non_string_thread_identifier(
+    rag: LangGraphRAG,
+) -> None:
+    context = QueryContext(user_id="user-1", pharmacy_id=7)
+
+    with pytest.raises(ValueError, match="thread identifier"):
+        rag._thread_id(123, context)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"user_id": 123, "pharmacy_id": 7},
+        {"user_id": "user-1", "pharmacy_id": True},
+        {"user_id": "user-1", "pharmacy_id": 7, "patient_id": True},
+        {"user_id": "user-1", "pharmacy_id": 7, "prescription_id": "12"},
+    ],
+)
+def test_query_context_rejects_coerced_identity_types(payload) -> None:
+    with pytest.raises(ValidationError):
+        QueryContext(**payload)
