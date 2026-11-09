@@ -3,6 +3,7 @@
 All identity and tenant scope comes from the authenticated MCP context.
 These tools expose operational facts; they never mutate pharmacy records.
 """
+
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta
@@ -162,9 +163,7 @@ def _inventory_availability(
 ) -> tuple[bool, int]:
     """Return expiry state and sellable quantity for a lot."""
     is_expired = expires_at is not None and expires_at <= now
-    available_quantity = (
-        0 if is_expired else max(0, quantity - reserved_quantity)
-    )
+    available_quantity = 0 if is_expired else max(0, quantity - reserved_quantity)
     return is_expired, available_quantity
 
 
@@ -270,10 +269,7 @@ async def get_inventory_overview(
     if input.low_stock_only:
         statement = statement.where(
             or_(
-                (
-                    Inventory.expires_at.is_not(None)
-                    & (Inventory.expires_at <= now)
-                ),
+                (Inventory.expires_at.is_not(None) & (Inventory.expires_at <= now)),
                 (Inventory.quantity - Inventory.reserved_quantity)
                 <= Inventory.reorder_level,
             )
@@ -437,7 +433,6 @@ async def get_sales_summary(input: SalesSummaryRequest) -> SalesSummaryResult:
         cancelled_sales=counts.get("cancelled", 0),
         refunded_sales=counts.get("refunded", 0),
     )
-
 
 
 _WORKFLOW_GUIDES: dict[str, tuple[str, list[str], list[str]]] = {
