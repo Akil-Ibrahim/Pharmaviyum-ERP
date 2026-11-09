@@ -2,7 +2,8 @@
 
 Pharmaviyum uses the OpenTelemetry SDK for distributed tracing. The FastAPI
 application instruments inbound requests, SQLAlchemy database operations,
-Redis commands, and outbound HTTPX requests. Trace context propagation uses
+and outbound HTTPX requests. Redis command auto-instrumentation is disabled
+because command arguments can contain prompts, memory, and clinical payloads. Trace context propagation uses
 the standard W3C Trace Context headers (`traceparent` and `tracestate`).
 
 ## Configuration
@@ -41,7 +42,7 @@ prevent the pharmacy API from starting.
 - FastAPI server requests (health, readiness, metrics and documentation routes
   are excluded to reduce noise).
 - SQLAlchemy synchronous engine boundary used by the async SQLAlchemy engine.
-- Redis client operations.
+- Redis auto-instrumentation is intentionally disabled. Redis command attributes can include keys, prompts, memory, and clinical payloads; do not enable it without tested argument redaction that also covers pipelines.
 - Outbound HTTPX client requests.
 - Mortarium RAG retrieval and MCP tool execution, with bounded attributes for source counts, warning counts, tool names, and success state.
 - Mortarium model routing and agent execution, without recording prompts, patient data, tool arguments, or retrieved clinical text.
