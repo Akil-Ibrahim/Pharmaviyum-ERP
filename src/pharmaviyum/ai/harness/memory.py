@@ -11,12 +11,15 @@ Best practice 2026:
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 from datetime import datetime, timezone
 from typing import Any
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
+from src.pharmaviyum.core.config import settings as app_settings
 from src.pharmaviyum.core.logging import logger
 
 
@@ -45,13 +48,38 @@ class DialogueMemory:
         self.max_short_term = max_short_term_messages
         self.summarization_threshold = summarization_threshold
         self.ttl = ttl_seconds
-        self._prefix = "agent:memory"
+
+    @staticmethod
+    def _session_prefix(session_id: str) -> str:
+        """Derive an opaque Redis namespace from the API-scoped session ID."""
+        if (
+            not isinstance(session_id, str)
+            or not session_id.strip()
+            or len(session_id) > 512
+        ):
+            raise ValueError("Memory session identifier must be 1-512 characters")
+
+        secret = app_settings.SECRET_KEY or "local-development-only-memory-key"
+        if (
+            getattr(app_settings.ENVIRONMENT, "value", app_settings.ENVIRONMENT)
+            in {"staging", "production"}
+            and not app_settings.SECRET_KEY
+        ):
+            raise RuntimeError("Application SECRET_KEY is required for agent memory")
+
+        digest = hmac.new(
+            secret.encode("utf-8"),
+            f"agent-memory:v2:{session_id}".encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+        return f"agent:memory:v2:{digest}"
 
     async def load(self, session_id: str) -> list[BaseMessage]:
         """Load summary, episodic facts, and recent conversation history."""
         messages: list[BaseMessage] = []
 
-        summary_key = f"{self._prefix}:{session_id}:summary"
+        session_prefix = self._session_prefix(session_id)
+        summary_key = f"{session_prefix}:summary"
         summary = await self.redis.get(summary_key)
         if summary:
             summary_text = (
@@ -84,7 +112,7 @@ class DialogueMemory:
                 )
             )
 
-        short_term_key = f"{self._prefix}:{session_id}:messages"
+        short_term_key = f"{session_prefix}:messages"
         raw_messages = await self.redis.lrange(
             short_term_key, -self.max_short_term * 2, -1
         )
@@ -108,8 +136,8 @@ class DialogueMemory:
         assistant_message: str,
     ) -> None:
         """Save a turn and compact older turns when the threshold is reached."""
-        short_term_key = f"{self._prefix}:{session_id}:messages"
-        summary_key = f"{self._prefix}:{session_id}:summary"
+        short_term_key = f"{session_prefix}:messages"
+        summary_key = f"{session_prefix}:summary"
         now = datetime.now(timezone.utc).isoformat()
 
         pipe = self.redis.pipeline()
@@ -159,6 +187,7 @@ class DialogueMemory:
     ) -> None:
         """Summarize the oldest half of the window and retain recent overlap."""
         to_summarize_count = self.summarization_threshold
+        session_prefix = short_term_key.removesuffix(":messages")
         raw_messages = await self.redis.lrange(
             short_term_key, 0, to_summarize_count - 1
         )
@@ -197,21 +226,24 @@ class DialogueMemory:
             if not summary:
                 logger.warning("Memory summarization returned empty output")
                 return
-        except Exception:
-            logger.error("Memory summarization failed", exc_info=True)
+        except Exception as exc:
+            logger.error(
+                "Memory summarization failed",
+                extra={"error_type": type(exc).__name__},
+            )
             return
 
         # The summary is a context optimization, never the only copy of clinical
         # details. Archive verbatim turns with the summary before trimming the
         # active window; all tiers share the configured TTL.
-        archive_key = f"{self._prefix}:{session_id}:archive"
+        archive_key = f"{session_prefix}:archive"
         pipe = self.redis.pipeline()
         pipe.rpush(archive_key, *raw_messages)
         pipe.expire(archive_key, self.ttl)
         pipe.setex(summary_key, self.ttl, summary)
         pipe.ltrim(short_term_key, to_summarize_count, -1)
         await pipe.execute()
-        logger.info("Summarized and archived memory for session %s", session_id)
+        logger.info("Summarized and archived agent memory")
 
     async def save_episodic_fact(
         self,
@@ -220,14 +252,14 @@ class DialogueMemory:
         fact_value: str,
     ) -> None:
         """Save an explicitly extracted key fact without logging its value."""
-        episodic_key = f"{self._prefix}:{session_id}:episodic"
+        episodic_key = f"{self._session_prefix(session_id)}:episodic"
         await self.redis.hset(episodic_key, fact_type, fact_value)
         await self.redis.expire(episodic_key, self.ttl)
-        logger.info("Saved episodic fact type=%s for session %s", fact_type, session_id)
+        logger.info("Saved episodic fact type=%s", fact_type)
 
     async def get_episodic_facts(self, session_id: str) -> dict[str, str]:
         """Retrieve all episodic facts for a session."""
-        episodic_key = f"{self._prefix}:{session_id}:episodic"
+        episodic_key = f"{self._session_prefix(session_id)}:episodic"
         facts = await self.redis.hgetall(episodic_key)
         return {
             k.decode("utf-8") if isinstance(k, bytes) else str(k): (
@@ -239,9 +271,13 @@ class DialogueMemory:
     async def clear(self, session_id: str) -> None:
         """Clear all memory tiers for a session."""
         pipe = self.redis.pipeline()
-        pipe.delete(f"{self._prefix}:{session_id}:messages")
-        pipe.delete(f"{self._prefix}:{session_id}:summary")
-        pipe.delete(f"{self._prefix}:{session_id}:episodic")
-        pipe.delete(f"{self._prefix}:{session_id}:archive")
+        session_prefix = self._session_prefix(session_id)
+        for tier in ("messages", "summary", "episodic", "archive"):
+            pipe.delete(f"{session_prefix}:{tier}")
+
+        # Remove exact legacy keys on explicit clear, but never read them.
+        legacy_prefix = f"agent:memory:{session_id}"
+        for tier in ("messages", "summary", "episodic", "archive"):
+            pipe.delete(f"{legacy_prefix}:{tier}")
         await pipe.execute()
-        logger.info("Cleared all memory for session %s", session_id)
+        logger.info("Cleared all agent memory tiers")
