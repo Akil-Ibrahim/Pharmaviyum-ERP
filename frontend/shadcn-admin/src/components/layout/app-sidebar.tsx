@@ -15,7 +15,11 @@ import { TeamSwitcher } from './team-switcher'
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
   return (
-    <Sidebar collapsible={collapsible} variant={variant} className='border-sidebar-border/80'>
+    <Sidebar
+      collapsible={collapsible}
+      variant={variant}
+      className='border-sidebar-border/80'
+    >
       <SidebarHeader className='px-3 py-3'>
         <TeamSwitcher teams={sidebarData.teams} />
       </SidebarHeader>
