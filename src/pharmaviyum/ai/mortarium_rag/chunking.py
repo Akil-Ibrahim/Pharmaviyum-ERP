@@ -82,9 +82,7 @@ class MedicalChunker:
                     if " " in overlap_text:
                         overlap_text = overlap_text.split(" ", 1)[1]
                     part = overlap_text + part
-                chunk = self._create_chunk(
-                    document, part, section_type, chunk_index
-                )
+                chunk = self._create_chunk(document, part, section_type, chunk_index)
                 if chunk:
                     chunks.append(chunk)
                     chunk_index += 1

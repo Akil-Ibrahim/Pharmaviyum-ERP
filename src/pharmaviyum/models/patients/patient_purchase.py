@@ -33,7 +33,9 @@ class PatientPurchase(Base):
     dispensed_blisters: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     dispensed_units: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     unit_price: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
-    prescription_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    prescription_required: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
     purchased_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
 
     patient: Mapped["Patient"] = relationship("Patient", back_populates="purchases")
