@@ -74,8 +74,8 @@ class ModelRouter:
         language = (context or {}).get("language", "en").lower()
 
         logger.debug(
-            f"Model routing: complexity={complexity}, language={language}",
-            extra={"query_preview": query[:50]},
+            "Model routing completed",
+            extra={"complexity": complexity, "language": language},
         )
 
         # Rule 1: Safety checks always require the main or complex model

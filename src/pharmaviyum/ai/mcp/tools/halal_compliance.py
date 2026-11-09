@@ -231,6 +231,7 @@ def check_istihalah(ingredient: str, final_product: str) -> dict[str, str] | Non
     input_schema=HalalCheckRequest,
     output_schema=HalalCertification,
     category="regulatory",
+    execution_class="read",
     latency_estimate_ms=80,
     requires_db=True,
     tags=["halal", "fiqh", "shia", "sunni", "regulatory", "mena", "sea"],
@@ -322,13 +323,10 @@ async def check_halal_compliance(input: HalalCheckRequest) -> HalalCertification
     latency_ms = (time.perf_counter() - start) * 1000
 
     logger.info(
-        f"Global Halal check: {drug_name} ({country}, {fiqh_school}) -> {status.upper()}",
+        "Halal compliance check completed",
         extra={
-            "drug": drug_name,
             "status": status,
-            "fiqh": fiqh_school,
-            "marja": marja,
-            "darurah": darurah_applied,
+            "darurah_applied": darurah_applied,
             "latency_ms": latency_ms,
         },
     )

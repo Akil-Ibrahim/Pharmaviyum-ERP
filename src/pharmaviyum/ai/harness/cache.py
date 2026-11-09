@@ -120,8 +120,11 @@ class PromptCache:
                 )
                 await self.redis.zadd(semantic_key, {payload: 1.0})
                 await self.redis.expire(semantic_key, self.semantic_ttl)
-            except Exception as e:
-                logger.warning(f"Failed to cache semantic embedding: {e}")
+            except Exception as exc:
+                logger.warning(
+                    "Failed to cache semantic embedding",
+                    extra={"error_type": type(exc).__name__},
+                )
 
     @staticmethod
     def _validate_context(context: dict[str, Any] | None) -> None:
@@ -227,8 +230,11 @@ class PromptCache:
 
             return None
 
-        except Exception as e:
-            logger.warning(f"Semantic cache search failed: {e}")
+        except Exception as exc:
+            logger.warning(
+                "Semantic cache search failed",
+                extra={"error_type": type(exc).__name__},
+            )
             return None
 
     async def clear(self, pattern: str = "*") -> int:
