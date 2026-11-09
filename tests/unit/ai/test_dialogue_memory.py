@@ -16,6 +16,7 @@ class FakePipeline:
         def queue(*args):
             self.operations.append((name, args))
             return self
+
         return queue
 
     async def execute(self):

@@ -18,7 +18,6 @@ from pydantic import BaseModel, Field
 
 from src.pharmaviyum.core.logging import logger
 
-
 _PROMPT_INJECTION_PATTERNS = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (

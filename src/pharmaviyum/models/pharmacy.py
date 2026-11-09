@@ -15,9 +15,7 @@ class Pharmacy(Base):
         String(64), unique=True, nullable=False, index=True
     )
     address: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    timezone: Mapped[str] = mapped_column(
-        String(64), nullable=False, default="UTC"
-    )
+    timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="UTC")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False

@@ -36,15 +36,23 @@ class Inventory(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     product_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True
+        Integer,
+        ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     pharmacy_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("pharmacies.id", ondelete="CASCADE"), nullable=False, index=True
+        Integer,
+        ForeignKey("pharmacies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     reserved_quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     reorder_level: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    lot_number: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    lot_number: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, index=True
+    )
     expires_at: Mapped[datetime | None] = mapped_column(
         DateTime, nullable=True, index=True
     )
