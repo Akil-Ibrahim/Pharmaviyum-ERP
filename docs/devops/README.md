@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the production engineering roadmap for Pharmaviyum ERP/CRM. The target is a reliable, observable and secure platform for approximately 100 pharmacies with high visitor traffic and an AI/LLM workload.
+This document defines the production engineering roadmap for Pharmaviyum ERP/CRM. The target planning scenario is 100 pharmacies, 200 daily visitors per pharmacy (20,000 total), five employees per pharmacy (500 total), and three POS terminals per pharmacy (300 total). AI request volume and peak concurrency are not yet specified and must be measured; visitor counts must not be treated as AI requests or concurrent sessions.
 
 The project deliberately evolves the existing deployment model instead of introducing infrastructure for its own sake.
 
@@ -51,7 +51,7 @@ Establish a measurable baseline before changing infrastructure.
 
 The current k6 thresholds are initial engineering gates, not final SLOs. Recalibrate them after representative measurements.
 
-**Exit criteria:** a reproducible load-test suite and documented capacity baseline.
+**Exit criteria:** a reproducible load-test suite and documented capacity baseline. Business sizing assumptions and the benchmark evidence contract are defined in [`ENGINEERING_BENCHMARK_REQUIREMENTS.md`](./ENGINEERING_BENCHMARK_REQUIREMENTS.md). Suggested concurrency steps are stress-test profiles, not traffic forecasts.
 
 See `docs/devops/STAGE_1_LOAD_TESTING.md` for execution, variables, measurement requirements and exit criteria.
 
@@ -90,9 +90,19 @@ Track at minimum:
 - LLM request latency, errors and concurrency.
 - Host/container CPU, memory, disk and network saturation.
 
-Define SLI/SLO targets after Stage 1 measurements rather than inventing arbitrary numbers.
+Define SLI/SLO targets after Stage 1 measurements rather than inventing arbitrary numbers. Measure trace coverage, context propagation, exporter/collector failures, dropped telemetry, alert delivery and log/trace correlation; instrumentation presence alone is not proof of end-to-end observability.
 
 **Exit criteria:** dashboards, alert rules, correlated traces and documented SLOs.
+
+### Benchmark & Quality Gates
+
+Use [`ENGINEERING_BENCHMARK_REQUIREMENTS.md`](./ENGINEERING_BENCHMARK_REQUIREMENTS.md) as the canonical metric and reporting contract across API, PostgreSQL/pgvector, Redis, RAG, pharmacy-specific AI, agents/MCP, security, OpenTelemetry, frontend E2E and scalability.
+
+Keep independent gates for backend performance, data services, retrieval quality, answer/citation quality, clinical safety, agent/tool correctness, security/tenant isolation, observability, frontend workflows and recovery. Do not collapse these dimensions into a single average score. Confirmed cross-tenant leakage, unauthorized protected tool execution, sensitive telemetry exposure or critical clinical-safety failures block release.
+
+Ragas is used only for metrics supported by the pinned installed version. Retrieval ranking metrics and pharmacy-specific clinical metrics require project evaluators and/or expert-reviewed labels; they must not be described as native Ragas metrics without verifying the API.
+
+Every benchmark must identify commit, environment, workload, dataset, sample size, command and artifact. Distinguish MEASURED, HISTORICAL, ESTIMATED, NOT TESTED and UNAVAILABLE. Codespaces results are not production-capacity evidence.
 
 ### Stage 3 — Application Reliability
 
@@ -336,6 +346,7 @@ The exact topology remains subject to capacity measurements and deployment const
 ## Related documentation
 
 - `docs/devops/STAGE_1_LOAD_TESTING.md` — Stage 1 load-test procedure.
+- `docs/devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md` — canonical engineering, RAG, clinical AI, agent, security, observability and scalability metrics.
 - `docs/ai_architecture.md` — AI, RAG, memory, guardrails and MCP architecture.
 - `docs/guides/ENVIRONMENT_SETUP.md` — environment configuration and deployment prerequisites.
 - `docs/deployment/FASTAPI_CLOUD.md` — hosted application deployment runbook.
