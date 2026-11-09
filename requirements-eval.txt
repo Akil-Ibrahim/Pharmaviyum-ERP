@@ -1,0 +1,3 @@
+# Offline evaluation only. Do not install in the production runtime image.
+# Ragas 0.4.x collections API is used by evaluation/ragas_adapter.py.
+ragas==0.4.3
