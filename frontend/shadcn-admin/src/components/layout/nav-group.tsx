@@ -263,7 +263,9 @@ function SidebarMenuCollapsedDropdown({
                   <span className='max-w-52 truncate text-[13px] font-semibold text-foreground'>
                     {sub.title}
                   </span>
-                  {sub.badge && <span className='ms-auto text-xs'>{sub.badge}</span>}
+                  {sub.badge && (
+                    <span className='ms-auto text-xs'>{sub.badge}</span>
+                  )}
                 </Link>
               </DropdownMenuItem>
             )
