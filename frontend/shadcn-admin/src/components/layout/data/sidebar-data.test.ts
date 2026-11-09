@@ -2,86 +2,98 @@ import { describe, expect, it } from 'vitest'
 import { sidebarData } from './sidebar-data'
 
 describe('Pharmaviyum sidebar navigation', () => {
-  it('keeps the primary operational items in the agreed order', () => {
-    const operations = sidebarData.navGroups.find(
-      (group) => group.title === 'Operations'
-    )
+  const group = (title: string) =>
+    sidebarData.navGroups.find((item) => item.title === title)
 
-    expect(operations?.items.map((item) => item.title)).toEqual([
+  const itemTitles = (title: string) =>
+    group(title)?.items.map((item) => item.title)
+
+  it('keeps the compact operational navigation in the agreed order', () => {
+    expect(itemTitles('Operations')).toEqual([
       'Dashboard',
       'POS',
       'Mortarium AI',
-      'Drug Reference',
-      'Catalog Review',
       'Patients',
-      'Purchase Ledger',
-      'Orders',
       'Prescriptions',
-      'Pharmacy',
-    ])
-  })
-
-  it('groups the seven pharmacy entities under Pharmacy', () => {
-    const operations = sidebarData.navGroups.find(
-      (group) => group.title === 'Operations'
-    )
-    const pharmacy = operations?.items.find((item) => item.title === 'Pharmacy')
-
-    expect(pharmacy?.items?.map((item) => item.title)).toEqual([
       'Inventory',
       'Procurement',
-      'Transfers',
-      'Expiry Control',
-      'Batches',
       'Pharmacies',
+    ])
+  })
+
+  it('groups inventory capabilities under Inventory', () => {
+    const inventory = group('Operations')?.items.find(
+      (item) => item.title === 'Inventory'
+    )
+
+    expect(inventory?.items?.map((item) => item.title)).toEqual([
+      'Drug Catalog',
+      'Catalog Review',
+      'Stock Overview',
+      'Batches',
+      'Expiry Management',
+      'Transfers',
+    ])
+  })
+
+  it('groups procurement capabilities under Procurement', () => {
+    const procurement = group('Operations')?.items.find(
+      (item) => item.title === 'Procurement'
+    )
+
+    expect(procurement?.items?.map((item) => item.title)).toEqual([
       'Suppliers',
+      'Purchase Orders',
+      'Receiving',
     ])
   })
 
-  it('keeps ERP Systems, Sync Events, and Tasks as separate final navigation items', () => {
-    const integrations = sidebarData.navGroups.find(
-      (group) => group.title === 'Integrations'
-    )
+  it('keeps Users and Settings in Administration', () => {
+    expect(itemTitles('Administration')).toEqual(['Users', 'Settings'])
 
-    expect(integrations?.items.map((item) => item.title)).toEqual([
-      'ERP Systems',
-      'Sync Events',
-      'Tasks',
-    ])
-  })
-
-  it('keeps Developer Tools under Settings and hides legacy sidebar links', () => {
-    const administration = sidebarData.navGroups.find(
-      (group) => group.title === 'Administration'
-    )
-    const settings = administration?.items.find(
+    const settings = group('Administration')?.items.find(
       (item) => item.title === 'Settings'
     )
-    const visibleTitles = sidebarData.navGroups.flatMap((group) =>
-      group.items.flatMap((item) => [
-        item.title,
-        ...(item.items?.map((subItem) => subItem.title) ?? []),
-      ])
+
+    expect(settings?.items?.map((item) => item.title)).toEqual([
+      'Profile',
+      'Account',
+      'Appearance',
+      'Notifications',
+      'Developer Tools',
+    ])
+  })
+
+  it('groups ERP connections and sync history under System integrations', () => {
+    expect(itemTitles('System')).toEqual(['Integrations', 'Background Tasks'])
+
+    const integrations = group('System')?.items.find(
+      (item) => item.title === 'Integrations'
     )
 
-    expect(settings?.items?.map((item) => item.title)).toContain(
-      'Developer Tools'
+    expect(integrations?.items?.map((item) => item.title)).toEqual([
+      'ERP Connections',
+      'Sync History',
+    ])
+  })
+
+  it('preserves the Mortarium AI destination and removes redundant top-level links', () => {
+    const mortarium = group('Operations')?.items.find(
+      (item) => item.title === 'Mortarium AI'
     )
-    expect(sidebarData.user.name).toBe('admin')
-    expect(sidebarData.navGroups.map((group) => group.title)).toEqual([
+    const allTopLevelTitles = sidebarData.navGroups.flatMap((navGroup) =>
+      navGroup.items.map((item) => item.title)
+    )
+
+    expect(mortarium?.url).toBe('/mortarium-ai')
+    expect(allTopLevelTitles).not.toContain('Drug Reference')
+    expect(allTopLevelTitles).not.toContain('Catalog Review')
+    expect(allTopLevelTitles).not.toContain('Purchase Ledger')
+    expect(allTopLevelTitles).not.toContain('Orders')
+    expect(sidebarData.navGroups.map((navGroup) => navGroup.title)).toEqual([
       'Operations',
       'Administration',
-      'Integrations',
+      'System',
     ])
-    const integrations = sidebarData.navGroups.find(
-      (group) => group.title === 'Integrations'
-    )
-    expect(integrations?.items.map((item) => item.title)).toEqual([
-      'ERP Systems',
-      'Sync Events',
-      'Tasks',
-    ])
-    expect(visibleTitles).not.toContain('Products')
-    expect(visibleTitles).not.toContain('Pharmacist Workspace')
   })
 })
