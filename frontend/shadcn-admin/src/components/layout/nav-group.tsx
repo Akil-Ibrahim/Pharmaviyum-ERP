@@ -63,7 +63,7 @@ export function NavGroup({ title, items }: NavGroupProps) {
 
 function NavBadge({ children }: { children: ReactNode }) {
   return (
-    <Badge className='ms-auto rounded-md border border-primary/15 bg-primary/10 px-1.5 py-0 text-[10px] font-bold text-primary shadow-none'>
+    <Badge className='ms-auto rounded-md border border-primary/15 bg-primary/10 px-1.5 py-0 text-[10px] font-bold text-primary shadow-none group-data-[collapsible=icon]:hidden'>
       {children}
     </Badge>
   )
@@ -121,7 +121,7 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
       >
         <Link to={item.url} onClick={() => setOpenMobile(false)}>
           <NavIcon icon={item.icon} active={isActive} />
-          <span className='min-w-0 truncate text-sm font-medium text-[#0F172A]'>
+          <span className='min-w-0 truncate text-sm font-medium text-[#0F172A] group-data-[collapsible=icon]:hidden'>
             {item.title}
           </span>
           {item.badge && <NavBadge>{item.badge}</NavBadge>}
@@ -221,7 +221,7 @@ function SidebarMenuCollapsedDropdown({
             tooltip={item.title}
             isActive={isActive}
             className={[
-              'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150',
+              'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center',
               isActive
                 ? 'bg-transparent text-[#0F172A] hover:bg-transparent'
                 : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
@@ -232,7 +232,7 @@ function SidebarMenuCollapsedDropdown({
               {item.title}
             </span>
             {item.badge && <NavBadge>{item.badge}</NavBadge>}
-            <ChevronRight className='ms-auto size-4 text-muted-foreground/70' />
+            <ChevronRight className='ms-auto size-4 text-muted-foreground/70 group-data-[collapsible=icon]:hidden' />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
