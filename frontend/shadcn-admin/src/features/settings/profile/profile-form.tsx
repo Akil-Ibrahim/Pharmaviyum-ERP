@@ -1,9 +1,9 @@
+import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
-import { useFieldArray, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link } from '@tanstack/react-router'
+import { Camera, Trash2 } from 'lucide-react'
 import { showSubmittedData } from '@/lib/show-submitted-data'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -15,58 +15,79 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/date-picker'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@/components/ui/avatar'
 
 const profileFormSchema = z.object({
-  username: z
-    .string('Please enter your username.')
-    .min(2, 'Username must be at least 2 characters.')
-    .max(30, 'Username must not be longer than 30 characters.'),
-  email: z.email({
-    error: (iss) =>
-      iss.input === undefined
-        ? 'Please select an email to display.'
-        : undefined,
-  }),
-  bio: z.string().max(160).min(4),
-  urls: z
-    .array(
-      z.object({
-        value: z.url('Please enter a valid URL.'),
-      })
-    )
-    .optional(),
+  firstName: z
+    .string()
+    .trim()
+    .min(2, 'First name must be at least 2 characters.')
+    .max(50, 'First name must not be longer than 50 characters.'),
+  lastName: z
+    .string()
+    .trim()
+    .min(2, 'Last name must be at least 2 characters.')
+    .max(50, 'Last name must not be longer than 50 characters.'),
+  dateOfBirth: z.date().optional(),
+  email: z.email('Please enter a valid email address.'),
 })
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
-// This can come from your database or API.
-const defaultValues: Partial<ProfileFormValues> = {
-  bio: 'I own a computer.',
-  urls: [
-    { value: 'https://shadcn.com' },
-    { value: 'http://twitter.com/shadcn' },
-  ],
+const defaultValues: ProfileFormValues = {
+  firstName: '',
+  lastName: '',
+  email: '',
 }
 
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024
+
 export function ProfileForm() {
+  const [avatarPreview, setAvatarPreview] = useState<string>()
+  const [avatarError, setAvatarError] = useState<string>()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues,
     mode: 'onChange',
   })
 
-  const { fields, append } = useFieldArray({
-    name: 'urls',
-    control: form.control,
-  })
+  useEffect(() => {
+    if (!avatarPreview) return
+    return () => URL.revokeObjectURL(avatarPreview)
+  }, [avatarPreview])
+
+  function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Please choose an image file.')
+      event.target.value = ''
+      return
+    }
+
+    if (file.size > MAX_AVATAR_SIZE) {
+      setAvatarError('Image must be 5 MB or smaller.')
+      event.target.value = ''
+      return
+    }
+
+    setAvatarError(undefined)
+    setAvatarPreview(URL.createObjectURL(file))
+  }
+
+  function removeAvatar() {
+    setAvatarPreview(undefined)
+    setAvatarError(undefined)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   return (
     <Form {...form}>
@@ -74,103 +95,149 @@ export function ProfileForm() {
         onSubmit={form.handleSubmit((data) => showSubmittedData(data))}
         className='space-y-8'
       >
-        <FormField
-          control={form.control}
-          name='username'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Username</FormLabel>
-              <FormControl>
-                <Input placeholder='shadcn' {...field} />
-              </FormControl>
-              <FormDescription>
-                This is your public display name. It can be your real name or a
-                pseudonym. You can only change this once every 30 days.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name='email'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder='Select a verified email to display' />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value='m@example.com'>m@example.com</SelectItem>
-                  <SelectItem value='m@google.com'>m@google.com</SelectItem>
-                  <SelectItem value='m@support.com'>m@support.com</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                You can manage verified email addresses in your{' '}
-                <Link to='/'>email settings</Link>.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name='bio'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Bio</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder='Tell us a little bit about yourself'
-                  className='resize-none'
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                You can <span>@mention</span> other users and organizations to
-                link to them.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div>
-          {fields.map((field, index) => (
+        <div className='space-y-4'>
+          <div className='space-y-1'>
+            <h3 className='text-base font-medium'>Profile photo</h3>
+            <p className='text-sm text-muted-foreground'>
+              Add a photo so your colleagues can recognize you.
+            </p>
+          </div>
+          <div className='flex flex-wrap items-center gap-4'>
+            <Avatar className='size-20'>
+              {avatarPreview ? (
+                <AvatarImage src={avatarPreview} alt='Profile photo preview' />
+              ) : null}
+              <AvatarFallback className='text-xl'>
+                <Camera className='size-7 text-muted-foreground' />
+              </AvatarFallback>
+            </Avatar>
+            <div className='flex flex-wrap gap-2'>
+              <input
+                ref={fileInputRef}
+                type='file'
+                accept='image/*'
+                className='sr-only'
+                aria-label='Choose profile photo'
+                onChange={handleAvatarChange}
+              />
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Camera className='me-2 size-4' />
+                {avatarPreview ? 'Change photo' : 'Upload photo'}
+              </Button>
+              {avatarPreview ? (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  onClick={removeAvatar}
+                >
+                  <Trash2 className='me-2 size-4' />
+                  Remove
+                </Button>
+              ) : null}
+            </div>
+          </div>
+          <p className='text-xs text-muted-foreground'>
+            JPG, PNG or other image formats. Maximum file size: 5 MB.
+          </p>
+          {avatarError ? (
+            <p role='alert' className='text-sm text-destructive'>
+              {avatarError}
+            </p>
+          ) : null}
+        </div>
+
+        <div className='space-y-4'>
+          <div className='space-y-1'>
+            <h3 className='text-base font-medium'>Personal information</h3>
+            <p className='text-sm text-muted-foreground'>
+              Your name and date of birth.
+            </p>
+          </div>
+          <div className='grid gap-6 sm:grid-cols-2'>
             <FormField
               control={form.control}
-              key={field.id}
-              name={`urls.${index}.value`}
+              name='firstName'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={cn(index !== 0 && 'sr-only')}>
-                    URLs
-                  </FormLabel>
-                  <FormDescription className={cn(index !== 0 && 'sr-only')}>
-                    Add links to your website, blog, or social media profiles.
-                  </FormDescription>
-                  <FormControl className={cn(index !== 0 && 'mt-1.5')}>
-                    <Input {...field} />
+                  <FormLabel>First name</FormLabel>
+                  <FormControl>
+                    <Input placeholder='Your first name' autoComplete='given-name' {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          ))}
-          <Button
-            type='button'
-            variant='outline'
-            size='sm'
-            className='mt-2'
-            onClick={() => append({ value: '' })}
-          >
-            Add URL
-          </Button>
+            <FormField
+              control={form.control}
+              name='lastName'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last name</FormLabel>
+                  <FormControl>
+                    <Input placeholder='Your last name' autoComplete='family-name' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <FormField
+            control={form.control}
+            name='dateOfBirth'
+            render={({ field }) => (
+              <FormItem className='flex flex-col sm:max-w-sm'>
+                <FormLabel>Date of birth</FormLabel>
+                <DatePicker
+                  selected={field.value}
+                  onSelect={field.onChange}
+                  disabled={(date) => date > new Date()}
+                />
+                <FormDescription>
+                  Optional. Your date of birth is only used for your profile.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
-        <Button type='submit'>Update profile</Button>
+
+        <div className='space-y-4'>
+          <div className='space-y-1'>
+            <h3 className='text-base font-medium'>Contact information</h3>
+            <p className='text-sm text-muted-foreground'>
+              The email address associated with your profile.
+            </p>
+          </div>
+          <FormField
+            control={form.control}
+            name='email'
+            render={({ field }) => (
+              <FormItem className='sm:max-w-md'>
+                <FormLabel>Email address</FormLabel>
+                <FormControl>
+                  <Input
+                    type='email'
+                    placeholder='you@example.com'
+                    autoComplete='email'
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Email changes may require verification.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <Button type='submit' disabled={!form.formState.isValid}>
+          Save changes
+        </Button>
       </form>
     </Form>
   )
