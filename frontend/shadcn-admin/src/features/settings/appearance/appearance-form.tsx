@@ -8,7 +8,7 @@ import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
 import { useFont } from '@/context/font-provider'
 import {
-  getNavigationIconColorValue,
+  getNavIconColorValue,
   NAVIGATION_ICON_COLORS,
   type NavigationIconColor,
   type NavigationIconPreset,
@@ -237,7 +237,7 @@ export function AppearanceForm() {
                         id='navigation-icon-color-picker'
                         type='color'
                         aria-label='Pick custom navigation icon colour'
-                        value={getNavigationIconColorValue(
+                        value={getNavIconColorValue(
                           field.value as NavigationIconColor
                         )}
                         onChange={(event) =>
@@ -252,7 +252,7 @@ export function AppearanceForm() {
                       </FormLabel>
                       <Input
                         id='navigation-icon-color-hex'
-                        value={getNavigationIconColorValue(
+                        value={getNavIconColorValue(
                           field.value as NavigationIconColor
                         ).toUpperCase()}
                         onChange={(event) =>
@@ -267,7 +267,7 @@ export function AppearanceForm() {
                       aria-hidden='true'
                       className='mb-1 size-5 rounded-full border'
                       style={{
-                        backgroundColor: getNavigationIconColorValue(
+                        backgroundColor: getNavIconColorValue(
                           field.value as NavigationIconColor
                         ),
                       }}
