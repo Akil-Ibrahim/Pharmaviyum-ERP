@@ -4,7 +4,7 @@ import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
 import { getCookie } from '@/lib/cookies'
 import {
-  getNavIconColorValue,
+  getNavIconColor,
   ThemeProvider,
   useTheme,
 } from './theme-provider'
@@ -65,10 +65,10 @@ describe('ThemeProvider navigation icon color', () => {
       .element(screen.getByText('#123456', { exact: true }))
       .toBeInTheDocument()
     expect(getCookie('pharmaviyum-navigation-icon-color')).toBe('#123456')
-    expect(getNavIconColorValue('#123456')).toBe('#123456')
+    expect(getNavIconColor('#123456')).toBe('#123456')
   })
 
   it('resolves a named preset to its color value', () => {
-    expect(getNavIconColorValue('emerald')).toBe('#059669')
+    expect(getNavIconColor('emerald')).toBe('#059669')
   })
 })
