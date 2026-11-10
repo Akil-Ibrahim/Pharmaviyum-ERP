@@ -26,6 +26,31 @@ import {
   type ServiceState,
 } from './api'
 
+const classNames = {
+  page: 'space-y-6 p-4 md:p-6',
+  serviceHeader: 'grid-cols-[1fr_auto] items-start',
+  iconContainer: 'flex size-10 items-center justify-center rounded-lg bg-muted',
+  icon: 'size-5 text-muted-foreground',
+  stack: 'space-y-1',
+  diagnostic:
+    'rounded-md bg-muted px-3 py-2 font-mono text-xs text-muted-foreground',
+  description: 'text-sm text-muted-foreground',
+  pageHeader:
+    'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
+  iconRow: 'flex items-center gap-2',
+  summaryCard:
+    'flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between',
+  summaryRow: 'flex items-center gap-3',
+  summaryIcon:
+    'flex size-11 items-center justify-center rounded-full bg-muted',
+  rightColumn: 'flex flex-col items-start gap-1 sm:items-end',
+  skeletonRow: 'flex h-28 items-center gap-3',
+  skeletonIcon: 'size-10 animate-pulse rounded-lg bg-muted',
+  skeletonText: 'h-4 w-32 animate-pulse rounded bg-muted',
+  footer:
+    'space-y-2 rounded-lg border bg-muted/30 p-4 text-xs text-muted-foreground',
+}
+
 const stateLabels: Record<ServiceState, string> = {
   operational: 'Operational',
   degraded: 'Degraded',
@@ -71,12 +96,12 @@ function ServiceCard({ check }: { check: ServiceCheck }) {
 
   return (
     <Card>
-      <CardHeader className='grid-cols-[1fr_auto] items-start'>
-        <div className='flex items-center gap-3'>
-          <span className='flex size-10 items-center justify-center rounded-lg bg-muted'>
-            <Icon className='size-5 text-muted-foreground' />
+      <CardHeader className={classNames.serviceHeader}>
+        <div className={classNames.summaryRow}>
+          <span className={classNames.iconContainer}>
+            <Icon className={classNames.icon} />
           </span>
-          <div className='space-y-1'>
+          <div className={classNames.stack}>
             <CardTitle className='text-base'>{check.name}</CardTitle>
             <CardDescription>Live health check</CardDescription>
           </div>
@@ -87,9 +112,9 @@ function ServiceCard({ check }: { check: ServiceCheck }) {
         </Badge>
       </CardHeader>
       <CardContent className='space-y-2'>
-        <p className='text-sm text-muted-foreground'>{check.description}</p>
+        <p className={classNames.description}>{check.description}</p>
         {check.diagnostic && (
-          <p className='rounded-md bg-muted px-3 py-2 font-mono text-xs text-muted-foreground'>
+          <p className={classNames.diagnostic}>
             Diagnostic: {check.diagnostic}
           </p>
         )}
@@ -118,16 +143,16 @@ export function SystemStatusPage() {
         : 'One or more components need attention.'
 
   return (
-    <main className='space-y-6 p-4 md:p-6'>
-      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-        <div className='space-y-1'>
-          <div className='flex items-center gap-2'>
-            <Activity className='size-5 text-muted-foreground' />
+    <main className={classNames.page}>
+      <div className={classNames.pageHeader}>
+        <div className={classNames.stack}>
+          <div className={classNames.iconRow}>
+            <Activity className={classNames.icon} />
             <h1 className='text-2xl font-semibold tracking-tight'>
               System Status
             </h1>
           </div>
-          <p className='text-sm text-muted-foreground'>
+          <p className={classNames.description}>
             Live health checks for the Pharmaviyum application and its core
             dependencies.
           </p>
@@ -148,17 +173,17 @@ export function SystemStatusPage() {
       </div>
 
       <Card>
-        <CardContent className='flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between'>
-          <div className='flex items-center gap-3'>
-            <span className='flex size-11 items-center justify-center rounded-full bg-muted'>
-              <OverallIcon className='size-5 text-muted-foreground' />
+        <CardContent className={classNames.summaryCard}>
+          <div className={classNames.summaryRow}>
+            <span className={classNames.summaryIcon}>
+              <OverallIcon className={classNames.icon} />
             </span>
-            <div className='space-y-1'>
+            <div className={classNames.stack}>
               <p className='font-medium'>Overall system status</p>
-              <p className='text-sm text-muted-foreground'>{summary}</p>
+              <p className={classNames.description}>{summary}</p>
             </div>
           </div>
-          <div className='flex flex-col items-start gap-1 sm:items-end'>
+          <div className={classNames.rightColumn}>
             <Badge variant='outline' className={stateClasses[overall]}>
               {stateLabels[overall]}
             </Badge>
@@ -176,15 +201,15 @@ export function SystemStatusPage() {
         {statusQuery.isPending &&
           ['api', 'postgres', 'redis', 'ai'].map((item) => (
             <Card key={item}>
-              <CardContent className='flex h-28 items-center gap-3'>
-                <span className='size-10 animate-pulse rounded-lg bg-muted' />
-                <span className='h-4 w-32 animate-pulse rounded bg-muted' />
+              <CardContent className={classNames.skeletonRow}>
+                <span className={classNames.skeletonIcon} />
+                <span className={classNames.skeletonText} />
               </CardContent>
             </Card>
           ))}
       </section>
 
-      <div className='space-y-2 rounded-lg border bg-muted/30 p-4 text-xs text-muted-foreground'>
+      <div className={classNames.footer}>
         <p>
           Checks run automatically every 30 seconds. The API status confirms
           application availability through FastAPI Cloud; it does not query the
