@@ -19,7 +19,7 @@ export function AppSidebar() {
     <Sidebar
       collapsible={collapsible}
       variant={variant}
-      className='border-sidebar-border/80'
+      className='border-e border-[#E5E7EB] bg-white'
     >
       <SidebarHeader className='px-2 py-3'>
         <div className='flex items-center gap-1 group-data-[collapsible=icon]:flex-col'>
@@ -28,6 +28,7 @@ export function AppSidebar() {
           </div>
           <SidebarTrigger
             aria-label='Collapse or expand navigation'
+            title='Collapse or expand navigation'
             className='size-7 shrink-0 rounded-lg text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A]'
           />
         </div>
