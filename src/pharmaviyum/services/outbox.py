@@ -24,23 +24,27 @@ async def record_outbox_event(
     This function deliberately does not commit or publish. If the business
     transaction rolls back, the outbox row rolls back with it.
     """
+    event_id = str(uuid4())
+    occurred_at = datetime.now(timezone.utc)
     event = OutboxEvent(
-        event_id=str(uuid4()),
+        event_id=event_id,
         pharmacy_id=pharmacy_id,
         event_type=event_type,
         schema_version=1,
         aggregate_type=aggregate_type,
         aggregate_id=str(aggregate_id),
         aggregate_version=aggregate_version,
+        occurred_at=occurred_at,
+        created_at=occurred_at,
+        available_at=occurred_at,
         payload={
             **payload,
-            "event_id": None,  # replaced below with the generated immutable ID
+            "event_id": event_id,
             "event_type": event_type,
             "schema_version": 1,
             "pharmacy_id": pharmacy_id,
-            "occurred_at": datetime.now(timezone.utc).isoformat(),
+            "occurred_at": occurred_at.isoformat(),
         },
     )
-    event.payload["event_id"] = event.event_id
     session.add(event)
     return event
