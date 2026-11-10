@@ -183,7 +183,7 @@ describe('ConfigDrawer (integration)', () => {
           name: /reset theme preference to default/i,
         })
       )
-      await vi.waitFor(() => expect(getCookie('vite-ui-theme')).toBeUndefined())
+      await vi.waitFor(() => expect(getCookie('vite-ui-theme')).toBe('light'))
       await vi.waitFor(() =>
         expect(document.documentElement.classList.contains('light')).toBe(true)
       )
