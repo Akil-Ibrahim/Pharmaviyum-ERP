@@ -167,7 +167,7 @@ function SidebarMenuCollapsible({
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent className='CollapsibleContent'>
-          <SidebarMenuSub className='ms-5 mt-1 gap-1 border-sidebar-border/80 py-1 ps-3'>
+          <SidebarMenuSub className='ms-5 mt-1 gap-1 border-sidebar-border/80 ps-3 py-1'>
             {item.items.map((subItem) => {
               const isSubActive = checkIsActive(href, subItem)
               return (
