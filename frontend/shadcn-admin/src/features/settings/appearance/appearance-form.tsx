@@ -6,7 +6,7 @@ import { fonts } from '@/config/fonts'
 import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
 import { useFont } from '@/context/font-provider'
-import { useTheme, type ThemePreset } from '@/context/theme-provider'
+import { useTheme } from '@/context/theme-provider'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
   Form,
@@ -21,35 +21,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 const appearanceFormSchema = z.object({
   theme: z.enum(['light', 'dark']),
-  preset: z.enum([
-    'default',
-    'neutral',
-    'stone',
-    'zinc',
-    'slate',
-    'gray',
-    'mauve',
-    'olive',
-    'mist',
-    'taupe',
-    'red',
-    'orange',
-    'amber',
-    'yellow',
-    'lime',
-    'green',
-    'emerald',
-    'teal',
-    'cyan',
-    'sky',
-    'blue',
-    'indigo',
-    'violet',
-    'purple',
-    'fuchsia',
-    'pink',
-    'rose',
-  ]),
   font: z.enum(fonts),
 })
 
@@ -57,12 +28,11 @@ type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
 
 export function AppearanceForm() {
   const { font, setFont } = useFont()
-  const { theme, setTheme, preset, setPreset } = useTheme()
+  const { theme, setTheme } = useTheme()
 
   // This can come from your database or API.
   const defaultValues: Partial<AppearanceFormValues> = {
     theme: theme as 'light' | 'dark',
-    preset,
     font,
   }
 
@@ -74,7 +44,6 @@ export function AppearanceForm() {
   function onSubmit(data: AppearanceFormValues) {
     if (data.font != font) setFont(data.font)
     if (data.theme != theme) setTheme(data.theme)
-    if (data.preset != preset) setPreset(data.preset as ThemePreset)
 
     showSubmittedData(data)
   }
@@ -186,77 +155,6 @@ export function AppearanceForm() {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name='preset'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Theme preset</FormLabel>
-              <FormDescription>
-                Choose a complete shadcn color palette for the Pharmaviyum admin
-                interface. It updates surfaces, text, controls, borders, charts,
-                and navigation icon colors while preserving the navigation
-                layout and icon style.
-              </FormDescription>
-              <FormMessage />
-              <RadioGroup
-                onValueChange={field.onChange}
-                value={field.value}
-                className='grid max-w-2xl grid-cols-2 gap-3 pt-2 sm:grid-cols-3'
-              >
-                {(
-                  [
-                    'default',
-                    'neutral',
-                    'stone',
-                    'zinc',
-                    'slate',
-                    'gray',
-                    'mauve',
-                    'olive',
-                    'mist',
-                    'taupe',
-                    'red',
-                    'orange',
-                    'amber',
-                    'yellow',
-                    'lime',
-                    'green',
-                    'emerald',
-                    'teal',
-                    'cyan',
-                    'sky',
-                    'blue',
-                    'indigo',
-                    'violet',
-                    'purple',
-                    'fuchsia',
-                    'pink',
-                    'rose',
-                  ] as const
-                ).map((value) => (
-                  <FormItem key={value}>
-                    <FormLabel className='[&:has([data-state=checked])>div]:border-primary'>
-                      <FormControl>
-                        <RadioGroupItem value={value} className='sr-only' />
-                      </FormControl>
-                      <div className='rounded-lg border-2 border-muted bg-card p-3 hover:border-accent'>
-                        <div className='flex items-center gap-2'>
-                          <span
-                            className={`h-4 w-4 rounded-full border border-border bg-theme-${value}`}
-                          />
-                          <span className='font-normal capitalize'>
-                            {value}
-                          </span>
-                        </div>
-                      </div>
-                    </FormLabel>
-                  </FormItem>
-                ))}
-              </RadioGroup>
-            </FormItem>
-          )}
-        />
         <Button type='submit'>Update preferences</Button>
       </form>
     </Form>
