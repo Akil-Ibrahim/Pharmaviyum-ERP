@@ -1,4 +1,4 @@
-"""Persist user profile photos in PostgreSQL."""
+"""Persist user profile photos in a dedicated PostgreSQL table."""
 
 from alembic import op
 import sqlalchemy as sa
@@ -11,16 +11,21 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "users",
-        sa.Column("avatar_data", sa.LargeBinary(), nullable=True),
-    )
-    op.add_column(
-        "users",
-        sa.Column("avatar_content_type", sa.String(length=50), nullable=True),
+    op.create_table(
+        "user_avatars",
+        sa.Column("user_id", sa.Integer(), nullable=False),
+        sa.Column("avatar_data", sa.LargeBinary(), nullable=False),
+        sa.Column("content_type", sa.String(length=50), nullable=False),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            nullable=False,
+            server_default=sa.func.now(),
+        ),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("user_id", name="pk_user_avatars"),
     )
 
 
 def downgrade() -> None:
-    op.drop_column("users", "avatar_content_type")
-    op.drop_column("users", "avatar_data")
+    op.drop_table("user_avatars")
