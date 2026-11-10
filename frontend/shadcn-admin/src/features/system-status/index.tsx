@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import {
   Activity,
   AlertTriangle,
@@ -10,12 +11,6 @@ import {
   Server,
   XCircle,
 } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
-import {
-  fetchSystemStatus,
-  type ServiceCheck,
-  type ServiceState,
-} from './api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,6 +20,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  fetchSystemStatus,
+  type ServiceCheck,
+  type ServiceState,
+} from './api'
 
 const stateLabels: Record<ServiceState, string> = {
   operational: 'Operational',
