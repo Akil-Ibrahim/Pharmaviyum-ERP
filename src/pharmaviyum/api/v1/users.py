@@ -1,17 +1,92 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Response,
+    UploadFile,
+    status,
+)
 from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.user import User
-from src.pharmaviyum.modules.auth.deps import CurrentSuperuser
+from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser
+from src.pharmaviyum.services.profile_avatar import get_profile_avatar_content_type
 from src.pharmaviyum.schemas.user_schema import UserCreate, UserResponse
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+MAX_AVATAR_BYTES = 2 * 1024 * 1024
 router = APIRouter(prefix="/users", tags=["Users"])
+
+
+@router.get("/me/avatar", response_class=Response)
+async def get_my_avatar(current_user: CurrentUser) -> Response:
+    """Return the authenticated user's own profile photo."""
+    if current_user.avatar_data is None or current_user.avatar_content_type is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile photo not found",
+        )
+
+    return Response(
+        content=current_user.avatar_data,
+        media_type=current_user.avatar_content_type,
+        headers={
+            "Cache-Control": "private, max-age=300",
+            "Vary": "Authorization",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.put("/me/avatar", status_code=status.HTTP_204_NO_CONTENT)
+async def upload_my_avatar(
+    current_user: CurrentUser,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Validate and persist the authenticated user's profile photo."""
+    contents = await file.read(MAX_AVATAR_BYTES + 1)
+    if len(contents) > MAX_AVATAR_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Profile photo must be 2 MB or smaller",
+        )
+
+    try:
+        content_type = get_profile_avatar_content_type(contents)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    current_user.avatar_data = contents
+    current_user.avatar_content_type = content_type
+    db.add(current_user)
+    await db.commit()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete("/me/avatar", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_my_avatar(
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Remove the authenticated user's profile photo from PostgreSQL."""
+    current_user.avatar_data = None
+    current_user.avatar_content_type = None
+    db.add(current_user)
+    await db.commit()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/", response_model=List[UserResponse])
