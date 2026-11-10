@@ -665,7 +665,9 @@ async def payment_webhook(
             "amount": str(payment.amount),
             "provider_name": payment.provider_name,
             "inventory_effect": (
-                "commit_reservation" if event_status == "succeeded" else "release_reservation"
+                "commit_reservation"
+                if event_status == "succeeded"
+                else "release_reservation"
             ),
             "allocations": [
                 {
