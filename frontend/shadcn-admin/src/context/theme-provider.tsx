@@ -109,9 +109,8 @@ export function ThemeProvider({
   const [navigationIconColor, _setNavigationIconColor] =
     useState<NavigationIconColor>(
       () =>
-        (getCookie(
-          NAVIGATION_ICON_COLOR_COOKIE_NAME
-        ) as NavigationIconColor) || 'blue'
+        (getCookie(NAVIGATION_ICON_COLOR_COOKIE_NAME) as NavigationIconColor) ||
+        'blue'
     )
 
   const resolvedTheme = useMemo((): ResolvedTheme => {

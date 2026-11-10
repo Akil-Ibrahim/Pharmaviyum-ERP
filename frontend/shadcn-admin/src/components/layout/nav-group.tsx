@@ -1,6 +1,7 @@
 import { useState, type ElementType, type ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
+import { NAVIGATION_ICON_COLORS, useTheme } from '@/context/theme-provider'
 import {
   Collapsible,
   CollapsibleContent,
@@ -17,7 +18,6 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { NAVIGATION_ICON_COLORS, useTheme } from '@/context/theme-provider'
 import { Badge } from '../ui/badge'
 import {
   DropdownMenu,

@@ -61,12 +61,8 @@ type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
 
 export function AppearanceForm() {
   const { font, setFont } = useFont()
-  const {
-    theme,
-    setTheme,
-    navigationIconColor,
-    setNavigationIconColor,
-  } = useTheme()
+  const { theme, setTheme, navigationIconColor, setNavigationIconColor } =
+    useTheme()
 
   // This can come from your database or API.
   const defaultValues: Partial<AppearanceFormValues> = {
@@ -197,7 +193,6 @@ export function AppearanceForm() {
           )}
         />
 
-
         <FormField
           control={form.control}
           name='navigationIconColor'
@@ -205,7 +200,8 @@ export function AppearanceForm() {
             <FormItem>
               <FormLabel>Navigation active icon color</FormLabel>
               <FormDescription>
-                Choose the color used by the active navigation icon. This does not change the dashboard theme.
+                Choose the color used by the active navigation icon. This does
+                not change the dashboard theme.
               </FormDescription>
               <FormControl>
                 <select
@@ -230,7 +226,9 @@ export function AppearanceForm() {
                   className='size-6 rounded-lg shadow-sm'
                   style={{
                     backgroundColor:
-                      NAVIGATION_ICON_COLORS[field.value as NavigationIconColor],
+                      NAVIGATION_ICON_COLORS[
+                        field.value as NavigationIconColor
+                      ],
                   }}
                 />
                 <span className='capitalize'>{field.value}</span>
