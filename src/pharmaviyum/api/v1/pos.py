@@ -419,7 +419,9 @@ async def checkout(
                 {
                     "inventory_id": lot.id,
                     "lot_number": lot.lot_number,
-                    "expires_at": lot.expires_at.isoformat() if lot.expires_at else None,
+                    "expires_at": (
+                        lot.expires_at.isoformat() if lot.expires_at else None
+                    ),
                     "quantity": take,
                 }
             )
