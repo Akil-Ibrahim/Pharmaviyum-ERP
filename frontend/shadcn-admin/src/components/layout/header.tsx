@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
@@ -48,12 +49,15 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
   const profile = useProfileStore((state) => state.profile)
   const { avatarUrl } = useProfileAvatar()
   const { setOpen: setSearchOpen } = useSearch()
-  const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ')
-  const initials = [profile.firstName, profile.lastName]
+  const fullName = [profile.firstName, profile.lastName]
     .filter(Boolean)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase() || 'IA'
+    .join(' ')
+  const initials =
+    [profile.firstName, profile.lastName]
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase() || 'IA'
 
   useEffect(() => {
     const onScroll = () => {
@@ -174,7 +178,7 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
               <button
                 type='button'
                 aria-label='Open profile menu'
-                className='flex max-w-full items-center gap-2 rounded-md p-1.5 text-start outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring'
+                className='flex max-w-full items-center gap-2 rounded-md p-1.5 text-start transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring'
               >
                 <Avatar className='size-9 shrink-0'>
                   <AvatarImage src={avatarUrl} alt={fullName} />
@@ -183,7 +187,9 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
                   </AvatarFallback>
                 </Avatar>
                 <span className='hidden min-w-0 sm:grid'>
-                  <span className='truncate text-sm font-medium leading-5'>{fullName}</span>
+                  <span className='truncate text-sm leading-5 font-medium'>
+                    {fullName}
+                  </span>
                 </span>
               </button>
             </DropdownMenuTrigger>
@@ -196,7 +202,9 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div className='grid min-w-0'>
-                  <span className='truncate text-sm font-medium'>{fullName}</span>
+                  <span className='truncate text-sm font-medium'>
+                    {fullName}
+                  </span>
                 </div>
               </div>
               <DropdownMenuSeparator />
