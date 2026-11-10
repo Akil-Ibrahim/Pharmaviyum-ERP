@@ -63,10 +63,7 @@ jobs:
           done
 
           if (("${#FILES[@]}" > 0)); then
-            bunx prettier --write "${FILES[@]}"
-            echo "::group::FORMATTED_COMING_SOON"
-            cat src/components/coming-soon.tsx
-            echo "::endgroup::"
+            bunx prettier --check "${FILES[@]}"
           else
             echo "No frontend files changed; skipping Prettier."
           fi
