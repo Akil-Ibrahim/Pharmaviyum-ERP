@@ -18,6 +18,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { Badge } from '../ui/badge'
+import { NAVIGATION_ICON_COLORS, useTheme } from '@/context/theme-provider'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,6 +78,7 @@ function NavIcon({
   active?: boolean
   size?: 'sm' | 'md'
 }) {
+  const { navigationIconColor } = useTheme()
   if (!Icon) return null
 
   return (
@@ -85,9 +87,14 @@ function NavIcon({
         'flex shrink-0 items-center justify-center rounded-lg transition-colors duration-150',
         size === 'sm' ? 'size-7 [&>svg]:size-4' : 'size-8 [&>svg]:size-[18px]',
         active
-          ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+          ? 'text-white shadow-sm'
           : 'bg-transparent text-muted-foreground group-hover/menu-button:bg-primary/10 group-hover/menu-button:text-primary',
       ].join(' ')}
+      style={
+        active
+          ? { backgroundColor: NAVIGATION_ICON_COLORS[navigationIconColor] }
+          : undefined
+      }
     >
       <Icon />
     </span>
