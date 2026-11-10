@@ -3,7 +3,6 @@ import { getCookie } from '@/lib/cookies'
 import { cn } from '@/lib/utils'
 import { LayoutProvider } from '@/context/layout-provider'
 import { SearchProvider } from '@/context/search-provider'
-import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { SkipToMain } from '@/components/skip-to-main'
@@ -48,9 +47,6 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
                 className='max-md:scale-125'
               />
               <Separator orientation='vertical' className='h-6' />
-              <div className='ms-auto flex items-center gap-2'>
-                <ConfigDrawer />
-              </div>
             </Header>
             {children ?? <Outlet />}
           </SidebarInset>
