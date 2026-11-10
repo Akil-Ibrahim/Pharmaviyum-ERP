@@ -416,4 +416,4 @@ class TestDrugCatalogSourcePromotion:
         assert await test_db.scalar(select(MedicinalProduct)) is None
         assert await test_db.scalar(select(Product)) is None
         assert await test_db.scalar(select(DrugReference)) is None
-\n
+
