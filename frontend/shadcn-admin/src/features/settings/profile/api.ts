@@ -1,6 +1,6 @@
 import { apiFetch, apiFetchBlob } from '@/lib/api-client'
 
-const AVATAR_ENDPOINT = '/api/v1/users/me/avatar'
+const AVATAR_ENDPOINT = '/users/me/avatar'
 
 export function fetchProfileAvatar(): Promise<Blob | null> {
   return apiFetchBlob(AVATAR_ENDPOINT)
