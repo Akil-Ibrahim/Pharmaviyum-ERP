@@ -47,7 +47,8 @@ export const useProfileStore = create<ProfileState>()(
             firstName: legacyProfile.firstName ?? defaultProfile.firstName,
             lastName: legacyProfile.lastName ?? defaultProfile.lastName,
             email: legacyProfile.email ?? defaultProfile.email,
-            dateOfBirth: legacyProfile.dateOfBirth ?? defaultProfile.dateOfBirth,
+            dateOfBirth:
+              legacyProfile.dateOfBirth ?? defaultProfile.dateOfBirth,
             avatar: legacyProfile.avatar ?? defaultProfile.avatar,
           },
         }
