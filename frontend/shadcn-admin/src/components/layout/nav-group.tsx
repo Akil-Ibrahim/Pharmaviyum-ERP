@@ -38,7 +38,7 @@ export function NavGroup({ title, items }: NavGroupProps) {
   const { state, isMobile } = useSidebar()
   const href = useLocation({ select: (location) => location.href })
   return (
-    <SidebarGroup className='px-2 py-1.5 group-data-[collapsible=icon]:px-0'>
+    <SidebarGroup>
       <SidebarGroupLabel className='h-7 px-3 text-[10px] font-bold tracking-[0.16em] text-muted-foreground/75 uppercase'>
         {title}
       </SidebarGroupLabel>
@@ -113,7 +113,7 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
         isActive={isActive}
         tooltip={item.title}
         className={[
-          'relative h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center',
+          'relative h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!',
           isActive
             ? 'bg-transparent text-[#0F172A] shadow-none hover:bg-transparent'
             : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
@@ -156,14 +156,14 @@ function SidebarMenuCollapsible({
             tooltip={item.title}
             isActive={isActive}
             className={[
-              'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center',
+              'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!',
               isActive
                 ? 'bg-transparent text-[#0F172A] hover:bg-transparent'
                 : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
             ].join(' ')}
           >
             <NavIcon icon={item.icon} active={isActive} />
-            <span className='min-w-0 truncate text-sm font-medium text-[#0F172A]'>
+            <span className='min-w-0 truncate text-sm font-medium text-[#0F172A] group-data-[collapsible=icon]:hidden'>
               {item.title}
             </span>
             {item.badge && <NavBadge>{item.badge}</NavBadge>}
@@ -221,7 +221,7 @@ function SidebarMenuCollapsedDropdown({
             tooltip={item.title}
             isActive={isActive}
             className={[
-              'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center',
+              'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!',
               isActive
                 ? 'bg-transparent text-[#0F172A] hover:bg-transparent'
                 : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
