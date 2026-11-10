@@ -16,11 +16,7 @@ import { TeamSwitcher } from './team-switcher'
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
   return (
-    <Sidebar
-      collapsible={collapsible}
-      variant={variant}
-      className='border-e border-sidebar-border'
-    >
+    <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader className='px-2 py-3'>
         <div className='flex items-center gap-1 group-data-[collapsible=icon]:flex-col'>
           <div className='min-w-0 flex-1 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:flex-none'>
@@ -29,7 +25,7 @@ export function AppSidebar() {
           <SidebarTrigger
             aria-label='Collapse or expand navigation'
             title='Collapse or expand navigation'
-            className='size-7 shrink-0 rounded-lg text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A]'
+            className='hidden size-7 shrink-0 rounded-lg text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] md:inline-flex'
           />
         </div>
       </SidebarHeader>
@@ -38,7 +34,7 @@ export function AppSidebar() {
           <NavGroup key={props.title} {...props} />
         ))}
       </SidebarContent>
-      <SidebarFooter className='border-t border-sidebar-border/70 px-3 py-3'>
+      <SidebarFooter className='px-3 py-3'>
         <NavUser user={sidebarData.user} />
       </SidebarFooter>
       <SidebarRail />
