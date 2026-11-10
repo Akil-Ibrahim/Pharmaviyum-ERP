@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Main } from '@/components/layout/main'
 import {
   fetchSystemStatus,
   type ServiceCheck,
@@ -98,7 +99,8 @@ export function SystemStatusPage() {
         : 'One or more components need attention.'
 
   return (
-    <main>
+    <Main>
+      <div className='space-y-6'>
       <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <div>
           <h1 className='text-2xl font-semibold tracking-tight'>
@@ -170,6 +172,7 @@ export function SystemStatusPage() {
           live LLM inference request or measure model-provider availability.
         </CardDescription>
       </div>
-    </main>
+      </div>
+    </Main>
   )
 }
