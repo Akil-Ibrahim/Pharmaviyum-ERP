@@ -67,10 +67,5 @@ jobs:
           else
             echo "No frontend files changed; skipping Prettier."
           fi
-      - name: Temporary Prettier formatter output
-        if: always()
-        run: |
-          bunx prettier --write src/components/layout/nav-group.tsx
-          cat src/components/layout/nav-group.tsx
       - name: TypeScript and production build
         run: bun run build
