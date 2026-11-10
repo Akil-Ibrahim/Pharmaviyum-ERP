@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useProfileStore } from '@/stores/profile-store'
+import { useProfileAvatar } from '@/features/settings/profile/use-profile-avatar'
 import { useSearch } from '@/context/search-provider'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -45,6 +46,7 @@ const operationsGuideUrl =
 export function Header({ className, fixed, children, ...props }: HeaderProps) {
   const [offset, setOffset] = useState(0)
   const profile = useProfileStore((state) => state.profile)
+  const { avatarUrl } = useProfileAvatar()
   const { setOpen: setSearchOpen } = useSearch()
   const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ')
   const initials = [profile.firstName, profile.lastName]
@@ -175,7 +177,7 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
                 className='flex max-w-full items-center gap-2 rounded-md p-1.5 text-start outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring'
               >
                 <Avatar className='size-9 shrink-0'>
-                  <AvatarImage src={profile.avatar || undefined} alt={fullName} />
+                  <AvatarImage src={avatarUrl} alt={fullName} />
                   <AvatarFallback className='bg-primary/10 text-xs font-semibold text-primary'>
                     {initials}
                   </AvatarFallback>
@@ -188,7 +190,7 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
             <DropdownMenuContent align='end' className='w-56'>
               <div className='flex items-center gap-2 px-2 py-2'>
                 <Avatar className='size-9 shrink-0'>
-                  <AvatarImage src={profile.avatar || undefined} alt={fullName} />
+                  <AvatarImage src={avatarUrl} alt={fullName} />
                   <AvatarFallback className='bg-primary/10 text-xs font-semibold text-primary'>
                     {initials}
                   </AvatarFallback>
