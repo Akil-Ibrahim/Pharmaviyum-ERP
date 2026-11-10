@@ -27,6 +27,7 @@ from src.pharmaviyum.schemas.pos import (
     SaleResponse,
 )
 from src.pharmaviyum.schemas.pos_product import POSProductResponse
+from src.pharmaviyum.services.outbox import record_outbox_event
 from src.pharmaviyum.services.catalog_exclusions import (
     allowed_pharmacy_product_conditions,
 )
@@ -368,6 +369,7 @@ async def checkout(
     db.add(sale)
     await db.flush()
 
+    event_items: list[dict[str, object]] = []
     for line in sorted(payload.items, key=lambda item: item.product_id):
         product = products[line.product_id]
         item = SaleItem(
@@ -395,6 +397,7 @@ async def checkout(
         )
         lots = list(inventory_result.scalars().all())
         remaining = line.quantity
+        allocation_events: list[dict[str, object]] = []
         for lot in lots:
             available = lot.quantity - lot.reserved_quantity
             take = min(available, remaining)
@@ -404,18 +407,34 @@ async def checkout(
                 lot.quantity -= take
             else:
                 lot.reserved_quantity += take
-            db.add(
-                SaleItemAllocation(
-                    sale_item_id=item.id,
-                    inventory_id=lot.id,
-                    lot_number=lot.lot_number,
-                    expires_at=lot.expires_at,
-                    quantity=take,
-                )
+            allocation = SaleItemAllocation(
+                sale_item_id=item.id,
+                inventory_id=lot.id,
+                lot_number=lot.lot_number,
+                expires_at=lot.expires_at,
+                quantity=take,
+            )
+            db.add(allocation)
+            allocation_events.append(
+                {
+                    "inventory_id": lot.id,
+                    "lot_number": lot.lot_number,
+                    "expires_at": lot.expires_at.isoformat() if lot.expires_at else None,
+                    "quantity": take,
+                }
             )
             remaining -= take
             if remaining == 0:
                 break
+        event_items.append(
+            {
+                "product_id": product.id,
+                "quantity": line.quantity,
+                "unit_price": str(_money(product.price)),
+                "line_total": str(_money(_money(product.price) * line.quantity)),
+                "allocations": allocation_events,
+            }
+        )
         if remaining:
             # Build the response before rollback expires ORM state. Accessing
             # product.name afterwards can trigger async lazy IO outside greenlet.
@@ -446,6 +465,29 @@ async def checkout(
         settled_at=now if payload.payment_method == "cash" else None,
     )
     db.add(payment)
+    await record_outbox_event(
+        db,
+        pharmacy_id=payload.pharmacy_id,
+        event_type="pos.sale.created",
+        aggregate_type="sale",
+        aggregate_id=sale.id,
+        aggregate_version=1,
+        payload={
+            "sale_id": sale.id,
+            "receipt_number": sale.receipt_number,
+            "status": sale.status,
+            "subtotal": str(subtotal),
+            "discount_total": str(discount),
+            "total": str(total),
+            "cashier_user_id": cashier.id,
+            "items": event_items,
+            "payment": {
+                "method": payment.method,
+                "status": payment.status,
+                "amount": str(payment.amount),
+            },
+        },
+    )
     try:
         await db.commit()
     except IntegrityError:
@@ -605,6 +647,22 @@ async def payment_webhook(
     payment.settled_at = datetime.utcnow()
     sale.status = "completed" if event_status == "succeeded" else "cancelled"
     sale.completed_at = datetime.utcnow() if event_status == "succeeded" else None
+    await record_outbox_event(
+        db,
+        pharmacy_id=sale.pharmacy_id,
+        event_type=f"pos.payment.{event_status}",
+        aggregate_type="sale",
+        aggregate_id=sale.id,
+        aggregate_version=2,
+        payload={
+            "sale_id": sale.id,
+            "payment_id": payment.id,
+            "sale_status": sale.status,
+            "payment_status": payment.status,
+            "amount": str(payment.amount),
+            "provider_name": payment.provider_name,
+        },
+    )
     await db.commit()
     return {"status": "processed"}
 
@@ -656,6 +714,27 @@ async def cancel_pending_sale(
             payment.status = "failed"
             payment.settled_at = datetime.utcnow()
     sale.status = "cancelled"
+    await record_outbox_event(
+        db,
+        pharmacy_id=sale.pharmacy_id,
+        event_type="pos.sale.cancelled",
+        aggregate_type="sale",
+        aggregate_id=sale.id,
+        aggregate_version=2,
+        payload={
+            "sale_id": sale.id,
+            "receipt_number": sale.receipt_number,
+            "sale_status": sale.status,
+            "released_allocations": [
+                {
+                    "inventory_id": allocation.inventory_id,
+                    "lot_number": allocation.lot_number,
+                    "quantity": allocation.quantity,
+                }
+                for allocation in allocations
+            ],
+        },
+    )
     await db.commit()
     return SaleResponse.model_validate(await _load_sale(db, sale.id))
 
