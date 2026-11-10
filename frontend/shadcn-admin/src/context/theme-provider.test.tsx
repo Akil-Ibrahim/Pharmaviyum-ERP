@@ -30,12 +30,16 @@ describe('ThemeProvider navigation icon color', () => {
       </ThemeProvider>
     )
 
-    await expect.element(screen.getByText('blue')).toBeInTheDocument()
+    await expect
+      .element(screen.getByText('blue', { exact: true }))
+      .toBeInTheDocument()
     await userEvent.click(
       screen.getByRole('button', { name: 'Select emerald' })
     )
 
-    await expect.element(screen.getByText('emerald')).toBeInTheDocument()
+    await expect
+      .element(screen.getByText('emerald', { exact: true }))
+      .toBeInTheDocument()
     expect(getCookie('pharmaviyum-navigation-icon-color')).toBe('emerald')
   })
 })
