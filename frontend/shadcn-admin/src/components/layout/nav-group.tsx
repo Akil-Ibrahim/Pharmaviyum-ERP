@@ -221,10 +221,10 @@ function SidebarMenuCollapsedDropdown({
             tooltip={item.title}
             isActive={isActive}
             className={[
-              'h-10 gap-2.5 rounded-xl px-2.5 transition-all duration-150',
+              'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150',
               isActive
-                ? 'bg-primary/10 text-foreground hover:bg-primary/15'
-                : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+                ? 'bg-transparent text-[#0F172A] hover:bg-transparent'
+                : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
             ].join(' ')}
           >
             <NavIcon icon={item.icon} active={isActive} />
