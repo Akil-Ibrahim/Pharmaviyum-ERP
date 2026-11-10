@@ -38,8 +38,7 @@ const stateClasses: Record<ServiceState, string> = {
     'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
   degraded:
     'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400',
-  outage:
-    'border-destructive/30 bg-destructive/10 text-destructive',
+  outage: 'border-destructive/30 bg-destructive/10 text-destructive',
   unknown: 'border-muted-foreground/20 bg-muted text-muted-foreground',
 }
 
@@ -138,7 +137,9 @@ export function SystemStatusPage() {
           onClick={() => void refetch()}
           disabled={isFetching}
         >
-          <RefreshCw className={isFetching ? 'size-4 animate-spin' : 'size-4'} />
+          <RefreshCw
+            className={isFetching ? 'size-4 animate-spin' : 'size-4'}
+          />
           Refresh
         </Button>
       </div>
@@ -210,7 +211,12 @@ export function SystemStatusPage() {
           not execute a live LLM inference request or measure model-provider
           availability.
         </p>
-        <p>Last successful response received: {formatCheckedAt(dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined)}</p>
+        <p>
+          Last successful response received:{' '}
+          {formatCheckedAt(
+            dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined
+          )}
+        </p>
       </div>
     </main>
   )
