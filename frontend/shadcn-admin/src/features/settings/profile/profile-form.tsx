@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Camera, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useProfileStore } from '@/stores/profile-store'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -17,11 +18,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar'
 import { DatePicker } from '@/components/date-picker'
 import {
   deleteProfileAvatar,
@@ -153,10 +149,7 @@ export function ProfileForm() {
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className='space-y-8'
-      >
+      <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
         <div className='space-y-4'>
           <div className='space-y-1'>
             <h3 className='text-base font-medium'>Profile photo</h3>
@@ -257,10 +250,7 @@ export function ProfileForm() {
             render={({ field }) => (
               <FormItem className='flex flex-col sm:max-w-sm'>
                 <FormLabel>Date of birth</FormLabel>
-                <DatePicker
-                  selected={field.value}
-                  onSelect={field.onChange}
-                />
+                <DatePicker selected={field.value} onSelect={field.onChange} />
                 <FormDescription>
                   Optional. Your date of birth is only used for your profile.
                 </FormDescription>
@@ -300,10 +290,7 @@ export function ProfileForm() {
           />
         </div>
 
-        <Button
-          type='submit'
-          disabled={!form.formState.isValid || isSaving}
-        >
+        <Button type='submit' disabled={!form.formState.isValid || isSaving}>
           {isSaving ? <Loader2 className='size-4 animate-spin' /> : null}
           Save changes
         </Button>
