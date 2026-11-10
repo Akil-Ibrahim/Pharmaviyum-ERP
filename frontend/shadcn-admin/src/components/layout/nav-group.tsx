@@ -1,7 +1,7 @@
 import { useState, type ElementType, type ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
-import { NAVIGATION_ICON_COLORS, useTheme } from '@/context/theme-provider'
+import { getNavIconColor, useTheme } from '@/context/theme-provider'
 import {
   Collapsible,
   CollapsibleContent,
@@ -33,6 +33,9 @@ import {
   type NavLink,
   type NavGroup as NavGroupProps,
 } from './types'
+
+const inactiveNavItemClassName =
+  'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]'
 
 export function NavGroup({ title, items }: NavGroupProps) {
   const { state, isMobile } = useSidebar()
@@ -79,6 +82,7 @@ function NavIcon({
   size?: 'sm' | 'md'
 }) {
   const { navigationIconColor } = useTheme()
+  const iconColor = getNavIconColor(navigationIconColor)
   if (!Icon) return null
 
   return (
@@ -91,10 +95,10 @@ function NavIcon({
       style={
         active
           ? {
-              backgroundColor: NAVIGATION_ICON_COLORS[navigationIconColor],
+              backgroundColor: iconColor,
             }
           : {
-              color: NAVIGATION_ICON_COLORS[navigationIconColor],
+              color: iconColor,
             }
       }
     >
@@ -116,7 +120,7 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
           'relative h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:min-h-8 group-data-[collapsible=icon]:min-w-8 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:p-0!',
           isActive
             ? 'bg-transparent text-[#0F172A] shadow-none hover:bg-transparent'
-            : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
+            : inactiveNavItemClassName,
         ].join(' ')}
       >
         <Link to={item.url} onClick={() => setOpenMobile(false)}>
@@ -159,7 +163,7 @@ function SidebarMenuCollapsible({
               'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:min-h-8 group-data-[collapsible=icon]:min-w-8 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:p-0!',
               isActive
                 ? 'bg-transparent text-[#0F172A] hover:bg-transparent'
-                : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
+                : inactiveNavItemClassName,
             ].join(' ')}
           >
             <NavIcon icon={item.icon} active={isActive} />
@@ -183,7 +187,7 @@ function SidebarMenuCollapsible({
                       'h-10 gap-2.5 rounded-xl px-3 transition-colors',
                       isSubActive
                         ? 'bg-transparent text-[#0F172A]'
-                        : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
+                        : inactiveNavItemClassName,
                     ].join(' ')}
                   >
                     <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
@@ -224,7 +228,7 @@ function SidebarMenuCollapsedDropdown({
               'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:min-h-8 group-data-[collapsible=icon]:min-w-8 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:p-0!',
               isActive
                 ? 'bg-transparent text-[#0F172A] hover:bg-transparent'
-                : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
+                : inactiveNavItemClassName,
             ].join(' ')}
           >
             <NavIcon icon={item.icon} active={isActive} />
