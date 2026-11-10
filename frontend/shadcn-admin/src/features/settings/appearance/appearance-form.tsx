@@ -189,7 +189,7 @@ export function AppearanceForm() {
                     'dark:bg-background dark:hover:bg-background'
                   )}
                 >
-                  {Object.entries(NAVIGATION_ICON_COLORS).map(([name, color]) => (
+                  {Object.keys(NAVIGATION_ICON_COLORS).map((name) => (
                     <option key={name} value={name}>
                       {name}
                     </option>
