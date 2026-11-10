@@ -84,14 +84,14 @@ export function Chats() {
               <label
                 className={cn(
                   'focus-within:ring-1 focus-within:ring-ring focus-within:outline-hidden',
-                  'flex h-10 w-full items-center space-x-0 rounded-md border border-border ps-2'
+                  'flex h-10 w-full min-w-0 items-center space-x-0 rounded-md border border-border ps-2'
                 )}
               >
                 <SearchIcon size={15} className='me-2 stroke-slate-500' />
                 <span className='sr-only'>Search</span>
                 <input
                   type='text'
-                  className='w-full flex-1 bg-inherit text-sm focus-visible:outline-hidden'
+                  className='w-full min-w-0 flex-1 bg-inherit text-sm focus-visible:outline-hidden'
                   placeholder='Search chat...'
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -121,18 +121,18 @@ export function Chats() {
                         setMobileSelectedUser(chatUsr)
                       }}
                     >
-                      <div className='flex gap-2'>
+                      <div className='flex min-w-0 gap-2'>
                         <Avatar>
                           <AvatarImage src={profile} alt={username} />
                           <AvatarFallback>
                             {getDisplayNameInitials(fullName)}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <span className='col-start-2 row-span-2 font-medium'>
+                        <div className='min-w-0 flex-1'>
+                          <span className='block truncate font-medium'>
                             {fullName}
                           </span>
-                          <span className='col-start-2 row-span-2 row-start-2 line-clamp-2 text-ellipsis text-muted-foreground group-hover:text-accent-foreground/90'>
+                          <span className='line-clamp-2 break-words text-muted-foreground group-hover:text-accent-foreground/90'>
                             {lastMsg}
                           </span>
                         </div>
@@ -224,7 +224,7 @@ export function Chats() {
                               <div
                                 key={`${msg.sender}-${msg.timestamp}-${index}`}
                                 className={cn(
-                                  'chat-box max-w-72 px-3 py-2 wrap-break-word shadow-lg',
+                                  'chat-box max-w-[85%] px-3 py-2 wrap-break-word shadow-lg sm:max-w-72',
                                   msg.sender === 'You'
                                     ? 'self-end rounded-[16px_16px_0_16px] bg-primary/90 text-primary-foreground/75'
                                     : 'self-start rounded-[16px_16px_16px_0] bg-muted'

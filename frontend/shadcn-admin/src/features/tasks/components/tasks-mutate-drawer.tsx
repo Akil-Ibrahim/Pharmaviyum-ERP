@@ -71,7 +71,7 @@ export function TasksMutateDrawer({
         form.reset()
       }}
     >
-      <SheetContent className='flex flex-col'>
+      <SheetContent className='flex w-full flex-col sm:max-w-sm'>
         <SheetHeader className='text-start'>
           <SheetTitle>{isUpdate ? 'Update' : 'Create'} Task</SheetTitle>
           <SheetDescription>

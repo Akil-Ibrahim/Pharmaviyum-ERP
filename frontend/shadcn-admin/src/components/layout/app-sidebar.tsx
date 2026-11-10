@@ -29,7 +29,7 @@ export function AppSidebar() {
           />
         </div>
       </SidebarHeader>
-      <SidebarContent className='gap-0 px-1 py-2'>
+      <SidebarContent className='gap-0 px-1 py-2 group-data-[collapsible=icon]:px-0'>
         {sidebarData.navGroups.map((props) => (
           <NavGroup key={props.title} {...props} />
         ))}
