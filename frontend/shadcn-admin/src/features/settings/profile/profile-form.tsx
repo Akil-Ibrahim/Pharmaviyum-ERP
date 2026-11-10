@@ -6,11 +6,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Camera, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useProfileStore } from '@/stores/profile-store'
-import { useProfileAvatar } from '@/features/settings/profile/use-profile-avatar'
-import {
-  deleteProfileAvatar,
-  uploadProfileAvatar,
-} from '@/features/settings/profile/api'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -22,13 +17,17 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { DatePicker } from '@/components/date-picker'
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from '@/components/ui/avatar'
-
+import { DatePicker } from '@/components/date-picker'
+import {
+  deleteProfileAvatar,
+  uploadProfileAvatar,
+} from '@/features/settings/profile/api'
+import { useProfileAvatar } from '@/features/settings/profile/use-profile-avatar'
 const profileFormSchema = z.object({
   firstName: z
     .string()
