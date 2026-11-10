@@ -92,11 +92,7 @@ function NavIcon({
           ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
           : 'bg-transparent group-hover/menu-button:bg-primary/10',
       ].join(' ')}
-      style={
-        active
-          ? { backgroundColor: iconColor, color: '#ffffff' }
-          : { color: iconColor }
-      }
+      style={{ color: iconColor }}
     >
       <Icon />
     </span>
