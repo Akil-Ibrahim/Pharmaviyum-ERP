@@ -7,10 +7,9 @@ import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
 import { useFont } from '@/context/font-provider'
 import {
-  useTheme,
-  type ThemePreset,
-  type NavigationIconColor,
   NAVIGATION_ICON_COLORS,
+  type NavigationIconColor,
+  useTheme,
 } from '@/context/theme-provider'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
@@ -26,35 +25,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 const appearanceFormSchema = z.object({
   theme: z.enum(['light', 'dark']),
-  preset: z.enum([
-    'default',
-    'neutral',
-    'stone',
-    'zinc',
-    'slate',
-    'gray',
-    'mauve',
-    'olive',
-    'mist',
-    'taupe',
-    'red',
-    'orange',
-    'amber',
-    'yellow',
-    'lime',
-    'green',
-    'emerald',
-    'teal',
-    'cyan',
-    'sky',
-    'blue',
-    'indigo',
-    'violet',
-    'purple',
-    'fuchsia',
-    'pink',
-    'rose',
-  ]),
   font: z.enum(fonts),
   navigationIconColor: z.enum([
     'default',
@@ -91,19 +61,12 @@ type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
 
 export function AppearanceForm() {
   const { font, setFont } = useFont()
-  const {
-    theme,
-    setTheme,
-    preset,
-    setPreset,
-    navigationIconColor,
-    setNavigationIconColor,
-  } = useTheme()
+  const { theme, setTheme, navigationIconColor, setNavigationIconColor } =
+    useTheme()
 
   // This can come from your database or API.
   const defaultValues: Partial<AppearanceFormValues> = {
     theme: theme as 'light' | 'dark',
-    preset,
     font,
     navigationIconColor,
   }
@@ -116,9 +79,9 @@ export function AppearanceForm() {
   function onSubmit(data: AppearanceFormValues) {
     if (data.font != font) setFont(data.font)
     if (data.theme != theme) setTheme(data.theme)
-    if (data.preset != preset) setPreset(data.preset as ThemePreset)
-    if (data.navigationIconColor != navigationIconColor)
+    if (data.navigationIconColor !== navigationIconColor) {
       setNavigationIconColor(data.navigationIconColor as NavigationIconColor)
+    }
 
     showSubmittedData(data)
   }
@@ -232,143 +195,49 @@ export function AppearanceForm() {
 
         <FormField
           control={form.control}
-          name='preset'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Theme preset</FormLabel>
-              <FormDescription>
-                Choose a complete shadcn color palette for the Pharmaviyum admin
-                interface. It updates surfaces, text, controls, borders, and
-                charts while preserving the navigation layout, icon color
-                selection, and icon style.
-              </FormDescription>
-              <FormMessage />
-              <RadioGroup
-                onValueChange={field.onChange}
-                value={field.value}
-                className='grid max-w-2xl grid-cols-2 gap-3 pt-2 sm:grid-cols-3'
-              >
-                {(
-                  [
-                    'default',
-                    'neutral',
-                    'stone',
-                    'zinc',
-                    'slate',
-                    'gray',
-                    'mauve',
-                    'olive',
-                    'mist',
-                    'taupe',
-                    'red',
-                    'orange',
-                    'amber',
-                    'yellow',
-                    'lime',
-                    'green',
-                    'emerald',
-                    'teal',
-                    'cyan',
-                    'sky',
-                    'blue',
-                    'indigo',
-                    'violet',
-                    'purple',
-                    'fuchsia',
-                    'pink',
-                    'rose',
-                  ] as const
-                ).map((value) => (
-                  <FormItem key={value}>
-                    <FormLabel className='[&:has([data-state=checked])>div]:border-primary'>
-                      <FormControl>
-                        <RadioGroupItem value={value} className='sr-only' />
-                      </FormControl>
-                      <div className='rounded-lg border-2 border-muted bg-card p-3 hover:border-accent'>
-                        <div className='flex items-center gap-2'>
-                          <span
-                            className={`h-4 w-4 rounded-full border border-border bg-theme-${value}`}
-                          />
-                          <span className='font-normal capitalize'>
-                            {value}
-                          </span>
-                        </div>
-                      </div>
-                    </FormLabel>
-                  </FormItem>
-                ))}
-              </RadioGroup>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
           name='navigationIconColor'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Navigation icon color</FormLabel>
+              <FormLabel>Navigation active icon color</FormLabel>
               <FormDescription>
-                Choose the navigation icon color independently of the theme
-                preset. This setting affects navigation icons only.
+                Choose the color used by the active navigation icon. This does
+                not change the dashboard theme.
               </FormDescription>
+              <FormControl>
+                <select
+                  value={field.value}
+                  onChange={field.onChange}
+                  className={cn(
+                    buttonVariants({ variant: 'outline' }),
+                    'w-64 appearance-none font-normal capitalize',
+                    'dark:bg-background dark:hover:bg-background'
+                  )}
+                >
+                  {Object.keys(NAVIGATION_ICON_COLORS).map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </FormControl>
+              <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                <span
+                  aria-hidden='true'
+                  className='size-6 rounded-lg shadow-sm'
+                  style={{
+                    backgroundColor:
+                      NAVIGATION_ICON_COLORS[
+                        field.value as NavigationIconColor
+                      ],
+                  }}
+                />
+                <span className='capitalize'>{field.value}</span>
+              </div>
               <FormMessage />
-              <RadioGroup
-                onValueChange={field.onChange}
-                value={field.value}
-                className='grid max-w-2xl grid-cols-2 gap-3 pt-2 sm:grid-cols-4'
-              >
-                {(
-                  [
-                    'default',
-                    'neutral',
-                    'stone',
-                    'zinc',
-                    'slate',
-                    'gray',
-                    'mauve',
-                    'olive',
-                    'mist',
-                    'taupe',
-                    'red',
-                    'orange',
-                    'amber',
-                    'yellow',
-                    'lime',
-                    'green',
-                    'emerald',
-                    'teal',
-                    'cyan',
-                    'sky',
-                    'blue',
-                    'indigo',
-                    'violet',
-                    'purple',
-                    'fuchsia',
-                    'pink',
-                    'rose',
-                  ] as const
-                ).map((color) => (
-                  <FormItem key={color}>
-                    <FormLabel className='[&:has([data-state=checked])>div]:border-primary'>
-                      <FormControl>
-                        <RadioGroupItem value={color} className='sr-only' />
-                      </FormControl>
-                      <div className='flex items-center gap-2 rounded-lg border-2 border-muted bg-card p-3 hover:border-accent'>
-                        <span
-                          className='size-4 rounded-full border border-border'
-                          style={{
-                            backgroundColor: NAVIGATION_ICON_COLORS[color],
-                          }}
-                        />
-                        <span className='font-normal capitalize'>{color}</span>
-                      </div>
-                    </FormLabel>
-                  </FormItem>
-                ))}
-              </RadioGroup>
             </FormItem>
           )}
         />
+
         <Button type='submit'>Update preferences</Button>
       </form>
     </Form>

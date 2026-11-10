@@ -79,8 +79,6 @@ function NavIcon({
   size?: 'sm' | 'md'
 }) {
   const { navigationIconColor } = useTheme()
-  const iconColor = NAVIGATION_ICON_COLORS[navigationIconColor]
-
   if (!Icon) return null
 
   return (
@@ -89,10 +87,16 @@ function NavIcon({
         'flex shrink-0 items-center justify-center rounded-lg transition-colors duration-150',
         size === 'sm' ? 'size-7 [&>svg]:size-4' : 'size-8 [&>svg]:size-[18px]',
         active
-          ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
-          : 'bg-transparent group-hover/menu-button:bg-primary/10',
+          ? 'text-white shadow-sm'
+          : 'bg-transparent text-muted-foreground group-hover/menu-button:bg-primary/10 group-hover/menu-button:text-primary',
       ].join(' ')}
-      style={{ color: iconColor }}
+      style={
+        active
+          ? {
+              backgroundColor: NAVIGATION_ICON_COLORS[navigationIconColor],
+            }
+          : undefined
+      }
     >
       <Icon />
     </span>

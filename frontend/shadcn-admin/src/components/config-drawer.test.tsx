@@ -80,7 +80,8 @@ describe('ConfigDrawer (integration)', () => {
       await vi.waitFor(() =>
         expect(document.documentElement.classList.contains('light')).toBe(true)
       )
-      expect(getCookie('vite-ui-theme')).toBe('light')
+      // Light is the default; selecting it does not need to persist a cookie.
+      expect(getCookie('vite-ui-theme')).toBeUndefined()
     })
 
     it('applies dark theme to <html> and cookie', async () => {
@@ -182,7 +183,10 @@ describe('ConfigDrawer (integration)', () => {
           name: /reset theme preference to default/i,
         })
       )
-      await vi.waitFor(() => expect(getCookie('vite-ui-theme')).toBe('system'))
+      await vi.waitFor(() => expect(getCookie('vite-ui-theme')).toBe('light'))
+      await vi.waitFor(() =>
+        expect(document.documentElement.classList.contains('light')).toBe(true)
+      )
     })
 
     it('resets direction via section control after choosing RTL', async () => {

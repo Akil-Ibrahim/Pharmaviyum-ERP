@@ -1,8 +1,4 @@
-import {
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarTrigger,
-} from '@/components/ui/sidebar'
+import { SidebarMenu, SidebarMenuItem } from '@/components/ui/sidebar'
 
 type TeamSwitcherProps = {
   teams: {
@@ -22,7 +18,7 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <div className='flex min-h-12 items-center gap-2 rounded-lg px-2 py-1'>
+        <div className='flex min-h-12 items-center gap-2 rounded-lg px-2 py-1 group-data-[collapsible=icon]:justify-center'>
           <div className='size-10 shrink-0 overflow-hidden rounded-lg bg-background group-data-[collapsible=icon]:size-9'>
             <img
               src={brand.logo}
@@ -35,7 +31,6 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
               {brand.name}
             </span>
           </div>
-          <SidebarTrigger className='ms-auto size-8 shrink-0 group-data-[collapsible=icon]:mx-auto' />
         </div>
       </SidebarMenuItem>
     </SidebarMenu>
