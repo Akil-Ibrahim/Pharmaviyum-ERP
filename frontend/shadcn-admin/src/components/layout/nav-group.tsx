@@ -17,8 +17,8 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { Badge } from '../ui/badge'
 import { NAVIGATION_ICON_COLORS, useTheme } from '@/context/theme-provider'
+import { Badge } from '../ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,7 +92,9 @@ function NavIcon({
       ].join(' ')}
       style={
         active
-          ? { backgroundColor: NAVIGATION_ICON_COLORS[navigationIconColor] }
+          ? {
+              backgroundColor: NAVIGATION_ICON_COLORS[navigationIconColor],
+            }
           : undefined
       }
     >
