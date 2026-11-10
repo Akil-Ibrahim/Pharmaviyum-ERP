@@ -6,12 +6,7 @@ import { fonts } from '@/config/fonts'
 import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
 import { useFont } from '@/context/font-provider'
-import {
-  useTheme,
-  type ThemePreset,
-  type NavigationIconColor,
-  NAVIGATION_ICON_COLORS,
-} from '@/context/theme-provider'
+import { useTheme, type ThemePreset } from '@/context/theme-provider'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
   Form,
@@ -56,56 +51,19 @@ const appearanceFormSchema = z.object({
     'rose',
   ]),
   font: z.enum(fonts),
-  navigationIconColor: z.enum([
-    'default',
-    'neutral',
-    'stone',
-    'zinc',
-    'slate',
-    'gray',
-    'mauve',
-    'olive',
-    'mist',
-    'taupe',
-    'red',
-    'orange',
-    'amber',
-    'yellow',
-    'lime',
-    'green',
-    'emerald',
-    'teal',
-    'cyan',
-    'sky',
-    'blue',
-    'indigo',
-    'violet',
-    'purple',
-    'fuchsia',
-    'pink',
-    'rose',
-  ]),
 })
 
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
 
 export function AppearanceForm() {
   const { font, setFont } = useFont()
-  const {
-    theme,
-    setTheme,
-    preset,
-    setPreset,
-    navigationIconColor,
-    setNavigationIconColor,
-  } = useTheme()
+  const { theme, setTheme, preset, setPreset } = useTheme()
 
   // This can come from your database or API.
   const defaultValues: Partial<AppearanceFormValues> = {
     theme: theme as 'light' | 'dark',
     preset,
     font,
-    navigationIconColor,
   }
 
   const form = useForm<AppearanceFormValues>({
@@ -117,8 +75,6 @@ export function AppearanceForm() {
     if (data.font != font) setFont(data.font)
     if (data.theme != theme) setTheme(data.theme)
     if (data.preset != preset) setPreset(data.preset as ThemePreset)
-    if (data.navigationIconColor != navigationIconColor)
-      setNavigationIconColor(data.navigationIconColor as NavigationIconColor)
 
     showSubmittedData(data)
   }
@@ -238,9 +194,9 @@ export function AppearanceForm() {
               <FormLabel>Theme preset</FormLabel>
               <FormDescription>
                 Choose a complete shadcn color palette for the Pharmaviyum admin
-                interface. It updates surfaces, text, controls, borders, and
-                charts while preserving the navigation layout, icon color
-                selection, and icon style.
+                interface. It updates surfaces, text, controls, borders, charts,
+                and navigation icon colors while preserving the navigation
+                layout and icon style.
               </FormDescription>
               <FormMessage />
               <RadioGroup
@@ -293,74 +249,6 @@ export function AppearanceForm() {
                             {value}
                           </span>
                         </div>
-                      </div>
-                    </FormLabel>
-                  </FormItem>
-                ))}
-              </RadioGroup>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name='navigationIconColor'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Navigation icon color</FormLabel>
-              <FormDescription>
-                Choose the navigation icon color independently of the theme
-                preset. This setting affects navigation icons only.
-              </FormDescription>
-              <FormMessage />
-              <RadioGroup
-                onValueChange={field.onChange}
-                value={field.value}
-                className='grid max-w-2xl grid-cols-2 gap-3 pt-2 sm:grid-cols-4'
-              >
-                {(
-                  [
-                    'default',
-                    'neutral',
-                    'stone',
-                    'zinc',
-                    'slate',
-                    'gray',
-                    'mauve',
-                    'olive',
-                    'mist',
-                    'taupe',
-                    'red',
-                    'orange',
-                    'amber',
-                    'yellow',
-                    'lime',
-                    'green',
-                    'emerald',
-                    'teal',
-                    'cyan',
-                    'sky',
-                    'blue',
-                    'indigo',
-                    'violet',
-                    'purple',
-                    'fuchsia',
-                    'pink',
-                    'rose',
-                  ] as const
-                ).map((color) => (
-                  <FormItem key={color}>
-                    <FormLabel className='[&:has([data-state=checked])>div]:border-primary'>
-                      <FormControl>
-                        <RadioGroupItem value={color} className='sr-only' />
-                      </FormControl>
-                      <div className='flex items-center gap-2 rounded-lg border-2 border-muted bg-card p-3 hover:border-accent'>
-                        <span
-                          className='size-4 rounded-full border border-border'
-                          style={{
-                            backgroundColor: NAVIGATION_ICON_COLORS[color],
-                          }}
-                        />
-                        <span className='font-normal capitalize'>{color}</span>
                       </div>
                     </FormLabel>
                   </FormItem>
