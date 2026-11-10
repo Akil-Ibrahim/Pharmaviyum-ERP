@@ -45,7 +45,7 @@ export function Settings() {
         <aside className='w-full shrink-0 lg:sticky lg:top-0 lg:w-1/5'>
           <SidebarNav items={sidebarNavItems} />
         </aside>
-        <div className='min-h-0 min-w-0 w-full flex-1 p-1 lg:overflow-y-auto'>
+        <div className='min-h-0 w-full min-w-0 flex-1 p-1 lg:overflow-y-auto'>
           <Outlet />
         </div>
       </div>
