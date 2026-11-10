@@ -2,10 +2,10 @@ import { Telescope } from 'lucide-react'
 
 export function ComingSoon() {
   return (
-    <div className='h-svh'>
-      <div className='m-auto flex h-full w-full flex-col items-center justify-center gap-2'>
+    <div className='flex min-h-[calc(100svh-3.5rem)] w-full items-center justify-center px-4 py-8 md:min-h-svh'>
+      <div className='flex w-full flex-col items-center justify-center gap-2'>
         <Telescope size={72} />
-        <h1 className='text-4xl leading-tight font-bold'>Coming Soon!</h1>
+        <h1 className='text-center text-3xl leading-tight font-bold sm:text-4xl'>Coming Soon!</h1>
         <p className='text-center text-muted-foreground'>
           This page has not been created yet. <br />
           Stay tuned though!
