@@ -27,10 +27,10 @@ from src.pharmaviyum.schemas.pos import (
     SaleResponse,
 )
 from src.pharmaviyum.schemas.pos_product import POSProductResponse
-from src.pharmaviyum.services.outbox import record_outbox_event
 from src.pharmaviyum.services.catalog_exclusions import (
     allowed_pharmacy_product_conditions,
 )
+from src.pharmaviyum.services.outbox import record_outbox_event
 
 router = APIRouter(prefix="/api/v1/pos", tags=["Point of Sale"])
 CENT = Decimal("0.01")
