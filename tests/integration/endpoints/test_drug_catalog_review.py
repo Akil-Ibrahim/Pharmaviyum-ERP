@@ -306,3 +306,117 @@ class TestDrugCatalogSourcePromotion:
         )
         assert reference is not None and reference.inn_name == "Ibuprofen"
         assert await test_db.scalar(select(Product)) is None
+
+    async def test_create_new_review_cannot_promote_the_same_source_twice(
+        self,
+        authenticated_client: AsyncClient,
+        test_db: AsyncSession,
+    ):
+        record = DrugCatalogSourceRecord(
+            source_name="test-source",
+            source_record_id=f"idempotent-product-{next(_source_ids)}",
+            source_version="2026-01",
+            extracted_at=datetime.now(timezone.utc).replace(tzinfo=None),
+            normalized_payload={
+                "ingredient_name": "Naproxen",
+                "brand_name": "Example Naproxen",
+                "strength": "250 mg",
+                "dosage_form": "Tablet",
+                "country": "Canada",
+                "regulatory_id": "DIN-IDEMPOTENT-001",
+            },
+            review_status="pending_review",
+        )
+        test_db.add(record)
+        await test_db.flush()
+
+        payload = {
+            "review_status": "approved",
+            "create_new": True,
+            "match_confidence": "1.0000",
+            "review_notes": "Verified against the source record.",
+        }
+        first_response = await authenticated_client.patch(
+            f"/api/v1/drug-catalog/sources/{record.id}/review",
+            json=payload,
+        )
+
+        assert first_response.status_code == 200, first_response.text
+        medicinal_product_id = first_response.json()["matched_medicinal_product_id"]
+        assert medicinal_product_id is not None
+
+        repeated_response = await authenticated_client.patch(
+            f"/api/v1/drug-catalog/sources/{record.id}/review",
+            json=payload,
+        )
+
+        assert repeated_response.status_code == 409
+        products = (
+            (
+                await test_db.execute(
+                    select(MedicinalProduct).where(
+                        MedicinalProduct.id == medicinal_product_id
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert len(products) == 1
+        assert await test_db.scalar(select(Product)) is None
+
+    @pytest.mark.parametrize(
+        "normalized_payload",
+        [
+            {
+                "ingredient_name": "ibuprofen",
+                "brand_name": "Teva",
+                "manufacturer": "Teva Pharmaceutical Industries",
+                "country": "Germany",
+            },
+            {
+                "ingredient_name": "ibuprofen",
+                "brand_name": "ExampleMed",
+                "manufacturer": "Example Pharma",
+                "country": "Israel",
+            },
+            {
+                "ingredient_name": "ibuprofen",
+                "brand_name": "ExampleMed",
+                "manufacturer": "Example Pharma",
+                "country": "Germany",
+                "manufacturer_country": "IL",
+            },
+        ],
+    )
+    async def test_excluded_sources_cannot_create_catalog_products(
+        self,
+        normalized_payload: dict,
+        authenticated_client: AsyncClient,
+        test_db: AsyncSession,
+    ):
+        record = DrugCatalogSourceRecord(
+            source_name="test-source",
+            source_record_id=f"excluded-promotion-{next(_source_ids)}",
+            source_version="2026-01",
+            extracted_at=datetime.now(timezone.utc).replace(tzinfo=None),
+            normalized_payload=normalized_payload,
+            review_status="pending_review",
+        )
+        test_db.add(record)
+        await test_db.flush()
+
+        response = await authenticated_client.patch(
+            f"/api/v1/drug-catalog/sources/{record.id}/review",
+            json={
+                "review_status": "approved",
+                "create_new": True,
+                "match_confidence": "1.0000",
+            },
+        )
+
+        assert response.status_code == 422
+        assert record.review_status == "pending_review"
+        assert await test_db.scalar(select(MedicinalProduct)) is None
+        assert await test_db.scalar(select(Product)) is None
+        assert await test_db.scalar(select(DrugReference)) is None
