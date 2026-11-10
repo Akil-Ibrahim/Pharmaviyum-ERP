@@ -17,7 +17,7 @@ def get_profile_avatar_content_type(contents: bytes) -> str:
     try:
         with Image.open(BytesIO(contents)) as image:
             image_format = image.format
-            if image_format not in _AVATAR_CONTENT_TYPES:
+            if image_format is None or image_format not in _AVATAR_CONTENT_TYPES:
                 raise ValueError("Only JPEG, PNG, and WebP images are supported.")
             if image.width > _MAX_AVATAR_DIMENSION or image.height > _MAX_AVATAR_DIMENSION:
                 raise ValueError("Image dimensions must not exceed 4096 × 4096 pixels.")
