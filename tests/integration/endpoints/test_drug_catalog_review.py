@@ -352,12 +352,16 @@ class TestDrugCatalogSourcePromotion:
 
         assert repeated_response.status_code == 409
         products = (
-            await test_db.execute(
-                select(MedicinalProduct).where(
-                    MedicinalProduct.id == medicinal_product_id
+            (
+                await test_db.execute(
+                    select(MedicinalProduct).where(
+                        MedicinalProduct.id == medicinal_product_id
+                    )
                 )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         assert len(products) == 1
         assert await test_db.scalar(select(Product)) is None
 
@@ -416,4 +420,3 @@ class TestDrugCatalogSourcePromotion:
         assert await test_db.scalar(select(MedicinalProduct)) is None
         assert await test_db.scalar(select(Product)) is None
         assert await test_db.scalar(select(DrugReference)) is None
-
