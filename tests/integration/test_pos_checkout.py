@@ -209,7 +209,10 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
     assert len(outbox_events) == 1
     assert outbox_events[0].event_type == "pos.sale.created"
     assert outbox_events[0].payload["event_id"] == outbox_events[0].event_id
-    assert outbox_events[0].payload["items"][0]["allocations"][0]["lot_number"] == "EARLY-LOT"
+    assert (
+        outbox_events[0].payload["items"][0]["allocations"][0]["lot_number"]
+        == "EARLY-LOT"
+    )
     allocations = receipt["items"][0]["allocations"]
     assert [(row["lot_number"], row["quantity"]) for row in allocations] == [
         ("EARLY-LOT", 2),
