@@ -5,11 +5,33 @@ type Theme = 'dark' | 'light' | 'system'
 type ResolvedTheme = Exclude<Theme, 'system'>
 
 export type NavigationIconColor =
-  | 'default' | 'neutral' | 'stone' | 'zinc' | 'slate' | 'gray'
-  | 'mauve' | 'olive' | 'mist' | 'taupe' | 'red' | 'orange'
-  | 'amber' | 'yellow' | 'lime' | 'green' | 'emerald' | 'teal'
-  | 'cyan' | 'sky' | 'blue' | 'indigo' | 'violet' | 'purple'
-  | 'fuchsia' | 'pink' | 'rose'
+  | 'default'
+  | 'neutral'
+  | 'stone'
+  | 'zinc'
+  | 'slate'
+  | 'gray'
+  | 'mauve'
+  | 'olive'
+  | 'mist'
+  | 'taupe'
+  | 'red'
+  | 'orange'
+  | 'amber'
+  | 'yellow'
+  | 'lime'
+  | 'green'
+  | 'emerald'
+  | 'teal'
+  | 'cyan'
+  | 'sky'
+  | 'blue'
+  | 'indigo'
+  | 'violet'
+  | 'purple'
+  | 'fuchsia'
+  | 'pink'
+  | 'rose'
 
 export const NAVIGATION_ICON_COLORS: Record<NavigationIconColor, string> = {
   default: '#1e293b',
@@ -87,8 +109,9 @@ export function ThemeProvider({
   const [navigationIconColor, _setNavigationIconColor] =
     useState<NavigationIconColor>(
       () =>
-        (getCookie(NAVIGATION_ICON_COLOR_COOKIE_NAME) as NavigationIconColor) ||
-        'blue'
+        (getCookie(
+          NAVIGATION_ICON_COLOR_COOKIE_NAME
+        ) as NavigationIconColor) || 'blue'
     )
 
   const resolvedTheme = useMemo((): ResolvedTheme => {
@@ -133,11 +156,7 @@ export function ThemeProvider({
   }
 
   const setNavigationIconColor = (color: NavigationIconColor) => {
-    setCookie(
-      NAVIGATION_ICON_COLOR_COOKIE_NAME,
-      color,
-      THEME_COOKIE_MAX_AGE
-    )
+    setCookie(NAVIGATION_ICON_COLOR_COOKIE_NAME, color, THEME_COOKIE_MAX_AGE)
     _setNavigationIconColor(color)
   }
 
