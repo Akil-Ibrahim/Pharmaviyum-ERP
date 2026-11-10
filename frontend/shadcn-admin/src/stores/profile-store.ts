@@ -6,7 +6,6 @@ export interface ProfileIdentity {
   lastName: string
   email: string
   dateOfBirth: string
-  avatar: string
 }
 
 interface ProfileState {
@@ -14,16 +13,17 @@ interface ProfileState {
   setProfile: (profile: Partial<ProfileIdentity>) => void
 }
 
+const defaultProfile: ProfileIdentity = {
+  firstName: 'Ibrahim',
+  lastName: 'Akil',
+  email: '',
+  dateOfBirth: '',
+}
+
 export const useProfileStore = create<ProfileState>()(
   persist(
     (set) => ({
-      profile: {
-        firstName: 'Ibrahim',
-        lastName: 'Akil',
-        email: '',
-        dateOfBirth: '',
-        avatar: '',
-      },
+      profile: defaultProfile,
       setProfile: (profile) =>
         set((state) => ({
           profile: { ...state.profile, ...profile },
@@ -31,7 +31,24 @@ export const useProfileStore = create<ProfileState>()(
     }),
     {
       name: 'pharmaviyum-profile',
+      version: 2,
       storage: createJSONStorage(() => localStorage),
+      migrate: (persistedState) => {
+        const persisted = persistedState as {
+          profile?: Partial<ProfileIdentity> & { avatar?: string }
+        }
+        const legacyProfile = persisted.profile ?? {}
+
+        // Remove the old base64 avatar from persisted browser storage.
+        return {
+          profile: {
+            firstName: legacyProfile.firstName ?? defaultProfile.firstName,
+            lastName: legacyProfile.lastName ?? defaultProfile.lastName,
+            email: legacyProfile.email ?? defaultProfile.email,
+            dateOfBirth: legacyProfile.dateOfBirth ?? defaultProfile.dateOfBirth,
+          },
+        }
+      },
       partialize: (state) => ({ profile: state.profile }),
     }
   )
