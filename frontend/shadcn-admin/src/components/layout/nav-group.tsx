@@ -156,7 +156,7 @@ function SidebarMenuCollapsible({
             tooltip={item.title}
             isActive={isActive}
             className={[
-              'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!',
+              'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:min-h-8 group-data-[collapsible=icon]:min-w-8 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:p-0!',
               isActive
                 ? 'bg-transparent text-[#0F172A] hover:bg-transparent'
                 : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
@@ -221,7 +221,7 @@ function SidebarMenuCollapsedDropdown({
             tooltip={item.title}
             isActive={isActive}
             className={[
-              'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!',
+              'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:min-h-8 group-data-[collapsible=icon]:min-w-8 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:p-0!',
               isActive
                 ? 'bg-transparent text-[#0F172A] hover:bg-transparent'
                 : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
