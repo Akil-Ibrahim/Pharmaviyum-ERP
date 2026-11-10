@@ -63,7 +63,12 @@ jobs:
           done
 
           if (("${#FILES[@]}" > 0)); then
-            bunx prettier --check "${FILES[@]}"
+            bunx prettier --write "${FILES[@]}"
+            for file in "${FILES[@]}"; do
+              echo "::group::PRETTIER_OUTPUT ${file}"
+              cat "${file}"
+              echo "::endgroup::"
+            done
           else
             echo "No frontend files changed; skipping Prettier."
           fi
