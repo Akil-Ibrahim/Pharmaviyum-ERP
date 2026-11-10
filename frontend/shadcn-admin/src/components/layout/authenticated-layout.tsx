@@ -3,7 +3,6 @@ import { getCookie } from '@/lib/cookies'
 import { cn } from '@/lib/utils'
 import { LayoutProvider } from '@/context/layout-provider'
 import { SearchProvider } from '@/context/search-provider'
-import { Separator } from '@/components/ui/separator'
 import {
   SidebarInset,
   SidebarProvider,
@@ -38,14 +37,13 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
               'peer-data-[variant=inset]:has-data-[layout=fixed]:h-[calc(100svh-(var(--spacing)*4))]'
             )}
           >
-            <div className='flex h-14 shrink-0 items-center gap-3 border-b px-4 md:hidden'>
+            <div className='flex h-14 shrink-0 items-center gap-3 px-4 md:hidden'>
               <SidebarTrigger
                 variant='outline'
                 aria-label='Open navigation menu'
                 title='Open navigation menu'
                 className='size-9'
               />
-              <Separator orientation='vertical' className='h-6' />
             </div>
             {children ?? <Outlet />}
           </SidebarInset>
