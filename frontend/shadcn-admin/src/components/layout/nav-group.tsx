@@ -1,10 +1,7 @@
 import { useState, type ElementType, type ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
-import {
-  getNavigationIconColorValue,
-  useTheme,
-} from '@/context/theme-provider'
+import { getNavigationIconColorValue, useTheme } from '@/context/theme-provider'
 import {
   Collapsible,
   CollapsibleContent,
