@@ -447,9 +447,7 @@ async def test_checkout_rejects_insufficient_stock_without_partial_decrement(
     )
     assert (
         await test_db.scalar(
-            select(OutboxEvent).where(
-                OutboxEvent.event_type == "pos.sale.created"
-            )
+            select(OutboxEvent).where(OutboxEvent.event_type == "pos.sale.created")
         )
         is None
     )
