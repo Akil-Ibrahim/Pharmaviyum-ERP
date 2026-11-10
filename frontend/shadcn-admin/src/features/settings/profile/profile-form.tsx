@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Camera, Trash2 } from 'lucide-react'
-import { showSubmittedData } from '@/lib/show-submitted-data'
+import { useProfileStore } from '@/stores/profile-store'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -40,21 +40,28 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
 const defaultValues: ProfileFormValues = {
-  firstName: '',
-  lastName: '',
+  firstName: 'Ibrahim',
+  lastName: 'Akil',
   email: '',
 }
 
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024
 
 export function ProfileForm() {
-  const [avatarPreview, setAvatarPreview] = useState<string>()
+  const profile = useProfileStore((state) => state.profile)
+  const setProfile = useProfileStore((state) => state.setProfile)
+  const [avatarPreview, setAvatarPreview] = useState<string | undefined>(profile.avatar || undefined)
+  const [avatarRemoved, setAvatarRemoved] = useState(false)
   const [avatarError, setAvatarError] = useState<string>()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues,
+    defaultValues: {
+      firstName: profile.firstName || 'Ibrahim',
+      lastName: profile.lastName || 'Akil',
+      email: profile.email,
+    },
     mode: 'onChange',
   })
 
@@ -80,11 +87,17 @@ export function ProfileForm() {
     }
 
     setAvatarError(undefined)
-    setAvatarPreview(URL.createObjectURL(file))
+    setAvatarRemoved(false)
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') setAvatarPreview(reader.result)
+    }
+    reader.readAsDataURL(file)
   }
 
   function removeAvatar() {
     setAvatarPreview(undefined)
+    setAvatarRemoved(true)
     setAvatarError(undefined)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
@@ -92,7 +105,14 @@ export function ProfileForm() {
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit((data) => showSubmittedData(data))}
+        onSubmit={form.handleSubmit((data) =>
+          setProfile({
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            avatar: avatarRemoved ? '' : avatarPreview || '',
+          })
+        )}
         className='space-y-8'
       >
         <div className='space-y-4'>
