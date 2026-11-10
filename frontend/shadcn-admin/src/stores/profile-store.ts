@@ -5,6 +5,7 @@ export interface ProfileIdentity {
   firstName: string
   lastName: string
   email: string
+  dateOfBirth: string
   avatar: string
 }
 
@@ -20,6 +21,7 @@ export const useProfileStore = create<ProfileState>()(
         firstName: 'Ibrahim',
         lastName: 'Akil',
         email: '',
+        dateOfBirth: '',
         avatar: '',
       },
       setProfile: (profile) =>
