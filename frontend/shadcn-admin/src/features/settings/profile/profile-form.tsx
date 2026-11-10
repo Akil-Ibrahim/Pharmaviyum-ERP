@@ -24,6 +24,7 @@ import {
   uploadProfileAvatar,
 } from '@/features/settings/profile/api'
 import { useProfileAvatar } from '@/features/settings/profile/use-profile-avatar'
+
 const profileFormSchema = z.object({
   firstName: z
     .string()
@@ -139,7 +140,9 @@ export function ProfileForm() {
       toast.success('Profile updated successfully.')
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Unable to save profile photo.'
+        error instanceof Error
+          ? error.message
+          : 'Unable to save profile photo.'
       setAvatarError(message)
       toast.error(message)
     } finally {
