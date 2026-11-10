@@ -3,11 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
 import { getCookie } from '@/lib/cookies'
-import {
-  getNavIconColor,
-  ThemeProvider,
-  useTheme,
-} from './theme-provider'
+import { getNavIconColor, ThemeProvider, useTheme } from './theme-provider'
 
 function NavigationColorProbe() {
   const { navigationIconColor, setNavigationIconColor } = useTheme()
