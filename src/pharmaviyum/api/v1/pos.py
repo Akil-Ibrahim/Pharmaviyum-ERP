@@ -480,6 +480,9 @@ async def checkout(
             "discount_total": str(discount),
             "total": str(total),
             "cashier_user_id": cashier.id,
+            "inventory_effect": (
+                "decrement" if payload.payment_method == "cash" else "reserve"
+            ),
             "items": event_items,
             "payment": {
                 "method": payment.method,
@@ -661,6 +664,17 @@ async def payment_webhook(
             "payment_status": payment.status,
             "amount": str(payment.amount),
             "provider_name": payment.provider_name,
+            "inventory_effect": (
+                "commit_reservation" if event_status == "succeeded" else "release_reservation"
+            ),
+            "allocations": [
+                {
+                    "inventory_id": allocation.inventory_id,
+                    "lot_number": allocation.lot_number,
+                    "quantity": allocation.quantity,
+                }
+                for allocation in allocations
+            ],
         },
     )
     await db.commit()
@@ -725,6 +739,7 @@ async def cancel_pending_sale(
             "sale_id": sale.id,
             "receipt_number": sale.receipt_number,
             "sale_status": sale.status,
+            "inventory_effect": "release_reservation",
             "released_allocations": [
                 {
                     "inventory_id": allocation.inventory_id,
