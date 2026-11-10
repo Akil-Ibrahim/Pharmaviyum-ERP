@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.user import User
+from src.pharmaviyum.models.user_avatar import UserAvatar
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser
 from src.pharmaviyum.services.profile_avatar import get_profile_avatar_content_type
 from src.pharmaviyum.schemas.user_schema import UserCreate, UserResponse
@@ -26,17 +27,24 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.get("/me/avatar", response_class=Response)
-async def get_my_avatar(current_user: CurrentUser) -> Response:
+async def get_my_avatar(
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
     """Return the authenticated user's own profile photo."""
-    if current_user.avatar_data is None or current_user.avatar_content_type is None:
+    result = await db.execute(
+        select(UserAvatar).where(UserAvatar.user_id == current_user.id)
+    )
+    avatar = result.scalar_one_or_none()
+    if avatar is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Profile photo not found",
         )
 
     return Response(
-        content=current_user.avatar_data,
-        media_type=current_user.avatar_content_type,
+        content=avatar.avatar_data,
+        media_type=avatar.content_type,
         headers={
             "Cache-Control": "private, max-age=300",
             "Vary": "Authorization",
@@ -67,9 +75,20 @@ async def upload_my_avatar(
             detail=str(exc),
         ) from exc
 
-    current_user.avatar_data = contents
-    current_user.avatar_content_type = content_type
-    db.add(current_user)
+    result = await db.execute(
+        select(UserAvatar).where(UserAvatar.user_id == current_user.id)
+    )
+    avatar = result.scalar_one_or_none()
+    if avatar is None:
+        avatar = UserAvatar(
+            user_id=current_user.id,
+            avatar_data=contents,
+            content_type=content_type,
+        )
+    else:
+        avatar.avatar_data = contents
+        avatar.content_type = content_type
+    db.add(avatar)
     await db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -81,10 +100,13 @@ async def delete_my_avatar(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """Remove the authenticated user's profile photo from PostgreSQL."""
-    current_user.avatar_data = None
-    current_user.avatar_content_type = None
-    db.add(current_user)
-    await db.commit()
+    result = await db.execute(
+        select(UserAvatar).where(UserAvatar.user_id == current_user.id)
+    )
+    avatar = result.scalar_one_or_none()
+    if avatar is not None:
+        await db.delete(avatar)
+        await db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
