@@ -61,9 +61,9 @@ export function Chats() {
   return (
     <>
       <Main fixed>
-        <section className='flex h-full gap-6'>
+        <section className='flex h-full min-w-0 gap-6'>
           {/* Left Side */}
-          <div className='flex w-full flex-col gap-2 sm:w-56 lg:w-72 2xl:w-80'>
+          <div className='flex w-full min-w-0 flex-col gap-2 sm:w-56 sm:shrink-0 lg:w-72 2xl:w-80'>
             <div className='sticky top-0 z-10 -mx-4 bg-background px-4 pb-3 shadow-md sm:static sm:z-auto sm:mx-0 sm:p-0 sm:shadow-none'>
               <div className='flex items-center justify-between py-2'>
                 <div className='flex gap-2'>
@@ -149,7 +149,7 @@ export function Chats() {
           {selectedUser ? (
             <div
               className={cn(
-                'absolute inset-0 start-full z-50 hidden w-full flex-1 flex-col border bg-background shadow-xs sm:static sm:z-auto sm:flex sm:rounded-md',
+                'absolute inset-0 start-full z-50 hidden w-full min-w-0 flex-1 flex-col border bg-background shadow-xs sm:static sm:z-auto sm:flex sm:rounded-md',
                 mobileSelectedUser && 'inset-s-0 flex'
               )}
             >
