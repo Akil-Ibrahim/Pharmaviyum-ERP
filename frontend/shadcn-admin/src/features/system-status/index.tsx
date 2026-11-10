@@ -43,6 +43,16 @@ const stateVariants: Record<
   unknown: 'outline',
 }
 
+const stateClasses: Record<ServiceState, string> = {
+  operational:
+    'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+  degraded:
+    'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400',
+  outage:
+    'border-destructive/30 bg-destructive/10 text-destructive',
+  unknown: 'border-muted-foreground/20 bg-muted text-muted-foreground',
+}
+
 const stateIcons = {
   operational: CheckCircle2,
   degraded: AlertTriangle,
@@ -81,7 +91,7 @@ function ServiceCard({ check }: { check: ServiceCheck }) {
             <CardDescription>Live health check</CardDescription>
           </div>
         </div>
-        <Badge variant={stateVariants[check.state]}>
+        <Badge variant='outline' className={stateClasses[check.state]}>
           <StateIcon className='size-3' />
           {stateLabels[check.state]}
         </Badge>
@@ -163,7 +173,7 @@ export function SystemStatusPage() {
             </div>
           </div>
           <div className='flex flex-col items-start gap-1 sm:items-end'>
-            <Badge variant={stateVariants[overall]}>
+            <Badge variant='outline' className={stateClasses[overall]}>
               {stateLabels[overall]}
             </Badge>
             <span className='text-xs text-muted-foreground'>
