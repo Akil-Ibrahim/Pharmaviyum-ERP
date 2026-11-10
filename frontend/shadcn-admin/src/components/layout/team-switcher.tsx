@@ -19,7 +19,7 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
     <SidebarMenu>
       <SidebarMenuItem>
         <div className='flex min-h-12 items-center gap-2 rounded-lg px-2 py-1 group-data-[collapsible=icon]:justify-center'>
-          <div className='size-10 shrink-0 overflow-hidden rounded-lg bg-background group-data-[collapsible=icon]:size-9'>
+          <div className='size-10 shrink-0 overflow-hidden rounded-lg bg-background group-data-[collapsible=icon]:size-8'>
             <img
               src={brand.logo}
               alt=''

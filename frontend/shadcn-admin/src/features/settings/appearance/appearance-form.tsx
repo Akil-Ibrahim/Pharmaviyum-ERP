@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { ChevronDownIcon } from '@radix-ui/react-icons'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { fonts } from '@/config/fonts'
+import { Check } from 'lucide-react'
 import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
 import { useFont } from '@/context/font-provider'
@@ -198,41 +199,52 @@ export function AppearanceForm() {
           name='navigationIconColor'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Navigation active icon color</FormLabel>
+              <FormLabel>Navigation icon color</FormLabel>
               <FormDescription>
-                Choose the color used by the active navigation icon. This does
-                not change the dashboard theme.
+                Choose a color for sidebar icons. Active icon tiles use a white
+                icon. The dashboard background remains unchanged.
               </FormDescription>
               <FormControl>
-                <select
-                  value={field.value}
-                  onChange={field.onChange}
-                  className={cn(
-                    buttonVariants({ variant: 'outline' }),
-                    'w-64 appearance-none font-normal capitalize',
-                    'dark:bg-background dark:hover:bg-background'
-                  )}
+                <div
+                  role='group'
+                  aria-label='Navigation icon color'
+                  className='grid max-w-xl grid-cols-2 gap-2 sm:grid-cols-3'
                 >
-                  {Object.keys(NAVIGATION_ICON_COLORS).map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
+                  {(
+                    Object.keys(NAVIGATION_ICON_COLORS) as NavigationIconColor[]
+                  ).map((name) => {
+                    const selected = field.value === name
+                    return (
+                      <Button
+                        key={name}
+                        type='button'
+                        variant='outline'
+                        aria-pressed={selected}
+                        onClick={() => field.onChange(name)}
+                        className={cn(
+                          'h-10 justify-start gap-2.5 rounded-lg px-3 font-normal capitalize',
+                          selected && 'border-primary bg-accent/50'
+                        )}
+                      >
+                        <span
+                          aria-hidden='true'
+                          className='size-3.5 shrink-0 rounded-full ring-1 ring-black/10'
+                          style={{
+                            backgroundColor: NAVIGATION_ICON_COLORS[name],
+                          }}
+                        />
+                        <span className='truncate'>{name}</span>
+                        {selected && (
+                          <Check
+                            aria-hidden='true'
+                            className='ms-auto size-4'
+                          />
+                        )}
+                      </Button>
+                    )
+                  })}
+                </div>
               </FormControl>
-              <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                <span
-                  aria-hidden='true'
-                  className='size-6 rounded-lg shadow-sm'
-                  style={{
-                    backgroundColor:
-                      NAVIGATION_ICON_COLORS[
-                        field.value as NavigationIconColor
-                      ],
-                  }}
-                />
-                <span className='capitalize'>{field.value}</span>
-              </div>
               <FormMessage />
             </FormItem>
           )}
