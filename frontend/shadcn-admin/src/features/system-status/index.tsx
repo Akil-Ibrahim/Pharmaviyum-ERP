@@ -16,7 +16,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Main } from '@/components/layout/main'
 import {
   fetchSystemStatus,
   type ServiceCheck,
@@ -99,7 +98,7 @@ export function SystemStatusPage() {
         : 'One or more components need attention.'
 
   return (
-    <Main>
+    <main className='p-4'>
       <div className='space-y-6'>
       <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <div>
@@ -173,6 +172,6 @@ export function SystemStatusPage() {
         </CardDescription>
       </div>
       </div>
-    </Main>
+    </main>
   )
 }
