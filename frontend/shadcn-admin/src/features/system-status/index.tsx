@@ -98,7 +98,7 @@ export function SystemStatusPage() {
         : 'One or more components need attention.'
 
   return (
-    <main className='p-4'>
+    <main className='p-4 md:p-6'>
       <div className='space-y-6'>
       <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <div>
