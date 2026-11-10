@@ -69,7 +69,7 @@ export function useProfileAvatar() {
   )
 
   return {
-    avatarUrl: remoteAvatarUrl ?? legacyAvatar || undefined,
+    avatarUrl: remoteAvatarUrl ?? (legacyAvatar || undefined),
     isLoading: query.isLoading,
   }
 }
