@@ -123,7 +123,8 @@ export function EntityPage({
         </div>
       )}
 
-      <Card className='min-w-0'>\n        <CardHeader className='gap-4'>
+      <Card className='min-w-0'>
+        <CardHeader className='gap-4'>
           <div className='flex min-w-0 flex-wrap items-center justify-between gap-2'>
             <CardTitle>{title} records</CardTitle>
             {rows.length > 0 && (
