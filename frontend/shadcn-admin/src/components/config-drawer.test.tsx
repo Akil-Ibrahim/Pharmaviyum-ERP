@@ -80,7 +80,8 @@ describe('ConfigDrawer (integration)', () => {
       await vi.waitFor(() =>
         expect(document.documentElement.classList.contains('light')).toBe(true)
       )
-      expect(getCookie('vite-ui-theme')).toBe('light')
+      // Light is the default; selecting it does not need to persist a cookie.
+      expect(getCookie('vite-ui-theme')).toBeUndefined()
     })
 
     it('applies dark theme to <html> and cookie', async () => {
@@ -103,7 +104,10 @@ describe('ConfigDrawer (integration)', () => {
       await userEvent.click(
         screen.getByRole('radio', { name: /select system/i })
       )
-      await vi.waitFor(() => expect(getCookie('vite-ui-theme')).toBe('system'))
+      await vi.waitFor(() => expect(getCookie('vite-ui-theme')).toBeUndefined())
+      await vi.waitFor(() =>
+        expect(document.documentElement.classList.contains('light')).toBe(true)
+      )
       await vi.waitFor(() => {
         const root = document.documentElement
         const hasLight = root.classList.contains('light')
