@@ -252,7 +252,9 @@ export function AppearanceForm() {
                       </FormLabel>
                       <Input
                         id='navigation-icon-color-hex'
-                        value={field.value}
+                        value={getNavigationIconColorValue(
+                          field.value as NavigationIconColor
+                        ).toUpperCase()}
                         onChange={(event) =>
                           field.onChange(event.target.value.trim())
                         }
