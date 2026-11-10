@@ -12,9 +12,9 @@ from sqlalchemy import func, select
 
 from src.pharmaviyum.models.drug_catalog import DrugReference, MedicinalProduct
 from src.pharmaviyum.models.inventory import Inventory
+from src.pharmaviyum.models.outbox import OutboxEvent
 from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.pos import Payment, Sale, SaleItemAllocation
-from src.pharmaviyum.models.outbox import OutboxEvent
 from src.pharmaviyum.models.product import Product
 
 
