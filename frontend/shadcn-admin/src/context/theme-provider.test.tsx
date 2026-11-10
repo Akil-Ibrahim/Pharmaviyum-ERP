@@ -1,7 +1,7 @@
+import { clearCookies } from '@/test-utils/cookies'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
-import { clearCookies } from '@/test-utils/cookies'
 import { getCookie } from '@/lib/cookies'
 import { ThemeProvider, useTheme } from './theme-provider'
 
