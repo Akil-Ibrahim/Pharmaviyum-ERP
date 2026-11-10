@@ -194,7 +194,6 @@ export function ProfileForm() {
                 <DatePicker
                   selected={field.value}
                   onSelect={field.onChange}
-                  disabled={(date) => date > new Date()}
                 />
                 <FormDescription>
                   Optional. Your date of birth is only used for your profile.
