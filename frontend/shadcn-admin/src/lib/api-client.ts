@@ -10,7 +10,11 @@ export async function apiFetch<T>(
   const headers = new Headers(init.headers)
 
   headers.set('Accept', 'application/json')
-  if (init.body && !headers.has('Content-Type')) {
+  if (
+    init.body &&
+    !(typeof FormData !== 'undefined' && init.body instanceof FormData) &&
+    !headers.has('Content-Type')
+  ) {
     headers.set('Content-Type', 'application/json')
   }
   if (token) {
@@ -40,4 +44,37 @@ export async function apiFetch<T>(
   }
 
   return response.json() as Promise<T>
+}
+
+export async function apiFetchBlob(path: string): Promise<Blob | null> {
+  const token = useAuthStore.getState().auth.accessToken
+  const headers = new Headers({ Accept: 'image/*' })
+
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    headers,
+    cache: 'no-store',
+  })
+
+  if (response.status === 401) {
+    useAuthStore.getState().auth.reset()
+  }
+
+  if (response.status === 404 || response.status === 204) {
+    return null
+  }
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null)
+    const detail =
+      payload && typeof payload.detail === 'string'
+        ? payload.detail
+        : `API request failed with status ${response.status}`
+    throw new Error(detail)
+  }
+
+  return response.blob()
 }

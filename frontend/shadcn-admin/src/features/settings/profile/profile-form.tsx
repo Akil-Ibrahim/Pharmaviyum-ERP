@@ -1,9 +1,12 @@
-import { useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Camera, Trash2 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { Camera, Loader2, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useProfileStore } from '@/stores/profile-store'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -17,10 +20,10 @@ import {
 import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/date-picker'
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar'
+  deleteProfileAvatar,
+  uploadProfileAvatar,
+} from '@/features/settings/profile/api'
+import { useProfileAvatar } from '@/features/settings/profile/use-profile-avatar'
 
 const profileFormSchema = z.object({
   firstName: z
@@ -40,14 +43,33 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024
+const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 export function ProfileForm() {
   const profile = useProfileStore((state) => state.profile)
   const setProfile = useProfileStore((state) => state.setProfile)
-  const [avatarPreview, setAvatarPreview] = useState<string | undefined>(profile.avatar || undefined)
+  const { avatarUrl } = useProfileAvatar()
+  const queryClient = useQueryClient()
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarRemoved, setAvatarRemoved] = useState(false)
   const [avatarError, setAvatarError] = useState<string>()
+  const [isSaving, setIsSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const localAvatarUrl = useMemo(
+    () => (avatarFile ? URL.createObjectURL(avatarFile) : undefined),
+    [avatarFile]
+  )
+  const avatarPreview = avatarRemoved
+    ? undefined
+    : (localAvatarUrl ?? avatarUrl)
+
+  useEffect(
+    () => () => {
+      if (localAvatarUrl) URL.revokeObjectURL(localAvatarUrl)
+    },
+    [localAvatarUrl]
+  )
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -66,8 +88,8 @@ export function ProfileForm() {
     const file = event.target.files?.[0]
     if (!file) return
 
-    if (!file.type.startsWith('image/')) {
-      setAvatarError('Please choose an image file.')
+    if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
+      setAvatarError('Choose a JPG, PNG, or WebP image.')
       event.target.value = ''
       return
     }
@@ -80,34 +102,51 @@ export function ProfileForm() {
 
     setAvatarError(undefined)
     setAvatarRemoved(false)
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result === 'string') setAvatarPreview(reader.result)
-    }
-    reader.readAsDataURL(file)
+    setAvatarFile(file)
   }
 
   function removeAvatar() {
-    setAvatarPreview(undefined)
+    setAvatarFile(null)
     setAvatarRemoved(true)
     setAvatarError(undefined)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  async function onSubmit(data: ProfileFormValues) {
+    setIsSaving(true)
+    setAvatarError(undefined)
+
+    try {
+      setProfile({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        dateOfBirth: data.dateOfBirth?.toISOString().slice(0, 10) || '',
+      })
+
+      if (avatarFile) {
+        await uploadProfileAvatar(avatarFile)
+      } else if (avatarRemoved) {
+        await deleteProfileAvatar()
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['profile-avatar'] })
+      setAvatarFile(null)
+      setAvatarRemoved(false)
+      toast.success('Profile updated successfully.')
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Unable to save profile photo.'
+      setAvatarError(message)
+      toast.error(message)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit((data) =>
-          setProfile({
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            dateOfBirth: data.dateOfBirth?.toISOString().slice(0, 10) || '',
-            avatar: avatarRemoved ? '' : avatarPreview || '',
-          })
-        )}
-        className='space-y-8'
-      >
+      <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
         <div className='space-y-4'>
           <div className='space-y-1'>
             <h3 className='text-base font-medium'>Profile photo</h3>
@@ -128,7 +167,7 @@ export function ProfileForm() {
               <input
                 ref={fileInputRef}
                 type='file'
-                accept='image/*'
+                accept='image/jpeg,image/png,image/webp'
                 className='sr-only'
                 aria-label='Choose profile photo'
                 onChange={handleAvatarChange}
@@ -142,11 +181,7 @@ export function ProfileForm() {
                 {avatarPreview ? 'Change photo' : 'Upload photo'}
               </Button>
               {avatarPreview ? (
-                <Button
-                  type='button'
-                  variant='ghost'
-                  onClick={removeAvatar}
-                >
+                <Button type='button' variant='ghost' onClick={removeAvatar}>
                   <Trash2 className='me-2 size-4' />
                   Remove
                 </Button>
@@ -154,7 +189,7 @@ export function ProfileForm() {
             </div>
           </div>
           <p className='text-xs text-muted-foreground'>
-            JPG, PNG or other image formats. Maximum file size: 2 MB.
+            JPG, PNG, or WebP. Maximum file size: 2 MB.
           </p>
           {avatarError ? (
             <p role='alert' className='text-sm text-destructive'>
@@ -178,7 +213,11 @@ export function ProfileForm() {
                 <FormItem>
                   <FormLabel>First name</FormLabel>
                   <FormControl>
-                    <Input placeholder='Your first name' autoComplete='given-name' {...field} />
+                    <Input
+                      placeholder='Your first name'
+                      autoComplete='given-name'
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -191,7 +230,11 @@ export function ProfileForm() {
                 <FormItem>
                   <FormLabel>Last name</FormLabel>
                   <FormControl>
-                    <Input placeholder='Your last name' autoComplete='family-name' {...field} />
+                    <Input
+                      placeholder='Your last name'
+                      autoComplete='family-name'
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -204,10 +247,7 @@ export function ProfileForm() {
             render={({ field }) => (
               <FormItem className='flex flex-col sm:max-w-sm'>
                 <FormLabel>Date of birth</FormLabel>
-                <DatePicker
-                  selected={field.value}
-                  onSelect={field.onChange}
-                />
+                <DatePicker selected={field.value} onSelect={field.onChange} />
                 <FormDescription>
                   Optional. Your date of birth is only used for your profile.
                 </FormDescription>
@@ -247,7 +287,8 @@ export function ProfileForm() {
           />
         </div>
 
-        <Button type='submit' disabled={!form.formState.isValid}>
+        <Button type='submit' disabled={!form.formState.isValid || isSaving}>
+          {isSaving ? <Loader2 className='size-4 animate-spin' /> : null}
           Save changes
         </Button>
       </form>
