@@ -29,7 +29,7 @@ export function AppSidebar() {
           <SidebarTrigger
             aria-label='Collapse or expand navigation'
             title='Collapse or expand navigation'
-            className='size-7 shrink-0 rounded-lg text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A]'
+            className='hidden size-7 shrink-0 rounded-lg text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] md:inline-flex'
           />
         </div>
       </SidebarHeader>
