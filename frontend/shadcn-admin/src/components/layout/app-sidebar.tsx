@@ -5,7 +5,6 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-  SidebarTrigger,
 } from '@/components/ui/sidebar'
 // import { AppTitle } from './app-title'
 import { sidebarData } from './data/sidebar-data'
@@ -18,16 +17,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader className='px-2 py-3'>
-        <div className='flex items-center gap-1 group-data-[collapsible=icon]:flex-col'>
-          <div className='min-w-0 flex-1 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:flex-none'>
-            <TeamSwitcher teams={sidebarData.teams} />
-          </div>
-          <SidebarTrigger
-            aria-label='Collapse or expand navigation'
-            title='Collapse or expand navigation'
-            className='hidden size-7 shrink-0 rounded-lg text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] md:inline-flex'
-          />
-        </div>
+        <TeamSwitcher teams={sidebarData.teams} />
       </SidebarHeader>
       <SidebarContent className='gap-0 px-1 py-2 group-data-[collapsible=icon]:px-0'>
         {sidebarData.navGroups.map((props) => (
