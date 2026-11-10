@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
@@ -43,11 +44,7 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024
-const ALLOWED_AVATAR_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-])
+const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 export function ProfileForm() {
   const profile = useProfileStore((state) => state.profile)
@@ -66,7 +63,7 @@ export function ProfileForm() {
   )
   const avatarPreview = avatarRemoved
     ? undefined
-    : localAvatarUrl ?? avatarUrl
+    : (localAvatarUrl ?? avatarUrl)
 
   useEffect(
     () => () => {
@@ -140,9 +137,7 @@ export function ProfileForm() {
       toast.success('Profile updated successfully.')
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : 'Unable to save profile photo.'
+        error instanceof Error ? error.message : 'Unable to save profile photo.'
       setAvatarError(message)
       toast.error(message)
     } finally {
