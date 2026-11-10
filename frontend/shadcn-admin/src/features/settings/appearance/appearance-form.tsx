@@ -230,10 +230,17 @@ export function AppearanceForm() {
                         <span
                           aria-hidden='true'
                           className='size-3.5 shrink-0 rounded-full ring-1 ring-black/10'
-                          style={{ backgroundColor: NAVIGATION_ICON_COLORS[name] }}
+                          style={{
+                            backgroundColor: NAVIGATION_ICON_COLORS[name],
+                          }}
                         />
                         <span className='truncate'>{name}</span>
-                        {selected && <Check aria-hidden='true' className='ms-auto size-4' />}
+                        {selected && (
+                          <Check
+                            aria-hidden='true'
+                            className='ms-auto size-4'
+                          />
+                        )}
                       </Button>
                     )
                   })}
