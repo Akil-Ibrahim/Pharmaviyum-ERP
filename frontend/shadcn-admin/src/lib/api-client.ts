@@ -46,7 +46,6 @@ export async function apiFetch<T>(
   return response.json() as Promise<T>
 }
 
-
 export async function apiFetchBlob(path: string): Promise<Blob | null> {
   const token = useAuthStore.getState().auth.accessToken
   const headers = new Headers({ Accept: 'image/*' })
