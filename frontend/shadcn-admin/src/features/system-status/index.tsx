@@ -58,6 +58,7 @@ const serviceIcons = {
 
 function formatCheckedAt(value?: string) {
   if (!value) return 'Waiting for first check'
+
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: 'medium',
     timeStyle: 'medium',
@@ -70,7 +71,7 @@ function ServiceCard({ check }: { check: ServiceCheck }) {
 
   return (
     <Card>
-      <CardHeader className='flex-row items-start justify-between space-y-0'>
+      <CardHeader className='grid-cols-[1fr_auto] items-start'>
         <div className='flex items-center gap-3'>
           <span className='flex size-10 items-center justify-center rounded-lg bg-muted'>
             <Icon className='size-5 text-muted-foreground' />
@@ -98,14 +99,7 @@ function ServiceCard({ check }: { check: ServiceCheck }) {
 }
 
 export function SystemStatusPage() {
-  const {
-    data,
-    error,
-    isPending,
-    isFetching,
-    refetch,
-    dataUpdatedAt,
-  } = useQuery({
+  const statusQuery = useQuery({
     queryKey: ['system-status'],
     queryFn: fetchSystemStatus,
     refetchInterval: 30_000,
@@ -113,8 +107,15 @@ export function SystemStatusPage() {
     retry: 1,
   })
 
-  const overall = data?.overall ?? 'unknown'
+  const overall = statusQuery.data?.overall ?? 'unknown'
   const OverallIcon = stateIcons[overall]
+  const summary = statusQuery.isPending
+    ? 'Running the first health check…'
+    : statusQuery.error
+      ? 'Unable to retrieve system health information.'
+      : overall === 'operational'
+        ? 'All monitored components are operational.'
+        : 'One or more components need attention.'
 
   return (
     <main className='space-y-6 p-4 md:p-6'>
@@ -134,11 +135,13 @@ export function SystemStatusPage() {
         <Button
           variant='outline'
           size='sm'
-          onClick={() => void refetch()}
-          disabled={isFetching}
+          onClick={() => void statusQuery.refetch()}
+          disabled={statusQuery.isFetching}
         >
           <RefreshCw
-            className={isFetching ? 'size-4 animate-spin' : 'size-4'}
+            className={
+              statusQuery.isFetching ? 'size-4 animate-spin' : 'size-4'
+            }
           />
           Refresh
         </Button>
@@ -152,15 +155,7 @@ export function SystemStatusPage() {
             </span>
             <div className='space-y-1'>
               <p className='font-medium'>Overall system status</p>
-              <p className='text-sm text-muted-foreground'>
-                {isPending
-                  ? 'Running the first health check…'
-                  : error
-                    ? 'Unable to retrieve system health information.'
-                    : overall === 'operational'
-                      ? 'All monitored components are operational.'
-                      : 'One or more components need attention.'}
-              </p>
+              <p className='text-sm text-muted-foreground'>{summary}</p>
             </div>
           </div>
           <div className='flex flex-col items-start gap-1 sm:items-end'>
@@ -168,28 +163,17 @@ export function SystemStatusPage() {
               {stateLabels[overall]}
             </Badge>
             <span className='text-xs text-muted-foreground'>
-              Last checked: {formatCheckedAt(data?.checkedAt)}
+              Last checked: {formatCheckedAt(statusQuery.data?.checkedAt)}
             </span>
           </div>
         </CardContent>
       </Card>
 
-      {error && (
-        <div
-          role='alert'
-          className='rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive'
-        >
-          {error instanceof Error
-            ? error.message
-            : 'The system status request failed.'}
-        </div>
-      )}
-
       <section className='grid gap-4 sm:grid-cols-2'>
-        {data?.checks.map((check) => (
+        {statusQuery.data?.checks.map((check) => (
           <ServiceCard key={check.id} check={check} />
         ))}
-        {isPending &&
+        {statusQuery.isPending &&
           ['api', 'postgres', 'redis', 'ai'].map((item) => (
             <Card key={item}>
               <CardContent className='flex h-28 items-center gap-3'>
@@ -210,12 +194,6 @@ export function SystemStatusPage() {
           The AI indicator verifies LangGraph component initialization. It does
           not execute a live LLM inference request or measure model-provider
           availability.
-        </p>
-        <p>
-          Last successful response received:{' '}
-          {formatCheckedAt(
-            dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined
-          )}
         </p>
       </div>
     </main>
