@@ -10,18 +10,11 @@ import {
   UserRound,
   Settings,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { useProfileStore } from '@/stores/profile-store'
-import { useProfileAvatar } from '@/features/settings/profile/use-profile-avatar'
+import { cn } from '@/lib/utils'
 import { useSearch } from '@/context/search-provider'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +23,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { Separator } from '@/components/ui/separator'
+import { useProfileAvatar } from '@/features/settings/profile/use-profile-avatar'
 type HeaderProps = React.HTMLAttributes<HTMLElement> & {
   fixed?: boolean
   ref?: React.Ref<HTMLElement>
