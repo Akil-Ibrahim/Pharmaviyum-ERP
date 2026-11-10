@@ -231,12 +231,7 @@ function SidebarMenuCollapsedDropdown({
             <ChevronRight className='ms-auto size-4 text-muted-foreground/70' />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
-        <DropdownMenuContent
-          side='right'
-          align='start'
-          sideOffset={8}
-          className='min-w-52 rounded-xl p-1.5 shadow-lg'
-        >
+        <DropdownMenuContent side='right' align='start' sideOffset={8} className='min-w-52 rounded-xl p-1.5 shadow-lg'>
           <DropdownMenuLabel className='px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground'>
             {item.title} {item.badge ? `(${item.badge})` : ''}
           </DropdownMenuLabel>
@@ -248,20 +243,14 @@ function SidebarMenuCollapsedDropdown({
               <DropdownMenuItem
                 key={`${sub.title}-${sub.url}`}
                 asChild
-                className={
-                  isSubActive
-                    ? 'rounded-lg bg-primary/10 text-foreground'
-                    : 'rounded-lg'
-                }
+                className={isSubActive ? 'rounded-lg bg-primary/10 text-foreground' : 'rounded-lg'}
               >
                 <Link to={sub.url} className='gap-2.5'>
                   <NavIcon icon={sub.icon} active={isSubActive} />
                   <span className='max-w-52 truncate text-[13px] font-semibold text-foreground'>
                     {sub.title}
                   </span>
-                  {sub.badge && (
-                    <span className='ms-auto text-xs'>{sub.badge}</span>
-                  )}
+                  {sub.badge && <span className='ms-auto text-xs'>{sub.badge}</span>}
                 </Link>
               </DropdownMenuItem>
             )
