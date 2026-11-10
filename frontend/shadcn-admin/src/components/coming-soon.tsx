@@ -3,8 +3,7 @@ import { Telescope } from 'lucide-react'
 export function ComingSoon() {
   return (
     <div
-      className='flex w-full items-center justify-center px-4 py-8 md:min-h-svh'
-      style={{ minHeight: 'calc(100svh - 3.5rem)' }}
+      className='flex min-h-[calc(100svh-3.5rem)] w-full items-center justify-center px-4 py-8 md:min-h-svh'
     >
       <div className='flex w-full flex-col items-center justify-center gap-2'>
         <Telescope size={72} />
