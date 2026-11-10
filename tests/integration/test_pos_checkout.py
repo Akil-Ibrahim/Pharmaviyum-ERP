@@ -8,7 +8,7 @@ import json
 from datetime import datetime, timedelta
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from src.pharmaviyum.models.drug_catalog import DrugReference, MedicinalProduct
 from src.pharmaviyum.models.inventory import Inventory
