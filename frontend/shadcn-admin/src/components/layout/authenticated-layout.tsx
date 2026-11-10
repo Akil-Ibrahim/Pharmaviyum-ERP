@@ -3,12 +3,7 @@ import { getCookie } from '@/lib/cookies'
 import { cn } from '@/lib/utils'
 import { LayoutProvider } from '@/context/layout-provider'
 import { SearchProvider } from '@/context/search-provider'
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from '@/components/ui/sidebar'
-import { Separator } from '@/components/ui/separator'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { SkipToMain } from '@/components/skip-to-main'
 
@@ -38,15 +33,6 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
               'peer-data-[variant=inset]:has-data-[layout=fixed]:h-[calc(100svh-(var(--spacing)*4))]'
             )}
           >
-            <div className='flex h-14 shrink-0 items-center gap-3 px-4'>
-              <SidebarTrigger
-                variant='outline'
-                aria-label='Toggle navigation sidebar'
-                title='Toggle navigation sidebar'
-                className='size-8 shrink-0 rounded-lg'
-              />
-              <Separator orientation='vertical' className='h-6 shrink-0' />
-            </div>
             {children ?? <Outlet />}
           </SidebarInset>
         </SidebarProvider>
