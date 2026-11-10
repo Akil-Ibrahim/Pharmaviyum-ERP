@@ -19,7 +19,7 @@ export function AppSidebar() {
       <SidebarHeader className='px-2 py-3'>
         <TeamSwitcher teams={sidebarData.teams} />
       </SidebarHeader>
-      <SidebarContent className='gap-0 px-1 py-2 group-data-[collapsible=icon]:px-0'>
+      <SidebarContent>
         {sidebarData.navGroups.map((props) => (
           <NavGroup key={props.title} {...props} />
         ))}
