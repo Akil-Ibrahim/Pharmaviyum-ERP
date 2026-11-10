@@ -3,9 +3,16 @@ import { getCookie } from '@/lib/cookies'
 import { cn } from '@/lib/utils'
 import { LayoutProvider } from '@/context/layout-provider'
 import { SearchProvider } from '@/context/search-provider'
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { ConfigDrawer } from '@/components/config-drawer'
+import { Header } from '@/components/layout/header'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { SkipToMain } from '@/components/skip-to-main'
+import { Separator } from '@/components/ui/separator'
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -33,6 +40,18 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
               'peer-data-[variant=inset]:has-data-[layout=fixed]:h-[calc(100svh-(var(--spacing)*4))]'
             )}
           >
+            <Header fixed className='border-b bg-background'>
+              <SidebarTrigger
+                variant='outline'
+                aria-label='Toggle navigation sidebar'
+                title='Toggle navigation sidebar'
+                className='max-md:scale-125'
+              />
+              <Separator orientation='vertical' className='h-6' />
+              <div className='ms-auto flex items-center gap-2'>
+                <ConfigDrawer />
+              </div>
+            </Header>
             {children ?? <Outlet />}
           </SidebarInset>
         </SidebarProvider>
