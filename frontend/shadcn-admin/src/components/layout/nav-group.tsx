@@ -84,7 +84,7 @@ function NavIcon({
   return (
     <span
       className={[
-        'flex shrink-0 items-center justify-center rounded-xl transition-colors duration-150',
+        'flex shrink-0 items-center justify-center rounded-lg transition-colors duration-150',
         size === 'sm' ? 'size-7 [&>svg]:size-4' : 'size-8 [&>svg]:size-5',
         active ? 'text-white' : 'bg-transparent',
       ].join(' ')}
