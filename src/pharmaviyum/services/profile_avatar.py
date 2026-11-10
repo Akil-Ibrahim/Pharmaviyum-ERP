@@ -23,9 +23,7 @@ def get_profile_avatar_content_type(contents: bytes) -> str:
                 image.width > _MAX_AVATAR_DIMENSION
                 or image.height > _MAX_AVATAR_DIMENSION
             ):
-                raise ValueError(
-                    "Image dimensions must not exceed 4096 × 4096 pixels."
-                )
+                raise ValueError("Image dimensions must not exceed 4096 × 4096 pixels.")
             image.verify()
     except (
         Image.DecompressionBombError,
