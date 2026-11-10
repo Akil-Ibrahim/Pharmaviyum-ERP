@@ -121,13 +121,15 @@ export function Chats() {
                         setMobileSelectedUser(chatUsr)
                       }}
                     >
-                      <div className='flex min-w-0 gap-2'>\n                        <Avatar>
+                      <div className='flex min-w-0 gap-2'>
+                        <Avatar>
                           <AvatarImage src={profile} alt={username} />
                           <AvatarFallback>
                             {getDisplayNameInitials(fullName)}
                           </AvatarFallback>
                         </Avatar>
-                        <div className='min-w-0 flex-1'>\n                          <span className='block truncate font-medium'>
+                        <div className='min-w-0 flex-1'>
+                          <span className='block truncate font-medium'>
                             {fullName}
                           </span>
                           <span className='line-clamp-2 break-words text-muted-foreground group-hover:text-accent-foreground/90'>
