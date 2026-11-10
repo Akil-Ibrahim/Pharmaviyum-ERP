@@ -37,6 +37,9 @@ import {
   type NavGroup as NavGroupProps,
 } from './types'
 
+const inactiveNavItemClassName =
+  'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]'
+
 export function NavGroup({ title, items }: NavGroupProps) {
   const { state, isMobile } = useSidebar()
   const href = useLocation({ select: (location) => location.href })
@@ -120,7 +123,7 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
           'relative h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:min-h-8 group-data-[collapsible=icon]:min-w-8 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:p-0!',
           isActive
             ? 'bg-transparent text-[#0F172A] shadow-none hover:bg-transparent'
-            : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
+            : inactiveNavItemClassName,
         ].join(' ')}
       >
         <Link to={item.url} onClick={() => setOpenMobile(false)}>
@@ -163,7 +166,7 @@ function SidebarMenuCollapsible({
               'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:min-h-8 group-data-[collapsible=icon]:min-w-8 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:p-0!',
               isActive
                 ? 'bg-transparent text-[#0F172A] hover:bg-transparent'
-                : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
+                : inactiveNavItemClassName,
             ].join(' ')}
           >
             <NavIcon icon={item.icon} active={isActive} />
@@ -187,7 +190,7 @@ function SidebarMenuCollapsible({
                       'h-10 gap-2.5 rounded-xl px-3 transition-colors',
                       isSubActive
                         ? 'bg-transparent text-[#0F172A]'
-                        : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
+                        : inactiveNavItemClassName,
                     ].join(' ')}
                   >
                     <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
@@ -228,7 +231,7 @@ function SidebarMenuCollapsedDropdown({
               'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:min-h-8 group-data-[collapsible=icon]:min-w-8 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:p-0!',
               isActive
                 ? 'bg-transparent text-[#0F172A] hover:bg-transparent'
-                : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
+                : inactiveNavItemClassName,
             ].join(' ')}
           >
             <NavIcon icon={item.icon} active={isActive} />
