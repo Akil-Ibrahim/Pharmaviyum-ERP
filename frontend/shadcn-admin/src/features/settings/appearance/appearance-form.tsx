@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { ChevronDownIcon } from '@radix-ui/react-icons'
-import { Check } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Check } from 'lucide-react'
 import { fonts } from '@/config/fonts'
 import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
@@ -201,9 +201,8 @@ export function AppearanceForm() {
             <FormItem>
               <FormLabel>Navigation icon color</FormLabel>
               <FormDescription>
-                Choose the icon color used throughout the sidebar. The active
-                icon tile uses this color with a white icon. This does not
-                change the dashboard background or theme.
+                Choose a color for sidebar icons. Active icon tiles use a white
+                icon. The dashboard background remains unchanged.
               </FormDescription>
               <FormControl>
                 <div
