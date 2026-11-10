@@ -57,7 +57,6 @@ describe('Pharmaviyum sidebar navigation', () => {
 
     expect(settings?.items?.map((item) => item.title)).toEqual([
       'Profile',
-      'Account',
       'Appearance',
       'Notifications',
       'Developer Tools',
