@@ -6,7 +6,11 @@ import { fonts } from '@/config/fonts'
 import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
 import { useFont } from '@/context/font-provider'
-import { useTheme } from '@/context/theme-provider'
+import {
+  NAVIGATION_ICON_COLORS,
+  type NavigationIconColor,
+  useTheme,
+} from '@/context/theme-provider'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
   Form,
@@ -22,18 +26,25 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 const appearanceFormSchema = z.object({
   theme: z.enum(['light', 'dark']),
   font: z.enum(fonts),
+  navigationIconColor: z.enum([
+    'default', 'neutral', 'stone', 'zinc', 'slate', 'gray',
+    'mauve', 'olive', 'mist', 'taupe', 'red', 'orange', 'amber',
+    'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky',
+    'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose',
+  ]),
 })
 
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
 
 export function AppearanceForm() {
   const { font, setFont } = useFont()
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, navigationIconColor, setNavigationIconColor } = useTheme()
 
   // This can come from your database or API.
   const defaultValues: Partial<AppearanceFormValues> = {
     theme: theme as 'light' | 'dark',
     font,
+    navigationIconColor,
   }
 
   const form = useForm<AppearanceFormValues>({
@@ -44,6 +55,9 @@ export function AppearanceForm() {
   function onSubmit(data: AppearanceFormValues) {
     if (data.font != font) setFont(data.font)
     if (data.theme != theme) setTheme(data.theme)
+    if (data.navigationIconColor !== navigationIconColor) {
+      setNavigationIconColor(data.navigationIconColor as NavigationIconColor)
+    }
 
     showSubmittedData(data)
   }
@@ -151,6 +165,46 @@ export function AppearanceForm() {
                   </FormLabel>
                 </FormItem>
               </RadioGroup>
+            </FormItem>
+          )}
+        />
+
+
+        <FormField
+          control={form.control}
+          name='navigationIconColor'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Navigation active icon color</FormLabel>
+              <FormDescription>
+                Choose the color used by the active navigation icon. This does not change the dashboard theme.
+              </FormDescription>
+              <FormControl>
+                <select
+                  value={field.value}
+                  onChange={field.onChange}
+                  className={cn(
+                    buttonVariants({ variant: 'outline' }),
+                    'w-64 appearance-none font-normal capitalize',
+                    'dark:bg-background dark:hover:bg-background'
+                  )}
+                >
+                  {Object.entries(NAVIGATION_ICON_COLORS).map(([name, color]) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </FormControl>
+              <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                <span
+                  aria-hidden='true'
+                  className='size-6 rounded-lg shadow-sm'
+                  style={{ backgroundColor: NAVIGATION_ICON_COLORS[field.value as NavigationIconColor] }}
+                />
+                <span className='capitalize'>{field.value}</span>
+              </div>
+              <FormMessage />
             </FormItem>
           )}
         />
