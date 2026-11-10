@@ -27,10 +27,33 @@ const appearanceFormSchema = z.object({
   theme: z.enum(['light', 'dark']),
   font: z.enum(fonts),
   navigationIconColor: z.enum([
-    'default', 'neutral', 'stone', 'zinc', 'slate', 'gray',
-    'mauve', 'olive', 'mist', 'taupe', 'red', 'orange', 'amber',
-    'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky',
-    'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose',
+    'default',
+    'neutral',
+    'stone',
+    'zinc',
+    'slate',
+    'gray',
+    'mauve',
+    'olive',
+    'mist',
+    'taupe',
+    'red',
+    'orange',
+    'amber',
+    'yellow',
+    'lime',
+    'green',
+    'emerald',
+    'teal',
+    'cyan',
+    'sky',
+    'blue',
+    'indigo',
+    'violet',
+    'purple',
+    'fuchsia',
+    'pink',
+    'rose',
   ]),
 })
 
@@ -38,7 +61,12 @@ type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
 
 export function AppearanceForm() {
   const { font, setFont } = useFont()
-  const { theme, setTheme, navigationIconColor, setNavigationIconColor } = useTheme()
+  const {
+    theme,
+    setTheme,
+    navigationIconColor,
+    setNavigationIconColor,
+  } = useTheme()
 
   // This can come from your database or API.
   const defaultValues: Partial<AppearanceFormValues> = {
@@ -200,7 +228,10 @@ export function AppearanceForm() {
                 <span
                   aria-hidden='true'
                   className='size-6 rounded-lg shadow-sm'
-                  style={{ backgroundColor: NAVIGATION_ICON_COLORS[field.value as NavigationIconColor] }}
+                  style={{
+                    backgroundColor:
+                      NAVIGATION_ICON_COLORS[field.value as NavigationIconColor],
+                  }}
                 />
                 <span className='capitalize'>{field.value}</span>
               </div>
