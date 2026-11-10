@@ -7,7 +7,9 @@ export function ComingSoon() {
     >
       <div className='flex w-full flex-col items-center justify-center gap-2'>
         <Telescope size={72} />
-        <h1 className='text-center text-3xl leading-tight font-bold sm:text-4xl'>
+        <h1
+          className='text-center text-3xl leading-tight font-bold sm:text-4xl'
+        >
           Coming Soon!
         </h1>
         <p className='text-center text-muted-foreground'>
