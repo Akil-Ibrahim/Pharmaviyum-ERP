@@ -84,18 +84,18 @@ function NavIcon({
   return (
     <span
       className={[
-        'flex shrink-0 items-center justify-center rounded-lg transition-colors duration-150',
-        size === 'sm' ? 'size-7 [&>svg]:size-4' : 'size-8 [&>svg]:size-[18px]',
-        active
-          ? 'text-white shadow-sm'
-          : 'bg-transparent text-muted-foreground group-hover/menu-button:bg-primary/10 group-hover/menu-button:text-primary',
+        'flex shrink-0 items-center justify-center rounded-xl transition-colors duration-150',
+        size === 'sm' ? 'size-7 [&>svg]:size-4' : 'size-8 [&>svg]:size-5',
+        active ? 'text-white' : 'bg-transparent',
       ].join(' ')}
       style={
         active
           ? {
               backgroundColor: NAVIGATION_ICON_COLORS[navigationIconColor],
             }
-          : undefined
+          : {
+              color: NAVIGATION_ICON_COLORS[navigationIconColor],
+            }
       }
     >
       <Icon />
@@ -113,15 +113,15 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
         isActive={isActive}
         tooltip={item.title}
         className={[
-          'relative h-10 gap-2.5 rounded-xl px-2.5 transition-all duration-150',
+          'relative h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150',
           isActive
-            ? 'bg-primary/10 text-foreground shadow-none before:absolute before:inset-y-2 before:start-0 before:w-[3px] before:rounded-full before:bg-primary hover:bg-primary/15'
-            : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+            ? 'bg-transparent text-[#0F172A] shadow-none hover:bg-transparent'
+            : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
         ].join(' ')}
       >
         <Link to={item.url} onClick={() => setOpenMobile(false)}>
           <NavIcon icon={item.icon} active={isActive} />
-          <span className='min-w-0 truncate text-[13px] font-semibold text-foreground'>
+          <span className='min-w-0 truncate text-sm font-medium text-[#0F172A]'>
             {item.title}
           </span>
           {item.badge && <NavBadge>{item.badge}</NavBadge>}
@@ -156,14 +156,14 @@ function SidebarMenuCollapsible({
             tooltip={item.title}
             isActive={isActive}
             className={[
-              'h-10 gap-2.5 rounded-xl px-2.5 transition-all duration-150',
+              'h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150',
               isActive
-                ? 'bg-primary/10 text-foreground hover:bg-primary/15'
-                : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+                ? 'bg-transparent text-[#0F172A] hover:bg-transparent'
+                : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
             ].join(' ')}
           >
             <NavIcon icon={item.icon} active={isActive} />
-            <span className='min-w-0 truncate text-[13px] font-semibold text-foreground'>
+            <span className='min-w-0 truncate text-sm font-medium text-[#0F172A]'>
               {item.title}
             </span>
             {item.badge && <NavBadge>{item.badge}</NavBadge>}
@@ -180,15 +180,15 @@ function SidebarMenuCollapsible({
                     asChild
                     isActive={isSubActive}
                     className={[
-                      'h-10 gap-2.5 rounded-xl px-2.5 transition-colors',
+                      'h-10 gap-2.5 rounded-xl px-3 transition-colors',
                       isSubActive
-                        ? 'bg-primary/10 font-semibold text-foreground'
-                        : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+                        ? 'bg-transparent text-[#0F172A]'
+                        : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
                     ].join(' ')}
                   >
                     <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
                       <NavIcon icon={subItem.icon} active={isSubActive} />
-                      <span className='min-w-0 truncate text-[13px] font-semibold text-foreground'>
+                      <span className='min-w-0 truncate text-sm font-medium text-[#0F172A]'>
                         {subItem.title}
                       </span>
                       {subItem.badge && <NavBadge>{subItem.badge}</NavBadge>}
@@ -228,7 +228,7 @@ function SidebarMenuCollapsedDropdown({
             ].join(' ')}
           >
             <NavIcon icon={item.icon} active={isActive} />
-            <span className='min-w-0 truncate text-[13px] font-semibold text-foreground'>
+            <span className='min-w-0 truncate text-sm font-medium text-[#0F172A]'>
               {item.title}
             </span>
             {item.badge && <NavBadge>{item.badge}</NavBadge>}
@@ -254,13 +254,13 @@ function SidebarMenuCollapsedDropdown({
                 asChild
                 className={
                   isSubActive
-                    ? 'rounded-lg bg-primary/10 text-foreground'
-                    : 'rounded-lg'
+                    ? 'rounded-lg bg-[#F1F5F9] text-[#0F172A]'
+                    : 'rounded-lg text-[#0F172A]'
                 }
               >
                 <Link to={sub.url} className='gap-2.5'>
                   <NavIcon icon={sub.icon} active={isSubActive} />
-                  <span className='max-w-52 truncate text-[13px] font-semibold text-foreground'>
+                  <span className='max-w-52 truncate text-sm font-medium text-[#0F172A]'>
                     {sub.title}
                   </span>
                   {sub.badge && (
