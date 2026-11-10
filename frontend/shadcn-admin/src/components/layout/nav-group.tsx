@@ -1,7 +1,10 @@
 import { useState, type ElementType, type ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
-import { NAVIGATION_ICON_COLORS, useTheme } from '@/context/theme-provider'
+import {
+  getNavigationIconColorValue,
+  useTheme,
+} from '@/context/theme-provider'
 import {
   Collapsible,
   CollapsibleContent,
@@ -79,6 +82,7 @@ function NavIcon({
   size?: 'sm' | 'md'
 }) {
   const { navigationIconColor } = useTheme()
+  const iconColor = getNavigationIconColorValue(navigationIconColor)
   if (!Icon) return null
 
   return (
@@ -91,10 +95,10 @@ function NavIcon({
       style={
         active
           ? {
-              backgroundColor: NAVIGATION_ICON_COLORS[navigationIconColor],
+              backgroundColor: iconColor,
             }
           : {
-              color: NAVIGATION_ICON_COLORS[navigationIconColor],
+              color: iconColor,
             }
       }
     >
