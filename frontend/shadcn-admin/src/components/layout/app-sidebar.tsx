@@ -19,7 +19,7 @@ export function AppSidebar() {
     <Sidebar
       collapsible={collapsible}
       variant={variant}
-      className='border-e border-[#E5E7EB] bg-white'
+      className='border-e border-sidebar-border'
     >
       <SidebarHeader className='px-2 py-3'>
         <div className='flex items-center gap-1 group-data-[collapsible=icon]:flex-col'>
