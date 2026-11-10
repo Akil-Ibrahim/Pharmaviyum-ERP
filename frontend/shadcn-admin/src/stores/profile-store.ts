@@ -6,6 +6,7 @@ export interface ProfileIdentity {
   lastName: string
   email: string
   dateOfBirth: string
+  avatar: string
 }
 
 interface ProfileState {
@@ -18,6 +19,7 @@ const defaultProfile: ProfileIdentity = {
   lastName: 'Akil',
   email: '',
   dateOfBirth: '',
+  avatar: '',
 }
 
 export const useProfileStore = create<ProfileState>()(
@@ -35,17 +37,18 @@ export const useProfileStore = create<ProfileState>()(
       storage: createJSONStorage(() => localStorage),
       migrate: (persistedState) => {
         const persisted = persistedState as {
-          profile?: Partial<ProfileIdentity> & { avatar?: string }
+          profile?: Partial<ProfileIdentity>
         }
         const legacyProfile = persisted.profile ?? {}
 
-        // Remove the old base64 avatar from persisted browser storage.
+        // Keep the previous local photo until it has been migrated to PostgreSQL.
         return {
           profile: {
             firstName: legacyProfile.firstName ?? defaultProfile.firstName,
             lastName: legacyProfile.lastName ?? defaultProfile.lastName,
             email: legacyProfile.email ?? defaultProfile.email,
             dateOfBirth: legacyProfile.dateOfBirth ?? defaultProfile.dateOfBirth,
+            avatar: legacyProfile.avatar ?? defaultProfile.avatar,
           },
         }
       },
