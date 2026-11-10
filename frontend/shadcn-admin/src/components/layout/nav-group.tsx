@@ -42,7 +42,7 @@ export function NavGroup({ title, items }: NavGroupProps) {
       <SidebarGroupLabel className='h-7 px-3 text-[10px] font-bold tracking-[0.16em] text-muted-foreground/75 uppercase'>
         {title}
       </SidebarGroupLabel>
-      <SidebarMenu className='gap-1'>
+      <SidebarMenu className='gap-1 group-data-[collapsible=icon]:items-center'>
         {items.map((item) => {
           const key = `${item.title}-${item.url}`
 
@@ -113,7 +113,7 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
         isActive={isActive}
         tooltip={item.title}
         className={[
-          'relative h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!',
+          'relative h-10 gap-2.5 rounded-xl px-3 transition-colors duration-150 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:min-h-8 group-data-[collapsible=icon]:min-w-8 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:p-0!',
           isActive
             ? 'bg-transparent text-[#0F172A] shadow-none hover:bg-transparent'
             : 'text-[#0F172A] hover:bg-[#F1F5F9] hover:text-[#0F172A]',
