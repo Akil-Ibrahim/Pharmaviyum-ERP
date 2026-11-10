@@ -9,7 +9,7 @@ from src.pharmaviyum.database import Base
 
 
 class UserAvatar(Base):
-    """Store one private avatar image per user without loading it with user rows."""
+    """Store one private avatar image per user."""
 
     __tablename__ = "user_avatars"
 
