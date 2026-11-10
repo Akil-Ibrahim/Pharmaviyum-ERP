@@ -66,7 +66,7 @@ export const NAVIGATION_ICON_COLORS: Record<NavigationIconPreset, string> = {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-export function getNavigationIconColorValue(
+export function getNavIconColorValue(
   color: NavigationIconColor
 ): string {
   if (/^#[\da-fA-F]{6}$/.test(color)) return color
