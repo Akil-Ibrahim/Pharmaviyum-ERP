@@ -70,9 +70,6 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
                 </Avatar>
                 <span className='hidden min-w-0 sm:grid'>
                   <span className='truncate text-sm font-medium leading-5'>{fullName}</span>
-                  <span className='truncate text-xs text-muted-foreground leading-4'>
-                    {profile.email || 'Profile'}
-                  </span>
                 </span>
               </button>
             </DropdownMenuTrigger>
@@ -86,9 +83,6 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
                 </Avatar>
                 <div className='grid min-w-0'>
                   <span className='truncate text-sm font-medium'>{fullName}</span>
-                  <span className='truncate text-xs text-muted-foreground'>
-                    {profile.email || ' '}
-                  </span>
                 </div>
               </div>
               <DropdownMenuSeparator />
