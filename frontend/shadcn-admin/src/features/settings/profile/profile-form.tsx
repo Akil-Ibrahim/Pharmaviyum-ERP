@@ -45,7 +45,7 @@ const defaultValues: ProfileFormValues = {
   email: '',
 }
 
-const MAX_AVATAR_SIZE = 5 * 1024 * 1024
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024
 
 export function ProfileForm() {
   const profile = useProfileStore((state) => state.profile)
@@ -81,7 +81,7 @@ export function ProfileForm() {
     }
 
     if (file.size > MAX_AVATAR_SIZE) {
-      setAvatarError('Image must be 5 MB or smaller.')
+      setAvatarError('Image must be 2 MB or smaller.')
       event.target.value = ''
       return
     }
@@ -161,7 +161,7 @@ export function ProfileForm() {
             </div>
           </div>
           <p className='text-xs text-muted-foreground'>
-            JPG, PNG or other image formats. Maximum file size: 5 MB.
+            JPG, PNG or other image formats. Maximum file size: 2 MB.
           </p>
           {avatarError ? (
             <p role='alert' className='text-sm text-destructive'>
