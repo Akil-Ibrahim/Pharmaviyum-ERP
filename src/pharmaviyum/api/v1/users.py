@@ -18,8 +18,8 @@ from src.pharmaviyum.db.session import get_db
 from src.pharmaviyum.models.user import User
 from src.pharmaviyum.models.user_avatar import UserAvatar
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser
-from src.pharmaviyum.services.profile_avatar import get_profile_avatar_content_type
 from src.pharmaviyum.schemas.user_schema import UserCreate, UserResponse
+from src.pharmaviyum.services.profile_avatar import get_profile_avatar_content_type
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 MAX_AVATAR_BYTES = 2 * 1024 * 1024
