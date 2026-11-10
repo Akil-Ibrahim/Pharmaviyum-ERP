@@ -93,7 +93,6 @@ export const sidebarData: SidebarData = {
           icon: Settings,
           items: [
             { title: 'Profile', url: '/settings', icon: UserCog },
-            { title: 'Account', url: '/settings/account', icon: UserRound },
             { title: 'Appearance', url: '/settings/appearance', icon: Palette },
             {
               title: 'Notifications',
