@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -39,12 +39,6 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
-const defaultValues: ProfileFormValues = {
-  firstName: 'Ibrahim',
-  lastName: 'Akil',
-  email: '',
-}
-
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024
 
 export function ProfileForm() {
@@ -61,14 +55,12 @@ export function ProfileForm() {
       firstName: profile.firstName || 'Ibrahim',
       lastName: profile.lastName || 'Akil',
       email: profile.email,
+      dateOfBirth: profile.dateOfBirth
+        ? new Date(`${profile.dateOfBirth}T00:00:00`)
+        : undefined,
     },
     mode: 'onChange',
   })
-
-  useEffect(() => {
-    if (!avatarPreview) return
-    return () => URL.revokeObjectURL(avatarPreview)
-  }, [avatarPreview])
 
   function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -110,6 +102,7 @@ export function ProfileForm() {
             firstName: data.firstName,
             lastName: data.lastName,
             email: data.email,
+            dateOfBirth: data.dateOfBirth?.toISOString().slice(0, 10) || '',
             avatar: avatarRemoved ? '' : avatarPreview || '',
           })
         )}
