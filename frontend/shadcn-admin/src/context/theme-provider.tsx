@@ -2,39 +2,10 @@ import { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 
 type Theme = 'dark' | 'light' | 'system'
-export type ThemePreset =
-  | 'default'
-  | 'neutral'
-  | 'stone'
-  | 'zinc'
-  | 'slate'
-  | 'gray'
-  | 'mauve'
-  | 'olive'
-  | 'mist'
-  | 'taupe'
-  | 'red'
-  | 'orange'
-  | 'amber'
-  | 'yellow'
-  | 'lime'
-  | 'green'
-  | 'emerald'
-  | 'teal'
-  | 'cyan'
-  | 'sky'
-  | 'blue'
-  | 'indigo'
-  | 'violet'
-  | 'purple'
-  | 'fuchsia'
-  | 'pink'
-  | 'rose'
 type ResolvedTheme = Exclude<Theme, 'system'>
 
-const DEFAULT_THEME = 'system'
+const DEFAULT_THEME = 'light'
 const THEME_COOKIE_NAME = 'vite-ui-theme'
-const PRESET_COOKIE_NAME = 'pharmaviyum-theme-preset'
 const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 type ThemeProviderProps = {
@@ -49,8 +20,6 @@ type ThemeProviderState = {
   theme: Theme
   setTheme: (theme: Theme) => void
   resetTheme: () => void
-  preset: ThemePreset
-  setPreset: (preset: ThemePreset) => void
 }
 
 const initialState: ThemeProviderState = {
@@ -59,8 +28,6 @@ const initialState: ThemeProviderState = {
   theme: DEFAULT_THEME,
   setTheme: () => null,
   resetTheme: () => null,
-  preset: 'blue',
-  setPreset: () => null,
 }
 
 const ThemeContext = createContext<ThemeProviderState>(initialState)
@@ -71,10 +38,6 @@ export function ThemeProvider({
   storageKey = THEME_COOKIE_NAME,
   ...props
 }: ThemeProviderProps) {
-  const [preset, _setPreset] = useState<ThemePreset>(() => {
-    const savedPreset = getCookie(PRESET_COOKIE_NAME) as ThemePreset | null
-    return savedPreset || 'blue'
-  })
   const [theme, _setTheme] = useState<Theme>(
     () => (getCookie(storageKey) as Theme) || defaultTheme
   )
@@ -95,7 +58,7 @@ export function ThemeProvider({
     const applyTheme = (currentResolvedTheme: ResolvedTheme) => {
       root.classList.remove('light', 'dark')
       root.classList.add(currentResolvedTheme)
-      root.dataset.colorTheme = preset
+      root.removeAttribute('data-color-theme')
     }
 
     const handleChange = () => {
@@ -108,23 +71,16 @@ export function ThemeProvider({
     applyTheme(resolvedTheme)
     mediaQuery.addEventListener('change', handleChange)
     return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [theme, resolvedTheme, preset])
+  }, [theme, resolvedTheme])
 
   const setTheme = (theme: Theme) => {
     setCookie(storageKey, theme, THEME_COOKIE_MAX_AGE)
     _setTheme(theme)
   }
 
-  const setPreset = (nextPreset: ThemePreset) => {
-    setCookie(PRESET_COOKIE_NAME, nextPreset, THEME_COOKIE_MAX_AGE)
-    _setPreset(nextPreset)
-  }
-
   const resetTheme = () => {
     removeCookie(storageKey)
-    removeCookie(PRESET_COOKIE_NAME)
     _setTheme(DEFAULT_THEME)
-    _setPreset('blue')
   }
 
   const contextValue = {
@@ -133,8 +89,6 @@ export function ThemeProvider({
     resetTheme,
     theme,
     setTheme,
-    preset,
-    setPreset,
   }
 
   return (
