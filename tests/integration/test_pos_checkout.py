@@ -14,6 +14,7 @@ from src.pharmaviyum.models.drug_catalog import DrugReference, MedicinalProduct
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.pos import Payment, Sale, SaleItemAllocation
+from src.pharmaviyum.models.outbox import OutboxEvent
 from src.pharmaviyum.models.product import Product
 
 
@@ -195,6 +196,20 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
     assert receipt["cash_change"] == "8.50"
     assert receipt["payments"][0]["status"] == "succeeded"
     assert receipt["payments"][0]["cash_received"] == "40.00"
+    outbox_events = list(
+        (
+            await test_db.scalars(
+                select(OutboxEvent).where(
+                    OutboxEvent.aggregate_type == "sale",
+                    OutboxEvent.aggregate_id == str(receipt["id"]),
+                )
+            )
+        ).all()
+    )
+    assert len(outbox_events) == 1
+    assert outbox_events[0].event_type == "pos.sale.created"
+    assert outbox_events[0].payload["event_id"] == outbox_events[0].event_id
+    assert outbox_events[0].payload["items"][0]["allocations"][0]["lot_number"] == "EARLY-LOT"
     allocations = receipt["items"][0]["allocations"]
     assert [(row["lot_number"], row["quantity"]) for row in allocations] == [
         ("EARLY-LOT", 2),
@@ -213,6 +228,12 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
     )
     assert duplicate.status_code == 201
     assert duplicate.json()["id"] == receipt["id"]
+    event_count = await test_db.scalar(
+        select(func.count())
+        .select_from(OutboxEvent)
+        .where(OutboxEvent.aggregate_id == str(receipt["id"]))
+    )
+    assert event_count == 1
 
     await test_db.refresh(first)
     await test_db.refresh(second)
@@ -344,6 +365,20 @@ async def test_card_payment_reserves_stock_until_signed_webhook(
     )
     assert webhook.status_code == 200, webhook.text
     assert webhook.json()["status"] == "processed"
+    sale_events = list(
+        (
+            await test_db.scalars(
+                select(OutboxEvent)
+                .where(OutboxEvent.aggregate_id == str(receipt["id"]))
+                .order_by(OutboxEvent.aggregate_version.asc())
+            )
+        ).all()
+    )
+    assert [event.aggregate_version for event in sale_events] == [1, 2]
+    assert [event.event_type for event in sale_events] == [
+        "pos.sale.created",
+        "pos.payment.succeeded",
+    ]
 
     await test_db.refresh(first)
     await test_db.refresh(second)
@@ -404,6 +439,14 @@ async def test_checkout_rejects_insufficient_stock_without_partial_decrement(
         )
         is None
     )
+    assert (
+        await test_db.scalar(
+            select(OutboxEvent).where(
+                OutboxEvent.event_type == "pos.sale.created"
+            )
+        )
+        is None
+    )
 
 
 @pytest.mark.integration
@@ -430,6 +473,14 @@ async def test_cancel_pending_sale_releases_reserved_inventory(
     assert cancelled.status_code == 200, cancelled.text
     assert cancelled.json()["status"] == "cancelled"
     assert cancelled.json()["payments"][0]["status"] == "failed"
+    cancel_event = await test_db.scalar(
+        select(OutboxEvent).where(
+            OutboxEvent.aggregate_id == str(receipt["id"]),
+            OutboxEvent.event_type == "pos.sale.cancelled",
+        )
+    )
+    assert cancel_event is not None
+    assert cancel_event.aggregate_version == 2
 
     await test_db.refresh(first)
     await test_db.refresh(second)
