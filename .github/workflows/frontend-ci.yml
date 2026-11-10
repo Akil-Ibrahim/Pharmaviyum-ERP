@@ -63,8 +63,6 @@ jobs:
           done
 
           if (("${#FILES[@]}" > 0)); then
-            bunx prettier --write "${FILES[@]}"
-            git diff --color=never -- "${FILES[@]}"
             bunx prettier --check "${FILES[@]}"
           else
             echo "No frontend files changed; skipping Prettier."
