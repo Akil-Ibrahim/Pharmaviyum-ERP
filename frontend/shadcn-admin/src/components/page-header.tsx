@@ -24,12 +24,12 @@ export function PageHeader({
       )}
     >
       <div className='flex min-w-0 items-start gap-3'>
-        <div className='flex h-8 shrink-0 items-center gap-3'>
+        <div className='flex h-7 shrink-0 items-center gap-3'>
           <SidebarTrigger
             variant='outline'
             aria-label='Toggle navigation sidebar'
             title='Toggle navigation sidebar'
-            className='size-8 rounded-lg max-md:scale-110'
+            className='max-md:scale-125'
           />
           <Separator orientation='vertical' className='h-6' />
         </div>
