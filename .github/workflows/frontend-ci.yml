@@ -63,7 +63,12 @@ jobs:
           done
 
           if (("${#FILES[@]}" > 0)); then
+            bunx prettier --write "${FILES[@]}"
             bunx prettier --check "${FILES[@]}"
+            for path in src/components/layout/header.tsx src/features/settings/profile/profile-form.tsx src/features/settings/profile/use-profile-avatar.ts; do
+              echo "===== PRETTIER OUTPUT: $path ====="
+              cat "$path"
+            done
           else
             echo "No frontend files changed; skipping Prettier."
           fi
