@@ -1,9 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { UserRound, Settings } from 'lucide-react'
+import { Bell, Search as SearchIcon, UserRound, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useProfileStore } from '@/stores/profile-store'
+import { useSearch } from '@/context/search-provider'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +28,7 @@ type HeaderProps = React.HTMLAttributes<HTMLElement> & {
 export function Header({ className, fixed, children, ...props }: HeaderProps) {
   const [offset, setOffset] = useState(0)
   const profile = useProfileStore((state) => state.profile)
+  const { setOpen: setSearchOpen } = useSearch()
   const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ')
   const initials = [profile.firstName, profile.lastName]
     .filter(Boolean)
@@ -54,7 +63,49 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
         )}
       >
         {children}
-        <div className='ms-auto flex min-w-0 items-center'>
+        <div className='ms-auto flex min-w-0 items-center gap-1 sm:gap-2'>
+          <Button
+            type='button'
+            variant='ghost'
+            size='icon'
+            aria-label='Search'
+            title='Search'
+            onClick={() => setSearchOpen(true)}
+          >
+            <SearchIcon className='size-4' />
+          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon'
+                aria-label='Notifications'
+                title='Notifications'
+              >
+                <Bell className='size-4' />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align='end' className='w-80'>
+              <div className='space-y-1'>
+                <p className='text-sm font-medium'>Notifications</p>
+                <p className='text-xs text-muted-foreground'>
+                  You’re all caught up. New notifications will appear here.
+                </p>
+              </div>
+              <Separator className='my-3' />
+              <div className='flex flex-col items-center gap-2 py-6 text-center'>
+                <span className='flex size-10 items-center justify-center rounded-full bg-muted'>
+                  <Bell className='size-5 text-muted-foreground' />
+                </span>
+                <p className='text-sm font-medium'>No notifications yet</p>
+                <p className='max-w-56 text-xs text-muted-foreground'>
+                  There are no new notifications to show.
+                </p>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Separator orientation='vertical' className='mx-1 h-6' />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
