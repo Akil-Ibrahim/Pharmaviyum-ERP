@@ -208,6 +208,7 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
     )
     assert len(outbox_events) == 1
     assert outbox_events[0].event_type == "pos.sale.created"
+    assert outbox_events[0].payload["inventory_effect"] == "decrement"
     assert outbox_events[0].payload["event_id"] == outbox_events[0].event_id
     assert (
         outbox_events[0].payload["items"][0]["allocations"][0]["lot_number"]
@@ -382,6 +383,8 @@ async def test_card_payment_reserves_stock_until_signed_webhook(
         "pos.sale.created",
         "pos.payment.succeeded",
     ]
+    assert sale_events[0].payload["inventory_effect"] == "reserve"
+    assert sale_events[1].payload["inventory_effect"] == "commit_reservation"
 
     await test_db.refresh(first)
     await test_db.refresh(second)
@@ -484,6 +487,7 @@ async def test_cancel_pending_sale_releases_reserved_inventory(
     )
     assert cancel_event is not None
     assert cancel_event.aggregate_version == 2
+    assert cancel_event.payload["inventory_effect"] == "release_reservation"
 
     await test_db.refresh(first)
     await test_db.refresh(second)
