@@ -11,12 +11,8 @@ export function Main({ fixed, className, fluid, ...props }: MainProps) {
     <main
       data-layout={fixed ? 'fixed' : 'auto'}
       className={cn(
-        'px-4 py-6',
-
-        // If layout is fixed, make the main container flex and grow
-        fixed && 'flex grow flex-col overflow-hidden',
-
-        // If layout is not fluid, set the max-width
+        'w-full min-w-0 max-w-full px-3 py-5 sm:px-4 sm:py-6',
+        fixed && 'flex min-h-0 min-w-0 grow flex-col overflow-hidden',
         !fluid &&
           '@7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl',
         className
