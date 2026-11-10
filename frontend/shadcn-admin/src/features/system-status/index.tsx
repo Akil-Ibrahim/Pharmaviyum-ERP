@@ -33,16 +33,6 @@ const stateLabels: Record<ServiceState, string> = {
   unknown: 'Unknown',
 }
 
-const stateVariants: Record<
-  ServiceState,
-  'default' | 'secondary' | 'destructive' | 'outline'
-> = {
-  operational: 'default',
-  degraded: 'secondary',
-  outage: 'destructive',
-  unknown: 'outline',
-}
-
 const stateClasses: Record<ServiceState, string> = {
   operational:
     'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
