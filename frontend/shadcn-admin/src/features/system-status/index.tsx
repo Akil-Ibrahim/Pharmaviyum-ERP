@@ -16,11 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  fetchSystemStatus,
-  type ServiceCheck,
-  type ServiceState,
-} from './api'
+import { fetchSystemStatus, type ServiceCheck, type ServiceState } from './api'
 
 const stateLabels: Record<ServiceState, string> = {
   operational: 'Operational',
@@ -100,77 +96,77 @@ export function SystemStatusPage() {
   return (
     <main className='p-4 md:p-6'>
       <div className='space-y-6'>
-      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-        <div>
-          <h1 className='text-2xl font-semibold tracking-tight'>
-            System Status
-          </h1>
+        <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+          <div>
+            <h1 className='text-2xl font-semibold tracking-tight'>
+              System Status
+            </h1>
+            <CardDescription>
+              Live health checks for the Pharmaviyum application and its core
+              dependencies.
+            </CardDescription>
+          </div>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => void statusQuery.refetch()}
+            disabled={statusQuery.isFetching}
+          >
+            <RefreshCw className='size-4' />
+            Refresh
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Overall system status</CardTitle>
+            <CardAction>
+              <Badge variant='outline' className={stateClasses[overall]}>
+                <OverallIcon className='size-3' />
+                {stateLabels[overall]}
+              </Badge>
+            </CardAction>
+            <CardDescription>{summary}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CardDescription>
+              Last checked: {formatCheckedAt(statusQuery.data?.checkedAt)}
+            </CardDescription>
+          </CardContent>
+        </Card>
+
+        <section className='grid gap-4 sm:grid-cols-2'>
+          {statusQuery.data?.checks.map((check) => (
+            <ServiceCard key={check.id} check={check} />
+          ))}
+          {statusQuery.isPending && (
+            <Card>
+              <CardContent>
+                <CardDescription>
+                  Checking application dependencies…
+                </CardDescription>
+              </CardContent>
+            </Card>
+          )}
+        </section>
+
+        {statusQuery.error && (
+          <p role='alert' className='text-sm text-destructive'>
+            {statusQuery.error.message}
+          </p>
+        )}
+
+        <div className='rounded-lg border p-4'>
           <CardDescription>
-            Live health checks for the Pharmaviyum application and its core
-            dependencies.
+            The FastAPI Cloud indicator verifies that the hosted application
+            responds to its health endpoint. It does not query the provider’s
+            private control plane.
+          </CardDescription>
+          <CardDescription>
+            The AI indicator verifies LangGraph initialization. It does not run
+            a live LLM inference request or measure model-provider availability.
           </CardDescription>
         </div>
-        <Button
-          variant='outline'
-          size='sm'
-          onClick={() => void statusQuery.refetch()}
-          disabled={statusQuery.isFetching}
-        >
-          <RefreshCw className='size-4' />
-          Refresh
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Overall system status</CardTitle>
-          <CardAction>
-            <Badge variant='outline' className={stateClasses[overall]}>
-              <OverallIcon className='size-3' />
-              {stateLabels[overall]}
-            </Badge>
-          </CardAction>
-          <CardDescription>{summary}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <CardDescription>
-            Last checked: {formatCheckedAt(statusQuery.data?.checkedAt)}
-          </CardDescription>
-        </CardContent>
-      </Card>
-
-      <section className='grid gap-4 sm:grid-cols-2'>
-        {statusQuery.data?.checks.map((check) => (
-          <ServiceCard key={check.id} check={check} />
-        ))}
-        {statusQuery.isPending && (
-          <Card>
-            <CardContent>
-              <CardDescription>
-                Checking application dependencies…
-              </CardDescription>
-            </CardContent>
-          </Card>
-        )}
-      </section>
-
-      {statusQuery.error && (
-        <p role='alert' className='text-sm text-destructive'>
-          {statusQuery.error.message}
-        </p>
-      )}
-
-      <div className='rounded-lg border p-4'>
-        <CardDescription>
-          The FastAPI Cloud indicator verifies that the hosted application
-          responds to its health endpoint. It does not query the provider’s
-          private control plane.
-        </CardDescription>
-        <CardDescription>
-          The AI indicator verifies LangGraph initialization. It does not run a
-          live LLM inference request or measure model-provider availability.
-        </CardDescription>
-      </div>
       </div>
     </main>
   )
