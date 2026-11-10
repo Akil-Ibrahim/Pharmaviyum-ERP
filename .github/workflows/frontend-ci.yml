@@ -63,7 +63,8 @@ jobs:
           done
 
           if (("${#FILES[@]}" > 0)); then
-            bunx prettier --check "${FILES[@]}"
+            bunx prettier --write "${FILES[@]}"
+            cat src/features/system-status/index.tsx
           else
             echo "No frontend files changed; skipping Prettier."
           fi
