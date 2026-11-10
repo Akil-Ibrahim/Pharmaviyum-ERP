@@ -8,8 +8,10 @@ import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
 import { useFont } from '@/context/font-provider'
 import {
+  getNavigationIconColorValue,
   NAVIGATION_ICON_COLORS,
   type NavigationIconColor,
+  type NavigationIconPreset,
   useTheme,
 } from '@/context/theme-provider'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -22,40 +24,19 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 const appearanceFormSchema = z.object({
   theme: z.enum(['light', 'dark']),
   font: z.enum(fonts),
-  navigationIconColor: z.enum([
-    'default',
-    'neutral',
-    'stone',
-    'zinc',
-    'slate',
-    'gray',
-    'mauve',
-    'olive',
-    'mist',
-    'taupe',
-    'red',
-    'orange',
-    'amber',
-    'yellow',
-    'lime',
-    'green',
-    'emerald',
-    'teal',
-    'cyan',
-    'sky',
-    'blue',
-    'indigo',
-    'violet',
-    'purple',
-    'fuchsia',
-    'pink',
-    'rose',
-  ]),
+  navigationIconColor: z
+    .string()
+    .refine(
+      (value) =>
+        value in NAVIGATION_ICON_COLORS || /^#[\da-fA-F]{6}$/.test(value),
+      'Choose a preset or enter a valid 6-digit HEX color.'
+    ),
 })
 
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
@@ -65,7 +46,6 @@ export function AppearanceForm() {
   const { theme, setTheme, navigationIconColor, setNavigationIconColor } =
     useTheme()
 
-  // This can come from your database or API.
   const defaultValues: Partial<AppearanceFormValues> = {
     theme: theme as 'light' | 'dark',
     font,
@@ -199,50 +179,98 @@ export function AppearanceForm() {
           name='navigationIconColor'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Navigation icon color</FormLabel>
+              <FormLabel>Navigation icon colour</FormLabel>
               <FormDescription>
-                Choose a color for sidebar icons. Active icon tiles use a white
-                icon. The dashboard background remains unchanged.
+                Choose a preset or define your own HEX colour. This preference
+                is saved for future visits. Active icon tiles use a white icon;
+                the dashboard background remains unchanged.
               </FormDescription>
               <FormControl>
                 <div
                   role='group'
-                  aria-label='Navigation icon color'
-                  className='grid max-w-xl grid-cols-2 gap-2 sm:grid-cols-3'
+                  aria-label='Navigation icon colour'
+                  className='space-y-4'
                 >
-                  {(
-                    Object.keys(NAVIGATION_ICON_COLORS) as NavigationIconColor[]
-                  ).map((name) => {
-                    const selected = field.value === name
-                    return (
-                      <Button
-                        key={name}
-                        type='button'
-                        variant='outline'
-                        aria-pressed={selected}
-                        onClick={() => field.onChange(name)}
-                        className={cn(
-                          'h-10 justify-start gap-2.5 rounded-lg px-3 font-normal capitalize',
-                          selected && 'border-primary bg-accent/50'
-                        )}
-                      >
-                        <span
-                          aria-hidden='true'
-                          className='size-3.5 shrink-0 rounded-full ring-1 ring-black/10'
-                          style={{
-                            backgroundColor: NAVIGATION_ICON_COLORS[name],
-                          }}
-                        />
-                        <span className='truncate'>{name}</span>
-                        {selected && (
-                          <Check
+                  <div className='grid max-w-xl grid-cols-2 gap-2 sm:grid-cols-3'>
+                    {(
+                      Object.keys(
+                        NAVIGATION_ICON_COLORS
+                      ) as NavigationIconPreset[]
+                    ).map((name) => {
+                      const selected = field.value === name
+                      return (
+                        <Button
+                          key={name}
+                          type='button'
+                          variant='outline'
+                          aria-pressed={selected}
+                          onClick={() => field.onChange(name)}
+                          className={cn(
+                            'h-10 justify-start gap-2.5 rounded-lg px-3 font-normal capitalize',
+                            selected && 'border-primary bg-accent/50'
+                          )}
+                        >
+                          <span
                             aria-hidden='true'
-                            className='ms-auto size-4'
+                            className='size-3.5 shrink-0 rounded-full ring-1 ring-black/10'
+                            style={{
+                              backgroundColor: NAVIGATION_ICON_COLORS[name],
+                            }}
                           />
+                          <span className='truncate'>{name}</span>
+                          {selected && (
+                            <Check
+                              aria-hidden='true'
+                              className='ms-auto size-4'
+                            />
+                          )}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  <div className='flex flex-wrap items-end gap-3'>
+                    <div className='space-y-2'>
+                      <FormLabel htmlFor='navigation-icon-color-picker'>
+                        Custom colour
+                      </FormLabel>
+                      <Input
+                        id='navigation-icon-color-picker'
+                        type='color'
+                        aria-label='Pick custom navigation icon colour'
+                        value={getNavigationIconColorValue(
+                          field.value as NavigationIconColor
                         )}
-                      </Button>
-                    )
-                  })}
+                        onChange={(event) =>
+                          field.onChange(event.target.value.toUpperCase())
+                        }
+                        className='h-10 w-16 cursor-pointer p-1'
+                      />
+                    </div>
+                    <div className='space-y-2'>
+                      <FormLabel htmlFor='navigation-icon-color-hex'>
+                        HEX value
+                      </FormLabel>
+                      <Input
+                        id='navigation-icon-color-hex'
+                        value={field.value}
+                        onChange={(event) =>
+                          field.onChange(event.target.value.trim())
+                        }
+                        placeholder='#2563EB'
+                        maxLength={7}
+                        className='w-36 font-mono uppercase'
+                      />
+                    </div>
+                    <span
+                      aria-hidden='true'
+                      className='mb-1 size-5 rounded-full border'
+                      style={{
+                        backgroundColor: getNavigationIconColorValue(
+                          field.value as NavigationIconColor
+                        ),
+                      }}
+                    />
+                  </div>
                 </div>
               </FormControl>
               <FormMessage />
