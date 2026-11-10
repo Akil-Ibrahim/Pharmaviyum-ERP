@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { Bell, Search as SearchIcon, UserRound, Settings } from 'lucide-react'
+import {
+  Activity,
+  Bell,
+  BookOpen,
+  CircleHelp,
+  FileText,
+  Search as SearchIcon,
+  UserRound,
+  Settings,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useProfileStore } from '@/stores/profile-store'
 import { useSearch } from '@/context/search-provider'
@@ -16,6 +25,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -24,6 +34,13 @@ type HeaderProps = React.HTMLAttributes<HTMLElement> & {
   fixed?: boolean
   ref?: React.Ref<HTMLElement>
 }
+
+const documentationUrl =
+  'https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/blob/main/docs/README.md'
+const setupGuideUrl =
+  'https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/blob/main/docs/guides/ENVIRONMENT_SETUP.md'
+const operationsGuideUrl =
+  'https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/blob/main/docs/operations/INCIDENT_RUNBOOK.md'
 
 export function Header({ className, fixed, children, ...props }: HeaderProps) {
   const [offset, setOffset] = useState(0)
@@ -105,6 +122,50 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
               </div>
             </PopoverContent>
           </Popover>
+          <Button asChild variant='ghost' size='icon'>
+            <Link
+              to='/system-status'
+              aria-label='System Status'
+              title='System Status'
+            >
+              <Activity className='size-4' />
+            </Link>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon'
+                aria-label='Help'
+                title='Help'
+              >
+                <CircleHelp className='size-4' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end' className='w-60'>
+              <DropdownMenuLabel>Help & Documentation</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <a href={documentationUrl} target='_blank' rel='noreferrer'>
+                  <BookOpen />
+                  Documentation
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href={setupGuideUrl} target='_blank' rel='noreferrer'>
+                  <FileText />
+                  Setup & deployment guide
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href={operationsGuideUrl} target='_blank' rel='noreferrer'>
+                  <Activity />
+                  Operations runbook
+                </a>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Separator orientation='vertical' className='mx-1 h-6' />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
