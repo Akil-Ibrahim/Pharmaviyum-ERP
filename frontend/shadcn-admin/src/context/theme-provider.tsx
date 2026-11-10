@@ -4,7 +4,7 @@ import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 type Theme = 'dark' | 'light' | 'system'
 type ResolvedTheme = Exclude<Theme, 'system'>
 
-export type NavigationIconColor =
+export type NavigationIconPreset =
   | 'default'
   | 'neutral'
   | 'stone'
@@ -33,7 +33,9 @@ export type NavigationIconColor =
   | 'pink'
   | 'rose'
 
-export const NAVIGATION_ICON_COLORS: Record<NavigationIconColor, string> = {
+export type NavigationIconColor = NavigationIconPreset | `#${string}`
+
+export const NAVIGATION_ICON_COLORS: Record<NavigationIconPreset, string> = {
   default: '#1e293b',
   neutral: '#404040',
   stone: '#57534e',
@@ -61,6 +63,15 @@ export const NAVIGATION_ICON_COLORS: Record<NavigationIconColor, string> = {
   fuchsia: '#c026d3',
   pink: '#db2777',
   rose: '#e11d48',
+}
+
+export function getNavigationIconColorValue(color: NavigationIconColor): string {
+  if (/^#[\da-fA-F]{6}$/.test(color)) return color
+  return NAVIGATION_ICON_COLORS[color as NavigationIconPreset] ?? NAVIGATION_ICON_COLORS.blue
+}
+
+function isNavigationIconColor(value: string): value is NavigationIconColor {
+  return value in NAVIGATION_ICON_COLORS || /^#[\da-fA-F]{6}$/.test(value)
 }
 
 const NAVIGATION_ICON_COLOR_COOKIE_NAME = 'pharmaviyum-navigation-icon-color'
@@ -107,11 +118,12 @@ export function ThemeProvider({
     () => (getCookie(storageKey) as Theme) || defaultTheme
   )
   const [navigationIconColor, _setNavigationIconColor] =
-    useState<NavigationIconColor>(
-      () =>
-        (getCookie(NAVIGATION_ICON_COLOR_COOKIE_NAME) as NavigationIconColor) ||
-        'blue'
-    )
+    useState<NavigationIconColor>(() => {
+      const storedColor = getCookie(NAVIGATION_ICON_COLOR_COOKIE_NAME)
+      return storedColor && isNavigationIconColor(storedColor)
+        ? storedColor
+        : 'blue'
+    })
 
   const resolvedTheme = useMemo((): ResolvedTheme => {
     if (theme === 'system') {
@@ -155,6 +167,7 @@ export function ThemeProvider({
   }
 
   const setNavigationIconColor = (color: NavigationIconColor) => {
+    if (!isNavigationIconColor(color)) return
     setCookie(NAVIGATION_ICON_COLOR_COOKIE_NAME, color, THEME_COOKIE_MAX_AGE)
     _setNavigationIconColor(color)
   }
