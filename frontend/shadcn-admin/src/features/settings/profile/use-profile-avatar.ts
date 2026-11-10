@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/auth-store'
@@ -5,11 +6,7 @@ import { useProfileStore } from '@/stores/profile-store'
 import { fetchProfileAvatar, uploadProfileAvatar } from './api'
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024
-const ALLOWED_AVATAR_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-])
+const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 async function fetchOrMigrateProfileAvatar(): Promise<Blob | null> {
   const serverAvatar = await fetchProfileAvatar()
