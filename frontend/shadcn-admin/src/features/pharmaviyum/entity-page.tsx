@@ -179,7 +179,7 @@ export function EntityPage({
                       {visibleColumns.map((column) => (
                         <td
                           key={column}
-                          className='max-w-[280px] break-words p-3 align-top'
+                          className='max-w-[280px] p-3 align-top break-words'
                         >
                           {formatCell(row[column], column)}
                         </td>
