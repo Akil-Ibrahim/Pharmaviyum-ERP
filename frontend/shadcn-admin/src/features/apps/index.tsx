@@ -132,7 +132,7 @@ export function Apps() {
         </Select>
       </div>
       <Separator className='shadow-sm' />
-      <ul className='faded-bottom no-scrollbar grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-4 overflow-y-auto overflow-x-hidden pt-4 pb-16 sm:grid-cols-2 lg:grid-cols-3'>
+      <ul className='faded-bottom no-scrollbar grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-4 overflow-x-hidden overflow-y-auto pt-4 pb-16 sm:grid-cols-2 lg:grid-cols-3'>
         {filteredApps.map((app) => (
           <li
             key={app.name}
