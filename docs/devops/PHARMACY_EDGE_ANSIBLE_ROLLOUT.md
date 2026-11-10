@@ -119,7 +119,7 @@ A candidate rollout sequence is:
 4. Thirty pharmacies.
 5. The remaining forty-four pharmacies.
 
-The lab site is separate from the 100 production pharmacies. The 5 + 20 + 30 + 44 production waves total 99; add the final production site as a separately approved final wave, or adjust wave sizes to the actual fleet inventory. Never assume the inventory contains exactly 100 reachable hosts.
+The lab site is separate from the 100 production pharmacies. The 5 + 20 + 30 + 45 production waves total 100. Adjust the final wave to the actual approved fleet inventory; never assume the inventory contains exactly 100 reachable hosts. Never assume the inventory contains exactly 100 reachable hosts.
 
 Ansible `serial` can limit each play to a batch, but it is not a substitute for release gates. After every batch:
 
