@@ -91,7 +91,7 @@ export function EntityPage({
   }, [rows])
 
   return (
-    <Main className='flex flex-col gap-6'>
+    <Main className='flex min-w-0 flex-col gap-6'>
       <PageHeader
         title={title}
         description={description}
@@ -113,7 +113,7 @@ export function EntityPage({
       {status && <Badge variant='secondary'>{status}</Badge>}
 
       {rows.length > 0 && (
-        <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+        <div className='grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
           <MetricCard label='Total' value={rows.length} />
           {Object.entries(statusCounts)
             .slice(0, 3)
@@ -123,9 +123,9 @@ export function EntityPage({
         </div>
       )}
 
-      <Card>
+      <Card className='min-w-0'>
         <CardHeader className='gap-4'>
-          <div className='flex items-center justify-between gap-3'>
+          <div className='flex min-w-0 flex-wrap items-center justify-between gap-2'>
             <CardTitle>{title} records</CardTitle>
             {rows.length > 0 && (
               <span className='text-xs text-muted-foreground'>
@@ -134,7 +134,7 @@ export function EntityPage({
             )}
           </div>
           {rows.length > 0 && (
-            <div className='relative max-w-sm'>
+            <div className='relative w-full max-w-sm'>
               <Search className='absolute top-2.5 left-2.5 size-4 text-muted-foreground' />
               <Input
                 value={query}
@@ -145,7 +145,7 @@ export function EntityPage({
             </div>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className='min-w-0'>
           {loading && (
             <p className='text-sm text-muted-foreground'>
               Loading {title.toLowerCase()}...
@@ -157,7 +157,7 @@ export function EntityPage({
           )}
           {!loading && !error && filteredRows.length > 0 && (
             <div className='overflow-x-auto rounded-md border'>
-              <table className='w-full text-sm'>
+              <table className='w-full min-w-[42rem] text-sm'>
                 <thead>
                   <tr className='border-b bg-muted/40 text-left text-muted-foreground'>
                     {visibleColumns.map((column) => (
@@ -179,7 +179,7 @@ export function EntityPage({
                       {visibleColumns.map((column) => (
                         <td
                           key={column}
-                          className='max-w-[280px] p-3 align-top'
+                          className='max-w-[280px] p-3 align-top break-words'
                         >
                           {formatCell(row[column], column)}
                         </td>
