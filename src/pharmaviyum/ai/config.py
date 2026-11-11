@@ -42,7 +42,7 @@ class QwenSettings(BaseSettings):
     timeout_seconds: float = 30.0
     temperature: float = 0.1
     max_output_tokens: int = 500
-    free_quota_only: bool = True
+    free_quota_only: bool = False
 
 
 class OpenAISettings(BaseSettings):
