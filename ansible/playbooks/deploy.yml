@@ -50,10 +50,13 @@
       ansible.builtin.command: docker compose version
       changed_when: false
 
-- name: Deploy Pharmaviyum
+- name: Deploy Pharmaviyum in controlled rollout waves
   hosts: pharmacy_servers
   become: true
   gather_facts: true
+  serial: "10%"
+  any_errors_fatal: true
+  max_fail_percentage: 0
   roles:
     - role: docker
       tags: [docker, infrastructure]
@@ -62,21 +65,27 @@
     - role: app-backend
       tags: [backend, application]
 
-- name: Verify deployment
+- name: Verify each deployment wave before proceeding
   hosts: pharmacy_servers
   become: false
   gather_facts: false
+  serial: "10%"
+  any_errors_fatal: true
+  max_fail_percentage: 0
   tasks:
-    - name: Check backend health
+    - name: Check backend readiness
       ansible.builtin.uri:
-        url: "http://127.0.0.1:{{ backend_port }}/health"
+        url: "http://127.0.0.1:{{ backend_port }}/ready"
         status_code: 200
         timeout: 10
-      register: health
+        return_content: true
+      register: readiness
       retries: 12
       delay: 5
-      until: health.status == 200
+      until:
+        - readiness.status == 200
+        - readiness.json.status | default('') == 'ready'
 
     - name: Show deployed release
       ansible.builtin.debug:
-        msg: "Pharmaviyum {{ app_version }} is healthy on {{ inventory_hostname }}"
+        msg: "Pharmaviyum {{ app_version }} is ready on {{ inventory_hostname }}"
