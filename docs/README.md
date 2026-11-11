@@ -18,6 +18,7 @@ This directory contains the current engineering documentation for Pharmaviyum ER
 | Release | [`operations/RELEASE_RUNBOOK.md`](./operations/RELEASE_RUNBOOK.md) | Staging release and rollback procedure. |
 | Production engineering | [`operations/PRODUCTION_ENGINEERING.md`](./operations/PRODUCTION_ENGINEERING.md) | Operational contract and production engineering standards. |
 | DevOps roadmap | [`devops/README.md`](./devops/README.md) | Capacity, observability, reliability, security, and recovery roadmap. |
+| Pharmacy Edge fleet | [`devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Target Ansible inventory, Central/Edge roles, staged rollout, backup and restore gates for a 100-pharmacy fleet. |
 | ADRs | [`adr/`](./adr/) | Architecture decisions and their implementation status. |
 | WebSocket | [`websocket-protocol.md`](./websocket-protocol.md) | Current v1 WebSocket design/contract status. |
 | Interview | [`interview/README.md`](./interview/README.md) | Senior Python / AI / LLM interview preparation. |
