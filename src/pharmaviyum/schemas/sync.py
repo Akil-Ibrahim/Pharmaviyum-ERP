@@ -47,9 +47,7 @@ class SyncEventEnvelope(BaseModel):
             raise ValueError("Unsupported event_type for synchronization contract v1")
         if self.schema_version != 1 or self.aggregate_type != "sale":
             raise ValueError("Unsupported schema version or aggregate type for v1")
-        expected_aggregate_version = (
-            1 if self.event_type == "pos.sale.created" else 2
-        )
+        expected_aggregate_version = 1 if self.event_type == "pos.sale.created" else 2
         if self.aggregate_version != expected_aggregate_version:
             raise ValueError("Unexpected aggregate version for POS event type")
 
