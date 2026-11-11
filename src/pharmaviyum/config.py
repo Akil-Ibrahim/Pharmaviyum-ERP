@@ -116,6 +116,14 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://redis:6379/0"
     REDIS_MAX_CONNECTIONS: int = 10
 
+    # Pharmacy Edge → Central synchronization. Credentials are provisioned per node.
+    PHARMAVIYUM_EDGE_NODE_ID: Optional[str] = None
+    PHARMAVIYUM_EDGE_TOKEN: Optional[str] = None
+    PHARMAVIYUM_CENTRAL_SYNC_URL: Optional[str] = None
+    PHARMAVIYUM_SYNC_BATCH_SIZE: int = 50
+    PHARMAVIYUM_SYNC_LEASE_SECONDS: int = 30
+    PHARMAVIYUM_SYNC_HTTP_TIMEOUT_SECONDS: float = 10.0
+
     # Observability
     SENTRY_DSN: Optional[str] = None
     PROMETHEUS_ENABLED: bool = False
