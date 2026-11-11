@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from src.pharmaviyum.config import settings
 from src.pharmaviyum.models.outbox import OutboxEvent
 from src.pharmaviyum.models.pharmacy import Pharmacy
+from src.pharmaviyum.schemas.sync import SyncEventEnvelope
 from src.pharmaviyum.services.outbox import record_outbox_event
 from src.pharmaviyum.services.outbox_dispatcher import dispatch_pending_outbox
 
@@ -40,6 +41,28 @@ async def _add_outbox_event(
     aggregate_version: int,
     event_type: str = "pos.sale.created",
 ) -> OutboxEvent:
+    sale_id = int(aggregate_id)
+    if event_type == "pos.sale.created":
+        payload = {
+            "sale_id": sale_id,
+            "receipt_number": f"PV-{aggregate_id}",
+            "status": "completed",
+            "subtotal": "10.00",
+            "discount_total": "0.00",
+            "total": "10.00",
+            "cashier_user_id": 1,
+            "inventory_effect": "decrement",
+            "items": [],
+            "payment": {"method": "cash", "status": "succeeded", "amount": "10.00"},
+        }
+    else:
+        payload = {
+            "sale_id": sale_id,
+            "receipt_number": f"PV-{aggregate_id}",
+            "sale_status": "cancelled",
+            "inventory_effect": "release_reservation",
+            "released_allocations": [],
+        }
     return await record_outbox_event(
         test_db,
         pharmacy_id=pharmacy_id,
@@ -47,11 +70,7 @@ async def _add_outbox_event(
         aggregate_type="sale",
         aggregate_id=aggregate_id,
         aggregate_version=aggregate_version,
-        payload={
-            "sale_id": int(aggregate_id),
-            "receipt_number": f"PV-{aggregate_id}",
-            "sale_status": "completed",
-        },
+        payload=payload,
     )
 
 
@@ -76,6 +95,7 @@ async def test_dispatcher_sends_envelope_and_marks_event_published(
 
     async def handler(request: httpx.Request) -> httpx.Response:
         body = json.loads(request.content)
+        SyncEventEnvelope.model_validate(body)
         received.append((request, body))
         return httpx.Response(
             202,
@@ -187,6 +207,7 @@ async def test_dispatcher_never_sends_later_aggregate_version_first(
 
     async def handler(request: httpx.Request) -> httpx.Response:
         body = json.loads(request.content)
+        SyncEventEnvelope.model_validate(body)
         delivered_ids.append(body["event_id"])
         return httpx.Response(
             202,
