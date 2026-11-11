@@ -23,6 +23,20 @@
           The long-term architecture target is {{ max_supported_pharmacy_sites }} sites;
           larger rollouts remain disabled.
 
+    - name: Validate every Edge identity before opening SSH connections
+      ansible.builtin.assert:
+        that:
+          - hostvars[item].ansible_host is defined
+          - hostvars[item].ansible_host | string | length > 0
+          - hostvars[item].ansible_user is defined
+          - hostvars[item].ansible_user | string | length > 0
+          - hostvars[item].pharmacy_id is defined
+          - hostvars[item].pharmacy_id | string | length > 0
+          - hostvars[item].site_code is defined
+          - hostvars[item].site_code | string | length > 0
+        fail_msg: "Every selected Edge must have a real SSH endpoint, SSH user, pharmacy_id and site_code."
+      loop: "{{ groups['pharmacy_servers'] }}"
+
     - name: Require immutable application release
       ansible.builtin.assert:
         that:
