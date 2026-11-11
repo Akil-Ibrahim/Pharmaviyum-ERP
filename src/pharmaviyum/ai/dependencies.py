@@ -19,6 +19,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
+
+from src.pharmaviyum.ai.agents.callbacks import PharmaviyumCallbackHandler
 from redis.asyncio import Redis
 
 from src.pharmaviyum.ai.agents.checkpointer import AgentCheckpointer
@@ -103,6 +105,11 @@ def _build_llm(model: str) -> BaseChatModel:
             max_retries=0,
             max_tokens=settings.qwen.max_output_tokens,
             stream_usage=True,
+            callbacks=[
+                PharmaviyumCallbackHandler(
+                    session_id="provider", trace_id="qwencloud", model_name=model
+                )
+            ],
         )
 
     if settings.cloud_llm_provider == "gemini":
