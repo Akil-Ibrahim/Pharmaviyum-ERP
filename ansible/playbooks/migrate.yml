@@ -50,7 +50,7 @@
 
     - name: Render release environment for the migration image
       ansible.builtin.template:
-        src: ../roles/app-backend/templates/app.env.j2
+        src: "{{ playbook_dir }}/../roles/app-backend/templates/app.env.j2"
         dest: "{{ app_directory }}/.env"
         owner: "{{ deploy_user }}"
         mode: "0600"
@@ -58,7 +58,7 @@
 
     - name: Install the release Compose definition
       ansible.builtin.copy:
-        src: ../roles/app-backend/files/docker-compose-backend.yml
+        src: "{{ playbook_dir }}/../roles/app-backend/files/docker-compose-backend.yml"
         dest: "{{ app_directory }}/docker-compose.yml"
         owner: "{{ deploy_user }}"
         mode: "0644"
@@ -111,7 +111,7 @@
     - name: Generate a unique pre-migration backup name
       ansible.builtin.set_fact:
         migration_backup_file: >-
-          {{ app_directory }}/backups/pre-migration-{{ ansible_date_time.iso8601_basic_short }}.sql.gz
+          {{ app_directory }}/backups/pre-migration-{{ inventory_hostname }}-{{ ansible_date_time.iso8601_basic_short }}.sql.gz
 
     - name: Create a compressed database backup before migration
       ansible.builtin.shell: >-
@@ -123,6 +123,25 @@
         executable: /bin/bash
       changed_when: true
       no_log: true
+
+    - name: Set restrictive ownership and permissions on the backup
+      ansible.builtin.file:
+        path: "{{ migration_backup_file }}"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: "0600"
+
+    - name: Inspect the generated backup file
+      ansible.builtin.stat:
+        path: "{{ migration_backup_file }}"
+      register: migration_backup_stat
+
+    - name: Require a non-empty pre-migration backup
+      ansible.builtin.assert:
+        that:
+          - migration_backup_stat.stat.exists
+          - migration_backup_stat.stat.size | int > 0
+        fail_msg: "The pre-migration backup is missing or empty; refusing to run Alembic."
 
     - name: Verify the pre-migration backup archive
       ansible.builtin.command:
