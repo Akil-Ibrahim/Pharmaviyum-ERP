@@ -22,7 +22,6 @@ from langchain_openai import ChatOpenAI
 from redis.asyncio import Redis
 
 from src.pharmaviyum.ai.agents.callbacks import PharmaviyumCallbackHandler
-
 from src.pharmaviyum.ai.agents.checkpointer import AgentCheckpointer
 from src.pharmaviyum.ai.agents.pharmacist_agent import PharmacistAgent
 from src.pharmaviyum.ai.config import settings
