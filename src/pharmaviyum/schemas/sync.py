@@ -78,13 +78,11 @@ class SyncEventEnvelope(BaseModel):
                     "payment",
                 },
                 allowed={
-                    "sale_id",
                     "receipt_number",
                     "status",
                     "subtotal",
                     "discount_total",
                     "total",
-                    "cashier_user_id",
                     "inventory_effect",
                     "items",
                     "payment",
