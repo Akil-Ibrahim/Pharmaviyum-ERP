@@ -39,6 +39,14 @@ provisioner:
         ansible_connection: community.docker.docker
         ansible_user: root
         ansible_remote_tmp: /tmp/.ansible/tmp
+        docker_require_pinned_versions: false
+        docker_package_names:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        docker_package_versions: {}
 verifier:
   name: ansible
 scenario:

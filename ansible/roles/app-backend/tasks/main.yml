@@ -40,9 +40,9 @@
     - ghcr_username | default('') | length > 0
     - ghcr_token | default('') | length > 0
 
-- name: Pull immutable application image
+- name: Pull immutable application image by digest
   community.docker.docker_image:
-    name: "{{ backend_image }}:{{ app_version }}"
+    name: "{{ backend_image }}@{{ backend_image_digest }}"
     source: pull
 
 - name: Start database and cache
