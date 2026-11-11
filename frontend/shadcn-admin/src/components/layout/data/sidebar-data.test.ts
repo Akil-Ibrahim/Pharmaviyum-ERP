@@ -30,26 +30,14 @@ describe('Pharmaviyum sidebar navigation', () => {
     ])
   })
 
-  it('nests System Status and Integrations under Developer Settings', () => {
+  it('keeps Developer Settings under Settings', () => {
     expect(itemTitles('Administration')).toEqual(['Users', 'Settings'])
     const settings = group('Administration')?.items.find((item) => item.title === 'Settings')
     expect(settings?.items?.map((item) => item.title)).toEqual([
       'Profile', 'Appearance', 'Notifications', 'Developer Settings',
     ])
-
-    const developer = settings?.items?.find((item) => item.title === 'Developer Settings')
-    expect(developer?.url).toBe('/settings/developer')
-    expect(developer?.items?.map((item) => item.title)).toEqual([
-      'System Status', 'Integrations',
-    ])
-
-    const integrations = developer?.items?.find((item) => item.title === 'Integrations')
-    expect(integrations?.items?.map((item) => item.title)).toEqual([
-      'ERP Connections', 'Sync History',
-    ])
-    expect(integrations?.items?.map((item) => item.url)).toEqual([
-      '/erp-systems', '/sync-events',
-    ])
+    expect(settings?.items?.find((item) => item.title === 'Developer Settings')?.url)
+      .toBe('/settings/developer')
   })
 
   it('keeps Background Tasks in the System group', () => {
