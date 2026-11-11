@@ -51,7 +51,7 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
 
         llm_output = getattr(response, "llm_output", None) or {}
         generations = getattr(response, "generations", None) or []
-        message_usage = {}
+        message_usage: dict[str, Any] = {}
         if generations and generations[0]:
             message = getattr(generations[0][0], "message", None)
             message_usage = getattr(message, "usage_metadata", None) or {}
