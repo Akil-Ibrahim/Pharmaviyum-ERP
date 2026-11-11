@@ -1,4 +1,5 @@
 import {
+  Activity,
   ArrowLeftRight,
   Bell,
   BookOpenCheck,
@@ -52,23 +53,11 @@ export const sidebarData: SidebarData = {
           title: 'Inventory',
           icon: Boxes,
           items: [
-            {
-              title: 'Drug Catalog',
-              url: '/drug-reference',
-              icon: BookOpenCheck,
-            },
-            {
-              title: 'Catalog Review',
-              url: '/drug-catalog-review',
-              icon: ClipboardCheck,
-            },
+            { title: 'Drug Catalog', url: '/drug-reference', icon: BookOpenCheck },
+            { title: 'Catalog Review', url: '/drug-catalog-review', icon: ClipboardCheck },
             { title: 'Stock Overview', url: '/inventory', icon: Boxes },
             { title: 'Batches', url: '/batches', icon: PackageCheck },
-            {
-              title: 'Expiry Management',
-              url: '/expiry-control',
-              icon: CalendarClock,
-            },
+            { title: 'Expiry Management', url: '/expiry-control', icon: CalendarClock },
             { title: 'Transfers', url: '/transfers', icon: ArrowLeftRight },
           ],
         },
@@ -94,15 +83,22 @@ export const sidebarData: SidebarData = {
           items: [
             { title: 'Profile', url: '/settings', icon: UserCog },
             { title: 'Appearance', url: '/settings/appearance', icon: Palette },
+            { title: 'Notifications', url: '/settings/notifications', icon: Bell },
             {
-              title: 'Notifications',
-              url: '/settings/notifications',
-              icon: Bell,
-            },
-            {
-              title: 'Developer Tools',
+              title: 'Developer Settings',
               url: '/settings/developer',
               icon: Code2,
+              items: [
+                { title: 'System Status', url: '/system-status', icon: Activity },
+                {
+                  title: 'Integrations',
+                  icon: ServerCog,
+                  items: [
+                    { title: 'ERP Connections', url: '/erp-systems', icon: ServerCog },
+                    { title: 'Sync History', url: '/sync-events', icon: RefreshCw },
+                  ],
+                },
+              ],
             },
           ],
         },
@@ -110,17 +106,7 @@ export const sidebarData: SidebarData = {
     },
     {
       title: 'System',
-      items: [
-        {
-          title: 'Integrations',
-          icon: ServerCog,
-          items: [
-            { title: 'ERP Connections', url: '/erp-systems', icon: ServerCog },
-            { title: 'Sync History', url: '/sync-events', icon: RefreshCw },
-          ],
-        },
-        { title: 'Background Tasks', url: '/tasks', icon: ListChecks },
-      ],
+      items: [{ title: 'Background Tasks', url: '/tasks', icon: ListChecks }],
     },
   ],
 }
