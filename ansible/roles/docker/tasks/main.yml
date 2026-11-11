@@ -1,13 +1,37 @@
 ---
+- name: Require a supported Debian-family Docker host
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == "Debian"
+      - ansible_distribution in ["Debian", "Ubuntu"]
+    fail_msg: >-
+      The Docker role supports only Debian or Ubuntu hosts. Refusing to configure
+      an unvalidated package repository for {{ ansible_distribution }}.
+
 - name: Check Docker installation
   ansible.builtin.command: docker --version
   register: docker_check
   failed_when: false
   changed_when: false
 
+- name: Require explicit Docker package version pins
+  ansible.builtin.assert:
+    that:
+      - docker_package_versions is defined
+      - docker_package_versions is mapping
+      - docker_package_versions[item] is defined
+      - docker_package_versions[item] | string | length > 0
+    fail_msg: >-
+      Set an approved version for {{ item }} in the pharmacy host/group vars
+      before provisioning Docker.
+  loop: "{{ docker_package_names }}"
+  when: docker_require_pinned_versions | bool
+
 - name: Install Docker repository prerequisites
   ansible.builtin.apt:
-    name: [ca-certificates, curl]
+    name:
+      - ca-certificates
+      - curl
     state: present
     update_cache: true
   when: docker_check.rc != 0
@@ -21,7 +45,7 @@
 
 - name: Install Docker repository signing key
   ansible.builtin.get_url:
-    url: https://download.docker.com/linux/ubuntu/gpg
+    url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
     dest: /etc/apt/keyrings/docker.asc
     mode: "0644"
   when: docker_check.rc != 0
@@ -37,23 +61,31 @@
     repo: >-
       deb [arch={{ docker_arch.stdout }}
       signed-by=/etc/apt/keyrings/docker.asc]
-      https://download.docker.com/linux/ubuntu
+      https://download.docker.com/linux/{{ ansible_distribution | lower }}
       {{ ansible_distribution_release }} stable
     filename: docker
     state: present
     update_cache: true
   when: docker_check.rc != 0
 
-- name: Install Docker Engine and plugins
+- name: Install pinned Docker Engine packages
   ansible.builtin.apt:
-    name:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-buildx-plugin
-      - docker-compose-plugin
+    name: "{{ item }}={{ docker_package_versions[item] }}"
     state: present
-  when: docker_check.rc != 0
+    update_cache: true
+  loop: "{{ docker_package_names }}"
+  when:
+    - docker_check.rc != 0
+    - docker_require_pinned_versions | bool
+
+- name: Install Docker Engine packages in isolated test environments
+  ansible.builtin.apt:
+    name: "{{ docker_package_names }}"
+    state: present
+    update_cache: true
+  when:
+    - docker_check.rc != 0
+    - not (docker_require_pinned_versions | bool)
 
 - name: Ensure Docker service is enabled and running
   ansible.builtin.systemd:
@@ -62,8 +94,18 @@
     state: started
     daemon_reload: true
 
-- name: Add deploy user to Docker group
-  ansible.builtin.user:
-    name: "{{ deploy_user }}"
-    groups: docker
-    append: true
+- name: Read installed Docker package versions
+  ansible.builtin.package_facts:
+    manager: auto
+  when: docker_require_pinned_versions | bool
+
+- name: Verify installed Docker package versions match approved pins
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.packages[item] is defined
+      - ansible_facts.packages[item][0].version == docker_package_versions[item]
+    fail_msg: >-
+      Installed {{ item }} version does not match the approved pin
+      {{ docker_package_versions[item] }}.
+  loop: "{{ docker_package_names }}"
+  when: docker_require_pinned_versions | bool
