@@ -60,7 +60,6 @@ async def test_edge_enrollment_and_event_ingress_are_durable_and_idempotent(
     event = {
         "event_id": str(uuid4()),
         "edge_node_id": enrolled["node_id"],
-        "pharmacy_id": pharmacy.id,
         "event_type": "pos.sale.created",
         "schema_version": 1,
         "aggregate_type": "sale",
@@ -131,7 +130,6 @@ async def test_edge_identity_cannot_submit_for_another_pharmacy(
     event = {
         "event_id": str(uuid4()),
         "edge_node_id": node["node_id"],
-        "pharmacy_id": pharmacy_b.id,
         "event_type": "pos.sale.created",
         "schema_version": 1,
         "aggregate_type": "sale",
