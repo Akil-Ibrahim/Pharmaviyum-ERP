@@ -92,7 +92,58 @@ Every Edge host must have explicit non-secret metadata: immutable `pharmacy_id`,
 
 Prefer a shared role with explicit `deployment_role: central|edge` only when the tasks and security boundaries are genuinely shared. Do not hide Central-only services inside every pharmacy deployment.
 
-## 4. Playbook responsibilities
+## 4. Production Mortarium AI profile (Ansible / on-premises)
+
+The Ansible/on-premises production profile is deliberately separate from the FastAPI Cloud demo profile.
+
+| Concern | Demo: FastAPI Cloud | Production target: Ansible / on-premises |
+|---|---|---|
+| LLM provider | QwenCloud API | Local Ollama runtime |
+| Model profile | `qwen3.8-flash` | `Qwen3.5 9B Q4_K_M` (target default; hardware validation required) |
+| Network dependency for generation | External provider connectivity | Local inference after model/runtime provisioning |
+| Credentials | QwenCloud API key in FastAPI Cloud secrets | No external LLM API key required for local inference; protect any registry/download credentials separately |
+| Quota/cost controls | Provider free quota + application guard | Local CPU/GPU/RAM/disk capacity, concurrency and queue limits |
+| Deployment owner | FastAPI Cloud configuration/release | Ansible roles and approved on-premises release process |
+
+The demo's QwenCloud settings, free-tier assumptions and API key must not be copied into the production Ansible inventory or Edge environment. Likewise, the on-premises Ollama profile must not be treated as proof that the FastAPI Cloud demo has a local model available.
+
+### Production placement
+
+- Deploy the primary Mortarium AI runtime on the Central on-premises platform by default, behind an authenticated internal API boundary.
+- Do not install a model runtime on every pharmacy Edge node by default. An optional site-local inference node is a separate hardware-profile decision and must be explicitly enabled per site.
+- Keep POS checkout, inventory commits, dispensing authorization, payment and audit transactions independent of Mortarium and Ollama.
+- If Central AI is unreachable, AI-dependent features degrade gracefully; each Edge continues its permitted local business workflows and queues eligible synchronization events.
+- A local Edge AI runtime, if later approved, may provide optional assistant functionality only. It must not authorize dispensing, payment, stock mutation or override deterministic business rules.
+
+### Ansible responsibilities for the production AI runtime
+
+The target Ansible role (for example, `mortarium_ai`) should own:
+- pinned Ollama runtime version and service configuration;
+- explicit model identifier/revision and model artifact integrity verification;
+- model storage path, disk-space preflight and retention policy;
+- CPU/GPU/RAM resource limits and concurrency/queue bounds validated against the actual host profile;
+- internal-only listener binding, firewall rules and authenticated service-to-service access;
+- startup/readiness checks that verify the model is actually loaded and can complete a bounded synthetic inference;
+- structured operational metrics, logs and traces without prompts, secrets or patient-identifying payloads;
+- controlled model/runtime upgrades, canary validation and rollback to a previously verified artifact;
+- service restart policy and graceful shutdown behavior.
+
+Do not expose Ollama's unauthenticated management/API port directly to the public internet. Place an authenticated application gateway in front of model inference. Restrict which application services and MCP tools can invoke AI capabilities.
+
+### Production acceptance gates
+
+Before enabling the production profile:
+1. Validate the selected quantized model on the exact target CPU/GPU/RAM profile; record model artifact hash, inference latency, throughput, peak memory and disk usage.
+2. Run representative synthetic pharmacy prompts and the approved RAG evaluation suite; validate citation grounding, medication entity accuracy, negation preservation, multilingual retrieval and patient/tenant isolation.
+3. Verify that AI saturation or process failure does not degrade POS transaction latency or availability.
+4. Test Central WAN/runtime outage and confirm Edge offline workflows remain operational.
+5. Verify internal authentication, network policy, secret handling, telemetry redaction and auditability.
+6. Test model upgrade and rollback without changing business data or database schema.
+7. Record the exact model/runtime versions and benchmark evidence in the release artifact.
+
+The model name above is a documented target profile, not evidence that Ollama or this model is already installed, benchmarked or running on production hardware. Hardware sizing, concurrency limits, latency SLOs and whether any Edge site receives local inference remain subject to measured pilot results.
+
+## 5. Playbook responsibilities
 
 Suggested entry points:
 
@@ -109,7 +160,7 @@ Suggested entry points:
 
 Keep inventory selection explicit on every operator command. Production playbooks must fail closed if the selected environment, site identity, image digest, backup target or required secrets are missing.
 
-## 5. Safe rollout policy for 100 pharmacies
+## 6. Safe rollout policy for 100 pharmacies
 
 A candidate rollout sequence is:
 
@@ -134,7 +185,7 @@ Ansible `serial` can limit each play to a batch, but it is not a substitute for 
 
 Use explicit maintenance windows and an operator approval between waves. A disconnected site should be reported as not updated, not silently skipped.
 
-## 6. Release and migration rules
+## 7. Release and migration rules
 
 - Build once in CI and deploy the same immutable image digest to lab, pilot and production.
 - Do not use `latest` or mutable release tags as deployment identity.
@@ -145,7 +196,7 @@ Use explicit maintenance windows and an operator approval between waves. A disco
 - A backend rollback does not automatically reverse a database migration. Define forward-fix or tested restore strategy for each migration.
 - Keep application, schema and event-contract compatibility visible in release metadata.
 
-## 7. Backup and restore controls
+## 8. Backup and restore controls
 
 The current backup playbook creates a local SQL dump and retains seven days of local files. Before production fleet use, add:
 
@@ -162,7 +213,7 @@ The current cron command references `/opt/ansible/playbooks/backup.yml` and `/op
 
 A backup is not accepted as recoverable until a restore test has succeeded on an isolated target.
 
-## 8. Security and secrets
+## 9. Security and secrets
 
 - Use per-site credentials and per-node identities; avoid one shared credential for all pharmacies.
 - Prefer an external secret manager; Ansible Vault is an acceptable controlled fallback.
@@ -173,7 +224,7 @@ A backup is not accepted as recoverable until a restore test has succeeded on an
 - Rotate certificates and credentials with a tested overlap window.
 - Store audit and operational telemetry without patient-identifying payloads unless explicitly required and protected.
 
-## 9. Required Ansible quality gates
+## 10. Required Ansible quality gates
 
 Before a role is eligible for production:
 
@@ -186,7 +237,7 @@ Before a role is eligible for production:
 - Restore and rollback are exercised in an isolated lab.
 - Production inventory is protected and reviewed separately from role code.
 
-## 10. Current blockers before 100-site deployment
+## 11. Current blockers before 100-site deployment
 
 1. No implemented transactional outbox/inbox or Edge-to-Central Sync Engine was found in the audited paths.
 2. Production inventory has one placeholder host, not a 100-site fleet source.
@@ -197,7 +248,7 @@ Before a role is eligible for production:
 7. Rollback changes the backend image only; it does not handle schema compatibility or data recovery.
 8. UPS, VPN, site identity, host security and centralized fleet monitoring are not yet proven as deployed capabilities.
 
-## 11. Implementation order
+## 12. Implementation order
 
 1. Complete ADR-0002 and the domain-level Central/Edge contracts.
 2. Implement and test transactional outbox/inbox and the Sync Engine in the application.
