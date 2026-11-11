@@ -19,9 +19,9 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
+from redis.asyncio import Redis
 
 from src.pharmaviyum.ai.agents.callbacks import PharmaviyumCallbackHandler
-from redis.asyncio import Redis
 
 from src.pharmaviyum.ai.agents.checkpointer import AgentCheckpointer
 from src.pharmaviyum.ai.agents.pharmacist_agent import PharmacistAgent
