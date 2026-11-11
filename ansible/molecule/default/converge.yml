@@ -2,6 +2,13 @@
 - name: Converge
   hosts: all
   become: true
+  gather_facts: false
+  pre_tasks:
+    - name: Bootstrap Ansible remote temporary directory
+      ansible.builtin.raw: mkdir -p /tmp/.ansible/tmp && chmod 0700 /tmp/.ansible/tmp
+      changed_when: false
+    - name: Gather system facts after remote temp bootstrap
+      ansible.builtin.setup:
   tasks:
     - name: Include Docker role
       ansible.builtin.include_role:
