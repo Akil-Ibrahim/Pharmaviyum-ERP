@@ -152,6 +152,7 @@ services:
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
       PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
       OLLAMA_BASE_URL: http://ollama:11434
       PHARMAVIYUM_EDGE_NODE_ID: ${PHARMAVIYUM_EDGE_NODE_ID:-}
@@ -184,6 +185,7 @@ services:
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
       PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
       OLLAMA_BASE_URL: http://ollama:11434
       PHARMAVIYUM_EDGE_NODE_ID: ${PHARMAVIYUM_EDGE_NODE_ID:-}
