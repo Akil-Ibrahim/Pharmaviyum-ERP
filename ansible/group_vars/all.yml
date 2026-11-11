@@ -13,6 +13,17 @@ backend_log_level: info
 postgres_version: "16"
 postgres_db: pharmaviyum
 postgres_user: app_user
+
+# Docker is installed from the vendor repository with explicit per-OS package pins.
+# Set all five versions in approved host_vars/group_vars before a fresh production install.
+docker_require_pinned_versions: true
+docker_package_names:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+docker_package_versions: {}
 postgres_password: ""
 postgresql_data_dir: /opt/pharmaviyum/data/postgres
 
