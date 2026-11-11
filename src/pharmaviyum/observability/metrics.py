@@ -281,6 +281,7 @@ _ALLOWED_QUERY_TYPES = {"hybrid_multi_query", "other"}
 _ALLOWED_MODELS = {
     "qwen3.5:9b",
     "qwen3:8b",
+    "qwen3.8-flash",
     "gpt-4o",
     "gpt-4o-mini",
     "other",
@@ -332,6 +333,8 @@ def _model_label(model_name: str) -> str:
     normalized = model_name.lower().strip()
     if normalized.startswith("qwen3:8b"):
         return "qwen3:8b"
+    if normalized.startswith("qwen3.8-flash"):
+        return "qwen3.8-flash"
     return _bounded(normalized, _ALLOWED_MODELS)
 
 
