@@ -23,7 +23,8 @@ def _sale_created_payload(sale_id: int) -> dict:
         "inventory_effect": "decrement",
         "items": [
             {
-                "product_id": 1,
+                "product_sku": "TEST-SKU-1",
+                "product_name": "Test Medicine",
                 "quantity": 1,
                 "unit_price": "10.00",
                 "line_total": "10.00",
