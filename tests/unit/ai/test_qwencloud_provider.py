@@ -1,5 +1,5 @@
-from pydantic import SecretStr
 import pytest
+from pydantic import SecretStr
 
 from src.pharmaviyum.ai import dependencies
 from src.pharmaviyum.ai.config import QwenSettings
