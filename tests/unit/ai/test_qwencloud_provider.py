@@ -8,7 +8,7 @@ from src.pharmaviyum.ai.config import QwenSettings
 def test_qwen_settings_default_to_demo_model_and_free_only() -> None:
     settings = QwenSettings(_env_file=None)
     assert settings.model == "qwen3.8-flash"
-    assert settings.free_quota_only is True
+    assert settings.free_quota_only is False
     assert settings.base_url.endswith("/compatible-mode/v1")
 
 
@@ -36,6 +36,7 @@ def test_qwencloud_builds_openai_compatible_chat_model(monkeypatch) -> None:
     assert captured["max_retries"] == 0
     assert captured["max_tokens"] == dependencies.settings.qwen.max_output_tokens
     assert captured["stream_usage"] is True
+    assert captured["callbacks"][0].model_name == "qwen3.8-flash"
 
 
 def test_qwencloud_fails_closed_without_api_key(monkeypatch) -> None:
