@@ -20,6 +20,7 @@ Set these environment variables on the Pharmacy Edge worker and Beat containers:
 Keep the token in Ansible Vault or the deployment platform's secret store. Never commit it to Git, bake it into an image, place it in a URL, or expose it to the frontend. Configure the same node ID and token only on that pharmacy's Edge installation. The API must be reachable through HTTPS/TLS; mTLS and automated credential rotation remain required hardening work before broad fleet rollout.
 
 If any of the three required Edge variables is missing, the task safely performs no delivery. A Central-only installation should not receive Edge credentials.
+The Ansible app-backend role deploys the API, Celery worker and one Beat scheduler together. It renders the secret-bearing .env with mode 0600 and suppresses task output; deploy validation requires the three Edge identity values to be supplied together and requires an HTTPS Central URL.
 
 ## Delivery protocol
 
