@@ -1,0 +1,26 @@
+---
+# Reference structure for a future 100-site inventory.
+# This file is a schema example, not a runnable production inventory.
+# Populate hosts from an approved CMDB/dynamic inventory source.
+all:
+  children:
+    central:
+      hosts: {}
+    pharmacy_edges:
+      children:
+        pharmacy_edges_canary:
+          hosts: {}
+        pharmacy_edges_wave_01:
+          hosts: {}
+        pharmacy_edges_wave_02:
+          hosts: {}
+        pharmacy_edges_wave_03:
+          hosts: {}
+        pharmacy_edges_wave_04:
+          hosts: {}
+      vars:
+        deployment_role: edge
+        max_supported_pharmacy_sites: 100
+        # Keep current operational rollout policy unchanged until gates pass.
+        active_rollout_limit: 10
+        rollout_serial: 1
