@@ -13,66 +13,60 @@ export const Route = createFileRoute('/_authenticated/settings/developer')({
 
 function DeveloperSettingsPage() {
   return (
-    <main className='p-4 md:p-6'>
-      <div className='space-y-6'>
-        <div>
-          <h1 className='text-2xl font-semibold tracking-tight'>
-            Developer Settings
-          </h1>
-          <p className='mt-1 text-sm text-muted-foreground'>
-            System diagnostics, ERP integrations, and synchronization workspaces.
-          </p>
-        </div>
+    <main className='space-y-6 p-4 md:p-6'>
+      <header className='space-y-1'>
+        <h1 className='text-2xl font-semibold tracking-tight'>
+          Developer Settings
+        </h1>
+        <p className='text-sm text-muted-foreground'>
+          Diagnostics and integration workspaces.
+        </p>
+      </header>
 
-        <section className='grid gap-4 md:grid-cols-2'>
-          <Link
-            to='/system-status'
-            className='rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring'
-          >
-            <Card className='h-full transition-colors hover:bg-accent/40'>
-              <CardHeader>
-                <div className='mb-2 flex size-10 items-center justify-center rounded-lg bg-muted'>
-                  <Activity className='size-5' />
-                </div>
-                <CardTitle>System Status</CardTitle>
-                <CardDescription>
-                  Inspect application health and the availability of core dependencies.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
-
-          <Card className='h-full'>
+      <section className='grid gap-4 md:grid-cols-2'>
+        <Link to='/system-status'>
+          <Card className='h-full transition-colors hover:bg-accent/40'>
             <CardHeader>
-              <div className='mb-2 flex size-10 items-center justify-center rounded-lg bg-muted'>
-                <ServerCog className='size-5' />
-              </div>
-              <CardTitle>Integrations</CardTitle>
+              <CardTitle className='flex items-center gap-2'>
+                <Activity className='size-4' />
+                System Status
+              </CardTitle>
               <CardDescription>
-                Entry points for ERP connections and synchronization history. These two
-                workspaces are navigation shells; live backend integration is not yet
-                connected.
+                View application health and core dependency status.
               </CardDescription>
-              <div className='mt-2 flex flex-col gap-2'>
-                <Link
-                  to='/erp-systems'
-                  className='inline-flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                >
-                  <ServerCog className='size-4 text-muted-foreground' />
-                  ERP Connections
-                </Link>
-                <Link
-                  to='/sync-events'
-                  className='inline-flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                >
-                  <RefreshCw className='size-4 text-muted-foreground' />
-                  Sync History
-                </Link>
-              </div>
             </CardHeader>
           </Card>
-        </section>
-      </div>
+        </Link>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className='flex items-center gap-2'>
+              <ServerCog className='size-4' />
+              Integrations
+            </CardTitle>
+            <CardDescription>
+              ERP Connections and Sync History are navigation shells. Live
+              backend integration is not yet connected.
+            </CardDescription>
+            <div className='flex flex-col gap-2'>
+              <Link
+                to='/erp-systems'
+                className='flex items-center gap-2 text-sm hover:underline'
+              >
+                <ServerCog className='size-4' />
+                ERP Connections
+              </Link>
+              <Link
+                to='/sync-events'
+                className='flex items-center gap-2 text-sm hover:underline'
+              >
+                <RefreshCw className='size-4' />
+                Sync History
+              </Link>
+            </div>
+          </CardHeader>
+        </Card>
+      </section>
     </main>
   )
 }
