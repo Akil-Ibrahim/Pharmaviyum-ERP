@@ -13,7 +13,7 @@ backend_log_level: info
 postgres_version: "16"
 postgres_db: pharmaviyum
 postgres_user: app_user
-postgres_password: "{{ lookup('env', 'PHARMAVIYUM_POSTGRES_PASSWORD') }}"
+postgres_password: ""
 postgresql_data_dir: /opt/pharmaviyum/data/postgres
 
 redis_image: "valkey/valkey:8-alpine"
@@ -32,9 +32,9 @@ rollout_serial: 1
 
 # Per-pharmacy Edge sync identity. Supply the token from the Ansible controller's
 # protected environment or override it with an encrypted Ansible Vault variable.
-pharmaviyum_edge_node_id: "{{ lookup('env', 'PHARMAVIYUM_EDGE_NODE_ID') | default('', true) }}"
-pharmaviyum_edge_token: "{{ lookup('env', 'PHARMAVIYUM_EDGE_TOKEN') | default('', true) }}"
-pharmaviyum_central_sync_url: "{{ lookup('env', 'PHARMAVIYUM_CENTRAL_SYNC_URL') | default('', true) }}"
+pharmaviyum_edge_node_id: ""
+pharmaviyum_edge_token: ""
+pharmaviyum_central_sync_url: ""
 pharmaviyum_sync_batch_size: 50
 pharmaviyum_sync_lease_seconds: 30
 pharmaviyum_sync_http_timeout_seconds: 10
