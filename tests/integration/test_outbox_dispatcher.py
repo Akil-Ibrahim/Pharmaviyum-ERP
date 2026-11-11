@@ -22,7 +22,7 @@ def _configure_edge(monkeypatch, *, batch_size: int = 20) -> str:
     node_id = "7ec6b2b7-9e7c-4f4b-9f77-8b1d22b22e11"
     monkeypatch.setattr(settings, "PHARMAVIYUM_EDGE_NODE_ID", node_id)
     monkeypatch.setattr(
-        settings, "PHARMAVIYUM_EDGE_TOKEN", "test-edge-token-value-123456"
+        settings, "PHARMAVIYUM_EDGE_TOKEN", "test-edge-token-value-1234567890"
     )
     monkeypatch.setattr(
         settings, "PHARMAVIYUM_CENTRAL_SYNC_URL", "https://central.example.test"
@@ -113,7 +113,7 @@ async def test_dispatcher_sends_envelope_and_marks_event_published(
     assert len(received) == 1
     request, envelope = received[0]
     assert str(request.url) == "https://central.example.test/api/v1/sync/events"
-    assert request.headers["X-Edge-Token"] == "test-edge-token-value-123456"
+    assert request.headers["X-Edge-Token"] == "test-edge-token-value-1234567890"
     assert envelope["edge_node_id"] == node_id
     assert envelope["pharmacy_id"] == pharmacy.id
     assert envelope["aggregate_id"] == "PV-501"
