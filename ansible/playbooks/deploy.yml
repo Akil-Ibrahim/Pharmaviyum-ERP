@@ -35,47 +35,10 @@
     - name: Validate enabled Edge sync credentials and HTTPS endpoint
       ansible.builtin.assert:
         that:
-          - pharmaviyum_edge_node_id is match('^[0-9a-fA-F-]{36}      ansible.builtin.command: docker --version
-      changed_when: false
-
-    - name: Check Compose availability
-      ansible.builtin.command: docker compose version
-      changed_when: false
-
-- name: Deploy Pharmaviyum
-  hosts: pharmacy_servers
-  become: true
-  gather_facts: true
-  roles:
-    - role: docker
-      tags: [docker, infrastructure]
-    - role: postgresql
-      tags: [database, infrastructure]
-    - role: app-backend
-      tags: [backend, application]
-
-- name: Verify deployment
-  hosts: pharmacy_servers
-  become: false
-  gather_facts: false
-  tasks:
-    - name: Check backend health
-      ansible.builtin.uri:
-        url: "http://127.0.0.1:{{ backend_port }}/health"
-        status_code: 200
-        timeout: 10
-      register: health
-      retries: 12
-      delay: 5
-      until: health.status == 200
-
-    - name: Show deployed release
-      ansible.builtin.debug:
-        msg: "Pharmaviyum {{ app_version }} is healthy on {{ inventory_hostname }}"
-)
+          - pharmaviyum_edge_node_id is match('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$')
           - pharmaviyum_edge_token | length >= 32
-          - pharmaviyum_central_sync_url is match('^https://')
-        fail_msg: "Edge sync requires a UUID node ID, a high-entropy token and an HTTPS Central URL."
+          - pharmaviyum_central_sync_url is match('^https://[^/]+(/.*)?$')
+        fail_msg: "Edge sync requires a valid UUID, a high-entropy token and an HTTPS Central URL."
       no_log: true
       when: pharmaviyum_edge_node_id | default('') | length > 0
 
