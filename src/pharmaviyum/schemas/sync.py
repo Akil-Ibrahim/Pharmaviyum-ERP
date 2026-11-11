@@ -47,6 +47,8 @@ class SyncEventEnvelope(BaseModel):
         }
         if self.event_type not in allowed_event_types:
             raise ValueError("Unsupported event_type for synchronization contract v1")
+        if self.schema_version != 1 or self.aggregate_type != "sale":
+            raise ValueError("Unsupported schema version or aggregate type for v1")
 
         def require_shape(
             value: Any,
@@ -203,6 +205,8 @@ class SyncEventEnvelope(BaseModel):
                     label="released lot allocation",
                 )
 
+        if str(self.payload.get("sale_id", "")) != self.aggregate_id:
+            raise ValueError("aggregate_id must match the POS sale_id")
         if len(json.dumps(self.payload, separators=(",", ":"))) > 262144:
             raise ValueError("Event payload exceeds the 256 KiB limit")
         return self
