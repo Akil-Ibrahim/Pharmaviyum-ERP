@@ -10,7 +10,7 @@ The current `main` branch contains:
 
 - `ansible/inventory/production/hosts.yml` with one `pharmacy-server-01` host.
 - `ansible/playbooks/deploy.yml` targeting `pharmacy_servers`; it validates release and Edge sync settings, checks Docker/Compose, deploys roles in controlled waves and verifies `/ready`.
-- `ansible/roles/app-backend/` which writes an environment file, copies a Compose definition, pulls a backend image, starts PostgreSQL and Valkey, runs Alembic migrations, then starts the backend.
+- `ansible/roles/app-backend/` which writes an environment file, copies a Compose definition, pulls a backend image, starts PostgreSQL and Valkey, then starts the backend. Database migrations are a separate, explicitly approved release operation.
 - `ansible/roles/postgresql/` which currently prepares a directory and reports container status; PostgreSQL itself is created by Compose.
 - `ansible/playbooks/backup.yml` which writes a local compressed `pg_dump`, prunes local files by age and installs a cron entry.
 - `ansible/playbooks/rollback.yml` which rolls back the backend image and checks `/health`; it does not restore a database backup.
@@ -204,7 +204,9 @@ Use explicit maintenance windows and an operator approval between waves. A disco
 - Build once in CI and deploy the same immutable image digest to lab, pilot and production.
 - Supply `PHARMAVIYUM_BACKEND_IMAGE_DIGEST` as `sha256:<64-hex>`; Ansible pulls and writes the digest reference rather than resolving a mutable tag. Rollback requires the previous verified image digest as well as its release label.
 - Do not use `latest` or mutable release tags as deployment identity.
-- Validate the database migration against a production-like copy before rollout.
+- Run `ansible/playbooks/migrate.yml` as a separate, explicitly approved operation before `deploy.yml`; it requires `migration_approved=true` and a non-empty change reference.
+- The migration playbook starts only DB/cache dependencies, verifies PostgreSQL readiness, creates a pre-migration compressed dump, verifies the gzip archive and records its SHA-256 before running Alembic from the pinned release image.
+- Validate the database migration against a production-like copy before rollout. A valid gzip archive and checksum prove archive integrity only; they do not replace an isolated restore drill or off-site backup.
 - Use expand/contract migrations: deploy backward-compatible schema first, then application versions, then remove obsolete schema only after the compatibility window.
 - Do not run a fleet-wide database migration independently on every Edge if the migration is intended for Central only.
 - Edge application and event schema versions must be compatible with the Central sync contract during staggered rollout.
@@ -282,6 +284,7 @@ Before a role is eligible for production:
 - `ansible/ansible.cfg`
 - `ansible/playbooks/deploy.yml`
 - `ansible/playbooks/backup.yml`
+- `ansible/playbooks/migrate.yml`
 - `ansible/playbooks/rollback.yml`
 - `ansible/roles/app-backend/files/docker-compose-backend.yml`
 - Ansible rolling execution: https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_strategies.html
