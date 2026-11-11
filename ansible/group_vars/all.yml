@@ -24,9 +24,3 @@ ghcr_token: "{{ lookup('env', 'PHARMAVIYUM_GHCR_TOKEN') }}"
 backup_enabled: true
 backup_schedule: "0 2 * * *"
 backup_retention_days: 7
-
-# Capacity target vs. currently permitted rollout size.
-# Keep the active rollout limit at 10 until the starter profile is fully validated.
-max_supported_pharmacy_sites: 100
-active_rollout_limit: 10
-rollout_serial: 1
