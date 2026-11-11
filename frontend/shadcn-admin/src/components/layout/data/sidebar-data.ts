@@ -1,7 +1,6 @@
 import {
-  Activity,
-  ArrowLeftRight,
   Bell,
+  ArrowLeftRight,
   BookOpenCheck,
   Bot,
   Boxes,
@@ -15,8 +14,6 @@ import {
   PackageCheck,
   Palette,
   ReceiptText,
-  RefreshCw,
-  ServerCog,
   Settings,
   ShoppingCart,
   Store,
@@ -84,22 +81,7 @@ export const sidebarData: SidebarData = {
             { title: 'Profile', url: '/settings', icon: UserCog },
             { title: 'Appearance', url: '/settings/appearance', icon: Palette },
             { title: 'Notifications', url: '/settings/notifications', icon: Bell },
-            {
-              title: 'Developer Settings',
-              url: '/settings/developer',
-              icon: Code2,
-              items: [
-                { title: 'System Status', url: '/system-status', icon: Activity },
-                {
-                  title: 'Integrations',
-                  icon: ServerCog,
-                  items: [
-                    { title: 'ERP Connections', url: '/erp-systems', icon: ServerCog },
-                    { title: 'Sync History', url: '/sync-events', icon: RefreshCw },
-                  ],
-                },
-              ],
-            },
+            { title: 'Developer Settings', url: '/settings/developer', icon: Code2 },
           ],
         },
       ],
