@@ -660,6 +660,7 @@ async def payment_webhook(
         aggregate_id=sale.receipt_number,
         aggregate_version=2,
         payload={
+            "receipt_number": sale.receipt_number,
             "sale_status": sale.status,
             "payment_status": payment.status,
             "amount": str(payment.amount),
