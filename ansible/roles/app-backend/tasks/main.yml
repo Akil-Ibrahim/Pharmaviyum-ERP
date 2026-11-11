@@ -19,6 +19,7 @@
     dest: "{{ app_directory }}/.env"
     owner: "{{ deploy_user }}"
     mode: "0600"
+  no_log: true
   notify: Restart application
 
 - name: Deploy Compose definition
@@ -68,5 +69,7 @@
     project_name: "{{ docker_compose_project }}"
     services:
       - backend
+      - celery-worker
+      - celery-beat
     state: present
     pull: missing

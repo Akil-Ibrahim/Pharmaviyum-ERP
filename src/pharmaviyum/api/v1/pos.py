@@ -417,7 +417,6 @@ async def checkout(
             db.add(allocation)
             allocation_events.append(
                 {
-                    "inventory_id": lot.id,
                     "lot_number": lot.lot_number,
                     "expires_at": (
                         lot.expires_at.isoformat() if lot.expires_at else None
@@ -430,7 +429,8 @@ async def checkout(
                 break
         event_items.append(
             {
-                "product_id": product.id,
+                "product_sku": product.sku,
+                "product_name": product.name,
                 "quantity": line.quantity,
                 "unit_price": str(_money(product.price)),
                 "line_total": str(_money(_money(product.price) * line.quantity)),
@@ -472,16 +472,14 @@ async def checkout(
         pharmacy_id=payload.pharmacy_id,
         event_type="pos.sale.created",
         aggregate_type="sale",
-        aggregate_id=sale.id,
+        aggregate_id=sale.receipt_number,
         aggregate_version=1,
         payload={
-            "sale_id": sale.id,
             "receipt_number": sale.receipt_number,
             "status": sale.status,
             "subtotal": str(subtotal),
             "discount_total": str(discount),
             "total": str(total),
-            "cashier_user_id": cashier.id,
             "inventory_effect": (
                 "decrement" if payload.payment_method == "cash" else "reserve"
             ),
@@ -626,11 +624,13 @@ async def payment_webhook(
             status_code=409, detail="Payment amount does not match the sale"
         )
     allocations_result = await db.execute(
-        select(SaleItemAllocation)
+        select(SaleItemAllocation, SaleItem.sku)
         .join(SaleItem, SaleItem.id == SaleItemAllocation.sale_item_id)
         .where(SaleItem.sale_id == sale.id)
     )
-    allocations = list(allocations_result.scalars().all())
+    allocation_rows = list(allocations_result.all())
+    allocations = [allocation for allocation, _sku in allocation_rows]
+    allocation_skus = {allocation.id: sku for allocation, sku in allocation_rows}
     inventory_ids = [allocation.inventory_id for allocation in allocations]
     inventory_result = await db.execute(
         select(Inventory)
@@ -657,11 +657,10 @@ async def payment_webhook(
         pharmacy_id=sale.pharmacy_id,
         event_type=f"pos.payment.{event_status}",
         aggregate_type="sale",
-        aggregate_id=sale.id,
+        aggregate_id=sale.receipt_number,
         aggregate_version=2,
         payload={
-            "sale_id": sale.id,
-            "payment_id": payment.id,
+            "receipt_number": sale.receipt_number,
             "sale_status": sale.status,
             "payment_status": payment.status,
             "amount": str(payment.amount),
@@ -673,7 +672,7 @@ async def payment_webhook(
             ),
             "allocations": [
                 {
-                    "inventory_id": allocation.inventory_id,
+                    "product_sku": allocation_skus[allocation.id],
                     "lot_number": allocation.lot_number,
                     "quantity": allocation.quantity,
                 }
@@ -714,11 +713,13 @@ async def cancel_pending_sale(
         )
 
     allocation_result = await db.execute(
-        select(SaleItemAllocation)
+        select(SaleItemAllocation, SaleItem.sku)
         .join(SaleItem, SaleItem.id == SaleItemAllocation.sale_item_id)
         .where(SaleItem.sale_id == sale.id)
     )
-    allocations = list(allocation_result.scalars().all())
+    allocation_rows = list(allocation_result.all())
+    allocations = [allocation for allocation, _sku in allocation_rows]
+    allocation_skus = {allocation.id: sku for allocation, sku in allocation_rows}
     inventory_ids = [allocation.inventory_id for allocation in allocations]
     inventory_result = await db.execute(
         select(Inventory).where(Inventory.id.in_(inventory_ids)).with_for_update()
@@ -737,16 +738,15 @@ async def cancel_pending_sale(
         pharmacy_id=sale.pharmacy_id,
         event_type="pos.sale.cancelled",
         aggregate_type="sale",
-        aggregate_id=sale.id,
+        aggregate_id=sale.receipt_number,
         aggregate_version=2,
         payload={
-            "sale_id": sale.id,
             "receipt_number": sale.receipt_number,
             "sale_status": sale.status,
             "inventory_effect": "release_reservation",
             "released_allocations": [
                 {
-                    "inventory_id": allocation.inventory_id,
+                    "product_sku": allocation_skus[allocation.id],
                     "lot_number": allocation.lot_number,
                     "quantity": allocation.quantity,
                 }

@@ -5,5 +5,7 @@
     project_name: "{{ docker_compose_project }}"
     services:
       - backend
+      - celery-worker
+      - celery-beat
     state: present
     restarted: true

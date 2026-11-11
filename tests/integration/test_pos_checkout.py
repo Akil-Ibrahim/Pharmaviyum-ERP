@@ -201,7 +201,7 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
             await test_db.scalars(
                 select(OutboxEvent).where(
                     OutboxEvent.aggregate_type == "sale",
-                    OutboxEvent.aggregate_id == str(receipt["id"]),
+                    OutboxEvent.aggregate_id == receipt["receipt_number"],
                 )
             )
         ).all()
@@ -210,6 +210,9 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
     assert outbox_events[0].event_type == "pos.sale.created"
     assert outbox_events[0].payload["inventory_effect"] == "decrement"
     assert outbox_events[0].payload["event_id"] == outbox_events[0].event_id
+    assert outbox_events[0].payload["items"][0]["product_sku"] == product.sku
+    assert "product_id" not in outbox_events[0].payload["items"][0]
+    assert "inventory_id" not in outbox_events[0].payload["items"][0]["allocations"][0]
     assert (
         outbox_events[0].payload["items"][0]["allocations"][0]["lot_number"]
         == "EARLY-LOT"
@@ -235,7 +238,7 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
     event_count = await test_db.scalar(
         select(func.count())
         .select_from(OutboxEvent)
-        .where(OutboxEvent.aggregate_id == str(receipt["id"]))
+        .where(OutboxEvent.aggregate_id == receipt["receipt_number"])
     )
     assert event_count == 1
 
@@ -373,7 +376,7 @@ async def test_card_payment_reserves_stock_until_signed_webhook(
         (
             await test_db.scalars(
                 select(OutboxEvent)
-                .where(OutboxEvent.aggregate_id == str(receipt["id"]))
+                .where(OutboxEvent.aggregate_id == receipt["receipt_number"])
                 .order_by(OutboxEvent.aggregate_version.asc())
             )
         ).all()
@@ -385,6 +388,8 @@ async def test_card_payment_reserves_stock_until_signed_webhook(
     ]
     assert sale_events[0].payload["inventory_effect"] == "reserve"
     assert sale_events[1].payload["inventory_effect"] == "commit_reservation"
+    assert sale_events[1].payload["allocations"][0]["product_sku"] == product.sku
+    assert "inventory_id" not in sale_events[1].payload["allocations"][0]
 
     await test_db.refresh(first)
     await test_db.refresh(second)
@@ -479,13 +484,15 @@ async def test_cancel_pending_sale_releases_reserved_inventory(
     assert cancelled.json()["payments"][0]["status"] == "failed"
     cancel_event = await test_db.scalar(
         select(OutboxEvent).where(
-            OutboxEvent.aggregate_id == str(receipt["id"]),
+            OutboxEvent.aggregate_id == receipt["receipt_number"],
             OutboxEvent.event_type == "pos.sale.cancelled",
         )
     )
     assert cancel_event is not None
     assert cancel_event.aggregate_version == 2
     assert cancel_event.payload["inventory_effect"] == "release_reservation"
+    assert cancel_event.payload["released_allocations"][0]["product_sku"] == product.sku
+    assert "inventory_id" not in cancel_event.payload["released_allocations"][0]
 
     await test_db.refresh(first)
     await test_db.refresh(second)

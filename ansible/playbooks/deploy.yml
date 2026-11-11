@@ -19,6 +19,29 @@
           - postgres_password | length > 0
         fail_msg: "PHARMAVIYUM_POSTGRES_PASSWORD must be set."
 
+    - name: Require Edge sync configuration to be all enabled or all disabled
+      ansible.builtin.assert:
+        that:
+          - >-
+            (pharmaviyum_edge_node_id | default('') | length == 0
+            and pharmaviyum_edge_token | default('') | length == 0
+            and pharmaviyum_central_sync_url | default('') | length == 0)
+            or
+            (pharmaviyum_edge_node_id | default('') | length > 0
+            and pharmaviyum_edge_token | default('') | length > 0
+            and pharmaviyum_central_sync_url | default('') | length > 0)
+        fail_msg: "Configure Edge node ID, token and Central URL together, or leave all three empty."
+
+    - name: Validate enabled Edge sync credentials and HTTPS endpoint
+      ansible.builtin.assert:
+        that:
+          - pharmaviyum_edge_node_id is match('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$')
+          - pharmaviyum_edge_token | length >= 32
+          - pharmaviyum_central_sync_url is match('^https://[^/]+(/.*)?$')
+        fail_msg: "Edge sync requires a valid UUID, a high-entropy token and an HTTPS Central URL."
+      no_log: true
+      when: pharmaviyum_edge_node_id | default('') | length > 0
+
     - name: Check Docker availability
       ansible.builtin.command: docker --version
       changed_when: false
@@ -27,10 +50,13 @@
       ansible.builtin.command: docker compose version
       changed_when: false
 
-- name: Deploy Pharmaviyum
+- name: Deploy Pharmaviyum in controlled rollout waves
   hosts: pharmacy_servers
   become: true
   gather_facts: true
+  serial: "10%"
+  any_errors_fatal: true
+  max_fail_percentage: 0
   roles:
     - role: docker
       tags: [docker, infrastructure]
@@ -38,22 +64,20 @@
       tags: [database, infrastructure]
     - role: app-backend
       tags: [backend, application]
-
-- name: Verify deployment
-  hosts: pharmacy_servers
-  become: false
-  gather_facts: false
-  tasks:
-    - name: Check backend health
+  post_tasks:
+    - name: Check backend readiness before advancing rollout
       ansible.builtin.uri:
-        url: "http://127.0.0.1:{{ backend_port }}/health"
+        url: "http://127.0.0.1:{{ backend_port }}/ready"
         status_code: 200
         timeout: 10
-      register: health
+        return_content: true
+      register: readiness
       retries: 12
       delay: 5
-      until: health.status == 200
+      until:
+        - readiness.status == 200
+        - readiness.json.status | default('') == 'ready'
 
-    - name: Show deployed release
+    - name: Confirm ready release for this rollout wave
       ansible.builtin.debug:
-        msg: "Pharmaviyum {{ app_version }} is healthy on {{ inventory_hostname }}"
+        msg: "Pharmaviyum {{ app_version }} is ready on {{ inventory_hostname }}"
