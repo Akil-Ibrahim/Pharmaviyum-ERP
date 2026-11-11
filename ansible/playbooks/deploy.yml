@@ -106,7 +106,9 @@
     - name: Require an immutable backend image digest
       ansible.builtin.assert:
         that:
-          - backend_image_digest is match('^sha256:[0-9a-f]{64}
+          - backend_image_digest is match('^sha256:[0-9a-f]{64}$')
+        fail_msg: "Set PHARMAVIYUM_BACKEND_IMAGE_DIGEST to the approved sha256 digest before deployment."
+
     - name: Require a unique database credential for every pharmacy
       ansible.builtin.assert:
         that:
@@ -175,8 +177,6 @@
     - name: Confirm ready release for this pharmacy
       ansible.builtin.debug:
         msg: "Pharmaviyum {{ app_version }} is ready on {{ inventory_hostname }}"
-)
-        fail_msg: "Set PHARMAVIYUM_BACKEND_IMAGE_DIGEST to the approved sha256 digest before deployment."
 
     - name: Require a unique database credential for every pharmacy
       ansible.builtin.assert:
