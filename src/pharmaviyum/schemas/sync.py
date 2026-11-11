@@ -144,7 +144,7 @@ class SyncEventEnvelope(BaseModel):
             payment = require_shape(
                 self.payload,
                 required={
-                    "sale_id",
+                    "receipt_number",
                     "sale_status",
                     "payment_status",
                     "amount",
@@ -153,8 +153,7 @@ class SyncEventEnvelope(BaseModel):
                     "allocations",
                 },
                 allowed={
-                    "sale_id",
-                    "payment_id",
+                    "receipt_number",
                     "sale_status",
                     "payment_status",
                     "amount",
