@@ -172,6 +172,32 @@ services:
     networks:
       - pharmaviyum-network
 
+  # Celery Beat schedules durable outbox polling. Run one Beat instance per Edge node.
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pharmaviyum-celery-beat
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      REDIS_URL: redis://redis:6379/0
+      PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
+      OLLAMA_BASE_URL: http://ollama:11434
+      PHARMAVIYUM_EDGE_NODE_ID: ${PHARMAVIYUM_EDGE_NODE_ID:-}
+      PHARMAVIYUM_EDGE_TOKEN: ${PHARMAVIYUM_EDGE_TOKEN:-}
+      PHARMAVIYUM_CENTRAL_SYNC_URL: ${PHARMAVIYUM_CENTRAL_SYNC_URL:-}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./src:/app/src
+    command: >
+      celery -A src.pharmaviyum.ai.mortarium_rag.ingestion.celery_app beat
+        --loglevel=info
+    restart: unless-stopped
+    networks:
+      - pharmaviyum-network
+
 volumes:
   postgres_data:
     driver: local
