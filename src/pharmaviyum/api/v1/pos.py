@@ -750,7 +750,7 @@ async def cancel_pending_sale(
             "inventory_effect": "release_reservation",
             "released_allocations": [
                 {
-                    "inventory_id": allocation.inventory_id,
+                    "product_sku": allocation_skus[allocation.id],
                     "lot_number": allocation.lot_number,
                     "quantity": allocation.quantity,
                 }
