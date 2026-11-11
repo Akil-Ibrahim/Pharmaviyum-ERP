@@ -202,6 +202,7 @@ Use explicit maintenance windows and an operator approval between waves. A disco
 ## 6. Release and migration rules
 
 - Build once in CI and deploy the same immutable image digest to lab, pilot and production.
+- Supply `PHARMAVIYUM_BACKEND_IMAGE_DIGEST` as `sha256:<64-hex>`; Ansible pulls and writes the digest reference rather than resolving a mutable tag. Rollback requires the previous verified image digest as well as its release label.
 - Do not use `latest` or mutable release tags as deployment identity.
 - Validate the database migration against a production-like copy before rollout.
 - Use expand/contract migrations: deploy backward-compatible schema first, then application versions, then remove obsolete schema only after the compatibility window.
