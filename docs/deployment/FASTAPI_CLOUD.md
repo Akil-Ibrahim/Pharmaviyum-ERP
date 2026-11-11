@@ -41,13 +41,23 @@ Configure these in the FastAPI Cloud app environment before deploying:
 - `SECRET_KEY`: a newly generated random secret of at least 32 characters. The API accepts this documented name and the legacy `API_SECRET_KEY` alias. Production/staging startup fails if neither is configured.
 - `ADMIN_PASSWORD` (optional): an explicit bootstrap-admin password, at least 16 characters. If omitted, the bootstrap login path is disabled; existing users authenticate only against their stored password hashes. Never rely on a default admin password.
 - `USE_CLOUD_LLM=true`
-- `CLOUD_LLM_PROVIDER=gemini`
-- `GEMINI_API_KEY`: Gemini API key, stored as a secret.
-- `GEMINI_MODEL=gemini-3.5-flash`
-- `GEMINI_FAST_MODEL=gemini-3.5-flash-lite`
-- `GEMINI_COMPLEX_MODEL=gemini-2.5-pro`
-- `GEMINI_EMBEDDING_MODEL=gemini-embedding-001`
-- `GEMINI_EMBEDDING_DIMENSIONS=1024`
+- `CLOUD_LLM_PROVIDER=qwencloud`
+- `QWEN_API_KEY`: QwenCloud API key, stored only as a FastAPI Cloud secret.
+- `QWEN_BASE_URL=https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1`
+- `QWEN_MODEL=qwen3.8-flash`
+- `QWEN_FAST_MODEL=qwen3.8-flash`
+- `QWEN_COMPLEX_MODEL=qwen3.8-flash`
+- `QWEN_FREE_QUOTA_ONLY=true`
+- `QWEN_TIMEOUT_SECONDS=30`
+- `QWEN_MAX_OUTPUT_TOKENS=500`
+
+For the demo, QwenCloud is the sole configured cloud LLM provider. The code uses the OpenAI-compatible ChatOpenAI adapter with automatic retries disabled, a finite timeout, and a bounded output-token target. The application setting `QWEN_FREE_QUOTA_ONLY=true` is a fail-closed configuration guard; it does **not** query QwenCloud quota or override billing policy. In the QwenCloud console, enable the provider's **Free quota only** switch for the selected model. Verify that switch and quota expiry in the console before enabling live requests.
+
+Token usage is emitted through the existing LangChain callback/Prometheus instrumentation when callbacks are attached to the invocation. Review the provider console for authoritative quota consumption; local metrics are operational telemetry, not a billing ledger. The existing per-request AI token budget limits prompt/output size, but does not guarantee an exact provider-side daily quota cap.
+
+QwenCloud supplies generation only in this configuration. Embeddings remain independently configured: the current cloud embedding path uses the configured OpenAI embedding credentials/model. Do not assume the Qwen API key provides embeddings. Configure a supported embedding provider separately before enabling cloud RAG ingestion/retrieval.
+
+The provider adapter is selected by `CLOUD_LLM_PROVIDER`; changing the model is configuration-only. Changing provider requires a supported adapter and credentials. Never put API keys in source control or logs.
 
 Use the exact variable names; the application reads configuration from environment variables. Do not use example/local credentials in production.
 
