@@ -224,6 +224,12 @@ async def test_ingress_rejects_patient_data_and_unregistered_event_types(
     }
     headers = {"X-Edge-Token": node["credential"]}
 
+    forged_scope = {**base_event, "pharmacy_id": pharmacy.id}
+    rejected_scope = await authenticated_client.post(
+        "/api/v1/sync/events", json=forged_scope, headers=headers
+    )
+    assert rejected_scope.status_code == 422
+
     patient_data = {
         **base_event,
         "payload": {**_sale_created_payload(1002), "patient_name": "Not Allowed"},
