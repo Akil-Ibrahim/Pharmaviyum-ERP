@@ -298,7 +298,7 @@ def _provider_config() -> tuple[str, str, str | None, str]:
     api_key = settings.openai.api_key
     if api_key is None:
         raise RuntimeError(
-            "Groq chat uses OpenAI embeddings in this project; set OPENAI_API_KEY locally"
+            "QwenCloud/Groq chat use the separately configured OpenAI embeddings in this project; set OPENAI_API_KEY locally"
         )
     return "openai", settings.openai.embedding_model, api_key.get_secret_value(), ""
 

@@ -62,7 +62,15 @@ services:
       
       # Cloud LLM APIs (NO Ollama in Codespaces!)
       USE_CLOUD_LLM: ${USE_CLOUD_LLM:-false}
-      CLOUD_LLM_PROVIDER: ${CLOUD_LLM_PROVIDER:-gemini}
+      CLOUD_LLM_PROVIDER: ${CLOUD_LLM_PROVIDER:-qwencloud}
+      QWEN_API_KEY: ${QWEN_API_KEY:-}
+      QWEN_BASE_URL: ${QWEN_BASE_URL:-https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1}
+      QWEN_MODEL: ${QWEN_MODEL:-qwen3.8-flash}
+      QWEN_FAST_MODEL: ${QWEN_FAST_MODEL:-qwen3.8-flash}
+      QWEN_COMPLEX_MODEL: ${QWEN_COMPLEX_MODEL:-qwen3.8-flash}
+      QWEN_FREE_QUOTA_ONLY: ${QWEN_FREE_QUOTA_ONLY:-false}
+      QWEN_TIMEOUT_SECONDS: ${QWEN_TIMEOUT_SECONDS:-30}
+      QWEN_MAX_OUTPUT_TOKENS: ${QWEN_MAX_OUTPUT_TOKENS:-500}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
@@ -109,7 +117,15 @@ services:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
       PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
       USE_CLOUD_LLM: ${USE_CLOUD_LLM:-false}
-      CLOUD_LLM_PROVIDER: ${CLOUD_LLM_PROVIDER:-gemini}
+      CLOUD_LLM_PROVIDER: ${CLOUD_LLM_PROVIDER:-qwencloud}
+      QWEN_API_KEY: ${QWEN_API_KEY:-}
+      QWEN_BASE_URL: ${QWEN_BASE_URL:-https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1}
+      QWEN_MODEL: ${QWEN_MODEL:-qwen3.8-flash}
+      QWEN_FAST_MODEL: ${QWEN_FAST_MODEL:-qwen3.8-flash}
+      QWEN_COMPLEX_MODEL: ${QWEN_COMPLEX_MODEL:-qwen3.8-flash}
+      QWEN_FREE_QUOTA_ONLY: ${QWEN_FREE_QUOTA_ONLY:-false}
+      QWEN_TIMEOUT_SECONDS: ${QWEN_TIMEOUT_SECONDS:-30}
+      QWEN_MAX_OUTPUT_TOKENS: ${QWEN_MAX_OUTPUT_TOKENS:-500}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
       GROQ_API_KEY: ${GROQ_API_KEY:-}

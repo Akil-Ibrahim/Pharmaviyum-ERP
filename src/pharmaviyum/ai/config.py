@@ -30,6 +30,21 @@ class GroqSettings(BaseSettings):
     temperature: float = 0.1
 
 
+class QwenSettings(BaseSettings):
+    """QwenCloud OpenAI-compatible API settings and demo cost guard."""
+
+    model_config = SettingsConfigDict(env_prefix="QWEN_")
+    api_key: SecretStr | None = None
+    base_url: str = "https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1"
+    model: str = "qwen3.8-flash"
+    fast_model: str = "qwen3.8-flash"
+    complex_model: str = "qwen3.8-flash"
+    timeout_seconds: float = 30.0
+    temperature: float = 0.1
+    max_output_tokens: int = 500
+    free_quota_only: bool = False
+
+
 class OpenAISettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="OPENAI_")
     api_key: SecretStr | None = None
@@ -193,6 +208,7 @@ class AISettings(BaseSettings):
 
     ollama: OllamaSettings = Field(default_factory=OllamaSettings)
     groq: GroqSettings = Field(default_factory=GroqSettings)
+    qwen: QwenSettings = Field(default_factory=QwenSettings)
     openai: OpenAISettings = Field(default_factory=OpenAISettings)
     anthropic: AnthropicSettings = Field(default_factory=AnthropicSettings)
     gemini: GeminiSettings = Field(default_factory=GeminiSettings)
@@ -210,7 +226,7 @@ class AISettings(BaseSettings):
     log_level: str = "INFO"
     enable_telemetry: bool = True
     use_cloud_llm: bool = False
-    cloud_llm_provider: Literal["gemini", "groq"] = "gemini"
+    cloud_llm_provider: Literal["gemini", "groq", "qwencloud"] = "gemini"
     cors_origins: list[str] = Field(default_factory=list)
 
     @field_validator("environment")

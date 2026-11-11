@@ -181,12 +181,14 @@ The repository does not use a separate Kubernetes AI deployment; Mortarium remai
 
 Mortarium uses different LLM profiles depending on the deployment target:
 
-| Deployment | LLM provider | Default model profile |
-|---|---|---|
-| FastAPI Cloud deployment | Gemini cloud provider | Main: `gemini-3.5-flash`; Fast: `gemini-3.5-flash-lite`; Complex/evaluation: `gemini-2.5-pro`; Embeddings: `gemini-embedding-001` |
-| Ansible / on-premises pharmacy deployment | Ollama | Qwen3.5 9B Q4_K_M |
+| Deployment profile | LLM provider | Model profile | Status / boundary |
+|---|---|---|---|
+| FastAPI Cloud demo | QwenCloud API | `qwen3.8-flash` | Demo-only provider profile; free quota and provider-console Free quota only controls apply. |
+| Ansible / on-premises production target | Local Ollama runtime | `Qwen3.5 9B Q4_K_M` | Target profile; hardware validation and production rollout are not yet complete. |
 
-This separation is intentional: FastAPI Cloud is the hosted application deployment target, while Ansible provisions the local Ollama-based Mortarium runtime for on-premises installations. Gemma is not the current default; it can be introduced later as an additional Ollama profile without changing the Mortarium architecture.
+These are intentionally separate deployment profiles. The QwenCloud demo key, quota assumptions and cloud API configuration must not be copied into production Ansible inventories. The on-premises production target runs local inference through Ollama and is capacity-bound by the selected host's CPU/GPU, RAM, disk and concurrency limits. The primary production AI runtime is intended for Central; Edge-local inference is optional and must be explicitly approved per hardware profile. POS and other deterministic pharmacy transactions must never depend on Mortarium availability.
+
+See [QwenCloud demo operations](./ai/QWENCLOUD_DEMO.md) for the demo profile and [Pharmacy Edge Ansible rollout](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) for the on-premises production target. Neither profile description is evidence of a completed live deployment.
 
 ## Configuration
 
