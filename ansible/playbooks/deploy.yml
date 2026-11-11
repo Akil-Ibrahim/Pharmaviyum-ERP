@@ -22,8 +22,10 @@
           - site_code | string | length > 0
           - ansible_host is defined
           - ansible_host | string | length > 0
+          - ansible_user is defined
+          - ansible_user | string | length > 0
         fail_msg: >-
-          Every production Edge must define a real host address, pharmacy_id
+          Every production Edge must define a real host address, SSH user, pharmacy_id
           and site_code. Localhost/default identity fallbacks are forbidden.
 
     - name: Require immutable application version
