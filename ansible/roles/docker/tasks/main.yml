@@ -32,6 +32,7 @@
     name:
       - ca-certificates
       - curl
+      - python3-debian
     state: present
     update_cache: true
   when: docker_check.rc != 0
@@ -57,14 +58,25 @@
   when: docker_check.rc != 0
 
 - name: Configure Docker apt repository
-  ansible.builtin.apt_repository:
-    repo: >-
-      deb [arch={{ docker_arch.stdout }}
-      signed-by=/etc/apt/keyrings/docker.asc]
-      https://download.docker.com/linux/{{ ansible_distribution | lower }}
-      {{ ansible_distribution_release }} stable
-    filename: docker
+  ansible.builtin.deb822_repository:
+    name: docker
+    types:
+      - deb
+    uris:
+      - "https://download.docker.com/linux/{{ ansible_distribution | lower }}"
+    suites:
+      - "{{ ansible_distribution_release }}"
+    components:
+      - stable
+    architectures:
+      - "{{ docker_arch.stdout }}"
+    signed_by: /etc/apt/keyrings/docker.asc
     state: present
+    enabled: true
+  when: docker_check.rc != 0
+
+- name: Refresh apt metadata after adding Docker repository
+  ansible.builtin.apt:
     update_cache: true
   when: docker_check.rc != 0
 
