@@ -9,7 +9,6 @@ from fastapi import APIRouter, Header, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.sync import CentralInboxEvent
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, SessionDep
 from src.pharmaviyum.schemas.sync import (
@@ -138,6 +137,8 @@ async def receive_sync_event(
             detail="Aggregate version already exists with a different event_id",
         )
 
+    authenticated_node_id = node.id
+    authenticated_pharmacy_id = node.pharmacy_id
     inbox_event = CentralInboxEvent(
         event_id=str(event.event_id),
         pharmacy_id=node.pharmacy_id,
@@ -164,8 +165,8 @@ async def receive_sync_event(
         )
         if duplicate is not None:
             same_event = (
-                duplicate.pharmacy_id == node.pharmacy_id
-                and duplicate.edge_node_id == node.id
+                duplicate.pharmacy_id == authenticated_pharmacy_id
+                and duplicate.edge_node_id == authenticated_node_id
                 and duplicate.event_type == event.event_type
                 and duplicate.schema_version == event.schema_version
                 and duplicate.aggregate_type == event.aggregate_type
