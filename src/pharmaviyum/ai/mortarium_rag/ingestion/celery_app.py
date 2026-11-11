@@ -102,7 +102,10 @@ def create_celery_app() -> Celery:
         "pharmaviyum.ai.ingestion",
         broker=settings.REDIS_URL,
         backend=settings.REDIS_URL,
-        include=["src.pharmaviyum.ai.mortarium_rag.ingestion.tasks"],
+        include=[
+            "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks",
+            "src.pharmaviyum.sync.worker",
+        ],
     )
 
     app.conf.update(
@@ -129,6 +132,9 @@ def create_celery_app() -> Celery:
             "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.cleanup_old_jobs": {
                 "queue": "maintenance"
             },
+            "src.pharmaviyum.sync.worker.dispatch_outbox_batch": {
+                "queue": "maintenance"
+            },
         },
         task_queue_max_priority=10,
         task_default_priority=5,
@@ -137,6 +143,11 @@ def create_celery_app() -> Celery:
             "cleanup-old-ingestion-jobs": {
                 "task": "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.cleanup_old_jobs",
                 "schedule": 86400.0,
+            },
+            "dispatch-pharmacy-edge-outbox": {
+                "task": "src.pharmaviyum.sync.worker.dispatch_outbox_batch",
+                "schedule": 5.0,
+                "options": {"expires": 10},
             },
         },
     )
