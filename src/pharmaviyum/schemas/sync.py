@@ -1,10 +1,11 @@
 """Request and response contracts for Edge synchronization ingress."""
 
 from datetime import datetime, timezone
+import json
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class EdgeNodeProvisionRequest(BaseModel):
@@ -35,6 +36,54 @@ class SyncEventEnvelope(BaseModel):
     aggregate_version: int = Field(ge=1)
     occurred_at: datetime
     payload: dict[str, Any]
+
+    @model_validator(mode="after")
+    def validate_initial_pos_payload(self) -> "SyncEventEnvelope":
+        allowed_event_types = {
+            "pos.sale.created",
+            "pos.sale.cancelled",
+            "pos.payment.succeeded",
+            "pos.payment.failed",
+        }
+        if self.event_type not in allowed_event_types:
+            raise ValueError("Unsupported event_type for synchronization contract v1")
+
+        forbidden_keys = {
+            "patient",
+            "patientid",
+            "patientname",
+            "phone",
+            "email",
+            "address",
+            "dob",
+            "dateofbirth",
+            "prescription",
+            "medicalrecordnumber",
+            "nationalid",
+            "diagnosis",
+            "allergy",
+        }
+
+        def inspect(value: Any) -> None:
+            if isinstance(value, dict):
+                for key, child in value.items():
+                    normalized = "".join(
+                        character for character in str(key).lower()
+                        if character.isalnum()
+                    )
+                    if normalized in forbidden_keys:
+                        raise ValueError(
+                            "Patient-identifying or clinical fields are not accepted"
+                        )
+                    inspect(child)
+            elif isinstance(value, list):
+                for child in value:
+                    inspect(child)
+
+        inspect(self.payload)
+        if len(json.dumps(self.payload, separators=(",", ":"))) > 262144:
+            raise ValueError("Event payload exceeds the 256 KiB limit")
+        return self
 
     @field_validator("occurred_at")
     @classmethod
