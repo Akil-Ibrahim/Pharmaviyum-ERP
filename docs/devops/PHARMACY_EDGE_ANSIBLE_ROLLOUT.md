@@ -1,7 +1,7 @@
 # Pharmacy Edge Fleet — Ansible Deployment and Operations Plan
 
 **Status:** Target operating model; not yet deployed.  
-**Scope:** Central infrastructure and 100 pharmacy Edge sites.  
+**Scope:** Initial Ansible validation for 1–10 pharmacy Edge sites, with an explicit architecture target of up to 100 sites.  
 **Principle:** Ansible configures infrastructure and releases. Pharmaviyum application services own business transactions and synchronization.
 
 ## 1. Verified repository baseline
@@ -9,7 +9,7 @@
 The current `main` branch contains:
 
 - `ansible/inventory/production/hosts.yml` with one `pharmacy-server-01` host.
-- `ansible/playbooks/deploy.yml` targeting `pharmacy_servers`; it validates an immutable release tag, checks Docker/Compose, deploys roles and checks only the backend `/health` endpoint.
+- `ansible/playbooks/deploy.yml` targeting `pharmacy_servers`; it validates release and Edge sync settings, checks Docker/Compose, deploys roles in controlled waves and verifies `/ready`.
 - `ansible/roles/app-backend/` which writes an environment file, copies a Compose definition, pulls a backend image, starts PostgreSQL and Valkey, runs Alembic migrations, then starts the backend.
 - `ansible/roles/postgresql/` which currently prepares a directory and reports container status; PostgreSQL itself is created by Compose.
 - `ansible/playbooks/backup.yml` which writes a local compressed `pg_dump`, prunes local files by age and installs a cron entry.
@@ -18,6 +18,14 @@ The current `main` branch contains:
 - An Nginx role exists, but it is not included in the current deployment playbook.
 
 These are repository facts, not a claim that the playbooks have been executed successfully on a real pharmacy server.
+
+## 0.1 Starter rollout: 1–10 pharmacies
+
+The first engineering objective is to make one pharmacy Edge deployment safe and repeatable, then validate 2–3 and finally 4–10 sites. The active Ansible rollout limit is deliberately set to 10 and deployment is serial (`serial: 1`) with fail-fast behavior. The limit is operational, not an architecture ceiling.
+
+For each site, use its own immutable `pharmacy_id`, `site_code`, Edge node ID, Edge token, SSH identity and PostgreSQL credential. Per-site secrets must come from encrypted host variables or an approved secret manager. Global defaults for the PostgreSQL password and Edge token are intentionally empty, preventing accidental credential reuse. The lab inventory reads only its own test password from `PHARMAVIYUM_LAB_POSTGRES_PASSWORD`. The production inventory has no localhost fallback.
+
+A single pharmacy may run as an isolated Edge. Central sync is enabled only when that site's node ID, token and HTTPS Central URL are all configured and pass validation. POS and local transactional workflows must not wait on the Central API.
 
 ## 2. Target inventory
 
@@ -92,7 +100,7 @@ Every Edge host must have explicit non-secret metadata: immutable `pharmacy_id`,
 
 Prefer a shared role with explicit `deployment_role: central|edge` only when the tasks and security boundaries are genuinely shared. Do not hide Central-only services inside every pharmacy deployment.
 
-## 4. Production Mortarium AI profile (Ansible / on-premises)
+## Production Mortarium AI profile (Ansible / on-premises)
 
 The Ansible/on-premises production profile is deliberately separate from the FastAPI Cloud demo profile.
 
@@ -143,7 +151,7 @@ Before enabling the production profile:
 
 The model name above is a documented target profile, not evidence that Ollama or this model is already installed, benchmarked or running on production hardware. Hardware sizing, concurrency limits, latency SLOs and whether any Edge site receives local inference remain subject to measured pilot results.
 
-## 5. Playbook responsibilities
+## 4. Playbook responsibilities
 
 Suggested entry points:
 
@@ -160,7 +168,11 @@ Suggested entry points:
 
 Keep inventory selection explicit on every operator command. Production playbooks must fail closed if the selected environment, site identity, image digest, backup target or required secrets are missing.
 
-## 6. Safe rollout policy for 100 pharmacies
+## 5. Target capacity: up to 100 pharmacies
+
+The target architecture supports up to 100 independent Edge sites through stable site identity, per-site secrets, isolated local databases, Central/Edge inventory groups and versioned sync contracts. The starter playbook currently enforces a maximum of 10 hosts; the 100-site profile is not enabled until the starter quality gates and later fleet-scale tests pass.
+
+Use a CMDB-backed dynamic inventory for the full fleet. Keep Central and Edge in separate groups and divide Edge hosts into explicitly approved canary/wave child groups. `ansible/inventory/examples/fleet-100.yml` is a non-runnable schema example.
 
 A candidate rollout sequence is:
 
@@ -170,7 +182,7 @@ A candidate rollout sequence is:
 4. Thirty pharmacies.
 5. The remaining forty-four pharmacies.
 
-The lab site is separate from the 100 production pharmacies. The 5 + 20 + 30 + 45 production waves total 100. Adjust the final wave to the actual approved fleet inventory; never assume the inventory contains exactly 100 reachable hosts. Never assume the inventory contains exactly 100 reachable hosts.
+The lab site is separate from production. The 5 + 20 + 30 + 45 production waves total 100; these are planning examples, not enabled defaults. Adjust wave sizes to the approved inventory and never assume every site is reachable.
 
 Ansible `serial` can limit each play to a batch, but it is not a substitute for release gates. After every batch:
 
@@ -185,7 +197,7 @@ Ansible `serial` can limit each play to a batch, but it is not a substitute for 
 
 Use explicit maintenance windows and an operator approval between waves. A disconnected site should be reported as not updated, not silently skipped.
 
-## 7. Release and migration rules
+## 6. Release and migration rules
 
 - Build once in CI and deploy the same immutable image digest to lab, pilot and production.
 - Do not use `latest` or mutable release tags as deployment identity.
@@ -196,7 +208,7 @@ Use explicit maintenance windows and an operator approval between waves. A disco
 - A backend rollback does not automatically reverse a database migration. Define forward-fix or tested restore strategy for each migration.
 - Keep application, schema and event-contract compatibility visible in release metadata.
 
-## 8. Backup and restore controls
+## 7. Backup and restore controls
 
 The current backup playbook creates a local SQL dump and retains seven days of local files. Before production fleet use, add:
 
@@ -213,7 +225,7 @@ The current cron command references `/opt/ansible/playbooks/backup.yml` and `/op
 
 A backup is not accepted as recoverable until a restore test has succeeded on an isolated target.
 
-## 9. Security and secrets
+## 8. Security and secrets
 
 - Use per-site credentials and per-node identities; avoid one shared credential for all pharmacies.
 - Prefer an external secret manager; Ansible Vault is an acceptable controlled fallback.
@@ -224,7 +236,7 @@ A backup is not accepted as recoverable until a restore test has succeeded on an
 - Rotate certificates and credentials with a tested overlap window.
 - Store audit and operational telemetry without patient-identifying payloads unless explicitly required and protected.
 
-## 10. Required Ansible quality gates
+## 9. Required Ansible quality gates
 
 Before a role is eligible for production:
 
@@ -237,26 +249,28 @@ Before a role is eligible for production:
 - Restore and rollback are exercised in an isolated lab.
 - Production inventory is protected and reviewed separately from role code.
 
-## 11. Current blockers before 100-site deployment
+## 10. Current blockers before declaring 100-site production readiness
 
-1. No implemented transactional outbox/inbox or Edge-to-Central Sync Engine was found in the audited paths.
+1. The repository now contains a durable Edge outbox dispatcher and Central inbox ingress foundation; full operational acceptance, end-to-end reconciliation, conflict workflows, fleet load tests and production recovery evidence remain outstanding.
 2. Production inventory has one placeholder host, not a 100-site fleet source.
-3. Deployment validates only `/health`; operational readiness and synchronization checks are missing.
+3. Deployment now checks `/ready`, but site-level POS synthetic transaction, backup integrity, sync backlog/last-sync and UPS checks are not yet wired into Ansible postflight.
 4. PostgreSQL lifecycle is mostly Compose-managed; the Ansible PostgreSQL role is not a full lifecycle/HA role.
 5. Nginx role is not wired into the current deployment, and current Compose has no Nginx service.
 6. Backup is local-only; integrity validation, off-site copy and tested restore are not established.
 7. Rollback changes the backend image only; it does not handle schema compatibility or data recovery.
 8. UPS, VPN, site identity, host security and centralized fleet monitoring are not yet proven as deployed capabilities.
 
-## 12. Implementation order
+## 11. Implementation order
 
-1. Complete ADR-0002 and the domain-level Central/Edge contracts.
-2. Implement and test transactional outbox/inbox and the Sync Engine in the application.
-3. Build a lab Edge Compose/deployment profile with durable local PostgreSQL.
-4. Add lab inventory and Ansible role tests; do not repoint production inventory yet.
-5. Add backup integrity, off-site transfer and a restore playbook; demonstrate recovery.
-6. Add Central inventory, Edge identity/VPN, readiness and sync monitoring.
-7. Run the lab and five-site pilot failure exercises before widening rollout.
+1. Complete Ansible hardening and test gates for one lab Edge, then one pilot pharmacy, then 2–3 and up to 10 sites. Keep the active rollout limit at 10 throughout this phase.
+2. Complete ADR-0002 and the domain-level Central/Edge contracts.
+3. Complete end-to-end tests for the durable outbox/inbox and sync processing contract.
+4. Build a lab Edge Compose/deployment profile with durable local PostgreSQL.
+5. Add lab inventory and Ansible role tests; do not repoint production inventory yet.
+6. Add backup integrity, off-site transfer and a restore playbook; demonstrate recovery.
+7. Add Central inventory, per-site Edge identity/VPN, readiness and sync monitoring.
+8. Run lab and small-pilot failure exercises before widening rollout.
+9. Only after 1–10 is proven, enable the 100-site dynamic inventory, staged wave controller, central observability capacity, backup throughput and recovery capacity.
 
 ## References
 
