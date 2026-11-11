@@ -3,19 +3,25 @@
   hosts: pharmacy_servers
   become: true
   gather_facts: false
+  vars_files:
+    - ../group_vars/all.yml
   vars:
     rollback_version: ""
     rollback_image_digest: ""
+
   pre_tasks:
-    - name: Require explicit rollback version
+    - name: Require an explicit previous release and immutable image digest
       ansible.builtin.assert:
         that:
-          - rollback_version | length > 0
+          - rollback_version | string | length > 0
           - rollback_version != "latest"
-          - rollback_image_digest is match('^sha256:[0-9a-f]{64}
+          - rollback_image_digest is match('^sha256:[0-9a-f]{64}$')
+        fail_msg: >-
+          Pass the previous release label and its immutable digest:
+          -e rollback_version=<release> -e rollback_image_digest=sha256:<64-hex>.
 
   tasks:
-    - name: Pull rollback image
+    - name: Pull rollback image by immutable digest
       community.docker.docker_image:
         name: "{{ backend_image }}@{{ rollback_image_digest }}"
         source: pull
@@ -29,16 +35,18 @@
         mode: "0600"
       no_log: true
 
-    - name: Start rollback backend
+    - name: Start rollback application services
       community.docker.docker_compose_v2:
         project_src: "{{ app_directory }}"
         project_name: "{{ docker_compose_project }}"
         services:
           - backend
+          - celery-worker
+          - celery-beat
         state: present
         pull: missing
 
-    - name: Wait for rollback health
+    - name: Wait for rollback readiness
       ansible.builtin.uri:
         url: "http://127.0.0.1:{{ backend_port }}/ready"
         status_code: 200
@@ -50,41 +58,7 @@
       until:
         - readiness.status == 200
         - readiness.json.status | default('') == 'ready'
-)
-        fail_msg: >-
-          Pass the previous release label and its immutable digest:
-          -e rollback_version=<release> -e rollback_image_digest=sha256:<64-hex>.
 
-  tasks:
-    - name: Pull rollback image
-      community.docker.docker_image:
-        name: "{{ backend_image }}:{{ rollback_version }}"
-        source: pull
-
-    - name: Set rollback image in Compose environment
-      ansible.builtin.lineinfile:
-        path: "{{ app_directory }}/.env"
-        regexp: '^BACKEND_IMAGE='
-        line: "BACKEND_IMAGE={{ backend_image }}:{{ rollback_version }}"
-        owner: "{{ deploy_user }}"
-        mode: "0600"
-      no_log: true
-
-    - name: Start rollback backend
-      community.docker.docker_compose_v2:
-        project_src: "{{ app_directory }}"
-        project_name: "{{ docker_compose_project }}"
-        services:
-          - backend
-        state: present
-        pull: missing
-
-    - name: Wait for rollback health
-      ansible.builtin.uri:
-        url: "http://127.0.0.1:{{ backend_port }}/health"
-        status_code: 200
-        timeout: 10
-      register: health
-      retries: 12
-      delay: 5
-      until: health.status == 200
+    - name: Report rollback release identity
+      ansible.builtin.debug:
+        msg: "Rolled back {{ inventory_hostname }} to {{ rollback_version }} ({{ rollback_image_digest }})."
