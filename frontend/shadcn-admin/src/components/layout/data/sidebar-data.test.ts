@@ -48,7 +48,7 @@ describe('Pharmaviyum sidebar navigation', () => {
     ])
   })
 
-  it('keeps Users and Settings in Administration', () => {
+  it('keeps Developer Settings under Settings in Administration', () => {
     expect(itemTitles('Administration')).toEqual(['Users', 'Settings'])
 
     const settings = group('Administration')?.items.find(
@@ -59,21 +59,14 @@ describe('Pharmaviyum sidebar navigation', () => {
       'Profile',
       'Appearance',
       'Notifications',
-      'Developer Tools',
+      'Developer Settings',
     ])
+    expect(settings?.items?.find((item) => item.title === 'Developer Settings')?.url)
+      .toBe('/settings/developer')
   })
 
-  it('groups ERP connections and sync history under System integrations', () => {
-    expect(itemTitles('System')).toEqual(['Integrations', 'Background Tasks'])
-
-    const integrations = group('System')?.items.find(
-      (item) => item.title === 'Integrations'
-    )
-
-    expect(integrations?.items?.map((item) => item.title)).toEqual([
-      'ERP Connections',
-      'Sync History',
-    ])
+  it('keeps Background Tasks in the System group', () => {
+    expect(itemTitles('System')).toEqual(['Background Tasks'])
   })
 
   it('preserves the Mortarium AI destination and removes redundant top-level links', () => {
