@@ -128,7 +128,6 @@
       ansible.builtin.file:
         path: "{{ migration_backup_file }}"
         owner: "{{ deploy_user }}"
-        group: "{{ deploy_user }}"
         mode: "0600"
 
     - name: Inspect the generated backup file
