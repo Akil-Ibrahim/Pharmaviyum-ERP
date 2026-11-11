@@ -43,7 +43,7 @@ async def _add_outbox_event(
 ) -> OutboxEvent:
     if event_type == "pos.sale.created":
         payload = {
-            "receipt_number": f"PV-{aggregate_id}",
+            "receipt_number": aggregate_id,
             "status": "completed",
             "subtotal": "10.00",
             "discount_total": "0.00",
