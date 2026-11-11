@@ -68,13 +68,11 @@ class SyncEventEnvelope(BaseModel):
             sale = require_shape(
                 self.payload,
                 required={
-                    "sale_id",
                     "receipt_number",
                     "status",
                     "subtotal",
                     "discount_total",
                     "total",
-                    "cashier_user_id",
                     "inventory_effect",
                     "items",
                     "payment",
@@ -147,7 +145,6 @@ class SyncEventEnvelope(BaseModel):
                 self.payload,
                 required={
                     "sale_id",
-                    "payment_id",
                     "sale_status",
                     "payment_status",
                     "amount",
@@ -205,8 +202,8 @@ class SyncEventEnvelope(BaseModel):
                     label="released lot allocation",
                 )
 
-        if str(self.payload.get("sale_id", "")) != self.aggregate_id:
-            raise ValueError("aggregate_id must match the POS sale_id")
+        if str(self.payload.get("receipt_number", "")) != self.aggregate_id:
+            raise ValueError("aggregate_id must match the POS receipt_number")
         if len(json.dumps(self.payload, separators=(",", ":"))) > 262144:
             raise ValueError("Event payload exceeds the 256 KiB limit")
         return self
