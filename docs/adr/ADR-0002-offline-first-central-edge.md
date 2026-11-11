@@ -6,21 +6,13 @@ Proposed — target architecture approved for design work; implementation and pr
 
 ## Context
 
-Pharmaviyum targets a pharmacy network of up to 100 sites. A pharmacy must continue its permitted local work when the WAN link or the central platform is unavailable. POS and inventory transactions must not depend on Mortarium, a cloud LLM, or a live connection to the central control plane.
+Pharmaviyum targets a pharmacy network of 100+ sites. A pharmacy must continue its permitted local work when the WAN link or the central platform is unavailable. POS and inventory transactions must not depend on Mortarium, a cloud LLM, or a live connection to the central control plane.
 
-The current repository contains a FastAPI modular monolith, PostgreSQL/pgvector, Valkey, POS checkout/payment/FEFO code and Ansible deployment scaffolding. The current Ansible production inventory describes one `pharmacy-server-01`; the current Compose stack is a single-node application/database/cache deployment. A production-grade offline synchronization protocol and 100-site fleet deployment are not yet implemented. The delivery strategy is deliberately staged: first harden and validate Ansible for 1–10 pharmacies, while keeping site identity, inventory grouping and Central/Edge contracts compatible with a future 100-site fleet.
+The current repository contains a FastAPI modular monolith, PostgreSQL/pgvector, Valkey, POS checkout/payment/FEFO code and Ansible deployment scaffolding. The current Ansible production inventory describes one `pharmacy-server-01`; the current Compose stack is a single-node application/database/cache deployment. A production-grade offline synchronization protocol and 100-site fleet deployment are not yet implemented.
 
 ## Decision
 
 Adopt a **Central + Pharmacy Edge** topology while retaining a modular-monolith application architecture initially.
-
-#### Capacity and rollout boundary
-
-- Architectural target: up to 100 independently identified Pharmacy Edge sites.
-- Initial implementation and validation scope: 1–10 pharmacies.
-- The starter Ansible rollout limit is a safety control, not a domain-model or architecture limit.
-- Do not raise the active rollout limit beyond 10 until lab, pilot, backup/restore, offline behavior, sync compatibility, observability and staged-failure tests pass.
-- A 100-site inventory and staged rollout profile are future enablement work; the current inventory/playbooks do not prove 100-site production readiness.
 
 ### 1. Pharmacy Edge — local operational authority
 
