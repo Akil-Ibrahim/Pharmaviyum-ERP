@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
-  Activity,
   Bell,
   BookOpen,
   CircleHelp,
@@ -127,15 +126,6 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
               </div>
             </PopoverContent>
           </Popover>
-          <Button asChild variant='ghost' size='icon'>
-            <Link
-              to='/system-status'
-              aria-label='System Status'
-              title='System Status'
-            >
-              <Activity className='size-4' />
-            </Link>
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
