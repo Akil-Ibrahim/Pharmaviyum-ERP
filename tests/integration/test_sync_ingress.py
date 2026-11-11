@@ -10,6 +10,30 @@ from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.sync import CentralInboxEvent, PharmacyEdgeNode
 
 
+def _sale_created_payload(sale_id: int) -> dict:
+    """Return the allowlisted POS sale event payload shape."""
+    return {
+        "sale_id": sale_id,
+        "receipt_number": f"PV-TEST-{sale_id}",
+        "status": "completed",
+        "subtotal": "10.00",
+        "discount_total": "0.00",
+        "total": "10.00",
+        "cashier_user_id": 1,
+        "inventory_effect": "decrement",
+        "items": [
+            {
+                "product_id": 1,
+                "quantity": 1,
+                "unit_price": "10.00",
+                "line_total": "10.00",
+                "allocations": [],
+            }
+        ],
+        "payment": {"method": "cash", "status": "succeeded", "amount": "10.00"},
+    }
+
+
 @pytest.mark.integration
 async def test_edge_enrollment_and_event_ingress_are_durable_and_idempotent(
     authenticated_client, test_db
@@ -46,7 +70,7 @@ async def test_edge_enrollment_and_event_ingress_are_durable_and_idempotent(
         "aggregate_id": "sale-1001",
         "aggregate_version": 1,
         "occurred_at": datetime.now(timezone.utc).isoformat(),
-        "payload": {"sale_id": 1001, "inventory_effect": "decrement"},
+        "payload": _sale_created_payload(1001),
     }
     headers = {"X-Edge-Token": credential}
     first = await authenticated_client.post(
@@ -75,7 +99,7 @@ async def test_edge_enrollment_and_event_ingress_are_durable_and_idempotent(
     assert replay.status_code == 202, replay.text
     assert replay.json()["duplicate"] is True
 
-    altered = {**event, "payload": {"sale_id": 1001, "inventory_effect": "credit"}}
+    altered = {**event, "payload": {**_sale_created_payload(1001), "total": "11.00"}}
     conflict = await authenticated_client.post(
         "/api/v1/sync/events", json=altered, headers=headers
     )
@@ -119,7 +143,7 @@ async def test_edge_identity_cannot_submit_for_another_pharmacy(
         "aggregate_id": "sale-forged",
         "aggregate_version": 1,
         "occurred_at": datetime.now(timezone.utc).isoformat(),
-        "payload": {"sale_id": 7},
+        "payload": _sale_created_payload(7),
     }
     response = await authenticated_client.post(
         "/api/v1/sync/events",
@@ -167,7 +191,7 @@ async def test_revoked_edge_credential_is_rejected(
         "aggregate_id": "sale-after-revoke",
         "aggregate_version": 1,
         "occurred_at": datetime.now(timezone.utc).isoformat(),
-        "payload": {"sale_id": 8},
+        "payload": _sale_created_payload(8),
     }
     response = await authenticated_client.post(
         "/api/v1/sync/events",
@@ -201,13 +225,13 @@ async def test_ingress_rejects_patient_data_and_unregistered_event_types(
         "aggregate_id": "sale-sensitive",
         "aggregate_version": 1,
         "occurred_at": datetime.now(timezone.utc).isoformat(),
-        "payload": {"sale_id": 1002},
+        "payload": _sale_created_payload(1002),
     }
     headers = {"X-Edge-Token": node["credential"]}
 
     patient_data = {
         **base_event,
-        "payload": {"sale_id": 1002, "patient_name": "Not Allowed"},
+        "payload": {**_sale_created_payload(1002), "patient_name": "Not Allowed"},
     }
     rejected_patient_data = await authenticated_client.post(
         "/api/v1/sync/events", json=patient_data, headers=headers
