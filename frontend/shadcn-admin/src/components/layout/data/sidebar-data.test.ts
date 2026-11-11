@@ -61,8 +61,9 @@ describe('Pharmaviyum sidebar navigation', () => {
       'Notifications',
       'Developer Settings',
     ])
-    expect(settings?.items?.find((item) => item.title === 'Developer Settings')?.url)
-      .toBe('/settings/developer')
+    expect(
+      settings?.items?.find((item) => item.title === 'Developer Settings')?.url
+    ).toBe('/settings/developer')
   })
 
   it('keeps Background Tasks in the System group', () => {
