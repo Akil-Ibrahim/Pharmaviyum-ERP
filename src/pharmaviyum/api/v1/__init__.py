@@ -14,6 +14,7 @@ from .orders import router as orders_router
 from .patient_purchases import router as patient_purchases_router
 from .pharmacy_entities import router as pharmacy_entities_router
 from .pos import router as pos_router
+from .sync import router as sync_router
 from .products import router as products_router
 from .users import router as users_router
 
@@ -30,6 +31,7 @@ api_v1_router.include_router(orders_router)
 api_v1_router.include_router(patients_router)
 api_v1_router.include_router(patient_purchases_router)
 api_v1_router.include_router(pos_router)
+api_v1_router.include_router(sync_router)
 api_v1_router.include_router(pharmacy_entities_router)
 api_v1_router.include_router(products_router)
 api_v1_router.include_router(users_router)
