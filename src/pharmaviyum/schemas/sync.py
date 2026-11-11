@@ -11,7 +11,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 class EdgeNodeProvisionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
-    pharmacy_id: int = Field(gt=0)
     display_name: str = Field(min_length=2, max_length=120)
 
 
