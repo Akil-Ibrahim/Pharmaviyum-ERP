@@ -201,7 +201,7 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
             await test_db.scalars(
                 select(OutboxEvent).where(
                     OutboxEvent.aggregate_type == "sale",
-                    OutboxEvent.aggregate_id == str(receipt["id"]),
+                    OutboxEvent.aggregate_id == receipt["receipt_number"],
                 )
             )
         ).all()
@@ -241,7 +241,7 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
     event_count = await test_db.scalar(
         select(func.count())
         .select_from(OutboxEvent)
-        .where(OutboxEvent.aggregate_id == str(receipt["id"]))
+        .where(OutboxEvent.aggregate_id == receipt["receipt_number"])
     )
     assert event_count == 1
 
@@ -379,7 +379,7 @@ async def test_card_payment_reserves_stock_until_signed_webhook(
         (
             await test_db.scalars(
                 select(OutboxEvent)
-                .where(OutboxEvent.aggregate_id == str(receipt["id"]))
+                .where(OutboxEvent.aggregate_id == receipt["receipt_number"])
                 .order_by(OutboxEvent.aggregate_version.asc())
             )
         ).all()
@@ -487,7 +487,7 @@ async def test_cancel_pending_sale_releases_reserved_inventory(
     assert cancelled.json()["payments"][0]["status"] == "failed"
     cancel_event = await test_db.scalar(
         select(OutboxEvent).where(
-            OutboxEvent.aggregate_id == str(receipt["id"]),
+            OutboxEvent.aggregate_id == receipt["receipt_number"],
             OutboxEvent.event_type == "pos.sale.cancelled",
         )
     )
