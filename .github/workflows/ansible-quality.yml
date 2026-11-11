@@ -19,6 +19,8 @@ jobs:
   ansible-syntax:
     name: Ansible syntax and lint
     runs-on: ubuntu-latest
+    env:
+      ANSIBLE_CONFIG: ansible/ansible.cfg
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
