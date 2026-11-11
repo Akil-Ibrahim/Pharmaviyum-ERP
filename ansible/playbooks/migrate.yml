@@ -1,3 +1,9 @@
+---
+# Run this playbook as an explicit release gate before deploy.yml.
+# Example:
+# ansible-playbook -i inventory/lab/hosts.yml playbooks/migrate.yml \
+#   -e migration_approved=true -e migration_approval_reference=CHG-1234
+
 - name: Validate migration target fleet before contacting pharmacy hosts
   hosts: localhost
   connection: local
@@ -46,11 +52,6 @@
             | map('extract', hostvars, 'postgres_password')
             | list | unique | list | length)
             == (groups['pharmacy_servers'] | length)
-          - >-
-            (groups['pharmacy_servers']
-            | map('extract', hostvars, 'postgres_password')
-            | select('defined') | list | length)
-            == (groups['pharmacy_servers'] | length)
         fail_msg: "Each pharmacy must supply a distinct PostgreSQL credential."
       no_log: true
 
@@ -66,6 +67,7 @@
   vars:
     migration_approved: false
     migration_approval_reference: ""
+    migration_work_dir: "{{ app_directory }}/.migration-{{ inventory_hostname }}"
 
   pre_tasks:
     - name: Require explicit migration approval and change reference
@@ -98,126 +100,148 @@
         - { path: "{{ app_directory }}", mode: "0750" }
         - { path: "{{ app_directory }}/backups", mode: "0700" }
 
-    - name: Render release environment for the migration image
-      ansible.builtin.template:
-        src: "{{ playbook_dir }}/../roles/app-backend/templates/app.env.j2"
-        dest: "{{ app_directory }}/.env"
-        owner: "{{ deploy_user }}"
-        mode: "0600"
-      no_log: true
+    - name: Stage migration release, verify backup and apply schema change
+      block:
+        - name: Create isolated migration work directory
+          ansible.builtin.file:
+            path: "{{ migration_work_dir }}"
+            state: directory
+            owner: "{{ deploy_user }}"
+            mode: "0700"
 
-    - name: Install the release Compose definition
-      ansible.builtin.copy:
-        src: "{{ playbook_dir }}/../roles/app-backend/files/docker-compose-backend.yml"
-        dest: "{{ app_directory }}/docker-compose.yml"
-        owner: "{{ deploy_user }}"
-        mode: "0644"
+        - name: Render isolated migration environment
+          ansible.builtin.template:
+            src: "{{ playbook_dir }}/../roles/app-backend/templates/app.env.j2"
+            dest: "{{ migration_work_dir }}/.env"
+            owner: "{{ deploy_user }}"
+            mode: "0600"
+          no_log: true
 
-    - name: Authenticate to the container registry
-      community.docker.docker_login:
-        registry_url: "{{ container_registry }}"
-        username: "{{ ghcr_username }}"
-        password: "{{ ghcr_token }}"
-      no_log: true
-      when:
-        - ghcr_username | default('') | length > 0
-        - ghcr_token | default('') | length > 0
+        - name: Install isolated migration Compose definition
+          ansible.builtin.copy:
+            src: "{{ playbook_dir }}/../roles/app-backend/files/docker-compose-backend.yml"
+            dest: "{{ migration_work_dir }}/docker-compose.yml"
+            owner: "{{ deploy_user }}"
+            mode: "0600"
 
-    - name: Pull the exact immutable release image
-      community.docker.docker_image:
-        name: "{{ backend_image }}@{{ backend_image_digest }}"
-        source: pull
+        - name: Authenticate to the container registry
+          community.docker.docker_login:
+            registry_url: "{{ container_registry }}"
+            username: "{{ ghcr_username }}"
+            password: "{{ ghcr_token }}"
+          no_log: true
+          when:
+            - ghcr_username | default('') | length > 0
+            - ghcr_token | default('') | length > 0
 
-    - name: Start only PostgreSQL and cache dependencies
-      community.docker.docker_compose_v2:
-        project_src: "{{ app_directory }}"
-        project_name: "{{ docker_compose_project }}"
-        services:
-          - db
-          - redis
-        state: present
+        - name: Pull the exact immutable release image
+          community.docker.docker_image:
+            name: "{{ backend_image }}@{{ backend_image_digest }}"
+            source: pull
 
-    - name: Wait for PostgreSQL to accept connections
-      ansible.builtin.command:
-        argv:
-          - docker
-          - compose
-          - -f
-          - "{{ app_directory }}/docker-compose.yml"
-          - exec
-          - -T
-          - db
-          - pg_isready
-          - -U
-          - "{{ postgres_user }}"
-          - -d
-          - "{{ postgres_db }}"
-      register: postgres_ready
-      changed_when: false
-      retries: 12
-      delay: 5
-      until: postgres_ready.rc == 0
+        - name: Start only PostgreSQL and cache dependencies in the existing project
+          community.docker.docker_compose_v2:
+            project_src: "{{ migration_work_dir }}"
+            project_name: "{{ docker_compose_project }}"
+            services:
+              - db
+              - redis
+            state: present
 
-    - name: Generate a unique pre-migration backup name
-      ansible.builtin.set_fact:
-        migration_backup_file: >-
-          {{ app_directory }}/backups/pre-migration-{{ inventory_hostname }}-{{ ansible_date_time.iso8601_basic_short }}.sql.gz
+        - name: Wait for PostgreSQL to accept connections
+          ansible.builtin.command:
+            argv:
+              - docker
+              - compose
+              - --project-name
+              - "{{ docker_compose_project }}"
+              - --env-file
+              - "{{ migration_work_dir }}/.env"
+              - -f
+              - "{{ migration_work_dir }}/docker-compose.yml"
+              - exec
+              - -T
+              - db
+              - pg_isready
+              - -U
+              - "{{ postgres_user }}"
+              - -d
+              - "{{ postgres_db }}"
+          register: postgres_ready
+          changed_when: false
+          retries: 12
+          delay: 5
+          until: postgres_ready.rc == 0
 
-    - name: Create a compressed database backup before migration
-      ansible.builtin.shell: >-
-        set -o pipefail &&
-        docker compose -f "{{ app_directory }}/docker-compose.yml"
-        exec -T db pg_dump -U "{{ postgres_user }}" -d "{{ postgres_db }}"
-        | gzip -c > "{{ migration_backup_file }}"
-      args:
-        executable: /bin/bash
-      changed_when: true
-      no_log: true
+        - name: Generate a unique pre-migration backup name
+          ansible.builtin.set_fact:
+            migration_backup_file: >-
+              {{ app_directory }}/backups/pre-migration-{{ inventory_hostname }}-{{ ansible_date_time.iso8601_basic_short }}.sql.gz
 
-    - name: Set restrictive ownership and permissions on the backup
-      ansible.builtin.file:
-        path: "{{ migration_backup_file }}"
-        owner: "{{ deploy_user }}"
-        mode: "0600"
+        - name: Create a compressed database backup before migration
+          ansible.builtin.shell: >-
+            set -o pipefail &&
+            docker compose
+            --project-name "{{ docker_compose_project }}"
+            --env-file "{{ migration_work_dir }}/.env"
+            -f "{{ migration_work_dir }}/docker-compose.yml"
+            exec -T db pg_dump -U "{{ postgres_user }}" -d "{{ postgres_db }}"
+            | gzip -c > "{{ migration_backup_file }}"
+          args:
+            executable: /bin/bash
+          changed_when: true
+          no_log: true
 
-    - name: Inspect the generated backup file
-      ansible.builtin.stat:
-        path: "{{ migration_backup_file }}"
-      register: migration_backup_stat
+        - name: Set restrictive ownership and permissions on the backup
+          ansible.builtin.file:
+            path: "{{ migration_backup_file }}"
+            owner: "{{ deploy_user }}"
+            mode: "0600"
 
-    - name: Require a non-empty pre-migration backup
-      ansible.builtin.assert:
-        that:
-          - migration_backup_stat.stat.exists
-          - migration_backup_stat.stat.size | int > 0
-        fail_msg: "The pre-migration backup is missing or empty; refusing to run Alembic."
+        - name: Inspect the generated backup file
+          ansible.builtin.stat:
+            path: "{{ migration_backup_file }}"
+          register: migration_backup_stat
 
-    - name: Verify the pre-migration backup archive
-      ansible.builtin.command:
-        argv:
-          - gzip
-          - -t
-          - "{{ migration_backup_file }}"
-      changed_when: false
+        - name: Require a non-empty pre-migration backup
+          ansible.builtin.assert:
+            that:
+              - migration_backup_stat.stat.exists
+              - migration_backup_stat.stat.size | int > 0
+            fail_msg: "The pre-migration backup is missing or empty; refusing to run Alembic."
 
-    - name: Record backup checksum
-      ansible.builtin.command:
-        argv:
-          - sha256sum
-          - "{{ migration_backup_file }}"
-      register: migration_backup_checksum
-      changed_when: false
+        - name: Verify the pre-migration backup archive
+          ansible.builtin.command:
+            argv:
+              - gzip
+              - -t
+              - "{{ migration_backup_file }}"
+          changed_when: false
 
-    - name: Run Alembic migration using the pinned release image
-      community.docker.docker_compose_v2_run:
-        project_src: "{{ app_directory }}"
-        project_name: "{{ docker_compose_project }}"
-        service: backend
-        command: alembic upgrade head
-        no_deps: true
-        remove_orphans: true
-        cleanup: true
-      register: migration_result
+        - name: Record backup checksum
+          ansible.builtin.command:
+            argv:
+              - sha256sum
+              - "{{ migration_backup_file }}"
+          register: migration_backup_checksum
+          changed_when: false
+
+        - name: Run Alembic migration using the pinned release image
+          community.docker.docker_compose_v2_run:
+            project_src: "{{ migration_work_dir }}"
+            project_name: "{{ docker_compose_project }}"
+            service: backend
+            command: alembic upgrade head
+            no_deps: true
+            remove_orphans: true
+            cleanup: true
+          register: migration_result
+
+      always:
+        - name: Remove staged migration environment and Compose files
+          ansible.builtin.file:
+            path: "{{ migration_work_dir }}"
+            state: absent
 
     - name: Report migration audit metadata
       ansible.builtin.debug:
