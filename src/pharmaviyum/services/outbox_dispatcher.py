@@ -8,7 +8,8 @@ import random
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
-from uuid import uuid4
+from urllib.parse import urlsplit
+from uuid import UUID, uuid4
 
 import httpx
 from sqlalchemy import exists, select
@@ -44,6 +45,23 @@ def _dispatcher_configuration() -> tuple[str, str, str] | None:
     token = settings.PHARMAVIYUM_EDGE_TOKEN
     central_url = settings.PHARMAVIYUM_CENTRAL_SYNC_URL
     if not node_id or not token or not central_url:
+        return None
+    try:
+        UUID(node_id)
+    except ValueError:
+        logger.error("sync_dispatcher_disabled_invalid_edge_node_id")
+        return None
+    endpoint = urlsplit(central_url)
+    if (
+        endpoint.scheme != "https"
+        or not endpoint.hostname
+        or endpoint.username
+        or endpoint.password
+        or endpoint.query
+        or endpoint.fragment
+        or len(token) < 32
+    ):
+        logger.error("sync_dispatcher_disabled_invalid_secure_configuration")
         return None
     return node_id, token, central_url.rstrip("/")
 
