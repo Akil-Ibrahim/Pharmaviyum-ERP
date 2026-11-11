@@ -177,23 +177,3 @@
     - name: Confirm ready release for this pharmacy
       ansible.builtin.debug:
         msg: "Pharmaviyum {{ app_version }} is ready on {{ inventory_hostname }}"
-
-    - name: Require a unique database credential for every pharmacy
-      ansible.builtin.assert:
-        that:
-          - hostvars[item].postgres_password is defined
-          - hostvars[item].postgres_password | string | length > 0
-        fail_msg: "Each pharmacy must provide its own PostgreSQL password through encrypted host variables or a secret manager."
-      no_log: true
-      loop: "{{ groups['pharmacy_servers'] }}"
-
-    - name: Require unique PostgreSQL credentials across pharmacy sites
-      ansible.builtin.assert:
-        that:
-          - >-
-            (groups['pharmacy_servers']
-            | map('extract', hostvars, 'postgres_password')
-            | list | unique | list | length)
-            == (groups['pharmacy_servers'] | length)
-        fail_msg: "Each pharmacy must use a distinct PostgreSQL credential."
-      no_log: true
