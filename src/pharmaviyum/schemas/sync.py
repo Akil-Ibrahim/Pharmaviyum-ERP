@@ -97,14 +97,16 @@ class SyncEventEnvelope(BaseModel):
                 line = require_shape(
                     item,
                     required={
-                        "product_id",
+                        "product_sku",
+                        "product_name",
                         "quantity",
                         "unit_price",
                         "line_total",
                         "allocations",
                     },
                     allowed={
-                        "product_id",
+                        "product_sku",
+                        "product_name",
                         "quantity",
                         "unit_price",
                         "line_total",
@@ -118,13 +120,11 @@ class SyncEventEnvelope(BaseModel):
                     require_shape(
                         allocation,
                         required={
-                            "inventory_id",
                             "lot_number",
                             "expires_at",
                             "quantity",
                         },
                         allowed={
-                            "inventory_id",
                             "lot_number",
                             "expires_at",
                             "quantity",
@@ -170,8 +170,8 @@ class SyncEventEnvelope(BaseModel):
             for allocation in payment["allocations"]:
                 require_shape(
                     allocation,
-                    required={"inventory_id", "lot_number", "quantity"},
-                    allowed={"inventory_id", "lot_number", "quantity"},
+                    required={"product_sku", "lot_number", "quantity"},
+                    allowed={"product_sku", "lot_number", "quantity"},
                     label="payment lot allocation",
                 )
         else:
@@ -198,8 +198,8 @@ class SyncEventEnvelope(BaseModel):
             for allocation in cancelled["released_allocations"]:
                 require_shape(
                     allocation,
-                    required={"inventory_id", "lot_number", "quantity"},
-                    allowed={"inventory_id", "lot_number", "quantity"},
+                    required={"product_sku", "lot_number", "quantity"},
+                    allowed={"product_sku", "lot_number", "quantity"},
                     label="released lot allocation",
                 )
 
