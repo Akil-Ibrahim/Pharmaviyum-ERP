@@ -76,7 +76,8 @@
         that:
           - >-
             hostvars[item].pharmaviyum_edge_node_id is match(
-            '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}
+            '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$'
+            )
           - hostvars[item].pharmaviyum_edge_token | length >= 32
           - hostvars[item].pharmaviyum_central_sync_url is match('^https://[^/]+(/.*)?$')
         fail_msg: "Enabled Edge sync requires a UUID, a high-entropy token and an HTTPS Central URL."
@@ -150,13 +151,6 @@
       ansible.builtin.debug:
         msg: "Pharmaviyum {{ app_version }} is ready on {{ inventory_hostname }}"
 
-            )
-          - hostvars[item].pharmaviyum_edge_token | length >= 32
-          - hostvars[item].pharmaviyum_central_sync_url is match('^https://[^/]+(/.*)?$')
-        fail_msg: "Enabled Edge sync requires a UUID, a high-entropy token and an HTTPS Central URL."
-      no_log: true
-      loop: "{{ groups['pharmacy_servers'] }}"
-      when: hostvars[item].pharmaviyum_edge_node_id | default('') | length > 0
 
     - name: Require immutable application release
       ansible.builtin.assert:
