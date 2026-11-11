@@ -202,7 +202,8 @@ async def _ingest_document_async(
             if settings.use_cloud_llm and settings.cloud_llm_provider == "gemini"
             else (
                 "openai"
-                if settings.use_cloud_llm and settings.cloud_llm_provider in {"groq", "qwencloud"}
+                if settings.use_cloud_llm
+                and settings.cloud_llm_provider in {"groq", "qwencloud"}
                 else "ollama"
             )
         )
