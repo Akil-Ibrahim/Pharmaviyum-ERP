@@ -57,6 +57,16 @@
             == (groups['pharmacy_servers'] | length)
         fail_msg: "Every pharmacy Edge must have a unique site_code."
 
+    - name: Require approved Docker package pins before opening SSH connections
+      ansible.builtin.assert:
+        that:
+          - docker_package_versions is mapping
+          - docker_package_versions[item] is defined
+          - docker_package_versions[item] | string | length > 0
+        fail_msg: "Set an approved Docker package version for {{ item }} before deployment."
+      loop: "{{ docker_package_names }}"
+
+
     - name: Require Edge sync configuration to be all enabled or all disabled
       ansible.builtin.assert:
         that:
@@ -101,6 +111,17 @@
         fail_msg: "Each pharmacy must provide its own PostgreSQL password through encrypted host variables or a secret manager."
       no_log: true
       loop: "{{ groups['pharmacy_servers'] }}"
+
+    - name: Require unique PostgreSQL credentials across pharmacy sites
+      ansible.builtin.assert:
+        that:
+          - >-
+            (groups['pharmacy_servers']
+            | map('extract', hostvars, 'postgres_password')
+            | list | unique | list | length)
+            == (groups['pharmacy_servers'] | length)
+        fail_msg: "Each pharmacy must use a distinct PostgreSQL credential."
+      no_log: true
 
 - name: Validate each Edge host before deployment
   hosts: pharmacy_servers
