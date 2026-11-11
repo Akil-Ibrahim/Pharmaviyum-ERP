@@ -223,3 +223,51 @@ async def test_dispatcher_never_sends_later_aggregate_version_first(
         )
         assert len(rows) == 2
         assert all(row.published_at is not None for row in rows)
+
+
+@pytest.mark.integration
+async def test_expired_lease_fences_off_the_previous_worker(
+    test_db, test_engine
+):
+    from datetime import timedelta
+
+    from src.pharmaviyum.services.outbox_dispatcher import (
+        _acknowledge_published,
+        _claim_batch,
+    )
+
+    pharmacy = Pharmacy(name="Lease Fencing Pharmacy", code="DISPATCH-FENCE")
+    test_db.add(pharmacy)
+    await test_db.flush()
+    event = await _add_outbox_event(
+        test_db,
+        pharmacy_id=pharmacy.id,
+        aggregate_id="504",
+        aggregate_version=1,
+    )
+    event.lease_token = "00000000-0000-0000-0000-000000000001"
+    event.locked_until = datetime.now(timezone.utc) - timedelta(seconds=1)
+    event_id = event.event_id
+    await test_db.commit()
+
+    factory = async_sessionmaker(test_engine, expire_on_commit=False)
+    claimed = await _claim_batch(factory, batch_size=10, lease_seconds=30)
+    assert len(claimed) == 1
+    assert claimed[0].event_id == event_id
+    assert claimed[0].lease_token != "00000000-0000-0000-0000-000000000001"
+    assert claimed[0].attempts == 1
+
+    stale_ack = await _acknowledge_published(
+        factory,
+        row_id=claimed[0].row_id,
+        lease_token="00000000-0000-0000-0000-000000000001",
+    )
+    assert stale_ack is False
+
+    async with factory() as session:
+        stored = await session.scalar(
+            select(OutboxEvent).where(OutboxEvent.event_id == event_id)
+        )
+        assert stored is not None
+        assert stored.published_at is None
+        assert stored.lease_token == claimed[0].lease_token
