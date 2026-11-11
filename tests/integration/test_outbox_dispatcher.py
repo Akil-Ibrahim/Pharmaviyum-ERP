@@ -249,9 +249,7 @@ async def test_dispatcher_never_sends_later_aggregate_version_first(
 
 
 @pytest.mark.integration
-async def test_expired_lease_fences_off_the_previous_worker(
-    test_db, test_engine
-):
+async def test_expired_lease_fences_off_the_previous_worker(test_db, test_engine):
     from datetime import timedelta
 
     from src.pharmaviyum.services.outbox_dispatcher import (
