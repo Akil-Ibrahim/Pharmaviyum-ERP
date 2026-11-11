@@ -9,11 +9,12 @@ platforms:
   - name: pharmaviyum-ansible-test
     image: geerlingguy/docker-ubuntu2204-ansible:latest
     privileged: true
+    user: root
     pre_build_image: true
     command: /lib/systemd/systemd
     cgroupns_mode: host
     tmpfs:
-      - /tmp:rw,exec,nosuid,nodev
+      - /tmp:rw,exec,nosuid,nodev,mode=1777
 provisioner:
   name: ansible
   config_options:
