@@ -28,7 +28,7 @@ The Ansible app-backend role deploys the API, Celery worker and one Beat schedul
 2. Celery Beat enqueues a bounded dispatcher pass every five seconds. Run one Beat scheduler per Edge installation.
 3. The dispatcher claims eligible rows in a short transaction using FOR UPDATE SKIP LOCKED.
 4. Each claim receives a unique lease fencing token and expiry. The attempt counter is incremented before the network call.
-5. The HTTP request runs outside the database transaction and includes the immutable event_id, edge_node_id, pharmacy scope, aggregate identity/version and payload.
+5. The HTTP request runs outside the database transaction and includes the immutable event_id, edge_node_id, aggregate identity/version and payload. Central derives the authoritative pharmacy scope from the authenticated Edge registration; the Edge does not send a trusted pharmacy_id field.
    POS product references use the shared product SKU and lot number; local integer product/inventory primary keys are deliberately excluded because they are not portable between independent Edge databases. Central must resolve the SKU in the pharmacy's canonical catalog and quarantine unknown or ambiguous mappings.
 Sale aggregate IDs use the immutable receipt number, not a local auto-increment sale ID. Cashier and payment database row IDs are not transmitted; Central must not infer cross-site identity from local numeric keys.
 6. Only a matching Central accepted acknowledgement allows the dispatcher to set published_at.
