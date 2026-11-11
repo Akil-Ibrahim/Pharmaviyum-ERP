@@ -39,6 +39,7 @@ provisioner:
         ansible_connection: community.docker.docker
         ansible_user: root
         ansible_remote_tmp: /tmp/.ansible/tmp
+        docker_require_pinned_versions: false
 verifier:
   name: ansible
 scenario:
