@@ -25,6 +25,8 @@ The first engineering objective is to make one pharmacy Edge deployment safe and
 
 For each site, use its own immutable `pharmacy_id`, `site_code`, Edge node ID, Edge token, SSH identity and PostgreSQL credential. Per-site secrets must come from encrypted host variables or an approved secret manager. Global defaults for the PostgreSQL password and Edge token are intentionally empty, preventing accidental credential reuse. The lab inventory reads only its own test password from `PHARMAVIYUM_LAB_POSTGRES_PASSWORD`. The production inventory has no localhost fallback.
 
+The Docker role supports only Debian/Ubuntu hosts, requires explicit per-site or per-OS package-version pins for Docker Engine and plugins, and verifies installed versions against those pins. Set `docker_package_versions` in approved host/group variables before provisioning a fresh host. The deployment user is not added to the `docker` group because Docker socket access is effectively root-equivalent.
+
 A single pharmacy may run as an isolated Edge. Central sync is enabled only when that site's node ID, token and HTTPS Central URL are all configured and pass validation. POS and local transactional workflows must not wait on the Central API.
 
 ## 2. Target inventory
