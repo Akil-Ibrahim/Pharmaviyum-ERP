@@ -20,7 +20,9 @@ from src.pharmaviyum.services.outbox_dispatcher import dispatch_pending_outbox
 def _configure_edge(monkeypatch, *, batch_size: int = 20) -> str:
     node_id = "7ec6b2b7-9e7c-4f4b-9f77-8b1d22b22e11"
     monkeypatch.setattr(settings, "PHARMAVIYUM_EDGE_NODE_ID", node_id)
-    monkeypatch.setattr(settings, "PHARMAVIYUM_EDGE_TOKEN", "test-edge-token-value-123456")
+    monkeypatch.setattr(
+        settings, "PHARMAVIYUM_EDGE_TOKEN", "test-edge-token-value-123456"
+    )
     monkeypatch.setattr(
         settings, "PHARMAVIYUM_CENTRAL_SYNC_URL", "https://central.example.test"
     )
