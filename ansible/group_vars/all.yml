@@ -24,3 +24,12 @@ ghcr_token: "{{ lookup('env', 'PHARMAVIYUM_GHCR_TOKEN') }}"
 backup_enabled: true
 backup_schedule: "0 2 * * *"
 backup_retention_days: 7
+
+# Per-pharmacy Edge sync identity. Supply the token from the Ansible controller's
+# protected environment or override it with an encrypted Ansible Vault variable.
+pharmaviyum_edge_node_id: "{{ lookup('env', 'PHARMAVIYUM_EDGE_NODE_ID') | default('', true) }}"
+pharmaviyum_edge_token: "{{ lookup('env', 'PHARMAVIYUM_EDGE_TOKEN') | default('', true) }}"
+pharmaviyum_central_sync_url: "{{ lookup('env', 'PHARMAVIYUM_CENTRAL_SYNC_URL') | default('', true) }}"
+pharmaviyum_sync_batch_size: 50
+pharmaviyum_sync_lease_seconds: 30
+pharmaviyum_sync_http_timeout_seconds: 10
