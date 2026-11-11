@@ -17,9 +17,6 @@ platforms:
       - /tmp:rw,exec,nosuid,nodev,mode=1777
 provisioner:
   name: ansible
-  config_options:
-    defaults:
-      remote_tmp: /root/.ansible/tmp
   inventory:
     host_vars:
       pharmaviyum-ansible-test:
