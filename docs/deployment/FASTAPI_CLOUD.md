@@ -61,6 +61,11 @@ The provider adapter is selected by `CLOUD_LLM_PROVIDER`; changing the model is 
 
 Use the exact variable names; the application reads configuration from environment variables. Do not use example/local credentials in production.
 
+
+## QwenCloud demo operations
+
+The QwenCloud variables above describe the **demo profile only**; they are not a production provider recommendation or a guarantee of free/unlimited service. Follow the [QwenCloud demo operations guide](../ai/QWENCLOUD_DEMO.md) for the full configuration contract, provider-console **Free quota only** requirement, current-versus-planned safeguards, embedding separation, quota-expiry checks, and release gates. In particular, `QWEN_FREE_QUOTA_ONLY=true` is an application-side fail-closed guard; it does not independently enforce provider billing. The provider-console control remains mandatory.
+
 ## Database preparation
 
 1. Provision a PostgreSQL database with the pgvector extension available.
