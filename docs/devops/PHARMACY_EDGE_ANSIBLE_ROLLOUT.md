@@ -23,7 +23,7 @@ These are repository facts, not a claim that the playbooks have been executed su
 
 The first engineering objective is to make one pharmacy Edge deployment safe and repeatable, then validate 2–3 and finally 4–10 sites. The active Ansible rollout limit is deliberately set to 10 and deployment is serial (`serial: 1`) with fail-fast behavior. The limit is operational, not an architecture ceiling.
 
-For each site, use its own immutable `pharmacy_id`, `site_code`, Edge node ID, Edge token, SSH identity and database credential. Put per-site secret values in encrypted host variables or an approved secret manager; do not reuse a single Edge credential across the fleet. The production inventory has no localhost fallback.
+For each site, use its own immutable `pharmacy_id`, `site_code`, Edge node ID, Edge token, SSH identity and PostgreSQL credential. Per-site secrets must come from encrypted host variables or an approved secret manager. Global defaults for the PostgreSQL password and Edge token are intentionally empty, preventing accidental credential reuse. The lab inventory reads only its own test password from `PHARMAVIYUM_LAB_POSTGRES_PASSWORD`. The production inventory has no localhost fallback.
 
 A single pharmacy may run as an isolated Edge. Central sync is enabled only when that site's node ID, token and HTTPS Central URL are all configured and pass validation. POS and local transactional workflows must not wait on the Central API.
 
