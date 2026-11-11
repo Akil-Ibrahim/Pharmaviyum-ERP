@@ -28,7 +28,6 @@ class ClaimedOutboxEvent:
     row_id: int
     event_id: str
     lease_token: str
-    pharmacy_id: int
     event_type: str
     schema_version: int
     aggregate_type: str
@@ -116,7 +115,6 @@ async def _claim_batch(
                         row_id=event.id,
                         event_id=event.event_id,
                         lease_token=lease_token,
-                        pharmacy_id=event.pharmacy_id,
                         event_type=event.event_type,
                         schema_version=event.schema_version,
                         aggregate_type=event.aggregate_type,
@@ -145,7 +143,6 @@ def _event_envelope(event: ClaimedOutboxEvent, *, edge_node_id: str) -> dict[str
     return {
         "event_id": event.event_id,
         "edge_node_id": edge_node_id,
-        "pharmacy_id": event.pharmacy_id,
         "event_type": event.event_type,
         "schema_version": event.schema_version,
         "aggregate_type": event.aggregate_type,
