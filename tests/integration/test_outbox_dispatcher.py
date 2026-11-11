@@ -41,16 +41,13 @@ async def _add_outbox_event(
     aggregate_version: int,
     event_type: str = "pos.sale.created",
 ) -> OutboxEvent:
-    sale_id = int(aggregate_id)
     if event_type == "pos.sale.created":
         payload = {
-            "sale_id": sale_id,
             "receipt_number": f"PV-{aggregate_id}",
             "status": "completed",
             "subtotal": "10.00",
             "discount_total": "0.00",
             "total": "10.00",
-            "cashier_user_id": 1,
             "inventory_effect": "decrement",
             "items": [],
             "payment": {"method": "cash", "status": "succeeded", "amount": "10.00"},
@@ -68,7 +65,7 @@ async def _add_outbox_event(
         pharmacy_id=pharmacy_id,
         event_type=event_type,
         aggregate_type="sale",
-        aggregate_id=aggregate_id,
+        aggregate_id=f"PV-{aggregate_id}",
         aggregate_version=aggregate_version,
         payload=payload,
     )
@@ -120,10 +117,10 @@ async def test_dispatcher_sends_envelope_and_marks_event_published(
     assert request.headers["X-Edge-Token"] == "test-edge-token-value-123456"
     assert envelope["edge_node_id"] == node_id
     assert envelope["pharmacy_id"] == pharmacy.id
-    assert envelope["aggregate_id"] == "501"
+    assert envelope["aggregate_id"] == "PV-501"
     assert envelope["aggregate_version"] == 1
     assert envelope["event_id"] == event_id
-    assert envelope["payload"]["sale_id"] == 501
+    assert envelope["payload"]["receipt_number"] == "PV-501"
     assert "event_id" not in envelope["payload"]
 
     async with factory() as session:
