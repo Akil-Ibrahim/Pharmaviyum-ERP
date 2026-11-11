@@ -19,7 +19,7 @@ provisioner:
   name: ansible
   config_options:
     defaults:
-      remote_tmp: /tmp
+      remote_tmp: /var/tmp/.ansible/tmp
   inventory:
     host_vars:
       pharmaviyum-ansible-test:
@@ -32,7 +32,7 @@ provisioner:
         postgres_password: "molecule-test-password"
         ghcr_username: ""
         ghcr_token: ""
-        ansible_remote_tmp: /tmp
+        ansible_remote_tmp: /var/tmp/.ansible/tmp
 verifier:
   name: ansible
 scenario:
