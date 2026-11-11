@@ -64,16 +64,8 @@
       tags: [database, infrastructure]
     - role: app-backend
       tags: [backend, application]
-
-- name: Verify each deployment wave before proceeding
-  hosts: pharmacy_servers
-  become: false
-  gather_facts: false
-  serial: "10%"
-  any_errors_fatal: true
-  max_fail_percentage: 0
-  tasks:
-    - name: Check backend readiness
+  post_tasks:
+    - name: Check backend readiness before advancing rollout
       ansible.builtin.uri:
         url: "http://127.0.0.1:{{ backend_port }}/ready"
         status_code: 200
@@ -86,6 +78,6 @@
         - readiness.status == 200
         - readiness.json.status | default('') == 'ready'
 
-    - name: Show deployed release
+    - name: Confirm ready release for this rollout wave
       ansible.builtin.debug:
         msg: "Pharmaviyum {{ app_version }} is ready on {{ inventory_hostname }}"
