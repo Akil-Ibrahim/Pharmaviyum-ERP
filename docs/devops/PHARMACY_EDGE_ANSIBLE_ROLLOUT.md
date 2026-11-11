@@ -203,7 +203,7 @@ The long-term capacity target is 100 independent Edge sites. The architecture mu
 
 ### Inventory and technical scaling model
 
-- Keep Central and Edge in separate inventory groups. Edge sites belong to explicit canary and rollout-wave child groups; do not infer deployment order from host naming.
+- Keep Central and Edge in separate inventory groups. Edge sites belong to explicit canary and rollout-wave child groups; do not infer deployment order from host naming. See `ansible/inventory/examples/fleet-100.yml` for the future 100-site inventory shape (schema example only, not a runnable inventory).
 - Keep one host record per pharmacy Edge with immutable `pharmacy_id`, `site_code` and `edge_node_id`. Enforce uniqueness across the complete fleet before any write operation.
 - Prefer a CMDB-backed/dynamic inventory for a real 100-site fleet. A static YAML inventory remains acceptable for the 1–10 pilot, with reviewed inventory changes.
 - Keep per-site variables and credentials isolated. Do not share a database password, SSH identity or application secret across all sites.
