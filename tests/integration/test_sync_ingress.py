@@ -239,9 +239,7 @@ async def test_ingress_rejects_patient_data_and_unregistered_event_types(
 
     assert (
         await test_db.scalar(
-            select(CentralInboxEvent).where(
-                CentralInboxEvent.aggregate_id == "PV-TEST-1002"
-            )
+            select(CentralInboxEvent).where(CentralInboxEvent.aggregate_id == "PV-TEST-1002")
         )
         is None
     )
