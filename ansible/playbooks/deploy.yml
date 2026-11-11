@@ -8,10 +8,11 @@
       ansible.builtin.assert:
         that:
           - groups['pharmacy_servers'] | length >= 1
-          - groups['pharmacy_servers'] | length <= 10
+          - groups['pharmacy_servers'] | length <= (active_rollout_limit | int)
         fail_msg: >-
-          The starter Ansible profile supports 1–10 pharmacy Edge sites.
-          Split larger fleets into an explicitly approved rollout profile.
+          The currently enabled Ansible rollout supports up to {{ active_rollout_limit }} pharmacy Edge sites.
+          The long-term architecture target is {{ max_supported_pharmacy_sites }} sites;
+          larger rollouts remain disabled until separately validated.
 
     - name: Require explicit Edge site identity
       ansible.builtin.assert:
