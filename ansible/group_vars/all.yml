@@ -5,6 +5,7 @@ app_environment: production
 
 container_registry: ghcr.io
 backend_image: "ghcr.io/ibrahimengpy/pharmaviyum-crm"
+backend_image_digest: "{{ lookup('env', 'PHARMAVIYUM_BACKEND_IMAGE_DIGEST') }}"
 
 backend_port: 8000
 backend_workers: 2
