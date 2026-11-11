@@ -48,39 +48,161 @@ class SyncEventEnvelope(BaseModel):
         if self.event_type not in allowed_event_types:
             raise ValueError("Unsupported event_type for synchronization contract v1")
 
-        forbidden_keys = {
-            "patient",
-            "patientid",
-            "patientname",
-            "phone",
-            "email",
-            "address",
-            "dob",
-            "dateofbirth",
-            "prescription",
-            "medicalrecordnumber",
-            "nationalid",
-            "diagnosis",
-            "allergy",
-        }
+        def require_shape(
+            value: Any,
+            *,
+            required: set[str],
+            allowed: set[str],
+            label: str,
+        ) -> dict[str, Any]:
+            if not isinstance(value, dict):
+                raise ValueError(f"{label} must be an object")
+            keys = set(value)
+            if not required.issubset(keys) or not keys.issubset(allowed):
+                raise ValueError(f"{label} does not match the approved v1 schema")
+            return value
 
-        def inspect(value: Any) -> None:
-            if isinstance(value, dict):
-                for key, child in value.items():
-                    normalized = "".join(
-                        character for character in str(key).lower()
-                        if character.isalnum()
+        if self.event_type == "pos.sale.created":
+            sale = require_shape(
+                self.payload,
+                required={
+                    "sale_id",
+                    "receipt_number",
+                    "status",
+                    "subtotal",
+                    "discount_total",
+                    "total",
+                    "cashier_user_id",
+                    "inventory_effect",
+                    "items",
+                    "payment",
+                },
+                allowed={
+                    "sale_id",
+                    "receipt_number",
+                    "status",
+                    "subtotal",
+                    "discount_total",
+                    "total",
+                    "cashier_user_id",
+                    "inventory_effect",
+                    "items",
+                    "payment",
+                },
+                label="pos.sale.created payload",
+            )
+            if not isinstance(sale["items"], list):
+                raise ValueError("sale items must be an array")
+            for item in sale["items"]:
+                line = require_shape(
+                    item,
+                    required={
+                        "product_id",
+                        "quantity",
+                        "unit_price",
+                        "line_total",
+                        "allocations",
+                    },
+                    allowed={
+                        "product_id",
+                        "quantity",
+                        "unit_price",
+                        "line_total",
+                        "allocations",
+                    },
+                    label="sale item",
+                )
+                if not isinstance(line["allocations"], list):
+                    raise ValueError("sale item allocations must be an array")
+                for allocation in line["allocations"]:
+                    require_shape(
+                        allocation,
+                        required={
+                            "inventory_id",
+                            "lot_number",
+                            "expires_at",
+                            "quantity",
+                        },
+                        allowed={
+                            "inventory_id",
+                            "lot_number",
+                            "expires_at",
+                            "quantity",
+                        },
+                        label="sale lot allocation",
                     )
-                    if normalized in forbidden_keys:
-                        raise ValueError(
-                            "Patient-identifying or clinical fields are not accepted"
-                        )
-                    inspect(child)
-            elif isinstance(value, list):
-                for child in value:
-                    inspect(child)
+            require_shape(
+                sale["payment"],
+                required={"method", "status", "amount"},
+                allowed={"method", "status", "amount"},
+                label="sale payment",
+            )
+        elif self.event_type in {
+            "pos.payment.succeeded",
+            "pos.payment.failed",
+        }:
+            payment = require_shape(
+                self.payload,
+                required={
+                    "sale_id",
+                    "payment_id",
+                    "sale_status",
+                    "payment_status",
+                    "amount",
+                    "provider_name",
+                    "inventory_effect",
+                    "allocations",
+                },
+                allowed={
+                    "sale_id",
+                    "payment_id",
+                    "sale_status",
+                    "payment_status",
+                    "amount",
+                    "provider_name",
+                    "inventory_effect",
+                    "allocations",
+                },
+                label="payment event payload",
+            )
+            if not isinstance(payment["allocations"], list):
+                raise ValueError("payment allocations must be an array")
+            for allocation in payment["allocations"]:
+                require_shape(
+                    allocation,
+                    required={"inventory_id", "lot_number", "quantity"},
+                    allowed={"inventory_id", "lot_number", "quantity"},
+                    label="payment lot allocation",
+                )
+        else:
+            cancelled = require_shape(
+                self.payload,
+                required={
+                    "sale_id",
+                    "receipt_number",
+                    "sale_status",
+                    "inventory_effect",
+                    "released_allocations",
+                },
+                allowed={
+                    "sale_id",
+                    "receipt_number",
+                    "sale_status",
+                    "inventory_effect",
+                    "released_allocations",
+                },
+                label="sale cancellation payload",
+            )
+            if not isinstance(cancelled["released_allocations"], list):
+                raise ValueError("released allocations must be an array")
+            for allocation in cancelled["released_allocations"]:
+                require_shape(
+                    allocation,
+                    required={"inventory_id", "lot_number", "quantity"},
+                    allowed={"inventory_id", "lot_number", "quantity"},
+                    label="released lot allocation",
+                )
 
-        inspect(self.payload)
         if len(json.dumps(self.payload, separators=(",", ":"))) > 262144:
             raise ValueError("Event payload exceeds the 256 KiB limit")
         return self
