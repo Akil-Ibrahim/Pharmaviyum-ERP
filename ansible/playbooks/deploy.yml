@@ -3,6 +3,8 @@
   hosts: localhost
   connection: local
   gather_facts: false
+  vars_files:
+    - ../group_vars/all.yml
   tasks:
     - name: Require at least one selected pharmacy Edge
       ansible.builtin.assert:
@@ -40,6 +42,8 @@
   hosts: pharmacy_servers
   become: false
   gather_facts: false
+  vars_files:
+    - ../group_vars/all.yml
   tasks:
     - name: Require explicit Edge site and SSH identity
       ansible.builtin.assert:
@@ -69,6 +73,8 @@
   serial: 1
   become: true
   gather_facts: true
+  vars_files:
+    - ../group_vars/all.yml
   roles:
     - role: docker
       tags: [docker, infrastructure]
@@ -81,6 +87,8 @@
   hosts: pharmacy_servers
   become: false
   gather_facts: false
+  vars_files:
+    - ../group_vars/all.yml
   tasks:
     - name: Check backend health
       ansible.builtin.uri:
