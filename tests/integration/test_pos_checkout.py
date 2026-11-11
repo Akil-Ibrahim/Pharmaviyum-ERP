@@ -212,10 +212,7 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
     assert outbox_events[0].payload["event_id"] == outbox_events[0].event_id
     assert outbox_events[0].payload["items"][0]["product_sku"] == product.sku
     assert "product_id" not in outbox_events[0].payload["items"][0]
-    assert (
-        "inventory_id"
-        not in outbox_events[0].payload["items"][0]["allocations"][0]
-    )
+    assert "inventory_id" not in outbox_events[0].payload["items"][0]["allocations"][0]
     assert (
         outbox_events[0].payload["items"][0]["allocations"][0]["lot_number"]
         == "EARLY-LOT"
