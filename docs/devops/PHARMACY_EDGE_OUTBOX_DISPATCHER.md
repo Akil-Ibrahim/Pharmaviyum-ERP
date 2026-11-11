@@ -29,6 +29,7 @@ If any of the three required Edge variables is missing, the task safely performs
 4. Each claim receives a unique lease fencing token and expiry. The attempt counter is incremented before the network call.
 5. The HTTP request runs outside the database transaction and includes the immutable event_id, edge_node_id, pharmacy scope, aggregate identity/version and payload.
    POS product references use the shared product SKU and lot number; local integer product/inventory primary keys are deliberately excluded because they are not portable between independent Edge databases. Central must resolve the SKU in the pharmacy's canonical catalog and quarantine unknown or ambiguous mappings.
+Sale aggregate IDs use the immutable receipt number, not a local auto-increment sale ID. Cashier and payment database row IDs are not transmitted; Central must not infer cross-site identity from local numeric keys.
 6. Only a matching Central accepted acknowledgement allows the dispatcher to set published_at.
 7. A timeout or failure releases the still-owned lease and schedules exponential backoff with jitter. The event remains durable and is never silently discarded.
 
