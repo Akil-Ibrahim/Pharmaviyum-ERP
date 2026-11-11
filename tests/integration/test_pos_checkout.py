@@ -391,6 +391,8 @@ async def test_card_payment_reserves_stock_until_signed_webhook(
     ]
     assert sale_events[0].payload["inventory_effect"] == "reserve"
     assert sale_events[1].payload["inventory_effect"] == "commit_reservation"
+    assert sale_events[1].payload["allocations"][0]["product_sku"] == product.sku
+    assert "inventory_id" not in sale_events[1].payload["allocations"][0]
 
     await test_db.refresh(first)
     await test_db.refresh(second)
@@ -492,6 +494,8 @@ async def test_cancel_pending_sale_releases_reserved_inventory(
     assert cancel_event is not None
     assert cancel_event.aggregate_version == 2
     assert cancel_event.payload["inventory_effect"] == "release_reservation"
+    assert cancel_event.payload["released_allocations"][0]["product_sku"] == product.sku
+    assert "inventory_id" not in cancel_event.payload["released_allocations"][0]
 
     await test_db.refresh(first)
     await test_db.refresh(second)
