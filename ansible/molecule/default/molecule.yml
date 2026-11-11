@@ -29,7 +29,9 @@ provisioner:
         postgres_password: "molecule-test-password"
         ghcr_username: ""
         ghcr_token: ""
-        ansible_remote_tmp: /root/.ansible/tmp
+        ansible_connection: community.docker.docker
+        ansible_user: root
+        ansible_remote_tmp: /tmp/.ansible/tmp
 verifier:
   name: ansible
 scenario:
