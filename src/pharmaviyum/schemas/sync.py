@@ -174,14 +174,12 @@ class SyncEventEnvelope(BaseModel):
             cancelled = require_shape(
                 self.payload,
                 required={
-                    "sale_id",
                     "receipt_number",
                     "sale_status",
                     "inventory_effect",
                     "released_allocations",
                 },
                 allowed={
-                    "sale_id",
                     "receipt_number",
                     "sale_status",
                     "inventory_effect",
