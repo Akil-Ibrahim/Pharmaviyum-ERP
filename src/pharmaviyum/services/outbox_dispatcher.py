@@ -123,7 +123,9 @@ def _event_envelope(
         "pharmacy_id",
         "occurred_at",
     }
-    payload = {key: value for key, value in event.payload.items() if key not in reserved}
+    payload = {
+        key: value for key, value in event.payload.items() if key not in reserved
+    }
     return {
         "event_id": event.event_id,
         "edge_node_id": edge_node_id,
@@ -243,7 +245,9 @@ async def dispatch_pending_outbox(
                     acknowledgement.get("status") != "accepted"
                     or acknowledgement.get("event_id") != event.event_id
                 ):
-                    raise ValueError("Central returned an invalid event acknowledgement")
+                    raise ValueError(
+                        "Central returned an invalid event acknowledgement"
+                    )
             except (httpx.HTTPError, ValueError, KeyError, AttributeError) as exc:
                 await _release_for_retry(
                     session_factory,
