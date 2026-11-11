@@ -97,12 +97,12 @@ def _build_llm(model: str) -> BaseChatModel:
             )
         return ChatOpenAI(
             model=model,
-            api_key=api_key.get_secret_value(),
+            api_key=api_key,
             base_url=settings.qwen.base_url,
             temperature=settings.qwen.temperature,
             timeout=settings.qwen.timeout_seconds,
             max_retries=0,
-            max_tokens=settings.qwen.max_output_tokens,
+            model_kwargs={"max_tokens": settings.qwen.max_output_tokens},
             stream_usage=True,
             callbacks=[
                 PharmaviyumCallbackHandler(
