@@ -54,15 +54,6 @@
       - redis
     state: present
 
-- name: Run database migrations
-  community.docker.docker_compose_v2_run:
-    project_src: "{{ app_directory }}"
-    service: backend
-    command: alembic upgrade head
-    remove_orphans: true
-    cleanup: true
-  register: migration_result
-
 - name: Start backend
   community.docker.docker_compose_v2:
     project_src: "{{ app_directory }}"
