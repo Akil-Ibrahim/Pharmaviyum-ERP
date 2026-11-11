@@ -22,9 +22,7 @@ def test_qwencloud_builds_openai_compatible_chat_model(monkeypatch) -> None:
     monkeypatch.setattr(dependencies, "ChatOpenAI", fake_chat_openai)
     monkeypatch.setattr(dependencies.settings, "use_cloud_llm", True)
     monkeypatch.setattr(dependencies.settings, "cloud_llm_provider", "qwencloud")
-    monkeypatch.setattr(
-        dependencies.settings.qwen, "api_key", SecretStr("test-secret")
-    )
+    monkeypatch.setattr(dependencies.settings.qwen, "api_key", SecretStr("test-secret"))
     monkeypatch.setattr(dependencies.settings.qwen, "free_quota_only", True)
 
     result = dependencies._build_llm("qwen3.8-flash")
