@@ -89,10 +89,7 @@ async def receive_sync_event(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or revoked Edge credential",
         )
-    if (
-        event.edge_node_id != UUID(node.node_id)
-        or event.pharmacy_id != node.pharmacy_id
-    ):
+    if event.edge_node_id != UUID(node.node_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Event scope does not match the authenticated Edge identity",
