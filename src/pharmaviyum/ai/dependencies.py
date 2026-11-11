@@ -18,6 +18,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from redis.asyncio import Redis
 
 from src.pharmaviyum.ai.agents.checkpointer import AgentCheckpointer
@@ -83,6 +84,27 @@ def _build_llm(model: str) -> BaseChatModel:
             num_predict=settings.token_budget.max_output_tokens,
         )
 
+    if settings.cloud_llm_provider == "qwencloud":
+        api_key = settings.qwen.api_key
+        if api_key is None:
+            raise RuntimeError(
+                "USE_CLOUD_LLM=true with QWEN provider requires QWEN_API_KEY"
+            )
+        if not settings.qwen.free_quota_only:
+            raise RuntimeError(
+                "QwenCloud paid usage is disabled; set QWEN_FREE_QUOTA_ONLY=true"
+            )
+        return ChatOpenAI(
+            model=model,
+            api_key=api_key.get_secret_value(),
+            base_url=settings.qwen.base_url,
+            temperature=settings.qwen.temperature,
+            timeout=settings.qwen.timeout_seconds,
+            max_retries=0,
+            max_tokens=settings.qwen.max_output_tokens,
+            stream_usage=True,
+        )
+
     if settings.cloud_llm_provider == "gemini":
         api_key = settings.gemini.api_key
         if api_key is None:
@@ -120,43 +142,40 @@ def _build_embeddings_provider() -> str:
 
 @lru_cache(maxsize=1)
 def get_llm_fast() -> BaseChatModel:
-    model = (
-        (
-            settings.gemini.fast_model
-            if settings.cloud_llm_provider == "gemini"
-            else settings.groq.fast_model
-        )
-        if settings.use_cloud_llm
-        else settings.ollama.fast_model
-    )
+    if not settings.use_cloud_llm:
+        model = settings.ollama.fast_model
+    elif settings.cloud_llm_provider == "gemini":
+        model = settings.gemini.fast_model
+    elif settings.cloud_llm_provider == "qwencloud":
+        model = settings.qwen.fast_model
+    else:
+        model = settings.groq.fast_model
     return _build_llm(model)
 
 
 @lru_cache(maxsize=1)
 def get_llm_main() -> BaseChatModel:
-    model = (
-        (
-            settings.gemini.model
-            if settings.cloud_llm_provider == "gemini"
-            else settings.groq.model
-        )
-        if settings.use_cloud_llm
-        else settings.ollama.main_model
-    )
+    if not settings.use_cloud_llm:
+        model = settings.ollama.main_model
+    elif settings.cloud_llm_provider == "gemini":
+        model = settings.gemini.model
+    elif settings.cloud_llm_provider == "qwencloud":
+        model = settings.qwen.model
+    else:
+        model = settings.groq.model
     return _build_llm(model)
 
 
 @lru_cache(maxsize=1)
 def get_llm_complex() -> BaseChatModel:
-    model = (
-        (
-            settings.gemini.complex_model
-            if settings.cloud_llm_provider == "gemini"
-            else settings.groq.model
-        )
-        if settings.use_cloud_llm
-        else settings.ollama.complex_model
-    )
+    if not settings.use_cloud_llm:
+        model = settings.ollama.complex_model
+    elif settings.cloud_llm_provider == "gemini":
+        model = settings.gemini.complex_model
+    elif settings.cloud_llm_provider == "qwencloud":
+        model = settings.qwen.complex_model
+    else:
+        model = settings.groq.model
     return _build_llm(model)
 
 
@@ -302,7 +321,11 @@ class AIComponents:
                     (
                         settings.gemini.complex_model
                         if settings.cloud_llm_provider == "gemini"
-                        else settings.groq.model
+                        else (
+                            settings.qwen.complex_model
+                            if settings.cloud_llm_provider == "qwencloud"
+                            else settings.groq.model
+                        )
                     )
                     if settings.use_cloud_llm
                     else settings.ollama.complex_model
