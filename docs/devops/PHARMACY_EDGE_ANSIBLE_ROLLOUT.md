@@ -1,8 +1,45 @@
 # Pharmacy Edge Fleet — Ansible Deployment and Operations Plan
 
 **Status:** Target operating model; not yet deployed.  
-**Scope:** Central infrastructure and 100 pharmacy Edge sites.  
+**Scope:** Starter production profile for 1–10 pharmacy Edge sites; designed to scale later without changing site identity or sync contracts.  
 **Principle:** Ansible configures infrastructure and releases. Pharmaviyum application services own business transactions and synchronization.
+
+## 0. Starter production profile: 1–10 pharmacies
+
+This is the first supported rollout envelope. The 100-site fleet plan is a later scale-out target, not the initial deployment scope.
+
+### Operating topology
+
+| Pharmacy count | Initial topology | Required behavior |
+|---|---|---|
+| 1 | One independent Edge node at the pharmacy; Central services may remain on the existing managed platform | Local POS and local database are the site's operational boundary; WAN loss must not block permitted local transactions |
+| 2–3 | One Edge node per pharmacy plus one Central control/sync endpoint | Each site has its own identity, credentials, database and backup lifecycle |
+| 4–10 | Same Central + per-site Edge topology, deployed in controlled batches | One failed or offline site must not block healthy sites; deploy and verify one site at a time |
+
+Do not place all pharmacies on one shared local database. Each pharmacy Edge owns its local transactional data and durable event journal. Central receives authorized events through the application Sync Engine; Ansible provisions and updates infrastructure but does not implement business synchronization.
+
+### Initial deployment rules
+
+- Maximum inventory size for this starter profile: 10 pharmacy Edge sites. The deploy preflight rejects an empty fleet or more than 10 sites.
+- Deploy one Edge host at a time (`serial: 1`) and stop on failure. Do not use unattended fleet-wide parallel rollout at this stage.
+- Use a separate immutable `pharmacy_id` / `site_code` per pharmacy and separate credentials per Edge node.
+- A single-pharmacy installation may operate as an isolated Edge deployment. Central sync is enabled only when the Central endpoint and sync contract are configured and verified.
+- For 2–10 pharmacies, Central is the control and synchronization plane; it is not a synchronous dependency for POS checkout, payment, dispensing or local stock commits.
+- Every Edge needs durable local PostgreSQL storage, tested local backups, UPS-backed graceful shutdown, time synchronization and monitored disk capacity.
+- Edge-to-Central connectivity should be outbound authenticated TLS/VPN. Do not expose PostgreSQL, Valkey or the backend directly to the public internet.
+- Mortarium AI remains optional and isolated. Its unavailability or resource saturation must not stop pharmacy workflows.
+
+### Starter rollout gates
+
+1. Lab: one non-production Edge node, synthetic data only.
+2. Pilot: one real pharmacy after local backup/restore and offline-mode tests pass.
+3. Small network: expand to 2–3 sites, then 4–10, with explicit operator approval between batches.
+4. At each site, verify database readiness, application readiness, local POS synthetic transaction, backup freshness, disk/UPS status and sync backlog/last-sync state.
+5. Stop the rollout on any failed readiness check. Report unreachable sites as not updated; never silently skip them.
+
+### Scope boundary
+
+The repository currently has a single Compose backend/database/cache deployment shape. The documented offline-first Central/Edge behavior is a target architecture, not proof that the transactional outbox/inbox, conflict resolution, durable sync engine, site failover or offline POS behavior are already implemented. The 1–10 profile must not be advertised as production-ready until those application-level acceptance tests pass.
 
 ## 1. Verified repository baseline
 
