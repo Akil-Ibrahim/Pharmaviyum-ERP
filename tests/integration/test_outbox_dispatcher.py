@@ -115,6 +115,7 @@ async def test_dispatcher_sends_envelope_and_marks_event_published(
     assert str(request.url) == "https://central.example.test/api/v1/sync/events"
     assert request.headers["X-Edge-Token"] == "test-edge-token-value-1234567890"
     assert envelope["edge_node_id"] == node_id
+    assert "pharmacy_id" not in envelope
     assert envelope["pharmacy_id"] == pharmacy.id
     assert envelope["aggregate_id"] == "PV-501"
     assert envelope["aggregate_version"] == 1
