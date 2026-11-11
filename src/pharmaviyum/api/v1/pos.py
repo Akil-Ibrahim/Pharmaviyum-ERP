@@ -472,16 +472,14 @@ async def checkout(
         pharmacy_id=payload.pharmacy_id,
         event_type="pos.sale.created",
         aggregate_type="sale",
-        aggregate_id=sale.id,
+        aggregate_id=sale.receipt_number,
         aggregate_version=1,
         payload={
-            "sale_id": sale.id,
             "receipt_number": sale.receipt_number,
             "status": sale.status,
             "subtotal": str(subtotal),
             "discount_total": str(discount),
             "total": str(total),
-            "cashier_user_id": cashier.id,
             "inventory_effect": (
                 "decrement" if payload.payment_method == "cash" else "reserve"
             ),
@@ -659,11 +657,9 @@ async def payment_webhook(
         pharmacy_id=sale.pharmacy_id,
         event_type=f"pos.payment.{event_status}",
         aggregate_type="sale",
-        aggregate_id=sale.id,
+        aggregate_id=sale.receipt_number,
         aggregate_version=2,
         payload={
-            "sale_id": sale.id,
-            "payment_id": payment.id,
             "sale_status": sale.status,
             "payment_status": payment.status,
             "amount": str(payment.amount),
@@ -741,10 +737,9 @@ async def cancel_pending_sale(
         pharmacy_id=sale.pharmacy_id,
         event_type="pos.sale.cancelled",
         aggregate_type="sale",
-        aggregate_id=sale.id,
+        aggregate_id=sale.receipt_number,
         aggregate_version=2,
         payload={
-            "sale_id": sale.id,
             "receipt_number": sale.receipt_number,
             "sale_status": sale.status,
             "inventory_effect": "release_reservation",
