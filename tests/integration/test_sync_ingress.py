@@ -181,7 +181,6 @@ async def test_revoked_edge_credential_is_rejected(authenticated_client, test_db
     event = {
         "event_id": str(uuid4()),
         "edge_node_id": node["node_id"],
-        "pharmacy_id": pharmacy.id,
         "event_type": "pos.sale.created",
         "schema_version": 1,
         "aggregate_type": "sale",
@@ -215,7 +214,6 @@ async def test_ingress_rejects_patient_data_and_unregistered_event_types(
     base_event = {
         "event_id": str(uuid4()),
         "edge_node_id": node["node_id"],
-        "pharmacy_id": pharmacy.id,
         "event_type": "pos.sale.created",
         "schema_version": 1,
         "aggregate_type": "sale",
