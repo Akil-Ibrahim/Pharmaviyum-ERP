@@ -37,6 +37,26 @@
         fail_msg: "Every Edge must define a real SSH endpoint, SSH user, pharmacy_id and site_code."
       loop: "{{ groups['pharmacy_servers'] }}"
 
+    - name: Require unique pharmacy IDs across the selected fleet
+      ansible.builtin.assert:
+        that:
+          - >-
+            (groups['pharmacy_servers']
+            | map('extract', hostvars, 'pharmacy_id')
+            | list | unique | list | length)
+            == (groups['pharmacy_servers'] | length)
+        fail_msg: "Every pharmacy Edge must have a unique pharmacy_id."
+
+    - name: Require unique site codes across the selected fleet
+      ansible.builtin.assert:
+        that:
+          - >-
+            (groups['pharmacy_servers']
+            | map('extract', hostvars, 'site_code')
+            | list | unique | list | length)
+            == (groups['pharmacy_servers'] | length)
+        fail_msg: "Every pharmacy Edge must have a unique site_code."
+
     - name: Require Edge sync configuration to be all enabled or all disabled
       ansible.builtin.assert:
         that:
