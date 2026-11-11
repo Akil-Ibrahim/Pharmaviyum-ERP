@@ -54,7 +54,6 @@ async def _add_outbox_event(
         }
     else:
         payload = {
-            "sale_id": sale_id,
             "receipt_number": f"PV-{aggregate_id}",
             "sale_status": "cancelled",
             "inventory_effect": "release_reservation",
