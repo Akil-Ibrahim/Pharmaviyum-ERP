@@ -126,10 +126,16 @@ async def test_edge_identity_cannot_submit_for_another_pharmacy(
     )
     assert enrollment.status_code == 201, enrollment.text
     node = enrollment.json()
+    enrollment_b = await authenticated_client.post(
+        "/api/v1/sync/edge-nodes",
+        json={"pharmacy_id": pharmacy_b.id, "display_name": "Edge B"},
+    )
+    assert enrollment_b.status_code == 201, enrollment_b.text
+    node_b = enrollment_b.json()
 
     event = {
         "event_id": str(uuid4()),
-        "edge_node_id": node["node_id"],
+        "edge_node_id": node_b["node_id"],
         "event_type": "pos.sale.created",
         "schema_version": 1,
         "aggregate_type": "sale",
