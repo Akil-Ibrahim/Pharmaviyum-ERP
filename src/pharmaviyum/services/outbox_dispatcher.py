@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
@@ -20,13 +21,21 @@ from src.pharmaviyum.models.outbox import OutboxEvent
 
 logger = logging.getLogger(__name__)
 
-_EVENT_METADATA_KEYS = {
-    "event_id",
-    "event_type",
-    "schema_version",
-    "pharmacy_id",
-    "occurred_at",
-}
+
+@dataclass(frozen=True)
+class ClaimedOutboxEvent:
+    row_id: int
+    event_id: str
+    lease_token: str
+    pharmacy_id: int
+    event_type: str
+    schema_version: int
+    aggregate_type: str
+    aggregate_id: str
+    aggregate_version: int
+    occurred_at: datetime
+    payload: dict[str, Any]
+    attempts: int
 
 
 def _dispatcher_configuration() -> tuple[str, str, str] | None:
@@ -44,7 +53,7 @@ async def _claim_batch(
     *,
     batch_size: int,
     lease_seconds: int,
-) -> list[tuple[int, str, str, int, str, int, str, int, datetime, dict[str, Any]]]:
+) -> list[ClaimedOutboxEvent]:
     """Atomically lease the oldest eligible event per aggregate.
 
     SKIP LOCKED allows multiple dispatchers to claim disjoint work. The fencing
@@ -85,54 +94,46 @@ async def _claim_batch(
                 event.locked_until = now + timedelta(seconds=lease_seconds)
                 event.attempts += 1
                 claimed.append(
-                    (
-                        event.id,
-                        event.event_id,
-                        lease_token,
-                        event.pharmacy_id,
-                        event.event_type,
-                        event.schema_version,
-                        event.aggregate_type,
-                        event.aggregate_version,
-                        event.occurred_at,
-                        dict(event.payload),
+                    ClaimedOutboxEvent(
+                        row_id=event.id,
+                        event_id=event.event_id,
+                        lease_token=lease_token,
+                        pharmacy_id=event.pharmacy_id,
+                        event_type=event.event_type,
+                        schema_version=event.schema_version,
+                        aggregate_type=event.aggregate_type,
+                        aggregate_id=event.aggregate_id,
+                        aggregate_version=event.aggregate_version,
+                        occurred_at=event.occurred_at,
+                        payload=dict(event.payload),
+                        attempts=event.attempts,
                     )
                 )
         return claimed
 
 
 def _event_envelope(
-    event: tuple[int, str, str, int, str, int, str, int, datetime, dict[str, Any]],
-    *,
-    edge_node_id: str,
+    event: ClaimedOutboxEvent, *, edge_node_id: str
 ) -> dict[str, Any]:
-    (
-        _row_id,
-        event_id,
-        _lease_token,
-        pharmacy_id,
-        event_type,
-        schema_version,
-        aggregate_type,
-        aggregate_version,
-        occurred_at,
-        stored_payload,
-    ) = event
-    payload = {
-        key: value
-        for key, value in stored_payload.items()
-        if key not in _EVENT_METADATA_KEYS
+    """Convert the persisted outbox record into the public sync contract."""
+    reserved = {
+        "event_id",
+        "event_type",
+        "schema_version",
+        "pharmacy_id",
+        "occurred_at",
     }
+    payload = {key: value for key, value in event.payload.items() if key not in reserved}
     return {
-        "event_id": event_id,
+        "event_id": event.event_id,
         "edge_node_id": edge_node_id,
-        "pharmacy_id": pharmacy_id,
-        "event_type": event_type,
-        "schema_version": schema_version,
-        "aggregate_type": aggregate_type,
-        "aggregate_id": str(stored_payload.get("sale_id", "")),
-        "aggregate_version": aggregate_version,
-        "occurred_at": occurred_at.isoformat(),
+        "pharmacy_id": event.pharmacy_id,
+        "event_type": event.event_type,
+        "schema_version": event.schema_version,
+        "aggregate_type": event.aggregate_type,
+        "aggregate_id": event.aggregate_id,
+        "aggregate_version": event.aggregate_version,
+        "occurred_at": event.occurred_at.isoformat(),
         "payload": payload,
     }
 
@@ -230,18 +231,6 @@ async def dispatch_pending_outbox(
     published = 0
     try:
         for event in claimed:
-            (
-                row_id,
-                event_id,
-                lease_token,
-                _pharmacy_id,
-                _event_type,
-                _schema_version,
-                _aggregate_type,
-                aggregate_version,
-                _occurred_at,
-                _payload,
-            ) = event
             try:
                 response = await client.post(
                     f"{central_url}/api/v1/sync/events",
@@ -252,27 +241,30 @@ async def dispatch_pending_outbox(
                 acknowledgement = response.json()
                 if (
                     acknowledgement.get("status") != "accepted"
-                    or acknowledgement.get("event_id") != event_id
+                    or acknowledgement.get("event_id") != event.event_id
                 ):
                     raise ValueError("Central returned an invalid event acknowledgement")
-            except (httpx.HTTPError, ValueError, KeyError) as exc:
+            except (httpx.HTTPError, ValueError, KeyError, AttributeError) as exc:
                 await _release_for_retry(
                     session_factory,
-                    row_id=row_id,
-                    lease_token=lease_token,
-                    attempts=aggregate_version,
+                    row_id=event.row_id,
+                    lease_token=event.lease_token,
+                    attempts=event.attempts,
                     error=f"Central delivery failed: {type(exc).__name__}",
                 )
                 logger.warning(
                     "sync_event_delivery_failed",
-                    extra={"event_id": event_id, "error_type": type(exc).__name__},
+                    extra={
+                        "event_id": event.event_id,
+                        "error_type": type(exc).__name__,
+                    },
                 )
                 continue
 
             if await _acknowledge_published(
                 session_factory,
-                row_id=row_id,
-                lease_token=lease_token,
+                row_id=event.row_id,
+                lease_token=event.lease_token,
             ):
                 published += 1
     finally:
