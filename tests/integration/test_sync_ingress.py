@@ -13,13 +13,11 @@ from src.pharmaviyum.models.sync import CentralInboxEvent, PharmacyEdgeNode
 def _sale_created_payload(sale_id: int) -> dict:
     """Return the allowlisted POS sale event payload shape."""
     return {
-        "sale_id": sale_id,
         "receipt_number": f"PV-TEST-{sale_id}",
         "status": "completed",
         "subtotal": "10.00",
         "discount_total": "0.00",
         "total": "10.00",
-        "cashier_user_id": 1,
         "inventory_effect": "decrement",
         "items": [
             {
@@ -66,7 +64,7 @@ async def test_edge_enrollment_and_event_ingress_are_durable_and_idempotent(
         "event_type": "pos.sale.created",
         "schema_version": 1,
         "aggregate_type": "sale",
-        "aggregate_id": "1001",
+        "aggregate_id": "PV-TEST-1001",
         "aggregate_version": 1,
         "occurred_at": datetime.now(timezone.utc).isoformat(),
         "payload": _sale_created_payload(1001),
@@ -137,7 +135,7 @@ async def test_edge_identity_cannot_submit_for_another_pharmacy(
         "event_type": "pos.sale.created",
         "schema_version": 1,
         "aggregate_type": "sale",
-        "aggregate_id": "7",
+        "aggregate_id": "PV-TEST-7",
         "aggregate_version": 1,
         "occurred_at": datetime.now(timezone.utc).isoformat(),
         "payload": _sale_created_payload(7),
@@ -183,7 +181,7 @@ async def test_revoked_edge_credential_is_rejected(authenticated_client, test_db
         "event_type": "pos.sale.created",
         "schema_version": 1,
         "aggregate_type": "sale",
-        "aggregate_id": "8",
+        "aggregate_id": "PV-TEST-8",
         "aggregate_version": 1,
         "occurred_at": datetime.now(timezone.utc).isoformat(),
         "payload": _sale_created_payload(8),
@@ -217,7 +215,7 @@ async def test_ingress_rejects_patient_data_and_unregistered_event_types(
         "event_type": "pos.sale.created",
         "schema_version": 1,
         "aggregate_type": "sale",
-        "aggregate_id": "1002",
+        "aggregate_id": "PV-TEST-1002",
         "aggregate_version": 1,
         "occurred_at": datetime.now(timezone.utc).isoformat(),
         "payload": _sale_created_payload(1002),
@@ -242,7 +240,7 @@ async def test_ingress_rejects_patient_data_and_unregistered_event_types(
     assert (
         await test_db.scalar(
             select(CentralInboxEvent).where(
-                CentralInboxEvent.aggregate_id == "1002"
+                CentralInboxEvent.aggregate_id == "PV-TEST-1002"
             )
         )
         is None
