@@ -52,9 +52,7 @@ async def test_edge_enrollment_and_event_ingress_are_durable_and_idempotent(
     assert len(credential) >= 32
 
     node = await test_db.scalar(
-        select(PharmacyEdgeNode).where(
-            PharmacyEdgeNode.node_id == enrolled["node_id"]
-        )
+        select(PharmacyEdgeNode).where(PharmacyEdgeNode.node_id == enrolled["node_id"])
     )
     assert node is not None
     assert node.credential_hash != credential
@@ -84,9 +82,7 @@ async def test_edge_enrollment_and_event_ingress_are_durable_and_idempotent(
     }
 
     stored = await test_db.scalar(
-        select(CentralInboxEvent).where(
-            CentralInboxEvent.event_id == event["event_id"]
-        )
+        select(CentralInboxEvent).where(CentralInboxEvent.event_id == event["event_id"])
     )
     assert stored is not None
     assert stored.pharmacy_id == pharmacy.id
@@ -162,9 +158,7 @@ async def test_edge_identity_cannot_submit_for_another_pharmacy(
 
 
 @pytest.mark.integration
-async def test_revoked_edge_credential_is_rejected(
-    authenticated_client, test_db
-):
+async def test_revoked_edge_credential_is_rejected(authenticated_client, test_db):
     pharmacy = Pharmacy(name="Revocation Test Pharmacy", code="SYNC-REVOKE")
     test_db.add(pharmacy)
     await test_db.flush()
