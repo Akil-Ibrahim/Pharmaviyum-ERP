@@ -112,9 +112,7 @@ async def _claim_batch(
         return claimed
 
 
-def _event_envelope(
-    event: ClaimedOutboxEvent, *, edge_node_id: str
-) -> dict[str, Any]:
+def _event_envelope(event: ClaimedOutboxEvent, *, edge_node_id: str) -> dict[str, Any]:
     """Convert the persisted outbox record into the public sync contract."""
     reserved = {
         "event_id",
