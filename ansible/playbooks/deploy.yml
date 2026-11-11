@@ -4,6 +4,28 @@
   become: false
   gather_facts: true
   tasks:
+    - name: Require a starter fleet of one to ten pharmacy Edge sites
+      ansible.builtin.assert:
+        that:
+          - groups['pharmacy_servers'] | length >= 1
+          - groups['pharmacy_servers'] | length <= 10
+        fail_msg: >-
+          The starter Ansible profile supports 1–10 pharmacy Edge sites.
+          Split larger fleets into an explicitly approved rollout profile.
+
+    - name: Require explicit Edge site identity
+      ansible.builtin.assert:
+        that:
+          - pharmacy_id is defined
+          - pharmacy_id | string | length > 0
+          - site_code is defined
+          - site_code | string | length > 0
+          - ansible_host is defined
+          - ansible_host | string | length > 0
+        fail_msg: >-
+          Every production Edge must define a real host address, pharmacy_id
+          and site_code. Localhost/default identity fallbacks are forbidden.
+
     - name: Require immutable application version
       ansible.builtin.assert:
         that:
@@ -27,8 +49,9 @@
       ansible.builtin.command: docker compose version
       changed_when: false
 
-- name: Deploy Pharmaviyum
+- name: Deploy Pharmaviyum one pharmacy at a time
   hosts: pharmacy_servers
+  serial: 1
   become: true
   gather_facts: true
   roles:
