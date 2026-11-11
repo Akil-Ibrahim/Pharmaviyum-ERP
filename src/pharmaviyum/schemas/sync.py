@@ -27,7 +27,6 @@ class SyncEventEnvelope(BaseModel):
 
     event_id: UUID
     edge_node_id: UUID
-    pharmacy_id: int = Field(gt=0)
     event_type: str = Field(min_length=3, max_length=120)
     schema_version: int = Field(ge=1)
     aggregate_type: str = Field(min_length=1, max_length=80)
