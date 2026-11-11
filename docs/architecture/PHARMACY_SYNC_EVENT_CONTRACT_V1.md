@@ -25,7 +25,7 @@ Every event must have the following immutable envelope fields:
 | `event_id` | UUID | Globally unique and stable across every retry. |
 | `event_type` | string | Namespaced domain event, e.g. `pos.sale.created`. |
 | `schema_version` | positive integer | Version of this event payload contract. |
-| `pharmacy_id` | stable ID | Pharmacy/site scope assigned by Central; never trusted from an unverified client claim. |
+| `pharmacy_id` | Central-derived field | Not sent by Edge; Central derives the pharmacy scope from the authenticated `edge_node_id` registration. |
 | `edge_node_id` | stable ID | Registered Edge installation identity; not a hostname or mutable IP address. |
 | `aggregate_type` | string | Domain stream type, e.g. `sale`, `inventory_item`. |
 | `aggregate_id` | string | Stable identifier within the pharmacy scope. |
