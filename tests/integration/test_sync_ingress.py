@@ -66,7 +66,7 @@ async def test_edge_enrollment_and_event_ingress_are_durable_and_idempotent(
         "event_type": "pos.sale.created",
         "schema_version": 1,
         "aggregate_type": "sale",
-        "aggregate_id": "sale-1001",
+        "aggregate_id": "1001",
         "aggregate_version": 1,
         "occurred_at": datetime.now(timezone.utc).isoformat(),
         "payload": _sale_created_payload(1001),
@@ -137,7 +137,7 @@ async def test_edge_identity_cannot_submit_for_another_pharmacy(
         "event_type": "pos.sale.created",
         "schema_version": 1,
         "aggregate_type": "sale",
-        "aggregate_id": "sale-forged",
+        "aggregate_id": "7",
         "aggregate_version": 1,
         "occurred_at": datetime.now(timezone.utc).isoformat(),
         "payload": _sale_created_payload(7),
@@ -183,7 +183,7 @@ async def test_revoked_edge_credential_is_rejected(authenticated_client, test_db
         "event_type": "pos.sale.created",
         "schema_version": 1,
         "aggregate_type": "sale",
-        "aggregate_id": "sale-after-revoke",
+        "aggregate_id": "8",
         "aggregate_version": 1,
         "occurred_at": datetime.now(timezone.utc).isoformat(),
         "payload": _sale_created_payload(8),
@@ -217,7 +217,7 @@ async def test_ingress_rejects_patient_data_and_unregistered_event_types(
         "event_type": "pos.sale.created",
         "schema_version": 1,
         "aggregate_type": "sale",
-        "aggregate_id": "sale-sensitive",
+        "aggregate_id": "1002",
         "aggregate_version": 1,
         "occurred_at": datetime.now(timezone.utc).isoformat(),
         "payload": _sale_created_payload(1002),
@@ -242,7 +242,7 @@ async def test_ingress_rejects_patient_data_and_unregistered_event_types(
     assert (
         await test_db.scalar(
             select(CentralInboxEvent).where(
-                CentralInboxEvent.aggregate_id == "sale-sensitive"
+                CentralInboxEvent.aggregate_id == "1002"
             )
         )
         is None
