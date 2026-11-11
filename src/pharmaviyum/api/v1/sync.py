@@ -163,9 +163,25 @@ async def receive_sync_event(
             )
         )
         if duplicate is not None:
-            return SyncEventAcknowledgement(
-                event_id=event.event_id, status="accepted", duplicate=True
+            same_event = (
+                duplicate.pharmacy_id == node.pharmacy_id
+                and duplicate.edge_node_id == node.id
+                and duplicate.event_type == event.event_type
+                and duplicate.schema_version == event.schema_version
+                and duplicate.aggregate_type == event.aggregate_type
+                and duplicate.aggregate_id == event.aggregate_id
+                and duplicate.aggregate_version == event.aggregate_version
+                and duplicate.occurred_at == event.occurred_at
+                and duplicate.payload == event.payload
             )
+            if same_event:
+                return SyncEventAcknowledgement(
+                    event_id=event.event_id, status="accepted", duplicate=True
+                )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="event_id was concurrently used with different event content",
+            ) from exc
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Event conflicts with an existing aggregate version",
