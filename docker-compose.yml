@@ -154,6 +154,9 @@ services:
       REDIS_URL: redis://redis:6379/0
       PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
       OLLAMA_BASE_URL: http://ollama:11434
+      PHARMAVIYUM_EDGE_NODE_ID: ${PHARMAVIYUM_EDGE_NODE_ID:-}
+      PHARMAVIYUM_EDGE_TOKEN: ${PHARMAVIYUM_EDGE_TOKEN:-}
+      PHARMAVIYUM_CENTRAL_SYNC_URL: ${PHARMAVIYUM_CENTRAL_SYNC_URL:-}
     depends_on:
       - postgres
       - redis
