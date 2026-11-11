@@ -10,6 +10,6 @@
     - name: Gather system facts after remote temp bootstrap
       ansible.builtin.setup:
   tasks:
-    - name: Include Docker role
+    - name: Include Docker role from the repository role directory
       ansible.builtin.include_role:
-        name: docker
+        name: "{{ playbook_dir }}/../../roles/docker"
