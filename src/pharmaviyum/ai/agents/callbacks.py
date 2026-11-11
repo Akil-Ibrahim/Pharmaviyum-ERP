@@ -50,9 +50,15 @@ class PharmaviyumCallbackHandler(AsyncCallbackHandler):
         from src.pharmaviyum.ai.observability.metrics import record_llm_usage
 
         llm_output = getattr(response, "llm_output", None) or {}
+        generations = getattr(response, "generations", None) or []
+        message_usage = {}
+        if generations and generations[0]:
+            message = getattr(generations[0][0], "message", None)
+            message_usage = getattr(message, "usage_metadata", None) or {}
         usage = (
             llm_output.get("token_usage")
             or llm_output.get("usage")
+            or message_usage
             or getattr(response, "usage_metadata", None)
             or {}
         )
