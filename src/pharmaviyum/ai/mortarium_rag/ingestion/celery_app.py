@@ -31,6 +31,7 @@ _ALLOWED_TASKS = {
     "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.ingest_document",
     "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.ingest_batch",
     "src.pharmaviyum.ai.mortarium_rag.ingestion.tasks.cleanup_old_jobs",
+    "src.pharmaviyum.sync.worker.dispatch_outbox_batch",
     "other",
 }
 
