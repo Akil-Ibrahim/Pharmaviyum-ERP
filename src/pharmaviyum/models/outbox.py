@@ -71,5 +71,6 @@ class OutboxEvent(Base):
     locked_until: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    lease_token: Mapped[str | None] = mapped_column(String(36), nullable=True)
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_error: Mapped[str | None] = mapped_column(String(1000), nullable=True)
