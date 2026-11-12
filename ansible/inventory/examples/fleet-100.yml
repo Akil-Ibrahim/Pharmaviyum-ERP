@@ -5,7 +5,7 @@ all:
   children:
     central:
       hosts: {}
-    pharmacy_edges:
+    pharmacy_servers:
       children:
         pharmacy_edges_canary:
           hosts: {}
