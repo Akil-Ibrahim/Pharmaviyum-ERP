@@ -42,7 +42,6 @@
           - restic_rest_password | default('') | string | length > 0
           - offsite_backup_file is match('^' ~ (app_directory | regex_escape) ~ '/backups/pharmaviyum_[0-9]+[.]sql[.]gz$')
         fail_msg: "Off-site transfer requires approval, a site-scoped HTTPS repository, protected credentials and a valid local backup path."
-      no_log: true
       tags: [preflight]
 
 - name: Encrypt and upload verified local backup artifacts to Restic
