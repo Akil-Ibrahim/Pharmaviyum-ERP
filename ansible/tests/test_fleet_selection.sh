@@ -107,6 +107,22 @@ echo "Checking that the migration preflight also accepts a 10-site wave from a 1
 ansible-playbook -i "$inventory_100" playbooks/migrate.yml \
   --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS"
 
+echo "Checking that an 11-site migration wave is rejected."
+if output="$(ansible-playbook -i "$inventory_100" playbooks/migrate.yml \
+  --limit "$(make_limit 11)" --tags preflight -e "$EXTRA_VARS" 2>&1)"; then
+  echo "ERROR: an 11-site migration wave unexpectedly passed the active rollout guardrail."
+  exit 1
+fi
+grep -q "active rollout limit is 10" <<<"$output"
+
+echo "Checking that a 101-site migration inventory is rejected."
+if output="$(ansible-playbook -i "$inventory_101" playbooks/migrate.yml \
+  --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS" 2>&1)"; then
+  echo "ERROR: a 101-site migration inventory unexpectedly passed the architecture ceiling."
+  exit 1
+fi
+grep -q "architecture inventory ceiling" <<<"$output"
+
 echo "Checking that an 11-site wave is rejected."
 if output="$(ansible-playbook -i "$inventory_100" playbooks/deploy.yml \
   --limit "$(make_limit 11)" --tags preflight -e "$EXTRA_VARS" 2>&1)"; then
