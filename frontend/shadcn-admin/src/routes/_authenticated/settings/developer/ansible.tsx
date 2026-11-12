@@ -1,10 +1,5 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
-import {
-  ArrowLeft,
-  BookOpen,
-  Network,
-  ShieldCheck,
-} from 'lucide-react'
+import { ArrowLeft, BookOpen, Network, ShieldCheck } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -173,7 +168,7 @@ const sections: DocumentationSection[] = [
 
 function AnsibleDocumentationPage() {
   return (
-    <main className='space-y-6 p-4 md:p-6'>
+    <main className='p-4 md:p-6 space-y-6'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <Link
           to='/settings/developer'
