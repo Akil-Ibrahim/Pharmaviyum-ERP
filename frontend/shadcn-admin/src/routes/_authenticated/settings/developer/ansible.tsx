@@ -2,7 +2,6 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import {
   ArrowLeft,
   BookOpen,
-  CheckCircle2,
   Network,
   ShieldCheck,
 } from 'lucide-react'
