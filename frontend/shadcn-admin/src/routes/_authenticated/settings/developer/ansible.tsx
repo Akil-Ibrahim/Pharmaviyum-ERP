@@ -44,6 +44,22 @@ const sections: DocumentationSection[] = [
     ],
   },
   {
+    id: 'future-scale',
+    title: 'Future scale: up to 100 pharmacies',
+    paragraphs: [
+      'The target architecture is designed to accommodate up to 100 independent Pharmacy Edge sites. This is a future capacity objective, not the current active rollout size and not evidence that a 100-site fleet has been load-tested or accepted.',
+      'The Ansible configuration separates max_supported_pharmacy_sites: 100 from active_rollout_limit: 10. The starter deployment and migration playbooks must continue to reject inventories larger than ten until a separate capacity, security, resilience, and operational review authorizes expansion.',
+    ],
+    bullets: [
+      'Use a CMDB-backed dynamic inventory; keep Central hosts separate from Pharmacy Edge hosts.',
+      'Divide Edge sites into explicit canary and rollout-wave groups. Preserve unique pharmacy ID, site code, Edge identity, PostgreSQL credentials, and backup namespace for every site.',
+      'Keep the initial rollout serial and fail-fast. Any future batch size must be justified by measured controller, network, registry, database, and site-health capacity.',
+      'Before increasing the active limit, complete fleet load and failure tests, backup/restore drills, sync backlog and replay validation, monitoring and alerting, and documented RPO/RTO.',
+      'Treat ansible/inventory/examples/fleet-100.yml as a non-runnable schema example, never as a production inventory.',
+      'The 100-site profile is an architecture provision only. Do not change the active ten-site guardrail as part of the current rollout.',
+    ],
+  },
+  {
     id: 'architecture',
     title: 'Pharmacy Edge operating model',
     paragraphs: [
