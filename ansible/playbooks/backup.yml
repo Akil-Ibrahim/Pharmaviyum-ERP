@@ -1,56 +1,254 @@
 ---
-# =============================================================================
-# Pharmaviyum-CRM - Automated Backup Playbook
-# Backs up PostgreSQL database and manages retention policy
-# Usage: ansible-playbook playbooks/backup.yml --ask-vault-pass
-# =============================================================================
+# Verified local PostgreSQL backup.
+# Schedule this playbook from a protected automation controller (AWX/AAP/CI runner
+# or an approved systemd timer) that supplies secrets securely. Do not store a
+# reusable Ansible Vault password on pharmacy Edge hosts.
 
-- name: Backup PostgreSQL and manage retention
+- name: Create and verify PostgreSQL backup artifacts
   hosts: pharmacy_servers
   become: true
-  gather_facts: true
+  gather_facts: false
+  serial: 1
+  any_errors_fatal: true
+  vars_files:
+    - ../group_vars/all.yml
+  vars:
+    backup_lock_file: "{{ app_directory }}/backups/.backup.lock"
+    backup_tmp_file: "{{ app_directory }}/backups/pharmaviyum_{{ ansible_date_time.iso8601_micro | regex_replace('[^0-9]', '') }}.sql.gz.partial"
+    backup_file: "{{ app_directory }}/backups/pharmaviyum_{{ ansible_date_time.iso8601_micro | regex_replace('[^0-9]', '') }}.sql.gz"
+    backup_checksum_tmp_file: "{{ backup_file }}.sha256.partial"
+    backup_manifest_tmp_file: "{{ backup_file }}.manifest.yml.partial"
+
+  pre_tasks:
+    - name: End the play without contacting Edge hosts when backups are disabled
+      ansible.builtin.meta: end_play
+      when: not (backup_enabled | bool)
+
+    - name: Gather host facts for backup artifact timestamps
+      ansible.builtin.setup:
+
+    - name: Require a stable pharmacy identity for the backup manifest
+      ansible.builtin.assert:
+        that:
+          - pharmacy_id is defined
+          - pharmacy_id | string | length > 0
+          - site_code is defined
+          - site_code | string | length > 0
+        fail_msg: "Every pharmacy backup must be associated with a stable pharmacy_id and site_code."
+
+    - name: Require backup configuration and a safe retention period
+      ansible.builtin.assert:
+        that:
+          - backup_retention_days | int >= 1
+          - app_directory | string | length > 1
+          - postgres_user | string | length > 0
+          - postgres_db | string | length > 0
+          - docker_compose_project | string | length > 0
+        fail_msg: "Backup is disabled or required database/retention configuration is invalid."
+
+    - name: Require the deployed Compose file and protected environment file
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ app_directory }}/docker-compose.yml"
+        - "{{ app_directory }}/.env"
+      register: backup_runtime_files
+
+    - name: Refuse backup if the deployed runtime configuration is missing
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+        fail_msg: "The deployed Compose file or protected environment file is missing."
+      loop: "{{ backup_runtime_files.results }}"
+
+    - name: Check required backup utilities
+      ansible.builtin.command:
+        argv:
+          - "{{ item }}"
+          - --version
+      loop:
+        - gzip
+        - sha256sum
+        - flock
+      changed_when: false
 
   tasks:
-    - name: Ensure backup directory exists
-      ansible.builtin.file:
-        path: "{{ app_directory }}/backups"
-        state: directory
-        owner: "{{ deploy_user }}"
-        mode: "0750"
+    - name: Create, verify and publish backup artifact
+      block:
+        - name: Ensure backup directory is private
+          ansible.builtin.file:
+            path: "{{ app_directory }}/backups"
+            state: directory
+            owner: "{{ deploy_user }}"
+            mode: "0700"
 
-    - name: Generate timestamp for backup file
-      ansible.builtin.set_fact:
-        backup_ts: "{{ ansible_date_time.iso8601_basic_short }}"
+        - name: Create a compressed PostgreSQL dump under an exclusive lock
+          ansible.builtin.command:
+            argv:
+              - flock
+              - -n
+              - "{{ backup_lock_file }}"
+              - bash
+              - -o
+              - pipefail
+              - -c
+              - >-
+                umask 077 &&
+                docker compose
+                --project-name {{ docker_compose_project | quote }}
+                --env-file {{ (app_directory ~ '/.env') | quote }}
+                -f {{ (app_directory ~ '/docker-compose.yml') | quote }}
+                exec -T db pg_dump --no-owner --no-acl
+                -U {{ postgres_user | quote }}
+                -d {{ postgres_db | quote }}
+                | gzip -c > {{ backup_tmp_file | quote }}
+          register: backup_dump_result
+          changed_when: true
+          no_log: true
 
-    - name: Create compressed PostgreSQL dump
-      ansible.builtin.shell: >
-        set -o pipefail &&
-        docker compose -f {{ app_directory }}/docker-compose.yml
-        exec -T db pg_dump -U {{ postgres_user }} -d {{ postgres_db }}
-        | gzip > "{{ app_directory }}/backups/pharmaviyum_{{ backup_ts }}.sql.gz"
-      args:
-        executable: /bin/bash
-      changed_when: true
+        - name: Inspect the temporary backup artifact
+          ansible.builtin.stat:
+            path: "{{ backup_tmp_file }}"
+          register: backup_tmp_stat
 
-    - name: Find backups older than retention period
-      ansible.builtin.find:
-        paths: "{{ app_directory }}/backups"
-        patterns: "pharmaviyum_*.sql.gz"
-        age: "{{ backup_retention_days }}d"
-      register: old_backups
+        - name: Refuse to publish an empty or missing backup
+          ansible.builtin.assert:
+            that:
+              - backup_tmp_stat.stat.exists
+              - backup_tmp_stat.stat.isreg
+              - backup_tmp_stat.stat.size | int > 0
+            fail_msg: "The PostgreSQL backup is missing or empty; no artifact will be published."
 
-    - name: Delete expired backup files
-      ansible.builtin.file:
-        path: "{{ item.path }}"
-        state: absent
-      loop: "{{ old_backups.files }}"
+        - name: Verify the complete gzip stream before publication
+          ansible.builtin.command:
+            argv:
+              - gzip
+              - -t
+              - "{{ backup_tmp_file }}"
+          changed_when: false
 
-    - name: Schedule daily backup via cron
-      ansible.builtin.cron:
-        name: "Pharmaviyum DB Backup"
-        minute: "0"
-        hour: "2"
-        job: "ansible-playbook /opt/ansible/playbooks/backup.yml
-              --vault-password-file /opt/ansible/vault.key"
-        user: root
-      when: backup_enabled | bool
+        - name: Calculate SHA-256 for the verified backup
+          ansible.builtin.command:
+            argv:
+              - sha256sum
+              - "{{ backup_tmp_file }}"
+          register: backup_checksum
+          changed_when: false
+
+        - name: Write checksum sidecar as a temporary file
+          ansible.builtin.copy:
+            content: "{{ backup_checksum.stdout.split()[0] }}  {{ backup_file | basename }}\n"
+            dest: "{{ backup_checksum_tmp_file }}"
+            owner: "{{ deploy_user }}"
+            mode: "0600"
+
+        - name: Write backup manifest as a temporary file
+          ansible.builtin.copy:
+            content: |
+              format: gzip-compressed PostgreSQL plain SQL
+              created_at: "{{ ansible_date_time.iso8601 }}"
+              host: "{{ inventory_hostname }}"
+              pharmacy_id: "{{ pharmacy_id }}"
+              site_code: "{{ site_code }}"
+              database: "{{ postgres_db }}"
+              backup_file: "{{ backup_file | basename }}"
+              sha256: "{{ backup_checksum.stdout.split()[0] }}"
+            dest: "{{ backup_manifest_tmp_file }}"
+            owner: "{{ deploy_user }}"
+            mode: "0600"
+
+        - name: Publish the checksum sidecar before exposing the backup payload
+          ansible.builtin.copy:
+            src: "{{ backup_checksum_tmp_file }}"
+            dest: "{{ backup_file }}.sha256"
+            remote_src: true
+            owner: "{{ deploy_user }}"
+            mode: "0600"
+
+        - name: Publish the backup manifest before exposing the backup payload
+          ansible.builtin.copy:
+            src: "{{ backup_manifest_tmp_file }}"
+            dest: "{{ backup_file }}.manifest.yml"
+            remote_src: true
+            owner: "{{ deploy_user }}"
+            mode: "0600"
+
+        - name: Atomically publish the verified backup payload last
+          ansible.builtin.copy:
+            src: "{{ backup_tmp_file }}"
+            dest: "{{ backup_file }}"
+            remote_src: true
+            owner: "{{ deploy_user }}"
+            mode: "0600"
+
+        - name: Enforce private permissions on published artifacts
+          ansible.builtin.file:
+            path: "{{ item }}"
+            owner: "{{ deploy_user }}"
+            mode: "0600"
+          loop:
+            - "{{ backup_file }}"
+            - "{{ backup_file }}.sha256"
+            - "{{ backup_file }}.manifest.yml"
+
+        - name: Verify the published backup checksum
+          ansible.builtin.command:
+            argv:
+              - sha256sum
+              - --check
+              - "{{ backup_file }}.sha256"
+          args:
+            chdir: "{{ app_directory }}/backups"
+          changed_when: false
+
+        - name: Find expired completed backup payloads
+          ansible.builtin.find:
+            paths: "{{ app_directory }}/backups"
+            patterns: "pharmaviyum_*.sql.gz"
+            age: "{{ backup_retention_days }}d"
+            file_type: file
+          register: expired_backups
+
+        - name: Delete expired backup payloads only after new backup verification
+          ansible.builtin.file:
+            path: "{{ item.path }}"
+            state: absent
+          loop: "{{ expired_backups.files }}"
+          loop_control:
+            label: "{{ item.path | basename }}"
+
+        - name: Delete expired checksum sidecars
+          ansible.builtin.file:
+            path: "{{ item.path }}.sha256"
+            state: absent
+          loop: "{{ expired_backups.files }}"
+          loop_control:
+            label: "{{ item.path | basename }}"
+
+        - name: Delete expired backup manifests
+          ansible.builtin.file:
+            path: "{{ item.path }}.manifest.yml"
+            state: absent
+          loop: "{{ expired_backups.files }}"
+          loop_control:
+            label: "{{ item.path | basename }}"
+
+        - name: Report verified local backup metadata
+          ansible.builtin.debug:
+            msg:
+              - "Backup verified for {{ inventory_hostname }}."
+              - "Artifact: {{ backup_file }}."
+              - "SHA-256: {{ backup_checksum.stdout.split()[0] }}."
+              - "Retention: {{ backup_retention_days }} days."
+              - "Storage: local Edge disk only; off-site protection is not configured."
+
+      always:
+        - name: Remove incomplete backup and metadata temporary files
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "{{ backup_tmp_file }}"
+            - "{{ backup_checksum_tmp_file }}"
+            - "{{ backup_manifest_tmp_file }}"

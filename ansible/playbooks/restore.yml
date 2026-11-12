@@ -1,0 +1,351 @@
+---
+# Non-destructive restore drill. Restores into a new, isolated database on one
+# explicitly confirmed Edge host. It never replaces the live application DB.
+
+- name: Validate restore drill selection before contacting pharmacy hosts
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    restore_approved: false
+    restore_approval_reference: ""
+    restore_target_confirmation: ""
+    restore_target_database: ""
+    restore_backup_file: ""
+    restore_expected_sha256: ""
+  tasks:
+    - name: Require an inventory containing the pharmacy Edge group and a target confirmation
+      ansible.builtin.assert:
+        that:
+          - groups['pharmacy_servers'] is defined
+          - restore_target_confirmation | string | length > 0
+          - restore_target_confirmation in groups['pharmacy_servers']
+        fail_msg: >-
+          A restore drill requires a target confirmation matching a host in the
+          pharmacy Edge inventory group.
+
+    - name: Require explicit restore approval and target confirmation
+      ansible.builtin.assert:
+        that:
+          - restore_approved | bool
+          - restore_approval_reference | string | length > 0
+          - restore_target_database is match('^pharmaviyum_restore_[a-z0-9_]{1,32}$')
+          - restore_backup_file | string | length > 0
+          - restore_expected_sha256 is match('^[0-9a-f]{64}$')
+        fail_msg: >-
+          Restore drills require explicit approval, a change reference, exact
+          target-host confirmation, a dedicated restore database name, a backup
+          path and its independently supplied SHA-256.
+
+- name: Verify a backup by restoring it into an isolated database
+  hosts: pharmacy_servers
+  serial: 1
+  any_errors_fatal: true
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../group_vars/all.yml
+  vars:
+    restore_approved: false
+    restore_approval_reference: ""
+    restore_target_confirmation: ""
+    restore_target_database: ""
+    restore_backup_file: ""
+    restore_expected_sha256: ""
+
+  pre_tasks:
+    - name: Revalidate restore approval and immutable target
+      ansible.builtin.assert:
+        that:
+          - ansible_play_hosts_all | length == 1
+          - restore_approved | bool
+          - restore_approval_reference | string | length > 0
+          - restore_target_confirmation == inventory_hostname
+          - restore_target_database is match('^pharmaviyum_restore_[a-z0-9_]{1,32}$')
+          - restore_target_database != postgres_db
+          - restore_backup_file is match('^' ~ (app_directory | regex_escape) ~ '/backups/pharmaviyum_[0-9]+[.]sql[.]gz$')
+          - restore_expected_sha256 is match('^[0-9a-f]{64}$')
+        fail_msg: "Restore request is not explicitly approved or does not match this host and isolated target database."
+
+    - name: Require deployed Compose and backup artifacts
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ app_directory }}/docker-compose.yml"
+        - "{{ app_directory }}/.env"
+        - "{{ restore_backup_file }}"
+        - "{{ restore_backup_file }}.sha256"
+        - "{{ restore_backup_file }}.manifest.yml"
+      register: restore_artifact_stats
+
+    - name: Refuse restore when any required artifact is missing
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+          - item.stat.size | int > 0
+        fail_msg: "A required Compose, environment, backup or backup metadata file is missing or empty."
+      loop: "{{ restore_artifact_stats.results }}"
+
+    - name: Read backup manifest from the selected Edge host
+      ansible.builtin.slurp:
+        src: "{{ restore_backup_file }}.manifest.yml"
+      register: restore_manifest_raw
+      no_log: true
+
+    - name: Parse backup manifest
+      ansible.builtin.set_fact:
+        restore_manifest: "{{ restore_manifest_raw.content | b64decode | from_yaml }}"
+      no_log: true
+
+    - name: Require backup manifest to match the selected pharmacy and database
+      ansible.builtin.assert:
+        that:
+          - restore_manifest.pharmacy_id | default('') == pharmacy_id
+          - restore_manifest.site_code | default('') == site_code
+          - restore_manifest.host | default('') == inventory_hostname
+          - restore_manifest.database | default('') == postgres_db
+          - restore_manifest.backup_file | default('') == restore_backup_file | basename
+          - restore_manifest.sha256 | default('') == restore_expected_sha256
+        fail_msg: "The backup manifest does not match the selected pharmacy, database, artifact, or independently supplied checksum."
+      no_log: true
+
+    - name: Verify compressed backup integrity
+      ansible.builtin.command:
+        argv:
+          - gzip
+          - -t
+          - "{{ restore_backup_file }}"
+      changed_when: false
+
+    - name: Calculate source backup checksum
+      ansible.builtin.command:
+        argv:
+          - sha256sum
+          - "{{ restore_backup_file }}"
+      register: restore_actual_checksum
+      changed_when: false
+
+    - name: Require the operator-supplied checksum to match the backup
+      ansible.builtin.assert:
+        that:
+          - restore_actual_checksum.stdout.split()[0] == restore_expected_sha256
+        fail_msg: "The backup SHA-256 does not match the independently supplied expected checksum."
+
+    - name: Verify the published checksum sidecar
+      ansible.builtin.command:
+        argv:
+          - sha256sum
+          - --check
+          - "{{ restore_backup_file }}.sha256"
+      args:
+        chdir: "{{ app_directory }}/backups"
+      changed_when: false
+
+    - name: Wait for the local PostgreSQL container to accept connections
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - --project-name
+          - "{{ docker_compose_project }}"
+          - --env-file
+          - "{{ app_directory }}/.env"
+          - -f
+          - "{{ app_directory }}/docker-compose.yml"
+          - exec
+          - -T
+          - db
+          - pg_isready
+          - -U
+          - "{{ postgres_user }}"
+          - -d
+          - "{{ postgres_db }}"
+      register: restore_postgres_ready
+      changed_when: false
+      retries: 12
+      delay: 5
+      until: restore_postgres_ready.rc == 0
+
+    - name: Check whether the isolated restore database already exists
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - --project-name
+          - "{{ docker_compose_project }}"
+          - --env-file
+          - "{{ app_directory }}/.env"
+          - -f
+          - "{{ app_directory }}/docker-compose.yml"
+          - exec
+          - -T
+          - db
+          - psql
+          - -U
+          - "{{ postgres_user }}"
+          - -d
+          - "{{ postgres_db }}"
+          - -Atc
+          - "SELECT 1 FROM pg_database WHERE datname = '{{ restore_target_database }}'"
+      register: restore_database_exists
+      changed_when: false
+      no_log: true
+
+    - name: Refuse to overwrite an existing restore database
+      ansible.builtin.assert:
+        that:
+          - restore_database_exists.stdout | trim == ""
+        fail_msg: "The requested restore database already exists; choose a new unique target name."
+
+  tasks:
+    - name: Create isolated restore database and validate restored schema
+      block:
+        - name: Create isolated restore database
+          ansible.builtin.command:
+            argv:
+              - docker
+              - compose
+              - --project-name
+              - "{{ docker_compose_project }}"
+              - --env-file
+              - "{{ app_directory }}/.env"
+              - -f
+              - "{{ app_directory }}/docker-compose.yml"
+              - exec
+              - -T
+              - db
+              - createdb
+              - -U
+              - "{{ postgres_user }}"
+              - -O
+              - "{{ postgres_user }}"
+              - "{{ restore_target_database }}"
+          register: restore_database_created
+          changed_when: true
+          no_log: true
+
+        - name: Restore the compressed SQL dump into the isolated database
+          ansible.builtin.command:
+            argv:
+              - bash
+              - -o
+              - pipefail
+              - -c
+              - >-
+                gzip -dc {{ restore_backup_file | quote }}
+                | docker compose
+                --project-name {{ docker_compose_project | quote }}
+                --env-file {{ (app_directory ~ '/.env') | quote }}
+                -f {{ (app_directory ~ '/docker-compose.yml') | quote }}
+                exec -T db psql -v ON_ERROR_STOP=1
+                -U {{ postgres_user | quote }}
+                -d {{ restore_target_database | quote }}
+          changed_when: true
+          no_log: true
+
+        - name: Count restored application schema tables
+          ansible.builtin.command:
+            argv:
+              - docker
+              - compose
+              - --project-name
+              - "{{ docker_compose_project }}"
+              - --env-file
+              - "{{ app_directory }}/.env"
+              - -f
+              - "{{ app_directory }}/docker-compose.yml"
+              - exec
+              - -T
+              - db
+              - psql
+              - -U
+              - "{{ postgres_user }}"
+              - -d
+              - "{{ restore_target_database }}"
+              - -Atc
+              - "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema')"
+          register: restore_table_count
+          changed_when: false
+          no_log: true
+
+        - name: Verify the restored database contains application tables
+          ansible.builtin.assert:
+            that:
+              - restore_table_count.stdout | trim | int > 0
+            fail_msg: "Restore completed but no application tables were found in the isolated database."
+
+        - name: Verify Alembic migration metadata exists
+          ansible.builtin.command:
+            argv:
+              - docker
+              - compose
+              - --project-name
+              - "{{ docker_compose_project }}"
+              - --env-file
+              - "{{ app_directory }}/.env"
+              - -f
+              - "{{ app_directory }}/docker-compose.yml"
+              - exec
+              - -T
+              - db
+              - psql
+              - -U
+              - "{{ postgres_user }}"
+              - -d
+              - "{{ restore_target_database }}"
+              - -Atc
+              - "SELECT CASE WHEN to_regclass('public.alembic_version') IS NULL THEN 0 ELSE 1 END"
+          register: restore_alembic_check
+          changed_when: false
+          no_log: true
+
+        - name: Require Alembic schema version metadata
+          ansible.builtin.assert:
+            that:
+              - restore_alembic_check.stdout | trim == "1"
+            fail_msg: "The restored database does not contain public.alembic_version."
+
+      rescue:
+        - name: Remove incomplete isolated restore database after a failed drill
+          ansible.builtin.command:
+            argv:
+              - docker
+              - compose
+              - --project-name
+              - "{{ docker_compose_project }}"
+              - --env-file
+              - "{{ app_directory }}/.env"
+              - -f
+              - "{{ app_directory }}/docker-compose.yml"
+              - exec
+              - -T
+              - db
+              - dropdb
+              - --if-exists
+              - -U
+              - "{{ postgres_user }}"
+              - "{{ restore_target_database }}"
+          changed_when: true
+          failed_when: false
+          no_log: true
+          when:
+            - restore_database_created is defined
+            - restore_database_created is succeeded
+
+        - name: Fail the restore drill after cleaning up its incomplete target
+          ansible.builtin.fail:
+            msg: >-
+              Restore drill failed. The incomplete isolated database was removed
+              where possible. The live application database and source backup
+              were not modified.
+
+    - name: Report successful isolated restore drill
+      ansible.builtin.debug:
+        msg:
+          - "Restore drill succeeded on {{ inventory_hostname }}."
+          - "Approval: {{ restore_approval_reference }}."
+          - "Source backup: {{ restore_backup_file }}."
+          - "Verified SHA-256: {{ restore_actual_checksum.stdout.split()[0] }}."
+          - "Restored database: {{ restore_target_database }}."
+          - "The isolated database is intentionally retained for operator inspection; no cutover was performed."

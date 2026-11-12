@@ -12,7 +12,7 @@ The current `main` branch contains:
 - `ansible/playbooks/deploy.yml` targeting `pharmacy_servers`; it validates release and Edge sync settings, checks Docker/Compose, deploys roles in controlled waves and verifies `/ready`.
 - `ansible/roles/app-backend/` which writes an environment file, copies a Compose definition, pulls a backend image, starts PostgreSQL and Valkey, then starts the backend. Database migrations are a separate, explicitly approved release operation.
 - `ansible/roles/postgresql/` which currently prepares a directory and reports container status; PostgreSQL itself is created by Compose.
-- `ansible/playbooks/backup.yml` which writes a local compressed `pg_dump`, prunes local files by age and installs a cron entry.
+- `ansible/playbooks/backup.yml` which creates a local compressed PostgreSQL dump, verifies gzip integrity and SHA-256, writes a manifest, and prunes expired local artifacts only after a new backup has been verified. `ansible/playbooks/restore.yml` performs a non-destructive restore drill into a separately named database on exactly one explicitly confirmed Edge host. Scheduling is delegated to a protected automation controller.
 - `ansible/playbooks/rollback.yml` which rolls back the backend image and checks `/health`; it does not restore a database backup.
 - A Compose definition containing `db`, `redis` (Valkey image) and `backend`. It does not define an Nginx service.
 - An Nginx role exists, but it is not included in the current deployment playbook.
@@ -215,18 +215,18 @@ Use explicit maintenance windows and an operator approval between waves. A disco
 
 ## 7. Backup and restore controls
 
-The current backup playbook creates a local SQL dump and retains seven days of local files. Before production fleet use, add:
+The current backup playbook creates a local gzip-compressed SQL dump, verifies the gzip stream and published SHA-256, writes a metadata manifest, serializes backup runs with a lock, and retains local files according to `backup_retention_days`. The restore playbook verifies an independently supplied SHA-256 and restores into a new, isolated database on one explicitly confirmed host; it never overwrites the live application database and leaves a successful restore target for operator inspection. These are useful local verification controls, but they are still not a disaster-recovery solution. Before production fleet use, add:
 
 - explicit backup integrity check (for example, inspect the dump with the matching PostgreSQL client);
 - encryption before off-site transfer;
 - a remote destination independent of the pharmacy host;
 - retention policy by business and regulatory requirements;
 - backup age and transfer monitoring;
-- a tested restore playbook;
-- restore verification of schema, critical row counts and application invariants;
+- off-site backup verification and restore from the remote copy;
+- restore verification of critical business row counts and application invariants (the current drill checks basic schema presence and Alembic metadata only);
 - documented RPO/RTO per site and Central.
 
-The current cron command references `/opt/ansible/playbooks/backup.yml` and `/opt/ansible/vault.key`. Verify that these paths, permissions, key lifecycle and execution environment are actually provisioned before enabling the cron job. Do not distribute a reusable Vault password as an unmanaged plaintext file across the fleet.
+Backup scheduling is intentionally not installed by the playbook on pharmacy Edge hosts. Run it from a protected automation controller (for example AWX/AAP or an approved scheduler) that obtains Vault/secret-manager credentials at runtime. Do not distribute a reusable Vault password as an unmanaged plaintext file across the fleet.
 
 A backup is not accepted as recoverable until a restore test has succeeded on an isolated target.
 
@@ -261,7 +261,7 @@ Before a role is eligible for production:
 3. Deployment now checks `/ready`, but site-level POS synthetic transaction, backup integrity, sync backlog/last-sync and UPS checks are not yet wired into Ansible postflight.
 4. PostgreSQL lifecycle is mostly Compose-managed; the Ansible PostgreSQL role is not a full lifecycle/HA role.
 5. Nginx role is not wired into the current deployment, and current Compose has no Nginx service.
-6. Backup is local-only; integrity validation, off-site copy and tested restore are not established.
+6. Backup is local-only; off-site copy and restore-from-off-site are not established. The new isolated restore drill is a basic schema check, not a full application recovery acceptance test.
 7. Rollback changes the backend image only; it does not handle schema compatibility or data recovery.
 8. UPS, VPN, site identity, host security and centralized fleet monitoring are not yet proven as deployed capabilities.
 

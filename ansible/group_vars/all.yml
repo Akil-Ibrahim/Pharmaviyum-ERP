@@ -34,7 +34,6 @@ ghcr_username: "{{ lookup('env', 'PHARMAVIYUM_GHCR_USERNAME') }}"
 ghcr_token: "{{ lookup('env', 'PHARMAVIYUM_GHCR_TOKEN') }}"
 
 backup_enabled: true
-backup_schedule: "0 2 * * *"
 backup_retention_days: 7
 
 # Architecture capacity and active rollout safety limit are deliberately separate.
