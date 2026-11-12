@@ -203,6 +203,8 @@
 
 - name: Validate each Edge host before deployment
   hosts: pharmacy_servers
+  any_errors_fatal: true
+  max_fail_percentage: 0
   become: false
   gather_facts: false
   vars_files:
