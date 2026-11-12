@@ -1,24 +1,58 @@
 ---
+# Roll back application containers only. This playbook never downgrades the DB.
+# The operator must verify backward compatibility with the currently migrated
+# schema and explicitly enumerate the exact selected pharmacy hosts.
+
 - name: Roll back Pharmaviyum backend
   hosts: pharmacy_servers
+  serial: 1
+  any_errors_fatal: true
+  max_fail_percentage: 0
   become: true
   gather_facts: false
   vars_files:
     - ../group_vars/all.yml
   vars:
+    rollback_approved: false
+    rollback_approval_reference: ""
+    rollback_target_confirmations: []
     rollback_version: ""
     rollback_image_digest: ""
+    rollback_schema_compatibility_confirmed: false
+    rollback_schema_compatibility_reference: ""
 
   pre_tasks:
-    - name: Require an explicit previous release and immutable image digest
+    # Controller-only checks run before Ansible opens an SSH connection.
+    # CI invokes --tags preflight to exercise these checks without changing hosts.
+    - name: Validate rollback approval, selected wave and schema compatibility before SSH
       ansible.builtin.assert:
         that:
+          - groups['pharmacy_servers'] is defined
+          - groups['pharmacy_servers'] | length >= 1
+          - groups['pharmacy_servers'] | length <= (max_supported_pharmacy_sites | int)
+          - active_rollout_limit | int >= 1
+          - active_rollout_limit | int <= (max_supported_pharmacy_sites | int)
+          - ansible_play_hosts_all | length >= 1
+          - ansible_play_hosts_all | length <= (active_rollout_limit | int)
+          - rollback_approved | bool
+          - rollback_approval_reference | string | length > 0
+          - rollback_target_confirmations is sequence
+          - rollback_target_confirmations is not string
+          - rollback_target_confirmations | sort == ansible_play_hosts_all | sort
           - rollback_version | string | length > 0
           - rollback_version != "latest"
           - rollback_image_digest is match('^sha256:[0-9a-f]{64}$')
+          - rollback_schema_compatibility_confirmed | bool
+          - rollback_schema_compatibility_reference | string | length > 0
         fail_msg: >-
-          Pass the previous release label and its immutable digest:
-          -e rollback_version=<release> -e rollback_image_digest=sha256:<64-hex>.
+          Rollback requires explicit change approval, exact confirmation of
+          every selected host, a 1-{{ active_rollout_limit }} site wave, an
+          immutable image digest, and documented confirmation that the old
+          application release is compatible with the current database schema.
+      run_once: true
+      delegate_to: localhost
+      become: false
+      tags: [preflight]
 
   tasks:
     - name: Pull rollback image by immutable digest
@@ -61,4 +95,8 @@
 
     - name: Report rollback release identity
       ansible.builtin.debug:
-        msg: "Rolled back {{ inventory_hostname }} to {{ rollback_version }} ({{ rollback_image_digest }})."
+        msg:
+          - "Rolled back {{ inventory_hostname }} to {{ rollback_version }} ({{ rollback_image_digest }})."
+          - "Approval: {{ rollback_approval_reference }}."
+          - "Schema compatibility evidence: {{ rollback_schema_compatibility_reference }}."
+          - "No database schema rollback was performed."
