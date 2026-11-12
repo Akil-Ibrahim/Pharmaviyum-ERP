@@ -32,7 +32,7 @@ For a future fleet:
 
 The 100-site profile is an architecture provision only. Do not change the active ten-site guardrail as part of the current rollout.
 
-## 5. Target operating model
+## 4. Target operating model
 
 A pharmacy has a dedicated Edge host on its local network. Local POS workflows must not require a continuous WAN connection to Central for every transaction. The Edge host retains local operational data and synchronizes with Central when connectivity is available.
 
