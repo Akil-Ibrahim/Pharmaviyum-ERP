@@ -37,7 +37,7 @@ with open(path, "w", encoding="utf-8") as stream:
             site_code_yaml = ""
         if mode == "duplicate-site-code-case" and index == count:
             site_code = "test-001"
-            site_code_yaml = f"          site_code: {site_code}\\n"
+            site_code_yaml = f"          site_code: {site_code}\n"
         if mode == "duplicate-edge-node-id" and index in (1, count):
             edge_node_id = "123e4567-e89b-42d3-a456-426614174000"
             if index == count:
