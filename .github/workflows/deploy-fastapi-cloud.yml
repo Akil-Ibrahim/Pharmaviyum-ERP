@@ -223,6 +223,14 @@ jobs:
             .components.ai_initialized == "ok"
           ' >/dev/null
 
+          appearance_status="$(curl --silent --show-error -o /tmp/appearance.html -w '%{http_code}' \
+            "$base_url/settings/appearance")"
+          if [ "$appearance_status" != "200" ] || ! grep -Eiq '<html([[:space:]>])' /tmp/appearance.html; then
+            echo "Frontend SPA route /settings/appearance did not return the built HTML entrypoint (HTTP $appearance_status)."
+            head -c 1000 /tmp/appearance.html || true
+            exit 1
+          fi
+
           auth_status="$(curl --silent --show-error -o /tmp/auth-invalid.json -w '%{http_code}' \
             -X POST "$base_url/api/v1/auth/token" \
             -H 'Content-Type: application/x-www-form-urlencoded' \
