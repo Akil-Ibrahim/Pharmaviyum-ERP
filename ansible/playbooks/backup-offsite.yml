@@ -36,9 +36,9 @@
           - site_code is defined
           - site_code | string | length > 0
           - restic_repository_url is match('^rest:https://')
-          - '@' not in restic_repository_url
-          - '?' not in restic_repository_url
-          - '#' not in restic_repository_url
+          - "'@' not in restic_repository_url"
+          - "'?' not in restic_repository_url"
+          - "'#' not in restic_repository_url"
           - restic_repository_url is search('/' ~ (pharmacy_id | regex_escape) ~ '$')
           - restic_repository_password | default('') | string | length >= 20
           - restic_rest_username | default('') | string | length > 0
