@@ -12,7 +12,7 @@ The current `main` branch contains:
 - `ansible/playbooks/deploy.yml` targeting `pharmacy_servers`; it validates release and Edge sync settings, checks Docker/Compose, deploys roles in controlled waves and verifies `/ready`.
 - `ansible/roles/app-backend/` which writes an environment file, copies a Compose definition, pulls a backend image, starts PostgreSQL and Valkey, then starts the backend. Database migrations are a separate, explicitly approved release operation.
 - `ansible/roles/postgresql/` which currently prepares a directory and reports container status; PostgreSQL itself is created by Compose.
-- `ansible/playbooks/backup.yml` which writes a local compressed `pg_dump`, prunes local files by age and installs a cron entry.
+- `ansible/playbooks/backup.yml` which creates a local compressed PostgreSQL dump, verifies gzip integrity and SHA-256, writes a manifest, and prunes expired local artifacts only after a new backup has been verified. Scheduling is delegated to a protected automation controller.
 - `ansible/playbooks/rollback.yml` which rolls back the backend image and checks `/health`; it does not restore a database backup.
 - A Compose definition containing `db`, `redis` (Valkey image) and `backend`. It does not define an Nginx service.
 - An Nginx role exists, but it is not included in the current deployment playbook.
@@ -215,7 +215,7 @@ Use explicit maintenance windows and an operator approval between waves. A disco
 
 ## 7. Backup and restore controls
 
-The current backup playbook creates a local SQL dump and retains seven days of local files. Before production fleet use, add:
+The current backup playbook creates a local gzip-compressed SQL dump, verifies the gzip stream and published SHA-256, writes a metadata manifest, serializes backup runs with a lock, and retains local files according to `backup_retention_days`. It is still a local-only backup and is not a disaster-recovery solution. Before production fleet use, add:
 
 - explicit backup integrity check (for example, inspect the dump with the matching PostgreSQL client);
 - encryption before off-site transfer;
@@ -226,7 +226,7 @@ The current backup playbook creates a local SQL dump and retains seven days of l
 - restore verification of schema, critical row counts and application invariants;
 - documented RPO/RTO per site and Central.
 
-The current cron command references `/opt/ansible/playbooks/backup.yml` and `/opt/ansible/vault.key`. Verify that these paths, permissions, key lifecycle and execution environment are actually provisioned before enabling the cron job. Do not distribute a reusable Vault password as an unmanaged plaintext file across the fleet.
+Backup scheduling is intentionally not installed by the playbook on pharmacy Edge hosts. Run it from a protected automation controller (for example AWX/AAP or an approved scheduler) that obtains Vault/secret-manager credentials at runtime. Do not distribute a reusable Vault password as an unmanaged plaintext file across the fleet.
 
 A backup is not accepted as recoverable until a restore test has succeeded on an isolated target.
 
