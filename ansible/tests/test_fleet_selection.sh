@@ -100,7 +100,7 @@ if output="$(ansible-playbook -i "$inventory_100" playbooks/migrate.yml \
   echo "ERROR: an 11-site migration wave unexpectedly passed the active rollout guardrail."
   exit 1
 fi
-grep -q "active migration rollout limit" <<<"$output"
+grep -q "active rollout limit is 10" <<<"$output"
 
 echo "Checking that migration preflight rejects a 101-site inventory."
 if output="$(ansible-playbook -i "$inventory_101" playbooks/migrate.yml \
@@ -108,7 +108,7 @@ if output="$(ansible-playbook -i "$inventory_101" playbooks/migrate.yml \
   echo "ERROR: a 101-site migration inventory unexpectedly passed the architecture ceiling."
   exit 1
 fi
-grep -q "migration inventory" <<<"$output"
+grep -q "100-site architecture inventory ceiling" <<<"$output"
 
 echo "Checking that an 11-site wave is rejected."
 if output="$(ansible-playbook -i "$inventory_100" playbooks/deploy.yml \
