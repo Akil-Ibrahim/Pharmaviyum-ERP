@@ -42,6 +42,9 @@ jobs:
       - name: Test restore and rollback recovery guardrails
         run: bash tests/test_recovery_guardrails.sh
 
+      - name: Test off-site backup preflight guardrails
+        run: bash tests/test_offsite_backup_guardrails.sh
+
   molecule:
     runs-on: ubuntu-latest
     needs: lint
