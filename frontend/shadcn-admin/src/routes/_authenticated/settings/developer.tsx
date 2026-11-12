@@ -27,7 +27,7 @@ export const Route = createFileRoute('/_authenticated/settings/developer')({
 
 function DeveloperSettingsPage() {
   return (
-    <main className='p-4 md:p-6 space-y-6'>
+    <main className='p-4 space-y-6 md:p-6'>
       <header className='space-y-1'>
         <h1 className='text-2xl font-semibold tracking-tight'>
           Developer Settings
