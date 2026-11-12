@@ -87,6 +87,29 @@
         fail_msg: "A required Compose, environment, backup or backup metadata file is missing or empty."
       loop: "{{ restore_artifact_stats.results }}"
 
+    - name: Read backup manifest from the selected Edge host
+      ansible.builtin.slurp:
+        src: "{{ restore_backup_file }}.manifest.yml"
+      register: restore_manifest_raw
+      no_log: true
+
+    - name: Parse backup manifest
+      ansible.builtin.set_fact:
+        restore_manifest: "{{ restore_manifest_raw.content | b64decode | from_yaml }}"
+      no_log: true
+
+    - name: Require backup manifest to match the selected pharmacy and database
+      ansible.builtin.assert:
+        that:
+          - restore_manifest.pharmacy_id | default('') == pharmacy_id
+          - restore_manifest.site_code | default('') == site_code
+          - restore_manifest.host | default('') == inventory_hostname
+          - restore_manifest.database | default('') == postgres_db
+          - restore_manifest.backup_file | default('') == restore_backup_file | basename
+          - restore_manifest.sha256 | default('') == restore_expected_sha256
+        fail_msg: "The backup manifest does not match the selected pharmacy, database, artifact, or independently supplied checksum."
+      no_log: true
+
     - name: Verify compressed backup integrity
       ansible.builtin.command:
         argv:
