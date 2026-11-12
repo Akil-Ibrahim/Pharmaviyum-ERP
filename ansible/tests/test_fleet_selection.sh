@@ -32,7 +32,7 @@ with open(path, "w", encoding="utf-8") as stream:
         central_url = ""
         if mode == "duplicate-password" and index == count:
             password = "test-only-password-001"
-        site_code_yaml = f"          site_code: {site_code}\\n"
+        site_code_yaml = f"          site_code: {site_code}\n"
         if mode == "missing-site-code" and index == count:
             site_code_yaml = ""
         if mode == "duplicate-edge-node-id" and index in (1, count):
@@ -40,16 +40,16 @@ with open(path, "w", encoding="utf-8") as stream:
             edge_token = "test-edge-token-012345678901234567890123456789"
             central_url = "https://central.example.test"
         stream.write(
-            f"        pharmacy-edge-test-{suffix}:\\n"
-            f"          ansible_host: 127.0.0.1\\n"
-            f"          ansible_user: ansible-test\\n"
-            f"          ansible_connection: local\\n"
-            f"          pharmacy_id: test-pharmacy-{suffix}\\n"
+            f"        pharmacy-edge-test-{suffix}:\n"
+            f"          ansible_host: 127.0.0.1\n"
+            f"          ansible_user: ansible-test\n"
+            f"          ansible_connection: local\n"
+            f"          pharmacy_id: test-pharmacy-{suffix}\n"
             + site_code_yaml
-            + f"          postgres_password: {password}\\n"
-            + f"          pharmaviyum_edge_node_id: '{edge_node_id}'\\n"
-            + f"          pharmaviyum_edge_token: '{edge_token}'\\n"
-            + f"          pharmaviyum_central_sync_url: '{central_url}'\\n"
+            + f"          postgres_password: {password}\n"
+            + f"          pharmaviyum_edge_node_id: '{edge_node_id}'\n"
+            + f"          pharmaviyum_edge_token: '{edge_token}'\n"
+            + f"          pharmaviyum_central_sync_url: '{central_url}'\n"
         )
 PY
 }
