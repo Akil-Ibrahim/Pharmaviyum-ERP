@@ -163,7 +163,7 @@
       no_log: true
 
   tasks:
-    - name: Upload and read-verify only the approved local backup set
+    - name: Upload only the approved local backup set with Restic's default verification enabled
       ansible.builtin.command:
         argv:
           - "{{ restic_binary }}"
@@ -209,22 +209,26 @@
       changed_when: false
       no_log: true
 
-    - name: Parse remote snapshot inventory
+    - name: Match the uploaded snapshot in the remote repository
       ansible.builtin.set_fact:
-        restic_remote_snapshot_ids: "{{ (restic_remote_snapshots.stdout | from_json) | map(attribute='id') | list }}"
+        restic_remote_snapshot_matches: "{{ (restic_remote_snapshots.stdout | from_json) | selectattr('id', 'search', '^' ~ (restic_backup_summary.snapshot_id | regex_escape)) | list }}"
       no_log: true
 
-    - name: Confirm uploaded snapshot is visible in the remote repository
+    - name: Confirm snapshot ID, host and pharmacy tags in the remote repository
       ansible.builtin.assert:
         that:
-          - restic_remote_snapshot_ids | select('search', '^' ~ (restic_backup_summary.snapshot_id | regex_escape)) | list | length == 1
-        fail_msg: "The uploaded Restic snapshot is not visible in the remote repository."
+          - restic_remote_snapshot_matches | length == 1
+          - restic_remote_snapshot_matches[0].hostname == inventory_hostname
+          - pharmacy_id in restic_remote_snapshot_matches[0].tags
+          - site_code in restic_remote_snapshot_matches[0].tags
+          - offsite_backup_file in restic_remote_snapshot_matches[0].paths
+        fail_msg: "The uploaded snapshot is missing or its remote host/site identity does not match."
       no_log: true
 
     - name: Report off-site backup verification without exposing secrets
       ansible.builtin.debug:
         msg:
-          - "Encrypted Restic snapshot uploaded and read-verified for {{ pharmacy_id }} ({{ site_code }})."
+          - "Encrypted Restic snapshot uploaded and confirmed visible in the site repository for {{ pharmacy_id }} ({{ site_code }})."
           - "Snapshot ID: {{ restic_backup_summary.snapshot_id }}."
           - "Approval reference: {{ offsite_backup_approval_reference }}."
           - "Local artifacts were retained; no remote prune or local cleanup was run."
