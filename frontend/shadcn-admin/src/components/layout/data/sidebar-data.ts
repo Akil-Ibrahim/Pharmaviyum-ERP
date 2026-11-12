@@ -14,8 +14,6 @@ import {
   PackageCheck,
   Palette,
   ReceiptText,
-  RefreshCw,
-  ServerCog,
   Settings,
   ShoppingCart,
   Store,
@@ -93,14 +91,18 @@ export const sidebarData: SidebarData = {
           icon: Settings,
           items: [
             { title: 'Profile', url: '/settings', icon: UserCog },
-            { title: 'Appearance', url: '/settings/appearance', icon: Palette },
+            {
+              title: 'Appearance',
+              url: '/settings/appearance',
+              icon: Palette,
+            },
             {
               title: 'Notifications',
               url: '/settings/notifications',
               icon: Bell,
             },
             {
-              title: 'Developer Tools',
+              title: 'Developer Settings',
               url: '/settings/developer',
               icon: Code2,
             },
@@ -110,17 +112,7 @@ export const sidebarData: SidebarData = {
     },
     {
       title: 'System',
-      items: [
-        {
-          title: 'Integrations',
-          icon: ServerCog,
-          items: [
-            { title: 'ERP Connections', url: '/erp-systems', icon: ServerCog },
-            { title: 'Sync History', url: '/sync-events', icon: RefreshCw },
-          ],
-        },
-        { title: 'Background Tasks', url: '/tasks', icon: ListChecks },
-      ],
+      items: [{ title: 'Background Tasks', url: '/tasks', icon: ListChecks }],
     },
   ],
 }

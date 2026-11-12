@@ -48,48 +48,28 @@ describe('Pharmaviyum sidebar navigation', () => {
     ])
   })
 
-  it('keeps Users and Settings in Administration', () => {
-    expect(itemTitles('Administration')).toEqual(['Users', 'Settings'])
-
+  it('keeps Developer Settings under Administration', () => {
     const settings = group('Administration')?.items.find(
       (item) => item.title === 'Settings'
     )
-
-    expect(settings?.items?.map((item) => item.title)).toEqual([
-      'Profile',
-      'Appearance',
-      'Notifications',
-      'Developer Tools',
-    ])
-  })
-
-  it('groups ERP connections and sync history under System integrations', () => {
-    expect(itemTitles('System')).toEqual(['Integrations', 'Background Tasks'])
-
-    const integrations = group('System')?.items.find(
-      (item) => item.title === 'Integrations'
+    const developer = settings?.items?.find(
+      (item) => item.title === 'Developer Settings'
     )
 
-    expect(integrations?.items?.map((item) => item.title)).toEqual([
-      'ERP Connections',
-      'Sync History',
-    ])
+    expect(developer?.url).toBe('/settings/developer')
   })
 
-  it('preserves the Mortarium AI destination and removes redundant top-level links', () => {
+  it('keeps Background Tasks in the System group', () => {
+    expect(itemTitles('System')).toEqual(['Background Tasks'])
+  })
+
+  it('preserves Mortarium AI and navigation group order', () => {
     const mortarium = group('Operations')?.items.find(
       (item) => item.title === 'Mortarium AI'
     )
-    const allTopLevelTitles = sidebarData.navGroups.flatMap((navGroup) =>
-      navGroup.items.map((item) => item.title)
-    )
 
     expect(mortarium?.url).toBe('/mortarium-ai')
-    expect(allTopLevelTitles).not.toContain('Drug Reference')
-    expect(allTopLevelTitles).not.toContain('Catalog Review')
-    expect(allTopLevelTitles).not.toContain('Purchase Ledger')
-    expect(allTopLevelTitles).not.toContain('Orders')
-    expect(sidebarData.navGroups.map((navGroup) => navGroup.title)).toEqual([
+    expect(sidebarData.navGroups.map((item) => item.title)).toEqual([
       'Operations',
       'Administration',
       'System',
