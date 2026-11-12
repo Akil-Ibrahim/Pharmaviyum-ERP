@@ -1,3 +1,4 @@
+---
 - name: Verify a backup by restoring it into an isolated database
   hosts: pharmacy_servers
   serial: 1
