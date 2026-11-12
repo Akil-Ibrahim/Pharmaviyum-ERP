@@ -17,15 +17,19 @@ pip install molecule molecule-plugins[docker] ansible-lint yamllint pre-commit
 ### Run Molecule Tests
 
 ```bash
-# Test specific role
-cd molecule/app-backend
-molecule test
+# Run the repository's default Docker-role scenario
+molecule test -s default
 
 # Test with debug output
 molecule test --debug
+```
 
-# Run specific scenario
-molecule test -s default
+### Test pharmacy fleet selection
+
+```bash
+# Verify that a ten-site wave can be selected from a 100-site inventory,
+# while an eleven-site wave and a 101-site inventory fail closed.
+bash tests/test_fleet_selection.sh
 ```
 
 ### Linting
