@@ -1,15 +1,132 @@
 ---
-- name: Validate selected pharmacy fleet before contacting remote hosts
+# Run this playbook as an explicit release gate before deploy.yml.
+# Example:
+# ansible-playbook -i inventory/lab/hosts.yml playbooks/migrate.yml \
+#   --limit pharmacy-edge-lab-01 -e migration_approved=true \
+#   -e migration_approval_reference=CHG-1234
+
+- name: Validate selected migration fleet before contacting pharmacy hosts
   hosts: pharmacy_servers
   connection: local
   gather_facts: false
   any_errors_fatal: true
+  max_fail_percentage: 0
   tags: [preflight]
   vars_files:
     - ../group_vars/all.yml
   tasks:
-    - name: Apply shared pharmacy fleet guardrails
-      ansible.builtin.import_tasks: ../tasks/validate-pharmacy-fleet.yml
+    - name: Enforce the 100-site architecture inventory ceiling
+      ansible.builtin.assert:
+        that:
+          - groups['pharmacy_servers'] is defined
+          - groups['pharmacy_servers'] | length >= 1
+          - groups['pharmacy_servers'] | length <= (max_supported_pharmacy_sites | int)
+        fail_msg: >-
+          The migration inventory must contain between 1 and
+          {{ max_supported_pharmacy_sites }} pharmacy sites. The 100-site
+          value is an architecture ceiling, not an active rollout size.
+      run_once: true
+      delegate_to: localhost
+
+    - name: Enforce the active migration rollout limit against selected hosts
+      ansible.builtin.assert:
+        that:
+          - active_rollout_limit | int >= 1
+          - active_rollout_limit | int <= (max_supported_pharmacy_sites | int)
+          - ansible_play_hosts_all | length >= 1
+          - ansible_play_hosts_all | length <= (active_rollout_limit | int)
+        fail_msg: >-
+          The active migration rollout limit must be between 1 and
+          {{ max_supported_pharmacy_sites }}. This run selected
+          {{ ansible_play_hosts_all | length }} pharmacy hosts, but the
+          active limit is {{ active_rollout_limit }}.
+      run_once: true
+      delegate_to: localhost
+
+    - name: Require non-empty pharmacy IDs across the complete inventory
+      ansible.builtin.assert:
+        that:
+          - hostvars[item].pharmacy_id is defined
+          - hostvars[item].pharmacy_id | string | length > 0
+        fail_msg: "Every inventory pharmacy must define a non-empty pharmacy_id."
+      loop: "{{ groups['pharmacy_servers'] }}"
+      run_once: true
+      delegate_to: localhost
+
+    - name: Require globally unique pharmacy IDs
+      ansible.builtin.assert:
+        that:
+          - >-
+            (groups['pharmacy_servers']
+            | map('extract', hostvars, 'pharmacy_id')
+            | list | unique | list | length)
+            == (groups['pharmacy_servers'] | length)
+        fail_msg: "Every pharmacy in the complete inventory must have a unique pharmacy_id."
+      run_once: true
+      delegate_to: localhost
+
+    - name: Require non-empty site codes across the complete inventory
+      ansible.builtin.assert:
+        that:
+          - hostvars[item].site_code is defined
+          - hostvars[item].site_code | string | length > 0
+        fail_msg: "Every inventory pharmacy must define a non-empty site_code."
+      loop: "{{ groups['pharmacy_servers'] }}"
+      run_once: true
+      delegate_to: localhost
+
+    - name: Require globally unique site codes
+      ansible.builtin.assert:
+        that:
+          - >-
+            (groups['pharmacy_servers']
+            | map('extract', hostvars, 'site_code')
+            | list | unique | list | length)
+            == (groups['pharmacy_servers'] | length)
+        fail_msg: "Every pharmacy in the complete inventory must have a unique site_code."
+      run_once: true
+      delegate_to: localhost
+
+    - name: Validate SSH endpoint and user for selected migration hosts
+      ansible.builtin.assert:
+        that:
+          - hostvars[item].ansible_host is defined
+          - hostvars[item].ansible_host | string | length > 0
+          - hostvars[item].ansible_user is defined
+          - hostvars[item].ansible_user | string | length > 0
+        fail_msg: "Every selected migration target requires a real SSH endpoint and SSH user."
+      loop: "{{ ansible_play_hosts_all }}"
+      run_once: true
+      delegate_to: localhost
+
+    - name: Require a non-empty database credential for every selected pharmacy
+      ansible.builtin.assert:
+        that:
+          - hostvars[item].postgres_password is defined
+          - hostvars[item].postgres_password | string | length > 0
+        fail_msg: "Each selected pharmacy must provide its own PostgreSQL credential."
+      no_log: true
+      loop: "{{ ansible_play_hosts_all }}"
+      run_once: true
+      delegate_to: localhost
+
+    - name: Require unique configured PostgreSQL credentials across inventory
+      ansible.builtin.assert:
+        that:
+          - >-
+            (groups['pharmacy_servers']
+            | map('extract', hostvars)
+            | map(attribute='postgres_password', default='')
+            | select | list | unique | list | length)
+            ==
+            (groups['pharmacy_servers']
+            | map('extract', hostvars)
+            | map(attribute='postgres_password', default='')
+            | select | list | length)
+        fail_msg: "Every configured PostgreSQL credential must be unique across the complete inventory."
+      no_log: true
+      run_once: true
+      delegate_to: localhost
 
 - name: Apply an explicitly approved, backed-up Edge database migration
   hosts: pharmacy_servers
