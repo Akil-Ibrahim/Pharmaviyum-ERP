@@ -59,6 +59,7 @@
 
   tasks:
     - name: Create, verify and publish backup artifact
+      when: backup_enabled | bool
       block:
         - name: Ensure backup directory is private
           ansible.builtin.file:
@@ -234,4 +235,3 @@
             - "{{ backup_tmp_file }}"
             - "{{ backup_checksum_tmp_file }}"
             - "{{ backup_manifest_tmp_file }}"
-      when: backup_enabled | bool
