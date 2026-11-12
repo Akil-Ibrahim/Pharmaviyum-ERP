@@ -195,6 +195,7 @@
               - -O
               - "{{ postgres_user }}"
               - "{{ restore_target_database }}"
+          register: restore_database_created
           changed_when: true
           no_log: true
 
@@ -302,6 +303,9 @@
           changed_when: true
           failed_when: false
           no_log: true
+          when:
+            - restore_database_created is defined
+            - restore_database_created is succeeded
 
         - name: Fail the restore drill after cleaning up its incomplete target
           ansible.builtin.fail:
