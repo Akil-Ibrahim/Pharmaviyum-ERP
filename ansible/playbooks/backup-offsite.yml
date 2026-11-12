@@ -1,15 +1,8 @@
 ---
-# Upload an already verified local PostgreSQL dump to a site-scoped Restic
-# repository. Repository provisioning, key escrow, retention and restore remain
-# separate controller-owned operations; this playbook never initializes or prunes.
-#
-# Required per-site variables must come from protected Ansible Vault/host_vars:
-#   offsite_backup_approved, offsite_backup_approval_reference
-#   offsite_backup_file
-#   restic_repository_url (rest:https://.../<pharmacy_id>)
-#   restic_repository_password, restic_rest_username, restic_rest_password
+# Upload only a verified local PostgreSQL dump to an existing site-scoped
+# Restic REST repository. This playbook never initializes, prunes or deletes.
 
-- name: Validate off-site backup wave on the Ansible controller before SSH
+- name: Validate off-site backup approval and selected wave on controller
   hosts: pharmacy_servers
   connection: local
   serial: 1
@@ -18,7 +11,7 @@
   vars_files:
     - ../group_vars/all.yml
   tasks:
-    - name: Validate fleet ceiling and selected upload wave before SSH
+    - name: Validate inventory ceiling and active rollout wave
       ansible.builtin.assert:
         that:
           - groups['pharmacy_servers'] is defined
@@ -28,16 +21,27 @@
           - active_rollout_limit | int <= 10
           - ansible_play_hosts_all | length >= 1
           - ansible_play_hosts_all | length <= (active_rollout_limit | int)
-        fail_msg: "Off-site backup requires a valid inventory (max 100) and a selected wave of 1-{{ active_rollout_limit }} pharmacies."
+        fail_msg: "Off-site backup requires an inventory of at most 100 sites and a selected wave of 1-10 pharmacies."
       tags: [preflight]
 
-    - name: Validate site identity, approval, repository isolation and credentials before SSH
+    - name: Validate explicit approval, site identity and repository credentials before SSH
       ansible.builtin.assert:
         that:
           - offsite_backup_approved | default(false) | bool
           - offsite_backup_approval_reference | default('') | string | length > 0
           - pharmacy_id is defined
-          - pharmacy_id is match('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}
+          - pharmacy_id is match('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')
+          - site_code is defined
+          - site_code | string | length > 0
+          - restic_repository_url is match('^rest:https://')
+          - restic_repository_url is search('/' ~ (pharmacy_id | regex_escape) ~ '$')
+          - restic_repository_password | default('') | string | length >= 20
+          - restic_rest_username | default('') | string | length > 0
+          - restic_rest_password | default('') | string | length > 0
+          - offsite_backup_file is match('^' ~ (app_directory | regex_escape) ~ '/backups/pharmaviyum_[0-9]+[.]sql[.]gz$')
+        fail_msg: "Off-site transfer requires approval, a site-scoped HTTPS repository, protected credentials and a valid local backup path."
+      no_log: true
+      tags: [preflight]
 
 - name: Encrypt and upload verified local backup artifacts to Restic
   hosts: pharmacy_servers
@@ -49,7 +53,7 @@
     - ../group_vars/all.yml
   vars:
     restic_binary: /usr/bin/restic
-    restic_expected_version: 0.19.1
+    restic_expected_version: "0.19.1"
     restic_cache_directory: /var/cache/restic/pharmaviyum
     restic_environment:
       RESTIC_REPOSITORY: "{{ restic_repository_url }}"
@@ -57,18 +61,33 @@
       RESTIC_REST_USERNAME: "{{ restic_rest_username }}"
       RESTIC_REST_PASSWORD: "{{ restic_rest_password }}"
       RESTIC_CACHE_DIR: "{{ restic_cache_directory }}/{{ pharmacy_id }}"
+
   pre_tasks:
-    - name: Check Restic executable is installed
+    - name: Require the pinned Restic executable
       ansible.builtin.stat:
         path: "{{ restic_binary }}"
       register: restic_binary_stat
 
-    - name: Refuse upload when Restic is not installed
+    - name: Refuse upload when Restic is missing
       ansible.builtin.assert:
         that:
           - restic_binary_stat.stat.exists
           - restic_binary_stat.stat.executable
         fail_msg: "Install the pinned Restic {{ restic_expected_version }} release before enabling off-site upload."
+
+    - name: Verify the installed Restic version exactly
+      ansible.builtin.command:
+        argv:
+          - "{{ restic_binary }}"
+          - version
+      register: restic_version_result
+      changed_when: false
+
+    - name: Reject an unexpected Restic version
+      ansible.builtin.assert:
+        that:
+          - restic_version_result.stdout is search('restic ' ~ restic_expected_version ~ '($| )')
+        fail_msg: "The installed Restic version does not match the pinned release."
 
     - name: Inspect local backup payload, checksum and manifest
       ansible.builtin.stat:
@@ -85,12 +104,12 @@
           - item.stat.exists
           - item.stat.isreg
           - item.stat.size | int > 0
-        fail_msg: "The local dump, SHA-256 sidecar and manifest must all exist and be non-empty."
+        fail_msg: "The local dump, checksum sidecar and manifest must all exist and be non-empty."
       loop: "{{ offsite_local_artifacts.results }}"
       loop_control:
         label: "{{ item.item | basename }}"
 
-    - name: Verify local gzip stream before encryption and transfer
+    - name: Verify local gzip stream before transfer
       ansible.builtin.command:
         argv:
           - gzip
@@ -98,7 +117,7 @@
           - "{{ offsite_backup_file }}"
       changed_when: false
 
-    - name: Verify local SHA-256 sidecar before encryption and transfer
+    - name: Verify local SHA-256 sidecar before transfer
       ansible.builtin.command:
         argv:
           - sha256sum
@@ -108,7 +127,7 @@
         chdir: "{{ app_directory }}/backups"
       changed_when: false
 
-    - name: Read local manifest and verify pharmacy identity
+    - name: Read local manifest
       ansible.builtin.slurp:
         src: "{{ offsite_backup_file }}.manifest.yml"
       register: offsite_manifest_raw
@@ -129,21 +148,7 @@
         fail_msg: "Backup manifest identity does not match the selected pharmacy and database."
       no_log: true
 
-    - name: Check Restic version
-      ansible.builtin.command:
-        argv:
-          - "{{ restic_binary }}"
-          - version
-      register: restic_version_result
-      changed_when: false
-
-    - name: Require a Restic version response
-      ansible.builtin.assert:
-        that:
-          - restic_version_result.stdout is search('restic ' ~ (restic_expected_version | string) ~ '($| )')
-        fail_msg: "The Restic executable did not return a valid version."
-
-    - name: Create private Restic cache directory
+    - name: Create private site-specific Restic cache directory
       ansible.builtin.file:
         path: "{{ restic_cache_directory }}/{{ pharmacy_id }}"
         state: directory
@@ -151,7 +156,7 @@
         group: root
         mode: "0700"
 
-    - name: Confirm the site repository is already initialized; never initialize implicitly
+    - name: Confirm the site repository already exists; never initialize implicitly
       ansible.builtin.command:
         argv:
           - "{{ restic_binary }}"
@@ -163,7 +168,7 @@
       no_log: true
 
   tasks:
-    - name: Upload only the approved local backup set with Restic's default verification enabled
+    - name: Upload approved local artifacts with Restic verification enabled
       ansible.builtin.command:
         argv:
           - "{{ restic_binary }}"
@@ -214,659 +219,27 @@
         restic_remote_snapshot_matches: "{{ (restic_remote_snapshots.stdout | from_json) | selectattr('id', 'search', '^' ~ (restic_backup_summary.snapshot_id | regex_escape)) | list }}"
       no_log: true
 
-    - name: Confirm snapshot ID, host and pharmacy tags in the remote repository
+    - name: Require exactly one matching remote snapshot
       ansible.builtin.assert:
         that:
           - restic_remote_snapshot_matches | length == 1
+        fail_msg: "The uploaded Restic snapshot is not uniquely visible in the remote repository."
+      no_log: true
+
+    - name: Verify remote snapshot host, pharmacy tags and source path
+      ansible.builtin.assert:
+        that:
           - restic_remote_snapshot_matches[0].hostname == inventory_hostname
           - pharmacy_id in restic_remote_snapshot_matches[0].tags
           - site_code in restic_remote_snapshot_matches[0].tags
           - offsite_backup_file in restic_remote_snapshot_matches[0].paths
-        fail_msg: "The uploaded snapshot is missing or its remote host/site identity does not match."
+        fail_msg: "The remote snapshot identity does not match the selected pharmacy and source backup."
       no_log: true
 
-    - name: Report off-site backup verification without exposing secrets
+    - name: Report remote snapshot metadata without exposing secrets
       ansible.builtin.debug:
         msg:
-          - "Encrypted Restic snapshot uploaded and confirmed visible in the site repository for {{ pharmacy_id }} ({{ site_code }})."
-          - "Snapshot ID: {{ restic_backup_summary.snapshot_id }}."
-          - "Approval reference: {{ offsite_backup_approval_reference }}."
-          - "Local artifacts were retained; no remote prune or local cleanup was run."
-)
-          - site_code is defined
-          - site_code | string | length > 0
-          - restic_repository_url is match('^rest:https://')
-          - restic_repository_url is search('/' ~ (pharmacy_id | regex_escape) ~ '
-
-- name: Encrypt and upload verified local backup artifacts to Restic
-  hosts: pharmacy_servers
-  become: true
-  gather_facts: false
-  serial: 1
-  any_errors_fatal: true
-  vars_files:
-    - ../group_vars/all.yml
-  vars:
-    restic_binary: /usr/bin/restic
-    restic_cache_directory: /var/cache/restic/pharmaviyum
-    restic_environment:
-      RESTIC_REPOSITORY: "{{ restic_repository_url }}"
-      RESTIC_PASSWORD: "{{ restic_repository_password }}"
-      RESTIC_REST_USERNAME: "{{ restic_rest_username }}"
-      RESTIC_REST_PASSWORD: "{{ restic_rest_password }}"
-      RESTIC_CACHE_DIR: "{{ restic_cache_directory }}/{{ pharmacy_id }}"
-  pre_tasks:
-    - name: Require explicit approval for transfer of pharmacy backup data
-      ansible.builtin.assert:
-        that:
-          - offsite_backup_approved | default(false) | bool
-          - offsite_backup_approval_reference | default('') | string | length > 0
-          - pharmacy_id is defined
-          - pharmacy_id is match('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')
-          - site_code is defined
-          - site_code | string | length > 0
-          - restic_repository_url is match('^rest:https://')
-          - restic_repository_url is search('/' ~ (pharmacy_id | regex_escape) ~ '$')
-          - restic_repository_password | default('') | string | length >= 20
-          - restic_rest_username | default('') | string | length > 0
-          - restic_rest_password | default('') | string | length > 0
-          - offsite_backup_file is match('^' ~ (app_directory | regex_escape) ~ '/backups/pharmaviyum_[0-9]+[.]sql[.]gz$')
-        fail_msg: "Off-site upload requires approval, site-scoped HTTPS repository, unique site identity, protected credentials and an explicit local backup path."
-      no_log: true
-
-    - name: Check Restic executable is installed
-      ansible.builtin.stat:
-        path: "{{ restic_binary }}"
-      register: restic_binary_stat
-
-    - name: Refuse upload when Restic is not installed
-      ansible.builtin.assert:
-        that:
-          - restic_binary_stat.stat.exists
-          - restic_binary_stat.stat.executable
-        fail_msg: "Install and pin the approved Restic release before enabling off-site upload."
-
-    - name: Inspect local backup payload, checksum and manifest
-      ansible.builtin.stat:
-        path: "{{ item }}"
-      loop:
-        - "{{ offsite_backup_file }}"
-        - "{{ offsite_backup_file }}.sha256"
-        - "{{ offsite_backup_file }}.manifest.yml"
-      register: offsite_local_artifacts
-
-    - name: Require all local artifacts to be regular non-empty files
-      ansible.builtin.assert:
-        that:
-          - item.stat.exists
-          - item.stat.isreg
-          - item.stat.size | int > 0
-        fail_msg: "The local dump, SHA-256 sidecar and manifest must all exist and be non-empty."
-      loop: "{{ offsite_local_artifacts.results }}"
-      loop_control:
-        label: "{{ item.item | basename }}"
-
-    - name: Verify local gzip stream before encryption and transfer
-      ansible.builtin.command:
-        argv:
-          - gzip
-          - -t
-          - "{{ offsite_backup_file }}"
-      changed_when: false
-
-    - name: Verify local SHA-256 sidecar before encryption and transfer
-      ansible.builtin.command:
-        argv:
-          - sha256sum
-          - --check
-          - "{{ offsite_backup_file }}.sha256"
-      args:
-        chdir: "{{ app_directory }}/backups"
-      changed_when: false
-
-    - name: Read local manifest and verify pharmacy identity
-      ansible.builtin.slurp:
-        src: "{{ offsite_backup_file }}.manifest.yml"
-      register: offsite_manifest_raw
-      no_log: true
-
-    - name: Parse local manifest
-      ansible.builtin.set_fact:
-        offsite_manifest: "{{ offsite_manifest_raw.content | b64decode | from_yaml }}"
-      no_log: true
-
-    - name: Refuse cross-pharmacy or mismatched backup upload
-      ansible.builtin.assert:
-        that:
-          - offsite_manifest.pharmacy_id == pharmacy_id
-          - offsite_manifest.site_code == site_code
-          - offsite_manifest.backup_file == (offsite_backup_file | basename)
-          - offsite_manifest.database == postgres_db
-        fail_msg: "Backup manifest identity does not match the selected pharmacy and database."
-      no_log: true
-
-    - name: Check Restic version
-      ansible.builtin.command:
-        argv:
-          - "{{ restic_binary }}"
-          - version
-      register: restic_version_result
-      changed_when: false
-
-    - name: Require a Restic version response
-      ansible.builtin.assert:
-        that:
-          - restic_version_result.stdout is search('restic')
-        fail_msg: "The Restic executable did not return a valid version."
-
-    - name: Create private Restic cache directory
-      ansible.builtin.file:
-        path: "{{ restic_cache_directory }}/{{ pharmacy_id }}"
-        state: directory
-        owner: root
-        group: root
-        mode: "0700"
-
-    - name: Confirm the site repository is already initialized; never initialize implicitly
-      ansible.builtin.command:
-        argv:
-          - "{{ restic_binary }}"
-          - snapshots
-          - --json
-      environment: "{{ restic_environment }}"
-      register: restic_existing_snapshots
-      changed_when: false
-      no_log: true
-
-  tasks:
-    - name: Upload and read-verify only the approved local backup set
-      ansible.builtin.command:
-        argv:
-          - "{{ restic_binary }}"
-          - backup
-          - --json
-          - --verify
-          - --host
-          - "{{ inventory_hostname }}"
-          - --tag
-          - pharmaviyum
-          - --tag
-          - "{{ pharmacy_id }}"
-          - --tag
-          - "{{ site_code }}"
-          - "{{ offsite_backup_file }}"
-          - "{{ offsite_backup_file }}.sha256"
-          - "{{ offsite_backup_file }}.manifest.yml"
-      environment: "{{ restic_environment }}"
-      register: restic_backup_result
-      changed_when: true
-      no_log: true
-
-    - name: Extract Restic backup summary
-      ansible.builtin.set_fact:
-        restic_backup_summary: "{{ restic_backup_result.stdout_lines | map('from_json') | selectattr('message_type', 'equalto', 'summary') | list | last }}"
-      no_log: true
-
-    - name: Require a Restic snapshot identifier
-      ansible.builtin.assert:
-        that:
-          - restic_backup_summary.snapshot_id is defined
-          - restic_backup_summary.snapshot_id is match('^[0-9a-f]{8,64}$')
-        fail_msg: "Restic did not return a valid snapshot ID."
-      no_log: true
-
-    - name: Independently list remote snapshots after upload
-      ansible.builtin.command:
-        argv:
-          - "{{ restic_binary }}"
-          - snapshots
-          - --json
-      environment: "{{ restic_environment }}"
-      register: restic_remote_snapshots
-      changed_when: false
-      no_log: true
-
-    - name: Parse remote snapshot inventory
-      ansible.builtin.set_fact:
-        restic_remote_snapshot_ids: "{{ (restic_remote_snapshots.stdout | from_json) | map(attribute='id') | list }}"
-      no_log: true
-
-    - name: Confirm uploaded snapshot is visible in the remote repository
-      ansible.builtin.assert:
-        that:
-          - restic_backup_summary.snapshot_id in restic_remote_snapshot_ids
-        fail_msg: "The uploaded Restic snapshot is not visible in the remote repository."
-      no_log: true
-
-    - name: Report off-site backup verification without exposing secrets
-      ansible.builtin.debug:
-        msg:
-          - "Encrypted Restic snapshot uploaded and read-verified for {{ pharmacy_id }} ({{ site_code }})."
-          - "Snapshot ID: {{ restic_backup_summary.snapshot_id }}."
-          - "Approval reference: {{ offsite_backup_approval_reference }}."
-          - "Local artifacts were retained; no remote prune or local cleanup was run."
-)
-          - restic_repository_password | default('') | string | length >= 20
-          - restic_rest_username | default('') | string | length > 0
-          - restic_rest_password | default('') | string | length > 0
-          - offsite_backup_file is match('^' ~ (app_directory | regex_escape) ~ '/backups/pharmaviyum_[0-9]+[.]sql[.]gz
-
-- name: Encrypt and upload verified local backup artifacts to Restic
-  hosts: pharmacy_servers
-  become: true
-  gather_facts: false
-  serial: 1
-  any_errors_fatal: true
-  vars_files:
-    - ../group_vars/all.yml
-  vars:
-    restic_binary: /usr/bin/restic
-    restic_cache_directory: /var/cache/restic/pharmaviyum
-    restic_environment:
-      RESTIC_REPOSITORY: "{{ restic_repository_url }}"
-      RESTIC_PASSWORD: "{{ restic_repository_password }}"
-      RESTIC_REST_USERNAME: "{{ restic_rest_username }}"
-      RESTIC_REST_PASSWORD: "{{ restic_rest_password }}"
-      RESTIC_CACHE_DIR: "{{ restic_cache_directory }}/{{ pharmacy_id }}"
-  pre_tasks:
-    - name: Require explicit approval for transfer of pharmacy backup data
-      ansible.builtin.assert:
-        that:
-          - offsite_backup_approved | default(false) | bool
-          - offsite_backup_approval_reference | default('') | string | length > 0
-          - pharmacy_id is defined
-          - pharmacy_id is match('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')
-          - site_code is defined
-          - site_code | string | length > 0
-          - restic_repository_url is match('^rest:https://')
-          - restic_repository_url is search('/' ~ (pharmacy_id | regex_escape) ~ '$')
-          - restic_repository_password | default('') | string | length >= 20
-          - restic_rest_username | default('') | string | length > 0
-          - restic_rest_password | default('') | string | length > 0
-          - offsite_backup_file is match('^' ~ (app_directory | regex_escape) ~ '/backups/pharmaviyum_[0-9]+[.]sql[.]gz$')
-        fail_msg: "Off-site upload requires approval, site-scoped HTTPS repository, unique site identity, protected credentials and an explicit local backup path."
-      no_log: true
-
-    - name: Check Restic executable is installed
-      ansible.builtin.stat:
-        path: "{{ restic_binary }}"
-      register: restic_binary_stat
-
-    - name: Refuse upload when Restic is not installed
-      ansible.builtin.assert:
-        that:
-          - restic_binary_stat.stat.exists
-          - restic_binary_stat.stat.executable
-        fail_msg: "Install and pin the approved Restic release before enabling off-site upload."
-
-    - name: Inspect local backup payload, checksum and manifest
-      ansible.builtin.stat:
-        path: "{{ item }}"
-      loop:
-        - "{{ offsite_backup_file }}"
-        - "{{ offsite_backup_file }}.sha256"
-        - "{{ offsite_backup_file }}.manifest.yml"
-      register: offsite_local_artifacts
-
-    - name: Require all local artifacts to be regular non-empty files
-      ansible.builtin.assert:
-        that:
-          - item.stat.exists
-          - item.stat.isreg
-          - item.stat.size | int > 0
-        fail_msg: "The local dump, SHA-256 sidecar and manifest must all exist and be non-empty."
-      loop: "{{ offsite_local_artifacts.results }}"
-      loop_control:
-        label: "{{ item.item | basename }}"
-
-    - name: Verify local gzip stream before encryption and transfer
-      ansible.builtin.command:
-        argv:
-          - gzip
-          - -t
-          - "{{ offsite_backup_file }}"
-      changed_when: false
-
-    - name: Verify local SHA-256 sidecar before encryption and transfer
-      ansible.builtin.command:
-        argv:
-          - sha256sum
-          - --check
-          - "{{ offsite_backup_file }}.sha256"
-      args:
-        chdir: "{{ app_directory }}/backups"
-      changed_when: false
-
-    - name: Read local manifest and verify pharmacy identity
-      ansible.builtin.slurp:
-        src: "{{ offsite_backup_file }}.manifest.yml"
-      register: offsite_manifest_raw
-      no_log: true
-
-    - name: Parse local manifest
-      ansible.builtin.set_fact:
-        offsite_manifest: "{{ offsite_manifest_raw.content | b64decode | from_yaml }}"
-      no_log: true
-
-    - name: Refuse cross-pharmacy or mismatched backup upload
-      ansible.builtin.assert:
-        that:
-          - offsite_manifest.pharmacy_id == pharmacy_id
-          - offsite_manifest.site_code == site_code
-          - offsite_manifest.backup_file == (offsite_backup_file | basename)
-          - offsite_manifest.database == postgres_db
-        fail_msg: "Backup manifest identity does not match the selected pharmacy and database."
-      no_log: true
-
-    - name: Check Restic version
-      ansible.builtin.command:
-        argv:
-          - "{{ restic_binary }}"
-          - version
-      register: restic_version_result
-      changed_when: false
-
-    - name: Require a Restic version response
-      ansible.builtin.assert:
-        that:
-          - restic_version_result.stdout is search('restic')
-        fail_msg: "The Restic executable did not return a valid version."
-
-    - name: Create private Restic cache directory
-      ansible.builtin.file:
-        path: "{{ restic_cache_directory }}/{{ pharmacy_id }}"
-        state: directory
-        owner: root
-        group: root
-        mode: "0700"
-
-    - name: Confirm the site repository is already initialized; never initialize implicitly
-      ansible.builtin.command:
-        argv:
-          - "{{ restic_binary }}"
-          - snapshots
-          - --json
-      environment: "{{ restic_environment }}"
-      register: restic_existing_snapshots
-      changed_when: false
-      no_log: true
-
-  tasks:
-    - name: Upload and read-verify only the approved local backup set
-      ansible.builtin.command:
-        argv:
-          - "{{ restic_binary }}"
-          - backup
-          - --json
-          - --verify
-          - --host
-          - "{{ inventory_hostname }}"
-          - --tag
-          - pharmaviyum
-          - --tag
-          - "{{ pharmacy_id }}"
-          - --tag
-          - "{{ site_code }}"
-          - "{{ offsite_backup_file }}"
-          - "{{ offsite_backup_file }}.sha256"
-          - "{{ offsite_backup_file }}.manifest.yml"
-      environment: "{{ restic_environment }}"
-      register: restic_backup_result
-      changed_when: true
-      no_log: true
-
-    - name: Extract Restic backup summary
-      ansible.builtin.set_fact:
-        restic_backup_summary: "{{ restic_backup_result.stdout_lines | map('from_json') | selectattr('message_type', 'equalto', 'summary') | list | last }}"
-      no_log: true
-
-    - name: Require a Restic snapshot identifier
-      ansible.builtin.assert:
-        that:
-          - restic_backup_summary.snapshot_id is defined
-          - restic_backup_summary.snapshot_id is match('^[0-9a-f]{8,64}$')
-        fail_msg: "Restic did not return a valid snapshot ID."
-      no_log: true
-
-    - name: Independently list remote snapshots after upload
-      ansible.builtin.command:
-        argv:
-          - "{{ restic_binary }}"
-          - snapshots
-          - --json
-      environment: "{{ restic_environment }}"
-      register: restic_remote_snapshots
-      changed_when: false
-      no_log: true
-
-    - name: Parse remote snapshot inventory
-      ansible.builtin.set_fact:
-        restic_remote_snapshot_ids: "{{ (restic_remote_snapshots.stdout | from_json) | map(attribute='id') | list }}"
-      no_log: true
-
-    - name: Confirm uploaded snapshot is visible in the remote repository
-      ansible.builtin.assert:
-        that:
-          - restic_backup_summary.snapshot_id in restic_remote_snapshot_ids
-        fail_msg: "The uploaded Restic snapshot is not visible in the remote repository."
-      no_log: true
-
-    - name: Report off-site backup verification without exposing secrets
-      ansible.builtin.debug:
-        msg:
-          - "Encrypted Restic snapshot uploaded and read-verified for {{ pharmacy_id }} ({{ site_code }})."
-          - "Snapshot ID: {{ restic_backup_summary.snapshot_id }}."
-          - "Approval reference: {{ offsite_backup_approval_reference }}."
-          - "Local artifacts were retained; no remote prune or local cleanup was run."
-)
-        fail_msg: "Off-site upload requires approval, a site-scoped HTTPS repository, unique site identity, protected credentials and an explicit local backup path."
-      no_log: true
-      tags: [preflight]
-
-- name: Encrypt and upload verified local backup artifacts to Restic
-  hosts: pharmacy_servers
-  become: true
-  gather_facts: false
-  serial: 1
-  any_errors_fatal: true
-  vars_files:
-    - ../group_vars/all.yml
-  vars:
-    restic_binary: /usr/bin/restic
-    restic_cache_directory: /var/cache/restic/pharmaviyum
-    restic_environment:
-      RESTIC_REPOSITORY: "{{ restic_repository_url }}"
-      RESTIC_PASSWORD: "{{ restic_repository_password }}"
-      RESTIC_REST_USERNAME: "{{ restic_rest_username }}"
-      RESTIC_REST_PASSWORD: "{{ restic_rest_password }}"
-      RESTIC_CACHE_DIR: "{{ restic_cache_directory }}/{{ pharmacy_id }}"
-  pre_tasks:
-    - name: Require explicit approval for transfer of pharmacy backup data
-      ansible.builtin.assert:
-        that:
-          - offsite_backup_approved | default(false) | bool
-          - offsite_backup_approval_reference | default('') | string | length > 0
-          - pharmacy_id is defined
-          - pharmacy_id is match('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')
-          - site_code is defined
-          - site_code | string | length > 0
-          - restic_repository_url is match('^rest:https://')
-          - restic_repository_url is search('/' ~ (pharmacy_id | regex_escape) ~ '$')
-          - restic_repository_password | default('') | string | length >= 20
-          - restic_rest_username | default('') | string | length > 0
-          - restic_rest_password | default('') | string | length > 0
-          - offsite_backup_file is match('^' ~ (app_directory | regex_escape) ~ '/backups/pharmaviyum_[0-9]+[.]sql[.]gz$')
-        fail_msg: "Off-site upload requires approval, site-scoped HTTPS repository, unique site identity, protected credentials and an explicit local backup path."
-      no_log: true
-
-    - name: Check Restic executable is installed
-      ansible.builtin.stat:
-        path: "{{ restic_binary }}"
-      register: restic_binary_stat
-
-    - name: Refuse upload when Restic is not installed
-      ansible.builtin.assert:
-        that:
-          - restic_binary_stat.stat.exists
-          - restic_binary_stat.stat.executable
-        fail_msg: "Install and pin the approved Restic release before enabling off-site upload."
-
-    - name: Inspect local backup payload, checksum and manifest
-      ansible.builtin.stat:
-        path: "{{ item }}"
-      loop:
-        - "{{ offsite_backup_file }}"
-        - "{{ offsite_backup_file }}.sha256"
-        - "{{ offsite_backup_file }}.manifest.yml"
-      register: offsite_local_artifacts
-
-    - name: Require all local artifacts to be regular non-empty files
-      ansible.builtin.assert:
-        that:
-          - item.stat.exists
-          - item.stat.isreg
-          - item.stat.size | int > 0
-        fail_msg: "The local dump, SHA-256 sidecar and manifest must all exist and be non-empty."
-      loop: "{{ offsite_local_artifacts.results }}"
-      loop_control:
-        label: "{{ item.item | basename }}"
-
-    - name: Verify local gzip stream before encryption and transfer
-      ansible.builtin.command:
-        argv:
-          - gzip
-          - -t
-          - "{{ offsite_backup_file }}"
-      changed_when: false
-
-    - name: Verify local SHA-256 sidecar before encryption and transfer
-      ansible.builtin.command:
-        argv:
-          - sha256sum
-          - --check
-          - "{{ offsite_backup_file }}.sha256"
-      args:
-        chdir: "{{ app_directory }}/backups"
-      changed_when: false
-
-    - name: Read local manifest and verify pharmacy identity
-      ansible.builtin.slurp:
-        src: "{{ offsite_backup_file }}.manifest.yml"
-      register: offsite_manifest_raw
-      no_log: true
-
-    - name: Parse local manifest
-      ansible.builtin.set_fact:
-        offsite_manifest: "{{ offsite_manifest_raw.content | b64decode | from_yaml }}"
-      no_log: true
-
-    - name: Refuse cross-pharmacy or mismatched backup upload
-      ansible.builtin.assert:
-        that:
-          - offsite_manifest.pharmacy_id == pharmacy_id
-          - offsite_manifest.site_code == site_code
-          - offsite_manifest.backup_file == (offsite_backup_file | basename)
-          - offsite_manifest.database == postgres_db
-        fail_msg: "Backup manifest identity does not match the selected pharmacy and database."
-      no_log: true
-
-    - name: Check Restic version
-      ansible.builtin.command:
-        argv:
-          - "{{ restic_binary }}"
-          - version
-      register: restic_version_result
-      changed_when: false
-
-    - name: Require a Restic version response
-      ansible.builtin.assert:
-        that:
-          - restic_version_result.stdout is search('restic')
-        fail_msg: "The Restic executable did not return a valid version."
-
-    - name: Create private Restic cache directory
-      ansible.builtin.file:
-        path: "{{ restic_cache_directory }}/{{ pharmacy_id }}"
-        state: directory
-        owner: root
-        group: root
-        mode: "0700"
-
-    - name: Confirm the site repository is already initialized; never initialize implicitly
-      ansible.builtin.command:
-        argv:
-          - "{{ restic_binary }}"
-          - snapshots
-          - --json
-      environment: "{{ restic_environment }}"
-      register: restic_existing_snapshots
-      changed_when: false
-      no_log: true
-
-  tasks:
-    - name: Upload and read-verify only the approved local backup set
-      ansible.builtin.command:
-        argv:
-          - "{{ restic_binary }}"
-          - backup
-          - --json
-          - --verify
-          - --host
-          - "{{ inventory_hostname }}"
-          - --tag
-          - pharmaviyum
-          - --tag
-          - "{{ pharmacy_id }}"
-          - --tag
-          - "{{ site_code }}"
-          - "{{ offsite_backup_file }}"
-          - "{{ offsite_backup_file }}.sha256"
-          - "{{ offsite_backup_file }}.manifest.yml"
-      environment: "{{ restic_environment }}"
-      register: restic_backup_result
-      changed_when: true
-      no_log: true
-
-    - name: Extract Restic backup summary
-      ansible.builtin.set_fact:
-        restic_backup_summary: "{{ restic_backup_result.stdout_lines | map('from_json') | selectattr('message_type', 'equalto', 'summary') | list | last }}"
-      no_log: true
-
-    - name: Require a Restic snapshot identifier
-      ansible.builtin.assert:
-        that:
-          - restic_backup_summary.snapshot_id is defined
-          - restic_backup_summary.snapshot_id is match('^[0-9a-f]{8,64}$')
-        fail_msg: "Restic did not return a valid snapshot ID."
-      no_log: true
-
-    - name: Independently list remote snapshots after upload
-      ansible.builtin.command:
-        argv:
-          - "{{ restic_binary }}"
-          - snapshots
-          - --json
-      environment: "{{ restic_environment }}"
-      register: restic_remote_snapshots
-      changed_when: false
-      no_log: true
-
-    - name: Parse remote snapshot inventory
-      ansible.builtin.set_fact:
-        restic_remote_snapshot_ids: "{{ (restic_remote_snapshots.stdout | from_json) | map(attribute='id') | list }}"
-      no_log: true
-
-    - name: Confirm uploaded snapshot is visible in the remote repository
-      ansible.builtin.assert:
-        that:
-          - restic_backup_summary.snapshot_id in restic_remote_snapshot_ids
-        fail_msg: "The uploaded Restic snapshot is not visible in the remote repository."
-      no_log: true
-
-    - name: Report off-site backup verification without exposing secrets
-      ansible.builtin.debug:
-        msg:
-          - "Encrypted Restic snapshot uploaded and read-verified for {{ pharmacy_id }} ({{ site_code }})."
+          - "Encrypted Restic snapshot is visible in the site repository for {{ pharmacy_id }} ({{ site_code }})."
           - "Snapshot ID: {{ restic_backup_summary.snapshot_id }}."
           - "Approval reference: {{ offsite_backup_approval_reference }}."
           - "Local artifacts were retained; no remote prune or local cleanup was run."
