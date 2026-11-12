@@ -27,7 +27,7 @@ export const Route = createFileRoute('/_authenticated/settings/developer')({
 
 function DeveloperSettingsPage() {
   return (
-    <main className='p-4 space-y-6 md:p-6'>
+    <main className='space-y-6 p-4 md:p-6'>
       <header className='space-y-1'>
         <h1 className='text-2xl font-semibold tracking-tight'>
           Developer Settings
@@ -45,8 +45,8 @@ function DeveloperSettingsPage() {
               Ansible
             </CardTitle>
             <CardDescription>
-              Pharmacy Edge infrastructure automation, deployment standards,
-              and pharmacy onboarding.
+              Pharmacy Edge infrastructure automation, deployment standards, and
+              pharmacy onboarding.
             </CardDescription>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
