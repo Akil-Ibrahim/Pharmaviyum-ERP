@@ -105,7 +105,7 @@ if output="$(ansible-playbook -i "$inventory_duplicate_password" playbooks/deplo
   echo "ERROR: a duplicate PostgreSQL credential outside the selected wave was accepted."
   exit 1
 fi
-grep -q "configured PostgreSQL credential must be unique" <<<"$output"
+grep -qi "unique PostgreSQL credentials across configured inventory sites" <<<"$output"
 
 echo "Checking that a missing site code in an unselected site is rejected."
 if output="$(ansible-playbook -i "$inventory_missing_site_code" playbooks/deploy.yml \
