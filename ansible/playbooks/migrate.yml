@@ -1,73 +1,15 @@
 ---
-# Run this playbook as an explicit release gate before deploy.yml.
-# Example:
-# ansible-playbook -i inventory/lab/hosts.yml playbooks/migrate.yml \
-#   -e migration_approved=true -e migration_approval_reference=CHG-1234
-
-- name: Validate migration target fleet before contacting pharmacy hosts
-  hosts: localhost
+- name: Validate selected pharmacy fleet before contacting remote hosts
+  hosts: pharmacy_servers
   connection: local
   gather_facts: false
+  any_errors_fatal: true
+  tags: [preflight]
   vars_files:
     - ../group_vars/all.yml
   tasks:
-    - name: Require a selected 1–10 pharmacy Edge fleet
-      ansible.builtin.assert:
-        that:
-          - groups['pharmacy_servers'] is defined
-          - groups['pharmacy_servers'] | length >= 1
-          - groups['pharmacy_servers'] | length <= (active_rollout_limit | int)
-          - groups['pharmacy_servers'] | length <= (max_supported_pharmacy_sites | int)
-        fail_msg: "Migration target must contain between 1 and {{ active_rollout_limit }} pharmacy Edge hosts."
-
-    - name: Require explicit Edge connection and pharmacy identity metadata
-      ansible.builtin.assert:
-        that:
-          - hostvars[item].ansible_host is defined
-          - hostvars[item].ansible_host | string | length > 0
-          - hostvars[item].ansible_user is defined
-          - hostvars[item].ansible_user | string | length > 0
-          - hostvars[item].pharmacy_id is defined
-          - hostvars[item].pharmacy_id | string | length > 0
-          - hostvars[item].site_code is defined
-          - hostvars[item].site_code | string | length > 0
-        fail_msg: "Every migration target requires a real SSH endpoint, SSH user, pharmacy_id and site_code."
-      loop: "{{ groups['pharmacy_servers'] }}"
-
-    - name: Require unique pharmacy identities in the migration target
-      ansible.builtin.assert:
-        that:
-          - >-
-            (groups['pharmacy_servers']
-            | map('extract', hostvars, 'pharmacy_id')
-            | list | unique | list | length)
-            == (groups['pharmacy_servers'] | length)
-          - >-
-            (groups['pharmacy_servers']
-            | map('extract', hostvars, 'site_code')
-            | list | unique | list | length)
-            == (groups['pharmacy_servers'] | length)
-        fail_msg: "Every migration target must have unique pharmacy_id and site_code."
-
-    - name: Require a non-empty database credential for every pharmacy
-      ansible.builtin.assert:
-        that:
-          - hostvars[item].postgres_password is defined
-          - hostvars[item].postgres_password | string | length > 0
-        fail_msg: "Each pharmacy must provide its own PostgreSQL credential."
-      no_log: true
-      loop: "{{ groups['pharmacy_servers'] }}"
-
-    - name: Require distinct database credentials for each pharmacy
-      ansible.builtin.assert:
-        that:
-          - >-
-            (groups['pharmacy_servers']
-            | map('extract', hostvars, 'postgres_password')
-            | list | unique | list | length)
-            == (groups['pharmacy_servers'] | length)
-        fail_msg: "Each pharmacy must supply a distinct PostgreSQL credential."
-      no_log: true
+    - name: Apply shared pharmacy fleet guardrails
+      ansible.builtin.import_tasks: ../tasks/validate-pharmacy-fleet.yml
 
 - name: Apply an explicitly approved, backed-up Edge database migration
   hosts: pharmacy_servers
