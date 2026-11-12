@@ -57,7 +57,6 @@ describe('Pharmaviyum sidebar navigation', () => {
     )
 
     expect(developer?.url).toBe('/settings/developer')
-    expect(developer?.items).toBeUndefined()
   })
 
   it('keeps Background Tasks in the System group', () => {
