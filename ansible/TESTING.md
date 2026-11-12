@@ -32,7 +32,7 @@ molecule test --debug
 bash tests/test_fleet_selection.sh
 ```
 
-### Test restore and rollback recovery guardrails
+### Test restore and rollback recovery preflight gates
 
 ```bash
 # Exercise approval gates using synthetic localhost-only inventories.
