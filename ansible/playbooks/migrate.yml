@@ -41,6 +41,8 @@
         fail_msg: >-
           Database migrations are disabled by default. Pass
           -e migration_approved=true and a change/approval reference.
+      run_once: true
+      delegate_to: localhost
 
     - name: Require immutable release image and database credentials
       ansible.builtin.assert:
@@ -51,8 +53,9 @@
           - app_version != 'latest'
         fail_msg: "An immutable release, image digest and per-site DB credential are required."
       no_log: true
+      delegate_to: localhost
 
-    - name: Gather system facts after migration approval
+    - name: Gather Edge facts only after explicit migration approval
       ansible.builtin.setup:
 
   tasks:
