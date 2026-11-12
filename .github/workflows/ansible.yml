@@ -2,7 +2,7 @@ name: Ansible
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, fix/ansible-selected-rollout-limit]
     paths:
       - "ansible/**"
       - ".github/workflows/ansible.yml"
