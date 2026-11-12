@@ -140,17 +140,7 @@
             owner: "{{ deploy_user }}"
             mode: "0600"
 
-        - name: Atomically publish the verified backup payload
-          ansible.builtin.command:
-            argv:
-              - mv
-              - -f
-              - --
-              - "{{ backup_tmp_file }}"
-              - "{{ backup_file }}"
-          changed_when: true
-
-        - name: Publish the checksum sidecar
+        - name: Publish the checksum sidecar before exposing the backup payload
           ansible.builtin.command:
             argv:
               - mv
@@ -160,7 +150,7 @@
               - "{{ backup_file }}.sha256"
           changed_when: true
 
-        - name: Publish the backup manifest
+        - name: Publish the backup manifest before exposing the backup payload
           ansible.builtin.command:
             argv:
               - mv
@@ -168,6 +158,16 @@
               - --
               - "{{ backup_manifest_tmp_file }}"
               - "{{ backup_file }}.manifest.yml"
+          changed_when: true
+
+        - name: Atomically publish the verified backup payload last
+          ansible.builtin.command:
+            argv:
+              - mv
+              - -f
+              - --
+              - "{{ backup_tmp_file }}"
+              - "{{ backup_file }}"
           changed_when: true
 
         - name: Enforce private permissions on published artifacts
