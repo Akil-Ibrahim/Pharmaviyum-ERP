@@ -32,6 +32,13 @@ molecule test --debug
 bash tests/test_fleet_selection.sh
 ```
 
+### Test restore and rollback recovery preflight gates
+
+```bash
+# Synthetic localhost-only inventories; no pharmacy host is contacted.
+bash tests/test_recovery_guardrails.sh
+```
+
 ### Linting
 
 ```bash
