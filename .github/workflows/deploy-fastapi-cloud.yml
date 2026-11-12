@@ -4,6 +4,11 @@ name: Deploy to FastAPI Cloud
 # to FastAPI Cloud or run database migrations as a side effect.
 on:
   workflow_dispatch:
+    inputs:
+      change_reference:
+        description: "Approved production change or ticket reference"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -18,6 +23,7 @@ jobs:
     name: Build frontend and deploy
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    environment: production
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     env:
       DEPLOY_SHA: ${{ github.sha }}
@@ -70,15 +76,32 @@ jobs:
       # Alembic migrations are a separate, explicitly approved operation.
       # This deployment workflow must not mutate the production schema.
 
-      - name: Require authenticated production smoke credentials
+      - name: Validate production deployment inputs
         env:
+          CHANGE_REFERENCE: ${{ inputs.change_reference }}
+          FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
+          FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SMOKE_USERNAME: ${{ secrets.PHARMAVIYUM_SMOKE_USERNAME }}
           SMOKE_PASSWORD: ${{ secrets.PHARMAVIYUM_SMOKE_PASSWORD }}
+        shell: bash
         run: |
-          if [ -z "$SMOKE_USERNAME" ] || [ -z "$SMOKE_PASSWORD" ]; then
-            echo "Refusing production deployment: configure PHARMAVIYUM_SMOKE_USERNAME and PHARMAVIYUM_SMOKE_PASSWORD Actions secrets first."
+          set -euo pipefail
+          if [[ -z "$CHANGE_REFERENCE" ]]; then
+            echo "Refusing production deployment: provide an approved change reference."
             exit 1
           fi
+          for secret_name in FASTAPI_CLOUD_TOKEN FASTAPI_CLOUD_APP_ID DATABASE_URL SMOKE_USERNAME SMOKE_PASSWORD; do
+            if [[ -z "${!secret_name}" ]]; then
+              echo "Refusing production deployment: required secret/input is missing: $secret_name"
+              exit 1
+            fi
+          done
+          {
+            echo "## Production deployment approval"
+            echo "- Change reference: $CHANGE_REFERENCE"
+            echo "- Commit: $DEPLOY_SHA"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Deploy application and wait for verification
         run: uv run fastapi cloud deploy .
