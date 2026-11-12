@@ -3,9 +3,13 @@
 # explicitly confirmed Edge host. It never replaces the live application DB.
 
 - name: Validate restore drill selection before contacting pharmacy hosts
-  hosts: localhost
+  hosts: pharmacy_servers
   connection: local
+  serial: 1
+  any_errors_fatal: true
   gather_facts: false
+  vars_files:
+    - ../group_vars/all.yml
   vars:
     restore_approved: false
     restore_approval_reference: ""
@@ -14,35 +18,33 @@
     restore_backup_file: ""
     restore_expected_sha256: ""
   tasks:
-    - name: Require an inventory containing the pharmacy Edge group and a target confirmation
+    - name: Validate explicit approval and exact isolated restore target before SSH
       ansible.builtin.assert:
         that:
           - groups['pharmacy_servers'] is defined
-          - restore_target_confirmation | string | length > 0
-          - restore_target_confirmation in groups['pharmacy_servers']
-        fail_msg: >-
-          A restore drill requires a target confirmation matching a host in the
-          pharmacy Edge inventory group.
-
-    - name: Require explicit restore approval and target confirmation
-      ansible.builtin.assert:
-        that:
+          - groups['pharmacy_servers'] | length >= 1
+          - groups['pharmacy_servers'] | length <= (max_supported_pharmacy_sites | int)
+          - ansible_play_hosts_all | length == 1
           - restore_approved | bool
           - restore_approval_reference | string | length > 0
+          - restore_target_confirmation == inventory_hostname
           - restore_target_database is match('^pharmaviyum_restore_[a-z0-9_]{1,32}$')
-          - restore_backup_file | string | length > 0
+          - restore_target_database != postgres_db
+          - restore_backup_file is match('^' ~ (app_directory | regex_escape) ~ '/backups/pharmaviyum_[0-9]+[.]sql[.]gz$')
           - restore_expected_sha256 is match('^[0-9a-f]{64}$')
         fail_msg: >-
-          Restore drills require explicit approval, a change reference, exact
-          target-host confirmation, a dedicated restore database name, a backup
-          path and its independently supplied SHA-256.
+          Restore requires explicit approval, exactly one selected pharmacy
+          host, matching target confirmation, a new isolated database name,
+          a backup inside the protected backup directory and an independently
+          supplied SHA-256.
+      tags: [preflight]
 
 - name: Verify a backup by restoring it into an isolated database
   hosts: pharmacy_servers
   serial: 1
   any_errors_fatal: true
   become: true
-  gather_facts: true
+  gather_facts: false
   vars_files:
     - ../group_vars/all.yml
   vars:
