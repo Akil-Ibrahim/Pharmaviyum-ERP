@@ -182,7 +182,7 @@
         (groups['pharmacy_servers']
         | map('extract', hostvars)
         | map(attribute='pharmaviyum_edge_node_id', default='')
-        | select | list | unique | list | length)
+        | select | map('lower') | list | unique | list | length)
         ==
         (groups['pharmacy_servers']
         | map('extract', hostvars)
