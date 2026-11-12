@@ -277,6 +277,11 @@ jobs:
               rows = json.loads(Path(path).read_text())
               if not isinstance(rows, list):
                   raise SystemExit(f"Expected a list response from {path}")
+              if not rows:
+                  raise SystemExit(
+                      f"No omeprazole results returned by {path}; "
+                      "refusing to mark the production catalog smoke test as successful."
+                  )
               for row in rows:
                   if is_excluded_catalog_entry(
                       brand_name=row.get("brand_name") or row.get("name"),
