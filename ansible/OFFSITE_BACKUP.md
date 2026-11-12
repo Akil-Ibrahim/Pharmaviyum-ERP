@@ -45,9 +45,9 @@ Do not place secrets in `-e`, shell arguments, CI logs or command-line URLs. The
 
 ## Verification boundary
 
-The playbook verifies the local gzip stream, SHA-256 and manifest/site identity before upload. Restic's normal backup verification remains enabled (the playbook does not disable extra verification), and a subsequent remote snapshot listing must expose the returned snapshot ID with matching host, pharmacy/site tags and source path.
+The playbook verifies the local gzip stream, SHA-256 and manifest/site identity before upload. Restic's normal backup verification remains enabled (the playbook does not disable extra verification). It then confirms the returned snapshot ID, host, pharmacy/site tags and source path in the remote snapshot list, and streams the SQL dump, checksum sidecar and manifest back through `restic dump | sha256sum` to compare their hashes with the local originals. The read-back is streamed to the hash process, not written as a second full dump to disk.
 
-This is an initial upload slice, **not yet a complete disaster-recovery guarantee**. It does not yet independently stream the uploaded SQL payload back and compare its checksum, run a full remote repository data check, test recovery-key escrow, restore remotely into an isolated database, or validate application/POS invariants. Do not publish RPO/RTO or mark a site DR-ready until those separate acceptance tests pass.
+This is an initial upload slice, **not yet a complete disaster-recovery guarantee**. It does not yet run a full remote repository data check, test recovery-key escrow, restore remotely into an isolated database, or validate application/POS invariants. Do not publish RPO/RTO or mark a site DR-ready until those separate acceptance tests pass.
 
 ## Explicitly out of scope
 
