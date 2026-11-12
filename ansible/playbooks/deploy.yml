@@ -51,6 +51,15 @@
         fail_msg: "Every pharmacy in the complete inventory must have a unique pharmacy_id."
       run_once: true
 
+    - name: Require non-empty site codes across the complete inventory
+      ansible.builtin.assert:
+        that:
+          - hostvars[item].site_code is defined
+          - hostvars[item].site_code | string | length > 0
+        fail_msg: "Every inventory pharmacy must define a non-empty site_code."
+      loop: "{{ groups['pharmacy_servers'] }}"
+      run_once: true
+
     - name: Require globally unique site codes
       ansible.builtin.assert:
         that:
@@ -141,16 +150,37 @@
       loop: "{{ ansible_play_hosts_all }}"
       run_once: true
 
-    - name: Require unique PostgreSQL credentials across selected pharmacy sites
+    - name: Require unique PostgreSQL credentials across configured inventory sites
       ansible.builtin.assert:
         that:
           - >-
-            (ansible_play_hosts_all
-            | map('extract', hostvars, 'postgres_password')
-            | list | unique | list | length)
-            == (ansible_play_hosts_all | length)
-        fail_msg: "Each selected pharmacy must use a distinct PostgreSQL credential."
+            (groups['pharmacy_servers']
+            | map('extract', hostvars)
+            | map(attribute='postgres_password', default='')
+            | select | list | unique | list | length)
+            ==
+            (groups['pharmacy_servers']
+            | map('extract', hostvars)
+            | map(attribute='postgres_password', default='')
+            | select | list | length)
+        fail_msg: "Every configured PostgreSQL credential must be unique across the complete inventory."
       no_log: true
+      run_once: true
+
+    - name: Require globally unique configured Edge node IDs
+      ansible.builtin.assert:
+        that:
+          - >-
+            (groups['pharmacy_servers']
+            | map('extract', hostvars)
+            | map(attribute='pharmaviyum_edge_node_id', default='')
+            | select | list | unique | list | length)
+            ==
+            (groups['pharmacy_servers']
+            | map('extract', hostvars)
+            | map(attribute='pharmaviyum_edge_node_id', default='')
+            | select | list | length)
+        fail_msg: "Every configured Edge node ID must be unique across the complete inventory."
       run_once: true
 
 - name: Validate each Edge host before deployment
