@@ -168,7 +168,7 @@ const sections: DocumentationSection[] = [
 
 function AnsibleDocumentationPage() {
   return (
-    <main className='p-4 space-y-6 md:p-6'>
+    <main className='space-y-6 p-4 md:p-6'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <Link
           to='/settings/developer'
