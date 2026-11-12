@@ -17,6 +17,8 @@
           - groups['pharmacy_servers'] is defined
           - groups['pharmacy_servers'] | length >= 1
           - groups['pharmacy_servers'] | length <= (max_supported_pharmacy_sites | int)
+          - groups['pharmacy_servers'] | map('extract', hostvars, 'pharmacy_id') | list | unique | length == groups['pharmacy_servers'] | length
+          - groups['pharmacy_servers'] | map('extract', hostvars, 'site_code') | list | unique | length == groups['pharmacy_servers'] | length
           - active_rollout_limit | int >= 1
           - active_rollout_limit | int <= 10
           - ansible_play_hosts_all | length >= 1
