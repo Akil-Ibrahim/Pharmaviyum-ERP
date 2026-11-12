@@ -219,25 +219,25 @@ jobs:
             exit 1
           fi
 
-            login_response="$(curl --fail --silent --show-error \
-              -X POST "$base_url/api/v1/auth/token" \
-              -H 'Content-Type: application/x-www-form-urlencoded' \
-              --data-urlencode "username=$SMOKE_USERNAME" \
-              --data-urlencode "password=$SMOKE_PASSWORD")"
-            access_token="$(printf '%s' "$login_response" | jq -er '.access_token')"
-            profile="$(curl --fail --silent --show-error \
-              -H "Authorization: Bearer $access_token" "$base_url/api/v1/auth/me")"
-            printf '%s\n' "$profile" | jq -e '.accountNo and .email' >/dev/null
+          login_response="$(curl --fail --silent --show-error \
+            -X POST "$base_url/api/v1/auth/token" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode "username=$SMOKE_USERNAME" \
+            --data-urlencode "password=$SMOKE_PASSWORD")"
+          access_token="$(printf '%s' "$login_response" | jq -er '.access_token')"
+          profile="$(curl --fail --silent --show-error \
+            -H "Authorization: Bearer $access_token" "$base_url/api/v1/auth/me")"
+          printf '%s\n' "$profile" | jq -e '.accountNo and .email' >/dev/null
 
-            curl --fail --silent --show-error \
-              -H "Authorization: Bearer $access_token" \
-              "$base_url/api/v1/drug-catalog/search?q=omeprazole" \
-              -o /tmp/drug-catalog-smoke.json
-            curl --fail --silent --show-error \
-              -H "Authorization: Bearer $access_token" \
-              "$base_url/api/v1/products/search?q=omeprazole" \
-              -o /tmp/products-smoke.json
-            uv run python - <<'PY'
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $access_token" \
+            "$base_url/api/v1/drug-catalog/search?q=omeprazole" \
+            -o /tmp/drug-catalog-smoke.json
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $access_token" \
+            "$base_url/api/v1/products/search?q=omeprazole" \
+            -o /tmp/products-smoke.json
+          uv run python - <<'PY'
           import json
           from pathlib import Path
           from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
@@ -258,7 +258,6 @@ jobs:
           print("Authenticated catalog search returned no excluded medicines.")
           PY
 
-            echo "Authenticated sign-in, /auth/me and catalog exclusion smoke checks passed."
           echo "Authenticated sign-in, /auth/me and catalog exclusion smoke checks passed."
 
           echo "Production liveness, readiness, invalid-credential handling and protected POS access checks passed."
