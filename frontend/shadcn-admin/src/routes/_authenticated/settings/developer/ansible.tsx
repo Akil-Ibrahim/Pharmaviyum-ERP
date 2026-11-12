@@ -107,16 +107,17 @@ function AnsibleDocumentationPage() {
           </section>
           <section id='inventory' className='scroll-mt-6 space-y-3'>
             <h2 className='text-xl font-semibold'>6. Create a one-site inventory</h2>
-            <p className='text-sm leading-6 text-muted-foreground'>Begin with one lab host. Supply actual host connection details through a protected inventory source. The following is illustrative only:</p>
-            <pre className='overflow-x-auto rounded-lg border bg-muted/40 p-4 text-xs leading-6'>[pharmacy_servers]{'\n'}pharmacy-lab-01 ansible_host=192.0.2.10 ansible_user=ansible{'\n\n'}[pharmacy_servers:vars]{'\n'}ansible_become=true</pre>
-            <p className='text-sm leading-6 text-muted-foreground'>Replace the documentation-only IP address with an address from the pharmacy management network. Store site-specific values in encrypted host variables or an approved secret manager.</p>
+            <p className='text-sm leading-6 text-muted-foreground'>The repository includes an isolated lab inventory at ansible/inventory/lab/hosts.yml. It reads the lab host, SSH user, and lab database password from protected runtime environment variables. Review it before use; never point it at a live pharmacy. Production inventory must define a real SSH endpoint/user, unique pharmacy_id and site_code, and a unique per-pharmacy postgres_password.</p>
+            <p className='text-sm leading-6 text-muted-foreground'>Store site-specific values in encrypted host variables or an approved secret manager. The lab inventory uses a separate lab pharmacy identity and must never be reused for production.</p>
           </section>
           <section id='secrets' className='scroll-mt-6 space-y-3'>
             <h2 className='text-xl font-semibold'>7. Release inputs and secrets</h2>
             <ul className='list-disc space-y-2 pl-5 text-sm leading-6 text-muted-foreground'>
               <li><code>PHARMAVIYUM_APP_VERSION</code>: immutable release tag; never <code>latest</code>.</li>
               <li><code>PHARMAVIYUM_BACKEND_IMAGE_DIGEST</code>: approved <code>sha256</code> image digest.</li>
-              <li>Unique <code>PHARMAVIYUM_POSTGRES_PASSWORD</code> per pharmacy.</li>
+              <li>Unique per-host <code>postgres_password</code>, supplied through encrypted host variables or a secret manager.</li>
+              <li>Unique <code>pharmacy_id</code> and <code>site_code</code> for every site.</li>
+              <li>Explicit approved <code>docker_package_versions</code> pins for all required Docker packages; deployment fails closed if a pin is missing.</li>
               <li>Least-privilege registry username and token.</li>
               <li>Edge node UUID, Edge token, and Central HTTPS URL must be configured together or all remain disabled.</li>
             </ul>
@@ -135,8 +136,8 @@ function AnsibleDocumentationPage() {
               <li>Perform a POS smoke test and prove local sales continue during a WAN outage.</li>
               <li>Record release digest and test evidence before adding another site.</li>
             </ol>
-            <pre className='overflow-x-auto rounded-lg border bg-muted/40 p-4 text-xs leading-6'>ansible-playbook -i inventories/lab/hosts.yml ansible/playbooks/deploy.yml --limit pharmacy-lab-01</pre>
-            <p className='text-sm leading-6 text-muted-foreground'>Confirm actual inventory and playbook paths in the checked-out repository revision before execution. Never run a production deployment from an unreviewed branch.</p>
+            <pre className='overflow-x-auto rounded-lg border bg-muted/40 p-4 text-xs leading-6'>ansible-playbook -i inventory/lab/hosts.yml playbooks/deploy.yml --limit pharmacy-edge-lab-01</pre>
+            <p className='text-sm leading-6 text-muted-foreground'>Run this from the ansible/ directory. The controller must provide required lab connection/release variables and approved Docker package pins at runtime. The lab inventory must never point to a live pharmacy. Never run a production deployment from an unreviewed branch.</p>
           </section>
           <section id='migrations' className='scroll-mt-6 space-y-3'>
             <h2 className='text-xl font-semibold'>9. Database migrations</h2>
