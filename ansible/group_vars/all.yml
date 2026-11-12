@@ -2,31 +2,28 @@
 app_name: pharmaviyum
 app_version: "{{ lookup('env', 'PHARMAVIYUM_APP_VERSION') }}"
 app_environment: production
-
 container_registry: ghcr.io
 backend_image: "ghcr.io/ibrahimengpy/pharmaviyum-crm"
-
 backend_port: 8000
 backend_workers: 2
 backend_log_level: info
-
 postgres_version: "16"
 postgres_db: pharmaviyum
 postgres_user: app_user
 postgres_password: "{{ lookup('env', 'PHARMAVIYUM_POSTGRES_PASSWORD') }}"
 postgresql_data_dir: /opt/pharmaviyum/data/postgres
-
 redis_image: "valkey/valkey:8-alpine"
-
 ghcr_username: "{{ lookup('env', 'PHARMAVIYUM_GHCR_USERNAME') }}"
 ghcr_token: "{{ lookup('env', 'PHARMAVIYUM_GHCR_TOKEN') }}"
-
 backup_enabled: true
 backup_schedule: "0 2 * * *"
 backup_retention_days: 7
 
-# Per-pharmacy Edge sync identity. Supply the token from the Ansible controller's
-# protected environment or override it with an encrypted Ansible Vault variable.
+# Initial Ansible operating profile: one to ten pharmacy Edge sites.
+active_rollout_limit: 10
+rollout_serial: 1
+
+# Per-pharmacy Edge sync identity. Supply secrets through the protected controller.
 pharmaviyum_edge_node_id: "{{ lookup('env', 'PHARMAVIYUM_EDGE_NODE_ID') | default('', true) }}"
 pharmaviyum_edge_token: "{{ lookup('env', 'PHARMAVIYUM_EDGE_TOKEN') | default('', true) }}"
 pharmaviyum_central_sync_url: "{{ lookup('env', 'PHARMAVIYUM_CENTRAL_SYNC_URL') | default('', true) }}"
