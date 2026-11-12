@@ -19,13 +19,11 @@ describe('Pharmaviyum sidebar navigation', () => {
     expect(procurement?.items?.map((item) => item.title)).toEqual(['Suppliers', 'Purchase Orders', 'Receiving'])
   })
 
-  it('exposes Ansible documentation under Developer Settings', () => {
+  it('keeps Developer Settings under Administration', () => {
     const settings = group('Administration')?.items.find((item) => item.title === 'Settings')
     const developer = settings?.items?.find((item) => item.title === 'Developer Settings')
-    const ansible = developer?.items?.find((item) => item.title === 'Ansible')
     expect(developer?.url).toBe('/settings/developer')
-    expect(ansible?.items?.map((item) => item.title)).toEqual(['Documentation'])
-    expect(ansible?.items?.[0]?.url).toBe('/settings/developer/ansible')
+    expect(developer?.items).toBeUndefined()
   })
 
   it('keeps Background Tasks in the System group', () => {
