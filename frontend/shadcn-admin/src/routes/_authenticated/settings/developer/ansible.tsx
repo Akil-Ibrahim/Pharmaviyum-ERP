@@ -20,7 +20,15 @@ export const Route = createFileRoute(
   component: AnsibleDocumentationPage,
 })
 
-const sections = [
+type DocumentationSection = {
+  id: string
+  title: string
+  paragraphs?: string[]
+  bullets?: string[]
+  code?: string
+}
+
+const sections: DocumentationSection[] = [
   {
     id: 'overview',
     title: 'What Ansible is',
