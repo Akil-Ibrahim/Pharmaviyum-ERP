@@ -36,6 +36,16 @@ jobs:
           test "$(bun --version)" = "1.4.2"
       - name: Install dependencies
         run: bun install
+      - name: Temporary Prettier output diagnostic
+        if: github.event_name == 'pull_request'
+        run: |
+          bunx prettier --write src/routes/_authenticated/settings/developer.tsx src/routes/_authenticated/settings/developer/ansible.tsx
+          echo '--- PRETTIER_DEVELOPER_START ---'
+          cat src/routes/_authenticated/settings/developer.tsx
+          echo '--- PRETTIER_DEVELOPER_END ---'
+          echo '--- PRETTIER_ANSIBLE_START ---'
+          cat src/routes/_authenticated/settings/developer/ansible.tsx
+          echo '--- PRETTIER_ANSIBLE_END ---'
       - name: ESLint
         run: bun run lint
       - name: Prettier
