@@ -1,11 +1,9 @@
 name: Deploy to FastAPI Cloud
 
+# Production deployment is intentionally manual. CI completion must never deploy
+# to FastAPI Cloud or run database migrations as a side effect.
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: ["CI/CD Pipeline"]
-    types: [completed]
-    branches: [main]
 
 permissions:
   contents: read
@@ -20,13 +18,9 @@ jobs:
     name: Build frontend and deploy
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: >-
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'main')
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     env:
-      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      DEPLOY_SHA: ${{ github.sha }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -73,44 +67,8 @@ jobs:
             exit 1
           fi
 
-      - name: Apply database migrations before deployment
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PGVECTOR_DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          if [ -z "$DATABASE_URL" ]; then
-            echo "Missing required GitHub Actions secret: DATABASE_URL"
-            exit 1
-          fi
-          uv sync --frozen
-          uv run python - <<'PY'
-          import os
-          import psycopg
-          with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
-              with conn.cursor() as cur:
-                  cur.execute("""
-                      SELECT current_user, session_user,
-                             current_database(),
-                             pg_get_userbyid(n.nspowner) AS schema_owner,
-                             has_schema_privilege(current_user, 'public', 'USAGE') AS can_use,
-                             has_schema_privilege(current_user, 'public', 'CREATE') AS can_create,
-                             current_setting('role', true) AS active_role
-                      FROM pg_namespace n
-                      WHERE n.nspname = 'public'
-                  """)
-                  row = cur.fetchone()
-                  print("Neon migration connection diagnostics:")
-                  print({
-                      "current_user": row[0],
-                      "session_user": row[1],
-                      "database": row[2],
-                      "public_schema_owner": row[3],
-                      "can_use_public": row[4],
-                      "can_create_public": row[5],
-                      "active_role": row[6],
-                  })
-          PY
-          uv run alembic upgrade head
+      # Alembic migrations are a separate, explicitly approved operation.
+      # This deployment workflow must not mutate the production schema.
 
       - name: Deploy application and wait for verification
         run: uv run fastapi cloud deploy .
