@@ -39,6 +39,13 @@ bash tests/test_fleet_selection.sh
 bash tests/test_recovery_guardrails.sh
 ```
 
+### Test off-site backup preflight gates
+
+```bash
+# Synthetic localhost-only inventories; no credentials or pharmacy host are contacted.
+bash tests/test_offsite_backup_guardrails.sh
+```
+
 ### Linting
 
 ```bash
