@@ -83,6 +83,10 @@ echo "Checking that a 10-site wave succeeds from a 100-site inventory."
 ansible-playbook -i "$inventory_100" playbooks/deploy.yml \
   --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS"
 
+echo "Checking that the migration preflight also accepts a 10-site wave from a 100-site inventory."
+ansible-playbook -i "$inventory_100" playbooks/migrate.yml \
+  --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS"
+
 echo "Checking that an 11-site wave is rejected."
 if output="$(ansible-playbook -i "$inventory_100" playbooks/deploy.yml \
   --limit "$(make_limit 11)" --tags preflight -e "$EXTRA_VARS" 2>&1)"; then
