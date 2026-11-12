@@ -237,6 +237,46 @@
         fail_msg: "The remote snapshot identity does not match the selected pharmacy and source backup."
       no_log: true
 
+    - name: Calculate local SHA-256 for all uploaded artifacts
+      ansible.builtin.command:
+        argv:
+          - sha256sum
+          - "{{ item }}"
+      loop:
+        - "{{ offsite_backup_file }}"
+        - "{{ offsite_backup_file }}.sha256"
+        - "{{ offsite_backup_file }}.manifest.yml"
+      register: offsite_source_checksums
+      changed_when: false
+      no_log: true
+
+    - name: Stream each artifact back from the remote snapshot and calculate SHA-256
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          {{ restic_binary | quote }} dump
+          {{ restic_backup_summary.snapshot_id | quote }}
+          {{ item.item | quote }} | sha256sum
+        executable: /bin/bash
+      environment: "{{ restic_environment }}"
+      loop: "{{ offsite_source_checksums.results }}"
+      loop_control:
+        label: "{{ item.item | basename }}"
+      register: offsite_remote_checksums
+      changed_when: false
+      no_log: true
+
+    - name: Require streamed remote artifact hashes to match the local originals
+      ansible.builtin.assert:
+        that:
+          - item.stdout.split()[0] == offsite_source_checksums.results[ansible_loop.index0].stdout.split()[0]
+        fail_msg: "A streamed remote Restic artifact does not match its local source checksum."
+      loop: "{{ offsite_remote_checksums.results }}"
+      loop_control:
+        extended: true
+        label: "{{ item.item.item | basename }}"
+      no_log: true
+
     - name: Report remote snapshot metadata without exposing secrets
       ansible.builtin.debug:
         msg:
