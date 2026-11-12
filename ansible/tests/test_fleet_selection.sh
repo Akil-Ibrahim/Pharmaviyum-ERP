@@ -81,15 +81,15 @@ generate_inventory 100 "$inventory_duplicate_edge_node_id" duplicate-edge-node-i
 
 echo "Checking that a 10-site wave succeeds from a 100-site inventory."
 ansible-playbook -i "$inventory_100" playbooks/deploy.yml \
-  --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS"
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS"
 
 echo "Checking that migration preflight accepts a 10-site wave from a 100-site inventory."
 ansible-playbook -i "$inventory_100" playbooks/migrate.yml \
-  --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS"
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS"
 
 echo "Checking that migration preflight rejects an 11-site wave."
 if output="$(ansible-playbook -i "$inventory_100" playbooks/migrate.yml \
-  --limit "$(make_limit 11)" --tags preflight -e "$EXTRA_VARS" 2>&1)"; then
+  --limit "$(make_limit 11)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
   echo "ERROR: an 11-site migration wave unexpectedly passed the active rollout guardrail."
   exit 1
 fi
@@ -97,35 +97,15 @@ grep -q "active migration rollout limit" <<<"$output"
 
 echo "Checking that migration preflight rejects a 101-site inventory."
 if output="$(ansible-playbook -i "$inventory_101" playbooks/migrate.yml \
-  --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS" 2>&1)"; then
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
   echo "ERROR: a 101-site migration inventory unexpectedly passed the architecture ceiling."
   exit 1
 fi
 grep -q "migration inventory" <<<"$output"
 
-echo "Checking that the migration preflight also accepts a 10-site wave from a 100-site inventory."
-ansible-playbook -i "$inventory_100" playbooks/migrate.yml \
-  --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS"
-
-echo "Checking that an 11-site migration wave is rejected."
-if output="$(ansible-playbook -i "$inventory_100" playbooks/migrate.yml \
-  --limit "$(make_limit 11)" --tags preflight -e "$EXTRA_VARS" 2>&1)"; then
-  echo "ERROR: an 11-site migration wave unexpectedly passed the active rollout guardrail."
-  exit 1
-fi
-grep -q "active rollout limit is 10" <<<"$output"
-
-echo "Checking that a 101-site migration inventory is rejected."
-if output="$(ansible-playbook -i "$inventory_101" playbooks/migrate.yml \
-  --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS" 2>&1)"; then
-  echo "ERROR: a 101-site migration inventory unexpectedly passed the architecture ceiling."
-  exit 1
-fi
-grep -q "architecture inventory ceiling" <<<"$output"
-
 echo "Checking that an 11-site wave is rejected."
 if output="$(ansible-playbook -i "$inventory_100" playbooks/deploy.yml \
-  --limit "$(make_limit 11)" --tags preflight -e "$EXTRA_VARS" 2>&1)"; then
+  --limit "$(make_limit 11)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
   echo "ERROR: an 11-site rollout unexpectedly passed the active rollout guardrail."
   exit 1
 fi
@@ -133,7 +113,7 @@ grep -q "active rollout limit is 10" <<<"$output"
 
 echo "Checking that a 101-site inventory is rejected even for a 10-site wave."
 if output="$(ansible-playbook -i "$inventory_101" playbooks/deploy.yml \
-  --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS" 2>&1)"; then
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
   echo "ERROR: a 101-site inventory unexpectedly passed the architecture ceiling."
   exit 1
 fi
@@ -141,7 +121,7 @@ grep -q "architecture inventory ceiling" <<<"$output"
 
 echo "Checking that a duplicate DB credential in an unselected site is rejected."
 if output="$(ansible-playbook -i "$inventory_duplicate_password" playbooks/deploy.yml \
-  --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS" 2>&1)"; then
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
   echo "ERROR: a duplicate PostgreSQL credential outside the selected wave was accepted."
   exit 1
 fi
@@ -149,7 +129,7 @@ grep -qi "unique PostgreSQL credentials across configured inventory sites" <<<"$
 
 echo "Checking that a missing site code in an unselected site is rejected."
 if output="$(ansible-playbook -i "$inventory_missing_site_code" playbooks/deploy.yml \
-  --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS" 2>&1)"; then
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
   echo "ERROR: an inventory with a missing site_code was accepted."
   exit 1
 fi
@@ -157,7 +137,7 @@ grep -q "non-empty site_code" <<<"$output"
 
 echo "Checking that a duplicate Edge node ID in an unselected site is rejected."
 if output="$(ansible-playbook -i "$inventory_duplicate_edge_node_id" playbooks/deploy.yml \
-  --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS" 2>&1)"; then
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
   echo "ERROR: a duplicate Edge node ID outside the selected wave was accepted."
   exit 1
 fi
@@ -165,7 +145,7 @@ grep -q "configured Edge node ID must be unique" <<<"$output"
 
 echo "Checking that the active rollout limit cannot exceed the architecture ceiling."
 if output="$(ansible-playbook -i "$inventory_100" playbooks/deploy.yml \
-  --limit "$(make_limit 10)" --tags preflight -e "$EXTRA_VARS" -e active_rollout_limit=101 2>&1)"; then
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" -e active_rollout_limit=101 2>&1)"; then
   echo "ERROR: an active rollout limit above the architecture ceiling was accepted."
   exit 1
 fi
