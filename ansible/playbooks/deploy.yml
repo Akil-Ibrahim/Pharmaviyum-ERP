@@ -24,12 +24,15 @@
     - name: Enforce the active rollout limit against hosts selected for this run
       ansible.builtin.assert:
         that:
+          - active_rollout_limit | int >= 1
+          - active_rollout_limit | int <= (max_supported_pharmacy_sites | int)
           - ansible_play_hosts_all | length >= 1
           - ansible_play_hosts_all | length <= (active_rollout_limit | int)
         fail_msg: >-
-          This run selected {{ ansible_play_hosts_all | length }} pharmacy hosts,
-          but the active rollout limit is {{ active_rollout_limit }}. Use --limit
-          to select a wave of no more than {{ active_rollout_limit }} sites.
+          active_rollout_limit must be between 1 and
+          {{ max_supported_pharmacy_sites }}. This run selected
+          {{ ansible_play_hosts_all | length }} pharmacy hosts, but the active
+          rollout limit is {{ active_rollout_limit }}.
       run_once: true
       delegate_to: localhost
 
