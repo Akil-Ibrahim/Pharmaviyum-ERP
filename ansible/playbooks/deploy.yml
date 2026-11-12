@@ -19,6 +19,7 @@
           pharmacy sites. The 100-site value is an architecture ceiling, not an
           active rollout size.
       run_once: true
+      delegate_to: localhost
 
     - name: Enforce the active rollout limit against hosts selected for this run
       ansible.builtin.assert:
@@ -30,6 +31,7 @@
           but the active rollout limit is {{ active_rollout_limit }}. Use --limit
           to select a wave of no more than {{ active_rollout_limit }} sites.
       run_once: true
+      delegate_to: localhost
 
     - name: Require unique pharmacy IDs across the complete inventory
       ansible.builtin.assert:
@@ -39,6 +41,7 @@
         fail_msg: "Every inventory pharmacy must define a non-empty pharmacy_id."
       loop: "{{ groups['pharmacy_servers'] }}"
       run_once: true
+      delegate_to: localhost
 
     - name: Require globally unique pharmacy IDs
       ansible.builtin.assert:
@@ -50,6 +53,7 @@
             == (groups['pharmacy_servers'] | length)
         fail_msg: "Every pharmacy in the complete inventory must have a unique pharmacy_id."
       run_once: true
+      delegate_to: localhost
 
     - name: Require non-empty site codes across the complete inventory
       ansible.builtin.assert:
@@ -59,6 +63,7 @@
         fail_msg: "Every inventory pharmacy must define a non-empty site_code."
       loop: "{{ groups['pharmacy_servers'] }}"
       run_once: true
+      delegate_to: localhost
 
     - name: Require globally unique site codes
       ansible.builtin.assert:
@@ -70,6 +75,7 @@
             == (groups['pharmacy_servers'] | length)
         fail_msg: "Every pharmacy in the complete inventory must have a unique site_code."
       run_once: true
+      delegate_to: localhost
 
     - name: Validate SSH endpoint, user, and site identity for selected hosts
       ansible.builtin.assert:
@@ -83,6 +89,7 @@
         fail_msg: "Every selected Edge must define a real SSH endpoint, SSH user, and site_code."
       loop: "{{ ansible_play_hosts_all }}"
       run_once: true
+      delegate_to: localhost
 
     - name: Require approved Docker package pins before opening SSH connections
       ansible.builtin.assert:
@@ -93,6 +100,7 @@
         fail_msg: "Set an approved Docker package version for {{ item }} before deployment."
       loop: "{{ docker_package_names }}"
       run_once: true
+      delegate_to: localhost
 
     - name: Require Edge sync configuration to be all enabled or all disabled
       ansible.builtin.assert:
@@ -108,6 +116,7 @@
         fail_msg: "Configure Edge node ID, token and Central URL together for each selected site, or leave all three empty."
       loop: "{{ ansible_play_hosts_all }}"
       run_once: true
+      delegate_to: localhost
 
     - name: Validate enabled Edge sync credentials and HTTPS endpoint
       ansible.builtin.assert:
@@ -122,6 +131,7 @@
       no_log: true
       loop: "{{ ansible_play_hosts_all }}"
       run_once: true
+      delegate_to: localhost
       when: hostvars[item].pharmaviyum_edge_node_id | default('') | length > 0
 
     - name: Require immutable application release
@@ -132,6 +142,7 @@
           - app_version != "latest"
         fail_msg: "app_version must be an immutable release tag, never latest."
       run_once: true
+      delegate_to: localhost
 
     - name: Require an immutable backend image digest
       ansible.builtin.assert:
@@ -139,6 +150,7 @@
           - backend_image_digest is match('^sha256:[0-9a-f]{64}$')
         fail_msg: "Set PHARMAVIYUM_BACKEND_IMAGE_DIGEST to the approved sha256 digest before deployment."
       run_once: true
+      delegate_to: localhost
 
     - name: Require a unique database credential for every selected pharmacy
       ansible.builtin.assert:
@@ -149,6 +161,7 @@
       no_log: true
       loop: "{{ ansible_play_hosts_all }}"
       run_once: true
+      delegate_to: localhost
 
     - name: Require unique PostgreSQL credentials across configured inventory sites
       ansible.builtin.assert:
@@ -166,6 +179,7 @@
         fail_msg: "Every configured PostgreSQL credential must be unique across the complete inventory."
       no_log: true
       run_once: true
+      delegate_to: localhost
 
     - name: Require globally unique configured Edge node IDs
       ansible.builtin.assert:
@@ -182,6 +196,7 @@
             | select | list | length)
         fail_msg: "Every configured Edge node ID must be unique across the complete inventory."
       run_once: true
+      delegate_to: localhost
 
 - name: Validate each Edge host before deployment
   hosts: pharmacy_servers
