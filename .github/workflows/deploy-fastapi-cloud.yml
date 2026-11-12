@@ -70,6 +70,16 @@ jobs:
       # Alembic migrations are a separate, explicitly approved operation.
       # This deployment workflow must not mutate the production schema.
 
+      - name: Require authenticated production smoke credentials
+        env:
+          SMOKE_USERNAME: ${{ secrets.PHARMAVIYUM_SMOKE_USERNAME }}
+          SMOKE_PASSWORD: ${{ secrets.PHARMAVIYUM_SMOKE_PASSWORD }}
+        run: |
+          if [ -z "$SMOKE_USERNAME" ] || [ -z "$SMOKE_PASSWORD" ]; then
+            echo "Refusing production deployment: configure PHARMAVIYUM_SMOKE_USERNAME and PHARMAVIYUM_SMOKE_PASSWORD Actions secrets first."
+            exit 1
+          fi
+
       - name: Deploy application and wait for verification
         run: uv run fastapi cloud deploy .
         env:
@@ -209,7 +219,6 @@ jobs:
             exit 1
           fi
 
-          if [ -n "$SMOKE_USERNAME" ] && [ -n "$SMOKE_PASSWORD" ]; then
             login_response="$(curl --fail --silent --show-error \
               -X POST "$base_url/api/v1/auth/token" \
               -H 'Content-Type: application/x-www-form-urlencoded' \
@@ -250,9 +259,7 @@ jobs:
           PY
 
             echo "Authenticated sign-in, /auth/me and catalog exclusion smoke checks passed."
-          else
-            echo "Successful sign-in smoke check skipped; configure PHARMAVIYUM_SMOKE_USERNAME and PHARMAVIYUM_SMOKE_PASSWORD Actions secrets to enable it."
-          fi
+          echo "Authenticated sign-in, /auth/me and catalog exclusion smoke checks passed."
 
           echo "Production liveness, readiness, invalid-credential handling and protected POS access checks passed."
           echo "POS checkout exclusion and stock immutability are covered by the PostgreSQL integration suite; no production sale or stock mutation was created by this smoke run."
