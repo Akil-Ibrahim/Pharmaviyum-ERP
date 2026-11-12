@@ -14,12 +14,15 @@
     restore_backup_file: ""
     restore_expected_sha256: ""
   tasks:
-    - name: Require exactly one explicitly selected Edge host
+    - name: Require an inventory containing the pharmacy Edge group and a target confirmation
       ansible.builtin.assert:
         that:
           - groups['pharmacy_servers'] is defined
-          - groups['pharmacy_servers'] | length == 1
-        fail_msg: "A restore drill must target exactly one pharmacy Edge host."
+          - restore_target_confirmation | string | length > 0
+          - restore_target_confirmation in groups['pharmacy_servers']
+        fail_msg: >-
+          A restore drill requires a target confirmation matching a host in the
+          pharmacy Edge inventory group.
 
     - name: Require explicit restore approval and target confirmation
       ansible.builtin.assert:
@@ -55,6 +58,7 @@
     - name: Revalidate restore approval and immutable target
       ansible.builtin.assert:
         that:
+          - ansible_play_hosts_all | length == 1
           - restore_approved | bool
           - restore_approval_reference | string | length > 0
           - restore_target_confirmation == inventory_hostname
