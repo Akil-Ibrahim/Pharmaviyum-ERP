@@ -36,6 +36,9 @@ jobs:
       - name: Ansible lint
         run: ansible-lint --profile production
 
+      - name: Test selected rollout limits against a 100-site inventory
+        run: bash tests/test_fleet_selection.sh
+
   molecule:
     runs-on: ubuntu-latest
     needs: lint
