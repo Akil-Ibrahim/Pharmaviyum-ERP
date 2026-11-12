@@ -39,6 +39,9 @@ jobs:
       - name: Test selected rollout limits against a 100-site inventory
         run: bash tests/test_fleet_selection.sh
 
+      - name: Test restore and rollback recovery guardrails
+        run: bash tests/test_recovery_guardrails.sh
+
   molecule:
     runs-on: ubuntu-latest
     needs: lint
