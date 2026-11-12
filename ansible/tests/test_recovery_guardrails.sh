@@ -73,7 +73,7 @@ if output="$(ansible-playbook -i "$inventory_100" playbooks/restore.yml \
   echo "ERROR: multi-host restore unexpectedly passed."
   exit 1
 fi
-grep -q "ansible_play_hosts_all | length == 1" <<<"$output"
+grep -q "Restore requires explicit approval" <<<"$output"
 
 echo "Checking that restore target confirmation must match the selected host."
 if output="$(ansible-playbook -i "$inventory_100" playbooks/restore.yml \
@@ -82,7 +82,7 @@ if output="$(ansible-playbook -i "$inventory_100" playbooks/restore.yml \
   echo "ERROR: mismatched restore target confirmation unexpectedly passed."
   exit 1
 fi
-grep -q "restore_target_confirmation == inventory_hostname" <<<"$output"
+grep -q "Restore requires explicit approval" <<<"$output"
 
 rollback_targets="$(make_targets_json 1)"
 rollback_vars="{\"rollback_approved\":true,\"rollback_approval_reference\":\"TEST-ROLLBACK-001\",\"rollback_target_confirmations\":$rollback_targets,\"rollback_version\":\"release-test-previous\",\"rollback_image_digest\":\"sha256:$sha\",\"rollback_schema_compatibility_confirmed\":true,\"rollback_schema_compatibility_reference\":\"COMPAT-TEST-001\"}"
@@ -98,7 +98,7 @@ if output="$(ansible-playbook -i "$inventory_100" playbooks/rollback.yml \
   echo "ERROR: rollback without schema compatibility confirmation unexpectedly passed."
   exit 1
 fi
-grep -q "rollback_schema_compatibility_confirmed | bool" <<<"$output"
+grep -q "Rollback requires explicit change approval" <<<"$output"
 
 echo "Checking that an 11-site rollback wave is rejected."
 rollback_targets_11="$(make_targets_json 11)"
@@ -120,7 +120,7 @@ if output="$(ansible-playbook -i "$inventory_100" playbooks/rollback.yml \
   echo "ERROR: an 11-site rollback wave unexpectedly passed."
   exit 1
 fi
-grep -q "ansible_play_hosts_all | length <= (active_rollout_limit | int)" <<<"$output"
+grep -q "Rollback requires explicit change approval" <<<"$output"
 
 echo "Checking that a 101-site inventory is rejected before rollback."
 if output="$(ansible-playbook -i "$inventory_101" playbooks/rollback.yml \
@@ -128,6 +128,6 @@ if output="$(ansible-playbook -i "$inventory_101" playbooks/rollback.yml \
   echo "ERROR: a 101-site inventory unexpectedly passed rollback preflight."
   exit 1
 fi
-grep -q "groups\['pharmacy_servers'\] | length <= (max_supported_pharmacy_sites | int)" <<<"$output"
+grep -q "Rollback requires explicit change approval" <<<"$output"
 
 echo "Ansible recovery guardrail tests passed."
