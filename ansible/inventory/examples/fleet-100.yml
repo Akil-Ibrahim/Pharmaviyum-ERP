@@ -21,4 +21,3 @@ all:
         deployment_role: edge
         max_supported_pharmacy_sites: 100
         active_rollout_limit: 10
-        rollout_serial: 1
