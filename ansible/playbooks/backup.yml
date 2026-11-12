@@ -7,7 +7,7 @@
 - name: Create and verify PostgreSQL backup artifacts
   hosts: pharmacy_servers
   become: true
-  gather_facts: true
+  gather_facts: false
   serial: 1
   any_errors_fatal: true
   vars_files:
@@ -20,6 +20,22 @@
     backup_manifest_tmp_file: "{{ backup_file }}.manifest.yml.partial"
 
   pre_tasks:
+    - name: End the play without contacting Edge hosts when backups are disabled
+      ansible.builtin.meta: end_play
+      when: not (backup_enabled | bool)
+
+    - name: Gather host facts for backup artifact timestamps
+      ansible.builtin.setup:
+
+    - name: Require a stable pharmacy identity for the backup manifest
+      ansible.builtin.assert:
+        that:
+          - pharmacy_id is defined
+          - pharmacy_id | string | length > 0
+          - site_code is defined
+          - site_code | string | length > 0
+        fail_msg: "Every pharmacy backup must be associated with a stable pharmacy_id and site_code."
+
     - name: Require backup configuration and a safe retention period
       ansible.builtin.assert:
         that:
@@ -59,7 +75,6 @@
 
   tasks:
     - name: Create, verify and publish backup artifact
-      when: backup_enabled | bool
       block:
         - name: Ensure backup directory is private
           ansible.builtin.file:
@@ -134,6 +149,8 @@
               format: gzip-compressed PostgreSQL plain SQL
               created_at: "{{ ansible_date_time.iso8601 }}"
               host: "{{ inventory_hostname }}"
+              pharmacy_id: "{{ pharmacy_id }}"
+              site_code: "{{ site_code }}"
               database: "{{ postgres_db }}"
               backup_file: "{{ backup_file | basename }}"
               sha256: "{{ backup_checksum.stdout.split()[0] }}"
