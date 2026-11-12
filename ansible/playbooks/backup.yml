@@ -12,7 +12,6 @@
   any_errors_fatal: true
   vars_files:
     - ../group_vars/all.yml
-  when: backup_enabled | bool
   vars:
     backup_lock_file: "{{ app_directory }}/backups/.backup.lock"
     backup_tmp_file: "{{ app_directory }}/backups/pharmaviyum_{{ ansible_date_time.epoch }}.sql.gz.partial"
@@ -231,3 +230,4 @@
             - "{{ backup_tmp_file }}"
             - "{{ backup_checksum_tmp_file }}"
             - "{{ backup_manifest_tmp_file }}"
+      when: backup_enabled | bool
