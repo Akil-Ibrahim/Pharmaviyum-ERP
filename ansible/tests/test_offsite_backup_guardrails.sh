@@ -67,7 +67,7 @@ echo "Checking approved single-site off-site preflight (controller-local only)."
 ansible-playbook -i "$inventory_100" playbooks/backup-offsite.yml \
   --limit pharmacy-edge-test-001 --tags preflight -e "$vars"
 
-expect_rejected "off-site transfer without explicit approval" "Off-site upload requires approval" \
+expect_rejected "off-site transfer without explicit approval" "Off-site transfer requires approval" \
   ansible-playbook -i "$inventory_100" playbooks/backup-offsite.yml \
   --limit pharmacy-edge-test-001 --tags preflight -e "$vars" -e offsite_backup_approved=false
 
