@@ -35,8 +35,13 @@ with open(path, "w", encoding="utf-8") as stream:
         site_code_yaml = f"          site_code: {site_code}\n"
         if mode == "missing-site-code" and index == count:
             site_code_yaml = ""
+        if mode == "duplicate-site-code-case" and index == count:
+            site_code = "test-001"
+            site_code_yaml = f"          site_code: {site_code}\\n"
         if mode == "duplicate-edge-node-id" and index in (1, count):
             edge_node_id = "123e4567-e89b-42d3-a456-426614174000"
+            if index == count:
+                edge_node_id = edge_node_id.upper()
             edge_token = "test-edge-token-012345678901234567890123456789"
             central_url = "https://central.example.test"
         stream.write(
@@ -73,11 +78,13 @@ inventory_101="$TMP_DIR/fleet-101.yml"
 inventory_duplicate_password="$TMP_DIR/fleet-100-duplicate-password.yml"
 inventory_missing_site_code="$TMP_DIR/fleet-100-missing-site-code.yml"
 inventory_duplicate_edge_node_id="$TMP_DIR/fleet-100-duplicate-edge-node-id.yml"
+inventory_duplicate_site_code_case="$TMP_DIR/fleet-100-duplicate-site-code-case.yml"
 generate_inventory 100 "$inventory_100"
 generate_inventory 101 "$inventory_101"
 generate_inventory 100 "$inventory_duplicate_password" duplicate-password
 generate_inventory 100 "$inventory_missing_site_code" missing-site-code
 generate_inventory 100 "$inventory_duplicate_edge_node_id" duplicate-edge-node-id
+generate_inventory 100 "$inventory_duplicate_site_code_case" duplicate-site-code-case
 
 echo "Checking that a 10-site wave succeeds from a 100-site inventory."
 ansible-playbook -i "$inventory_100" playbooks/deploy.yml \
@@ -134,6 +141,14 @@ if output="$(ansible-playbook -i "$inventory_missing_site_code" playbooks/deploy
   exit 1
 fi
 grep -q "non-empty site_code" <<<"$output"
+
+echo "Checking that site-code uniqueness is case-insensitive across the complete inventory."
+if output="$(ansible-playbook -i "$inventory_duplicate_site_code_case" playbooks/deploy.yml \
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
+  echo "ERROR: site codes that differ only by case were accepted."
+  exit 1
+fi
+grep -q "unique site_code" <<<"$output"
 
 echo "Checking that a duplicate Edge node ID in an unselected site is rejected."
 if output="$(ansible-playbook -i "$inventory_duplicate_edge_node_id" playbooks/deploy.yml \
