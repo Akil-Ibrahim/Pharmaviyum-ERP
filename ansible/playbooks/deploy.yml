@@ -1,136 +1,20 @@
 ---
 - name: Validate selected pharmacy fleet before contacting remote hosts
-  hosts: localhost
+  hosts: pharmacy_servers
   connection: local
   gather_facts: false
+  any_errors_fatal: true
+  tags: [preflight]
   vars_files:
     - ../group_vars/all.yml
   tasks:
-    - name: Require at least one selected pharmacy Edge
-      ansible.builtin.assert:
-        that:
-          - groups['pharmacy_servers'] is defined
-          - groups['pharmacy_servers'] | length >= 1
-        fail_msg: "The selected inventory must contain at least one pharmacy Edge host."
-
-    - name: Enforce the current 1–10 rollout limit and 100-site architecture ceiling
-      ansible.builtin.assert:
-        that:
-          - groups['pharmacy_servers'] | length <= (active_rollout_limit | int)
-          - groups['pharmacy_servers'] | length <= (max_supported_pharmacy_sites | int)
-        fail_msg: >-
-          The active Ansible rollout is limited to {{ active_rollout_limit }} sites.
-          The architecture target is {{ max_supported_pharmacy_sites }} sites;
-          larger rollout waves are not enabled in this starter profile.
-
-    - name: Validate every Edge identity before opening SSH connections
-      ansible.builtin.assert:
-        that:
-          - hostvars[item].ansible_host is defined
-          - hostvars[item].ansible_host | string | length > 0
-          - hostvars[item].ansible_user is defined
-          - hostvars[item].ansible_user | string | length > 0
-          - hostvars[item].pharmacy_id is defined
-          - hostvars[item].pharmacy_id | string | length > 0
-          - hostvars[item].site_code is defined
-          - hostvars[item].site_code | string | length > 0
-        fail_msg: "Every Edge must define a real SSH endpoint, SSH user, pharmacy_id and site_code."
-      loop: "{{ groups['pharmacy_servers'] }}"
-
-    - name: Require unique pharmacy IDs across the selected fleet
-      ansible.builtin.assert:
-        that:
-          - >-
-            (groups['pharmacy_servers']
-            | map('extract', hostvars, 'pharmacy_id')
-            | list | unique | list | length)
-            == (groups['pharmacy_servers'] | length)
-        fail_msg: "Every pharmacy Edge must have a unique pharmacy_id."
-
-    - name: Require unique site codes across the selected fleet
-      ansible.builtin.assert:
-        that:
-          - >-
-            (groups['pharmacy_servers']
-            | map('extract', hostvars, 'site_code')
-            | list | unique | list | length)
-            == (groups['pharmacy_servers'] | length)
-        fail_msg: "Every pharmacy Edge must have a unique site_code."
-
-    - name: Require approved Docker package pins before opening SSH connections
-      ansible.builtin.assert:
-        that:
-          - docker_package_versions is mapping
-          - docker_package_versions[item] is defined
-          - docker_package_versions[item] | string | length > 0
-        fail_msg: "Set an approved Docker package version for {{ item }} before deployment."
-      loop: "{{ docker_package_names }}"
-
-
-    - name: Require Edge sync configuration to be all enabled or all disabled
-      ansible.builtin.assert:
-        that:
-          - >-
-            (hostvars[item].pharmaviyum_edge_node_id | default('') | length == 0
-            and hostvars[item].pharmaviyum_edge_token | default('') | length == 0
-            and hostvars[item].pharmaviyum_central_sync_url | default('') | length == 0)
-            or
-            (hostvars[item].pharmaviyum_edge_node_id | default('') | length > 0
-            and hostvars[item].pharmaviyum_edge_token | default('') | length > 0
-            and hostvars[item].pharmaviyum_central_sync_url | default('') | length > 0)
-        fail_msg: "Configure Edge node ID, token and Central URL together for each site, or leave all three empty."
-      loop: "{{ groups['pharmacy_servers'] }}"
-
-    - name: Validate enabled Edge sync credentials and HTTPS endpoint
-      ansible.builtin.assert:
-        that:
-          - >-
-            hostvars[item].pharmaviyum_edge_node_id is match(
-            '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$'
-            )
-          - hostvars[item].pharmaviyum_edge_token | length >= 32
-          - hostvars[item].pharmaviyum_central_sync_url is match('^https://[^/]+(/.*)?$')
-        fail_msg: "Enabled Edge sync requires a UUID, a high-entropy token and an HTTPS Central URL."
-      no_log: true
-      loop: "{{ groups['pharmacy_servers'] }}"
-      when: hostvars[item].pharmaviyum_edge_node_id | default('') | length > 0
-
-    - name: Require immutable application release
-      ansible.builtin.assert:
-        that:
-          - app_version is defined
-          - app_version | string | length > 0
-          - app_version != "latest"
-        fail_msg: "app_version must be an immutable release tag, never latest."
-
-    - name: Require an immutable backend image digest
-      ansible.builtin.assert:
-        that:
-          - backend_image_digest is match('^sha256:[0-9a-f]{64}$')
-        fail_msg: "Set PHARMAVIYUM_BACKEND_IMAGE_DIGEST to the approved sha256 digest before deployment."
-
-    - name: Require a unique database credential for every pharmacy
-      ansible.builtin.assert:
-        that:
-          - hostvars[item].postgres_password is defined
-          - hostvars[item].postgres_password | string | length > 0
-        fail_msg: "Each pharmacy must provide its own PostgreSQL password through encrypted host variables or a secret manager."
-      no_log: true
-      loop: "{{ groups['pharmacy_servers'] }}"
-
-    - name: Require unique PostgreSQL credentials across pharmacy sites
-      ansible.builtin.assert:
-        that:
-          - >-
-            (groups['pharmacy_servers']
-            | map('extract', hostvars, 'postgres_password')
-            | list | unique | list | length)
-            == (groups['pharmacy_servers'] | length)
-        fail_msg: "Each pharmacy must use a distinct PostgreSQL credential."
-      no_log: true
+    - name: Apply shared pharmacy fleet guardrails
+      ansible.builtin.import_tasks: ../tasks/validate-pharmacy-fleet.yml
 
 - name: Validate each Edge host before deployment
   hosts: pharmacy_servers
+  any_errors_fatal: true
+  max_fail_percentage: 0
   become: false
   gather_facts: false
   vars_files:

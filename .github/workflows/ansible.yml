@@ -2,7 +2,7 @@ name: Ansible
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, fix/ansible-selected-rollout-limit]
     paths:
       - "ansible/**"
       - ".github/workflows/ansible.yml"
@@ -35,6 +35,9 @@ jobs:
         run: yamllint -c .yamllint .
       - name: Ansible lint
         run: ansible-lint --profile production
+
+      - name: Test selected rollout limits against a 100-site inventory
+        run: bash tests/test_fleet_selection.sh
 
   molecule:
     runs-on: ubuntu-latest
