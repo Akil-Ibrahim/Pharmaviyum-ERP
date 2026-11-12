@@ -27,6 +27,7 @@ with open(path, "w", encoding="utf-8") as stream:
             f"        pharmacy-edge-test-{suffix}:\n"
             f"          ansible_host: 127.0.0.1\n"
             f"          ansible_user: ansible-test\n"
+            f"          ansible_connection: local\n"
             f"          pharmacy_id: test-pharmacy-{suffix}\n"
             f"          site_code: TEST-{suffix}\n"
             f"          postgres_password: test-only-password-{suffix}\n"
