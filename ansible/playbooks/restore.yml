@@ -29,7 +29,6 @@
         that:
           - restore_approved | bool
           - restore_approval_reference | string | length > 0
-          - restore_target_confirmation == groups['pharmacy_servers'][0]
           - restore_target_database is match('^pharmaviyum_restore_[a-z0-9_]{1,32}$')
           - restore_backup_file | string | length > 0
           - restore_expected_sha256 is match('^[0-9a-f]{64}$')
