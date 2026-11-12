@@ -32,7 +32,10 @@ molecule test --debug
 bash tests/test_fleet_selection.sh
 ```
 
-# Verify restore and rollback approval gates without connecting to pharmacy hosts
+### Test restore and rollback recovery guardrails
+
+```bash
+# Exercise approval gates using synthetic localhost-only inventories.
 bash tests/test_recovery_guardrails.sh
 ```
 
