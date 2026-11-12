@@ -32,6 +32,10 @@ molecule test --debug
 bash tests/test_fleet_selection.sh
 ```
 
+# Verify restore and rollback approval gates without connecting to pharmacy hosts
+bash tests/test_recovery_guardrails.sh
+```
+
 ### Linting
 
 ```bash
