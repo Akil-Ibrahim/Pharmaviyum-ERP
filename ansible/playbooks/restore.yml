@@ -106,6 +106,41 @@
           - restore_actual_checksum.stdout.split()[0] == restore_expected_sha256
         fail_msg: "The backup SHA-256 does not match the independently supplied expected checksum."
 
+    - name: Verify the published checksum sidecar
+      ansible.builtin.command:
+        argv:
+          - sha256sum
+          - --check
+          - "{{ restore_backup_file }}.sha256"
+      args:
+        chdir: "{{ app_directory }}/backups"
+      changed_when: false
+
+    - name: Wait for the local PostgreSQL container to accept connections
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - --project-name
+          - "{{ docker_compose_project }}"
+          - --env-file
+          - "{{ app_directory }}/.env"
+          - -f
+          - "{{ app_directory }}/docker-compose.yml"
+          - exec
+          - -T
+          - db
+          - pg_isready
+          - -U
+          - "{{ postgres_user }}"
+          - -d
+          - "{{ postgres_db }}"
+      register: restore_postgres_ready
+      changed_when: false
+      retries: 12
+      delay: 5
+      until: restore_postgres_ready.rc == 0
+
     - name: Check whether the isolated restore database already exists
       ansible.builtin.command:
         argv:
