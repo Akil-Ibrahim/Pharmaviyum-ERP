@@ -70,25 +70,18 @@ The controller should have network access only to the management endpoints it ne
 
 Begin with one lab host. Supply actual connection details through a protected inventory source.
 
-Example structure only; replace placeholders and validate the inventory conventions in the checked-out repository revision:
-
-```ini
-[pharmacy_servers]
-pharmacy-lab-01 ansible_host=192.0.2.10 ansible_user=ansible
-
-[pharmacy_servers:vars]
-ansible_become=true
-```
-
-Use a reserved address from the real management network, not the documentation address. Store site-specific values in encrypted host variables or an approved secret manager.
+The repository includes an isolated lab inventory at `ansible/inventory/lab/hosts.yml`. It reads the lab host, SSH user, and lab database password from protected runtime environment variables; it uses a non-production pharmacy ID and site code. Review that file before use. Do not copy its lab identity or credentials into production. Production inventory must define a real SSH endpoint/user, unique `pharmacy_id` and `site_code`, and a unique per-pharmacy `postgres_password` for every host.
 
 ## 7. Configure release inputs and secrets
 
 Provide required values at job runtime or through encrypted variables:
 
 - `PHARMAVIYUM_APP_VERSION`: immutable release tag or approved image digest; never use `latest`.
-- `PHARMAVIYUM_POSTGRES_PASSWORD`: unique, high-entropy password for this site's database.
+- `PHARMAVIYUM_BACKEND_IMAGE_DIGEST`: approved immutable `sha256:<64-hex>` image digest.
 - `PHARMAVIYUM_GHCR_USERNAME` and `PHARMAVIYUM_GHCR_TOKEN`: least-privilege registry credentials.
+- Per-host `pharmacy_id`, `site_code`, `ansible_host`, and `ansible_user`; IDs and site codes must be unique.
+- A unique per-host `postgres_password`, supplied through encrypted host variables or the secret manager (the lab inventory reads `PHARMAVIYUM_LAB_POSTGRES_PASSWORD`).
+- Explicit approved versions for every package in `docker_package_names` via `docker_package_versions`; deployment fails closed while any pin is missing.
 - Edge node UUID, Edge token, and Central HTTPS sync URL: configure all three together, or leave all three disabled until sync onboarding is approved.
 
 Do not put secrets in shell history, command-line arguments, tickets, or source control. Prefer protected controller credentials and masked runtime variables. Ensure job logs do not disclose secret values.
@@ -105,11 +98,13 @@ Do not put secrets in shell history, command-line arguments, tickets, or source 
 8. Perform a POS smoke test and verify that a temporary WAN outage does not block local sales.
 9. Record the release digest and evidence before adding another site.
 
-Illustrative controller command (confirm actual inventory and playbook paths in the repository revision before execution):
+From the repository's `ansible/` directory, the lab command is:
 
 ```bash
-ansible-playbook -i inventories/lab/hosts.ini playbooks/deploy.yml --limit pharmacy-lab-01
+ansible-playbook -i inventory/lab/hosts.yml playbooks/deploy.yml --limit pharmacy-edge-lab-01
 ```
+
+The controller must provide all required lab connection/release variables and approved Docker package pins at runtime. The lab inventory is isolated and must never point to a live pharmacy. The production inventory remains the default in `ansible.cfg`, so always pass the intended lab inventory explicitly for lab work.
 
 Never run a production deployment from an unreviewed branch.
 
