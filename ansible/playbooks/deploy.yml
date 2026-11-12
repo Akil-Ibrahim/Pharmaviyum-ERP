@@ -4,6 +4,17 @@
   become: false
   gather_facts: true
   tasks:
+    - name: Enforce the initial one-to-ten pharmacy rollout boundary
+      ansible.builtin.assert:
+        that:
+          - groups['pharmacy_servers'] | length >= 1
+          - groups['pharmacy_servers'] | length <= (active_rollout_limit | int)
+          - ansible_play_hosts_all | length <= (active_rollout_limit | int)
+        fail_msg: >-
+          This initial Ansible profile is limited to {{ active_rollout_limit }}
+          pharmacy Edge hosts. Larger fleets require a separately reviewed
+          rollout profile and must not bypass this guard.
+
     - name: Require immutable application version
       ansible.builtin.assert:
         that:
@@ -50,11 +61,11 @@
       ansible.builtin.command: docker compose version
       changed_when: false
 
-- name: Deploy Pharmaviyum in controlled rollout waves
+- name: Deploy Pharmaviyum in controlled one-host waves
   hosts: pharmacy_servers
   become: true
   gather_facts: true
-  serial: "10%"
+  serial: 1
   any_errors_fatal: true
   max_fail_percentage: 0
   roles:
