@@ -16,7 +16,23 @@ The ten-site limit is an enforced operational guardrail, not proof that ten prod
 
 Each pharmacy must have a unique site identity, database credentials, Edge sync identity, backup namespace, and operational owner.
 
-## 3. Target operating model
+## 3. Future architecture target: up to 100 pharmacies
+
+The target architecture is designed to accommodate up to **100 independent Pharmacy Edge sites**. This is a future capacity objective, not the current active rollout size and not evidence that a 100-site fleet has been load-tested or accepted.
+
+The Ansible configuration deliberately separates `max_supported_pharmacy_sites: 100` from `active_rollout_limit: 10`. The starter deployment and migration playbooks must continue to reject inventories larger than ten until a separate capacity, security, resilience, and operational review authorizes expansion.
+
+For a future fleet:
+
+- Use a CMDB-backed dynamic inventory; keep Central hosts separate from Pharmacy Edge hosts.
+- Divide Edge sites into explicit canary and rollout-wave groups. Preserve unique pharmacy ID, site code, Edge identity, PostgreSQL credentials, and backup namespace for every site.
+- Keep the initial rollout serial and fail-fast. Any future batch size must be justified by measured controller, network, registry, database, and site-health capacity.
+- Before increasing the active limit, complete fleet load and failure tests, backup/restore drills, sync backlog and replay validation, monitoring and alerting, and documented RPO/RTO.
+- Treat `ansible/inventory/examples/fleet-100.yml` as a non-runnable schema example, never as a production inventory.
+
+The 100-site profile is an architecture provision only. Do not change the active ten-site guardrail as part of the current rollout.
+
+## 5. Target operating model
 
 A pharmacy has a dedicated Edge host on its local network. Local POS workflows must not require a continuous WAN connection to Central for every transaction. The Edge host retains local operational data and synchronizes with Central when connectivity is available.
 
@@ -36,7 +52,7 @@ Pharmacy Edge Host (one site)
 Pharmaviyum Central
 ```
 
-## 4. Pharmacy prerequisites
+## 5. Pharmacy prerequisites
 
 Before onboarding a site, verify:
 
@@ -53,7 +69,7 @@ Before onboarding a site, verify:
 
 Never reuse another pharmacy's database password, Edge token, or site identity.
 
-## 5. Prepare the Ansible controller
+## 6. Prepare the Ansible controller
 
 Use an isolated, access-controlled controller such as AWX/AAP or an approved CI runner.
 
@@ -66,13 +82,13 @@ Use an isolated, access-controlled controller such as AWX/AAP or an approved CI 
 
 The controller should have network access only to the management endpoints it needs.
 
-## 6. Create a one-site inventory
+## 7. Create a one-site inventory
 
 Begin with one lab host. Supply actual connection details through a protected inventory source.
 
 The repository includes an isolated lab inventory at `ansible/inventory/lab/hosts.yml`. It reads the lab host, SSH user, and lab database password from protected runtime environment variables; it uses a non-production pharmacy ID and site code. Review that file before use. Do not copy its lab identity or credentials into production. Production inventory must define a real SSH endpoint/user, unique `pharmacy_id` and `site_code`, and a unique per-pharmacy `postgres_password` for every host.
 
-## 7. Configure release inputs and secrets
+## 8. Configure release inputs and secrets
 
 Provide required values at job runtime or through encrypted variables:
 
@@ -86,7 +102,7 @@ Provide required values at job runtime or through encrypted variables:
 
 Do not put secrets in shell history, command-line arguments, tickets, or source control. Prefer protected controller credentials and masked runtime variables. Ensure job logs do not disclose secret values.
 
-## 8. Deployment workflow
+## 9. Deployment workflow
 
 1. Review the target commit and playbook diff.
 2. Confirm the inventory contains only the approved pharmacy hosts and no more than ten sites.
@@ -108,11 +124,11 @@ The controller must provide all required lab connection/release variables and ap
 
 Never run a production deployment from an unreviewed branch.
 
-## 9. Database migrations are separate
+## 10. Database migrations are separate
 
 Application deployment must not implicitly run Alembic migrations. A migration is a separate reviewed change requiring its own playbook, compatibility checks, explicit approval and change reference, verified backup, controlled target selection, and post-migration readiness validation. Do not use the normal deployment workflow as a shortcut for schema changes.
 
-## 10. Backup and recovery
+## 11. Backup and recovery
 
 A backup stored only on the pharmacy Edge host is not disaster recovery. Before production acceptance, define and test:
 
@@ -126,7 +142,7 @@ A backup stored only on the pharmacy Edge host is not disaster recovery. Before 
 
 Never test restore by overwriting the live pharmacy database. Review a successful isolated restore drill before declaring a site recoverable.
 
-## 11. Security and operational safeguards
+## 12. Security and operational safeguards
 
 - Use SSH key authentication, host-key verification, least privilege, and protected controller credentials.
 - Keep secrets out of Git, logs, process arguments, and plaintext inventories.
@@ -138,7 +154,7 @@ Never test restore by overwriting the live pharmacy database. Review a successfu
 - Stop on readiness failure; do not continue to the next pharmacy.
 - Keep deployment, migration, backup, restore, and rollback as separate auditable operations.
 
-## 12. Site acceptance checklist
+## 13. Site acceptance checklist
 
 A site is not accepted merely because a playbook exits successfully. Require evidence for:
 
@@ -153,7 +169,7 @@ A site is not accepted merely because a playbook exits successfully. Require evi
 - [ ] Monitoring for disk, database, backup age, sync backlog, and last successful sync.
 - [ ] Documented site owner, RPO/RTO, rollback owner, and support contact.
 
-## 13. Current limitations
+## 14. Current limitations
 
 This guide defines the intended process and initial ten-site boundary. It does not claim that the production acceptance checklist is complete. Lab evidence is still required for the full Pharmacy Edge lifecycle, off-site backup and restore, business-level recovery, offline POS acceptance, UPS monitoring, and end-to-end synchronization recovery.
 
