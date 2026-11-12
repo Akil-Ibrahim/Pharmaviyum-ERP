@@ -32,8 +32,9 @@ with open(path, "w", encoding="utf-8") as stream:
         central_url = ""
         if mode == "duplicate-password" and index == count:
             password = "test-only-password-001"
+        site_code_yaml = f"          site_code: {site_code}\\n"
         if mode == "missing-site-code" and index == count:
-            site_code = ""
+            site_code_yaml = ""
         if mode == "duplicate-edge-node-id" and index in (1, count):
             edge_node_id = "123e4567-e89b-42d3-a456-426614174000"
             edge_token = "test-edge-token-012345678901234567890123456789"
