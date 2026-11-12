@@ -17,9 +17,8 @@ with open(path, "w", encoding="utf-8") as stream:
         pharmacy_id = f"pharmacy-{index:03d}"
         stream.write(
             f"        pharmacy-edge-test-{index:03d}:\n"
-            "          ansible_host: 127.0.0.1\n"
+            "          ansible_host: 192.0.2.1\n"
             "          ansible_user: ansible-test\n"
-            "          ansible_connection: local\n"
             f"          pharmacy_id: {pharmacy_id}\n"
             f"          site_code: TEST-{index:03d}\n"
             f"          restic_repository_url: rest:https://backup.example.invalid/{pharmacy_id}\n"
