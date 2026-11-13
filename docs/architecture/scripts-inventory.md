@@ -1,27 +1,28 @@
 # Script inventory and ownership
 
-This inventory classifies the current top-level `scripts/` directory without moving files. Keep these scripts at their current paths until every caller (CI, Docker, Compose, Ansible, Makefile, docs, and operator runbooks) has been updated in a coordinated change.
+This inventory classifies the current top-level `scripts/` directory without moving files. Keep scripts at their current paths until every caller (CI, Docker, Compose, Ansible, Makefile, docs, and operator runbooks) has been updated in a coordinated change.
 
 ## Application lifecycle
 
 | Script | Responsibility |
 |---|---|
-| `start.sh` | Container entrypoint: apply Alembic migrations and start Uvicorn |
-| `entrypoint.sh` | Legacy/alternate container entrypoint; verify Dockerfile and Compose references before consolidation |
+| `start.sh` | Container start command: apply Alembic migrations and start Uvicorn when explicitly invoked |
 | `start-dev.sh` | Local host development: sync Python and frontend dependencies, start API and Vite |
 | `start-docker.sh` | Start the root development Compose stack |
-| `dev.sh` | Legacy Compose development launcher; review service assumptions before retiring |
+| `dev.sh` | Docker Compose development launcher |
 | `stop.sh` | Stop local services |
-| `run-main-containers.sh` | Start the core container subset; verify current Compose service names before use |
+| `run-main-containers.sh` | Start the core container subset defined in the root Compose file |
+
+Unreferenced historical entrypoint scripts were removed after checking the Dockerfile, root/Codespaces/production Compose definitions, Ansible backend Compose definition, and repository code search. The removed scripts were not wired into the current runtime; two also swallowed Alembic migration failures, which could allow an application process to start against an unmigrated database. Runtime startup and migration ownership must remain explicit in the active deployment configuration.
 
 ## Database and operations
 
 | Script | Responsibility |
 |---|---|
-| `migrate.sh` | Apply schema migrations |
+| `migrate.sh` | Apply or inspect schema migrations |
 | `test_migrations.sh` | Migration lifecycle test; destructive because it downgrades to base |
 | `backup.sh` | Backup path for the `postgres` service in `docker-compose.prod.yml` |
-| `backup_db.sh` | Backup path for the `db` service in the default Compose topology |
+| `backup_db.sh` | Backup path for the `db` service in the Ansible backend Compose topology |
 | `db_reset.py` | Database reset utility; treat as destructive |
 | `seed_database.py` | Seed database data |
 | `logs.sh` | Follow application/service logs |
