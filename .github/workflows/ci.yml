@@ -35,6 +35,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.13.8"
+          version: "0.13.8"
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - name: Install dependencies
@@ -142,6 +143,7 @@ jobs:
       - name: Set up uv and managed Python
         uses: astral-sh/setup-uv@v7
         with:
+          version: "0.13.8"
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - run: uv sync --frozen
@@ -178,6 +180,7 @@ jobs:
       - name: Set up uv and managed Python
         uses: astral-sh/setup-uv@v7
         with:
+          version: "0.13.8"
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - run: uv sync --frozen
@@ -206,6 +209,7 @@ jobs:
       - name: Set up uv and managed Python
         uses: astral-sh/setup-uv@v7
         with:
+          version: "0.13.8"
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - name: Install dependencies and scanners
@@ -228,6 +232,7 @@ jobs:
       - name: Set up uv and managed Python
         uses: astral-sh/setup-uv@v7
         with:
+          version: "0.13.8"
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - run: uv sync --frozen
