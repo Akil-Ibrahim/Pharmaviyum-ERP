@@ -105,7 +105,7 @@ jobs:
           test "$(bun --version)" = "1.4.4"
       - name: Install frontend dependencies
         working-directory: frontend/shadcn-admin
-        run: bun install
+        run: bun install --frozen-lockfile
       - name: Install Chromium for Vitest browser tests
         working-directory: frontend/shadcn-admin
         run: bun run test:browser:install
