@@ -178,8 +178,6 @@ These are disposable development targets. The separate `docker-compose.prod.yml`
 
 FastAPI Cloud is the hosted application deployment target. GitHub Actions provides CI and a manually triggered deployment workflow; database, cache, and other required services must be provisioned and configured separately.
 
-FastAPI Cloud is the hosted application deployment target. GitHub Actions provides CI and a manually triggered deployment workflow; database, cache, and other required services must be provisioned and configured separately.
-
 The repository does not use a separate Kubernetes AI deployment; Mortarium remains an application-level AI layer.
 
 ## LLM deployment profiles
