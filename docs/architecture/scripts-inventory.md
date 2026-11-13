@@ -1,33 +1,34 @@
 # Script inventory and ownership
 
-This inventory classifies the current top-level `scripts/` directory without moving files. Keep these scripts at their current paths until every caller (CI, Docker, Compose, Ansible, Makefile, docs, and operator runbooks) has been updated in a coordinated change.
+This inventory classifies the current top-level `scripts/` directory without moving files. Keep scripts at their current paths until every caller (CI, Docker, Compose, Ansible, Makefile, docs, and operator runbooks) has been updated in a coordinated change.
 
 ## Application lifecycle
 
 | Script | Responsibility |
 |---|---|
-| `start.sh` | Container entrypoint: apply Alembic migrations and start Uvicorn |
-| `entrypoint.sh` | Legacy/alternate container entrypoint; verify Dockerfile and Compose references before consolidation |
+| `start.sh` | Manual API start helper: applies Alembic migrations and starts Uvicorn; the Dockerfile default `CMD` starts Uvicorn directly and does not invoke this helper |
 | `start-dev.sh` | Local host development: sync Python and frontend dependencies, start API and Vite |
 | `start-docker.sh` | Start the root development Compose stack |
-| `dev.sh` | Legacy Compose development launcher; review service assumptions before retiring |
+| `dev.sh` | Docker Compose development launcher |
 | `stop.sh` | Stop local services |
-| `run-main-containers.sh` | Start the core container subset; verify current Compose service names before use |
+| `run-main-containers.sh` | Start the core container subset defined in the root Compose file |
+
+Unreferenced historical entrypoint scripts were removed after checking the Dockerfile, root/Codespaces/production Compose definitions, Ansible backend Compose definition, and repository code search. The removed scripts were not wired into the current runtime; two also swallowed Alembic migration failures, which could allow an application process to start against an unmigrated database. Runtime startup and migration ownership must remain explicit in the active deployment configuration.
 
 ## Database and operations
 
 | Script | Responsibility |
 |---|---|
-| `migrate.sh` | Apply schema migrations |
+| `migrate.sh` | Apply or inspect schema migrations |
 | `test_migrations.sh` | Migration lifecycle test; destructive because it downgrades to base |
-| `backup.sh` | Backup path for the `postgres` service in `docker-compose.prod.yml` |
-| `backup_db.sh` | Backup path for the `db` service in the default Compose topology |
+| `backup.sh` | Legacy backup helper using `docker-compose -f docker-compose.prod.yml`; requires `DB_USER` and `DB_NAME` in the calling shell |
+| `backup_db.sh` | Backup helper that runs implicit `docker compose exec db`; it does not select the Ansible backend Compose file itself |
 | `db_reset.py` | Database reset utility; treat as destructive |
 | `seed_database.py` | Seed database data |
 | `logs.sh` | Follow application/service logs |
 | `setup_secrets.sh` | Local secret setup helper; never commit generated secret material |
 
-The two backup scripts target different Compose service names and database layouts. They are not interchangeable; do not consolidate until the production and development backup contracts are explicitly defined and restore-tested. Never run either against production as part of repository cleanup.
+The two backup scripts have different and currently fragile invocation contracts. `backup.sh` uses the legacy `docker-compose` v1 command, relies on caller-exported `DB_USER`/`DB_NAME`, and does not enable `pipefail`, so a failed `pg_dump` can be obscured by a successful `gzip`. `backup_db.sh` assumes the current Compose project exposes a service named `db`; the root `docker-compose.yml` exposes `postgres`, and the script does not pass `-f ansible/roles/app-backend/files/docker-compose-backend.yml`. Do not assume either script is safe or runnable from the repository root. Before operational use, define the intended host/project/env-file contract, add failure-safe pipeline handling, and test both backup and restore against a disposable database. Never run either against production as part of repository cleanup.
 
 ## Identity and tests
 
