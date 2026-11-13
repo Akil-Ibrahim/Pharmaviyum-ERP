@@ -6,7 +6,7 @@ This inventory classifies the current top-level `scripts/` directory without mov
 
 | Script | Responsibility |
 |---|---|
-| `start.sh` | Container start command: apply Alembic migrations and start Uvicorn when explicitly invoked |
+| `start.sh` | Manual API start helper: applies Alembic migrations and starts Uvicorn; the Dockerfile default `CMD` starts Uvicorn directly and does not invoke this helper |
 | `start-dev.sh` | Local host development: sync Python and frontend dependencies, start API and Vite |
 | `start-docker.sh` | Start the root development Compose stack |
 | `dev.sh` | Docker Compose development launcher |
@@ -21,14 +21,14 @@ Unreferenced historical entrypoint scripts were removed after checking the Docke
 |---|---|
 | `migrate.sh` | Apply or inspect schema migrations |
 | `test_migrations.sh` | Migration lifecycle test; destructive because it downgrades to base |
-| `backup.sh` | Backup path for the `postgres` service in `docker-compose.prod.yml` |
-| `backup_db.sh` | Backup path for the `db` service in the Ansible backend Compose topology |
+| `backup.sh` | Legacy backup helper using `docker-compose -f docker-compose.prod.yml`; requires `DB_USER` and `DB_NAME` in the calling shell |
+| `backup_db.sh` | Backup helper that runs implicit `docker compose exec db`; it does not select the Ansible backend Compose file itself |
 | `db_reset.py` | Database reset utility; treat as destructive |
 | `seed_database.py` | Seed database data |
 | `logs.sh` | Follow application/service logs |
 | `setup_secrets.sh` | Local secret setup helper; never commit generated secret material |
 
-The two backup scripts target different Compose service names and database layouts. They are not interchangeable; do not consolidate until the production and development backup contracts are explicitly defined and restore-tested. Never run either against production as part of repository cleanup.
+The two backup scripts have different and currently fragile invocation contracts. `backup.sh` uses the legacy `docker-compose` v1 command, relies on caller-exported `DB_USER`/`DB_NAME`, and does not enable `pipefail`, so a failed `pg_dump` can be obscured by a successful `gzip`. `backup_db.sh` assumes the current Compose project exposes a service named `db`; the root `docker-compose.yml` exposes `postgres`, and the script does not pass `-f ansible/roles/app-backend/files/docker-compose-backend.yml`. Do not assume either script is safe or runnable from the repository root. Before operational use, define the intended host/project/env-file contract, add failure-safe pipeline handling, and test both backup and restore against a disposable database. Never run either against production as part of repository cleanup.
 
 ## Identity and tests
 
