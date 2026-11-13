@@ -2,8 +2,13 @@ name: Refresh frontend lockfile
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - frontend/shadcn-admin/package.json
+      - .github/workflows/refresh-frontend-lock.yml
   push:
-    branches: [deploy/fastapi-cloud-prep]
+    branches: [deploy/fastapi-cloud-prep, chore/full-stack-upgrade-2026-11-13]
     paths:
       - frontend/shadcn-admin/package.json
       - .github/workflows/refresh-frontend-lock.yml
@@ -27,12 +32,12 @@ jobs:
         id: setup-bun
         continue-on-error: true
         with:
-          bun-version: "1.4.2"
+          bun-version: "1.4.4"
       - name: Install Bun from npm if GitHub Releases is unavailable
         if: steps.setup-bun.outcome == 'failure'
         run: |
-          npm install --global bun@1.4.2
-          test "$(bun --version)" = "1.4.2"
+          npm install --global bun@1.4.4
+          test "$(bun --version)" = "1.4.4"
       - name: Resolve dependencies and generate bun.lock
         run: bun install
       - name: ESLint
