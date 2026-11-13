@@ -1,20 +1,29 @@
-#!/bin/bash
-# Run the main Pharmaviyum-CRM Docker containers.
-# This script starts the core services needed for local development.
+#!/usr/bin/env bash
+# Start the core services defined by the canonical docker-compose.yml.
+set -Eeuo pipefail
 
-set -euo pipefail
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
 
-echo "🚀 Starting Pharmaviyum-CRM main Docker services..."
-echo "Checking Docker availability..."
-if ! command -v docker > /dev/null 2>&1; then
-  echo "❌ Docker CLI is not installed or not available in PATH."
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker CLI is not installed or not available in PATH." >&2
   exit 1
 fi
 
-echo "Building and starting services: db, redis, backend, frontend, nginx"
-docker compose up -d --build db redis backend frontend nginx
-echo ""
-echo "✅ Main services started. Status:"
-docker compose ps
-echo ""
-echo "To follow logs, run: docker compose logs -f backend frontend nginx"
+if ! docker compose version >/dev/null 2>&1; then
+  echo "Docker Compose v2 (docker compose) is required." >&2
+  exit 1
+fi
+
+SERVICES=(postgres redis api)
+
+echo "Building and starting core services: ${SERVICES[*]}"
+docker compose up -d --build "${SERVICES[@]}"
+
+echo
+echo "Core service status:"
+docker compose ps "${SERVICES[@]}"
+
+echo
+echo "Follow logs: docker compose logs -f api"
+echo "Stop core services: docker compose stop ${SERVICES[*]}"
