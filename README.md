@@ -4,7 +4,7 @@
 
 # Pharmaviyum — Pharmacy ERP/CRM
 
-![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.15.2-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162.5-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-blue) ![React](https://img.shields.io/badge/React-19.3.1-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.3.8-646CFF)
+![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.15.2-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162.5-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-dev%2FCI-blue) ![React](https://img.shields.io/badge/React-19.3.1-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.3.8-646CFF)
 
 > Pharmacy ERP/CRM platform with Mortarium AI for pharmacy operations, workflow, inventory, procurement, POS, and intelligent decision support.
 
@@ -176,30 +176,30 @@ The application combines a FastAPI backend, PostgreSQL/pgvector, Redis-compatibl
 ### Backend
 
 - Python 3.15.2
-- FastAPI 0.162.0
+- FastAPI 0.162.5
 - Uvicorn
-- Pydantic 2.14.0 / Pydantic Settings 2.15.0
-- SQLAlchemy 2.0.53
+- Pydantic 2.14.3 / Pydantic Settings 2.16.2
+- SQLAlchemy 2.1.8
 - Alembic
 - asyncpg / psycopg
 - Ruff / Black / isort / mypy / pytest
 
 ### Data & Infrastructure
 
-- PostgreSQL 16
-- pgvector 0.4.1
-- Valkey-compatible managed cache in the deployment configuration; Redis-compatible services are used by local development and CI
+- PostgreSQL 18 + pgvector 0.8.7 for disposable development/CI databases; managed Neon production database is not major-upgraded by this change
+- Redis 8.8 for local development/CI; managed production Redis remains separately managed
+- Valkey-compatible cache remains in the pharmacy-edge Ansible deployment template
 - Docker / Docker Compose
-- Celery
+- Celery 5.6.3
 
 ### AI / RAG
 
-- LangGraph
+- LangGraph 1.2.21
 - LangChain
 - PostgreSQL + pgvector
 - MCP JSON-RPC tool/resource layer
 - OpenTelemetry
-- Configured LLM provider(s)
+- QwenCloud for the current demo profile
 
 ### Frontend
 
