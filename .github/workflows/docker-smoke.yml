@@ -7,6 +7,7 @@ on:
     paths:
       - Dockerfile
       - docker-compose.yml
+      - docker-compose.prod.yml
       - docker-compose.codespaces.yml
       - docker-compose.monitoring.yml
       - .devcontainer/**
@@ -41,6 +42,10 @@ jobs:
           GRAFANA_ADMIN_PASSWORD: smoke-test-only
         run: |
           docker compose -f docker-compose.yml config
+          docker compose -f docker-compose.prod.yml config
+          grep -F 'image: pgvector/pgvector:pg16' docker-compose.prod.yml
+          grep -F 'image: redis:7-alpine' docker-compose.prod.yml
+          grep -F 'postgres_data:/var/lib/postgresql/data' docker-compose.prod.yml
           docker compose -f docker-compose.codespaces.yml config
           docker compose -f .devcontainer/docker-compose.devcontainer.yml config
           docker compose -f docker-compose.monitoring.yml config
