@@ -165,13 +165,16 @@ The repository also contains Prometheus/Grafana configuration under `docker/`. O
 
 ## Data and infrastructure
 
-Development Docker Compose currently provides:
+The default development Docker Compose stack currently provides:
 
-- PostgreSQL 16 with pgvector;
-- Redis 7 in the development Compose/CI profile (the managed deployment configuration uses a Redis-compatible Valkey service);
+- PostgreSQL 18 with pgvector 0.8.7;
+- Redis 8.8.4;
 - Ollama;
 - FastAPI API;
-- Celery ingestion worker.
+- Celery ingestion worker;
+- local observability services where configured.
+
+These are disposable development targets. The separate `docker-compose.prod.yml` profile remains on PostgreSQL 16 and Redis 7 pending separately approved data migrations. Managed production databases/caches and Pharmacy Edge PostgreSQL 16/Valkey are separate environments and are not upgraded by changing the development Compose stack.
 
 FastAPI Cloud is the hosted application deployment target. GitHub Actions provides CI and a manually triggered deployment workflow; database, cache, and other required services must be provisioned and configured separately.
 

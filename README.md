@@ -6,21 +6,67 @@
 
 ![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.15.2-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162.5-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-dev%2FCI-blue) ![React](https://img.shields.io/badge/React-19.3.1-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.3.8-646CFF)
 
-> Pharmacy ERP/CRM platform with Mortarium AI for pharmacy operations, workflow, inventory, procurement, POS, and intelligent decision support.
+> An integrated pharmacy ERP/CRM foundation for pharmacy operations, dispensing, point of sale, inventory, procurement, and AI-assisted decision support.
 
 ## Overview
 
 **Pharmaviyum** is a pharmacy-focused ERP/CRM platform with an integrated AI layer, **Mortarium**.
 
-The project evolved from a pharmacy CRM with an AI layer into a broader pharmacy ERP/CRM foundation covering operational workflows such as patients, prescriptions, products, POS, procurement, suppliers, receiving, inventory, batches, expiry control, FEFO dispensing, stock transfers, and auditability.
+The platform brings connected workflows for patients, prescriptions, product reference, POS, dispensing, procurement, suppliers, goods receiving, inventory, batches, expiry control, FEFO handling, stock transfers, and audit trails into one application architecture.
 
-The system is designed around real pharmacy workflows and can complement existing pharmacy ERP environments during gradual adoption rather than requiring an immediate replacement of existing systems.
+Its pilot-first approach is intended to support gradual adoption alongside existing pharmacy systems, rather than requiring an immediate replacement.
 
-The canonical integration and release branch is `main`. Changes should be proposed through pull requests and validated by GitHub Actions before merge.
+The canonical integration branch is `main`. Changes are reviewed through pull requests and validated by GitHub Actions before merge. Production deployment is a separate, manually approved release process.
 
-## Repository layout\n\nThe repository layout, directory ownership, and rules for adding or moving files are documented in [Repository structure](docs/architecture/repository-structure.md).\n\n## Core Pharmacy Workflow
+## At a Glance
 
-Pharmaviyum is organized around connected pharmacy operations:
+- **Application:** FastAPI backend with a React, TypeScript, and Vite frontend.
+- **Pharmacy domain:** POS, dispensing, product reference, inventory, procurement, and pharmacy operations.
+- **AI layer:** Mortarium, with LangGraph-based RAG and MCP integration.
+- **Infrastructure:** PostgreSQL, Redis-compatible services, Docker, and Pharmacy Edge automation.
+- **Delivery:** GitHub Actions CI with a separately controlled FastAPI Cloud deployment workflow.
+
+## Contents
+
+- [Overview](#overview)
+- [Repository Structure](#repository-structure)
+- [Core Pharmacy Workflow](#core-pharmacy-workflow)
+- [Core Capabilities](#core-capabilities)
+- [Architecture](#architecture)
+- [Technology Stack](#technology-stack)
+- [RAG Evaluation & Quality](#rag-evaluation--quality)
+- [Observability](#observability)
+- [AI / RAG Architecture](#ai--rag-architecture)
+- [Pharmacy Edge Automation](#pharmacy-edge-automation-ansible)
+- [Project Structure](#project-structure)
+- [Deployment](#deployment)
+- [Development](#development)
+- [Quality & CI](#quality--ci)
+- [Testing](#testing)
+- [Docker](#docker)
+- [Security & Data Handling](#security--data-handling)
+- [Project Status](#project-status)
+- [Documentation](#documentation)
+- [Demo / NDA Notice](#demo--nda-notice)
+- [License / NDA / Contact](#license--nda--contact)
+
+## Repository Structure
+
+The repository follows clearly defined architectural boundaries and directory ownership rules to keep the codebase consistent, maintainable, and easy to navigate.
+
+The **[Repository Structure Guide](docs/architecture/repository-structure.md)** is the source of truth for:
+
+- Directory responsibilities and ownership.
+- Where application code, infrastructure, tests, and documentation belong.
+- Rules for adding new files and organizing new components.
+- Safe procedures for moving, renaming, or removing existing files.
+- Repository-wide conventions for keeping tooling and deployment references in sync.
+
+Review this guide before introducing new directories or changing the location of existing files. Any structural change must update affected imports, CI workflows, Docker and Compose definitions, deployment assets, scripts, and documentation in the same change.
+
+## Core Pharmacy Workflow
+
+The workflow connects the pharmacy's clinical, commercial, and inventory operations. A typical domain flow is:
 
 ```text
 Patients / Prescriptions
@@ -46,11 +92,11 @@ Suppliers / Receiving  Pharmacy Network
 Expiry / Quarantine / Audit
 ```
 
-The domain is designed to keep pharmacy business processes connected instead of treating CRM, inventory, procurement, and POS as isolated features.
+These are connected domain workflows: a sale or dispensing event affects stock and traceability, while procurement and receiving replenish inventory through auditable transactions.
 
 ## Core Capabilities
 
-Pharmaviyum is being developed with a **pilot-first, offline-first** operating model. The initial Edge rollout is limited to 1–10 pharmacy sites; the architecture documents a future path to 100 sites, but that scale is not yet a validated production capacity.
+Pharmaviyum follows a **pilot-first, offline-capable** operating model. The documented initial Pharmacy Edge rollout is limited to 1–10 sites. A 100-site fleet is a future architecture objective, not a validated production capacity.
 
 ### Pharmacy Operations
 
@@ -70,7 +116,7 @@ Pharmaviyum is being developed with a **pilot-first, offline-first** operating m
 - Explicit separation between supported, restricted, online-only, and validation-blocked offline workflows
 - Ansible-based infrastructure automation for controlled Edge host provisioning, deployment, backup, restore drills, and rollback
 
-Offline operation does not bypass payment-provider authorization, fiscalization, e-prescription verification, or jurisdiction-specific controls. See the offline capability matrix before treating any workflow as available offline.
+Offline behavior is policy-controlled, not universal. Local persistence does not make an unavailable payment provider, fiscal authority, e-prescription service, or other external authority available. Consult the [Pharmacy Offline Capability Matrix](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) before treating any workflow as available offline.
 
 ### Inventory Management
 
@@ -133,7 +179,7 @@ Current architectural areas include:
 - Access-controlled AI workflows
 - Offline RAG evaluation with Ragas plus pharmaceutical-specific checks for citation support, medication entities, negation, patient-context isolation, and Russian/English retrieval
 
-The pharmacist remains the professional decision-maker. AI output is treated as decision support, not as an authoritative replacement for professional judgment.
+The pharmacist remains the professional decision-maker. Mortarium provides decision support; it does not authorize dispensing, replace professional judgment, or serve as an independent clinical authority.
 
 ## Architecture
 
@@ -187,9 +233,9 @@ The application combines a FastAPI backend, PostgreSQL/pgvector, Redis-compatibl
 
 ### Data & Infrastructure
 
-- PostgreSQL 18 + pgvector 0.8.7 for disposable development/CI databases; managed Neon production database is not major-upgraded by this change
-- Redis 8.8 for local development/CI; managed production Redis remains separately managed
-- Valkey-compatible cache remains in the pharmacy-edge Ansible deployment template
+- PostgreSQL 18 with pgvector 0.8.7 for disposable development/CI environments; managed production PostgreSQL is upgraded separately.
+- Redis 8.8.4 for disposable development/CI environments; the production Compose profile remains on Redis 7 pending a separately approved migration.
+- Valkey for the Pharmacy Edge Ansible deployment profile; it remains distinct from the local Redis service.
 - Docker / Docker Compose
 - uv 0.13.8 / Bun 1.4.4
 - Celery 5.6.3
@@ -233,7 +279,7 @@ See [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-
 
 ## Observability
 
-The API supports OpenTelemetry distributed tracing for FastAPI, SQLAlchemy, Redis, and outbound HTTPX requests. Configure an OTLP endpoint with `OTEL_EXPORTER_OTLP_ENDPOINT`; see [`docs/observability/opentelemetry.md`](docs/observability/opentelemetry.md) for deployment, sampling, and data-protection guidance.
+The application uses the OpenTelemetry SDK for distributed tracing. Automatic FastAPI, SQLAlchemy, and HTTPX instrumentation is disabled by default and requires an explicit development/test opt-in; Redis command auto-instrumentation remains disabled. Configure tracing with `OTEL_ENABLED=true` and `OTEL_EXPORTER_OTLP_ENDPOINT`. See [`docs/observability/opentelemetry.md`](docs/observability/opentelemetry.md) for instrumentation boundaries, sampling, and data-protection requirements.
 
 ## AI / RAG Architecture
 
@@ -280,28 +326,23 @@ See [`docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md`](docs/devops/ANSIBLE_PHARMACY_
 
 ## Project Structure
 
-```text
-.
-├── src/pharmaviyum/       # Main FastAPI backend
-│   ├── api/               # API routes
-│   ├── ai/                # Mortarium AI, RAG and MCP
-│   ├── core/              # Core application infrastructure
-│   ├── domain/            # Domain models and business concepts
-│   └── ...
-├── frontend/              # React / TypeScript frontend
-├── alembic/               # Database migrations
-├── scripts/               # Development and operational scripts
-├── docs/                  # Architecture, ADRs and engineering guides
-├── tests/                 # Automated tests
-├── docker-compose.yml     # Local development infrastructure
-├── pyproject.toml         # Python project and tooling configuration
-├── uv.lock                # Locked Python dependencies
-└── README.md              # Project overview
-```
+The repository is organized by responsibility, with clear boundaries between application code, frontend, database migrations, infrastructure automation, tests, and documentation.
+
+| Path | Responsibility |
+|---|---|
+| `src/pharmaviyum/` | FastAPI application, domain logic, integrations, and Mortarium AI |
+| `frontend/shadcn-admin/` | React, TypeScript, Vite, and shadcn-based admin interface |
+| `alembic/` | Database schema migrations |
+| `ansible/` | Pharmacy Edge infrastructure automation |
+| `docker/`, `deploy/`, and Compose files | Container and deployment assets |
+| `tests/` | Automated backend and cross-layer tests |
+| `docs/` | Architecture decisions, engineering guides, and operational runbooks |
+
+For directory ownership, root-level configuration rules, and safe file-movement procedures, use the canonical [Repository Structure Guide](docs/architecture/repository-structure.md).
 
 ## Deployment
 
-The hosted application deployment target is **FastAPI Cloud**. The repository uses a manually triggered GitHub Actions workflow for deployment; see [`docs/deployment/FASTAPI_CLOUD.md`](docs/deployment/FASTAPI_CLOUD.md) for prerequisites, environment variables, database migrations, and known runtime constraints. No deployment is implied by a successful CI run.
+The hosted application target is **FastAPI Cloud**. Production deployment is intentionally manual: merging to `main` or passing CI does not deploy the application or run production migrations. The release workflow verifies CI for the exact selected commit before deployment. See [`docs/deployment/FASTAPI_CLOUD.md`](docs/deployment/FASTAPI_CLOUD.md) for secrets, environment configuration, release steps, smoke checks, and rollback constraints.
 
 ## Development
 
@@ -389,15 +430,17 @@ bun run build
 
 ## Docker
 
-The local development stack provides the backend and supporting infrastructure required for development.
+The default local development Compose stack uses PostgreSQL 18 with pgvector 0.8.7 and Redis 8.8.4, alongside the application and supporting services. These are disposable development targets—not production upgrades.
 
 Typical services include:
 
-- PostgreSQL with pgvector
-- Redis-compatible cache/state service
+- PostgreSQL 18 with pgvector 0.8.7
+- Redis 8.8.4 for cache/state
 - FastAPI API
 - Celery background worker
-- AI/LLM services where configured
+- Ollama and local observability services where configured
+
+The separate docker-compose.prod.yml profile remains on PostgreSQL 16 and Redis 7. Managed production databases/caches and Pharmacy Edge PostgreSQL 16/Valkey are separate environments; changing the development Compose images does not migrate or upgrade them.
 
 Start the development stack with:
 
