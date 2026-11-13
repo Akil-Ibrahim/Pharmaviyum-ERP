@@ -16,7 +16,8 @@ This change set upgrades the application build and test stack. It does not deplo
 - uv 0.13.8
 - React 19.3.1, TypeScript 7.0.2, Vite 8.3.8, Tailwind CSS 4.3.5
 - PostgreSQL 18 + pgvector 0.8.7 for disposable development and CI databases
-- Redis 8.8 for disposable development and CI services
+- Redis 8.8 for disposable development and CI services (redis-py 8.1.0 documents support through Redis 8.8)
+- Prometheus 3.16.0, Grafana 13.3.1, OpenTelemetry Collector Contrib 0.165.1, and Jaeger 1.76.0 for local observability
 
 Versions are pinned in the dependency manifests and image tags where practical. The CI lock-generation workflows regenerate uv.lock and frontend/shadcn-admin/bun.lock and run validation.
 
