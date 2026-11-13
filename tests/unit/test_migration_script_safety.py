@@ -108,7 +108,8 @@ def test_migration_lifecycle_rejects_database_name_without_test_token(
     )
 
     assert result.returncode == 2
-    assert "distinct 'test' or 'testing' token" in result.stderr
+    assert "database name must contain a distinct" in result.stderr
+    assert "test or testing token" in result.stderr
     assert calls == ""
 
 
