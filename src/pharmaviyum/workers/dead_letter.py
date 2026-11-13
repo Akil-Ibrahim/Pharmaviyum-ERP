@@ -22,12 +22,12 @@ DEAD_LETTER_TTL = 30 * 24 * 3600
 class DeadLetterQueue:
     """Dead letter queue for storing failed tasks."""
 
-    def __init__(self, redis_client: Optional[aioredis.Redis[str]] = None):
+    def __init__(self, redis_client: Optional[aioredis.Redis] = None):
         self.redis = redis_client
         self.queue_key = "dead_letter_queue"
         self.index_key = "dead_letter_index"
 
-    async def _client(self) -> aioredis.Redis[str]:
+    async def _client(self) -> aioredis.Redis:
         if self.redis is None:
             self.redis = await get_redis()
         return self.redis
@@ -73,16 +73,26 @@ class DeadLetterQueue:
         task_name: Optional[str] = None,
     ) -> list[dict[str, Any]]:
         redis = await self._client()
-        entry_ids: list[str] = await redis.zrevrange(
+        raw_entry_ids = await redis.zrevrange(
             self.queue_key, skip, skip + limit - 1
         )
-        if not entry_ids:
+        if not raw_entry_ids:
             return []
 
         entries: list[dict[str, Any]] = []
-        for entry_id in entry_ids:
-            entry_json: str | None = await redis.hget(self.index_key, entry_id)
-            if entry_json:
+        for raw_entry_id in raw_entry_ids:
+            entry_id = (
+                raw_entry_id.decode()
+                if isinstance(raw_entry_id, bytes)
+                else raw_entry_id
+            )
+            raw_entry_json = await redis.hget(self.index_key, entry_id)
+            if raw_entry_json:
+                entry_json = (
+                    raw_entry_json.decode()
+                    if isinstance(raw_entry_json, bytes)
+                    else raw_entry_json
+                )
                 entry = json.loads(entry_json)
                 if not isinstance(entry, dict):
                     continue
@@ -93,8 +103,13 @@ class DeadLetterQueue:
 
     async def get_entry(self, entry_id: str) -> Optional[dict[str, Any]]:
         redis = await self._client()
-        entry_json: str | None = await redis.hget(self.index_key, entry_id)
-        if entry_json:
+        raw_entry_json = await redis.hget(self.index_key, entry_id)
+        if raw_entry_json:
+            entry_json = (
+                raw_entry_json.decode()
+                if isinstance(raw_entry_json, bytes)
+                else raw_entry_json
+            )
             entry = json.loads(entry_json)
             if isinstance(entry, dict):
                 return entry
@@ -137,9 +152,15 @@ class DeadLetterQueue:
     async def clear_old(self, days: int = 7) -> int:
         redis = await self._client()
         cutoff = datetime.now(timezone.utc).timestamp() - (days * 24 * 3600)
-        old_entries: list[str] = await redis.zrangebyscore(self.queue_key, 0, cutoff)
-        if not old_entries:
+        raw_old_entries = await redis.zrangebyscore(
+            self.queue_key, 0, cutoff
+        )
+        if not raw_old_entries:
             return 0
+        old_entries = [
+            entry.decode() if isinstance(entry, bytes) else entry
+            for entry in raw_old_entries
+        ]
         for entry_id in old_entries:
             await self.delete_entry(entry_id)
         logger.info(
