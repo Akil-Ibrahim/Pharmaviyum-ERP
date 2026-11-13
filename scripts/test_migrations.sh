@@ -23,9 +23,11 @@ if ! command -v python3 >/dev/null 2>&1; then
   fail "python3 is required to validate the database URL."
 fi
 
-# A separate URL and explicit opt-in are not sufficient by themselves:
-# require a clearly test-named database so a production database name is rejected.
-DATABASE_NAME="$(python3 -c '
+# Require a clearly test-named database and a loopback host by default.
+# Remote test hosts must be explicitly allowlisted by exact hostname.
+URL_INFO="$(python3 -c '
+import os
+import re
 import sys
 from urllib.parse import unquote, urlsplit
 
@@ -33,20 +35,42 @@ url = urlsplit(sys.argv[1])
 if url.scheme not in {"postgres", "postgresql", "postgresql+asyncpg"}:
     raise SystemExit("MIGRATION_TEST_DATABASE_URL must use PostgreSQL.")
 name = unquote(url.path.lstrip("/").split("/", 1)[0])
+host = (url.hostname or "").lower()
 if not name:
     raise SystemExit("MIGRATION_TEST_DATABASE_URL must include a database name.")
-print(name)
-' "$MIGRATION_TEST_DATABASE_URL")" || fail "invalid PostgreSQL URL."
+if not host:
+    raise SystemExit("MIGRATION_TEST_DATABASE_URL must include an explicit hostname.")
 
-if [[ ! "$DATABASE_NAME" =~ (^|[-_])(test|testing)([-_]|$) && ! "$DATABASE_NAME" =~ (test|testing)$ ]]; then
-  fail "database name '$DATABASE_NAME' is not clearly test-scoped; use a dedicated name such as pharmaviyum_test."
-fi
+if host not in {"localhost", "127.0.0.1", "::1"}:
+    allowed = {
+        item.strip().lower()
+        for item in os.environ.get("MIGRATION_TEST_ALLOWED_HOSTS", "").split(",")
+        if item.strip()
+    }
+    if host not in allowed:
+        raise SystemExit(
+            f"database host {host!r} is not loopback; add this exact disposable-test "
+            "hostname to MIGRATION_TEST_ALLOWED_HOSTS only after verifying the target."
+        )
+
+if not re.search(r"(^|[-_])(test|testing)([-_]|$)", name.lower()):
+    raise SystemExit("database name must contain a distinct 'test' or 'testing' token.")
+print(name)
+print(host)
+' "$MIGRATION_TEST_DATABASE_URL")" || fail "invalid or unsafe PostgreSQL URL."
+
+mapfile -t URL_PARTS <<< "$URL_INFO"
+DATABASE_NAME="${URL_PARTS[0]:-}"
+DATABASE_HOST="${URL_PARTS[1]:-}"
+
+[[ -n "$DATABASE_NAME" && -n "$DATABASE_HOST" ]] ||
+  fail "could not extract the test database name and host."
 
 if ! command -v uv >/dev/null 2>&1; then
   fail "uv is required. Install it from https://docs.astral.sh/uv/"
 fi
 
-echo "Testing migrations against explicitly configured test database '$DATABASE_NAME'..."
+echo "Testing migrations against test database '$DATABASE_NAME' on '$DATABASE_HOST'..."
 echo "Current revision:"
 uv run --locked alembic current
 
