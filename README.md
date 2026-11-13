@@ -430,15 +430,17 @@ bun run build
 
 ## Docker
 
-The local development stack provides the backend and supporting infrastructure required for development.
+The default local development Compose stack uses PostgreSQL 18 with pgvector 0.8.7 and Redis 8.8.4, alongside the application and supporting services. These are disposable development targets—not production upgrades.
 
 Typical services include:
 
-- PostgreSQL with pgvector
-- Redis-compatible cache/state service
+- PostgreSQL 18 with pgvector 0.8.7
+- Redis 8.8.4 for cache/state
 - FastAPI API
 - Celery background worker
-- AI/LLM services where configured
+- Ollama and local observability services where configured
+
+The separate docker-compose.prod.yml profile remains on PostgreSQL 16 and Redis 7. Managed production databases/caches and Pharmacy Edge PostgreSQL 16/Valkey are separate environments; changing the development Compose images does not migrate or upgrade them.
 
 Start the development stack with:
 
