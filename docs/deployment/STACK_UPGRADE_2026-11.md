@@ -40,6 +40,10 @@ SELECT extversion FROM pg_extension WHERE extname = 'vector';
 
 The Ansible controller CI remains on Python 3.14.10 because the current ansible-core support matrix lists controller Python only through 3.14; this is a separate automation toolchain, not the application runtime. The Ansible pharmacy-edge deployment template, the production Compose PostgreSQL 16/Redis 7 data services, and the managed Neon production database are intentionally not upgraded by this change set. The production Compose file keeps its existing database volume and major versions; do not run a major-version change through the current simple deploy script. Their current server versions and storage state must be confirmed, backed up, and migrated separately.
 
+## Redis client compatibility
+
+Redis-py 8.x exposes bytes-or-text unions in several command signatures even when response decoding is enabled. Application boundaries explicitly decode byte responses to UTF-8 text, and Redis client annotations use the current non-generic async client type. This keeps queue identifiers and cached text values deterministic while retaining `decode_responses=True` for normal application connections.
+
 ## Redis and Celery
 
 The development and CI Redis service is upgraded independently of managed Redis. The pharmacy-edge Ansible template currently uses Valkey; it is not silently replaced as part of this change.
