@@ -1,8 +1,0 @@
-{
-  "patient.created": "Pasien {name} berhasil dibuat",
-  "patient.not_found": "Pasien tidak ditemukan",
-  "prescription.created": "Resep berhasil dibuat",
-  "auth.login_success": "Login berhasil",
-  "auth.login_failed": "Username atau password salah",
-  "error.generic": "Terjadi kesalahan. Silakan coba lagi."
-}

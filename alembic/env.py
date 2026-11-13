@@ -26,9 +26,14 @@ target_metadata = Base.metadata
 
 def get_url() -> str:
     """Get a PostgreSQL URL suitable for Alembic's async engine."""
-    # FastAPI Cloud injects DATABASE_URL for the managed application database.
-    # Prefer it over PGVECTOR_DATABASE_URL, which may point at an AI/checkpointer DB.
-    url = os.getenv("DATABASE_URL") or os.getenv("PGVECTOR_DATABASE_URL")
+    # Migration lifecycle tests must explicitly opt into a disposable database.
+    # This override is intentionally separate from the application's DATABASE_URL.
+    # FastAPI Cloud uses DATABASE_URL; PGVECTOR_DATABASE_URL is only a fallback.
+    url = (
+        os.getenv("MIGRATION_TEST_DATABASE_URL")
+        or os.getenv("DATABASE_URL")
+        or os.getenv("PGVECTOR_DATABASE_URL")
+    )
     if not url:
         url = config.get_main_option("sqlalchemy.url")
 
