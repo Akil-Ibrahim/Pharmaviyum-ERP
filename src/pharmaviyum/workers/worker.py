@@ -62,7 +62,7 @@ class Worker:
         self.queues = [queue for queue in requested_queues if queue in _ALLOWED_QUEUES]
         if not self.queues:
             raise ValueError("At least one supported worker queue is required")
-        self.redis: Optional[aioredis.Redis] = None
+        self.redis: Optional[aioredis.Redis[str]] = None
         self._shutdown_event = asyncio.Event()
         self._tasks: list[asyncio.Task[Any]] = []
         self._stats: dict[str, Any] = {
@@ -73,7 +73,7 @@ class Worker:
         }
 
     @property
-    def redis_client(self) -> aioredis.Redis:
+    def redis_client(self) -> aioredis.Redis[str]:
         """Return the initialized Redis client."""
         if self.redis is None:
             raise RuntimeError("Worker Redis client is not initialized")
@@ -125,14 +125,14 @@ class Worker:
         logger.info(f"Processing queue: {queue}")
         while not self._shutdown_event.is_set():
             try:
-                result = await redis.bzpopmin(f"queue:{queue}", timeout=1.0)
-                if not result:
+                queue_item = await redis.bzpopmin(f"queue:{queue}", timeout=1.0)
+                if not queue_item:
                     continue
 
-                _, task_id, _ = result
+                _, task_id, _ = queue_item
                 payload_json = await redis.get(f"task:{task_id}")
                 if not payload_json:
-                    logger.warning(f"Task payload not found: {task_id}")
+                    logger.warning("Task payload not found", extra={"task_id": task_id})
                     WORKER_TASKS_TOTAL.labels(
                         task="unknown", queue=queue, status="failure"
                     ).inc()
@@ -143,7 +143,7 @@ class Worker:
                 task_args = payload.get("task_args", {})
                 task_class = TASK_REGISTRY.get(task_name)
                 if not task_class:
-                    logger.error(f"Unknown task: {task_name}")
+                    logger.error("Unknown task", extra={"task_name": task_name})
                     WORKER_TASKS_TOTAL.labels(
                         task="unknown", queue=queue, status="failure"
                     ).inc()
@@ -167,7 +167,7 @@ class Worker:
                 started = time.perf_counter()
                 WORKER_TASKS_IN_FLIGHT.labels(queue=queue).inc()
                 try:
-                    result = await task_instance.run_with_retry(**task_args)
+                    task_result = await task_instance.run_with_retry(**task_args)
                 except asyncio.CancelledError:
                     raise
                 except Exception as exc:
@@ -177,20 +177,20 @@ class Worker:
                     self._stats["failed"] += 1
                     logger.error(f"Task execution failed: {exc}", exc_info=True)
                 else:
-                    status = "success" if result.success else "failure"
+                    status = "success" if task_result.success else "failure"
                     WORKER_TASKS_TOTAL.labels(
                         task=task_name, queue=queue, status=status
                     ).inc()
                     self._stats["processed"] += 1
-                    if not result.success:
+                    if not task_result.success:
                         self._stats["failed"] += 1
                         await dead_letter_queue.add(
                             task_name=task_name,
                             task_args=task_args,
-                            result=result,
+                            result=task_result,
                             original_queue=queue,
                         )
-                    await self._mark_completed(task_id, result)
+                    await self._mark_completed(task_id, task_result)
                 finally:
                     WORKER_TASK_DURATION.labels(task=task_name, queue=queue).observe(
                         time.perf_counter() - started
