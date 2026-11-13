@@ -32,6 +32,8 @@ COPY README.md .
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 
+RUN uv run python scripts/check_python315_compat.py
+
 FROM oven/bun:1.4.4 AS frontend-builder
 
 WORKDIR /frontend
