@@ -68,10 +68,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5.6.0
         with:
-          python-version: "3.14.7"
+          python-version: "3.15.2"
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.8"
+          python-version: "3.15.2"
 
       - name: Install locked dependencies
         run: uv sync --frozen
