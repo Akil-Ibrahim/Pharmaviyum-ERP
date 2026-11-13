@@ -48,6 +48,7 @@ The canonical integration branch is `main`. Changes are reviewed through pull re
 - [Project Status](#project-status)
 - [Documentation](#documentation)
 - [Demo / NDA Notice](#demo--nda-notice)
+- [License / NDA / Contact](#license--nda--contact)
 
 ## Repository Structure
 
