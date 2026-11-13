@@ -28,11 +28,11 @@
 
 ## Backend checks
 Run from repository root as appropriate:
-- `uv run ruff check src/ tests/`
-- `uv run black --check src/ tests/`
-- `uv run isort --check-only --diff --profile black src/ tests/`
-- `uv run mypy --explicit-package-bases src/pharmaviyum/`
-- `uv run pytest` (prefer focused tests first; run the full suite when practical)
+- `uv run --locked ruff check src/ tests/`
+- `uv run --locked black --check src/ tests/`
+- `uv run --locked isort --check-only --diff --profile black src/ tests/`
+- `uv run --locked mypy --explicit-package-bases src/pharmaviyum/`
+- `uv run --locked pytest` (prefer focused tests first; run the full suite when practical)
 
 Do not auto-format unrelated files. Use the repository's pinned tooling from `pyproject.toml`.
 
