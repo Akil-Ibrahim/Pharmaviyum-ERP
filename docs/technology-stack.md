@@ -13,6 +13,7 @@ This page records the versions declared by the repository configuration. It is n
 | Pydantic Settings | `2.16.2` | `pyproject.toml` |
 | SQLAlchemy | `2.1.8` | `pyproject.toml` |
 | Alembic | `1.20.1` | `pyproject.toml` |
+| asyncpg / psycopg | `0.32.0` / `3.3.9` | `pyproject.toml` |
 | PostgreSQL | PostgreSQL 18 with pgvector 0.8.7 in disposable development/CI; managed production database migration remains separate | Docker Compose and CI service definitions |
 | Redis server | Redis 8.8 in disposable development/CI; managed production Redis is unchanged | Docker Compose and CI service definitions |
 | pgvector container extension | `0.8.7` | `pgvector/pgvector:0.8.7-pg18` image tag |
@@ -21,10 +22,13 @@ This page records the versions declared by the repository configuration. It is n
 | LangChain | `1.4.0` | `pyproject.toml` |
 | Redis Python client | `8.1.0` | `pyproject.toml` |
 | Celery | `5.6.3` | `pyproject.toml` |
+| Redis Python client | `8.1.0` | `pyproject.toml` |
+| uv | `0.13.8` | Dockerfile and GitHub Actions workflows |
 | React / React DOM | `^19.3.1` | `frontend/shadcn-admin/package.json` |
 | TypeScript | `~6.0.3` | `frontend/shadcn-admin/package.json` |
 | Vite | `^8.3.8` | `frontend/shadcn-admin/package.json` |
 | Tailwind CSS | `^4.3.5` | `frontend/shadcn-admin/package.json` |
+| Bun | `1.4.4` | Dockerfile and GitHub Actions workflows |
 | TanStack Query | `^5.103.1` | `frontend/shadcn-admin/package.json` |
 | TanStack Router | `^1.170.36` | `frontend/shadcn-admin/package.json` |
 | Vitest | `^4.1.11` | `frontend/shadcn-admin/package.json` |
@@ -40,7 +44,7 @@ Exact resolved Python versions are recorded in `uv.lock`. Frontend dependency ra
 - Container build: Docker multi-stage build
 - CI: GitHub Actions
 
-Workflow files are the authoritative source for the exact CI action versions and CI runtime setup. The workflows currently have more than one Bun setup declaration; keep them aligned when changing the frontend toolchain.
+Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collector Contrib `0.165.1`, Jaeger `1.76.0` in local Compose. Workflow files are the authoritative source for the exact CI action versions and CI runtime setup. The workflows currently have more than one Bun setup declaration; keep them aligned when changing the frontend toolchain.
 
 ## Dependency update procedure
 
