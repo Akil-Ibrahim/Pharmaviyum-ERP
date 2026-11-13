@@ -79,8 +79,8 @@ USER appuser
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD curl -fsS "http://localhost:\${PORT:-8000}/health" || exit 1
+    CMD curl -fsS "http://localhost:${PORT:-8000}/health" || exit 1
 
 # Migrations and demo seeding are deployment concerns, not application startup.
 # Production release pipelines must run migrations exactly once before traffic.
-CMD ["sh", "-c", "exec uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port \${PORT:-8000}"]
+CMD ["sh", "-c", "exec uvicorn src.pharmaviyum.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
