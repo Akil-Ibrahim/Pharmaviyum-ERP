@@ -222,7 +222,19 @@ jobs:
           import os
           import psycopg
 
-          with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+          database_url = os.environ["DATABASE_URL"]
+          # FastAPI's SQLAlchemy setting commonly uses the asyncpg dialect;
+          # psycopg requires a synchronous PostgreSQL URL.
+          if database_url.startswith("postgresql+asyncpg://"):
+              database_url = database_url.replace(
+                  "postgresql+asyncpg://", "postgresql://", 1
+              )
+          elif database_url.startswith("postgres+asyncpg://"):
+              database_url = database_url.replace(
+                  "postgres+asyncpg://", "postgresql://", 1
+              )
+
+          with psycopg.connect(database_url) as conn:
               result = conn.execute(
                   """
                   DELETE FROM users
