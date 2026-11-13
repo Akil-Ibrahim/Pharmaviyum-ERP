@@ -38,7 +38,7 @@ SELECT version();
 SELECT extversion FROM pg_extension WHERE extname = 'vector';
 ```
 
-The Ansible pharmacy-edge deployment template and managed Neon production database are intentionally not upgraded by this change set. Their current server versions and storage state must be confirmed, backed up, and migrated separately.
+The Ansible controller CI remains on Python 3.14.10 because the current ansible-core support matrix lists controller Python only through 3.14; this is a separate automation toolchain, not the application runtime. The Ansible pharmacy-edge deployment template and managed Neon production database are intentionally not upgraded by this change set. Their current server versions and storage state must be confirmed, backed up, and migrated separately.
 
 ## Redis and Celery
 
