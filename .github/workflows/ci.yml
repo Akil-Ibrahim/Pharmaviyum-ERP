@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: '3.14.7'
+  PYTHON_VERSION: '3.15.2'
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: postgres
   POSTGRES_DB: pharmaviyum_test
@@ -123,7 +123,7 @@ jobs:
     needs: lint
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: ${{ env.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
@@ -132,7 +132,7 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U postgres -d pharmaviyum_test" --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
-        image: redis:7-alpine
+        image: redis:8.8-alpine
         ports: ['6379:6379']
         options: >-
           --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
@@ -159,7 +159,7 @@ jobs:
     needs: lint
     services:
       postgres:
-        image: pgvector/pgvector:pg16
+        image: pgvector/pgvector:0.8.7-pg18
         env:
           POSTGRES_USER: ${{ env.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
