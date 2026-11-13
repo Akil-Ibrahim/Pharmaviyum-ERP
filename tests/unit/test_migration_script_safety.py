@@ -25,8 +25,7 @@ def run_migration_script(
     fake_uv = fake_bin / "uv"
     call_log = tmp_path / "uv-calls.log"
     fake_uv.write_text(
-        "#!/usr/bin/env bash\n"
-        'printf "%s\\n" "$*" >> "$UV_CALL_LOG"\n',
+        "#!/usr/bin/env bash\n" 'printf "%s\\n" "$*" >> "$UV_CALL_LOG"\n',
         encoding="utf-8",
     )
     fake_uv.chmod(0o755)
