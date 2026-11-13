@@ -1,0 +1,47 @@
+name: Regenerate uv.lock
+
+on:
+  push:
+    branches: [deploy/fastapi-cloud-prep, dev, fix/admin-login-bootstrap, chore/python-3.15-upgrade, fix/python315-native-dependency-compat, chore/full-stack-upgrade-2026-11-13]
+    paths:
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/regenerate-uv-lock.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/regenerate-uv-lock.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15.2'
+      - name: Install uv
+        run: pip install uv==0.13.8
+      - name: Resolve the complete lockfile for the upgraded Python and direct dependencies
+        run: uv lock --upgrade
+      - name: Commit updated lockfile
+        run: |
+          if git diff --quiet -- uv.lock; then
+            echo "uv.lock is already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add uv.lock
+          git commit -m "chore(deps): refresh complete Python lockfile"
+          git pull --rebase origin "${{ github.event.pull_request.head.ref || github.ref_name }}"
+          git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}

@@ -1,0 +1,38 @@
+# Documentation
+
+This directory contains the current engineering documentation for Pharmaviyum ERP/CRM.
+
+## Start here
+
+| Area | Document | Purpose |
+|---|---|---|
+| Technology stack | [`technology-stack.md`](./technology-stack.md) | Runtime versions, dependency sources of truth, and upgrade policy. |
+| Architecture | [`ai_architecture.md`](./ai_architecture.md) | Current AI/RAG, MCP, memory, guardrail, and observability architecture. |
+| QwenCloud demo | [`ai/QWENCLOUD_DEMO.md`](./ai/QWENCLOUD_DEMO.md) | Demo-only QwenCloud configuration, free-quota safeguards, implementation status, RAG embedding separation, and release gates. |
+| RAG | [`rag_architecture_audit.md`](./rag_architecture_audit.md) | Dated RAG security/quality audit and remaining work. |
+| Benchmark & quality | [`devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md`](./devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md) | Canonical metric definitions, evidence rules, Ragas and pharmacy-specific evaluation, security gates, load profiles, and benchmark report format. |
+| Development | [`guides/ENVIRONMENT_SETUP.md`](./guides/ENVIRONMENT_SETUP.md) | Canonical local environment and deployment prerequisites. |
+| Hosted deployment | [`deployment/FASTAPI_CLOUD.md`](./deployment/FASTAPI_CLOUD.md) | FastAPI Cloud deployment, secrets, environment, and runtime constraints. |
+| Testing | [`guides/TESTING.md`](./guides/TESTING.md) | Test layout, quality gates, and validation commands. |
+| Codespaces | [`guides/CODESPACES_GUIDE.md`](./guides/CODESPACES_GUIDE.md) | GitHub Codespaces workflow. |
+| Operations | [`operations/INCIDENT_RUNBOOK.md`](./operations/INCIDENT_RUNBOOK.md) | Incident triage and rollback guidance. |
+| Release | [`operations/RELEASE_RUNBOOK.md`](./operations/RELEASE_RUNBOOK.md) | Staging release and rollback procedure. |
+| Production engineering | [`operations/PRODUCTION_ENGINEERING.md`](./operations/PRODUCTION_ENGINEERING.md) | Operational contract and production engineering standards. |
+| DevOps roadmap | [`devops/README.md`](./devops/README.md) | Capacity, observability, reliability, security, and recovery roadmap. |
+| Pharmacy Edge fleet | [`devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Target Ansible inventory, Central/Edge roles, staged rollout, backup and restore gates for a 100-pharmacy fleet. |
+| ADRs | [`adr/`](./adr/) | Architecture decisions and their implementation status. |
+| WebSocket | [`websocket-protocol.md`](./websocket-protocol.md) | Current v1 WebSocket design/contract status. |
+| Interview | [`interview/README.md`](./interview/README.md) | Senior Python / AI / LLM interview preparation. |
+| AI engineering | [`internal/PHARMAVIUM_AI_GUIDELINES.md`](./internal/PHARMAVIUM_AI_GUIDELINES.md) | Mortarium AI/RAG-specific engineering invariants and evaluation guidance. |
+
+## Documentation ownership rules
+
+- Document the implemented repository, not historical or hypothetical infrastructure. Python dependencies are declared in `pyproject.toml` and resolved in `uv.lock`; CI uses `uv sync --frozen` and project commands use `uv run`. Frontend dependencies are declared in `frontend/shadcn-admin/package.json`.
+- Keep one canonical procedure for each workflow; remove duplicate command guides.
+- Architectural decisions belong in `docs/adr/`.
+- Operational procedures belong in `docs/operations/`.
+- Development procedures belong in `docs/guides/`.
+- Large roadmap documents belong in `docs/devops/`.
+- Interview material is intentionally separate from operational/project documentation.
+- When a command, service, path, or architectural invariant changes, update the canonical document in the same change.
+- Never place credentials, real customer/patient data, or provider secrets in documentation.

@@ -1,0 +1,63 @@
+---
+- name: Validate selected pharmacy fleet before contacting remote hosts
+  hosts: pharmacy_servers
+  connection: local
+  gather_facts: false
+  any_errors_fatal: true
+  tags: [preflight]
+  vars_files:
+    - ../group_vars/all.yml
+  tasks:
+    - name: Apply shared pharmacy fleet guardrails
+      ansible.builtin.import_tasks: ../tasks/validate-pharmacy-fleet.yml
+
+- name: Validate each Edge host before deployment
+  hosts: pharmacy_servers
+  any_errors_fatal: true
+  max_fail_percentage: 0
+  become: false
+  gather_facts: false
+  vars_files:
+    - ../group_vars/all.yml
+  tasks:
+    - name: Check Docker availability
+      ansible.builtin.command: docker --version
+      changed_when: false
+
+    - name: Check Compose availability
+      ansible.builtin.command: docker compose version
+      changed_when: false
+
+- name: Deploy Pharmaviyum one pharmacy at a time
+  hosts: pharmacy_servers
+  serial: 1
+  any_errors_fatal: true
+  max_fail_percentage: 0
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../group_vars/all.yml
+  roles:
+    - role: docker
+      tags: [docker, infrastructure]
+    - role: postgresql
+      tags: [database, infrastructure]
+    - role: app-backend
+      tags: [backend, application]
+  post_tasks:
+    - name: Check backend readiness before advancing rollout
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ backend_port }}/ready"
+        status_code: 200
+        timeout: 10
+        return_content: true
+      register: readiness
+      retries: 12
+      delay: 5
+      until:
+        - readiness.status == 200
+        - readiness.json.status | default('') == 'ready'
+
+    - name: Confirm ready release for this pharmacy
+      ansible.builtin.debug:
+        msg: "Pharmaviyum {{ app_version }} is ready on {{ inventory_hostname }}"

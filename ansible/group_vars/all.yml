@@ -1,0 +1,50 @@
+---
+app_name: pharmaviyum
+app_version: "{{ lookup('env', 'PHARMAVIYUM_APP_VERSION') }}"
+app_environment: production
+
+container_registry: ghcr.io
+backend_image: "ghcr.io/ibrahimengpy/pharmaviyum-crm"
+backend_image_digest: "{{ lookup('env', 'PHARMAVIYUM_BACKEND_IMAGE_DIGEST') }}"
+
+backend_port: 8000
+backend_workers: 2
+backend_log_level: info
+
+postgres_version: "16"
+postgres_db: pharmaviyum
+postgres_user: app_user
+
+# Docker is installed from the vendor repository with explicit per-OS package pins.
+# Set all five versions in approved host_vars/group_vars before a fresh production install.
+docker_require_pinned_versions: true
+docker_package_names:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+docker_package_versions: {}
+postgres_password: ""
+postgresql_data_dir: /opt/pharmaviyum/data/postgres
+
+redis_image: "valkey/valkey:8-alpine"
+
+ghcr_username: "{{ lookup('env', 'PHARMAVIYUM_GHCR_USERNAME') }}"
+ghcr_token: "{{ lookup('env', 'PHARMAVIYUM_GHCR_TOKEN') }}"
+
+backup_enabled: true
+backup_retention_days: 7
+
+# Architecture capacity and active rollout safety limit are deliberately separate.
+max_supported_pharmacy_sites: 100
+active_rollout_limit: 10
+
+# Per-pharmacy Edge sync identity. Supply the token from the Ansible controller's
+# protected environment or override it with an encrypted Ansible Vault variable.
+pharmaviyum_edge_node_id: ""
+pharmaviyum_edge_token: ""
+pharmaviyum_central_sync_url: ""
+pharmaviyum_sync_batch_size: 50
+pharmaviyum_sync_lease_seconds: 30
+pharmaviyum_sync_http_timeout_seconds: 10
