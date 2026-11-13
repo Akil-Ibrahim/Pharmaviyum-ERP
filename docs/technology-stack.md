@@ -6,7 +6,7 @@ This page records the versions declared by the repository configuration. It is n
 
 | Area | Version declared in repository | Source of truth |
 |---|---|---|
-| Python | `>=3.14.10,<3.16`; app CI and Docker target Python 3.15.2. Ansible controller CI remains on Python 3.14.10 because the supported ansible-core matrix currently ends at Python 3.14 | `pyproject.toml`, `.github/workflows/ci.yml`, `Dockerfile` |
+| Python | `>=3.15.2,<3.16`; app CI and Docker target Python 3.15.2. Ansible controller CI remains on Python 3.14.10 as a separate toolchain. Ansible controller CI remains on Python 3.14.10 because the supported ansible-core matrix currently ends at Python 3.14 | `pyproject.toml`, `.github/workflows/ci.yml`, `Dockerfile` |
 | FastAPI | `0.162.5` | `pyproject.toml` |
 | Uvicorn | `0.54.0` | `pyproject.toml` |
 | Pydantic | `2.14.3` | `pyproject.toml` |
