@@ -49,7 +49,7 @@ jobs:
       - name: Build React frontend
         working-directory: frontend/shadcn-admin
         run: |
-          bun install
+          bun install --frozen-lockfile
           bun run build
           test -s dist/index.html
           test -d dist/assets
