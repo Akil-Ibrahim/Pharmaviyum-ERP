@@ -4,7 +4,7 @@
 
 # Pharmaviyum — Pharmacy ERP/CRM
 
-![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.14.7-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162.0-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue) ![React](https://img.shields.io/badge/React-19.3-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.x-646CFF)
+![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.15.2-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162.5-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-blue) ![React](https://img.shields.io/badge/React-19.3.1-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.3.8-646CFF)
 
 > Pharmacy ERP/CRM platform with Mortarium AI for pharmacy operations, workflow, inventory, procurement, POS, and intelligent decision support.
 
@@ -175,7 +175,7 @@ The application combines a FastAPI backend, PostgreSQL/pgvector, Redis-compatibl
 
 ### Backend
 
-- Python 3.14.7
+- Python 3.15.2
 - FastAPI 0.162.0
 - Uvicorn
 - Pydantic 2.14.0 / Pydantic Settings 2.15.0
@@ -305,7 +305,7 @@ The hosted application deployment target is **FastAPI Cloud**. The repository us
 
 ### Prerequisites
 
-- Python 3.14.7 (project constraint: `>=3.14.7,<3.15`)
+- Python 3.15.2 (project constraint: `>=3.15.2,<3.16`)
 - `uv` for Python dependency installation and execution
 - Docker and Docker Compose
 - Bun for the frontend toolchain
