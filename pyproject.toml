@@ -3,7 +3,7 @@ name = "pharmaviyum-crm"
 version = "0.1.0"
 description = "Pharmacy ERP/CRM platform with Mortarium AI"
 readme = "README.md"
-requires-python = ">=3.15.2,<3.16"
+requires-python = ">=3.14.10,<3.16"
 dependencies = [
     # API and application
     "fastapi[standard]==0.162.5",
@@ -34,7 +34,7 @@ dependencies = [
     "langchain-google-genai==4.4.0",
 
     # Cloud and authentication
-    "boto3==1.40.30",
+    "boto3==1.44.1",
     "PyJWT==2.15.0",
     "passlib[bcrypt]==1.7.4",
     "bcrypt==4.3.0",
@@ -42,11 +42,11 @@ dependencies = [
 
     # HTTP clients
     "httpx==0.28.1",
-    "aiohttp==3.14.4",
+    "aiohttp==3.14.5",
     "multidict==6.9.1",
 
     # Documents and RAG ingestion
-    "aiofiles==24.1.0",
+    "aiofiles==25.1.0",
     "beautifulsoup4==4.14.2",
     # Pin the fixed release; 3.0.4 is flagged by pip-audit (GHSA-mmhr-3c5m-f64f).
     "soupsieve==4.1",
@@ -61,11 +61,11 @@ dependencies = [
     # Utilities and serialization
     "python-dotenv==1.2.3",
     "email-validator==2.3.0",
-    "protobuf==5.29.6",
+    "protobuf==7.36.2",
 
     # Observability
-    "prometheus-client==0.21.0",
-    "psutil==6.0.0",
+    "prometheus-client==0.26.0",
+    "psutil==7.2.2",
     "opentelemetry-api==1.45.1",
     "opentelemetry-sdk==1.45.1",
     "opentelemetry-exporter-otlp==1.45.1",
@@ -80,20 +80,20 @@ dev = [
     "pytest==9.2.0",
     "pytest-asyncio==1.4.0",
     "pytest-cov==7.1.0",
-    "pytest-mock==3.14.0",
+    "pytest-mock==3.17.0",
     "factory-boy==3.3.1",
-    "faker==30.8.2",
+    "faker==40.52.0",
     "ruff==0.16.8",
     "black==26.10.1",
     "isort==6.0.1",
     "mypy==2.4.1",
     "pip-audit==2.10.1",
-    "bandit==1.8.6",
-    "pre-commit==4.3.0",
+    "bandit==1.9.4",
+    "pre-commit==4.7.0",
     "types-aiofiles>=24.1.0.20250822",
     "types-beautifulsoup4>=4.12.0.20250516",
     "types-passlib>=1.7.7.20250617",
-    "types-psutil>=7.0.0.20250822",
+    "types-psutil==7.2.2.20261111",
 ]
 eval = [
     # ONNX Runtime has no CPython 3.15 wheel yet; keep this optional evaluation helper for 3.14 and older.
