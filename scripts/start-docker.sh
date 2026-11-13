@@ -5,12 +5,15 @@ set -e
 
 echo "🐳 Starting Pharmaviyum-CRM with Docker..."
 echo ""
-echo "Services will be available at:"
-echo "  - Frontend:    http://localhost:3000"
-echo "  - Backend API: http://localhost:8000"
-echo "  - AI Service:  http://localhost:8001"
-echo "  - Database:    localhost:5432"
-echo "  - Redis:       localhost:6379"
+echo "Services exposed by docker-compose.yml:"
+echo "  - Web UI / API: http://localhost:8000"
+echo "  - API docs:     http://localhost:8000/docs"
+echo "  - PostgreSQL:   localhost:5432"
+echo "  - Redis:        localhost:6379"
+echo "  - Ollama:       http://localhost:11434"
+echo "  - Jaeger UI:    http://localhost:16686"
+echo "  - OTLP gRPC:    localhost:4317"
+echo "  - OTLP HTTP:    localhost:4318"
 echo ""
 
 # Check if docker is available
