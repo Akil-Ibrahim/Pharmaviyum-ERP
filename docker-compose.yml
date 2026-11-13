@@ -68,7 +68,7 @@ services:
 
   # Jaeger provides a local trace UI for development.
   jaeger:
-    image: jaegertracing/all-in-one:1.67.0
+    image: jaegertracing/all-in-one:1.76.0
     container_name: pharmaviyum-jaeger
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
@@ -80,7 +80,7 @@ services:
 
   # OTLP receiver and trace pipeline for local development.
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.123.0
+    image: otel/opentelemetry-collector-contrib:0.165.1
     container_name: pharmaviyum-otel-collector
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
     volumes:
