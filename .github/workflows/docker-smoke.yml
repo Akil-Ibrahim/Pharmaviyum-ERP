@@ -2,6 +2,17 @@ name: Docker Smoke Test
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - docker-compose.yml
+      - docker-compose.codespaces.yml
+      - docker-compose.monitoring.yml
+      - .devcontainer/**
+      - pyproject.toml
+      - uv.lock
+      - .python-version
 
 permissions:
   contents: read
@@ -25,8 +36,14 @@ jobs:
           docker compose version
           docker info
 
-      - name: Validate development Compose configuration
-        run: docker compose -f docker-compose.yml config
+      - name: Validate development Compose configurations
+        env:
+          GRAFANA_ADMIN_PASSWORD: smoke-test-only
+        run: |
+          docker compose -f docker-compose.yml config
+          docker compose -f docker-compose.codespaces.yml config
+          docker compose -f .devcontainer/docker-compose.devcontainer.yml config
+          docker compose -f docker-compose.monitoring.yml config
 
       - name: Build application image
         run: docker build --tag pharmaviyum-crm:smoke-${GITHUB_SHA} .
@@ -56,6 +73,14 @@ jobs:
             --entrypoint python \
             pharmaviyum-crm:smoke-${GITHUB_SHA} \
             -c 'import src.pharmaviyum.main; print("FastAPI import OK")'
+
+      - name: Validate Celery app configuration in the built image
+        run: |
+          docker run --rm --network pharmaviyum-network \
+            --env REDIS_URL=redis://redis:6379/0 \
+            --entrypoint celery \
+            pharmaviyum-crm:smoke-${GITHUB_SHA} \
+            -A src.pharmaviyum.ai.mortarium_rag.ingestion.celery_app report
 
       - name: Cleanup
         if: always()
