@@ -22,7 +22,8 @@ This page records the versions declared by the repository configuration. It is n
 | LangChain | `1.4.0` | `pyproject.toml` |
 | Redis Python client | `8.1.0` | `pyproject.toml` |
 | Celery | `5.6.3` | `pyproject.toml` |
-| Redis Python client | `8.1.0` | `pyproject.toml` |
+| OpenTelemetry API / SDK / OTLP exporter | `1.45.2` | `pyproject.toml` |
+| OpenTelemetry instrumentation packages | `0.66b2` | `pyproject.toml` |
 | uv | `0.13.8` | Dockerfile and GitHub Actions workflows |
 | React / React DOM | `^19.3.1` | `frontend/shadcn-admin/package.json` |
 | TypeScript | `~6.0.3` | `frontend/shadcn-admin/package.json` |
@@ -44,13 +45,13 @@ Exact resolved Python versions are recorded in `uv.lock`. Frontend dependency ra
 - Container build: Docker multi-stage build
 - CI: GitHub Actions
 
-Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collector Contrib `0.165.1`, Jaeger `1.76.0` in local Compose. Workflow files are the authoritative source for the exact CI action versions and CI runtime setup. The workflows currently have more than one Bun setup declaration; keep them aligned when changing the frontend toolchain.
+Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collector Contrib `0.165.1`, Jaeger `1.76.0` in local Compose. Bun is pinned consistently to `1.4.4` across Docker and CI workflows.
 
 ## Dependency update procedure
 
 1. Change Python direct dependencies in `pyproject.toml`.
 2. Regenerate and commit `uv.lock`; CI uses `uv sync --frozen`, so a stale lockfile will fail reproducible installation.
-3. Change frontend dependencies in `frontend/shadcn-admin/package.json` and update the repository's package-manager lockfile if one is introduced or adopted.
+3. Change frontend dependencies in `frontend/shadcn-admin/package.json` and regenerate the committed `frontend/shadcn-admin/bun.lock`.
 4. Run backend lint, formatting, typing, unit and integration checks; run frontend lint, formatting, production build and tests.
 5. Check compatibility notes and security advisories for major-version upgrades.
 6. Update this document and the README only after the repository configuration has been updated. Do not describe a planned upgrade as already installed.
@@ -58,9 +59,9 @@ Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collecto
 
 ## Runtime infrastructure notes
 
-- PostgreSQL is configured at major version 16.
-- The application uses pgvector for vector search where enabled.
-- Development Compose/CI uses Redis-compatible services; the managed deployment uses a Redis-compatible Valkey service. These are deployment profiles, not interchangeable version claims.
+- PostgreSQL 18 + pgvector 0.8.7 is used in disposable local development and CI. The managed Neon database and pharmacy-edge Ansible PostgreSQL 16 deployment template are not major-upgraded by this application PR.
+- Redis 8.8 is used in disposable local development and CI. The FastAPI Cloud managed Redis version is not confirmed or changed.
+- The pharmacy-edge Ansible template uses Valkey; that server profile is intentionally kept separate from the local Redis service.
 - Mortarium's LLM provider/model selection is environment-configured. See [AI architecture](./ai_architecture.md) and [FastAPI Cloud deployment](./deployment/FASTAPI_CLOUD.md) for the current deployment profile.
 
 ## Documentation rule
