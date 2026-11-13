@@ -58,24 +58,24 @@ rollback:
 
 test:
 	@echo "🧪 Running tests..."
-	uv run pytest
+	uv run --locked pytest
 
 test-cov:
 	@echo "🧪 Running tests with coverage..."
-	uv run pytest --cov=src --cov-report=html
+	uv run --locked pytest --cov=src --cov-report=html
 
 lint:
 	@echo "🔍 Running Python quality checks..."
-	uv run ruff check .
-	uv run black --check .
-	uv run isort --check-only .
-	uv run mypy --explicit-package-bases src
+	uv run --locked ruff check .
+	uv run --locked black --check .
+	uv run --locked isort --check-only .
+	uv run --locked mypy --explicit-package-bases src
 
 format:
 	@echo "✨ Formatting Python code..."
-	uv run black .
-	uv run isort .
-	uv run ruff check . --fix
+	uv run --locked black .
+	uv run --locked isort .
+	uv run --locked ruff check . --fix
 
 pre-commit:
 	@echo "🪝 Running pre-commit hooks..."
@@ -83,7 +83,7 @@ pre-commit:
 
 security:
 	@echo "🔒 Running security audit..."
-	uv run pip-audit
+	uv run --locked pip-audit
 
 # =============================================================================
 # Logging & Debugging
