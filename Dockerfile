@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel uv
+RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel && python -m pip install --no-cache-dir uv==0.13.8
 
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
