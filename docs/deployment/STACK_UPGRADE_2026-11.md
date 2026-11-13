@@ -23,9 +23,9 @@ Versions are pinned in the dependency manifests and image tags where practical. 
 
 ## Compatibility gates
 
-Python 3.15.2 is the target runtime for this branch. CI must prove that native extensions, async database drivers, Celery workers, AI dependencies, and the FastAPI application install and execute successfully on CPython 3.15.2 before this branch is merged or deployed.
+Python 3.15.2 is the target runtime for this branch. The optional FastEmbed evaluation helper is excluded on Python 3.15 because its ONNX Runtime dependency does not publish a matching CPython 3.15 wheel yet. CI must prove that native extensions, async database drivers, Celery workers, AI dependencies, and the FastAPI application install and execute successfully on CPython 3.15.2 before this branch is merged or deployed.
 
-The Celery release documentation and some dependency classifiers may lag the newest CPython release. A successful resolver run alone is not sufficient: the full unit, integration, worker-import, Docker build, and smoke-test suite must pass.
+The Celery release documentation and some dependency classifiers may lag the newest CPython release. TypeScript remains on the latest compatible 6.0 line until typescript-eslint supports TypeScript 7. A successful resolver run alone is not sufficient: the full unit, integration, worker-import, Docker build, and smoke-test suite must pass.
 
 ## PostgreSQL 18 data safety
 
