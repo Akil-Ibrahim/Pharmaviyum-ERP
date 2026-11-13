@@ -2,6 +2,8 @@
 
 This inventory classifies the current top-level `scripts/` directory without moving files. Keep scripts at their current paths until every caller (CI, Docker, Compose, Ansible, Makefile, docs, and operator runbooks) has been updated in a coordinated change.
 
+Application startup is defined by `tool.fastapi.entrypoint` in `pyproject.toml` for FastAPI Cloud and the explicit Uvicorn `CMD` in the production Dockerfile. Database migrations are a separate release operation; do not add migration execution to web-process startup.
+
 ## Application lifecycle
 
 | Script | Responsibility |
