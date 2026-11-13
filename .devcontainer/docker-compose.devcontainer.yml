@@ -28,17 +28,18 @@ services:
         condition: service_healthy
 
   postgres:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:0.8.7-pg18
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: pharmaviyum
+      PGDATA: /var/lib/postgresql/18/docker
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_pg18:/var/lib/postgresql
       - ../docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d pharmaviyum"]
@@ -47,7 +48,7 @@ services:
       retries: 10
 
   redis:
-    image: redis:7-alpine
+    image: redis:8.8-alpine
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -61,7 +62,7 @@ services:
       retries: 10
 
 volumes:
-  postgres_data:
+  postgres_data_pg18:
   redis_data:
   pip_cache:
   npm_cache:
