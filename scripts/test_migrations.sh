@@ -1,47 +1,64 @@
-#!/bin/bash
-# ============================================================================
-# Test Database Migrations
-# Verifies that migrations can be applied and rolled back
-# ============================================================================
+#!/usr/bin/env bash
+# Exercise the complete Alembic migration lifecycle on a disposable database only.
+set -Eeuo pipefail
 
-set -e
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
 
-echo "🧪 Testing database migrations..."
-echo ""
+fail() {
+  echo "Refusing to run migration lifecycle test: $*" >&2
+  exit 2
+}
 
-# 1. Check current revision
-echo "📍 Step 1: Check current revision"
-alembic current
-echo ""
+[[ "${ALLOW_DESTRUCTIVE_MIGRATION_TESTS:-}" == "1" ]] ||
+  fail "set ALLOW_DESTRUCTIVE_MIGRATION_TESTS=1 to explicitly confirm the destructive test."
 
-# 2. Upgrade to head
-echo "️  Step 2: Upgrade to head"
-alembic upgrade head
-echo ""
+[[ -n "${MIGRATION_TEST_DATABASE_URL:-}" ]] ||
+  fail "MIGRATION_TEST_DATABASE_URL is required; DATABASE_URL is never used as a fallback."
 
-# 3. Downgrade to base
-echo "️  Step 3: Downgrade to base (remove all tables)"
-alembic downgrade base
-echo ""
+[[ "${MIGRATION_TEST_DATABASE_URL}" != "${DATABASE_URL:-}" ]] ||
+  fail "migration test URL must not equal DATABASE_URL."
 
-# 4. Upgrade again
-echo "⬆️  Step 4: Upgrade to head again"
-alembic upgrade head
-echo ""
+if ! command -v python3 >/dev/null 2>&1; then
+  fail "python3 is required to validate the database URL."
+fi
 
-# 5. Verify tables exist
-echo "🔍 Step 5: Verify tables exist"
-PGPASSWORD=postgres psql -h localhost -U postgres -d pharmaviyum -c "\dt"
-echo ""
+# A separate URL and explicit opt-in are not sufficient by themselves:
+# require a clearly test-named database so a production database name is rejected.
+DATABASE_NAME="$(python3 -c '
+import sys
+from urllib.parse import unquote, urlsplit
 
-# 6. Check pgvector extension
-echo "🔍 Step 6: Check pgvector extension"
-PGPASSWORD=postgres psql -h localhost -U postgres -d pharmaviyum -c "SELECT extname, extversion FROM pg_extension WHERE extname = 'vector';"
-echo ""
+url = urlsplit(sys.argv[1])
+if url.scheme not in {"postgres", "postgresql", "postgresql+asyncpg"}:
+    raise SystemExit("MIGRATION_TEST_DATABASE_URL must use PostgreSQL.")
+name = unquote(url.path.lstrip("/").split("/", 1)[0])
+if not name:
+    raise SystemExit("MIGRATION_TEST_DATABASE_URL must include a database name.")
+print(name)
+' "$MIGRATION_TEST_DATABASE_URL")" || fail "invalid PostgreSQL URL."
 
-# 7. Check indexes
-echo "🔍 Step 7: Check indexes on document_chunks"
-PGPASSWORD=postgres psql -h localhost -U postgres -d pharmaviyum -c "\di document_chunks*"
-echo ""
+if [[ ! "$DATABASE_NAME" =~ (^|[-_])(test|testing)([-_]|$) && ! "$DATABASE_NAME" =~ (test|testing)$ ]]; then
+  fail "database name '$DATABASE_NAME' is not clearly test-scoped; use a dedicated name such as pharmaviyum_test."
+fi
 
-echo "✅ All migration tests passed!"
+if ! command -v uv >/dev/null 2>&1; then
+  fail "uv is required. Install it from https://docs.astral.sh/uv/"
+fi
+
+echo "Testing migrations against explicitly configured test database '$DATABASE_NAME'..."
+echo "Current revision:"
+uv run --locked alembic current
+
+echo "Upgrade to head..."
+uv run --locked alembic upgrade head
+
+echo "Downgrade to base (drops all migrated tables)..."
+uv run --locked alembic downgrade base
+
+echo "Upgrade to head again..."
+uv run --locked alembic upgrade head
+
+echo "Final revision:"
+uv run --locked alembic current
+echo "Migration lifecycle test completed."

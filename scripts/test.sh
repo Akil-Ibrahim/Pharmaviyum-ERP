@@ -1,40 +1,37 @@
-#!/bin/bash
-# ============================================================================
-# Run Test Suite
+#!/usr/bin/env bash
+# Run the repository test suite with the dependency versions pinned in uv.lock.
 # Usage: ./scripts/test.sh [unit|integration|all|coverage]
-# ============================================================================
 
-set -e
+set -Eeuo pipefail
 
-COMMAND=${1:-unit}
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
 
-echo "🧪 Running tests: $COMMAND"
-echo ""
+if ! command -v uv >/dev/null 2>&1; then
+    echo "uv is required. Install it from https://docs.astral.sh/uv/" >&2
+    exit 1
+fi
 
-case $COMMAND in
+COMMAND="${1:-unit}"
+
+echo "Running tests: $COMMAND"
+
+case "$COMMAND" in
     unit)
-        echo "📦 Running unit tests..."
-        pytest tests/ -m unit -v
+        uv run --locked pytest tests/ -m unit -v
         ;;
     integration)
-        echo "🔗 Running integration tests..."
-        pytest tests/ -m integration -v
+        uv run --locked pytest tests/ -m integration -v
         ;;
     all)
-        echo " Running all tests..."
-        pytest tests/ -v
+        uv run --locked pytest tests/ -v
         ;;
     coverage)
-        echo "📊 Running tests with coverage..."
-        pytest tests/ --cov=src.pharmaviyum --cov-report=html --cov-report=term -v
-        echo ""
-        echo "📄 Coverage report: htmlcov/index.html"
+        uv run --locked pytest tests/ --cov=src/pharmaviyum --cov-report=html --cov-report=term-missing -v
+        echo "Coverage report: htmlcov/index.html"
         ;;
     *)
-        echo "❓ Usage: $0 [unit|integration|all|coverage]"
-        exit 1
+        echo "Usage: $0 [unit|integration|all|coverage]" >&2
+        exit 2
         ;;
 esac
-
-echo ""
-echo "✅ Tests completed!"

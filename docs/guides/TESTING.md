@@ -21,9 +21,9 @@ This guide describes the current test layout and the same quality gates used by 
 For a focused test:
 
 ```bash
-pytest tests/<path_to_test>.py -v
-pytest -m unit -v
-pytest -m integration -v
+uv run --locked pytest tests/<path_to_test>.py -v
+uv run --locked pytest -m unit -v
+uv run --locked pytest -m integration -v
 ```
 
 ## Test layout
@@ -50,7 +50,7 @@ The project uses pytest markers where applicable:
 ```bash
 pytest -m unit
 pytest -m integration
-pytest -m "not slow"
+uv run --locked pytest -m "not slow"
 ```
 
 Not every test requires an external LLM. RAG, agent, security, and integration tests should be run with the dependencies required by their category.
@@ -65,7 +65,7 @@ uv sync --frozen
 
 Do **not** use or create the obsolete `requirements-ai.txt` file.
 
-The repository also maintains `pyproject.toml` and `uv.lock`; dependency management is being consolidated toward that toolchain, but the current CI/Docker path still installs `pyproject.toml + uv.lock`.
+`pyproject.toml` is the source of direct dependency declarations and `uv.lock` pins the resolved environment. CI, Docker, Makefile, and local test entrypoints must use the committed lockfile (`uv sync --frozen` or `uv run --locked`) rather than ad-hoc `pip install` commands.
 
 ## Local infrastructure
 
@@ -121,7 +121,7 @@ The pipeline currently includes:
 4. mypy type checking;
 5. unit tests;
 6. integration tests with PostgreSQL/Redis and pgvector where required;
-7. uv run pip-audit;
+7. uv run --locked pip-audit;
 8. Bandit;
 9. RAG evaluation / golden-dataset checks;
 10. Docker build/publish after the required checks succeed.
@@ -133,10 +133,10 @@ The canonical CI workflow is `.github/workflows/ci.yml`; do not document CircleC
 Useful commands:
 
 ```bash
-pytest -v -s tests/<test>.py
-pytest --showlocals tests/<test>.py
-pytest -x tests/<test>.py
-pytest --pdb tests/<test>.py
+uv run --locked pytest -v -s tests/<test>.py
+uv run --locked pytest --showlocals tests/<test>.py
+uv run --locked pytest -x tests/<test>.py
+uv run --locked pytest --pdb tests/<test>.py
 ```
 
 Check service logs when an integration test fails because of infrastructure:

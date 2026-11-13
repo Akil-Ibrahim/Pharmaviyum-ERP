@@ -62,8 +62,8 @@ docker compose logs -f celery-worker
 ./scripts/test.sh all
 
 # Static checks
-uv run ruff check src/
-uv run mypy --explicit-package-bases src/pharmaviyum/
+uv run --locked ruff check src/
+uv run --locked mypy --explicit-package-bases src/pharmaviyum/
 ```
 
 Do not use `docker compose down -v` unless you intentionally want to delete local database, Redis, and Ollama volumes.

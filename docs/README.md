@@ -23,7 +23,7 @@ This directory contains the current engineering documentation for Pharmaviyum ER
 | ADRs | [`adr/`](./adr/) | Architecture decisions and their implementation status. |
 | WebSocket | [`websocket-protocol.md`](./websocket-protocol.md) | Current v1 WebSocket design/contract status. |
 | Interview | [`interview/README.md`](./interview/README.md) | Senior Python / AI / LLM interview preparation. |
-| Internal | [`internal/AGENTS.md`](./internal/AGENTS.md) | Repository-specific AI coding-agent guidance. |
+| AI engineering | [`internal/PHARMAVIUM_AI_GUIDELINES.md`](./internal/PHARMAVIUM_AI_GUIDELINES.md) | Mortarium AI/RAG-specific engineering invariants and evaluation guidance. |
 
 ## Documentation ownership rules
 

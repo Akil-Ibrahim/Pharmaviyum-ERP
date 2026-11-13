@@ -53,10 +53,10 @@ Use the repository documentation hierarchy consistently:
 - `docs/operations/` — operational and release runbooks.
 - `docs/devops/` — capacity, observability, and production-engineering roadmap.
 - `docs/interview/` — interview preparation material.
-- `docs/internal/` — repository-specific agent and engineering guidance.
+- `docs/internal/` — AI-specific engineering guidance; general repository rules live in the root `AGENTS.md`.
 
 Avoid duplicating commands or architecture descriptions when a canonical document already exists.
 
 ## Working-branch policy
 
-The current implementation branch is `dev`. Changes should be made there unless another branch is explicitly requested.
+The canonical integration and release branch is `main`. Make changes on a descriptive feature branch and propose them through a pull request; follow the root `AGENTS.md` for the repository-wide Git workflow.

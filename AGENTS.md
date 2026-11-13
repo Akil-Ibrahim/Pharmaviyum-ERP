@@ -1,11 +1,11 @@
-# Pi Coding Agent Instructions — Pharmaviyum ERP/CRM
+# Repository Agent Instructions — Pharmaviyum ERP/CRM
 
 ## Project context
 - Pharmacy ERP/CRM with a FastAPI backend and React/TypeScript admin frontend.
 - Backend source: `src/pharmaviyum/`; tests: `tests/`.
 - Frontend: `frontend/shadcn-admin/`.
 - Python dependencies and tooling are managed with `uv` and `pyproject.toml`; do not introduce or update a separate `requirements.txt`.
-- Python constraint in `pyproject.toml`: `>=3.14.10,<3.16`.
+- Python constraint in `pyproject.toml`: `>=3.15.2,<3.16`. Keep this value synchronized with `pyproject.toml`, Docker, and the application CI runtime; Ansible controller tooling may use a separate Python version.
 - API client generation script: `scripts/generate-api-client.sh`. It expects a local backend at `http://localhost:8000` and writes generated code under `frontend/shadcn-admin/src/client/`.
 
 ## Non-negotiable safety rules
@@ -28,11 +28,11 @@
 
 ## Backend checks
 Run from repository root as appropriate:
-- `uv run ruff check src/ tests/`
-- `uv run black --check src/ tests/`
-- `uv run isort --check-only --diff --profile black src/ tests/`
-- `uv run mypy --explicit-package-bases src/pharmaviyum/`
-- `uv run pytest` (prefer focused tests first; run the full suite when practical)
+- `uv run --locked ruff check src/ tests/`
+- `uv run --locked black --check src/ tests/`
+- `uv run --locked isort --check-only --diff --profile black src/ tests/`
+- `uv run --locked mypy --explicit-package-bases src/pharmaviyum/`
+- `uv run --locked pytest` (prefer focused tests first; run the full suite when practical)
 
 Do not auto-format unrelated files. Use the repository's pinned tooling from `pyproject.toml`.
 

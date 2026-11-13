@@ -18,7 +18,7 @@ The system is designed around real pharmacy workflows and can complement existin
 
 The canonical integration and release branch is `main`. Changes should be proposed through pull requests and validated by GitHub Actions before merge.
 
-## Core Pharmacy Workflow
+## Repository layout\n\nThe repository layout, directory ownership, and rules for adding or moving files are documented in [Repository structure](docs/architecture/repository-structure.md).\n\n## Core Pharmacy Workflow
 
 Pharmaviyum is organized around connected pharmacy operations:
 
