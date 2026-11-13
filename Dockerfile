@@ -38,8 +38,8 @@ FROM oven/bun:1.4.4 AS frontend-builder
 
 WORKDIR /frontend
 
-COPY frontend/shadcn-admin/package.json ./
-RUN bun install
+COPY frontend/shadcn-admin/package.json frontend/shadcn-admin/bun.lock ./
+RUN bun install --frozen-lockfile
 
 COPY frontend/shadcn-admin/ ./
 RUN bun run build
