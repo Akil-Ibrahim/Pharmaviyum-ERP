@@ -499,7 +499,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       redis:
-        image: redis:8.8-alpine
+        image: redis:8.8.4-alpine
         ports: [6379:6379]
     steps:
       - uses: actions/checkout@v3
@@ -531,7 +531,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       redis:
-        image: redis:8.8-alpine
+        image: redis:8.8.4-alpine
         ports: [6379:6379]
     steps:
       - uses: actions/checkout@v3
