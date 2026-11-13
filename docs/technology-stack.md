@@ -13,7 +13,9 @@ This page records the versions declared by the repository configuration. It is n
 | Pydantic Settings | `2.16.2` | `pyproject.toml` |
 | SQLAlchemy | `2.1.8` | `pyproject.toml` |
 | Alembic | `1.20.1` | `pyproject.toml` |
-| PostgreSQL | PostgreSQL 18 with pgvector 0.8.7 in disposable development/CI; managed production database migration remains separate | FastAPI Cloud environment configuration and CI service definitions |
+| PostgreSQL | PostgreSQL 18 with pgvector 0.8.7 in disposable development/CI; managed production database migration remains separate | Docker Compose and CI service definitions |
+| Redis server | Redis 8.8 in disposable development/CI; managed production Redis is unchanged | Docker Compose and CI service definitions |
+| pgvector container extension | `0.8.7` | `pgvector/pgvector:0.8.7-pg18` image tag |
 | pgvector | `0.4.1` Python package | `pyproject.toml` |
 | LangGraph | `1.2.21` | `pyproject.toml` |
 | LangChain | `1.4.0` | `pyproject.toml` |
