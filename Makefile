@@ -6,7 +6,7 @@
 # The React frontend runs separately from frontend/.
 # =============================================================================
 
-.PHONY: help dev dev-detach stop clean test test-cov lint format pre-commit logs logs-api logs-db logs-redis logs-ollama shell-api shell-db shell-redis status rebuild update docs security
+.PHONY: help dev dev-detach stop clean clean-volumes test test-cov lint format pre-commit logs logs-api logs-db logs-redis logs-ollama shell-api shell-db shell-redis status rebuild update docs security
 
 .DEFAULT_GOAL := help
 
@@ -27,9 +27,16 @@ stop:
 	docker compose down
 
 clean:
-	@echo "🧹 Cleaning up containers and volumes..."
-	docker compose down -v
-	rm -rf backups/
+	@echo "🧹 Stopping the development stack (preserving volumes and backups)..."
+	docker compose down --remove-orphans
+
+clean-volumes:
+	@if [ "$(CONFIRM_VOLUME_DELETION)" != "1" ]; then \
+		echo "Refusing to delete Compose volumes. Re-run with CONFIRM_VOLUME_DELETION=1 only for disposable local data."; \
+		exit 2; \
+	fi
+	@echo "⚠️  Removing local Compose volumes..."
+	docker compose down --volumes --remove-orphans
 
 # =============================================================================
 # Deployment
@@ -149,7 +156,8 @@ help:
 	@echo "  make dev              - Start development stack"
 	@echo "  make dev-detach      - Start development stack in background"
 	@echo "  make stop            - Stop development stack"
-	@echo "  make clean           - Stop stack and remove volumes"
+	@echo "  make clean           - Stop stack; preserve database volumes and backups"
+	@echo "  CONFIRM_VOLUME_DELETION=1 make clean-volumes - Delete local Compose volumes (destructive)"
 	@echo ""
 	@echo "Database:"
 	@echo "  make migrate          - Apply local migrations"
