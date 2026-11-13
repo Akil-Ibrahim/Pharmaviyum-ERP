@@ -47,7 +47,7 @@ jobs:
       - name: Commit lockfile if validation passes
         working-directory: .
         run: |
-          if git diff --quiet -- frontend/shadcn-admin/bun.lock; then
+          if [ -z "$(git status --short -- frontend/shadcn-admin/bun.lock)" ]; then
             echo "bun.lock is already current"
             exit 0
           fi
