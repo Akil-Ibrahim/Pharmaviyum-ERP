@@ -35,7 +35,6 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.13.8"
-          version: "0.13.8"
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - name: Install dependencies
@@ -171,7 +170,7 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U postgres -d pharmaviyum_test" --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
-        image: redis:7-alpine
+        image: redis:8.8-alpine
         ports: ['6379:6379']
         options: >-
           --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
