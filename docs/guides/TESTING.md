@@ -81,6 +81,27 @@ For tests that require the full stack:
 docker compose up -d
 ```
 
+## Destructive migration lifecycle test
+
+`scripts/test_migrations.sh` performs `alembic downgrade base`, which removes all migrated tables from its target database. Run it only against a disposable database.
+
+The script requires all of the following safeguards:
+
+- `ALLOW_DESTRUCTIVE_MIGRATION_TESTS=1` as an explicit destructive-operation acknowledgement;
+- `MIGRATION_TEST_DATABASE_URL` with a database name containing `test` or `testing`;
+- a loopback hostname by default (`localhost`, `127.0.0.1`, or `::1`);
+- for a dedicated remote test database, the exact verified hostname in `MIGRATION_TEST_ALLOWED_HOSTS` (comma-separated when multiple hosts are needed).
+
+Example for a local disposable database:
+
+```bash
+ALLOW_DESTRUCTIVE_MIGRATION_TESTS=1 \
+MIGRATION_TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test \
+./scripts/test_migrations.sh
+```
+
+Do not add production database hosts to `MIGRATION_TEST_ALLOWED_HOSTS`. The explicit opt-in and test-like database name do not make a production database safe to target.
+
 ## RAG tests
 
 RAG tests should cover the production invariants of the current pipeline, especially:
@@ -121,7 +142,7 @@ The pipeline currently includes:
 4. mypy type checking;
 5. unit tests;
 6. integration tests with PostgreSQL/Redis and pgvector where required;
-7. uv run --locked pip-audit;
+7. `uv run --locked pip-audit`;
 8. Bandit;
 9. RAG evaluation / golden-dataset checks;
 10. Docker build/publish after the required checks succeed.
