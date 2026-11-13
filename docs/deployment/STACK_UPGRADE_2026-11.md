@@ -57,4 +57,4 @@ The current application uses one Redis URL for cache operations and Celery broke
 5. Plan and approve Neon and pharmacy-edge database upgrades separately, including backups and rollback.
 6. Only after explicit production approval, deploy the application and perform the separately approved database migration.
 
-A green CI run does not itself authorize a production deployment or a database major-version upgrade.
+The legacy `scripts/deploy.sh` now refuses to run unless `PHARMAVIYUM_PRODUCTION_DEPLOY_APPROVAL=VERIFIED_BACKUP_AND_ROLLBACK_PLAN` is explicitly set after a backup and rollback plan have been verified. A green CI run does not itself authorize a production deployment or a database major-version upgrade.
