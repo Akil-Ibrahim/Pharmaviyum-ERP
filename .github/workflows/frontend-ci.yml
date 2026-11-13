@@ -35,7 +35,7 @@ jobs:
           npm install --global bun@1.4.4
           test "$(bun --version)" = "1.4.4"
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
       - name: ESLint
         run: bun run lint
       - name: Prettier
