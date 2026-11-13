@@ -50,6 +50,8 @@ The domain is designed to keep pharmacy business processes connected instead of 
 
 ## Core Capabilities
 
+Pharmaviyum is being developed with a **pilot-first, offline-first** operating model. The initial Edge rollout is limited to 1–10 pharmacy sites; the architecture documents a future path to 100 sites, but that scale is not yet a validated production capacity.
+
 ### Pharmacy Operations
 
 - Patient and customer workflows
@@ -58,6 +60,17 @@ The domain is designed to keep pharmacy business processes connected instead of 
 - Patient purchase history
 - Pharmacy and tenant context
 - Audit logging and transaction traceability
+
+### Pharmacy Edge & Offline Operations
+
+- Pharmacy-local Edge deployment for site-level operational continuity
+- Local POS and inventory workflows designed to continue during WAN/Central outages, subject to workflow-specific policy
+- Durable outbox-based synchronization with Central when connectivity returns
+- Per-pharmacy site identity and credentials
+- Explicit separation between supported, restricted, online-only, and validation-blocked offline workflows
+- Ansible-based infrastructure automation for controlled Edge host provisioning, deployment, backup, restore drills, and rollback
+
+Offline operation does not bypass payment-provider authorization, fiscalization, e-prescription verification, or jurisdiction-specific controls. See the offline capability matrix before treating any workflow as available offline.
 
 ### Inventory Management
 
@@ -118,6 +131,7 @@ Current architectural areas include:
 - AI-assisted analytics and forecasting
 - Application observability (OpenTelemetry traces + Prometheus metrics)
 - Access-controlled AI workflows
+- Offline RAG evaluation with Ragas plus pharmaceutical-specific checks for citation support, medication entities, negation, patient-context isolation, and Russian/English retrieval
 
 The pharmacist remains the professional decision-maker. AI output is treated as decision support, not as an authoritative replacement for professional judgment.
 
@@ -209,6 +223,12 @@ The lockfile is used for reproducible CI/development installation. Dependency ch
 
 For the exact declared runtime versions and the dependency-upgrade procedure, see [`docs/technology-stack.md`](docs/technology-stack.md).
 
+## RAG Evaluation & Quality
+
+RAG orchestration uses LangGraph. Ragas is isolated to offline evaluation and is not imported into the production request path. Evaluation includes standard Ragas measures (faithfulness, answer relevancy, context precision/recall) and domain-specific regression checks for citation correctness, medication name/strength/form, negation preservation, clinical hallucinations, patient/pharmacy isolation, and Russian/English retrieval. LLM-judge scores are regression signals—not clinical validation or regulatory certification. Evaluation datasets must be synthetic or de-identified.
+
+See [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-evaluation.md).
+
 ## Observability
 
 The API supports OpenTelemetry distributed tracing for FastAPI, SQLAlchemy, Redis, and outbound HTTPX requests. Configure an OTLP endpoint with `OTEL_EXPORTER_OTLP_ENDPOINT`; see [`docs/observability/opentelemetry.md`](docs/observability/opentelemetry.md) for deployment, sampling, and data-protection guidance.
@@ -240,6 +260,21 @@ Key design properties include:
 - low-cardinality observability labels.
 
 Detailed AI architecture is documented in [`docs/ai_architecture.md`](docs/ai_architecture.md).
+
+## Pharmacy Edge Automation (Ansible)
+
+The repository includes an Ansible operations layer under `ansible/` for controlled Pharmacy Edge infrastructure management. It is separate from application business logic and does not replace the application Sync Engine.
+
+Current repository assets include deployment, migration, backup, restore, rollback, fleet-validation playbooks, reusable roles, a lab inventory, and Ansible CI quality checks. The operating guardrails are:
+
+- Active rollout limit: **10 pharmacy sites**, with serial/fail-fast deployment.
+- Future architecture objective: **up to 100 sites**; this is not a claim of completed fleet validation.
+- Unique pharmacy/site identity and per-site credentials; secrets belong in an approved secret manager or encrypted runtime variables.
+- Immutable application image references and pinned infrastructure package versions.
+- Database migrations and restore operations require separate review and approval.
+- A repository playbook is not proof of a successful real-site deployment; lab and pharmacy acceptance evidence is required.
+
+See [`docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md`](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) and [`docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
 
 ## Project Structure
 
@@ -389,7 +424,7 @@ Security is treated as a cross-cutting concern across the application.
 
 **Current stage:** Pharmacy ERP Foundation + Production Hardening
 
-The project is under active engineering development. Current work focuses on building a production-oriented pharmacy ERP/CRM foundation, connecting real pharmacy workflows, maintaining CI quality gates, and integrating the Mortarium AI layer without unnecessary architectural complexity.
+The project is under active engineering development. Current work focuses on hardening the ERP/POS workflows, establishing the Pharmacy Edge and Central synchronization contract, validating the Ansible rollout for 1–10 sites, and improving Mortarium AI/RAG evaluation. The 100-site fleet is an architecture target only. A successful CI run or application deployment does not, by itself, establish production readiness; live smoke tests, site acceptance, recovery drills, and capacity evidence remain necessary.
 
 The development approach is **pilot-first**: where appropriate, Pharmaviyum can integrate alongside existing pharmacy ERP systems before broader replacement or migration decisions.
 
@@ -398,6 +433,10 @@ The development approach is **pilot-first**: where appropriate, Pharmaviyum can 
 Additional technical documentation is available under `docs/`, including:
 
 - [`docs/README.md`](docs/README.md) — documentation index
+- [`docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md`](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) — Ansible operating guide for Pharmacy Edge
+- [`docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) — 1–10 rollout guardrails and future 100-site architecture target
+- [`docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md`](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) — workflow-by-workflow offline policy and limitations
+- [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-evaluation.md) — Ragas and pharmaceutical RAG evaluation contract
 - Pharmacy workflow documentation
 - AI/RAG architecture
 - Architecture Decision Records (ADRs)
