@@ -26,7 +26,7 @@ from src.pharmaviyum.observability.metrics import (
 
 logger = structlog.get_logger()
 
-_redis_client: Redis[str] | None = None
+_redis_client: Redis | None = None
 _pool: ConnectionPool | None = None
 
 T = TypeVar("T")
@@ -83,12 +83,12 @@ def get_redis_pool() -> ConnectionPool:
     return _pool
 
 
-async def get_redis() -> Redis[str]:
+async def get_redis() -> Redis:
     """Get the shared Redis client and verify connectivity on first initialization."""
     global _redis_client
     if _redis_client is None:
         pool = get_redis_pool()
-        _redis_client = cast(Redis[str], Redis(connection_pool=pool))
+        _redis_client = cast(Redis, Redis(connection_pool=pool))
         try:
             await _execute_redis_command("ping", _redis_client.ping)
             logger.info("redis_connected")
@@ -116,7 +116,8 @@ async def close_redis() -> None:
 async def cache_get(key: str) -> str | None:
     """Get value from cache."""
     redis = await get_redis()
-    return await _execute_redis_command("get", lambda: redis.get(key))
+    value = await _execute_redis_command("get", lambda: redis.get(key))
+    return value.decode() if isinstance(value, bytes) else value
 
 
 async def cache_set(key: str, value: str, expire: int = 3600) -> bool:
