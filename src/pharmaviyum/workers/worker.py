@@ -62,7 +62,7 @@ class Worker:
         self.queues = [queue for queue in requested_queues if queue in _ALLOWED_QUEUES]
         if not self.queues:
             raise ValueError("At least one supported worker queue is required")
-        self.redis: Optional[aioredis.Redis[str]] = None
+        self.redis: Optional[aioredis.Redis] = None
         self._shutdown_event = asyncio.Event()
         self._tasks: list[asyncio.Task[Any]] = []
         self._stats: dict[str, Any] = {
@@ -73,7 +73,7 @@ class Worker:
         }
 
     @property
-    def redis_client(self) -> aioredis.Redis[str]:
+    def redis_client(self) -> aioredis.Redis:
         """Return the initialized Redis client."""
         if self.redis is None:
             raise RuntimeError("Worker Redis client is not initialized")
@@ -129,7 +129,12 @@ class Worker:
                 if not queue_item:
                     continue
 
-                _, task_id, _ = queue_item
+                _, raw_task_id, _ = queue_item
+                task_id = (
+                    raw_task_id.decode()
+                    if isinstance(raw_task_id, bytes)
+                    else str(raw_task_id)
+                )
                 payload_json = await redis.get(f"task:{task_id}")
                 if not payload_json:
                     logger.warning("Task payload not found", extra={"task_id": task_id})
