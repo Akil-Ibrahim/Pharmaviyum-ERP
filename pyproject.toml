@@ -66,13 +66,13 @@ dependencies = [
     # Observability
     "prometheus-client==0.26.0",
     "psutil==7.2.2",
-    "opentelemetry-api==1.45.1",
-    "opentelemetry-sdk==1.45.1",
-    "opentelemetry-exporter-otlp==1.45.1",
-    "opentelemetry-instrumentation-fastapi==0.66b1",
-    "opentelemetry-instrumentation-sqlalchemy==0.66b1",
-    "opentelemetry-instrumentation-redis==0.66b1",
-    "opentelemetry-instrumentation-httpx==0.66b1",
+    "opentelemetry-api==1.45.2",
+    "opentelemetry-sdk==1.45.2",
+    "opentelemetry-exporter-otlp==1.45.2",
+    "opentelemetry-instrumentation-fastapi==0.66b2",
+    "opentelemetry-instrumentation-sqlalchemy==0.66b2",
+    "opentelemetry-instrumentation-redis==0.66b2",
+    "opentelemetry-instrumentation-httpx==0.66b2",
 ]
 
 [dependency-groups]
