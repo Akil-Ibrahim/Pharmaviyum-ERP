@@ -247,8 +247,6 @@ jobs:
           trap cleanup_smoke_user EXIT
 
           health="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/health")"
-
-          health="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/health")"
           printf '%s\n' "$health" | jq -e '.status == "healthy"' >/dev/null
 
           readiness="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/ready")"
@@ -291,9 +289,9 @@ jobs:
             -H 'Content-Type: application/json' \
             --data "$(jq -n --arg email "$SMOKE_EMAIL" --arg password "$SMOKE_PASSWORD" \
               '{email: $email, password: $password}')")"
-          printf '%s\\n' "$registration_response" | jq -e --arg username "$SMOKE_USERNAME" \
-            '.username == $username and .email == ($username + "@pharmaviyum.invalid")' >/dev/null
           SMOKE_USER_CREATED=true
+          printf '%s\n' "$registration_response" | jq -e --arg username "$SMOKE_USERNAME" \
+            '.username == $username and .email == ($username + "@pharmaviyum.invalid")' >/dev/null
 
           login_response="$(curl --fail --silent --show-error \
             -X POST "$base_url/api/v1/auth/token" \
