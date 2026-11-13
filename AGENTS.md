@@ -5,7 +5,7 @@
 - Backend source: `src/pharmaviyum/`; tests: `tests/`.
 - Frontend: `frontend/shadcn-admin/`.
 - Python dependencies and tooling are managed with `uv` and `pyproject.toml`; do not introduce or update a separate `requirements.txt`.
-- Python constraint in `pyproject.toml`: `>=3.14.7,<3.15`.
+- Python constraint in `pyproject.toml`: `>=3.15.2,<3.16`.
 - API client generation script: `scripts/generate-api-client.sh`. It expects a local backend at `http://localhost:8000` and writes generated code under `frontend/shadcn-admin/src/client/`.
 
 ## Non-negotiable safety rules
