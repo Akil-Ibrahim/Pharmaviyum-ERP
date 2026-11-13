@@ -65,7 +65,7 @@ uv sync --frozen
 
 Do **not** use or create the obsolete `requirements-ai.txt` file.
 
-The repository also maintains `pyproject.toml` and `uv.lock`; dependency management is being consolidated toward that toolchain, but the current CI/Docker path still installs `pyproject.toml + uv.lock`.
+`pyproject.toml` is the source of direct dependency declarations and `uv.lock` pins the resolved environment. CI, Docker, Makefile, and local test entrypoints must use the committed lockfile (`uv sync --frozen` or `uv run --locked`) rather than ad-hoc `pip install` commands.
 
 ## Local infrastructure
 
