@@ -16,9 +16,7 @@ def test_static_path_uses_fastapi_cloud_working_directory(
     assert get_static_path() == frontend_dist.resolve()
 
 
-def test_static_path_uses_staged_static_directory(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_static_path_uses_staged_static_directory(tmp_path: Path, monkeypatch) -> None:
     static_dir = tmp_path / "static"
     static_dir.mkdir()
     (static_dir / "index.html").write_text("<!doctype html><html></html>")
