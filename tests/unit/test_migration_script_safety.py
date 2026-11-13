@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 MIGRATION_SCRIPT = REPOSITORY_ROOT / "scripts" / "test_migrations.sh"
 
@@ -15,7 +14,9 @@ def run_migration_script(
     tmp_path: Path,
     *,
     database_url: str | None = None,
-    migration_url: str | None = "postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test",
+    migration_url: (
+        str | None
+    ) = "postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test",
     allowed_hosts: str | None = None,
     allow_destructive: str | None = "1",
 ) -> tuple[subprocess.CompletedProcess[str], str]:
