@@ -82,8 +82,6 @@ jobs:
           FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
           FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SMOKE_USERNAME: ${{ secrets.PHARMAVIYUM_SMOKE_USERNAME }}
-          SMOKE_PASSWORD: ${{ secrets.PHARMAVIYUM_SMOKE_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
@@ -91,7 +89,7 @@ jobs:
             echo "Refusing production deployment: provide an approved change reference."
             exit 1
           fi
-          for secret_name in FASTAPI_CLOUD_TOKEN FASTAPI_CLOUD_APP_ID DATABASE_URL SMOKE_USERNAME SMOKE_PASSWORD; do
+          for secret_name in FASTAPI_CLOUD_TOKEN FASTAPI_CLOUD_APP_ID DATABASE_URL; do
             if [[ -z "${!secret_name}" ]]; then
               echo "Refusing production deployment: required secret/input is missing: $secret_name"
               exit 1
@@ -206,11 +204,49 @@ jobs:
         shell: bash
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SMOKE_USERNAME: ${{ secrets.PHARMAVIYUM_SMOKE_USERNAME }}
-          SMOKE_PASSWORD: ${{ secrets.PHARMAVIYUM_SMOKE_PASSWORD }}
         run: |
           set -euo pipefail
           base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
+
+          # Create a per-run pharmacist account through the existing registration
+          # endpoint. Credentials exist only in this runner's process environment.
+          SMOKE_USERNAME="pharmaviyum-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          SMOKE_EMAIL="${SMOKE_USERNAME}@pharmaviyum.invalid"
+          SMOKE_PASSWORD="$(openssl rand -hex 32)"
+          SMOKE_USER_CREATED=false
+
+          cleanup_smoke_user() {
+            local exit_code=$?
+            if [ "$SMOKE_USER_CREATED" = "true" ]; then
+              if ! uv run python - <<'PY'
+          import os
+          import psycopg
+
+          with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+              result = conn.execute(
+                  """
+                  DELETE FROM users
+                  WHERE username = %s AND email = %s AND is_superuser = FALSE
+                  """,
+                  (os.environ["SMOKE_USERNAME"], os.environ["SMOKE_EMAIL"]),
+              )
+              if result.rowcount != 1:
+                  raise RuntimeError(
+                      "Expected to remove exactly the temporary smoke user; "
+                      f"removed {result.rowcount} rows."
+                  )
+          PY
+              then
+                echo "ERROR: failed to remove the temporary smoke user." >&2
+                exit_code=1
+              fi
+            fi
+            exit "$exit_code"
+          }
+          export SMOKE_USERNAME SMOKE_EMAIL DATABASE_URL
+          trap cleanup_smoke_user EXIT
+
+          health="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/health")"
 
           health="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/health")"
           printf '%s\n' "$health" | jq -e '.status == "healthy"' >/dev/null
@@ -249,6 +285,15 @@ jobs:
             cat /tmp/pos-unauthorized.json
             exit 1
           fi
+
+          registration_response="$(curl --fail --silent --show-error \
+            -X POST "$base_url/api/v1/auth/register" \
+            -H 'Content-Type: application/json' \
+            --data "$(jq -n --arg email "$SMOKE_EMAIL" --arg password "$SMOKE_PASSWORD" \
+              '{email: $email, password: $password}')")"
+          printf '%s\\n' "$registration_response" | jq -e --arg username "$SMOKE_USERNAME" \
+            '.username == $username and .email == ($username + "@pharmaviyum.invalid")' >/dev/null
+          SMOKE_USER_CREATED=true
 
           login_response="$(curl --fail --silent --show-error \
             -X POST "$base_url/api/v1/auth/token" \
