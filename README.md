@@ -307,7 +307,7 @@ The hosted application deployment target is **FastAPI Cloud**. The repository us
 
 ### Prerequisites
 
-- Python 3.15.2 (project constraint: `>=3.14.10,<3.16`)
+- Python 3.15.2 (project constraint: `>=3.15.2,<3.16`)
 - `uv` for Python dependency installation and execution
 - Docker and Docker Compose
 - Bun for the frontend toolchain
