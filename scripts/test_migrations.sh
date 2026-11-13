@@ -27,6 +27,7 @@ fi
 # Remote test hosts must be explicitly allowlisted by exact hostname.
 URL_INFO="$(python3 -c '
 import os
+import re
 import sys
 from urllib.parse import unquote, urlsplit
 
@@ -52,8 +53,8 @@ if host not in {"localhost", "127.0.0.1", "::1"}:
             "hostname to MIGRATION_TEST_ALLOWED_HOSTS only after verifying the target."
         )
 
-if "test" not in name.lower() and "testing" not in name.lower():
-    raise SystemExit("database name must contain 'test' or 'testing'.")
+if not re.search(r"(^|[-_])(test|testing)([-_]|$)", name.lower()):
+    raise SystemExit("database name must contain a distinct 'test' or 'testing' token.")
 print(name)
 print(host)
 ' "$MIGRATION_TEST_DATABASE_URL")" || fail "invalid or unsafe PostgreSQL URL."
