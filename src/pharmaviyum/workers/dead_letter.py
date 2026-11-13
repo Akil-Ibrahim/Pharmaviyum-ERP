@@ -1,12 +1,12 @@
 """
-Dead letter queue for failed tasks
-Best practice 2026: Never lose failed tasks, enable manual retry
+Dead letter queue for failed tasks.
+Best practice: preserve failed work and support controlled manual retry.
 """
 
 import json
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Awaitable, Optional, TypeVar, cast
+from typing import Any, Optional, cast
 
 from redis import asyncio as aioredis
 
@@ -17,12 +17,6 @@ from src.pharmaviyum.workers.base import TaskResult
 logger = get_logger(__name__)
 
 DEAD_LETTER_TTL = 30 * 24 * 3600
-T = TypeVar("T")
-
-
-async def _await_redis(value: Awaitable[T] | T) -> T:
-    """Await a redis-py asyncio operation with compatible stub typing."""
-    return await cast(Awaitable[T], value)
 
 
 class DeadLetterQueue:
@@ -58,16 +52,14 @@ class DeadLetterQueue:
             "failed_at": datetime.now(timezone.utc).isoformat(),
             "status": "failed",
         }
-        await _await_redis(
-            redis.hset(self.index_key, entry_id, json.dumps(entry, ensure_ascii=False))
+        await redis.hset(
+            self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
         )
-        await _await_redis(
-            redis.zadd(
-                self.queue_key, {entry_id: datetime.now(timezone.utc).timestamp()}
-            )
+        await redis.zadd(
+            self.queue_key, {entry_id: datetime.now(timezone.utc).timestamp()}
         )
-        await _await_redis(redis.expire(self.queue_key, DEAD_LETTER_TTL))
-        await _await_redis(redis.expire(self.index_key, DEAD_LETTER_TTL))
+        await redis.expire(self.queue_key, DEAD_LETTER_TTL)
+        await redis.expire(self.index_key, DEAD_LETTER_TTL)
         logger.error(
             "Task added to dead letter queue",
             extra={"task_name": task_name, "attempts": result.attempts},
@@ -81,16 +73,27 @@ class DeadLetterQueue:
         task_name: Optional[str] = None,
     ) -> list[dict[str, Any]]:
         redis = await self._client()
-        entry_ids = await _await_redis(
-            redis.zrevrange(self.queue_key, skip, skip + limit - 1)
+        raw_entry_ids = cast(
+            list[bytes | str],
+            await redis.zrevrange(self.queue_key, skip, skip + limit - 1),
         )
-        if not entry_ids:
+        if not raw_entry_ids:
             return []
 
         entries: list[dict[str, Any]] = []
-        for entry_id in entry_ids:
-            entry_json = await _await_redis(redis.hget(self.index_key, entry_id))
-            if entry_json:
+        for raw_entry_id in raw_entry_ids:
+            entry_id = (
+                raw_entry_id.decode()
+                if isinstance(raw_entry_id, bytes)
+                else raw_entry_id
+            )
+            raw_entry_json = await redis.hget(self.index_key, entry_id)
+            if raw_entry_json:
+                entry_json = (
+                    raw_entry_json.decode()
+                    if isinstance(raw_entry_json, bytes)
+                    else raw_entry_json
+                )
                 entry = json.loads(entry_json)
                 if not isinstance(entry, dict):
                     continue
@@ -101,8 +104,13 @@ class DeadLetterQueue:
 
     async def get_entry(self, entry_id: str) -> Optional[dict[str, Any]]:
         redis = await self._client()
-        entry_json = await _await_redis(redis.hget(self.index_key, entry_id))
-        if entry_json:
+        raw_entry_json = await redis.hget(self.index_key, entry_id)
+        if raw_entry_json:
+            entry_json = (
+                raw_entry_json.decode()
+                if isinstance(raw_entry_json, bytes)
+                else raw_entry_json
+            )
             entry = json.loads(entry_json)
             if isinstance(entry, dict):
                 return entry
@@ -115,8 +123,8 @@ class DeadLetterQueue:
         entry["status"] = "retried"
         entry["retried_at"] = datetime.now(timezone.utc).isoformat()
         redis = await self._client()
-        await _await_redis(
-            redis.hset(self.index_key, entry_id, json.dumps(entry, ensure_ascii=False))
+        await redis.hset(
+            self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
         )
         return True
 
@@ -127,27 +135,33 @@ class DeadLetterQueue:
         entry["status"] = "discarded"
         entry["discarded_at"] = datetime.now(timezone.utc).isoformat()
         redis = await self._client()
-        await _await_redis(
-            redis.hset(self.index_key, entry_id, json.dumps(entry, ensure_ascii=False))
+        await redis.hset(
+            self.index_key, entry_id, json.dumps(entry, ensure_ascii=False)
         )
         return True
 
     async def delete_entry(self, entry_id: str) -> bool:
         redis = await self._client()
-        await _await_redis(redis.hdel(self.index_key, entry_id))
-        await _await_redis(redis.zrem(self.queue_key, entry_id))
+        await redis.hdel(self.index_key, entry_id)
+        await redis.zrem(self.queue_key, entry_id)
         return True
 
     async def count(self) -> int:
         redis = await self._client()
-        return await _await_redis(redis.zcard(self.queue_key))
+        return await redis.zcard(self.queue_key)
 
     async def clear_old(self, days: int = 7) -> int:
         redis = await self._client()
         cutoff = datetime.now(timezone.utc).timestamp() - (days * 24 * 3600)
-        old_entries = await _await_redis(redis.zrangebyscore(self.queue_key, 0, cutoff))
-        if not old_entries:
+        raw_old_entries = cast(
+            list[bytes | str], await redis.zrangebyscore(self.queue_key, 0, cutoff)
+        )
+        if not raw_old_entries:
             return 0
+        old_entries = [
+            entry.decode() if isinstance(entry, bytes) else entry
+            for entry in raw_old_entries
+        ]
         for entry_id in old_entries:
             await self.delete_entry(entry_id)
         logger.info(

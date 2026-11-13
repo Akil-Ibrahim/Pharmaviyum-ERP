@@ -2,7 +2,7 @@ name: Regenerate uv.lock
 
 on:
   push:
-    branches: [deploy/fastapi-cloud-prep, dev, fix/admin-login-bootstrap, chore/python-3.15-upgrade, fix/python315-native-dependency-compat]
+    branches: [deploy/fastapi-cloud-prep, dev, fix/admin-login-bootstrap, chore/python-3.15-upgrade, fix/python315-native-dependency-compat, chore/full-stack-upgrade-2026-11-13]
     paths:
       - pyproject.toml
       - uv.lock
@@ -28,12 +28,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
       - uses: actions/setup-python@v7
         with:
-          python-version: '3.14.7'
+          python-version: '3.15.2'
       - name: Install uv
-        run: pip install uv
-      # Refresh only the explicitly patched package; avoid unrelated dependency churn.
-      - name: Refresh dependency lock
-        run: uv lock --upgrade-package pypdf
+        run: pip install uv==0.13.8
+      - name: Resolve the complete lockfile for the upgraded Python and direct dependencies
+        run: uv lock --upgrade
       - name: Commit updated lockfile
         run: |
           if git diff --quiet -- uv.lock; then
@@ -43,6 +42,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add uv.lock
-          git commit -m "security: refresh pypdf lockfile"
+          git commit -m "chore(deps): refresh complete Python lockfile"
           git pull --rebase origin "${{ github.event.pull_request.head.ref || github.ref_name }}"
           git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}

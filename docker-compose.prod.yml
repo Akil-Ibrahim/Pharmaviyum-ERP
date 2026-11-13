@@ -3,10 +3,13 @@ version: '3.8'
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    # ... (как в предыдущем docker-compose.yml)
+    # Keep the existing production data volume and major version until a separately approved migration.
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7-alpine
+    # Production Redis major upgrade is a separate migration; keep the existing data volume for now.
     # ... (как в предыдущем docker-compose.yml)
 
   # vLLM вместо Ollama

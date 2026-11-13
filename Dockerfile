@@ -2,7 +2,7 @@
 # PHARMAVIYUM AI - Production Dockerfile
 # ============================================================================
 
-FROM python:3.14.7-slim AS python-builder
+FROM python:3.15.2-slim AS python-builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel uv
+RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel && python -m pip install --no-cache-dir uv==0.13.8
 
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -32,17 +32,19 @@ COPY README.md .
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 
-FROM oven/bun:1 AS frontend-builder
+RUN uv run python scripts/check_python315_compat.py
+
+FROM oven/bun:1.4.4 AS frontend-builder
 
 WORKDIR /frontend
 
-COPY frontend/shadcn-admin/package.json ./
-RUN bun install
+COPY frontend/shadcn-admin/package.json frontend/shadcn-admin/bun.lock ./
+RUN bun install --frozen-lockfile
 
 COPY frontend/shadcn-admin/ ./
 RUN bun run build
 
-FROM python:3.14.7-slim AS production
+FROM python:3.15.2-slim AS production
 
 LABEL maintainer="Pharmaviyum Team"
 LABEL description="Enterprise AI/LLM layer for pharmaceutical CRM"

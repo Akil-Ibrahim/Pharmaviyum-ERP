@@ -1,24 +1,25 @@
 # ============================================================================
 # PHARMAVIYUM AI - Full Stack Docker Compose
-# Python 3.14 + PostgreSQL 16 (pgvector) + Redis 7 + Ollama + Celery
+# Python 3.15.2 + PostgreSQL 18 (pgvector 0.8.7) + Redis 8.8.4 + Ollama + Celery
 # ============================================================================
 
 version: '3.8'
 
 services:
-  # PostgreSQL 16 with pgvector
+  # PostgreSQL 18 with pgvector 0.8.7
   postgres:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:0.8.7-pg18
     container_name: pharmaviyum-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: pharmaviyum
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+      PGDATA: /var/lib/postgresql/18/docker
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_pg18:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d pharmaviyum"]
       interval: 10s
@@ -29,9 +30,9 @@ services:
     networks:
       - pharmaviyum-network
 
-  # Redis 7
+  # Redis 8.8.4
   redis:
-    image: redis:7-alpine
+    image: redis:8.8.4-alpine
     container_name: pharmaviyum-redis
     ports:
       - "6379:6379"
@@ -67,7 +68,7 @@ services:
 
   # Jaeger provides a local trace UI for development.
   jaeger:
-    image: jaegertracing/all-in-one:1.67.0
+    image: jaegertracing/all-in-one:1.76.0
     container_name: pharmaviyum-jaeger
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
@@ -79,7 +80,7 @@ services:
 
   # OTLP receiver and trace pipeline for local development.
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.123.0
+    image: otel/opentelemetry-collector-contrib:0.165.1
     container_name: pharmaviyum-otel-collector
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
     volumes:
@@ -210,7 +211,7 @@ services:
       - pharmaviyum-network
 
 volumes:
-  postgres_data:
+  postgres_data_pg18:
     driver: local
   redis_data:
     driver: local

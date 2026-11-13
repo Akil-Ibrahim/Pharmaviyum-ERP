@@ -127,7 +127,7 @@ A green GitHub Actions workflow is necessary but does not prove that all pharmac
 ## 7. Runtime limitations and operational notes
 
 - FastAPI Cloud native deployment uses the Python project configuration; the workflow explicitly builds the React frontend.
-- Python is currently pinned in `pyproject.toml` to `>=3.14.7,<3.15`. Change this only after dependency and deployment validation.
+- The upgrade branch allows `>=3.14.10,<3.16` and targets Python 3.15.2 through `.python-version` and CI. FastAPI Cloud documents support for currently supported Python versions (3.10+), so CPython 3.15.2 is within the platform's stated range. The exact dependency build, application startup and smoke checks must still pass before production deployment. The production Neon PostgreSQL major version is not changed by this application upgrade.
 - The Dockerfile installs Tesseract and OCR language packs; native FastAPI Cloud does not automatically install those system packages. OCR features requiring the Tesseract executable need a separately validated runtime or external OCR service.
 - PostgreSQL/pgvector and Redis are separately provisioned services; deploying the app does not create them.
 - Celery worker/Beat processes are not started by the web deployment workflow. Deploy and monitor workers separately where required.

@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: '3.14.7'
+  PYTHON_VERSION: '3.15.2'
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: postgres
   POSTGRES_DB: pharmaviyum_test
@@ -34,11 +34,14 @@ jobs:
       - name: Set up uv and managed Python
         uses: astral-sh/setup-uv@v7
         with:
+          version: "0.13.8"
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - name: Install dependencies
         run: |
           uv sync --frozen
+      - name: Verify CPython 3.15 runtime dependencies
+        run: uv run python scripts/check_python315_compat.py
       - name: Ruff diagnostics
         run: uv run ruff check src/ tests/
       - name: Black diagnostics
@@ -102,7 +105,7 @@ jobs:
           test "$(bun --version)" = "1.4.4"
       - name: Install frontend dependencies
         working-directory: frontend/shadcn-admin
-        run: bun install
+        run: bun install --frozen-lockfile
       - name: Install Chromium for Vitest browser tests
         working-directory: frontend/shadcn-admin
         run: bun run test:browser:install
@@ -123,7 +126,7 @@ jobs:
     needs: lint
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: ${{ env.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
@@ -132,7 +135,7 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U postgres -d pharmaviyum_test" --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
-        image: redis:7-alpine
+        image: redis:8.8.4-alpine
         ports: ['6379:6379']
         options: >-
           --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
@@ -141,9 +144,14 @@ jobs:
       - name: Set up uv and managed Python
         uses: astral-sh/setup-uv@v7
         with:
+          version: "0.13.8"
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - run: uv sync --frozen
+      - name: Validate Celery app configuration on the target Python runtime
+        env:
+          REDIS_URL: redis://localhost:6379/15
+        run: uv run celery -A src.pharmaviyum.ai.mortarium_rag.ingestion.celery_app report
       - name: Unit tests
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
@@ -159,7 +167,7 @@ jobs:
     needs: lint
     services:
       postgres:
-        image: pgvector/pgvector:pg16
+        image: pgvector/pgvector:0.8.7-pg18
         env:
           POSTGRES_USER: ${{ env.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
@@ -168,7 +176,7 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U postgres -d pharmaviyum_test" --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
-        image: redis:7-alpine
+        image: redis:8.8.4-alpine
         ports: ['6379:6379']
         options: >-
           --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
@@ -177,6 +185,7 @@ jobs:
       - name: Set up uv and managed Python
         uses: astral-sh/setup-uv@v7
         with:
+          version: "0.13.8"
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - run: uv sync --frozen
@@ -205,6 +214,7 @@ jobs:
       - name: Set up uv and managed Python
         uses: astral-sh/setup-uv@v7
         with:
+          version: "0.13.8"
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - name: Install dependencies and scanners
@@ -227,6 +237,7 @@ jobs:
       - name: Set up uv and managed Python
         uses: astral-sh/setup-uv@v7
         with:
+          version: "0.13.8"
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - run: uv sync --frozen

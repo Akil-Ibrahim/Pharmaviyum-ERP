@@ -3,6 +3,15 @@ set -e
 
 echo "🚀 Deploying Pharmaviyum CRM to production..."
 
+# This legacy Compose script tears down and recreates services. It must not be
+# used until the operator has verified a current backup and an explicit
+# database migration/rollback plan for the target host.
+if [ "${PHARMAVIYUM_PRODUCTION_DEPLOY_APPROVAL:-}" != "VERIFIED_BACKUP_AND_ROLLBACK_PLAN" ]; then
+    echo "❌ Refusing production deployment."
+    echo "Set PHARMAVIYUM_PRODUCTION_DEPLOY_APPROVAL=VERIFIED_BACKUP_AND_ROLLBACK_PLAN only after verifying the production backup, database version, persistent volume mapping, and rollback plan."
+    exit 1
+fi
+
 # Check if .env.prod exists
 if [ ! -f .env.prod ]; then
     echo "❌ Error: .env.prod file not found!"

@@ -355,6 +355,8 @@ async def get_expiring_inventory(
 
     items = []
     for lot, product in rows:
+        if lot.expires_at is None:
+            continue
         expiry = lot.expires_at.date()
         days_left = (expiry - today).days
         is_expired, available_quantity = _inventory_availability(

@@ -125,14 +125,19 @@ class Worker:
         logger.info(f"Processing queue: {queue}")
         while not self._shutdown_event.is_set():
             try:
-                result = await redis.bzpopmin(f"queue:{queue}", timeout=1.0)
-                if not result:
+                queue_item = await redis.bzpopmin(f"queue:{queue}", timeout=1.0)
+                if not queue_item:
                     continue
 
-                _, task_id, _ = result
+                _, raw_task_id, _ = queue_item
+                task_id = (
+                    raw_task_id.decode()
+                    if isinstance(raw_task_id, bytes)
+                    else str(raw_task_id)
+                )
                 payload_json = await redis.get(f"task:{task_id}")
                 if not payload_json:
-                    logger.warning(f"Task payload not found: {task_id}")
+                    logger.warning("Task payload not found", extra={"task_id": task_id})
                     WORKER_TASKS_TOTAL.labels(
                         task="unknown", queue=queue, status="failure"
                     ).inc()
@@ -143,7 +148,7 @@ class Worker:
                 task_args = payload.get("task_args", {})
                 task_class = TASK_REGISTRY.get(task_name)
                 if not task_class:
-                    logger.error(f"Unknown task: {task_name}")
+                    logger.error("Unknown task", extra={"task_name": task_name})
                     WORKER_TASKS_TOTAL.labels(
                         task="unknown", queue=queue, status="failure"
                     ).inc()
@@ -167,7 +172,7 @@ class Worker:
                 started = time.perf_counter()
                 WORKER_TASKS_IN_FLIGHT.labels(queue=queue).inc()
                 try:
-                    result = await task_instance.run_with_retry(**task_args)
+                    task_result = await task_instance.run_with_retry(**task_args)
                 except asyncio.CancelledError:
                     raise
                 except Exception as exc:
@@ -177,20 +182,20 @@ class Worker:
                     self._stats["failed"] += 1
                     logger.error(f"Task execution failed: {exc}", exc_info=True)
                 else:
-                    status = "success" if result.success else "failure"
+                    status = "success" if task_result.success else "failure"
                     WORKER_TASKS_TOTAL.labels(
                         task=task_name, queue=queue, status=status
                     ).inc()
                     self._stats["processed"] += 1
-                    if not result.success:
+                    if not task_result.success:
                         self._stats["failed"] += 1
                         await dead_letter_queue.add(
                             task_name=task_name,
                             task_args=task_args,
-                            result=result,
+                            result=task_result,
                             original_queue=queue,
                         )
-                    await self._mark_completed(task_id, result)
+                    await self._mark_completed(task_id, task_result)
                 finally:
                     WORKER_TASK_DURATION.labels(task=task_name, queue=queue).observe(
                         time.perf_counter() - started

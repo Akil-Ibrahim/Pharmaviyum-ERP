@@ -6,23 +6,30 @@ This page records the versions declared by the repository configuration. It is n
 
 | Area | Version declared in repository | Source of truth |
 |---|---|---|
-| Python | `>=3.14.7,<3.15`; CI and Docker use Python 3.14.7 | `pyproject.toml`, `.github/workflows/ci.yml`, `Dockerfile` |
-| FastAPI | `0.162.0` | `pyproject.toml` |
+| Python | `>=3.15.2,<3.16`; app CI and Docker target Python 3.15.2. Ansible controller CI remains on Python 3.14.10 as a separate toolchain. Ansible controller CI remains on Python 3.14.10 because the supported ansible-core matrix currently ends at Python 3.14 | `pyproject.toml`, `.github/workflows/ci.yml`, `Dockerfile` |
+| FastAPI | `0.162.5` | `pyproject.toml` |
 | Uvicorn | `0.54.0` | `pyproject.toml` |
-| Pydantic | `2.14.0` | `pyproject.toml` |
-| Pydantic Settings | `2.15.0` | `pyproject.toml` |
-| SQLAlchemy | `2.0.53` | `pyproject.toml` |
-| Alembic | `1.20.0` | `pyproject.toml` |
-| PostgreSQL | Major version 16 | FastAPI Cloud environment configuration and CI service definitions |
-| pgvector | `0.4.1` Python package | `pyproject.toml` |
-| LangGraph | `1.2.11` | `pyproject.toml` |
+| Pydantic | `2.14.3` | `pyproject.toml` |
+| Pydantic Settings | `2.16.2` | `pyproject.toml` |
+| SQLAlchemy | `2.1.8` | `pyproject.toml` |
+| Alembic | `1.20.1` | `pyproject.toml` |
+| asyncpg / psycopg | `0.32.0` / `3.3.9` | `pyproject.toml` |
+| PostgreSQL | PostgreSQL 18 with pgvector 0.8.7 in disposable development/CI; managed production database migration remains separate | Docker Compose and CI service definitions |
+| Redis server | Redis 8.8.4 in disposable development/CI; production compose remains on Redis 7 pending a separate data migration | Docker Compose and CI service definitions |
+| pgvector container extension | `0.8.7` | `pgvector/pgvector:0.8.7-pg18` image tag |
+| pgvector Python client | `0.4.1` | `pyproject.toml` |
+| LangGraph | `1.2.21` | `pyproject.toml` |
 | LangChain | `1.4.0` | `pyproject.toml` |
-| Redis Python client | `6.2.0` | `pyproject.toml` |
-| Celery | `5.5.3` | `pyproject.toml` |
-| React / React DOM | `^19.3.0` | `frontend/shadcn-admin/package.json` |
+| Redis Python client | `8.1.0` | `pyproject.toml` |
+| Celery | `5.6.3` | `pyproject.toml` |
+| OpenTelemetry API / SDK / OTLP exporter | `1.45.2` | `pyproject.toml` |
+| OpenTelemetry instrumentation packages | `0.66b2` | `pyproject.toml` |
+| uv | `0.13.8` | Dockerfile and GitHub Actions workflows |
+| React / React DOM | `^19.3.1` | `frontend/shadcn-admin/package.json` |
 | TypeScript | `~6.0.3` | `frontend/shadcn-admin/package.json` |
-| Vite | `^8.3.0` | `frontend/shadcn-admin/package.json` |
-| Tailwind CSS | `^4.3.3` | `frontend/shadcn-admin/package.json` |
+| Vite | `^8.3.8` | `frontend/shadcn-admin/package.json` |
+| Tailwind CSS | `^4.3.5` | `frontend/shadcn-admin/package.json` |
+| Bun | `1.4.4` | Dockerfile and GitHub Actions workflows |
 | TanStack Query | `^5.103.1` | `frontend/shadcn-admin/package.json` |
 | TanStack Router | `^1.170.36` | `frontend/shadcn-admin/package.json` |
 | Vitest | `^4.1.11` | `frontend/shadcn-admin/package.json` |
@@ -38,13 +45,13 @@ Exact resolved Python versions are recorded in `uv.lock`. Frontend dependency ra
 - Container build: Docker multi-stage build
 - CI: GitHub Actions
 
-Workflow files are the authoritative source for the exact CI action versions and CI runtime setup. The workflows currently have more than one Bun setup declaration; keep them aligned when changing the frontend toolchain.
+Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collector Contrib `0.165.1`, Jaeger `1.76.0` in local Compose. Bun is pinned consistently to `1.4.4` across Docker and CI workflows.
 
 ## Dependency update procedure
 
 1. Change Python direct dependencies in `pyproject.toml`.
 2. Regenerate and commit `uv.lock`; CI uses `uv sync --frozen`, so a stale lockfile will fail reproducible installation.
-3. Change frontend dependencies in `frontend/shadcn-admin/package.json` and update the repository's package-manager lockfile if one is introduced or adopted.
+3. Change frontend dependencies in `frontend/shadcn-admin/package.json` and regenerate the committed `frontend/shadcn-admin/bun.lock`.
 4. Run backend lint, formatting, typing, unit and integration checks; run frontend lint, formatting, production build and tests.
 5. Check compatibility notes and security advisories for major-version upgrades.
 6. Update this document and the README only after the repository configuration has been updated. Do not describe a planned upgrade as already installed.
@@ -52,9 +59,10 @@ Workflow files are the authoritative source for the exact CI action versions and
 
 ## Runtime infrastructure notes
 
-- PostgreSQL is configured at major version 16.
-- The application uses pgvector for vector search where enabled.
-- Development Compose/CI uses Redis-compatible services; the managed deployment uses a Redis-compatible Valkey service. These are deployment profiles, not interchangeable version claims.
+- Disposable development/CI Compose targets PostgreSQL 18 with the pgvector 0.8.7 extension image; this does not change the managed Neon production major version or existing pharmacy-edge database volumes.
+- The application uses the pgvector Python client and PostgreSQL extension for vector search where enabled; these are separately versioned components.
+- Disposable development/CI Compose targets Redis 8.8.4. The production Compose profile remains on Redis 7 until a separately approved migration with backup and rollback. The managed Redis/Valkey production services are not upgraded by the application PR.
+- The pharmacy-edge Ansible template uses Valkey; that server profile is intentionally kept separate from the local Redis service.
 - Mortarium's LLM provider/model selection is environment-configured. See [AI architecture](./ai_architecture.md) and [FastAPI Cloud deployment](./deployment/FASTAPI_CLOUD.md) for the current deployment profile.
 
 ## Documentation rule
