@@ -6,23 +6,23 @@ This page records the versions declared by the repository configuration. It is n
 
 | Area | Version declared in repository | Source of truth |
 |---|---|---|
-| Python | `>=3.14.7,<3.15`; CI and Docker use Python 3.14.7 | `pyproject.toml`, `.github/workflows/ci.yml`, `Dockerfile` |
-| FastAPI | `0.162.0` | `pyproject.toml` |
+| Python | `>=3.15.2,<3.16`; app CI and Docker use Python 3.15.2. Ansible controller CI remains on Python 3.14.10 because the supported ansible-core matrix currently ends at Python 3.14 | `pyproject.toml`, `.github/workflows/ci.yml`, `Dockerfile` |
+| FastAPI | `0.162.5` | `pyproject.toml` |
 | Uvicorn | `0.54.0` | `pyproject.toml` |
-| Pydantic | `2.14.0` | `pyproject.toml` |
-| Pydantic Settings | `2.15.0` | `pyproject.toml` |
-| SQLAlchemy | `2.0.53` | `pyproject.toml` |
-| Alembic | `1.20.0` | `pyproject.toml` |
-| PostgreSQL | Major version 16 | FastAPI Cloud environment configuration and CI service definitions |
+| Pydantic | `2.14.3` | `pyproject.toml` |
+| Pydantic Settings | `2.16.2` | `pyproject.toml` |
+| SQLAlchemy | `2.1.8` | `pyproject.toml` |
+| Alembic | `1.20.1` | `pyproject.toml` |
+| PostgreSQL | PostgreSQL 18 with pgvector 0.8.7 in disposable development/CI; managed production database migration remains separate | FastAPI Cloud environment configuration and CI service definitions |
 | pgvector | `0.4.1` Python package | `pyproject.toml` |
-| LangGraph | `1.2.11` | `pyproject.toml` |
+| LangGraph | `1.2.21` | `pyproject.toml` |
 | LangChain | `1.4.0` | `pyproject.toml` |
-| Redis Python client | `6.2.0` | `pyproject.toml` |
-| Celery | `5.5.3` | `pyproject.toml` |
-| React / React DOM | `^19.3.0` | `frontend/shadcn-admin/package.json` |
+| Redis Python client | `8.1.0` | `pyproject.toml` |
+| Celery | `5.6.3` | `pyproject.toml` |
+| React / React DOM | `^19.3.1` | `frontend/shadcn-admin/package.json` |
 | TypeScript | `~6.0.3` | `frontend/shadcn-admin/package.json` |
-| Vite | `^8.3.0` | `frontend/shadcn-admin/package.json` |
-| Tailwind CSS | `^4.3.3` | `frontend/shadcn-admin/package.json` |
+| Vite | `^8.3.8` | `frontend/shadcn-admin/package.json` |
+| Tailwind CSS | `^4.3.5` | `frontend/shadcn-admin/package.json` |
 | TanStack Query | `^5.103.1` | `frontend/shadcn-admin/package.json` |
 | TanStack Router | `^1.170.36` | `frontend/shadcn-admin/package.json` |
 | Vitest | `^4.1.11` | `frontend/shadcn-admin/package.json` |
