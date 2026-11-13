@@ -56,6 +56,16 @@ jobs:
         env:
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
 
+      - name: Stage frontend build at the FastAPI Cloud static path
+        run: |
+          set -euo pipefail
+          rm -rf static
+          mkdir -p static
+          cp -a frontend/shadcn-admin/dist/. static/
+          test -s static/index.html
+          test -d static/assets
+          echo "Staged $(find static -type f | wc -l) frontend files for the FastAPI Cloud upload."
+
       - name: Set up uv and managed Python
         uses: astral-sh/setup-uv@v7
         with:

@@ -31,6 +31,8 @@ def get_static_path() -> Path | None:
     candidates = [
         Path(configured_path).expanduser() if configured_path else None,
         Path("/app/static"),
+        working_directory / "static",
+        module_root / "static",
         working_directory / "frontend" / "shadcn-admin" / "dist",
         working_directory / "frontend" / "dist",
         module_root / "frontend" / "shadcn-admin" / "dist",
