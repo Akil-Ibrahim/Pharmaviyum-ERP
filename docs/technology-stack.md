@@ -17,7 +17,7 @@ This page records the versions declared by the repository configuration. It is n
 | PostgreSQL | PostgreSQL 18 with pgvector 0.8.7 in disposable development/CI; managed production database migration remains separate | Docker Compose and CI service definitions |
 | Redis server | Redis 8.8 in disposable development/CI; managed production Redis is unchanged | Docker Compose and CI service definitions |
 | pgvector container extension | `0.8.7` | `pgvector/pgvector:0.8.7-pg18` image tag |
-| pgvector | `0.4.1` Python package | `pyproject.toml` |
+| pgvector Python client | `0.4.1` | `pyproject.toml` |
 | LangGraph | `1.2.21` | `pyproject.toml` |
 | LangChain | `1.4.0` | `pyproject.toml` |
 | Redis Python client | `8.1.0` | `pyproject.toml` |
@@ -59,8 +59,9 @@ Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collecto
 
 ## Runtime infrastructure notes
 
-- PostgreSQL 18 + pgvector 0.8.7 is used in disposable local development and CI. The managed Neon database and pharmacy-edge Ansible PostgreSQL 16 deployment template are not major-upgraded by this application PR.
-- Redis 8.8 is used in disposable local development and CI. The FastAPI Cloud managed Redis version is not confirmed or changed.
+- Disposable development/CI Compose targets PostgreSQL 18 with the pgvector 0.8.7 extension image; this does not change the managed Neon production major version or existing pharmacy-edge database volumes.
+- The application uses the pgvector Python client and PostgreSQL extension for vector search where enabled; these are separately versioned components.
+- Disposable development/CI Compose targets Redis 8.8. The managed Redis/Valkey production services are not upgraded by the application PR.
 - The pharmacy-edge Ansible template uses Valkey; that server profile is intentionally kept separate from the local Redis service.
 - Mortarium's LLM provider/model selection is environment-configured. See [AI architecture](./ai_architecture.md) and [FastAPI Cloud deployment](./deployment/FASTAPI_CLOUD.md) for the current deployment profile.
 
