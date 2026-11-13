@@ -181,7 +181,8 @@ The application combines a FastAPI backend, PostgreSQL/pgvector, Redis-compatibl
 - Pydantic 2.14.3 / Pydantic Settings 2.16.2
 - SQLAlchemy 2.1.8
 - Alembic
-- asyncpg / psycopg
+- asyncpg 0.32.0 / psycopg 3.3.9
+- Redis Python client 8.1.0
 - Ruff / Black / isort / mypy / pytest
 
 ### Data & Infrastructure
@@ -190,6 +191,7 @@ The application combines a FastAPI backend, PostgreSQL/pgvector, Redis-compatibl
 - Redis 8.8 for local development/CI; managed production Redis remains separately managed
 - Valkey-compatible cache remains in the pharmacy-edge Ansible deployment template
 - Docker / Docker Compose
+- uv 0.13.8 / Bun 1.4.4
 - Celery 5.6.3
 
 ### AI / RAG
