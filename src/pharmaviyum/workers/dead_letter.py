@@ -73,9 +73,7 @@ class DeadLetterQueue:
         task_name: Optional[str] = None,
     ) -> list[dict[str, Any]]:
         redis = await self._client()
-        raw_entry_ids = await redis.zrevrange(
-            self.queue_key, skip, skip + limit - 1
-        )
+        raw_entry_ids = await redis.zrevrange(self.queue_key, skip, skip + limit - 1)
         if not raw_entry_ids:
             return []
 
@@ -152,9 +150,7 @@ class DeadLetterQueue:
     async def clear_old(self, days: int = 7) -> int:
         redis = await self._client()
         cutoff = datetime.now(timezone.utc).timestamp() - (days * 24 * 3600)
-        raw_old_entries = await redis.zrangebyscore(
-            self.queue_key, 0, cutoff
-        )
+        raw_old_entries = await redis.zrangebyscore(self.queue_key, 0, cutoff)
         if not raw_old_entries:
             return 0
         old_entries = [
