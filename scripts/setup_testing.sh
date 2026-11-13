@@ -475,7 +475,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.14.7'
+          python-version: '3.15.2'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip uv
@@ -487,7 +487,7 @@ jobs:
     needs: lint
     services:
       postgres:
-        image: postgres:16-alpine
+        image: pgvector/pgvector:0.8.7-pg18
         env:
           POSTGRES_DB: pharmaviyum_test
           POSTGRES_USER: user
@@ -499,14 +499,14 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       redis:
-        image: redis:7-alpine
+        image: redis:8.8-alpine
         ports: [6379:6379]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.14.7'
+          python-version: '3.15.2'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip uv
@@ -519,7 +519,7 @@ jobs:
     needs: test-unit
     services:
       postgres:
-        image: postgres:16-alpine
+        image: pgvector/pgvector:0.8.7-pg18
         env:
           POSTGRES_DB: pharmaviyum_test
           POSTGRES_USER: user
@@ -531,14 +531,14 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       redis:
-        image: redis:7-alpine
+        image: redis:8.8-alpine
         ports: [6379:6379]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.14.7'
+          python-version: '3.15.2'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip uv
