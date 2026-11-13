@@ -146,6 +146,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - run: uv sync --frozen
+      - name: Validate Celery app configuration on the target Python runtime
+        env:
+          REDIS_URL: redis://localhost:6379/15
+        run: uv run celery -A src.pharmaviyum.ai.mortarium_rag.ingestion.celery_app report
       - name: Unit tests
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
