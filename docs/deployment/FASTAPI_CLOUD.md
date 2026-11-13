@@ -1,100 +1,156 @@
 # Pharmaviyum deployment to FastAPI Cloud
 
-This runbook targets the repository `main` branch and the FastAPI Cloud native Python deployment flow.
+This runbook describes the current manually triggered deployment workflow in `.github/workflows/deploy-fastapi-cloud.yml`. It is the hosted-release source of truth; do not infer deployment behavior from older workflow descriptions.
 
-## Deployment flow
+## 1. Release policy
 
-The GitHub Actions workflow `.github/workflows/deploy-fastapi-cloud.yml` supports both manual deployment and automatic deployment after a successful `CI/CD Pipeline` run on `main`. It:
+Production deployment is intentionally manual. A push or merge to `main` does not deploy automatically and must not run database migrations as a side effect.
 
-1. Checks out the exact commit selected for deployment.
-2. Installs Bun and builds `frontend/shadcn-admin`.
-3. Verifies that CI succeeded for that exact commit.
-4. Installs the Python project using `uv`.
-5. Runs `uv run alembic upgrade head` against the production database using the GitHub Actions secret `DATABASE_URL`.
-6. Runs `uv run fastapi cloud deploy .` with the FastAPI Cloud deploy token and app ID. The command uses its normal wait/verification behavior; the workflow fails if the command reports a deployment error.
+The release path is:
 
-Migrations run once in the release workflow before the app deployment, not in every API replica's startup command. Do not also enable migrations in application startup.
+```text
+Pull request
+  -> required CI, security, frontend, backend, integration and RAG checks
+  -> merge to main
+  -> manually dispatch Deploy to FastAPI Cloud from main
+  -> production environment approval (if configured)
+  -> deploy and smoke checks
+  -> inspect logs and verify live application
+```
 
-A successful workflow run is necessary but does not replace post-deploy verification of database/Redis readiness and critical pharmacy workflows.
+The workflow uses the exact commit selected on `main`, verifies successful CI for that same SHA, and serializes production deployments through a concurrency group.
 
-## GitHub Actions secrets required
+## 2. GitHub Actions secrets
 
-Configure these repository Actions secrets:
+Configure the following as repository Actions secrets or secrets on the protected GitHub Actions `production` environment:
 
-- `FASTAPI_CLOUD_TOKEN`: deploy token issued by FastAPI Cloud.
-- `FASTAPI_CLOUD_APP_ID`: ID of the target FastAPI Cloud app.
-- `DATABASE_URL`: async SQLAlchemy URL for the production PostgreSQL database, using `postgresql+asyncpg://...`. **This must point to the same production database configured in FastAPI Cloud**, because the workflow applies Alembic migrations through this secret before deploying.
-- `VITE_CLERK_PUBLISHABLE_KEY`: Clerk publishable key used at React build time if the Clerk sign-in route is enabled. This is a public frontend key, not a private key, but the workflow reads it from Actions secrets.
+- `FASTAPI_CLOUD_TOKEN`: FastAPI Cloud deploy token.
+- `FASTAPI_CLOUD_APP_ID`: target FastAPI Cloud application ID.
+- `DATABASE_URL`: synchronous or async PostgreSQL connection URL for the same production database used by the app. The workflow uses this secret for read-only catalog exclusion checks and to clean up the temporary smoke-test user. The cleanup step normalizes `postgresql+asyncpg://` / `postgres+asyncpg://` to a psycopg-compatible URL.
+- `VITE_CLERK_PUBLISHABLE_KEY`: optional build-time public frontend key when required by the current frontend sign-in configuration.
 
-Do not put token values, database credentials, or API keys in source files or commit them. Never paste secret values into chat or logs.
+Never put secret values in the repository, workflow inputs, issue comments, or chat. Never echo credentials into CI logs.
 
-## FastAPI Cloud environment variables
+**No smoke-test username/password secrets are required.** The workflow creates a unique temporary pharmacist account with a random per-run password using the existing registration endpoint, tests login/profile/catalog access, and attempts to delete only that exact non-superuser account. Do not configure static `PHARMAVIYUM_SMOKE_USERNAME` / `PHARMAVIYUM_SMOKE_PASSWORD` values. Do not use default `admin/admin` credentials.
 
-Configure these in the FastAPI Cloud app environment before deploying:
+## 3. FastAPI Cloud application environment
 
-- `ENVIRONMENT=production`
-- `LOG_LEVEL=INFO`
-- `CORS_ORIGINS`: the exact HTTPS origin of the deployed frontend (for a same-origin frontend, use the app's origin; do not use `*` with credentials).
-- `DATABASE_URL`: async SQLAlchemy URL for the production PostgreSQL database, using `postgresql+asyncpg://...`.
-- `PGVECTOR_DATABASE_URL`: async PostgreSQL URL for the vector store. It can point to the same database if the schema and permissions are suitable.
-- `REDIS_URL`: URL of a reachable Redis-compatible service.
-- `SECRET_KEY`: a newly generated random secret of at least 32 characters. The API accepts this documented name and the legacy `API_SECRET_KEY` alias. Production/staging startup fails if neither is configured.
-- `ADMIN_PASSWORD` (optional): an explicit bootstrap-admin password, at least 16 characters. If omitted, the bootstrap login path is disabled; existing users authenticate only against their stored password hashes. Never rely on a default admin password.
-- `USE_CLOUD_LLM=true`
-- `CLOUD_LLM_PROVIDER=qwencloud`
-- `QWEN_API_KEY`: QwenCloud API key, stored only as a FastAPI Cloud secret.
-- `QWEN_BASE_URL=https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1`
-- `QWEN_MODEL=qwen3.8-flash`
-- `QWEN_FAST_MODEL=qwen3.8-flash`
-- `QWEN_COMPLEX_MODEL=qwen3.8-flash`
-- `QWEN_FREE_QUOTA_ONLY=true`
-- `QWEN_TIMEOUT_SECONDS=30`
-- `QWEN_MAX_OUTPUT_TOKENS=500`
+Configure these in the FastAPI Cloud app Environment Variables panel:
 
-For the demo, QwenCloud is the sole configured cloud LLM provider. The code uses the OpenAI-compatible ChatOpenAI adapter with automatic retries disabled, a finite timeout, and a bounded output-token target. The application setting `QWEN_FREE_QUOTA_ONLY=true` is required (it defaults to false, so omission blocks Qwen calls) and is a fail-closed configuration guard; it does **not** query QwenCloud quota or override billing policy. In the QwenCloud console, enable the provider's **Free quota only** switch for the selected model. Verify that switch and quota expiry in the console before enabling live requests.
+| Variable | Requirement / notes |
+|---|---|
+| `ENVIRONMENT` | `production` |
+| `DEBUG` | `false` |
+| `LOG_LEVEL` | `INFO` |
+| `DATABASE_URL` | Production PostgreSQL async URL, normally `postgresql+asyncpg://...` |
+| `PGVECTOR_DATABASE_URL` | Reachable PostgreSQL/pgvector URL |
+| `REDIS_URL` | Reachable Redis-compatible URL |
+| `SECRET_KEY` | Unique random secret, at least 32 characters |
+| `CORS_ORIGINS` | Exact trusted HTTPS origin; no wildcard with credentials |
+| `USE_CLOUD_LLM` | `true` for the demo AI profile |
+| `CLOUD_LLM_PROVIDER` | `qwencloud` |
+| `QWEN_API_KEY` | QwenCloud API key, secret |
+| `QWEN_BASE_URL` | `https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1` |
+| `QWEN_MODEL` | `qwen3.8-flash` |
+| `QWEN_FAST_MODEL` | `qwen3.8-flash` |
+| `QWEN_COMPLEX_MODEL` | `qwen3.8-flash` |
+| `QWEN_FREE_QUOTA_ONLY` | `true`; application fail-closed guard |
+| `QWEN_TIMEOUT_SECONDS` | `30` |
+| `QWEN_MAX_OUTPUT_TOKENS` | `500` |
 
-Token usage is emitted through the attached LangChain callback/Prometheus instrumentation. Review the provider console for authoritative quota consumption; local metrics are operational telemetry, not a billing ledger. The existing per-request AI token budget limits prompt/output size, but does not guarantee an exact provider-side daily quota cap.
+The QwenCloud values describe the current demo profile, not an unlimited/free production SLA. Enable the provider-console **Free quota only** switch for the selected model and verify the remaining quota and expiry before enabling requests. The application flag alone does not enforce provider billing. QwenCloud generation and embeddings are separate; configure and verify the embedding provider independently before enabling cloud RAG.
 
-QwenCloud supplies generation only in this configuration. Embeddings remain independently configured: the current cloud embedding path uses the configured OpenAI embedding credentials/model. Do not assume the Qwen API key provides embeddings. Configure a supported embedding provider separately before enabling cloud RAG ingestion/retrieval.
+Use the same production database for the FastAPI Cloud `DATABASE_URL` and GitHub Actions `DATABASE_URL`. Keep database and Redis network access restricted to the required application/workflow sources.
 
-The provider adapter is selected by `CLOUD_LLM_PROVIDER`; changing the model is configuration-only. Changing provider requires a supported adapter and credentials. Never put API keys in source control or logs.
+## 4. Manual deployment procedure
 
-Use the exact variable names; the application reads configuration from environment variables. Do not use example/local credentials in production.
+1. Confirm the target change is merged into `main`.
+2. Confirm all required checks passed for the exact `main` commit.
+3. Open the [Deploy to FastAPI Cloud workflow](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/actions/workflows/deploy-fastapi-cloud.yml).
+4. Select **Run workflow**, select branch `main), and enter an approved change/ticket reference in `change_reference`.
+5. Start the workflow and complete any required approval for the `production` environment.
+6. Monitor the workflow. Do not declare success until the deploy and all required verification steps complete successfully.
 
+The workflow:
+- checks out the selected commit;
+- installs Bun (with a package-manager fallback) and builds `frontend/shadcn-admin`;
+- verifies CI succeeded for the exact commit SHA;
+- validates the change reference and required deployment secrets;
+- runs `uv run fastapi cloud deploy .`;
+- performs a read-only production catalog exclusion check;
+- verifies `/health` and `/ready`;
+- verifies `/settings/appearance` returns the SPA HTML;
+- verifies invalid credentials return HTTP 401 and unauthenticated POS search is protected by HTTP 401;
+- creates a temporary pharmacist account, verifies authentication/profile and non-empty Omeprazole catalog/product searches, and attempts to remove the exact temporary account.
 
-## QwenCloud demo operations
+The smoke checks must not create sales, receive stock, or alter inventory. If cleanup fails, the workflow reports failure; inspect the run before retrying and remove only the exact run-scoped temporary account through an approved cleanup procedure.
 
-The QwenCloud variables above describe the **demo profile only**; they are not a production provider recommendation or a guarantee of free/unlimited service. Follow the [QwenCloud demo operations guide](../ai/QWENCLOUD_DEMO.md) for the full configuration contract, provider-console **Free quota only** requirement, current-versus-planned safeguards, embedding separation, quota-expiry checks, and release gates. In particular, `QWEN_FREE_QUOTA_ONLY=true` is an application-side fail-closed guard; it does not independently enforce provider billing. The provider-console control remains mandatory.
+## 5. Database migrations are separate
 
-## Database preparation
+**The current deployment workflow does not run Alembic migrations.** It must not be described as a migration workflow.
 
-1. Provision a PostgreSQL database with the pgvector extension available.
-2. Set `DATABASE_URL` and `PGVECTOR_DATABASE_URL` in FastAPI Cloud.
-3. Set the GitHub Actions secret `DATABASE_URL` to the same production database. The deployment workflow uses it for `uv run alembic upgrade head` before deploying. The migration URL is normalized for asyncpg by `alembic/env.py`.
-4. Confirm the GitHub Actions identity can connect to that database and has permission to create/alter the application schema.
-5. Verify `/health` and `/ready` after the database and Redis are reachable.
+Schema changes require a separate, explicitly approved operation:
 
-The workflow applies migrations automatically as a single release step before deployment. Do not run the migration concurrently from multiple application replicas.
+1. Review the migration script and its compatibility/rollback implications.
+2. Verify a recent backup and a tested restore path.
+3. Obtain production approval for the schema change.
+4. Run `uv run alembic upgrade head` once from a trusted environment with the intended production database URL supplied securely.
+5. Verify the schema version and application readiness before proceeding with the application release.
 
-A newly provisioned database starts empty. Restore or migrate existing data only through a separately planned, verified database procedure.
+Do not run migrations from application startup or concurrently from multiple replicas. Do not use the deployment workflow's catalog-check/smoke-test database access as a reason to run schema changes.
 
-## Important runtime compatibility notes
+## 6. Post-deployment verification
 
-- FastAPI Cloud uses the Python project configuration and does not build the Dockerfile's Bun stage. The workflow handles the frontend build explicitly.
-- The project currently pins Python to `>=3.14.7,<3.15`. Keep this pin until the dependency set is tested on another version; a package/native-wheel incompatibility may fail the cloud build.
-- The Dockerfile installs the Tesseract system executable and OCR language packs. The native FastAPI Cloud deployment does not automatically install those apt packages. OCR paths that invoke Tesseract need a separate compatible runtime or an external OCR service before they can be considered production-ready.
-- Redis and PostgreSQL are separate managed services; deploying the FastAPI app does not provision them.
-- Celery/background jobs require a separate worker process and are not started by this web deployment workflow.
+At minimum, verify:
 
-## First deployment checklist
+```bash
+curl --fail https://pharmaviyum-erp-crm.fastapicloud.dev/health
+curl --fail https://pharmaviyum-erp-crm.fastapicloud.dev/ready
+```
 
-- [ ] FastAPI Cloud app exists.
-- [ ] GitHub Actions secrets `FASTAPI_CLOUD_TOKEN`, `FASTAPI_CLOUD_APP_ID`, `DATABASE_URL`, and (if required by the frontend) `VITE_CLERK_PUBLISHABLE_KEY` are configured.
-- [ ] The GitHub Actions `DATABASE_URL` and FastAPI Cloud `DATABASE_URL` point to the same production database.
-- [ ] PostgreSQL + pgvector and Redis endpoints are provisioned.
-- [ ] Required FastAPI Cloud environment variables are configured securely.
-- [ ] Run the `Deploy to FastAPI Cloud` workflow manually if an automatic run has not already deployed the latest successful `main` commit.
-- [ ] Confirm the migration step succeeded before the deploy step.
-- [ ] Confirm the deployment and inspect logs.
-- [ ] Check `/health`, `/ready`, and a basic frontend route.
-- [ ] Validate authentication, database operations, and AI requests before using real pharmacy data.
+Expected readiness components:
+
+- PostgreSQL: `ok`
+- Redis: `ok`
+- AI initialization: `ok`
+
+Also verify:
+- `/settings/appearance` serves the built frontend (HTTP 200);
+- login and `/api/v1/auth/me` work with an authorized non-privileged test account;
+- POS endpoints reject unauthenticated requests;
+- Omeprazole returns non-empty results from both the drug-catalog and product search endpoints;
+- no excluded catalog entries are active;
+- no unexpected sales, stock movements, or inventory mutations occurred.
+
+A green GitHub Actions workflow is necessary but does not prove that all pharmacy business workflows, provider quota, OCR, background workers, or Edge/offline behavior are production-ready.
+
+## 7. Runtime limitations and operational notes
+
+- FastAPI Cloud native deployment uses the Python project configuration; the workflow explicitly builds the React frontend.
+- Python is currently pinned in `pyproject.toml` to `>=3.14.7,<3.15`. Change this only after dependency and deployment validation.
+- The Dockerfile installs Tesseract and OCR language packs; native FastAPI Cloud does not automatically install those system packages. OCR features requiring the Tesseract executable need a separately validated runtime or external OCR service.
+- PostgreSQL/pgvector and Redis are separately provisioned services; deploying the app does not create them.
+- Celery worker/Beat processes are not started by the web deployment workflow. Deploy and monitor workers separately where required.
+- OpenTelemetry cloud export requires a reachable OTLP collector endpoint; the local Compose Jaeger/collector stack is not automatically present in FastAPI Cloud.
+- Keep AI provider outages and quota exhaustion isolated from POS and core ERP transactions.
+- The first rollout target is 1–10 pharmacies; capacity up to 100 is an architectural target, not a production capacity claim until validated.
+
+## 8. Troubleshooting
+
+| Symptom | First checks |
+|---|---|
+| Workflow refuses deployment inputs | Confirm `FASTAPI_CLOUD_TOKEN`, `FASTAPI_CLOUD_APP_ID`, `DATABASE_URL`, and a non-empty change reference exist in the correct Actions/production secret scope |
+| Exact-commit CI validation fails | Verify CI completed successfully for the same `main` SHA selected by the workflow |
+| `/ready` is not ready | Inspect FastAPI Cloud logs and verify PostgreSQL, Redis, and AI provider configuration/connectivity |
+| `/settings/appearance` returns JSON 404 | Inspect frontend build/staging and static-file packaging in the deployed artifact |
+| Smoke catalog search returns empty results | Treat as a catalog/data readiness issue; verify import status and search indexing separately—do not fabricate catalog rows or mark the smoke check successful |
+| Temporary smoke account cleanup fails | Inspect the exact run ID/attempt and cleanup logs; remove only the generated temporary account after confirming it is non-superuser |
+| AI calls fail or quota is exhausted | Verify QwenCloud credentials, model access, provider-console Free quota only setting, quota expiry, and embedding configuration; do not switch silently to a paid fallback |
+
+## 9. Security and change control
+
+- Keep production deployment manual and protected by the GitHub Actions `production` environment.
+- Do not bypass CI, branch protection, approvals, or concurrency controls.
+- Never use `admin/admin` or static smoke credentials.
+- Never expose secrets or patient data in workflow logs, traces, screenshots, or issue comments.
+- Do not change production data, schema, or real pharmacy hosts as part of a routine app deployment without a separately approved change.
