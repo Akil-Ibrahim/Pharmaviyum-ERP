@@ -2,7 +2,7 @@
 # PHARMAVIYUM AI - Production Dockerfile
 # ============================================================================
 
-FROM python:3.14.7-slim AS python-builder
+FROM python:3.15.2-slim AS python-builder
 
 WORKDIR /app
 
@@ -32,7 +32,7 @@ COPY README.md .
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 
-FROM oven/bun:1 AS frontend-builder
+FROM oven/bun:1.4.4 AS frontend-builder
 
 WORKDIR /frontend
 
