@@ -96,7 +96,8 @@ dev = [
     "types-psutil>=7.0.0.20250822",
 ]
 eval = [
-    "fastembed==0.9.1",
+    # ONNX Runtime has no CPython 3.15 wheel yet; keep this optional evaluation helper for 3.14 and older.
+    "fastembed==0.9.1; python_version < '3.15'",
 ]
 
 [tool.uv]
