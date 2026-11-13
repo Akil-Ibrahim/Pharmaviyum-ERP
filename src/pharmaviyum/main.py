@@ -21,6 +21,7 @@ from src.pharmaviyum.api.exceptions import (
 )
 from src.pharmaviyum.api.middleware import LoggingMiddleware, RequestIDMiddleware
 from src.pharmaviyum.api.v1 import api_v1_router
+from src.pharmaviyum.api.v1.endpoints.health import router as health_router
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.core.static_files import setup_static_files
 from src.pharmaviyum.database import AsyncSessionLocal
@@ -115,6 +116,9 @@ app.add_exception_handler(RequestValidationError, _handle_validation_error)
 app.add_exception_handler(ValidationError, _handle_validation_error)
 app.add_exception_handler(Exception, general_exception_handler)
 app.include_router(api_v1_router)
+# Keep platform probes at the root path used by FastAPI Cloud and container
+# orchestrators; these endpoints must not be hidden under /api/v1.
+app.include_router(health_router)
 
 
 @app.get("/api-info", tags=["Root"])
