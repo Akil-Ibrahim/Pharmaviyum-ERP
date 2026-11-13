@@ -26,7 +26,6 @@ COPY README.md ./README.md
 COPY src/ ./src/
 COPY alembic/ ./alembic/
 COPY scripts/ ./scripts/
-RUN chmod +x scripts/start.sh
 COPY alembic.ini .
 COPY README.md .
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -67,7 +66,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=python-builder /app/.venv /app/.venv
 COPY src/ ./src/
 COPY alembic/ ./alembic/
-COPY scripts/ ./scripts/
 COPY alembic.ini .
 ENV PATH="/app/.venv/bin:$PATH"
 COPY --from=frontend-builder /frontend/dist ./static
