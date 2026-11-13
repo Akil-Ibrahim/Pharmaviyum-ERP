@@ -6,7 +6,7 @@
 version: '3.8'
 
 services:
-  # PostgreSQL 16 with pgvector
+  # PostgreSQL 18 with pgvector 0.8.7
   postgres:
     image: pgvector/pgvector:0.8.7-pg18
     container_name: pharmaviyum-postgres
