@@ -436,3 +436,14 @@ async def test_langgraph_node_span_marks_cancellation(monkeypatch):
 
     span.set_attribute.assert_any_call("ai.execution_success", False)
     span.set_attribute.assert_any_call("ai.stream.cancelled", True)
+
+
+@pytest.mark.parametrize("thread_id", ["", "   ", "x" * 129, 123])
+def test_rag_checkpoint_thread_id_rejects_invalid_explicit_ids(
+    rag: LangGraphRAG, thread_id
+) -> None:
+    with pytest.raises(ValueError, match="thread identifier"):
+        rag._thread_id(
+            thread_id,
+            QueryContext(user_id="user-1", pharmacy_id=7),
+        )
