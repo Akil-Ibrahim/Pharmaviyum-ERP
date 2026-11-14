@@ -80,7 +80,7 @@ The workflow:
 - performs a read-only production catalog exclusion check;
 - verifies `/health` and `/ready`;
 - verifies `/version` reports `production` for API/core, application, and authentication settings, confirms API and authentication debug modes are disabled, and checks CPython `3.15.2`;
-- verifies `/settings/appearance` returns the SPA HTML;
+- verifies `/settings/appearance` and `/system-status` return the SPA HTML;
 - verifies invalid credentials return HTTP 401 and unauthenticated POS search is protected by HTTP 401;
 - creates a temporary pharmacist account, verifies authentication/profile and non-empty Omeprazole catalog/product searches, and attempts to remove the exact temporary account.
 
@@ -109,14 +109,17 @@ curl --fail https://pharmaviyum-erp-crm.fastapicloud.dev/health
 curl --fail https://pharmaviyum-erp-crm.fastapicloud.dev/ready
 ```
 
-Expected readiness components:
+Expected readiness response:
 
-- PostgreSQL: `ok`
-- Redis: `ok`
-- AI initialization: `ok`
+- `status`: `ready`
+- `checks.database.status`: `healthy`
+- `checks.redis.status`: `healthy`
+
+The `/ready` endpoint checks only PostgreSQL and Redis. AI initialization is a startup-critical dependency in the production application lifespan; it is not a field in the `/ready` response. The deployment workflow separately verifies `/version` and the application startup outcome.
 
 Also verify:
-- `/settings/appearance` serves the built frontend (HTTP 200);
+- `/version` reports the production environment and the expected Python runtime;
+- `/settings/appearance` and `/system-status` serve the built frontend (HTTP 200);
 - login and `/api/v1/auth/me` work with an authorized non-privileged test account;
 - POS endpoints reject unauthenticated requests;
 - Omeprazole returns non-empty results from both the drug-catalog and product search endpoints;
