@@ -25,7 +25,8 @@ class EmailData:
 
 def _send_email_sync(email_to: str, subject: str, html_content: str) -> None:
     """Deliver one HTML email using the configured SMTP server."""
-    if not settings.SMTP_HOST:
+    smtp_host = settings.SMTP_HOST
+    if not smtp_host:
         raise RuntimeError("SMTP_HOST must be configured when email delivery is enabled")
     if bool(settings.SMTP_USER) != bool(settings.SMTP_PASSWORD):
         raise RuntimeError("SMTP_USER and SMTP_PASSWORD must be configured together")
@@ -40,21 +41,21 @@ def _send_email_sync(email_to: str, subject: str, html_content: str) -> None:
     timeout = settings.SMTP_TIMEOUT_SECONDS
     if settings.SMTP_SSL:
         with smtplib.SMTP_SSL(
-            settings.SMTP_HOST,
+            smtp_host,
             settings.SMTP_PORT,
             timeout=timeout,
             context=ssl.create_default_context(),
         ) as smtp:
             if settings.SMTP_USER:
-                smtp.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+                smtp.login(settings.SMTP_USER, settings.SMTP_PASSWORD or "")
             smtp.send_message(message)
         return
 
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=timeout) as smtp:
+    with smtplib.SMTP(smtp_host, settings.SMTP_PORT, timeout=timeout) as smtp:
         if settings.SMTP_STARTTLS:
             smtp.starttls(context=ssl.create_default_context())
         if settings.SMTP_USER:
-            smtp.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            smtp.login(settings.SMTP_USER, settings.SMTP_PASSWORD or "")
         smtp.send_message(message)
 
 
@@ -114,6 +115,7 @@ def generate_new_account_email(
     </body></html>
     """
     return EmailData(html_content=html_content, subject=subject)
+
 
 def generate_password_reset_token(email: str) -> str:
     """Generate a 48-hour password-reset token."""
