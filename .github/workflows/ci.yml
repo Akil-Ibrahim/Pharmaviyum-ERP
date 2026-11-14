@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync --frozen
-      - name: Verify CPython 3.15 runtime dependencies
+      - name: Verify supported CPython runtime dependencies
         run: uv run python scripts/check_python315_compat.py
       - name: Ruff diagnostics
         run: uv run ruff check src/ tests/
@@ -248,11 +248,33 @@ jobs:
       - name: Validate golden dataset
         run: uv run pytest tests/test_evaluation.py -v -m unit
 
+  test-cloud-python-runtime:
+    name: FastAPI Cloud Python 3.13 Runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      UV_PYTHON: "3.13"
+      ENVIRONMENT: development
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: Set up uv and Python 3.13
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.8"
+          python-version: "3.13"
+          enable-cache: true
+      - name: Select Python 3.13 for this compatibility job
+        run: printf '3.13\\n' > .python-version
+      - name: Install production dependencies from the committed lockfile
+        run: uv sync --frozen --no-dev
+      - name: Verify runtime and critical application dependencies
+        run: uv run python scripts/check_python315_compat.py
+
   build:
     name: Build and Publish Immutable Image
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [test-unit, test-integration, security, rag-evaluation]
+    needs: [test-unit, test-integration, security, rag-evaluation, test-cloud-python-runtime]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read

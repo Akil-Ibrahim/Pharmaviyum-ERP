@@ -5,7 +5,7 @@
 - Backend source: `src/pharmaviyum/`; tests: `tests/`.
 - Frontend: `frontend/shadcn-admin/`.
 - Python dependencies and tooling are managed with `uv` and `pyproject.toml`; do not introduce or update a separate `requirements.txt`.
-- Python constraint in `pyproject.toml`: `>=3.15.2,<3.16`. Keep this value synchronized with `pyproject.toml`, Docker, and the application CI runtime; Ansible controller tooling may use a separate Python version.
+- Python application compatibility range in `pyproject.toml`: `>=3.13,<3.16`. The repository `.python-version`, Docker image, and primary CI suite remain on CPython 3.15.2; the FastAPI Cloud release workflow overrides the uploaded `.python-version` to 3.13 and CI has a dedicated Python 3.13 compatibility job. Ansible controller tooling remains a separate runtime.
 - API client generation script: `scripts/generate-api-client.sh`. It expects a local backend at `http://localhost:8000` and writes generated code under `frontend/shadcn-admin/src/client/`.
 
 ## Non-negotiable safety rules

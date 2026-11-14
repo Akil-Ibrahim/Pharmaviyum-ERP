@@ -67,13 +67,14 @@ Use the same production database for the FastAPI Cloud `DATABASE_URL` and GitHub
 1. Confirm the target change is merged into `main`.
 2. Confirm all required checks passed for the exact `main` commit.
 3. Open the [Deploy to FastAPI Cloud workflow](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/actions/workflows/deploy-fastapi-cloud.yml).
-4. Select **Run workflow**, select branch `main), and enter an approved change/ticket reference in `change_reference`.
+4. Select **Run workflow**, select branch `main`, and enter an approved change/ticket reference in `change_reference`.
 5. Start the workflow and complete any required approval for the `production` environment.
 6. Monitor the workflow. Do not declare success until the deploy and all required verification steps complete successfully.
 
 The workflow:
 - checks out the selected commit;
 - installs Bun (with a package-manager fallback) and builds `frontend/shadcn-admin`;
+- selects Python 3.13 for the FastAPI Cloud release runner and overrides `.python-version` in the uploaded deployment payload only; the committed development/CI pin remains Python 3.15.2;
 - verifies CI succeeded for the exact commit SHA;
 - validates the change reference and required deployment secrets;
 - runs `uv run fastapi cloud deploy .`;
@@ -127,7 +128,7 @@ A green GitHub Actions workflow is necessary but does not prove that all pharmac
 ## 7. Runtime limitations and operational notes
 
 - FastAPI Cloud native deployment uses the Python project configuration; the workflow explicitly builds the React frontend.
-- The upgrade branch allows `>=3.14.10,<3.16` and targets Python 3.15.2 through `.python-version` and CI. FastAPI Cloud documents support for currently supported Python versions (3.10+), so CPython 3.15.2 is within the platform's stated range. The exact dependency build, application startup and smoke checks must still pass before production deployment. The production Neon PostgreSQL major version is not changed by this application upgrade.
+- The application declares `requires-python = ">=3.13,<3.16"`. Development, Docker, and the primary CI suite remain pinned to CPython 3.15.2. The FastAPI Cloud release workflow writes `.python-version = 3.13` into the upload workspace immediately before deployment because the managed builder rejected the 3.15.2 interpreter. A dedicated CI job installs the locked production dependencies and runs critical import checks on Python 3.13 before a release is allowed. This keeps the production deployment runtime separate from the newer development/CI toolchain. The Neon PostgreSQL and managed Redis/Valkey versions are not changed by this application release.
 - The Dockerfile installs Tesseract and OCR language packs; native FastAPI Cloud does not automatically install those system packages. OCR features requiring the Tesseract executable need a separately validated runtime or external OCR service.
 - PostgreSQL/pgvector and Redis are separately provisioned services; deploying the app does not create them.
 - Celery worker/Beat processes are not started by the web deployment workflow. Deploy and monitor workers separately where required.
