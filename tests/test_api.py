@@ -37,6 +37,22 @@ class TestHealthEndpoints:
         assert data["version"] == "1.0.0"
         assert "documentation" in data
 
+    def test_version_endpoint_reports_all_runtime_environments(
+        self, test_client: TestClient
+    ):
+        """Expose the environment values used by app, API and auth settings."""
+        from src.pharmaviyum.ai.config import settings as application_settings
+        from src.pharmaviyum.config import settings as auth_settings
+        from src.pharmaviyum.core.config import settings as api_settings
+
+        response = test_client.get("/version")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["environment"] == api_settings.ENVIRONMENT.value
+        assert data["application_environment"] == application_settings.environment
+        assert data["auth_environment"] == auth_settings.ENVIRONMENT
+
     def test_metrics_endpoint(self, test_client: TestClient):
         """Test Prometheus metrics endpoint."""
         response = test_client.get("/metrics")
