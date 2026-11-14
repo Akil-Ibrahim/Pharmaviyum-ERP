@@ -1,41 +1,53 @@
 # Documentation
 
-This directory contains the current engineering documentation for Pharmaviyum ERP/CRM.
+This directory is the engineering documentation home for Pharmaviyum ERP/CRM. The English documentation is canonical for engineering and operations; a Russian pharmacy workflow companion is maintained where useful.
 
 ## Start here
 
-| Area | Document | Purpose |
+| Area | Canonical entry | What it covers |
 |---|---|---|
-| Technology stack | [`technology-stack.md`](./technology-stack.md) | Runtime versions, dependency sources of truth, and upgrade policy. |
-| Architecture | [`ai_architecture.md`](./ai_architecture.md) | Current AI/RAG, MCP, memory, guardrail, and observability architecture. |
-| Mortarium operations | [`ai/mortarium-pharmacy-operations.md`](./ai/mortarium-pharmacy-operations.md) | Current pharmacist-facing workflows and read-only MCP tool boundaries. |
-| Ragas / pharmaceutical evaluation | [`ai/ragas-pharmaceutical-evaluation.md`](./ai/ragas-pharmaceutical-evaluation.md) | Offline Ragas adapter, pharmacy-specific metrics, dataset rules and release gates. |
-| LLM engineering | [`llm_engineering_standards.md`](./llm_engineering_standards.md) | Context, token budgets, model routing, cache, memory, MCP and evaluation standards. |
-| QwenCloud demo | [`ai/QWENCLOUD_DEMO.md`](./ai/QWENCLOUD_DEMO.md) | Demo-only QwenCloud configuration, free-quota safeguards, implementation status, RAG embedding separation, and release gates. |
-| RAG | [`rag_architecture_audit.md`](./rag_architecture_audit.md) | Dated RAG security/quality audit and remaining work. |
-| Benchmark & quality | [`devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md`](./devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md) | Canonical metric definitions, evidence rules, Ragas and pharmacy-specific evaluation, security gates, load profiles, and benchmark report format. |
-| Development | [`guides/ENVIRONMENT_SETUP.md`](./guides/ENVIRONMENT_SETUP.md) | Canonical local environment and deployment prerequisites. |
-| Hosted deployment | [`deployment/FASTAPI_CLOUD.md`](./deployment/FASTAPI_CLOUD.md) | FastAPI Cloud deployment, secrets, environment, and runtime constraints. |
-| Testing | [`guides/TESTING.md`](./guides/TESTING.md) | Test layout, quality gates, and validation commands. |
-| Codespaces | [`guides/CODESPACES_GUIDE.md`](./guides/CODESPACES_GUIDE.md) | GitHub Codespaces workflow. |
-| Operations | [`operations/INCIDENT_RUNBOOK.md`](./operations/INCIDENT_RUNBOOK.md) | Incident triage and rollback guidance. |
-| Release | [`operations/RELEASE_RUNBOOK.md`](./operations/RELEASE_RUNBOOK.md) | Staging release and rollback procedure. |
-| Production engineering | [`operations/PRODUCTION_ENGINEERING.md`](./operations/PRODUCTION_ENGINEERING.md) | Operational contract and production engineering standards. |
-| DevOps roadmap | [`devops/README.md`](./devops/README.md) | Capacity, observability, reliability, security, and recovery roadmap. |
-| Pharmacy Edge fleet | [`devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Target Ansible inventory, Central/Edge roles, staged rollout, backup and restore gates for a 100-pharmacy fleet. |
-| ADRs | [`adr/`](./adr/) | Architecture decisions and their implementation status. |
-| WebSocket | [`websocket-protocol.md`](./websocket-protocol.md) | Current v1 WebSocket design/contract status. |
-| Interview | [`interview/README.md`](./interview/README.md) | Senior Python / AI / LLM interview preparation. |
-| AI engineering | [`internal/PHARMAVIUM_AI_GUIDELINES.md`](./internal/PHARMAVIUM_AI_GUIDELINES.md) | Mortarium AI/RAG-specific engineering invariants and evaluation guidance. |
+| Pharmacy workflows | [Workflow index](./workflows/README.md) | Pharmacy operations, POS, dispensing, inventory, procurement, audit and offline boundaries |
+| System architecture | [System context](./architecture/system-context.md) | Component boundaries, trust model, data ownership and Central/Edge target |
+| Technology | [Technology stack](./technology-stack.md) | Runtime versions, dependency sources of truth and upgrade policy |
+| AI / LLM system design | [AI system design](./ai/AI_LLM_SYSTEM_DESIGN.md) | Mortarium lifecycle, Agent Harness, LangGraph, RAG, MCP, safety, evaluation and observability |
+| AI architecture | [AI architecture](./ai_architecture.md) | Current implementation details |
+| LangGraph RAG | [RAG graph architecture](./ai/langgraph-rag-architecture.md) | Graph nodes, state, retrieval, bounded execution and persistence |
+| RAG audit | [RAG architecture audit](./rag_architecture_audit.md) | Dated findings, gaps and remediation priorities |
+| Pharmaceutical evaluation | [Ragas evaluation](./ai/ragas-pharmaceutical-evaluation.md) | Offline evaluator and pharmacy-specific quality metrics |
+| LLM standards | [LLM engineering standards](./llm_engineering_standards.md) | Context, token budgets, model routing, cache, memory and MCP standards |
+| ADRs | [ADR index](./adr/README.md) | Accepted and proposed architecture decisions |
+| Development | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) | Contributor workflow and quality gates |
+| Environment | [Environment setup](./guides/ENVIRONMENT_SETUP.md) | Local services, configuration and prerequisites |
+| Testing | [Testing guide](./guides/TESTING.md) | Test layout, markers and CI gates |
+| Operations | [Production operations runbook](./operations/PRODUCTION_OPERATIONS_RUNBOOK.md) | Health checks, incident triage, backup and recovery |
+| Release | [Release runbook](./operations/RELEASE_RUNBOOK.md) | Controlled release and rollback |
+| Hosted deployment | [FastAPI Cloud](./deployment/FASTAPI_CLOUD.md) | Hosting, secrets, runtime constraints and manual deployment |
+| DevOps roadmap | [Engineering stages](./devops/ENGINEERING_ROADMAP.md) | Stage goals, workstreams and exit criteria |
+| DevOps detail | [DevOps roadmap](./devops/README.md) | Capacity, observability, reliability, security and recovery |
+| WebSocket | [WebSocket protocol](./websocket-protocol.md) | Proposed v1 contract and current scaffold limitations |
+| Observability | [OpenTelemetry](./observability/opentelemetry.md) | Tracing configuration and privacy boundaries |
+| Pharmacy Edge | [Ansible rollout](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Controlled rollout and fleet guardrails |
+| Interview material | [Interview index](./interview/README.md) | Separate learning and interview preparation material |
+
+## Documentation map
+
+- workflows/: business processes and pharmacy operating model.
+- architecture/: system context, component boundaries and repository architecture.
+- adr/: durable architectural decisions and their lifecycle.
+- ai/: Mortarium operations, LangGraph RAG, evaluation and AI system design.
+- guides/: contributor setup, development and testing.
+- operations/: incident, production operations and release procedures.
+- devops/: engineering roadmap, benchmarks, load tests, observability and Pharmacy Edge operations.
+- deployment/: hosting-specific deployment instructions.
+- observability/: telemetry configuration and privacy controls.
 
 ## Documentation ownership rules
 
-- Document the implemented repository, not historical or hypothetical infrastructure. Python dependencies are declared in `pyproject.toml` and resolved in `uv.lock`; CI uses `uv sync --frozen` and project commands use `uv run`. Frontend dependencies are declared in `frontend/shadcn-admin/package.json`.
-- Keep one canonical procedure for each workflow; remove duplicate command guides.
-- Architectural decisions belong in `docs/adr/`.
-- Operational procedures belong in `docs/operations/`.
-- Development procedures belong in `docs/guides/`.
-- Large roadmap documents belong in `docs/devops/`.
-- Interview material is intentionally separate from operational/project documentation.
-- When a command, service, path, or architectural invariant changes, update the canonical document in the same change.
-- Never place credentials, real customer/patient data, or provider secrets in documentation.
+- Document the implemented repository, not historical or hypothetical infrastructure. Python dependencies are declared in pyproject.toml and resolved in uv.lock; frontend dependencies are declared in frontend/shadcn-admin/package.json.
+- Keep one canonical procedure for each workflow; link to it rather than copying it into several documents.
+- Architectural decisions belong in adr/. Operational procedures belong in operations/. Development procedures belong in guides/. Roadmaps and benchmark plans belong in devops/.
+- Label every capability as implemented, proposed, planned or not validated. An Accepted ADR does not prove implementation or production readiness.
+- When a command, service, path, API contract or architectural invariant changes, update the canonical document in the same change.
+- Never place credentials, real customer/patient data, provider secrets or unredacted logs in documentation.
+- Use synthetic examples. Any clinical evaluation threshold requires qualified pharmacy/clinical review.
+- Every production runbook must identify its environment, preconditions, owner, verification and rollback/recovery boundary.

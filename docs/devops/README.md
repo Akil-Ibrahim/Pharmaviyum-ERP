@@ -343,6 +343,10 @@ The exact topology remains subject to capacity measurements and deployment const
 - [ ] Dependency failure tested.
 - [ ] Incident runbook maintained.
 
+## Engineering stages
+
+See [Engineering Roadmap and Delivery Stages](./ENGINEERING_ROADMAP.md) for the staged delivery model, stage owners, evidence requirements and exit criteria. The roadmap separates pharmacy workflow correctness, measured capacity, observability, recovery, Mortarium quality, Edge pilot and controlled fleet expansion.
+
 ## Related documentation
 
 - `docs/devops/STAGE_1_LOAD_TESTING.md` — Stage 1 load-test procedure.

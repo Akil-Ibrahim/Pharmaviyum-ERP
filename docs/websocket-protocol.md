@@ -1,88 +1,95 @@
 # WebSocket Protocol (v1)
 
-## Status
+**Status:** Proposed application protocol. Current handlers are development scaffolds, not a production implementation.
 
-This document describes the intended v1 contract and the current development implementation. The current server handlers are still templates; authentication, authorization, persistence, and production connection controls are not yet complete.
+## Namespace and current routes
 
-## Namespace
+The application mounts handlers under /ws. Current source files:
+- src/pharmaviyum/api/websocket/router.py
+- src/pharmaviyum/api/websocket/handlers/chat.py
+- src/pharmaviyum/api/websocket/handlers/notifications.py
 
-The WebSocket namespace is:
+The development handlers accept a connection and echo/acknowledge plain text. They do not implement the JSON envelope below, JWT authentication, pharmacy authorization, durable delivery, heartbeat policy or production connection controls. Do not use them for real patient or production traffic.
 
-```text
-/ws
-```
+## Protocol goals
 
-The current development chat handler is exposed at:
+The v1 contract is intended for real-time chat, pharmacy-scoped notifications and presence. It must provide explicit protocol version and message type, request correlation, strict payload schemas, authenticated identity, server-authorized channel membership, bounded message size/rate/concurrency, predictable errors and graceful close behavior.
 
-```text
-/ws/chat
-```
+## Proposed JSON envelope
+
+    {
+      "version": "v1",
+      "type": "chat.message",
+      "request_id": "opaque-client-generated-id",
+      "payload": {}
+    }
+
+- version: required protocol version.
+- type: namespaced event type, such as chat.message, notification.subscribe or presence.update.
+- request_id: opaque correlation ID, not an authorization credential.
+- payload: event-specific object validated against a server-side schema.
+
+Payload schemas and limits must be implemented and contract-tested before the protocol is stable. Unknown versions/types and malformed payloads must not reach business handlers.
+
+## Proposed server event types
+
+| Type | Purpose | Security requirement |
+|---|---|---|
+| connection.ready | Confirm authenticated connection/version | Server-generated |
+| chat.message | Submit a chat message | Validate tenant, sender and recipient |
+| chat.message.ack | Acknowledge accepted message | Correlation and durable ID if persistence exists |
+| notification.subscribe | Request subscription | Server authorizes each channel |
+| notification.event | Deliver notification | No cross-tenant broadcast |
+| presence.update | Update duty/presence | Role- and pharmacy-scoped |
+| protocol.error | Report protocol failure | No stack traces or secrets |
+
+These names define design vocabulary, not current runtime capabilities.
 
 ## Authentication and authorization
 
-The production contract requires JWT authentication and pharmacy/role authorization before accepting application messages.
+Production connection establishment must authenticate the user before accepting application messages. Validate active user, active pharmacy membership, role permission and resource access.
 
-The current development handler accepts the connection without the full production authentication layer. Do not treat `/ws/chat` as a production-safe endpoint until the authorization contract is implemented and covered by tests.
+Do not trust pharmacy ID, role, channel name or recipient supplied by the client. Derive identity from the authenticated server-side principal. Define token expiry/revocation behavior for long-lived connections. Avoid long-lived bearer tokens in query strings.
 
-## Message model
+## Validation, limits and errors
 
-The production protocol should use versioned JSON messages with an explicit message type and correlation identifier. A representative envelope is:
+Define maximum frame/payload size, allowed content types, per-user/tenant/connection rate limits, maximum concurrent connections, idle timeout, heartbeat interval, backpressure and slow-consumer behavior.
 
-```json
-{
-  "version": "v1",
-  "type": "chat.message",
-  "request_id": "<opaque-id>",
-  "payload": {}
-}
-```
+Suggested error codes: UNAUTHENTICATED, FORBIDDEN, UNSUPPORTED_VERSION, UNKNOWN_EVENT_TYPE, INVALID_PAYLOAD, RATE_LIMITED, MESSAGE_TOO_LARGE and TEMPORARILY_UNAVAILABLE.
 
-The exact payload schemas should be defined in application code before the protocol is considered stable.
+Errors should include a safe message and request_id where available. Never return exception text, SQL, credentials or patient data.
 
-## Planned channels
+## Lifecycle and delivery semantics
 
-The architecture reserves logical channels for:
+Target lifecycle: connect → authenticate → negotiate version → authorize subscriptions → validate messages → enforce rate/backpressure → acknowledge accepted work → emit bounded telemetry → graceful close.
 
-- client-specific communication;
-- pharmacy-scoped communication;
-- duty/presence communication;
-- administrative notifications.
-
-Channel membership must always be authorized from authenticated application context. Client-provided channel names must never bypass tenant or role checks.
-
-## Connection lifecycle
-
-The production implementation should provide:
-
-1. authenticated connection establishment;
-2. authorization of requested channels;
-3. heartbeat/ping-pong handling;
-4. bounded message size and rate limits;
-5. structured connect/disconnect/error telemetry;
-6. graceful close handling;
-7. explicit protocol errors for invalid messages.
+If durable delivery is implemented, define message IDs, deduplication, acknowledgement, retention and replay. Do not promise exactly-once delivery. Prefer at-least-once delivery with idempotent consumers where appropriate.
 
 ## Scaling
 
-The first implementation remains inside the FastAPI application. Redis pub/sub or another shared coordination mechanism may be introduced when measured horizontal scaling requires cross-instance message delivery.
+Keep the gateway inside FastAPI initially, consistent with [ADR-0001](./adr/ADR-0001-websocket-gateway.md). Add Redis pub/sub only when measured horizontal scaling requires it. Pub/sub is not a durable queue; durable notifications require persistence and replay semantics.
 
-A dedicated WebSocket service is not part of the current deployment contract.
+## Observability and privacy
 
-## Current implementation
+Record connection counts, close categories, rate-limit outcomes, event type, processing latency and delivery failures with bounded labels. Do not log message bodies, tokens, patient identifiers or full channel membership lists.
 
-The active implementation is under:
+## Production readiness checklist
 
-```text
-src/pharmaviyum/api/websocket/
-├── router.py
-├── logger.py
-└── handlers/
-    └── chat.py
-```
+- [ ] Authentication before application messages.
+- [ ] Tenant and role authorization for every channel/action.
+- [ ] Resource authorization where applicable.
+- [ ] Strict versioned schemas and contract tests.
+- [ ] Frame limits, rate limits and connection quotas.
+- [ ] Heartbeat, idle timeout and graceful shutdown.
+- [ ] Backpressure and slow-consumer policy.
+- [ ] Durable delivery semantics documented if required.
+- [ ] Cross-instance behavior tested if horizontally scaled.
+- [ ] Privacy-reviewed telemetry and security tests.
 
-`handlers/chat.py` currently implements an echo-style development endpoint. It should be treated as a scaffold for the v1 contract, not as a completed chat system.
+Until these gates pass, /ws/chat and /ws/notifications remain development-only scaffolding.
 
-## Related documentation
+## References
 
-- `docs/adr/ADR-0001-websocket-gateway.md` — architectural decision and production requirements.
-- `docs/guides/TESTING.md` — test strategy.
+- [ADR-0001: WebSocket Gateway](./adr/ADR-0001-websocket-gateway.md)
+- [System context](./architecture/system-context.md)
+- [Testing guide](./guides/TESTING.md)
