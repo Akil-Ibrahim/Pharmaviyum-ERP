@@ -4,7 +4,7 @@ import hashlib
 import time
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -118,14 +118,20 @@ async def logout(body: RefreshTokenRequest) -> Message:
 
 
 @router.post("/password-recovery/{email}", response_model=Message)
-async def recover_password(email: str, session: SessionDep) -> Message:
+async def recover_password(
+    email: str,
+    session: SessionDep,
+    background_tasks: BackgroundTasks,
+) -> Message:
     result = await session.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
     if user and user.is_active:
         token = generate_password_reset_token(user.email)
         email_data = generate_reset_password_email(email, user.email, token)
         if getattr(settings, "EMAILS_ENABLED", False):
-            send_email(email, email_data.subject, email_data.html_content)
+            background_tasks.add_task(
+                send_email, email, email_data.subject, email_data.html_content
+            )
     return Message(
         message="If that email is registered, you will receive a recovery email"
     )
