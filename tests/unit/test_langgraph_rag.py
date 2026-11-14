@@ -161,6 +161,8 @@ async def test_run_reports_provider_token_usage_from_callbacks(
         {"user_id": "user-1", "pharmacy_id": -1},
         {"user_id": "user-1", "pharmacy_id": 1, "patient_id": 0},
         {"user_id": "user-1", "pharmacy_id": 1, "patient_id": -1},
+        {"user_id": "user-1", "pharmacy_id": 1, "patient_id": True},
+        {"user_id": "user-1", "pharmacy_id": 1, "patient_id": "12"},
         {"user_id": "user-1", "pharmacy_id": 1, "prescription_id": 0},
         {"user_id": "user-1", "pharmacy_id": 1, "prescription_id": -1},
     ],
