@@ -79,7 +79,7 @@ The workflow:
 - runs `uv run fastapi cloud deploy .`;
 - performs a read-only production catalog exclusion check;
 - verifies `/health` and `/ready`;
-- verifies `/version` reports `production` for the API/core, application, and authentication settings, and confirms the deployed CPython runtime is `3.15.2`;
+- verifies `/version` reports `production` for the API/core, application, and authentication settings, confirms API and authentication debug modes are disabled, and checks the deployed CPython runtime is `3.15.2`;
 - verifies `/settings/appearance` returns the SPA HTML;
 - verifies invalid credentials return HTTP 401 and unauthenticated POS search is protected by HTTP 401;
 - creates a temporary pharmacist account, verifies authentication/profile and non-empty Omeprazole catalog/product searches, and attempts to remove the exact temporary account.
