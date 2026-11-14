@@ -226,12 +226,12 @@ jobs:
           SMOKE_USERNAME="pharmaviyum-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           SMOKE_EMAIL="${SMOKE_USERNAME}@pharmaviyum.invalid"
           SMOKE_PASSWORD="$(openssl rand -hex 32)"
-          SMOKE_USER_CREATED=false
+          SMOKE_USER_ATTEMPTED=false
 
           cleanup_smoke_user() {
             local exit_code=$?
             trap - EXIT INT TERM
-            if [ "$SMOKE_USER_CREATED" = "true" ]; then
+            if [ "$SMOKE_USER_ATTEMPTED" = "true" ]; then
               if ! uv run python - <<'PY'
           import os
           import psycopg
@@ -256,9 +256,9 @@ jobs:
                   """,
                   (os.environ["SMOKE_USERNAME"], os.environ["SMOKE_EMAIL"]),
               )
-              if result.rowcount != 1:
+              if result.rowcount not in (0, 1):
                   raise RuntimeError(
-                      "Expected to remove exactly the temporary smoke user; "
+                      "Expected to remove zero or one temporary smoke user; "
                       f"removed {result.rowcount} rows."
                   )
           PY
@@ -325,12 +325,14 @@ jobs:
             exit 1
           fi
 
+          # Mark the attempt before sending the request: the server may commit
+          # the user even if the client loses the HTTP response.
+          SMOKE_USER_ATTEMPTED=true
           registration_response="$(curl --fail --silent --show-error \
             -X POST "$base_url/api/v1/auth/register" \
             -H 'Content-Type: application/json' \
             --data "$(jq -n --arg email "$SMOKE_EMAIL" --arg password "$SMOKE_PASSWORD" \
               '{email: $email, password: $password}')")"
-          SMOKE_USER_CREATED=true
           printf '%s\n' "$registration_response" | jq -e --arg username "$SMOKE_USERNAME" \
             '.username == $username and .email == ($username + "@pharmaviyum.invalid")' >/dev/null
 
