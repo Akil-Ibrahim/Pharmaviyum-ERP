@@ -1,6 +1,6 @@
 # Mortarium AI demo: QwenCloud provider and quota safeguards
 
-**Status:** implementation in progress on pull request [#244](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/244).  
+**Status:** provider adapter and fail-closed application guard are present on `main`; this document describes a demo configuration profile, not proof of a live or production deployment.  
 **Scope:** demo environment only. This document distinguishes implemented code from planned safeguards; a planned item is not an operational guarantee.
 
 ## 1. Demo objectives and boundaries
@@ -47,11 +47,11 @@ The application flag does not query provider quota and cannot enforce provider b
 
 | Capability | Status | Notes |
 |---|---|---|
-| QwenCloud provider adapter | Implemented on PR branch | OpenAI-compatible ChatOpenAI adapter |
-| Model selection by configuration | Implemented on PR branch | Fast/main/complex model settings; no LangGraph rewrite for model ID changes |
-| Fail-closed application free-quota flag | Implemented on PR branch | Defaults to false; adapter refuses initialization unless explicitly enabled |
-| Bounded timeout and output tokens | Implemented on PR branch | Retries disabled |
-| Token-usage callback/metrics | Implemented on PR branch; CI verification pending | Operational telemetry, not an authoritative quota ledger |
+| QwenCloud provider adapter | Implemented on `main` | OpenAI-compatible LangChain `ChatOpenAI` adapter |
+| Model selection by configuration | Implemented on `main` | Fast/main/complex model settings; no LangGraph rewrite for model ID changes |
+| Fail-closed application free-quota flag | Implemented on `main` | Defaults to false; adapter refuses initialization unless explicitly enabled |
+| Bounded timeout and output tokens | Implemented on `main` | Retries disabled |
+| Token-usage callback/metrics | Source implementation present; end-to-end telemetry verification required | Operational telemetry, not an authoritative quota ledger |
 | Provider-console Free quota only | Manual operator requirement | Must be enabled and checked in QwenCloud console |
 | Per-request prompt/token budget | Existing code | Limits prompt sizing; it is not a daily provider quota |
 | Shared daily Redis token cap | Planned; not yet implemented | Must reserve budget atomically before provider calls and reconcile actual usage |
