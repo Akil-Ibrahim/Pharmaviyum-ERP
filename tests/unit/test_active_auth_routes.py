@@ -33,11 +33,15 @@ async def test_password_reset_rejects_a_reused_token(monkeypatch) -> None:
     """A reset JTI already claimed in Redis cannot update the password again."""
     redis = MagicMock()
     redis.set = AsyncMock(return_value=False)
-    monkeypatch.setattr(modular_login, "decode_password_reset_token", lambda _: {
-        "sub": "pharmacist@example.test",
-        "jti": "already-used",
-        "exp": 4_102_444_800,
-    })
+    monkeypatch.setattr(
+        modular_login,
+        "decode_password_reset_token",
+        lambda _: {
+            "sub": "pharmacist@example.test",
+            "jti": "already-used",
+            "exp": 4_102_444_800,
+        },
+    )
     monkeypatch.setattr(modular_login, "get_redis", AsyncMock(return_value=redis))
 
     session = MagicMock()
@@ -55,7 +59,9 @@ async def test_password_reset_rejects_a_reused_token(monkeypatch) -> None:
 
 
 @pytest.mark.asyncio
-async def test_password_reset_hashes_and_persists_password_after_claim(monkeypatch) -> None:
+async def test_password_reset_hashes_and_persists_password_after_claim(
+    monkeypatch,
+) -> None:
     """A valid reset token is claimed before the password hash is changed."""
     user = SimpleNamespace(
         email="pharmacist@example.test",
@@ -70,11 +76,15 @@ async def test_password_reset_hashes_and_persists_password_after_claim(monkeypat
 
     redis = MagicMock()
     redis.set = AsyncMock(return_value=True)
-    monkeypatch.setattr(modular_login, "decode_password_reset_token", lambda _: {
-        "sub": user.email,
-        "jti": "fresh-token",
-        "exp": 4_102_444_800,
-    })
+    monkeypatch.setattr(
+        modular_login,
+        "decode_password_reset_token",
+        lambda _: {
+            "sub": user.email,
+            "jti": "fresh-token",
+            "exp": 4_102_444_800,
+        },
+    )
     monkeypatch.setattr(modular_login, "get_redis", AsyncMock(return_value=redis))
     monkeypatch.setattr(modular_login, "get_password_hash", lambda _: "new-hash")
 
