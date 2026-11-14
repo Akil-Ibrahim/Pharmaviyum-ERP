@@ -5,12 +5,12 @@ import html
 import logging
 import smtplib
 import ssl
-from email.message import EmailMessage
 from dataclasses import dataclass
 from datetime import datetime
+from email.message import EmailMessage
 
-from ...core.security import create_password_reset_token, decode_password_reset_token
 from ...core.config import settings
+from ...core.security import create_password_reset_token, decode_password_reset_token
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,9 @@ def _send_email_sync(email_to: str, subject: str, html_content: str) -> None:
     """Deliver one HTML email using the configured SMTP server."""
     smtp_host = settings.SMTP_HOST
     if not smtp_host:
-        raise RuntimeError("SMTP_HOST must be configured when email delivery is enabled")
+        raise RuntimeError(
+            "SMTP_HOST must be configured when email delivery is enabled"
+        )
     if bool(settings.SMTP_USER) != bool(settings.SMTP_PASSWORD):
         raise RuntimeError("SMTP_USER and SMTP_PASSWORD must be configured together")
 
@@ -35,7 +37,9 @@ def _send_email_sync(email_to: str, subject: str, html_content: str) -> None:
     message["Subject"] = subject
     message["From"] = settings.EMAILS_FROM
     message["To"] = email_to
-    message.set_content("This message contains HTML content. Please use an HTML-capable email client.")
+    message.set_content(
+        "This message contains HTML content. Please use an HTML-capable email client."
+    )
     message.add_alternative(html_content, subtype="html")
 
     timeout = settings.SMTP_TIMEOUT_SECONDS
@@ -66,6 +70,7 @@ async def send_email(email_to: str, subject: str, html_content: str) -> None:
     except Exception:
         logger.exception("Email delivery failed for %s", subject)
         raise
+
 
 def generate_email_logo_and_footer() -> tuple[str, str]:
     """Generate common email header and footer HTML."""
