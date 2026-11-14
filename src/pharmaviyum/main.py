@@ -133,7 +133,7 @@ async def root() -> dict[str, str]:
 
 # Serve the production React SPA from /app/static in Docker and from the
 # repository frontend build directory during local development.
-setup_static_files(app)
+setup_static_files(app, required=settings.environment == "production")
 
 
 if __name__ == "__main__":
