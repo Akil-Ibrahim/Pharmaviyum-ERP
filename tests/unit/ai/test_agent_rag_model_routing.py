@@ -443,3 +443,51 @@ async def test_planner_keeps_memory_and_rag_evidence_out_of_system_message() -> 
     assert memory_text in capture.messages[1].content
     assert rag_text in capture.messages[1].content
     assert "latest user request" in capture.messages[0].content
+
+
+def test_api_session_scope_separates_patients_and_explicit_no_patient_scope() -> None:
+    from types import SimpleNamespace
+
+    from src.pharmaviyum.api.v1.ai import _scoped_session_id
+
+    tenant = SimpleNamespace(pharmacy_id=7)
+    user = SimpleNamespace(id=42)
+    patient_a = _scoped_session_id("conversation-123", tenant, user, 101)
+    patient_b = _scoped_session_id("conversation-123", tenant, user, 202)
+    no_patient = _scoped_session_id("conversation-123", tenant, user, None)
+
+    assert patient_a != patient_b
+    assert patient_a != no_patient
+    assert patient_b != no_patient
+    assert patient_a.startswith("mortarium-session:v3|")
+    assert "pt:101" in patient_a
+    assert "pt:none" in no_patient
+
+
+@pytest.mark.parametrize("patient_id", [True, 0, -1, "101"])
+def test_api_session_scope_rejects_invalid_patient_id(patient_id) -> None:
+    from types import SimpleNamespace
+
+    from src.pharmaviyum.api.v1.ai import _scoped_session_id
+
+    with pytest.raises(ValueError, match="patient_id"):
+        _scoped_session_id(
+            "conversation-123",
+            SimpleNamespace(pharmacy_id=7),
+            SimpleNamespace(id=42),
+            patient_id,
+        )
+
+
+def test_api_session_scope_rejects_invalid_session_id(session_id) -> None:
+    from types import SimpleNamespace
+
+    from src.pharmaviyum.api.v1.ai import _scoped_session_id
+
+    with pytest.raises(ValueError, match="session_id"):
+        _scoped_session_id(
+            session_id,
+            SimpleNamespace(pharmacy_id=7),
+            SimpleNamespace(id=42),
+            None,
+        )
