@@ -463,11 +463,15 @@ async def test_planner_keeps_memory_and_rag_evidence_out_of_system_message() -> 
     assert "latest user request" in capture.messages[0].content
 
 
-def test_api_session_scope_separates_patients_and_explicit_no_patient_scope() -> None:
+def test_api_session_scope_separates_patients_and_explicit_no_patient_scope(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     from types import SimpleNamespace
 
     from src.pharmaviyum.api.v1.ai import _scoped_session_id
+    from src.pharmaviyum.core.config import settings as app_settings
 
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "api-session-test-secret")
     tenant = SimpleNamespace(pharmacy_id=7)
     user = SimpleNamespace(id=42)
     patient_a = _scoped_session_id("conversation-123", tenant, user, 101)
@@ -477,9 +481,10 @@ def test_api_session_scope_separates_patients_and_explicit_no_patient_scope() ->
     assert patient_a != patient_b
     assert patient_a != no_patient
     assert patient_b != no_patient
-    assert patient_a.startswith("mortarium-session:v3|")
-    assert "pt:101" in patient_a
-    assert "pt:none" in no_patient
+    assert patient_a.startswith("mortarium-session:v3:")
+    assert "conversation-123" not in patient_a
+    assert "101" not in patient_a
+    assert "202" not in patient_b
 
 
 @pytest.mark.parametrize("patient_id", [True, 0, -1, "101"])
@@ -510,3 +515,48 @@ def test_api_session_scope_rejects_invalid_session_id(session_id) -> None:
             SimpleNamespace(id=42),
             None,
         )
+
+
+def test_api_session_scope_changes_when_secret_rotates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from types import SimpleNamespace
+
+    from src.pharmaviyum.api.v1.ai import _scoped_session_id
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    tenant = SimpleNamespace(pharmacy_id=7)
+    user = SimpleNamespace(id=42)
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "first-session-secret")
+    first = _scoped_session_id("conversation-123", tenant, user, 101)
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-session-secret")
+    second = _scoped_session_id("conversation-123", tenant, user, 101)
+    assert first != second
+
+
+def test_api_session_scope_fails_closed_without_production_secret(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from types import SimpleNamespace
+
+    from src.pharmaviyum.api.v1.ai import _scoped_session_id
+    from src.pharmaviyum.core.config import Environment, settings as app_settings
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", None)
+    monkeypatch.setattr(app_settings, "ENVIRONMENT", Environment.PRODUCTION)
+    with pytest.raises(RuntimeError, match="SECRET_KEY"):
+        _scoped_session_id(
+            "conversation-123",
+            SimpleNamespace(pharmacy_id=7),
+            SimpleNamespace(id=42),
+            101,
+        )
+
+
+def test_query_request_rejects_whitespace_session_id() -> None:
+    from pydantic import ValidationError
+
+    from src.pharmaviyum.api.v1.ai import QueryRequest
+
+    with pytest.raises(ValidationError, match="session_id"):
+        QueryRequest(query="Check this medication", session_id="   ", pharmacy_id=7)
