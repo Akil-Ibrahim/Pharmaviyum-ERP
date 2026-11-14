@@ -50,8 +50,10 @@ class TestHealthEndpoints:
         assert response.status_code == 200
         data = response.json()
         assert data["environment"] == api_settings.ENVIRONMENT.value
+        assert data["debug"] is api_settings.DEBUG
         assert data["application_environment"] == application_settings.environment
         assert data["auth_environment"] == auth_settings.ENVIRONMENT
+        assert data["auth_debug"] is auth_settings.DEBUG
 
     def test_metrics_endpoint(self, test_client: TestClient):
         """Test Prometheus metrics endpoint."""
