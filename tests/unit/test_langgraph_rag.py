@@ -38,22 +38,60 @@ def test_route_after_grade_rewrites_until_budget_is_exhausted(
     )
 
 
-def test_thread_id_is_namespaced_and_unique_without_caller_id(
-    rag: LangGraphRAG,
+def test_thread_id_is_opaque_patient_scoped_and_unique_without_caller_id(
+    rag: LangGraphRAG, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    context = QueryContext(user_id="user-1", pharmacy_id=7)
-    assert rag._thread_id("conversation-123", context) == (
-        "rag:7:user-1:conversation-123"
-    )
-    first = rag._thread_id(None, context)
-    second = rag._thread_id(None, context)
-    assert first.startswith("rag:")
-    assert second.startswith("rag:")
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "rag-checkpoint-test-secret")
+    context = QueryContext(user_id="user-1", pharmacy_id=7, patient_id=12)
+    first = rag._thread_id("conversation-123", context)
+    assert first.startswith("rag:v2:")
+    assert len(first.rsplit(":", maxsplit=1)[-1]) == 64
+    assert "user-1" not in first
+    assert "conversation-123" not in first
+    assert ":7:" not in first
+    assert first == rag._thread_id("conversation-123", context)
+
+    other_patient = QueryContext(user_id="user-1", pharmacy_id=7, patient_id=13)
+    no_patient = QueryContext(user_id="user-1", pharmacy_id=7)
+    other_tenant = QueryContext(user_id="user-1", pharmacy_id=8, patient_id=12)
+    assert first != rag._thread_id("conversation-123", other_patient)
+    assert first != rag._thread_id("conversation-123", no_patient)
+    assert first != rag._thread_id("conversation-123", other_tenant)
+
+    random_one = rag._thread_id(None, context)
+    random_two = rag._thread_id(None, context)
+    assert random_one.startswith("rag:v2:")
+    assert random_one != random_two
+
+
+def test_rag_checkpoint_thread_id_changes_when_secret_rotates(
+    rag: LangGraphRAG, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    context = QueryContext(user_id="user-1", pharmacy_id=7, patient_id=12)
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "first-rag-secret")
+    first = rag._thread_id("conversation-123", context)
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-rag-secret")
+    second = rag._thread_id("conversation-123", context)
     assert first != second
-    other_tenant = QueryContext(user_id="user-1", pharmacy_id=8)
-    assert rag._thread_id("conversation-123", other_tenant) != rag._thread_id(
-        "conversation-123", context
-    )
+
+
+def test_rag_checkpoint_thread_id_fails_closed_without_production_secret(
+    rag: LangGraphRAG, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.pharmaviyum.core.config import Environment
+    from src.pharmaviyum.core.config import settings as app_settings
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", None)
+    monkeypatch.setattr(app_settings, "ENVIRONMENT", Environment.PRODUCTION)
+    with pytest.raises(RuntimeError, match="SECRET_KEY"):
+        rag._thread_id(
+            "conversation-123",
+            QueryContext(user_id="user-1", pharmacy_id=7),
+        )
 
 
 @pytest.mark.asyncio
@@ -124,6 +162,8 @@ async def test_run_reports_provider_token_usage_from_callbacks(
         {"user_id": "user-1", "pharmacy_id": -1},
         {"user_id": "user-1", "pharmacy_id": 1, "patient_id": 0},
         {"user_id": "user-1", "pharmacy_id": 1, "patient_id": -1},
+        {"user_id": "user-1", "pharmacy_id": 1, "patient_id": True},
+        {"user_id": "user-1", "pharmacy_id": 1, "patient_id": "12"},
         {"user_id": "user-1", "pharmacy_id": 1, "prescription_id": 0},
         {"user_id": "user-1", "pharmacy_id": 1, "prescription_id": -1},
     ],
@@ -396,3 +436,14 @@ async def test_langgraph_node_span_marks_cancellation(monkeypatch):
 
     span.set_attribute.assert_any_call("ai.execution_success", False)
     span.set_attribute.assert_any_call("ai.stream.cancelled", True)
+
+
+@pytest.mark.parametrize("thread_id", ["", "   ", "x" * 129, 123])
+def test_rag_checkpoint_thread_id_rejects_invalid_explicit_ids(
+    rag: LangGraphRAG, thread_id
+) -> None:
+    with pytest.raises(ValueError, match="thread identifier"):
+        rag._thread_id(
+            thread_id,
+            QueryContext(user_id="user-1", pharmacy_id=7),
+        )

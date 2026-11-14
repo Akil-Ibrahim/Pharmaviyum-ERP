@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import hmac
 import html
+import json
 import re
 import time
 from typing import Any, Awaitable, Callable, Literal
@@ -26,6 +29,8 @@ from src.pharmaviyum.ai.optimization.token_budget import (
     TokenBudgetExceeded,
     TokenBudgetManager,
 )
+from src.pharmaviyum.core.config import Environment
+from src.pharmaviyum.core.config import settings as app_settings
 from src.pharmaviyum.core.logging import logger
 
 from .contextual_compression import ContextualCompressor
@@ -698,5 +703,29 @@ class LangGraphRAG:
 
     @staticmethod
     def _thread_id(thread_id: str | None, context: QueryContext) -> str:
-        raw = thread_id or str(uuid4())
-        return f"rag:{context.pharmacy_id}:{context.user_id}:{raw}"
+        """Return an opaque, versioned checkpoint key bound to patient scope."""
+        raw = str(uuid4()) if thread_id is None else thread_id
+        if not isinstance(raw, str) or not raw.strip() or len(raw) > 128:
+            raise ValueError(
+                "RAG checkpoint thread identifier must be 1-128 characters"
+            )
+
+        scope = json.dumps(
+            ["rag", context.pharmacy_id, context.user_id, context.patient_id, raw],
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        secret = app_settings.SECRET_KEY or "local-development-only-rag-key"
+        environment = getattr(
+            app_settings.ENVIRONMENT, "value", app_settings.ENVIRONMENT
+        )
+        if (
+            environment in {Environment.STAGING.value, Environment.PRODUCTION.value}
+            and not app_settings.SECRET_KEY
+        ):
+            raise RuntimeError("Application SECRET_KEY is required for RAG checkpoints")
+
+        digest = hmac.new(
+            secret.encode("utf-8"), scope.encode("utf-8"), hashlib.sha256
+        ).hexdigest()
+        return f"rag:v2:{digest}"

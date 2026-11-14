@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import uuid
 from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 
 from src.pharmaviyum.ai.dependencies import get_agent_harness
@@ -20,6 +22,8 @@ from src.pharmaviyum.ai.mcp.context import (
     set_mcp_context,
 )
 from src.pharmaviyum.ai.mcp.registry import UserRole
+from src.pharmaviyum.core.config import Environment
+from src.pharmaviyum.core.config import settings as app_settings
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.models.patients import Patient
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
@@ -38,6 +42,7 @@ class QueryRequest(BaseModel):
     )
     session_id: str | None = Field(
         default=None,
+        min_length=1,
         max_length=64,
         description="Conversation session ID (max 64 characters)",
     )
@@ -56,6 +61,13 @@ class QueryRequest(BaseModel):
         default=False, description="Enable strict halal compliance check"
     )
     force_fresh: bool = Field(default=False, description="Bypass prompt cache")
+
+    @field_validator("session_id")
+    @classmethod
+    def validate_session_id(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("session_id must not contain only whitespace")
+        return value
 
 
 async def _tenant_context(
@@ -94,8 +106,46 @@ def _set_mcp_context(tenant, current_user: CurrentUser):
     )
 
 
-def _scoped_session_id(session_id: str, tenant, current_user: CurrentUser) -> str:
-    return f"pharmacy:{tenant.pharmacy_id}:user:{current_user.id}:session:{session_id}"
+def _scoped_session_id(
+    session_id: str,
+    tenant,
+    current_user: CurrentUser,
+    patient_id: int | None,
+) -> str:
+    """Return an opaque conversation namespace bound to the authenticated scope."""
+    if (
+        not isinstance(session_id, str)
+        or not session_id.strip()
+        or len(session_id) > 64
+    ):
+        raise ValueError("AI session_id must contain 1-64 non-whitespace characters")
+    if isinstance(patient_id, bool) or (
+        patient_id is not None and (not isinstance(patient_id, int) or patient_id <= 0)
+    ):
+        raise ValueError("AI patient_id must be a positive integer or None")
+
+    scope = json.dumps(
+        [
+            "mortarium-session:v3",
+            tenant.pharmacy_id,
+            current_user.id,
+            patient_id,
+            session_id,
+        ],
+        separators=(",", ":"),
+    )
+    secret = app_settings.SECRET_KEY or "local-development-only-session-key"
+    environment = getattr(app_settings.ENVIRONMENT, "value", app_settings.ENVIRONMENT)
+    if (
+        environment in {Environment.STAGING.value, Environment.PRODUCTION.value}
+        and not app_settings.SECRET_KEY
+    ):
+        raise RuntimeError("Application SECRET_KEY is required for AI sessions")
+
+    digest = hmac.new(
+        secret.encode("utf-8"), scope.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+    return f"mortarium-session:v3:{digest}"
 
 
 @router.get("/context")
@@ -143,7 +193,9 @@ async def query_agent(
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
     await _validate_patient_scope(request.patient_id, tenant.pharmacy_id, session)
     raw_session_id = request.session_id or str(uuid.uuid4())
-    session_id = _scoped_session_id(raw_session_id, tenant, current_user)
+    session_id = _scoped_session_id(
+        raw_session_id, tenant, current_user, request.patient_id
+    )
     context = {
         "user_id": tenant.user_id,
         "pharmacy_id": tenant.pharmacy_id,
@@ -257,7 +309,9 @@ async def query_agent_stream(
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
     await _validate_patient_scope(request.patient_id, tenant.pharmacy_id, session)
     raw_session_id = request.session_id or str(uuid.uuid4())
-    session_id = _scoped_session_id(raw_session_id, tenant, current_user)
+    session_id = _scoped_session_id(
+        raw_session_id, tenant, current_user, request.patient_id
+    )
     context = {
         "user_id": tenant.user_id,
         "pharmacy_id": tenant.pharmacy_id,

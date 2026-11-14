@@ -453,6 +453,14 @@ class PharmacistAgent:
         normalized_user_id = str(user_id)
         if not normalized_user_id.strip() or len(normalized_user_id) > 128:
             raise ValueError("Agent checkpoint user_id must be 1-128 characters")
+        patient_id = context.get("patient_id")
+        if isinstance(patient_id, bool) or (
+            patient_id is not None
+            and (not isinstance(patient_id, int) or patient_id <= 0)
+        ):
+            raise ValueError(
+                "Agent checkpoint patient_id must be a positive integer or None"
+            )
         if thread_id is not None and (
             not isinstance(thread_id, str)
             or not thread_id.strip()
@@ -462,7 +470,13 @@ class PharmacistAgent:
                 "Agent checkpoint thread identifier must be 1-128 non-whitespace characters"
             )
         scope = json.dumps(
-            ["agent", pharmacy_id, normalized_user_id, thread_id or "default"],
+            [
+                "agent",
+                pharmacy_id,
+                normalized_user_id,
+                patient_id,
+                thread_id or "default",
+            ],
             ensure_ascii=False,
             separators=(",", ":"),
         )
