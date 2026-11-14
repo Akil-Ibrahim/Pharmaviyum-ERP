@@ -196,7 +196,9 @@ async def query_agent(
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
     await _validate_patient_scope(request.patient_id, tenant.pharmacy_id, session)
     raw_session_id = request.session_id or str(uuid.uuid4())
-    session_id = _scoped_session_id(raw_session_id, tenant, current_user, request.patient_id)
+    session_id = _scoped_session_id(
+        raw_session_id, tenant, current_user, request.patient_id
+    )
     context = {
         "user_id": tenant.user_id,
         "pharmacy_id": tenant.pharmacy_id,
