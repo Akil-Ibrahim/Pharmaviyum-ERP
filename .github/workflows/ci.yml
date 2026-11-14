@@ -1,0 +1,285 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.15.2'
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: pharmaviyum_test
+  IMAGE_NAME: pharmaviyum-crm
+  IMAGE_REPOSITORY: ghcr.io/akil-ibrahim/pharmaviyum-crm
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pharmaviyum-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint, Format and Types
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4.4.0
+        with:
+          fetch-depth: 0
+      - name: Set up uv and managed Python
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.8"
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+      - name: Install dependencies
+        run: |
+          uv sync --frozen
+      - name: Verify CPython 3.15 runtime dependencies
+        run: uv run python scripts/check_python315_compat.py
+      - name: Ruff diagnostics
+        run: uv run ruff check src/ tests/
+      - name: Black diagnostics
+        shell: bash
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            FILES="$(git diff --name-only "origin/${GITHUB_BASE_REF}...${GITHUB_SHA}" -- src/ tests/ | grep -E "[.]py$" || true)"
+            if [ -z "$FILES" ]; then
+              echo "No Python files changed in this pull request; skipping Black."
+            else
+              printf '%s\n' "$FILES" | xargs uv run black --check --diff
+            fi
+          elif [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            FILES="$(git diff --name-only "$GITHUB_EVENT_BEFORE" "$GITHUB_SHA" -- src/ tests/ | grep -E "[.]py$" || true)"
+            if [ -z "$FILES" ]; then
+              echo "No Python files changed in this push; skipping Black."
+            else
+              printf '%s\\n' "$FILES" | xargs uv run black --check --diff
+            fi
+          else
+            uv run black --check --diff src/ tests/
+          fi
+      - name: isort diagnostics
+        shell: bash
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            FILES="$(git diff --name-only "origin/${GITHUB_BASE_REF}...${GITHUB_SHA}" -- src/ tests/ | grep -E "[.]py$" || true)"
+            if [ -z "$FILES" ]; then
+              echo "No Python files changed in this pull request; skipping isort."
+            else
+              printf '%s\n' "$FILES" | xargs uv run isort --check-only --diff --profile black
+            fi
+          elif [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            FILES="$(git diff --name-only "$GITHUB_EVENT_BEFORE" "$GITHUB_SHA" -- src/ tests/ | grep -E "[.]py$" || true)"
+            if [ -z "$FILES" ]; then
+              echo "No Python files changed in this push; skipping isort."
+            else
+              printf '%s\\n' "$FILES" | xargs uv run isort --check-only --diff --profile black
+            fi
+          else
+            uv run isort --check-only --diff --profile black src/ tests/
+          fi
+      - name: mypy diagnostics
+        run: uv run mypy --explicit-package-bases src/pharmaviyum/
+
+  frontend-checks:
+    name: Frontend Build, Lint and Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - uses: oven-sh/setup-bun@v2
+        id: setup-bun
+        continue-on-error: true
+        with:
+          bun-version: "1.4.4"
+      - name: Install Bun from npm if GitHub Releases is unavailable
+        if: steps.setup-bun.outcome == 'failure'
+        run: |
+          npm install --global bun@1.4.4
+          test "$(bun --version)" = "1.4.4"
+      - name: Install frontend dependencies
+        working-directory: frontend/shadcn-admin
+        run: bun install --frozen-lockfile
+      - name: Install Chromium for Vitest browser tests
+        working-directory: frontend/shadcn-admin
+        run: bun run test:browser:install
+      - name: ESLint for sidebar navigation changes
+        working-directory: frontend/shadcn-admin
+        run: bunx eslint src/components/layout/data/sidebar-data.ts src/components/layout/data/sidebar-data.test.ts
+      - name: Frontend build and TypeScript
+        working-directory: frontend/shadcn-admin
+        run: bun run build
+      - name: Vitest
+        working-directory: frontend/shadcn-admin
+        run: bun run test
+
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: lint
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d pharmaviyum_test" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:8.8.4-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: Set up uv and managed Python
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.8"
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Validate Celery app configuration on the target Python runtime
+        env:
+          REDIS_URL: redis://localhost:6379/15
+        run: uv run celery -A src.pharmaviyum.ai.mortarium_rag.ingestion.celery_app report
+      - name: Unit tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
+          PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
+          REDIS_URL: redis://localhost:6379/15
+          ENVIRONMENT: development
+        run: uv run pytest tests/unit/ -v -m unit --cov=src/pharmaviyum --cov-report=xml --cov-report=term-missing
+
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: lint
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.7-pg18
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d pharmaviyum_test" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:8.8.4-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: Set up uv and managed Python
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.8"
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Apply Alembic migrations to a separate clean PostgreSQL database
+        env:
+          PGPASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_migration_test
+          PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_migration_test
+        run: |
+          createdb -h localhost -U postgres pharmaviyum_migration_test
+          uv run alembic upgrade head
+      - name: Integration tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
+          PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
+          REDIS_URL: redis://localhost:6379/15
+          ENVIRONMENT: development
+        run: uv run pytest tests/integration/ -v -m integration --cov=src/pharmaviyum --cov-report=xml --cov-report=term-missing
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: Set up uv and managed Python
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.8"
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+      - name: Install dependencies and scanners
+        run: |
+          uv sync --frozen
+      - name: pip-audit diagnostics
+        run: uv run pip-audit --skip-editable
+      - name: Bandit diagnostics
+        run: |
+          uv run bandit -r src/pharmaviyum/ -ll             --exclude src/pharmaviyum/ai/mortarium_rag/ingestion/deduplication.py,src/pharmaviyum/ai/mortarium_rag/ingestion/versioning.py,src/pharmaviyum/ai/mortarium_rag/vector_store.py
+          uv run bandit -r             src/pharmaviyum/ai/mortarium_rag/ingestion/deduplication.py,            src/pharmaviyum/ai/mortarium_rag/ingestion/versioning.py,            src/pharmaviyum/ai/mortarium_rag/vector_store.py             -ll -s B608
+
+  rag-evaluation:
+    name: RAG Safety Regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [test-unit, security]
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: Set up uv and managed Python
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.8"
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Install isolated Ragas evaluation dependency and run pharma metrics
+        run: |
+          uv run --with-requirements requirements-eval.txt python -c "from ragas.metrics.collections import Faithfulness, AnswerRelevancy, ContextPrecisionWithReference, ContextRecall; print('Ragas collections API ready')"
+          uv run pytest tests/unit/ai/test_ragas_evaluation.py -v -m unit
+      - name: Validate golden dataset
+        run: uv run pytest tests/test_evaluation.py -v -m unit
+
+  build:
+    name: Build and Publish Immutable Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [test-unit, test-integration, security, rag-evaluation]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_digest: ${{ steps.image.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - uses: docker/setup-buildx-action@v3
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push immutable image
+        id: image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_REPOSITORY }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          provenance: true
+          sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

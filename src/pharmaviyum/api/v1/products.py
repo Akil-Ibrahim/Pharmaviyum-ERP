@@ -1,0 +1,190 @@
+from fastapi import APIRouter, HTTPException, Query, status
+from sqlalchemy import or_, select
+
+from src.pharmaviyum.models.drug_catalog import MedicinalProduct
+from src.pharmaviyum.models.product import Product
+from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, SessionDep
+from src.pharmaviyum.schemas.product_schema import (
+    ProductCreate,
+    ProductResponse,
+    ProductUpdate,
+)
+from src.pharmaviyum.services.catalog_exclusions import (
+    allowed_pharmacy_product_conditions,
+    is_excluded_catalog_entry,
+)
+
+router = APIRouter(prefix="/products", tags=["Products"])
+
+
+async def _validate_product_exclusion(
+    *,
+    db: SessionDep,
+    name: str,
+    manufacturer: str | None,
+    manufacturer_country: str | None,
+    medicinal_product_id: int | None,
+) -> None:
+    linked_product = None
+    if medicinal_product_id is not None:
+        linked_product = await db.get(MedicinalProduct, medicinal_product_id)
+        if linked_product is None:
+            raise HTTPException(
+                status_code=404, detail="Medicinal catalog product not found"
+            )
+
+    linked_brand = linked_product.brand_name if linked_product is not None else None
+    linked_manufacturer = (
+        linked_product.manufacturer if linked_product is not None else None
+    )
+    linked_country = (
+        linked_product.authorization_country if linked_product is not None else None
+    )
+    linked_manufacturer_country = (
+        linked_product.manufacturer_country if linked_product is not None else None
+    )
+    if is_excluded_catalog_entry(
+        brand_name=f"{name} {linked_brand or ''}",
+        manufacturer=f"{manufacturer or ''} {linked_manufacturer or ''}",
+        authorization_country=linked_country,
+        manufacturer_country=manufacturer_country,
+        payload={"manufacturer_country": linked_manufacturer_country},
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Teva and Israeli medicines are excluded from Pharmaviyum",
+        )
+
+
+@router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
+async def create_product(
+    data: ProductCreate,
+    db: SessionDep,
+    _: CurrentSuperuser,
+) -> Product:
+    await _validate_product_exclusion(
+        db=db,
+        name=data.name,
+        manufacturer=data.manufacturer,
+        manufacturer_country=data.manufacturer_country,
+        medicinal_product_id=data.medicinal_product_id,
+    )
+    product = Product(**data.model_dump())
+    db.add(product)
+    await db.commit()
+    await db.refresh(product)
+    return product
+
+
+@router.get("/search", response_model=list[ProductResponse])
+async def search_products(
+    db: SessionDep,
+    _: CurrentUser,
+    q: str = Query(..., min_length=2, max_length=100),
+    limit: int = Query(20, ge=1, le=100),
+) -> list[Product]:
+    """Search actual sellable pharmacy products; never searches reference-only drugs."""
+    term = f"%{q.strip()}%"
+    statement = (
+        select(Product)
+        .where(
+            Product.is_active.is_(True),
+            *allowed_pharmacy_product_conditions(),
+            or_(
+                Product.name.ilike(term),
+                Product.sku.ilike(term),
+                Product.inn_name.ilike(term),
+                Product.manufacturer.ilike(term),
+                Product.regulatory_id.ilike(term),
+                Product.gtin.ilike(term),
+                Product.barcode.ilike(term),
+            ),
+        )
+        .order_by(Product.name.asc(), Product.id.asc())
+        .limit(limit)
+    )
+    result = await db.execute(statement)
+    return list(result.scalars().all())
+
+
+@router.get("/{product_id}", response_model=ProductResponse)
+async def get_product(product_id: int, db: SessionDep, _: CurrentUser) -> Product:
+    result = await db.execute(
+        select(Product).where(
+            Product.id == product_id, *allowed_pharmacy_product_conditions()
+        )
+    )
+    product = result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product
+
+
+@router.get("/", response_model=list[ProductResponse])
+async def list_products(
+    db: SessionDep,
+    _: CurrentUser,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+) -> list[Product]:
+    result = await db.execute(
+        select(Product)
+        .where(Product.is_active, *allowed_pharmacy_product_conditions())
+        .offset(skip)
+        .limit(limit)
+    )
+    return list(result.scalars().all())
+
+
+@router.put("/{product_id}", response_model=ProductResponse)
+async def update_product(
+    product_id: int,
+    data: ProductUpdate,
+    db: SessionDep,
+    _: CurrentSuperuser,
+) -> Product:
+    result = await db.execute(
+        select(Product).where(
+            Product.id == product_id, *allowed_pharmacy_product_conditions()
+        )
+    )
+    product = result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    updates = data.model_dump(exclude_unset=True)
+    await _validate_product_exclusion(
+        db=db,
+        name=updates.get("name", product.name),
+        manufacturer=updates.get("manufacturer", product.manufacturer),
+        manufacturer_country=updates.get(
+            "manufacturer_country", product.manufacturer_country
+        ),
+        medicinal_product_id=updates.get(
+            "medicinal_product_id", product.medicinal_product_id
+        ),
+    )
+    for key, value in updates.items():
+        setattr(product, key, value)
+    await db.commit()
+    await db.refresh(product)
+    return product
+
+
+@router.delete("/{product_id}")
+async def delete_product(
+    product_id: int,
+    db: SessionDep,
+    _: CurrentSuperuser,
+) -> dict[str, str]:
+    result = await db.execute(
+        select(Product).where(
+            Product.id == product_id, *allowed_pharmacy_product_conditions()
+        )
+    )
+    product = result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    product.is_active = False
+    await db.commit()
+    return {"message": "Product deactivated"}

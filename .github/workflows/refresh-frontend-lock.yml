@@ -1,0 +1,58 @@
+name: Refresh frontend lockfile
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - frontend/shadcn-admin/package.json
+      - .github/workflows/refresh-frontend-lock.yml
+  push:
+    branches: [deploy/fastapi-cloud-prep, chore/full-stack-upgrade-2026-11-13]
+    paths:
+      - frontend/shadcn-admin/package.json
+      - .github/workflows/refresh-frontend-lock.yml
+
+permissions:
+  contents: write
+
+jobs:
+  lock-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend/shadcn-admin
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      - uses: oven-sh/setup-bun@v2
+        id: setup-bun
+        continue-on-error: true
+        with:
+          bun-version: "1.4.4"
+      - name: Install Bun from npm if GitHub Releases is unavailable
+        if: steps.setup-bun.outcome == 'failure'
+        run: |
+          npm install --global bun@1.4.4
+          test "$(bun --version)" = "1.4.4"
+      - name: Resolve dependencies and generate bun.lock
+        run: bun install
+      - name: ESLint
+        run: bun run lint
+      - name: TypeScript and production build
+        run: bun run build
+      - name: Commit lockfile if validation passes
+        working-directory: .
+        run: |
+          if [ -z "$(git status --short -- frontend/shadcn-admin/bun.lock)" ]; then
+            echo "bun.lock is already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/shadcn-admin/bun.lock
+          git commit -m "chore(frontend): add validated Bun lockfile"
+          git push origin HEAD:${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}

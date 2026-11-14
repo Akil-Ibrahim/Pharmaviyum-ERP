@@ -1,0 +1,60 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: ../../requirements.yml
+driver:
+  name: docker
+platforms:
+  - name: pharmaviyum-ansible-test
+    image: geerlingguy/docker-ubuntu2204-ansible:latest
+    privileged: true
+    user: root
+    pre_build_image: true
+    command: /lib/systemd/systemd
+    cgroupns_mode: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    tmpfs:
+      - /run:rw,nosuid,nodev,mode=755
+      - /run/lock:rw,nosuid,nodev,mode=755
+      - /tmp:rw,exec,nosuid,nodev,mode=1777
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      roles_path: ../../roles
+  inventory:
+    host_vars:
+      pharmaviyum-ansible-test:
+        app_environment: staging
+        app_directory: /opt/pharmaviyum
+        deploy_user: molecule
+        docker_compose_project: pharmaviyum
+        app_version: "test-release"
+        backend_image: "ghcr.io/ibrahimengpy/pharmaviyum-crm"
+        postgres_password: "molecule-test-password"
+        ghcr_username: ""
+        ghcr_token: ""
+        ansible_connection: community.docker.docker
+        ansible_user: root
+        ansible_remote_tmp: /tmp/.ansible/tmp
+        docker_require_pinned_versions: false
+        docker_package_names:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        docker_package_versions: {}
+verifier:
+  name: ansible
+scenario:
+  test_sequence:
+    - dependency
+    - syntax
+    - create
+    - converge
+    - idempotence
+    - verify
+    - destroy

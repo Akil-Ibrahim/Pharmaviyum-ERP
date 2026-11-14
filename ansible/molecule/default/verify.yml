@@ -1,0 +1,12 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  tasks:
+    - name: Check Docker service
+      ansible.builtin.command: docker --version
+      changed_when: false
+
+    - name: Check Docker Compose
+      ansible.builtin.command: docker compose version
+      changed_when: false

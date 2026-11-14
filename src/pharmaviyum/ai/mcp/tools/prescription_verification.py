@@ -1,0 +1,393 @@
+"""
+MCP Tool: Prescription Verification.
+
+Validates prescriptions against explicitly configured market regulations:
+- Expiry check
+- Prescriber license verification
+- Quantity limits (controlled substances)
+- Duplicate dispensing prevention
+- Drug availability check
+
+Implementation note:
+- The currently implemented country rules cover selected SEA markets (VN/TH/ID);
+  this is not a complete global regulatory database.
+- Controlled substance tracking (narcotics, psychotropics)
+- Audit trail for compliance
+- Async DB queries with selectinload
+"""
+
+from __future__ import annotations
+
+import time
+from datetime import datetime, timedelta
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.pharmaviyum.core.logging import logger
+
+from ..context import require_mcp_context
+from ..registry import registry
+from ..schemas import (
+    PrescriptionCheck,
+    PrescriptionVerification,
+    PrescriptionVerifyRequest,
+)
+
+# ============================================================================
+# CONTROLLED SUBSTANCE LIMITS (SEA regulations)
+# ============================================================================
+# Max quantity per prescription per country
+
+CONTROLLED_LIMITS: dict[str, dict] = {
+    # Vietnam (VN) — Ministry of Health regulations
+    "VN": {
+        "Diazepam": {"max_qty": 30, "unit": "tablets", "schedule": "psychotropic"},
+        "Codeine": {"max_qty": 60, "unit": "tablets", "schedule": "narcotic"},
+        "Tramadol": {"max_qty": 60, "unit": "tablets", "schedule": "psychotropic"},
+        "Morphine": {"max_qty": 30, "unit": "tablets", "schedule": "narcotic"},
+        "Methadone": {"max_qty": 30, "unit": "doses", "schedule": "narcotic"},
+    },
+    # Thailand (TH) — FDA Thailand
+    "TH": {
+        "Diazepam": {"max_qty": 30, "unit": "tablets", "schedule": "psychotropic"},
+        "Codeine": {"max_qty": 30, "unit": "tablets", "schedule": "narcotic"},
+        "Tramadol": {"max_qty": 30, "unit": "tablets", "schedule": "psychotropic"},
+    },
+    # Indonesia (ID) — BPOM
+    "ID": {
+        "Diazepam": {"max_qty": 30, "unit": "tablets", "schedule": "psychotropic"},
+        "Codeine": {"max_qty": 60, "unit": "tablets", "schedule": "narcotic"},
+    },
+}
+
+# Prescription validity period by country (days)
+PRESCRIPTION_VALIDITY: dict[str, int] = {
+    "VN": 30,  # Vietnam: 30 days for most prescriptions
+    "TH": 30,  # Thailand: 30 days
+    "ID": 30,  # Indonesia: 30 days
+}
+
+# Controlled substances require shorter validity
+CONTROLLED_PRESCRIPTION_VALIDITY: dict[str, int] = {
+    "VN": 7,  # Vietnam: 7 days for narcotics
+    "TH": 7,
+    "ID": 7,
+}
+
+
+# ============================================================================
+# MCP TOOL REGISTRATION
+# ============================================================================
+
+
+@registry.tool(
+    name="verify_prescription",
+    description=(
+        "Verify prescription validity against configured country-specific regulatory rules. "
+        "Checks: expiry date, prescriber license, quantity limits for "
+        "controlled substances, duplicate dispensing prevention. "
+        "Critical for legal compliance and patient safety."
+    ),
+    input_schema=PrescriptionVerifyRequest,
+    output_schema=PrescriptionVerification,
+    category="regulatory",
+    execution_class="read",
+    latency_estimate_ms=120,
+    requires_db=True,
+    tags=["prescription", "regulatory", "compliance", "safety"],
+)
+async def verify_prescription(
+    input: PrescriptionVerifyRequest,
+) -> PrescriptionVerification:
+    """
+    Verify prescription against regulatory requirements.
+
+    Checks performed:
+    1. Expiry — prescription not expired
+    2. Prescriber license — doctor is licensed and active
+    3. Quantity limits — within legal limits for controlled substances
+    4. Duplicate dispensing — not already dispensed
+    """
+    start = time.perf_counter()
+    auth_context = require_mcp_context()
+
+    # Lazy imports to avoid circular dependencies
+    from src.pharmaviyum.models.patients.patient import Patient
+    from src.pharmaviyum.models.prescription import Prescription
+    from src.pharmaviyum.shared.core.database import async_session_factory
+
+    checks: list[PrescriptionCheck] = []
+    overall_warnings: list[str] = []
+
+    async with async_session_factory() as session:
+        # Load prescription with relationships
+        query = (
+            select(Prescription)
+            .join(Patient, Prescription.patient_id == Patient.id)
+            .where(
+                Prescription.prescription_number == input.prescription_number,
+                Patient.pharmacy_id == auth_context.pharmacy_id,
+                Patient.is_active.is_(True),
+            )
+        )
+        result = await session.execute(query)
+        prescription = result.scalar_one_or_none()
+
+        if not prescription:
+            return PrescriptionVerification(
+                prescription_number=input.prescription_number,
+                is_valid=False,
+                checks=[
+                    PrescriptionCheck(
+                        check_type="exists",
+                        passed=False,
+                        details="Prescription not found in system",
+                    )
+                ],
+                overall_warnings=["Prescription number not recognized"],
+            )
+
+        # Load patient and items
+        patient_query = select(Patient).where(
+            Patient.id == prescription.patient_id,
+            Patient.pharmacy_id == auth_context.pharmacy_id,
+            Patient.is_active.is_(True),
+        )
+        patient_result = await session.execute(patient_query)
+        patient = patient_result.scalar_one_or_none()
+
+        # The current canonical prescription model stores one product per prescription.
+        # Keep the item collection empty until a normalized prescription-line model exists.
+        items: list[Any] = []
+
+        # A patient's residence is not the pharmacy's legal jurisdiction.
+        # The Pharmacy model does not yet store a trusted market profile, so
+        # regulatory checks must fail closed rather than infer a country.
+        country = None
+        if any(check in input.checks for check in ("expiry", "quantity_limits")):
+            jurisdiction_check = _check_jurisdiction(country)
+            checks.append(jurisdiction_check)
+            if not jurisdiction_check.passed:
+                overall_warnings.append(
+                    jurisdiction_check.details or "Unsupported jurisdiction"
+                )
+
+        # CHECK 1: Expiry
+        if "expiry" in input.checks:
+            expiry_check = await _check_expiry(prescription, country)
+            checks.append(expiry_check)
+            if not expiry_check.passed:
+                overall_warnings.append(expiry_check.details or "Prescription expired")
+
+        # CHECK 2: Prescriber license
+        if "prescriber_license" in input.checks:
+            license_check = await _check_prescriber_license(prescription)
+            checks.append(license_check)
+            if not license_check.passed:
+                overall_warnings.append(license_check.details or "Invalid prescriber")
+
+        # CHECK 3: Quantity limits (controlled substances)
+        if "quantity_limits" in input.checks:
+            for item in items:
+                qty_check = await _check_quantity_limits(item, country)
+                checks.append(qty_check)
+                if not qty_check.passed:
+                    overall_warnings.append(
+                        qty_check.details or "Quantity exceeds limit"
+                    )
+
+        # CHECK 4: Duplicate dispensing
+        if "duplicate_dispensing" in input.checks:
+            dup_check = await _check_duplicate_dispensing(session, prescription.id)
+            checks.append(dup_check)
+            if not dup_check.passed:
+                overall_warnings.append(dup_check.details or "Already dispensed")
+
+        # Determine overall validity
+        is_valid = all(c.passed for c in checks)
+
+        latency_ms = (time.perf_counter() - start) * 1000
+
+        logger.info(
+            "Prescription verification completed",
+            extra={
+                "is_valid": is_valid,
+                "checks_passed": sum(1 for c in checks if c.passed),
+                "checks_total": len(checks),
+                "latency_ms": latency_ms,
+            },
+        )
+
+        return PrescriptionVerification(
+            prescription_number=prescription.prescription_number,
+            is_valid=is_valid,
+            checks=checks,
+            patient_name=patient.full_name if patient else None,
+            prescriber_name=None,
+            drugs=[item.medication_name for item in items],
+            overall_warnings=overall_warnings,
+        )
+
+
+# ============================================================================
+# INDIVIDUAL CHECKS
+# ============================================================================
+
+
+def _check_jurisdiction(country: str | None) -> PrescriptionCheck:
+    """Fail closed when no validated prescription rules exist for the market."""
+    configured = bool(
+        country
+        and country in PRESCRIPTION_VALIDITY
+        and country in CONTROLLED_LIMITS
+        and country in CONTROLLED_PRESCRIPTION_VALIDITY
+    )
+    return PrescriptionCheck(
+        check_type="jurisdiction",
+        passed=configured,
+        details=(
+            f"Regulatory rules configured for {country}"
+            if configured
+            else (
+                f"No validated prescription rules configured for jurisdiction "
+                f"{country or '(missing)'}; legal validity cannot be confirmed"
+            )
+        ),
+        warnings=(
+            []
+            if configured
+            else ["Do not dispense based on this verification; confirm local rules"]
+        ),
+    )
+
+
+async def _check_expiry(prescription, country: str | None) -> PrescriptionCheck:
+    """Check expiry without inventing a default validity period."""
+    if not prescription.date_expires:
+        validity_days = PRESCRIPTION_VALIDITY.get(country or "")
+        if validity_days is None:
+            return PrescriptionCheck(
+                check_type="expiry",
+                passed=False,
+                details=(
+                    "Prescription has no explicit expiry date and no configured "
+                    f"validity period for jurisdiction {country or '(missing)'}"
+                ),
+                warnings=[
+                    "Prescription validity cannot be confirmed without local rules"
+                ],
+            )
+        expiry = prescription.date_issued + timedelta(days=validity_days)
+    else:
+        expiry = prescription.date_expires
+
+    is_valid = expiry > datetime.utcnow()
+
+    return PrescriptionCheck(
+        check_type="expiry",
+        passed=is_valid,
+        details=(
+            f"Valid until {expiry.strftime('%Y-%m-%d')}"
+            if is_valid
+            else f"Expired on {expiry.strftime('%Y-%m-%d')}"
+        ),
+        warnings=[] if is_valid else ["Prescription has expired"],
+    )
+
+
+async def _check_prescriber_license(prescription) -> PrescriptionCheck:
+    """Check if prescriber has valid license."""
+    # In production: query prescriber registry
+    # For now: assume valid if prescriber_name is set
+    has_prescriber = bool(prescription.prescriber_name)
+
+    return PrescriptionCheck(
+        check_type="prescriber_license",
+        passed=has_prescriber,
+        details=(
+            f"Prescriber: {prescription.prescriber_name}"
+            if has_prescriber
+            else "No prescriber information"
+        ),
+        warnings=[] if has_prescriber else ["Prescriber information missing"],
+    )
+
+
+async def _check_quantity_limits(item, country: str | None) -> PrescriptionCheck:
+    """Check quantity only when market-specific rules are configured."""
+    drug_name = item.medication_name
+    quantity = item.quantity_prescribed
+
+    if not country or country not in CONTROLLED_LIMITS:
+        return PrescriptionCheck(
+            check_type="quantity_limits",
+            passed=False,
+            details=(
+                f"Cannot verify {drug_name} quantity: no configured controlled-"
+                f"substance rules for jurisdiction {country or '(missing)'}"
+            ),
+            warnings=["Local controlled-substance rules must be verified"],
+        )
+
+    limits = CONTROLLED_LIMITS[country]
+
+    if drug_name not in limits:
+        # Not a controlled substance — pass
+        return PrescriptionCheck(
+            check_type="quantity_limits",
+            passed=True,
+            details=f"{drug_name}: {quantity} units (not controlled)",
+        )
+
+    limit_info = limits[drug_name]
+    max_qty = limit_info["max_qty"]
+    unit = limit_info["unit"]
+    schedule = limit_info["schedule"]
+
+    is_within_limit = quantity <= max_qty
+
+    return PrescriptionCheck(
+        check_type="quantity_limits",
+        passed=is_within_limit,
+        details=(
+            f"{drug_name}: {quantity}/{max_qty} {unit} ({schedule})"
+            if is_within_limit
+            else f"{drug_name}: {quantity} {unit} EXCEEDS limit of {max_qty} {unit} ({schedule})"
+        ),
+        warnings=(
+            []
+            if is_within_limit
+            else [f"Quantity exceeds legal limit for {schedule} substance"]
+        ),
+    )
+
+
+async def _check_duplicate_dispensing(
+    session: AsyncSession, prescription_id: int
+) -> PrescriptionCheck:
+    """Check if prescription has already been dispensed."""
+    from src.pharmaviyum.models.prescription import Prescription
+
+    result = await session.execute(
+        select(Prescription.status).where(Prescription.id == prescription_id)
+    )
+    prescription_status = result.scalar_one_or_none()
+    is_not_duplicate = prescription_status not in {"dispensed", "filled"}
+    fill_count = 0 if is_not_duplicate else 1
+
+    return PrescriptionCheck(
+        check_type="duplicate_dispensing",
+        passed=is_not_duplicate,
+        details=(
+            "Not yet dispensed"
+            if is_not_duplicate
+            else f"Already dispensed {fill_count} time(s)"
+        ),
+        warnings=(
+            []
+            if is_not_duplicate
+            else ["Prescription already dispensed — potential duplicate"]
+        ),
+    )

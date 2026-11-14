@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+
+export PHARMAVIYUM_APP_VERSION="ansible-preflight-test"
+export PHARMAVIYUM_BACKEND_IMAGE_DIGEST="sha256:$(printf '%064d' 0)"
+
+EXTRA_VARS='{"docker_package_versions":{"docker-ce":"test","docker-ce-cli":"test","containerd.io":"test","docker-buildx-plugin":"test","docker-compose-plugin":"test"}}'
+
+generate_inventory() {
+  local count="$1"
+  local output="$2"
+  local mode="${3:-normal}"
+  python - "$count" "$output" "$mode" <<'PY'
+import sys
+count = int(sys.argv[1])
+path = sys.argv[2]
+mode = sys.argv[3]
+with open(path, "w", encoding="utf-8") as stream:
+    stream.write("---\nall:\n  children:\n    pharmacy_servers:\n      hosts:\n")
+    for index in range(1, count + 1):
+        suffix = f"{index:03d}"
+        password = f"test-only-password-{suffix}"
+        site_code = f"TEST-{suffix}"
+        edge_node_id = ""
+        edge_token = ""
+        central_url = ""
+        if mode == "duplicate-password" and index == count:
+            password = "test-only-password-001"
+        site_code_yaml = f"          site_code: {site_code}\n"
+        if mode == "missing-site-code" and index == count:
+            site_code_yaml = ""
+        if mode == "duplicate-site-code-case" and index == count:
+            site_code = "test-001"
+            site_code_yaml = f"          site_code: {site_code}\n"
+        if mode == "duplicate-edge-node-id" and index in (1, count):
+            edge_node_id = "123e4567-e89b-42d3-a456-426614174000"
+            if index == count:
+                edge_node_id = edge_node_id.upper()
+            edge_token = "test-edge-token-012345678901234567890123456789"
+            central_url = "https://central.example.test"
+        stream.write(
+            f"        pharmacy-edge-test-{suffix}:\n"
+            f"          ansible_host: 127.0.0.1\n"
+            f"          ansible_user: ansible-test\n"
+            f"          ansible_connection: local\n"
+            f"          pharmacy_id: test-pharmacy-{suffix}\n"
+            + site_code_yaml
+            + f"          postgres_password: {password}\n"
+            + f"          pharmaviyum_edge_node_id: '{edge_node_id}'\n"
+            + f"          pharmaviyum_edge_token: '{edge_token}'\n"
+            + f"          pharmaviyum_central_sync_url: '{central_url}'\n"
+        )
+PY
+}
+
+make_limit() {
+  local count="$1"
+  local limit=""
+  for ((index = 1; index <= count; index++)); do
+    suffix="$(printf '%03d' "$index")"
+    host="pharmacy-edge-test-$suffix"
+    if [[ -n "$limit" ]]; then
+      limit+=","
+    fi
+    limit+="$host"
+  done
+  printf '%s' "$limit"
+}
+
+inventory_100="$TMP_DIR/fleet-100.yml"
+inventory_101="$TMP_DIR/fleet-101.yml"
+inventory_duplicate_password="$TMP_DIR/fleet-100-duplicate-password.yml"
+inventory_missing_site_code="$TMP_DIR/fleet-100-missing-site-code.yml"
+inventory_duplicate_edge_node_id="$TMP_DIR/fleet-100-duplicate-edge-node-id.yml"
+inventory_duplicate_site_code_case="$TMP_DIR/fleet-100-duplicate-site-code-case.yml"
+generate_inventory 100 "$inventory_100"
+generate_inventory 101 "$inventory_101"
+generate_inventory 100 "$inventory_duplicate_password" duplicate-password
+generate_inventory 100 "$inventory_missing_site_code" missing-site-code
+generate_inventory 100 "$inventory_duplicate_edge_node_id" duplicate-edge-node-id
+generate_inventory 100 "$inventory_duplicate_site_code_case" duplicate-site-code-case
+
+echo "Checking that a 10-site wave succeeds from a 100-site inventory."
+ansible-playbook -i "$inventory_100" playbooks/deploy.yml \
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS"
+
+echo "Checking that migration preflight accepts a 10-site wave from a 100-site inventory."
+ansible-playbook -i "$inventory_100" playbooks/migrate.yml \
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS"
+
+echo "Checking that migration preflight rejects an 11-site wave."
+if output="$(ansible-playbook -i "$inventory_100" playbooks/migrate.yml \
+  --limit "$(make_limit 11)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
+  echo "ERROR: an 11-site migration wave unexpectedly passed the active rollout guardrail."
+  exit 1
+fi
+grep -q "active rollout limit is 10" <<<"$output"
+
+echo "Checking that migration preflight rejects a 101-site inventory."
+if output="$(ansible-playbook -i "$inventory_101" playbooks/migrate.yml \
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
+  echo "ERROR: a 101-site migration inventory unexpectedly passed the architecture ceiling."
+  exit 1
+fi
+grep -q "100-site architecture inventory ceiling" <<<"$output"
+
+echo "Checking that an 11-site wave is rejected."
+if output="$(ansible-playbook -i "$inventory_100" playbooks/deploy.yml \
+  --limit "$(make_limit 11)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
+  echo "ERROR: an 11-site rollout unexpectedly passed the active rollout guardrail."
+  exit 1
+fi
+grep -q "active rollout limit is 10" <<<"$output"
+
+echo "Checking that a 101-site inventory is rejected even for a 10-site wave."
+if output="$(ansible-playbook -i "$inventory_101" playbooks/deploy.yml \
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
+  echo "ERROR: a 101-site inventory unexpectedly passed the architecture ceiling."
+  exit 1
+fi
+grep -q "architecture inventory ceiling" <<<"$output"
+
+echo "Checking that a duplicate DB credential in an unselected site is rejected."
+if output="$(ansible-playbook -i "$inventory_duplicate_password" playbooks/deploy.yml \
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
+  echo "ERROR: a duplicate PostgreSQL credential outside the selected wave was accepted."
+  exit 1
+fi
+grep -qi "unique PostgreSQL credentials across configured inventory sites" <<<"$output"
+
+echo "Checking that a missing site code in an unselected site is rejected."
+if output="$(ansible-playbook -i "$inventory_missing_site_code" playbooks/deploy.yml \
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
+  echo "ERROR: an inventory with a missing site_code was accepted."
+  exit 1
+fi
+grep -q "non-empty site_code" <<<"$output"
+
+echo "Checking that site-code uniqueness is case-insensitive across the complete inventory."
+if output="$(ansible-playbook -i "$inventory_duplicate_site_code_case" playbooks/deploy.yml \
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
+  echo "ERROR: site codes that differ only by case were accepted."
+  exit 1
+fi
+grep -q "unique site_code" <<<"$output"
+
+echo "Checking that a duplicate Edge node ID in an unselected site is rejected."
+if output="$(ansible-playbook -i "$inventory_duplicate_edge_node_id" playbooks/deploy.yml \
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" 2>&1)"; then
+  echo "ERROR: a duplicate Edge node ID outside the selected wave was accepted."
+  exit 1
+fi
+grep -q "configured Edge node ID must be unique" <<<"$output"
+
+echo "Checking that the active rollout limit cannot exceed the architecture ceiling."
+if output="$(ansible-playbook -i "$inventory_100" playbooks/deploy.yml \
+  --limit "$(make_limit 10)" --tags preflight --skip-tags always -e "$EXTRA_VARS" -e active_rollout_limit=101 2>&1)"; then
+  echo "ERROR: an active rollout limit above the architecture ceiling was accepted."
+  exit 1
+fi
+grep -q "active_rollout_limit must be between 1" <<<"$output"
+
+echo "Ansible fleet-selection guardrail tests passed."
