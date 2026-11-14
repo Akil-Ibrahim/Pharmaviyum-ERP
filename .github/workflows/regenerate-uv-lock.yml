@@ -32,7 +32,7 @@ jobs:
       - name: Install uv
         run: pip install uv==0.13.8
       - name: Resolve the complete lockfile for the upgraded Python and direct dependencies
-        run: uv lock --upgrade
+        run: uv lock --no-upgrade
       - name: Commit updated lockfile
         run: |
           if git diff --quiet -- uv.lock; then
