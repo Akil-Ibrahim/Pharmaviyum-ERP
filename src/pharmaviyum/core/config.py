@@ -66,6 +66,9 @@ class Settings(BaseSettings):
         if not self.SECRET_KEY and self.API_SECRET_KEY:
             self.SECRET_KEY = self.API_SECRET_KEY
 
+        if self.SMTP_STARTTLS and self.SMTP_SSL:
+            raise ValueError("SMTP_STARTTLS and SMTP_SSL cannot both be enabled")
+
         if self.ENVIRONMENT in {Environment.STAGING, Environment.PRODUCTION}:
             if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
                 raise ValueError(
@@ -78,6 +81,15 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 100
     RATE_LIMIT_BURST: int = 20
     EMAILS_ENABLED: bool = False
+    APP_URL: str = "http://localhost:5173"
+    SMTP_HOST: Optional[str] = None
+    SMTP_PORT: int = 587
+    SMTP_USER: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_STARTTLS: bool = True
+    SMTP_SSL: bool = False
+    SMTP_TIMEOUT_SECONDS: int = 10
+    EMAILS_FROM: str = "noreply@pharmaviyum.com"
     OTEL_ENABLED: bool = False
     OTEL_SERVICE_NAME: str = "pharmaviyum-crm"
     OTEL_EXPORTER_ENDPOINT: Optional[str] = None
