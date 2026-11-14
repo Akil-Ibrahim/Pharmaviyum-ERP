@@ -99,7 +99,7 @@ async def create_user(session: SessionDep, user_in: UserCreate) -> UserPublic:
             setup_token=setup_token,
         )
         send_email(
-            email_to=user_in.email,
+            email_to=user.email,
             subject=email_data.subject,
             html_content=email_data.html_content,
         )
