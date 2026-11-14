@@ -1,5 +1,6 @@
 """Authentication utilities for email templates and password recovery."""
 
+import html
 import logging
 from dataclasses import dataclass
 from datetime import datetime
@@ -43,33 +44,35 @@ def generate_email_logo_and_footer() -> tuple[str, str]:
 
 
 def generate_new_account_email(
-    email_to: str, username: str, password: str
+    email_to: str, username: str, setup_token: str
 ) -> EmailData:
-    """Generate a welcome email for a newly created user."""
+    """Generate a welcome email with a one-time password setup link.
+
+    Never include an account password in email. The setup token is short-lived
+    and is consumed by the existing password-reset endpoint.
+    """
     logo, footer = generate_email_logo_and_footer()
-    app_url = getattr(settings, "APP_URL", "http://localhost:3000")
+    app_url = getattr(settings, "APP_URL", "http://localhost:3000").rstrip("/")
+    setup_url = f"{app_url}/reset-password?token={setup_token}"
     subject = f"Welcome to {settings.APP_NAME}"
+    safe_username = html.escape(username)
+    safe_setup_url = html.escape(setup_url, quote=True)
     html_content = f"""
     <!DOCTYPE html>
     <html><body style="font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px;">
       <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px;">
         {logo}
-        <h2 style="color: #333;">Welcome, {username}!</h2>
-        <p style="color: #666; line-height: 1.6;">Your account has been created. You can now login.</p>
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0;">
-          <p style="margin: 8px 0;"><strong>Login:</strong> {username}</p>
-          <p style="margin: 8px 0;"><strong>Password:</strong> {password}</p>
-        </div>
-        <p style="color: #666; line-height: 1.6;"><strong>⚠️ Security:</strong> Please change your password after first login.</p>
+        <h2 style="color: #333;">Welcome, {safe_username}!</h2>
+        <p style="color: #666; line-height: 1.6;">Your account has been created. Use the secure link below to set your password.</p>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="{app_url}/login" style="display: inline-block; background: #1a73e8; color: white; padding: 12px 32px; text-decoration: none; border-radius: 6px; font-weight: bold;">Login Now</a>
+          <a href="{safe_setup_url}" style="display: inline-block; background: #1a73e8; color: white; padding: 12px 32px; text-decoration: none; border-radius: 6px; font-weight: bold;">Set Password</a>
         </div>
+        <p style="color: #666; line-height: 1.6; font-size: 14px;">This link expires in 48 hours and can only be used once. If you did not expect this account, contact your administrator.</p>
         {footer}
       </div>
     </body></html>
     """
     return EmailData(html_content=html_content, subject=subject)
-
 
 def generate_password_reset_token(email: str) -> str:
     """Generate a 48-hour password-reset token."""
