@@ -73,6 +73,7 @@ async def test_password_reset_hashes_and_persists_password_after_claim(
     session = MagicMock()
     session.execute = AsyncMock(return_value=result)
     session.flush = AsyncMock()
+    session.commit = AsyncMock()
 
     redis = MagicMock()
     redis.set = AsyncMock(return_value=True)
@@ -98,3 +99,48 @@ async def test_password_reset_hashes_and_persists_password_after_claim(
     redis.set.assert_awaited_once()
     assert redis.set.await_args.kwargs["nx"] is True
     session.flush.assert_awaited_once()
+    session.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_password_reset_releases_claim_when_database_commit_fails(
+    monkeypatch,
+) -> None:
+    """A failed DB commit must not permanently consume the reset token."""
+    user = SimpleNamespace(
+        email="pharmacist@example.test",
+        is_active=True,
+        hashed_password="old-hash",
+    )
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = user
+    session = MagicMock()
+    session.execute = AsyncMock(return_value=result)
+    session.flush = AsyncMock()
+    session.commit = AsyncMock(side_effect=RuntimeError("database unavailable"))
+    session.rollback = AsyncMock()
+
+    redis = MagicMock()
+    redis.set = AsyncMock(return_value=True)
+    redis.delete = AsyncMock()
+    monkeypatch.setattr(
+        modular_login,
+        "decode_password_reset_token",
+        lambda _: {
+            "sub": user.email,
+            "jti": "commit-failure-token",
+            "exp": 4_102_444_800,
+        },
+    )
+    monkeypatch.setattr(modular_login, "get_redis", AsyncMock(return_value=redis))
+    monkeypatch.setattr(modular_login, "get_password_hash", lambda _: "new-hash")
+
+    with pytest.raises(RuntimeError, match="database unavailable"):
+        await modular_login.reset_password(
+            NewPassword(token="reset-token", new_password="new-password-123"),
+            session,
+        )
+
+    session.rollback.assert_awaited_once()
+    redis.delete.assert_awaited_once_with("password-reset-used:commit-failure-token")
+    assert user.hashed_password == "new-hash"
