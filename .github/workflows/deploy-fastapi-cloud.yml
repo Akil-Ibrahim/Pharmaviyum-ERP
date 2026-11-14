@@ -211,7 +211,7 @@ jobs:
           )
           PY
 
-      - name: Verify production health, authentication and POS protection
+      - name: Verify production health, authentication and POS protection (temporary test account)
         shell: bash
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -219,16 +219,19 @@ jobs:
           set -euo pipefail
           base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
 
-          # Create a per-run pharmacist account through the existing registration
-          # endpoint. Credentials exist only in this runner's process environment.
+          # This smoke test intentionally writes one temporary non-superuser account
+          # to production through the public registration endpoint. It is not read-only.
+          # Cleanup runs on normal exits and catchable INT/TERM signals; forced runner
+          # termination (for example SIGKILL or host loss) can still prevent cleanup.
           SMOKE_USERNAME="pharmaviyum-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           SMOKE_EMAIL="${SMOKE_USERNAME}@pharmaviyum.invalid"
           SMOKE_PASSWORD="$(openssl rand -hex 32)"
-          SMOKE_USER_CREATED=false
+          SMOKE_USER_ATTEMPTED=false
 
           cleanup_smoke_user() {
             local exit_code=$?
-            if [ "$SMOKE_USER_CREATED" = "true" ]; then
+            trap - EXIT INT TERM
+            if [ "$SMOKE_USER_ATTEMPTED" = "true" ]; then
               if ! uv run python - <<'PY'
           import os
           import psycopg
@@ -253,9 +256,9 @@ jobs:
                   """,
                   (os.environ["SMOKE_USERNAME"], os.environ["SMOKE_EMAIL"]),
               )
-              if result.rowcount != 1:
+              if result.rowcount not in (0, 1):
                   raise RuntimeError(
-                      "Expected to remove exactly the temporary smoke user; "
+                      "Expected to remove zero or one temporary smoke user; "
                       f"removed {result.rowcount} rows."
                   )
           PY
@@ -268,6 +271,8 @@ jobs:
           }
           export SMOKE_USERNAME SMOKE_EMAIL DATABASE_URL
           trap cleanup_smoke_user EXIT
+          trap 'exit 130' INT
+          trap 'exit 143' TERM
 
           health="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/health")"
           # /health returns the aggregate status. Optional subsystem checks may
@@ -320,12 +325,14 @@ jobs:
             exit 1
           fi
 
+          # Mark the attempt before sending the request: the server may commit
+          # the user even if the client loses the HTTP response.
+          SMOKE_USER_ATTEMPTED=true
           registration_response="$(curl --fail --silent --show-error \
             -X POST "$base_url/api/v1/auth/register" \
             -H 'Content-Type: application/json' \
             --data "$(jq -n --arg email "$SMOKE_EMAIL" --arg password "$SMOKE_PASSWORD" \
               '{email: $email, password: $password}')")"
-          SMOKE_USER_CREATED=true
           printf '%s\n' "$registration_response" | jq -e --arg username "$SMOKE_USERNAME" \
             '.username == $username and .email == ($username + "@pharmaviyum.invalid")' >/dev/null
 
