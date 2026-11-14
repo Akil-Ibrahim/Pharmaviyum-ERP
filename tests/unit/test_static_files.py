@@ -84,8 +84,8 @@ def test_system_status_deep_link_serves_spa_entrypoint(monkeypatch, tmp_path) ->
 
 def test_production_fails_startup_when_spa_build_is_missing(monkeypatch) -> None:
     """Do not deploy an API-only production instance while the SPA is absent."""
-    from fastapi import FastAPI
     import pytest
+    from fastapi import FastAPI
 
     from src.pharmaviyum.core import static_files
 
