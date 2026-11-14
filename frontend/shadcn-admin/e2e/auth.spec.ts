@@ -5,8 +5,8 @@ test.describe('Active shadcn-admin authentication', () => {
     await page.goto('/sign-in')
 
     await expect(page.getByText('Sign in to Pharmaviyum')).toBeVisible()
-    await expect(page.getByLabel('Login')).toBeVisible()
-    await expect(page.getByLabel('Password')).toBeVisible()
+    await expect(page.getByRole('textbox', { name: 'Login' })).toBeVisible()
+    await expect(page.getByRole('textbox', { name: 'Password' })).toBeVisible()
     await expect(
       page.getByRole('link', { name: 'Forgot password?' })
     ).toHaveAttribute('href', '/forgot-password')
