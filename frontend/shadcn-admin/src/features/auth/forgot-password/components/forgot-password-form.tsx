@@ -38,7 +38,9 @@ export function ForgotPasswordForm({
 
     try {
       const apiBaseUrl = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
-      const recoveryUrl = `${apiBaseUrl}/api/v1/auth/password-recovery/${encodeURIComponent(data.email.trim())}`
+      const recoveryUrl = `${apiBaseUrl}/api/v1/auth/password-recovery/${encodeURIComponent(
+        data.email.trim()
+      )}`
       const response = await fetch(recoveryUrl, { method: 'POST' })
       const result = await response.json().catch(() => ({}))
 
