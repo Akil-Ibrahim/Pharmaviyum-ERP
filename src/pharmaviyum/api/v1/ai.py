@@ -22,7 +22,8 @@ from src.pharmaviyum.ai.mcp.context import (
     set_mcp_context,
 )
 from src.pharmaviyum.ai.mcp.registry import UserRole
-from src.pharmaviyum.core.config import Environment, settings as app_settings
+from src.pharmaviyum.core.config import Environment
+from src.pharmaviyum.core.config import settings as app_settings
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.models.patients import Patient
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
