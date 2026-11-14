@@ -26,3 +26,7 @@ dist/
 !frontend/shadcn-admin/
 !frontend/shadcn-admin/dist/
 !frontend/shadcn-admin/dist/**
+
+# FastAPI Cloud deploy workflow stages the frontend at the repository-root static/ path.
+!static/
+!static/**
