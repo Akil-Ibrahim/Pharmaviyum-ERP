@@ -482,14 +482,15 @@ Additional technical documentation is available under `docs/`, including:
 - [`docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) — 1–10 rollout guardrails and future 100-site architecture target
 - [`docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md`](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) — workflow-by-workflow offline policy and limitations
 - [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-evaluation.md) — Ragas and pharmaceutical RAG evaluation contract
-- Pharmacy workflow documentation
-- AI/RAG architecture
-- Architecture Decision Records (ADRs)
-- Development and testing guides
-- Operations and release runbooks
-- DevOps roadmap and engineering stages
-- WebSocket protocol documentation
-- AI / LLM system-design material
+- [Pharmacy workflow documentation](docs/workflows/README.md)
+- [System architecture and component boundaries](docs/architecture/system-context.md)
+- [AI / LLM system design](docs/ai/AI_LLM_SYSTEM_DESIGN.md)
+- [Architecture Decision Records (ADRs)](docs/adr/README.md)
+- [Development and testing handbook](docs/guides/DEVELOPMENT_AND_TESTING.md)
+- [Production operations and recovery runbook](docs/operations/PRODUCTION_OPERATIONS_RUNBOOK.md)
+- [Release runbook](docs/operations/RELEASE_RUNBOOK.md)
+- [DevOps roadmap and engineering stages](docs/devops/ENGINEERING_ROADMAP.md)
+- [WebSocket protocol](docs/websocket-protocol.md)
 
 ## Demo / NDA Notice
 
