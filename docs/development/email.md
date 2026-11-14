@@ -17,7 +17,7 @@ Compose starts Mailpit automatically. Open the local inbox at:
 - SMTP port: 1025
 - TLS: disabled for this local-only Mailpit connection
 
-The Mailpit ports are bound to 127.0.0.1, so the local capture service is not exposed to the LAN. The Compose API defaults EMAILS_ENABLED=true so account setup and password-recovery messages can be tested locally.
+The Mailpit ports are bound to 127.0.0.1, so the local capture service is not exposed to the LAN. The Compose API defaults EMAILS_ENABLED=true. Password-recovery delivery can be tested locally; account-setup delivery awaits mounting the modular user router.
 
 When running FastAPI directly on the host rather than in Docker, set SMTP_HOST=localhost.
 
