@@ -120,7 +120,9 @@ async def version():
         "name": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "environment": settings.ENVIRONMENT.value,
+        "debug": settings.DEBUG,
         "application_environment": application_settings.environment,
         "auth_environment": auth_settings.ENVIRONMENT,
+        "auth_debug": auth_settings.DEBUG,
         "python_version": __import__("sys").version,
     }
