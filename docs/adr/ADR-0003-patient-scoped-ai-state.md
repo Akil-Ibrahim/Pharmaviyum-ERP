@@ -1,10 +1,10 @@
 # ADR-0003: Patient-Scoped Mortarium Conversation State
 
 ## Status
-Proposed — implementation is under review in [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287). This ADR does not claim the change is merged or active in production.
+Proposed — the implementation was merged into `main` by [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287) (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`). The ADR remains proposed because the required staged end-to-end validation and production rollout have not been evidenced. A merge and passing CI do not establish production activation or clinical safety.
 
 ## Context
-Mortarium uses an authenticated pharmacy context, an Agent Harness with Redis dialogue memory, and two LangGraph workflows with checkpoint persistence. The current main implementation scopes the API session by pharmacy, user and client session, but not by patient. Agent and RAG checkpoint identities do not consistently bind patient identity. Reusing a session while switching patients can therefore risk reusing prior dialogue or checkpoint state.
+Before PR #287, Mortarium used an authenticated pharmacy context, an Agent Harness with Redis dialogue memory, and two LangGraph workflows with checkpoint persistence, but API session and checkpoint identities were not consistently bound to patient identity. Reusing a client session while switching patients could therefore risk reusing prior dialogue or checkpoint state.
 
 Patient retrieval filters alone do not solve this problem: memory and graph checkpoints are separate state stores.
 
@@ -46,7 +46,7 @@ Before production rollout:
 - Automatic deletion of old checkpoints: rejected until ownership, retention and backup implications are reviewed.
 
 ## Implementation status
-PR #287 proposes API session HMAC v3, patient-aware Agent/RAG checkpoint IDs, strict validation and regression tests. Required CI and code review must pass before this ADR can be reconsidered. No production deployment, data migration or legacy checkpoint deletion is authorized by this proposal.
+PR #287 merged the API session HMAC v3, patient-aware Agent/RAG checkpoint IDs, strict validation and regression tests into `main`. The merge commit's RAG Safety Regression, Unit Tests and Integration Tests checks passed. These automated checks are not a substitute for the remaining staged release gate: reuse one client session across Patient A → Patient B → no patient in both streaming and non-streaming paths, and verify isolation with PostgreSQL checkpoint persistence and Redis memory. No evidence of that staged test or a production deployment is recorded here. No production data migration or legacy checkpoint deletion is authorized by this ADR.
 
 ## References
 - [Mortarium RAG audit](../rag_architecture_audit.md)

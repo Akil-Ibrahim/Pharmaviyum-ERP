@@ -69,13 +69,13 @@ The registry filters tools by role; execution requires trusted request-scoped au
 The currently documented pharmacist operations tools are read-only. Do not infer write capability from MCP's existence.
 
 ## 8. Patient-context isolation
-The current main audit identified a P0 gap: API conversation sessions and graph checkpoint identities were not consistently bound to patient ID. Patient-scoped retrieval does not isolate dialogue memory or checkpoints.
+PR #287 merged the patient-scoped session and checkpoint namespace implementation into `main` (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`). Its RAG Safety Regression, Unit Tests and Integration Tests checks passed on the merge commit.
 
-The remediation proposal is recorded in [ADR-0003](../adr/ADR-0003-patient-scoped-ai-state.md) and [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287). Until merged, deployed and validated, do not claim patient-context session isolation is complete.
+This is not evidence of production activation or a completed staging release gate. The required end-to-end test remains: reuse one client session across Patient A → Patient B → no patient in synchronous and streaming modes, including PostgreSQL checkpoint persistence and Redis memory. Until that test is evidenced and the release is explicitly deployed, do not claim patient-context isolation is operationally proven in production.
 
 Required invariant: pharmacy + authenticated user + patient (including explicit none) + client session.
 
-Test patient A → patient B → no patient with the same client session in synchronous and streaming modes. Include Redis memory, cache, Agent checkpoints and RAG checkpoints. Namespace changes require a compatibility, retention and rollback plan.
+Namespace changes require a compatibility, retention and rollback plan. See [ADR-0003](../adr/ADR-0003-patient-scoped-ai-state.md) and [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287).
 
 ## 9. Pharmaceutical evaluation
 Ragas is an offline evaluator, not a production request dependency. Pair generic RAG metrics with deterministic pharmacy-specific metrics.
