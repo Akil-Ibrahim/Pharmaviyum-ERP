@@ -283,6 +283,8 @@ jobs:
             .environment == "production" and
             .application_environment == "production" and
             .auth_environment == "production" and
+            .debug == false and
+            .auth_debug == false and
             (.python_version | startswith("3.15.2"))
           ' >/dev/null
 
