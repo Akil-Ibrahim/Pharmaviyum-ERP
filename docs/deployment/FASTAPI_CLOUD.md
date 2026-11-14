@@ -67,7 +67,7 @@ Use the same production database for the FastAPI Cloud `DATABASE_URL` and GitHub
 1. Confirm the target change is merged into `main`.
 2. Confirm all required checks passed for the exact `main` commit.
 3. Open the [Deploy to FastAPI Cloud workflow](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/actions/workflows/deploy-fastapi-cloud.yml).
-4. Select **Run workflow**, select branch `main), and enter an approved change/ticket reference in `change_reference`.
+4. Select **Run workflow**, select branch `main`, and enter an approved change/ticket reference in `change_reference`.
 5. Start the workflow and complete any required approval for the `production` environment.
 6. Monitor the workflow. Do not declare success until the deploy and all required verification steps complete successfully.
 
@@ -79,11 +79,12 @@ The workflow:
 - runs `uv run fastapi cloud deploy .`;
 - performs a read-only production catalog exclusion check;
 - verifies `/health` and `/ready`;
+- verifies `/version` reports `production` for the API/core, application, and authentication settings, and confirms the deployed CPython runtime is `3.15.2`;
 - verifies `/settings/appearance` returns the SPA HTML;
 - verifies invalid credentials return HTTP 401 and unauthenticated POS search is protected by HTTP 401;
 - creates a temporary pharmacist account, verifies authentication/profile and non-empty Omeprazole catalog/product searches, and attempts to remove the exact temporary account.
 
-The smoke checks must not create sales, receive stock, or alter inventory. If cleanup fails, the workflow reports failure; inspect the run before retrying and remove only the exact run-scoped temporary account through an approved cleanup procedure.
+The temporary-account smoke test is a production write, not a read-only check. Cleanup is attempted on normal exit and catchable `INT` / `TERM` signals, including when the registration request has an ambiguous outcome. Forced runner termination or host loss can still prevent cleanup. The smoke checks must not create sales, receive stock, or alter inventory. If cleanup fails, the workflow reports failure; inspect the run before retrying and remove only the exact run-scoped temporary account through an approved cleanup procedure.
 
 ## 5. Database migrations are separate
 
