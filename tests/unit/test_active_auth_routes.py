@@ -149,3 +149,38 @@ async def test_password_reset_releases_claim_when_database_commit_fails(
     )
     redis.delete.assert_awaited_once_with(expected_key)
     assert user.hashed_password == "new-hash"
+
+
+@pytest.mark.asyncio
+async def test_password_reset_releases_claim_when_user_lookup_fails(monkeypatch) -> None:
+    """A transient DB lookup failure must leave the reset token retryable."""
+    session = MagicMock()
+    session.execute = AsyncMock(side_effect=RuntimeError("database unavailable"))
+    session.rollback = AsyncMock()
+
+    redis = MagicMock()
+    redis.set = AsyncMock(return_value=True)
+    redis.delete = AsyncMock()
+    monkeypatch.setattr(
+        modular_login,
+        "decode_password_reset_token",
+        lambda _: {
+            "sub": "pharmacist@example.test",
+            "jti": "lookup-failure-token",
+            "exp": 4_102_444_800,
+        },
+    )
+    monkeypatch.setattr(modular_login, "get_redis", AsyncMock(return_value=redis))
+
+    with pytest.raises(RuntimeError, match="database unavailable"):
+        await modular_login.reset_password(
+            NewPassword(token="reset-token", new_password="new-password-123"),
+            session,
+        )
+
+    session.rollback.assert_awaited_once()
+    expected_key = (
+        "auth:password-reset-used:"
+        f"{hashlib.sha256(b'lookup-failure-token').hexdigest()}"
+    )
+    redis.delete.assert_awaited_once_with(expected_key)
