@@ -1,6 +1,8 @@
 """Tests for SMTP delivery and non-blocking email dispatch."""
 
 import pytest
+from email.message import EmailMessage
+from typing import Any
 
 from src.pharmaviyum.modules.auth import utils
 
@@ -30,7 +32,7 @@ async def test_send_email_dispatches_delivery_to_worker_thread(monkeypatch) -> N
 
 
 def test_smtp_delivery_uses_starttls_and_authentication(monkeypatch) -> None:
-    sent_messages = []
+    sent_messages: list[EmailMessage] = []
 
     class FakeSMTP:
         def __init__(self, host: str, port: int, timeout: int) -> None:
@@ -38,20 +40,20 @@ def test_smtp_delivery_uses_starttls_and_authentication(monkeypatch) -> None:
             assert port == 587
             assert timeout == 10
 
-        def __enter__(self):
+        def __enter__(self) -> FakeSMTP:
             return self
 
-        def __exit__(self, exc_type, exc, traceback) -> None:
+        def __exit__(self, exc_type: Any, exc: Any, traceback: Any) -> None:
             return None
 
-        def starttls(self, context) -> None:
+        def starttls(self, context: Any) -> None:
             assert context is not None
 
         def login(self, username: str, password: str) -> None:
             assert username == "smtp-user"
             assert password == "smtp-password"
 
-        def send_message(self, message) -> None:
+        def send_message(self, message: EmailMessage) -> None:
             sent_messages.append(message)
 
     monkeypatch.setattr(utils.settings, "SMTP_HOST", "smtp.example.test")
