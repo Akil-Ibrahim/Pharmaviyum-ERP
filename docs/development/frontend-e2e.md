@@ -11,7 +11,7 @@ bunx playwright install chromium
 bun run test:e2e
 ```
 
-The suite starts the Vite development server automatically on `127.0.0.1:4173`. Set `PLAYWRIGHT_BASE_URL` only when testing an already-running application at a different origin.
+The suite builds the active frontend and starts its Vite preview server automatically on `127.0.0.1:4173`. Set `PLAYWRIGHT_BASE_URL` only when testing an already-running application at a different origin.
 
 ## Coverage
 
