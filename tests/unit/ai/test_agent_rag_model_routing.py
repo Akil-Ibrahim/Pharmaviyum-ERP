@@ -540,7 +540,8 @@ def test_api_session_scope_fails_closed_without_production_secret(
     from types import SimpleNamespace
 
     from src.pharmaviyum.api.v1.ai import _scoped_session_id
-    from src.pharmaviyum.core.config import Environment, settings as app_settings
+    from src.pharmaviyum.core.config import Environment
+from src.pharmaviyum.core.config import settings as app_settings
 
     monkeypatch.setattr(app_settings, "SECRET_KEY", None)
     monkeypatch.setattr(app_settings, "ENVIRONMENT", Environment.PRODUCTION)
