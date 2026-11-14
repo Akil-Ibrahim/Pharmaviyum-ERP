@@ -17,7 +17,8 @@
     "test:browser": "vitest",
     "test:coverage": "vitest run --coverage --browser.headless",
     "test:browser:install": "playwright install chromium",
-    "generate-routes": "tsr generate"
+    "generate-routes": "tsr generate",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@clerk/react": "^6.4.3",
@@ -92,6 +93,7 @@
     "vite": "^8.3.8",
     "vitest": "^4.1.11",
     "vitest-browser-react": "^2.3.0",
-    "@tanstack/router-cli": "1.167.38"
+    "@tanstack/router-cli": "1.167.38",
+    "@playwright/test": "1.59.1"
   }
 }
