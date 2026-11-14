@@ -30,7 +30,7 @@ def main() -> int:
 
     if current < MINIMUM_VERSION or current[:2] >= MAXIMUM_VERSION:
         print(
-            "ERROR: expected CPython >=3.15,<3.16; 
+            "ERROR: expected CPython >=3.15,<3.16; "
             f"found {current[0]}.{current[1]}.{current[2]}"
         )
         return 1
