@@ -211,7 +211,7 @@ jobs:
           )
           PY
 
-      - name: Verify production health, authentication and POS protection
+      - name: Verify production health, authentication and POS protection (temporary test account)
         shell: bash
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -219,8 +219,10 @@ jobs:
           set -euo pipefail
           base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
 
-          # Create a per-run pharmacist account through the existing registration
-          # endpoint. Credentials exist only in this runner's process environment.
+          # This smoke test intentionally writes one temporary non-superuser account
+          # to production through the public registration endpoint. It is not read-only.
+          # Cleanup runs on normal exits and catchable INT/TERM signals; forced runner
+          # termination (for example SIGKILL or host loss) can still prevent cleanup.
           SMOKE_USERNAME="pharmaviyum-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           SMOKE_EMAIL="${SMOKE_USERNAME}@pharmaviyum.invalid"
           SMOKE_PASSWORD="$(openssl rand -hex 32)"
@@ -228,6 +230,7 @@ jobs:
 
           cleanup_smoke_user() {
             local exit_code=$?
+            trap - EXIT INT TERM
             if [ "$SMOKE_USER_CREATED" = "true" ]; then
               if ! uv run python - <<'PY'
           import os
@@ -268,6 +271,8 @@ jobs:
           }
           export SMOKE_USERNAME SMOKE_EMAIL DATABASE_URL
           trap cleanup_smoke_user EXIT
+          trap 'exit 130' INT
+          trap 'exit 143' TERM
 
           health="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/health")"
           # /health returns the aggregate status. Optional subsystem checks may
