@@ -152,7 +152,9 @@ async def test_password_reset_releases_claim_when_database_commit_fails(
 
 
 @pytest.mark.asyncio
-async def test_password_reset_releases_claim_when_user_lookup_fails(monkeypatch) -> None:
+async def test_password_reset_releases_claim_when_user_lookup_fails(
+    monkeypatch,
+) -> None:
     """A transient DB lookup failure must leave the reset token retryable."""
     session = MagicMock()
     session.execute = AsyncMock(side_effect=RuntimeError("database unavailable"))
