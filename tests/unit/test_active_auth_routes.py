@@ -1,5 +1,6 @@
 """Regression tests for authentication routes exposed by the active FastAPI app."""
 
+import hashlib
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -142,7 +143,9 @@ async def test_password_reset_releases_claim_when_database_commit_fails(
         )
 
     session.rollback.assert_awaited_once()
-    redis.delete.assert_awaited_once_with(
-        "auth:password-reset-used:8f69641bc2de81f7222925b2853f0a216dcddac3d21523d151debfe8f6a84d06"
+    expected_key = (
+        "auth:password-reset-used:"
+        f"{hashlib.sha256(b'commit-failure-token').hexdigest()}"
     )
+    redis.delete.assert_awaited_once_with(expected_key)
     assert user.hashed_password == "new-hash"
