@@ -45,10 +45,16 @@ def get_static_path() -> Path | None:
     return None
 
 
-def setup_static_files(app: FastAPI):
-    """Serve built React frontend from FastAPI."""
+def setup_static_files(app: FastAPI) -> None:
+    """Serve the built React SPA and fail fast if production lacks its assets."""
     static_path = get_static_path()
     if not static_path:
+        if os.getenv("ENVIRONMENT", "development").lower() == "production":
+            raise RuntimeError(
+                "Production frontend build is missing: expected index.html in "
+                "/app/static, ./static, or frontend/shadcn-admin/dist. "
+                "Build and stage the React application before deployment."
+            )
         print("WARNING: Frontend build not found - API-only mode")
         return
 
