@@ -44,3 +44,31 @@ def test_inventory_mutations_require_superuser() -> None:
                 for dependency in route.dependant.dependencies
             }
             assert "get_current_active_superuser" in dependency_names
+
+
+# Account emails must never disclose the user's plaintext password.
+def test_account_welcome_email_contains_only_password_setup_link() -> None:
+    from src.pharmaviyum.modules.auth.utils import generate_new_account_email
+
+    email = generate_new_account_email(
+        email_to="pharmacist@example.test",
+        username="pharmacist@example.test",
+        setup_token="opaque-one-time-token",
+    )
+
+    assert "opaque-one-time-token" in email.html_content
+    assert "Set Password" in email.html_content
+    assert "Password:</strong>" not in email.html_content
+
+
+def test_account_welcome_email_escapes_untrusted_username() -> None:
+    from src.pharmaviyum.modules.auth.utils import generate_new_account_email
+
+    email = generate_new_account_email(
+        email_to="pharmacist@example.test",
+        username='<img src=x onerror="alert(1)">',
+        setup_token="opaque-one-time-token",
+    )
+
+    assert '<img src=x onerror="alert(1)">' not in email.html_content
+    assert "&lt;img" in email.html_content
