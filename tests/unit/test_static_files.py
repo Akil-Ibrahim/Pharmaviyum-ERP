@@ -2,8 +2,11 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+import pytest
 
 from src.pharmaviyum.core.static_files import get_static_path, setup_static_files
+
+pytestmark = pytest.mark.unit
 
 
 def test_static_path_uses_fastapi_cloud_working_directory(
