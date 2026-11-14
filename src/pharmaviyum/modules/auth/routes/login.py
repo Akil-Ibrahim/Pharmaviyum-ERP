@@ -164,7 +164,11 @@ async def reset_password(body: NewPassword, session: SessionDep) -> Message:
         user.hashed_password = get_password_hash(body.new_password)
         session.add(user)
         await session.flush()
+        # Commit while the one-time token claim is still in scope. If the
+        # database commit fails, release the Redis claim so the user can retry.
+        await session.commit()
     except Exception:
+        await session.rollback()
         await redis.delete(used_key)
         raise
     return Message(message="Password updated successfully")
