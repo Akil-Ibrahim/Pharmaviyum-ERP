@@ -2,10 +2,9 @@ import { useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate } from '@tanstack/react-router'
 import { ArrowRight, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { sleep, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -27,7 +26,6 @@ export function ForgotPasswordForm({
   className,
   ...props
 }: React.HTMLAttributes<HTMLFormElement>) {
-  const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -35,19 +33,38 @@ export function ForgotPasswordForm({
     defaultValues: { email: '' },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true)
 
-    toast.promise(sleep(2000), {
-      loading: 'Sending email...',
-      success: () => {
-        setIsLoading(false)
-        form.reset()
-        navigate({ to: '/otp' })
-        return `Email sent to ${data.email}`
-      },
-      error: 'Error',
-    })
+    try {
+      const apiBaseUrl = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
+      const recoveryUrl = `${apiBaseUrl}/api/v1/auth/password-recovery/${encodeURIComponent(
+        data.email.trim()
+      )}`
+      const response = await fetch(recoveryUrl, { method: 'POST' })
+      const result = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(
+          typeof result?.detail === 'string'
+            ? result.detail
+            : `Password recovery failed (HTTP ${response.status})`
+        )
+      }
+
+      form.reset()
+      toast.success(
+        'If that email is registered, a password reset link will be sent.'
+      )
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to request a password reset. Please try again.'
+      )
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (

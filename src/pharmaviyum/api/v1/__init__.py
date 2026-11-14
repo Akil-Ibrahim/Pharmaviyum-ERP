@@ -2,6 +2,8 @@
 
 from fastapi import APIRouter
 
+from src.pharmaviyum.modules.auth.routes.login import router as modular_auth_router
+
 from .ai import router as ai_router
 from .auth import router as auth_router
 from .dashboard import router as dashboard_router
@@ -22,6 +24,7 @@ api_v1_router = APIRouter()
 
 api_v1_router.include_router(ai_router)
 api_v1_router.include_router(auth_router)
+api_v1_router.include_router(modular_auth_router, prefix="/api/v1")
 api_v1_router.include_router(drug_catalog_router)
 api_v1_router.include_router(drug_catalog_review_router)
 api_v1_router.include_router(dashboard_router)

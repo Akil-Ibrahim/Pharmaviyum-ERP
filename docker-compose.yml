@@ -48,6 +48,19 @@ services:
     networks:
       - pharmaviyum-network
 
+  # Local SMTP sink for development; the UI/SMTP ports bind only to localhost.
+  mailpit:
+    image: axllent/mailpit:v1.33.1
+    container_name: pharmaviyum-mailpit
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+    environment:
+      MP_MAX_MESSAGES: 5000
+    restart: unless-stopped
+    networks:
+      - pharmaviyum-network
+
   # Ollama (Local LLM)
   ollama:
     image: ollama/ollama:latest
@@ -105,6 +118,16 @@ services:
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      APP_URL: ${APP_URL:-http://localhost:8000}
+      EMAILS_ENABLED: ${EMAILS_ENABLED:-true}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+      SMTP_SSL: ${SMTP_SSL:-false}
+      SMTP_TIMEOUT_SECONDS: ${SMTP_TIMEOUT_SECONDS:-10}
+      EMAILS_FROM: ${EMAILS_FROM:-noreply@pharmaviyum.local}
       REDIS_URL: redis://redis:6379/0
       PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
       OLLAMA_BASE_URL: http://ollama:11434
@@ -126,6 +149,8 @@ services:
       ollama:
         condition: service_started
       otel-collector:
+        condition: service_started
+      mailpit:
         condition: service_started
     volumes:
       - ./src:/app/src
