@@ -79,3 +79,13 @@ def test_spa_fallback_serves_system_status_route(tmp_path: Path, monkeypatch) ->
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/html")
     assert "Pharmaviyum" in response.text
+
+
+def test_required_frontend_fails_fast_when_build_is_missing(monkeypatch) -> None:
+    """Production must not silently start without its required React frontend."""
+    monkeypatch.setattr(
+        "src.pharmaviyum.core.static_files.get_static_path", lambda: None
+    )
+
+    with pytest.raises(RuntimeError, match="Frontend build not found"):
+        setup_static_files(FastAPI(), required=True)
