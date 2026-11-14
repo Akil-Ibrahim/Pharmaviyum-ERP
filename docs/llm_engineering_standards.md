@@ -21,7 +21,7 @@ Every model call must receive only the information needed for that step.
 
 RAG limits must be configurable and evaluated against a labelled retrieval set. Do not assume one fixed Top-K or chunk size is optimal for every document type or language.
 
-Current configurable controls are exposed through `RAGSettings` and `TokenBudgetSettings`:
+The following RAG controls are currently passed from `RAGSettings` into the active `LangGraphRAG` constructor:
 
 | Setting | Environment variable | Current default | Purpose |
 |---|---|---:|---|
@@ -31,8 +31,8 @@ Current configurable controls are exposed through `RAGSettings` and `TokenBudget
 | `max_query_variations` | `RAG_MAX_QUERY_VARIATIONS` | 2 | Query variations requested from the transformer |
 | `enable_multi_query` | `RAG_ENABLE_MULTI_QUERY` | true | Enable query expansion model calls |
 | `enable_hyde` | `RAG_ENABLE_HYDE` | true | Enable HyDE model call |
-| `max_chunk_tokens` | `RAG_MAX_CHUNK_TOKENS` | 512 | Ingestion chunk target |
-| `chunk_overlap` | `RAG_CHUNK_OVERLAP` | 50 | Ingestion overlap |
+
+The following settings are declared but are not effective controls in the audited runtime: `RAG_RERANK_TOP_N` (no reranker is injected), `RAG_RRF_K` (the hybrid-search method default is used), `RAG_ENABLE_CONTEXTUAL_COMPRESSION` (compression is always present in the graph), `RAG_DEFAULT_LANGUAGES` (ingestion paths use separate defaults), `RAG_MAX_CHUNK_TOKENS` and `RAG_CHUNK_OVERLAP` (the Celery task uses per-job config with hard-coded defaults). Do not promise that changing these environment variables changes runtime behavior until the wiring is implemented and contract-tested.
 
 Token budget controls use `AI_TOKEN_MAX_INPUT_TOKENS` (default 6000), `AI_TOKEN_MAX_OUTPUT_TOKENS` (default 500), and `AI_TOKEN_SAFETY_MARGIN_TOKENS` (default 256). The input limit is preflight-enforced. The output limit is a configured target until each provider adapter explicitly maps it to its native generation parameter. The defaults preserve the current retrieval behavior. Tune them only with retrieval-quality and answer-quality evaluations. A smaller Top-K is not automatically better if it drops clinically important evidence.
 
