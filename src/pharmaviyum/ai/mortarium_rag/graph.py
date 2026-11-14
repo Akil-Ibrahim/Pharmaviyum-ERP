@@ -719,13 +719,10 @@ class LangGraphRAG:
             app_settings.ENVIRONMENT, "value", app_settings.ENVIRONMENT
         )
         if (
-            environment
-            in {Environment.STAGING.value, Environment.PRODUCTION.value}
+            environment in {Environment.STAGING.value, Environment.PRODUCTION.value}
             and not app_settings.SECRET_KEY
         ):
-            raise RuntimeError(
-                "Application SECRET_KEY is required for RAG checkpoints"
-            )
+            raise RuntimeError("Application SECRET_KEY is required for RAG checkpoints")
 
         digest = hmac.new(
             secret.encode("utf-8"), scope.encode("utf-8"), hashlib.sha256
