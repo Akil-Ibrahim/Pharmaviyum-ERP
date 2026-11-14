@@ -32,7 +32,11 @@ from ..schemas import (
     UserUpdateMe,
 )
 from ..security import get_password_hash, verify_password
-from ..utils import generate_new_account_email, send_email
+from ..utils import (
+    generate_new_account_email,
+    generate_password_reset_token,
+    send_email,
+)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -73,7 +77,7 @@ async def create_user(session: SessionDep, user_in: UserCreate) -> UserPublic:
     """
     Create new user (superuser only).
 
-    Sends welcome email with password if emails are enabled.
+    Sends a one-time password setup link if emails are enabled.
     """
     # Check email uniqueness
     existing = await crud.get_user_by_email(session=session, email=user_in.email)
@@ -88,10 +92,11 @@ async def create_user(session: SessionDep, user_in: UserCreate) -> UserPublic:
 
     # Send welcome email
     if settings.EMAILS_ENABLED and user_in.email:
+        setup_token = generate_password_reset_token(user.email)
         email_data = generate_new_account_email(
-            email_to=user_in.email,
-            username=user_in.email,
-            password=user_in.password,
+            email_to=user.email,
+            username=user.email,
+            setup_token=setup_token,
         )
         send_email(
             email_to=user_in.email,
