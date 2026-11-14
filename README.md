@@ -233,7 +233,7 @@ The application combines a FastAPI backend, PostgreSQL/pgvector, Redis-compatibl
 
 ### Data & Infrastructure
 
-- PostgreSQL 18 with pgvector 0.8.7 for disposable development/CI environments; managed production PostgreSQL is upgraded separately.
+- PostgreSQL 18 with pgvector 0.8.7 for disposable development/CI environments; the managed production PostgreSQL version is unchanged by this setup and requires a separately approved migration to upgrade.
 - Redis 8.8.4 for disposable development/CI environments; the production Compose profile remains on Redis 7 pending a separately approved migration.
 - Valkey for the Pharmacy Edge Ansible deployment profile; it remains distinct from the local Redis service.
 - Docker / Docker Compose
