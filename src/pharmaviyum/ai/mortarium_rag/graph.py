@@ -704,7 +704,7 @@ class LangGraphRAG:
     @staticmethod
     def _thread_id(thread_id: str | None, context: QueryContext) -> str:
         """Return an opaque, versioned checkpoint key bound to patient scope."""
-        raw = thread_id or str(uuid4())
+        raw = str(uuid4()) if thread_id is None else thread_id
         if not isinstance(raw, str) or not raw.strip() or len(raw) > 128:
             raise ValueError(
                 "RAG checkpoint thread identifier must be 1-128 characters"
