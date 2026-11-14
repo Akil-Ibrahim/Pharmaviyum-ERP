@@ -153,14 +153,13 @@ async def reset_password(body: NewPassword, session: SessionDep) -> Message:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Reset token has already been used",
         )
-    result = await session.execute(select(User).where(User.email == payload["sub"]))
-    user = result.scalar_one_or_none()
-    if user is None or not user.is_active:
-        await redis.delete(used_key)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token"
-        )
     try:
+        result = await session.execute(select(User).where(User.email == payload["sub"]))
+        user = result.scalar_one_or_none()
+        if user is None or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token"
+            )
         user.hashed_password = get_password_hash(body.new_password)
         session.add(user)
         await session.flush()
