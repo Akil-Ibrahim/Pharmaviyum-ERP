@@ -8,6 +8,9 @@ This directory contains the current engineering documentation for Pharmaviyum ER
 |---|---|---|
 | Technology stack | [`technology-stack.md`](./technology-stack.md) | Runtime versions, dependency sources of truth, and upgrade policy. |
 | Architecture | [`ai_architecture.md`](./ai_architecture.md) | Current AI/RAG, MCP, memory, guardrail, and observability architecture. |
+| Mortarium operations | [`ai/mortarium-pharmacy-operations.md`](./ai/mortarium-pharmacy-operations.md) | Current pharmacist-facing workflows and read-only MCP tool boundaries. |
+| Ragas / pharmaceutical evaluation | [`ai/ragas-pharmaceutical-evaluation.md`](./ai/ragas-pharmaceutical-evaluation.md) | Offline Ragas adapter, pharmacy-specific metrics, dataset rules and release gates. |
+| LLM engineering | [`llm_engineering_standards.md`](./llm_engineering_standards.md) | Context, token budgets, model routing, cache, memory, MCP and evaluation standards. |
 | QwenCloud demo | [`ai/QWENCLOUD_DEMO.md`](./ai/QWENCLOUD_DEMO.md) | Demo-only QwenCloud configuration, free-quota safeguards, implementation status, RAG embedding separation, and release gates. |
 | RAG | [`rag_architecture_audit.md`](./rag_architecture_audit.md) | Dated RAG security/quality audit and remaining work. |
 | Benchmark & quality | [`devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md`](./devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md) | Canonical metric definitions, evidence rules, Ragas and pharmacy-specific evaluation, security gates, load profiles, and benchmark report format. |

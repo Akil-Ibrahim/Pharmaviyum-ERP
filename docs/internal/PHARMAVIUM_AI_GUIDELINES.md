@@ -32,6 +32,8 @@ When trade-offs are required, consider them in this order:
 ## AI/RAG-specific requirements
 
 - Preserve authenticated pharmacy/tenant context through the complete RAG execution path.
+- Bind conversation memory, Agent checkpoints, and RAG checkpoints to authenticated pharmacy, user, and patient scope (including an explicit no-patient scope); reject or isolate patient changes within a reused session.
+- Never claim patient-context isolation based only on database retrieval filters. Test patient A → patient B session reuse across memory, checkpoints, cache, streaming, and non-streaming paths.
 - Retrieval must fail closed when tenant scope is missing or invalid.
 - Prompt-cache reads and writes require an authenticated user and positive pharmacy ID; never use a shared anonymous fallback.
 - When evidence is insufficient, return an explicit warning and refer clinical decisions to a qualified pharmacist.
