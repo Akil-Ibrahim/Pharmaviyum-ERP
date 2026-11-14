@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import uuid
 from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 
 from src.pharmaviyum.ai.dependencies import get_agent_harness
@@ -20,6 +22,7 @@ from src.pharmaviyum.ai.mcp.context import (
     set_mcp_context,
 )
 from src.pharmaviyum.ai.mcp.registry import UserRole
+from src.pharmaviyum.core.config import Environment, settings as app_settings
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.models.patients import Patient
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
@@ -38,6 +41,7 @@ class QueryRequest(BaseModel):
     )
     session_id: str | None = Field(
         default=None,
+        min_length=1,
         max_length=64,
         description="Conversation session ID (max 64 characters)",
     )
@@ -56,6 +60,13 @@ class QueryRequest(BaseModel):
         default=False, description="Enable strict halal compliance check"
     )
     force_fresh: bool = Field(default=False, description="Bypass prompt cache")
+
+    @field_validator("session_id")
+    @classmethod
+    def validate_session_id(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("session_id must not contain only whitespace")
+        return value
 
 
 async def _tenant_context(
@@ -100,11 +111,7 @@ def _scoped_session_id(
     current_user: CurrentUser,
     patient_id: int | None,
 ) -> str:
-    """Bind every conversation state store to one authenticated patient scope.
-
-    The compact, versioned value is passed to Redis memory and both LangGraph
-    checkpoint paths. "none" is an explicit scope, not a wildcard.
-    """
+    """Return an opaque conversation namespace bound to the authenticated scope."""
     if (
         not isinstance(session_id, str)
         or not session_id.strip()
@@ -117,11 +124,31 @@ def _scoped_session_id(
     ):
         raise ValueError("AI patient_id must be a positive integer or None")
 
-    patient_scope = str(patient_id) if patient_id is not None else "none"
-    return (
-        f"mortarium-session:v3|p:{tenant.pharmacy_id}|u:{current_user.id}|"
-        f"pt:{patient_scope}|s:{session_id}"
+    scope = json.dumps(
+        [
+            "mortarium-session:v3",
+            tenant.pharmacy_id,
+            current_user.id,
+            patient_id,
+            session_id,
+        ],
+        separators=(",", ":"),
     )
+    secret = app_settings.SECRET_KEY or "local-development-only-session-key"
+    environment = getattr(
+        app_settings.ENVIRONMENT, "value", app_settings.ENVIRONMENT
+    )
+    if (
+        environment
+        in {Environment.STAGING.value, Environment.PRODUCTION.value}
+        and not app_settings.SECRET_KEY
+    ):
+        raise RuntimeError("Application SECRET_KEY is required for AI sessions")
+
+    digest = hmac.new(
+        secret.encode("utf-8"), scope.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+    return f"mortarium-session:v3:{digest}"
 
 
 @router.get("/context")
