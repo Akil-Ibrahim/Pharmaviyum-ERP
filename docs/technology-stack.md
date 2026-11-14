@@ -36,6 +36,7 @@ This page records the versions declared by the repository configuration. It is n
 | TanStack Query | `^5.103.1` | `frontend/shadcn-admin/package.json` |
 | TanStack Router | `^1.170.36` | `frontend/shadcn-admin/package.json` |
 | Vitest | `^4.1.11` | `frontend/shadcn-admin/package.json` |
+| Mailpit | `1.33.1` local SMTP sink for development; production SMTP is configured separately | `docker-compose.yml` |
 
 Exact resolved Python versions are recorded in `uv.lock`. Frontend dependency ranges are declared in `frontend/shadcn-admin/package.json`; do not assume a version range means a particular patch release is installed.
 
@@ -66,6 +67,7 @@ Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collecto
 - The application uses the pgvector Python client and PostgreSQL extension for vector search where enabled; these are separately versioned components.
 - Disposable development/CI Compose targets Redis 8.8.4. The production Compose profile remains on Redis 7 until a separately approved migration with backup and rollback. The managed Redis/Valkey production services are not upgraded by the application PR.
 - The pharmacy-edge Ansible template uses Valkey; that server profile is intentionally kept separate from the local Redis service.
+- Local Compose captures outgoing application emails in Mailpit (`http://localhost:8025`, SMTP `localhost:1025`). See [email delivery and local testing](./development/email.md) for setup. Production delivery requires explicit SMTP host, port, sender, TLS mode, and credentials in the FastAPI Cloud environment; this PR does not change production secrets or enable production email.
 - Mortarium's LLM provider/model selection is environment-configured. See [AI architecture](./ai_architecture.md) and [FastAPI Cloud deployment](./deployment/FASTAPI_CLOUD.md) for the current deployment profile.
 
 ## Documentation rule

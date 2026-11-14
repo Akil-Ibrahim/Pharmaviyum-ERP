@@ -1,19 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, type RenderResult } from 'vitest-browser-react'
 import { userEvent, type Locator } from 'vitest/browser'
 import { ForgotPasswordForm } from './forgot-password-form'
 
-const navigateMock = vi.fn()
-
-vi.mock('@tanstack/react-router', async (orig) => {
-  const actual = await orig<typeof import('@tanstack/react-router')>()
-  return { ...actual, useNavigate: () => navigateMock }
+const fetchMock = vi.fn().mockResolvedValue({
+  ok: true,
+  json: async () => ({ message: 'Password recovery requested' }),
 })
-
-vi.mock('@/lib/utils', async (orig) => ({
-  ...(await orig()),
-  sleep: vi.fn(() => Promise.resolve()),
-}))
 
 describe('ForgotPasswordForm', () => {
   let screen: RenderResult
@@ -22,10 +15,15 @@ describe('ForgotPasswordForm', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
+    vi.stubGlobal('fetch', fetchMock)
 
     screen = await render(<ForgotPasswordForm />)
     emailInput = screen.getByRole('textbox', { name: /^Email$/i })
     continueButton = screen.getByRole('button', { name: /^Continue$/i })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it('renders email field and continue button', async () => {
@@ -40,15 +38,17 @@ describe('ForgotPasswordForm', () => {
       .toBeInTheDocument()
   })
 
-  it('resets the form and navigates to /otp on success', async () => {
+  it('requests password recovery through the API and resets the form', async () => {
     await userEvent.fill(emailInput, 'a@b.com')
     await userEvent.click(continueButton)
 
-    await vi.waitFor(() =>
-      expect(navigateMock).toHaveBeenCalledWith({ to: '/otp' })
-    )
+    await vi.waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/auth/password-recovery/a%40b.com'),
+        { method: 'POST' }
+      )
+    })
 
-    // Form should reset on success
     await expect.element(emailInput).toHaveValue('')
   })
 })

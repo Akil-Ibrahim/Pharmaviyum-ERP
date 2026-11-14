@@ -4,7 +4,7 @@ import hashlib
 import time
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -118,14 +118,20 @@ async def logout(body: RefreshTokenRequest) -> Message:
 
 
 @router.post("/password-recovery/{email}", response_model=Message)
-async def recover_password(email: str, session: SessionDep) -> Message:
+async def recover_password(
+    email: str,
+    session: SessionDep,
+    background_tasks: BackgroundTasks,
+) -> Message:
     result = await session.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
     if user and user.is_active:
         token = generate_password_reset_token(user.email)
         email_data = generate_reset_password_email(email, user.email, token)
         if getattr(settings, "EMAILS_ENABLED", False):
-            send_email(email, email_data.subject, email_data.html_content)
+            background_tasks.add_task(
+                send_email, email, email_data.subject, email_data.html_content
+            )
     return Message(
         message="If that email is registered, you will receive a recovery email"
     )
@@ -147,18 +153,21 @@ async def reset_password(body: NewPassword, session: SessionDep) -> Message:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Reset token has already been used",
         )
-    result = await session.execute(select(User).where(User.email == payload["sub"]))
-    user = result.scalar_one_or_none()
-    if user is None or not user.is_active:
-        await redis.delete(used_key)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token"
-        )
     try:
+        result = await session.execute(select(User).where(User.email == payload["sub"]))
+        user = result.scalar_one_or_none()
+        if user is None or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token"
+            )
         user.hashed_password = get_password_hash(body.new_password)
         session.add(user)
         await session.flush()
+        # Commit while the one-time token claim is still in scope. If the
+        # database commit fails, release the Redis claim so the user can retry.
+        await session.commit()
     except Exception:
+        await session.rollback()
         await redis.delete(used_key)
         raise
     return Message(message="Password updated successfully")

@@ -14,7 +14,7 @@ Matches ibrahimengpy/full-stack-fastapi-template structure exactly:
 - POST /users/signup: PUBLIC REGISTRATION (no auth required)
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import func, select
 
 from src.pharmaviyum.core.config import settings
@@ -73,7 +73,11 @@ async def read_users(
     dependencies=[Depends(get_current_active_superuser)],
     response_model=UserPublic,
 )
-async def create_user(session: SessionDep, user_in: UserCreate) -> UserPublic:
+async def create_user(
+    session: SessionDep,
+    user_in: UserCreate,
+    background_tasks: BackgroundTasks,
+) -> UserPublic:
     """
     Create new user (superuser only).
 
@@ -98,10 +102,11 @@ async def create_user(session: SessionDep, user_in: UserCreate) -> UserPublic:
             username=user.email,
             setup_token=setup_token,
         )
-        send_email(
-            email_to=user_in.email,
-            subject=email_data.subject,
-            html_content=email_data.html_content,
+        background_tasks.add_task(
+            send_email,
+            user.email,
+            email_data.subject,
+            email_data.html_content,
         )
 
     return UserPublic.model_validate(user)

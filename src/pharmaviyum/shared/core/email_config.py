@@ -1,22 +1,6 @@
-"""
-Email configuration for different environments.
+"""Backward-compatible exports for the centralized email configuration."""
 
-Development: Uses Mailpit (local SMTP with web UI at localhost:8025)
-Production: Uses real SMTP service (SendGrid, AWS SES)
-"""
+from src.pharmaviyum.core.config import Settings as EmailSettings
+from src.pharmaviyum.core.config import settings as email_settings
 
-from pydantic_settings import BaseSettings
-
-
-class EmailSettings(BaseSettings):
-    SMTP_HOST: str = "mailpit"
-    SMTP_PORT: int = 1025
-    SMTP_USER: str = ""
-    SMTP_PASSWORD: str = ""
-    EMAILS_FROM: str = "noreply@pharmaviyum.com"
-    EMAILS_ENABLED: bool = True
-
-    model_config = {"env_file": ".env"}
-
-
-email_settings = EmailSettings()
+__all__ = ["EmailSettings", "email_settings"]
