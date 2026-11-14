@@ -62,9 +62,7 @@ def test_static_path_rejects_directory_without_spa_entrypoint(
     assert get_static_path() is None
 
 
-def test_spa_fallback_serves_system_status_route(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_spa_fallback_serves_system_status_route(tmp_path: Path, monkeypatch) -> None:
     """Deep links must return the SPA entrypoint instead of a backend 404."""
     static_dir = tmp_path / "static"
     static_dir.mkdir()
