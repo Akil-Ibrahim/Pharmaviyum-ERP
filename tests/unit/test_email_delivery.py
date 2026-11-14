@@ -1,8 +1,11 @@
 """Tests for SMTP delivery and non-blocking email dispatch."""
 
-import pytest
+from __future__ import annotations
+
 from email.message import EmailMessage
 from typing import Any
+
+import pytest
 
 from src.pharmaviyum.modules.auth import utils
 
