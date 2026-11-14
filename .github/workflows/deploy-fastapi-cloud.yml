@@ -27,7 +27,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     env:
       DEPLOY_SHA: ${{ github.sha }}
-      UV_PYTHON: "3.13"
+      UV_PYTHON: "3.14.10"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -71,7 +71,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.13.8"
-          python-version: "3.13"
+          python-version: "3.14.10"
           enable-cache: true
 
       - name: Verify CI passed for this exact main commit
@@ -113,11 +113,11 @@ jobs:
             echo "- Commit: $DEPLOY_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Pin the uploaded FastAPI Cloud runtime to Python 3.13
+      - name: Pin the uploaded FastAPI Cloud runtime to Python 3.14.10
         run: |
-          printf '3.13\n' > .python-version
-          test "$(cat .python-version)" = "3.13"
-          uv python find 3.13
+          printf '3.14.10\n' > .python-version
+          test "$(cat .python-version)" = "3.14.10"
+          uv python find 3.14.10
 
       - name: Deploy application and wait for verification
         run: uv run fastapi cloud deploy .

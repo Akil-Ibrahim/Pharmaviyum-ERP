@@ -249,22 +249,22 @@ jobs:
         run: uv run pytest tests/test_evaluation.py -v -m unit
 
   test-cloud-python-runtime:
-    name: FastAPI Cloud Python 3.13 Runtime
+    name: FastAPI Cloud Python 3.14.10 Runtime
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      UV_PYTHON: "3.13"
+      UV_PYTHON: "3.14.10"
       ENVIRONMENT: development
     steps:
       - uses: actions/checkout@v4.4.0
-      - name: Set up uv and Python 3.13
+      - name: Set up uv and Python 3.14.10
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.13.8"
-          python-version: "3.13"
+          python-version: "3.14.10"
           enable-cache: true
-      - name: Select Python 3.13 for this compatibility job
-        run: printf '3.13\n' > .python-version
+      - name: Select Python 3.14.10 for this compatibility job
+        run: printf '3.14.10\n' > .python-version
       - name: Install production dependencies from the committed lockfile
         run: uv sync --frozen --no-dev
       - name: Verify runtime and critical application dependencies

@@ -6,7 +6,7 @@ This page records the versions declared by the repository configuration. It is n
 
 | Area | Version declared in repository | Source of truth |
 |---|---|---|
-| Python | Application compatibility: `>=3.13,<3.16`; primary development/CI and Docker target Python 3.15.2; FastAPI Cloud deployment payload is pinned to Python 3.13 and has a dedicated compatibility job. Ansible controller CI uses Python 3.14.10 separately | `pyproject.toml`, `.python-version`, `.github/workflows/ci.yml`, `.github/workflows/deploy-fastapi-cloud.yml`, `Dockerfile` |
+| Python | Application compatibility: `>=3.13,<3.16`; primary development/CI and Docker target Python 3.15.2; FastAPI Cloud deployment payload is pinned to Python 3.14.10 and has a dedicated compatibility job. Ansible controller CI uses Python 3.14.10 separately | `pyproject.toml`, `.python-version`, `.github/workflows/ci.yml`, `.github/workflows/deploy-fastapi-cloud.yml`, `Dockerfile` |
 | FastAPI | `0.162.5` | `pyproject.toml` |
 | Uvicorn | `0.54.0` | `pyproject.toml` |
 | Pydantic | `2.14.3` | `pyproject.toml` |

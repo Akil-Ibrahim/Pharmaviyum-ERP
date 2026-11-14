@@ -348,7 +348,7 @@ The hosted application target is **FastAPI Cloud**. Production deployment is int
 
 ### Prerequisites
 
-- Python 3.15.2 for development and primary CI; the application supports `>=3.13,<3.16`, and the FastAPI Cloud release workflow pins its uploaded runtime to Python 3.13.
+- Python 3.15.2 for development and primary CI; the application supports `>=3.14.10,<3.16`, and the FastAPI Cloud release workflow pins its uploaded runtime to Python 3.14.10.
 - `uv` for Python dependency installation and execution
 - Docker and Docker Compose
 - Bun for the frontend toolchain

@@ -9,7 +9,7 @@ import importlib
 import importlib.metadata
 import sys
 
-MINIMUM_VERSION = (3, 13, 0)
+MINIMUM_VERSION = (3, 14, 10)
 MAXIMUM_VERSION = (3, 16)
 
 CRITICAL_PACKAGES = (
@@ -30,7 +30,7 @@ def main() -> int:
 
     if current < MINIMUM_VERSION or current[:2] >= MAXIMUM_VERSION:
         print(
-            "ERROR: expected CPython >=3.13,<3.16; "
+            "ERROR: expected CPython >=3.14.10,<3.16; 
             f"found {current[0]}.{current[1]}.{current[2]}"
         )
         return 1
