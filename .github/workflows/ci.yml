@@ -112,9 +112,13 @@ jobs:
       - name: ESLint for sidebar navigation changes
         working-directory: frontend/shadcn-admin
         run: bunx eslint src/components/layout/data/sidebar-data.ts src/components/layout/data/sidebar-data.test.ts
-      - name: Frontend build and TypeScript
+      - name: Frontend build, generated routes and TypeScript
         working-directory: frontend/shadcn-admin
-        run: bun run build
+        run: |
+          bun run build
+          grep -Fq 'system-status' src/routeTree.gen.ts
+          test -s dist/index.html
+          test -d dist/assets
       - name: Vitest
         working-directory: frontend/shadcn-admin
         run: bun run test
