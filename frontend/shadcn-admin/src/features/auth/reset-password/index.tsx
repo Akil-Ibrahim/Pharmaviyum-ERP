@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Loader2, KeyRound } from 'lucide-react'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -13,7 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
@@ -57,7 +57,8 @@ export function ResetPassword({ token }: ResetPasswordProps) {
     setIsLoading(true)
     try {
       const apiBaseUrl = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
-      const response = await fetch(`${apiBaseUrl}/api/v1/auth/reset-password/`, {
+      const resetUrl = `${apiBaseUrl}/api/v1/auth/reset-password/`
+      const response = await fetch(resetUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, new_password: values.newPassword }),
