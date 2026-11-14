@@ -142,17 +142,18 @@ The local example also documents optional Gemini, Groq, OpenAI, and Anthropic cr
 
 ## 5. RAG, agents, MCP, and observability
 
-The project uses LangGraph for Mortarium AI orchestration and has RAG-related settings in the environment template, including:
+Mortarium uses LangGraph for pharmacist-agent and RAG orchestration. In the audited runtime, these RAG settings are wired into the active graph:
 
-- `RAG_MAX_CHUNK_TOKENS`
-- `RAG_CHUNK_OVERLAP`
 - `RAG_TOP_K`
-- `RAG_RERANK_TOP_N`
+- `RAG_MAX_CONTEXT_DOCS`
+- `RAG_MAX_REWRITES`
+- `RAG_MAX_QUERY_VARIATIONS`
 - `RAG_ENABLE_HYDE`
 - `RAG_ENABLE_MULTI_QUERY`
-- `RAG_ENABLE_CONTEXTUAL_COMPRESSION`
 
-Agent controls include iteration/history bounds, checkpointing, HITL, and a safety-score threshold. MCP server settings include the server identity, tool timeout/retry bounds, RBAC, and analytics. Keep tool permissions least-privileged and pharmacy/patient context isolated.
+Several other variables are present in settings or `.env.example` but are not currently effective runtime controls: `RAG_RERANK_TOP_N` (no reranker is injected), `RAG_RRF_K` (hybrid search uses its method default), `RAG_ENABLE_CONTEXTUAL_COMPRESSION` (compression is always enabled in the graph), `RAG_MAX_CHUNK_TOKENS` / `RAG_CHUNK_OVERLAP` (the Celery worker uses job config defaults), and `RAG_DEFAULT_LANGUAGES` (the ingestion loaders have separate defaults). See the [Mortarium architecture audit](../rag_architecture_audit.md) before relying on these variables.
+
+Agent settings include iteration/history limits and checkpoint configuration; declared HITL/safety settings must not be interpreted as proof that a complete approval workflow is enabled. MCP tool execution is role-filtered and requires trusted tenant context. Write tools remain denied until a trusted approval verifier is configured. Keep tool permissions least-privileged and bind conversation memory/checkpoints to the same patient scope as the request.
 
 OpenTelemetry dependencies and local Compose collector/Jaeger services are included. The Compose collector applies a privacy attribute processor that removes sensitive URL, SQL, authorization, user, patient, pharmacy, and session attributes before exporting traces to local Jaeger. Do not assume the same collector exists in FastAPI Cloud: provide a reachable OTLP endpoint before enabling cloud telemetry. Never put patient data, credentials, access tokens, or raw clinical text into span attributes.
 
