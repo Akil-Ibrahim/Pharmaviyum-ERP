@@ -264,7 +264,7 @@ jobs:
           python-version: "3.13"
           enable-cache: true
       - name: Select Python 3.13 for this compatibility job
-        run: printf '3.13\\n' > .python-version
+        run: printf '3.13\n' > .python-version
       - name: Install production dependencies from the committed lockfile
         run: uv sync --frozen --no-dev
       - name: Verify runtime and critical application dependencies
