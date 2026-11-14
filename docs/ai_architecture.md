@@ -77,36 +77,17 @@ Query
   -> guardrails
 ```
 
-The graph requires an explicit checkpointer and derives the checkpoint/thread scope from the authenticated pharmacy and user context.
+The graph requires an explicit PostgreSQL-backed checkpointer. **Checkpoint identity differs between the two graphs:** `PharmacistAgent._thread_id()` uses a versioned HMAC-SHA-256 digest over pharmacy, user and thread identity; `LangGraphRAG._thread_id()` currently returns the plaintext composite `rag:{pharmacy_id}:{user_id}:{raw_session_id}`. The RAG checkpoint key is therefore tenant-scoped but not opaque. The previous claim that both graphs used HMAC identifiers was inaccurate. See the [current Mortarium audit](./rag_architecture_audit.md) and its P0/P1 remediation items.
 
+Agent Harness Redis dialogue-memory namespaces use versioned HMAC-SHA-256 keys derived from the API-scoped session ID. This pseudonymizes Redis key names only; it does not encrypt conversation payloads. Redis transport security, access control, encryption at rest, and retention controls remain mandatory infrastructure responsibilities.
 
-Both the Mortarium RAG graph and the pharmacist Agent Harness use opaque,
-versioned HMAC-SHA-256 checkpoint thread identifiers. The digest is keyed with
-the application `SECRET_KEY`; raw pharmacy, user, and conversation identifiers
-must not be embedded in checkpoint metadata. Keep `SECRET_KEY` stable across
-deployments to preserve checkpoint continuity. Rotating it changes derived
-thread identifiers.
+The HMAC-backed Agent checkpoint and memory namespaces do not automatically resume records written under former plaintext key formats. Existing records are not rewritten by application startup. Memory has a bounded seven-day TTL, but TTL is not a complete PHI retention/deletion policy. Checkpoint payloads can contain questions and retrieved clinical context; retention, deletion, backup expiry and restore behavior remain separate PHI lifecycle responsibilities.
 
-Agent Harness Redis dialogue-memory namespaces also use versioned HMAC-SHA-256
-keys. Raw API-scoped session IDs are not embedded in Redis key names or
-application log fields. The same `SECRET_KEY` stability requirement applies to
-memory continuity. This pseudonymizes Redis key names only; it does not encrypt
-conversation payloads. Redis transport security, access control, encryption at
-rest, and retention controls remain mandatory infrastructure responsibilities.
-
-The `v2` checkpoint identifiers and memory namespaces do not automatically
-resume/read records written with the former plaintext `rag:`, `agent:`, or
-`agent:memory:` formats. Existing checkpoint and memory records are not
-rewritten by application startup. The previous memory tiers have a bounded
-seven-day TTL and are allowed to expire naturally; an explicit memory purge
-also deletes the exact legacy keys for that authenticated session. No unsafe
-legacy-key read fallback is performed. Before any compatibility migration, verify authenticated
-tenant ownership and retention requirements. Checkpoint payload retention and
-deletion remain separate PHI lifecycle responsibilities.
+**Patient-scope limitation:** the API session scope and both graph thread IDs currently include pharmacy/user/session but not patient ID. Reusing a session while switching patients can reuse dialogue memory and checkpoint state. Do not claim patient-context isolation complete until session binding or scope-change rejection is implemented and regression-tested.
 
 ### Ingestion
 
-Document ingestion is implemented under `src/pharmaviyum/ai/rag/ingestion` and is integrated with the project's Celery worker in the development Docker Compose stack.
+Document ingestion used by the API is implemented under `src/pharmaviyum/ai/mortarium_rag/ingestion` and dispatched through the project's Celery worker. The API authorizes the pharmacy tenant before dispatch; the worker stamps canonical tenant/source metadata before chunking and vector persistence. A separate `IngestionOrchestrator` class is constructed by AI dependency initialization, but no API caller was found in this audit; its direct ingestion method does not explicitly stamp the same tenant metadata before the fail-closed vector-store upsert. Treat the Celery task path as canonical until the unused orchestrator is reconciled or retired.
 
 Do not document a separate Kubernetes ingestion deployment; the repository no longer maintains a Kubernetes manifest tree.
 
@@ -114,9 +95,15 @@ Do not document a separate Kubernetes ingestion deployment; the repository no lo
 
 Retrieval ranking metrics and the offline synthetic benchmark are documented in [`devops/STAGE_1_AI_RAG_OFFLINE_RESULTS.md`](./devops/STAGE_1_AI_RAG_OFFLINE_RESULTS.md). The reusable retrieval evaluator currently covers Recall@K, Precision@K, MRR and nDCG using labelled relevant chunk IDs. The expanded evaluation contract is maintained in [`devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md`](./devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md).
 
-Ragas may be used for answer/context metrics supported by the pinned installed version. Pharmacy-specific checks—including medication entity, ingredient, strength, dosage, dosage-form and route accuracy; negation preservation; contraindication and interaction accuracy; citation correctness; and clinical hallucination rate—require project-specific evaluators and pharmacist-reviewed ground truth. Do not present these custom measures as built-in Ragas metrics or treat an LLM judge as clinical ground truth.
+Ragas 0.4.3 is pinned separately in `requirements-eval.txt` and loaded lazily by `src/pharmaviyum/ai/evaluation/ragas_adapter.py`; it is not a production runtime dependency. CI verifies the Ragas collections API import and runs adapter/unit and golden-dataset tests. The adapter tests stub Ragas metric classes, so this is API/contract coverage rather than a measured run against a real judge model. Pharmacy-specific checks—including medication name/strength/form, negation, patient-context isolation, citation support and clinical hallucination—are implemented as project evaluators in `src/pharmaviyum/ai/evaluation/clinical_metrics.py`; they require labeled synthetic/de-identified data and, for claim support, an independent judge. These custom measures are not native Ragas metrics.
 
-Evaluation results must identify dataset, model, prompt, embedding and index versions, sample size and execution environment. Security and tenant-isolation failures are independent release blockers and must not be averaged into a composite quality score.
+Evaluation results must identify dataset, model, prompt, embedding and index versions, sample size and execution environment. Security and tenant-isolation failures are independent release blockers and must not be averaged into a composite quality score. The evaluator supports separate Russian/English retrieval scores, but current application, RAG and ingestion defaults omit Russian; RU support and quality are therefore not established. See the current [Mortarium audit](./rag_architecture_audit.md).
+
+## Runtime caveats
+
+- `PgVectorStore` performs vector search plus PostgreSQL full-text search and reciprocal-rank fusion. A `RerankerPort` is optional, but no concrete reranker is injected by the current `AIComponents` runtime; `RAG_RERANK_TOP_N` is not an effective runtime control.
+- `RAG_ENABLE_CONTEXTUAL_COMPRESSION` is declared but is not passed to `LangGraphRAG`; the compression node is always part of the compiled graph. `RAG_RRF_K`, `RAG_DEFAULT_LANGUAGES`, `RAG_MAX_CHUNK_TOKENS` and `RAG_CHUNK_OVERLAP` also need configuration-wiring review. The current Celery ingestion task uses per-job values with hard-coded defaults for chunk size/overlap.
+- The model router uses query-length, keyword and context heuristics. It is not a validated clinical-risk classifier. The API's current confidence and safety-score fields are fixed warning-dependent presentation heuristics, not calibrated clinical probabilities.
 
 ## Agent Harness and memory
 
@@ -159,7 +146,7 @@ Local API documentation:
 
 The AI/RAG layer uses application metrics and optional tracing integrations.
 
-Important RAG metrics include retrieval totals and retrieval latency. Metric labels are deliberately kept low-cardinality; do not add `session_id`, user IDs, pharmacy IDs, or similar identifiers to Prometheus labels.
+Important RAG metrics include retrieval totals and retrieval latency. Metric labels are deliberately kept low-cardinality; do not add `session_id`, user IDs, pharmacy IDs, or similar identifiers to Prometheus labels. RAG node spans record bounded counts and outcomes, not prompts or clinical payloads. The existence of instrumentation does not prove an OTLP exporter, collector, alerting and retention policy are active in every deployment.
 
 The repository also contains Prometheus/Grafana configuration under `docker/`. OpenTelemetry instrumentation boundaries, trace-context propagation, data-protection rules and observability acceptance criteria are documented in [`observability/opentelemetry.md`](./observability/opentelemetry.md).
 
