@@ -2,9 +2,7 @@
 
 from fastapi import APIRouter
 
-from src.pharmaviyum.modules.auth.routes.login import (
-    router as modular_auth_router,
-)
+from src.pharmaviyum.modules.auth.routes.login import router as modular_auth_router
 
 from .ai import router as ai_router
 from .auth import router as auth_router
