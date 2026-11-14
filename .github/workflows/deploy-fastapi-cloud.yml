@@ -281,7 +281,7 @@ jobs:
           printf '%s\n' "$health" | jq -e '.status == "healthy" or .status == "degraded"' >/dev/null
 
           runtime_info="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors "$base_url/version")"
-          if ! printf '%s\\n' "$runtime_info" | jq -e '
+          if ! printf '%s\n' "$runtime_info" | jq -e '
             .environment == "production" and
             .application_environment == "production" and
             .auth_environment == "production" and
@@ -290,7 +290,7 @@ jobs:
             (.python_version | startswith("3.15.2"))
           ' >/dev/null; then
             echo "Production runtime assertion failed; expected production mode, debug=false, and Python 3.15.2."
-            printf '%s\\n' "$runtime_info" | jq '{environment, application_environment, auth_environment, debug, auth_debug, python_version}'
+            printf '%s\n' "$runtime_info" | jq '{environment, application_environment, auth_environment, debug, auth_debug, python_version}'
             exit 1
           fi
 
