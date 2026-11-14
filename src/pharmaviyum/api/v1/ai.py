@@ -119,8 +119,7 @@ def _scoped_session_id(
     ):
         raise ValueError("AI session_id must contain 1-64 non-whitespace characters")
     if isinstance(patient_id, bool) or (
-        patient_id is not None
-        and (not isinstance(patient_id, int) or patient_id <= 0)
+        patient_id is not None and (not isinstance(patient_id, int) or patient_id <= 0)
     ):
         raise ValueError("AI patient_id must be a positive integer or None")
 
@@ -135,12 +134,9 @@ def _scoped_session_id(
         separators=(",", ":"),
     )
     secret = app_settings.SECRET_KEY or "local-development-only-session-key"
-    environment = getattr(
-        app_settings.ENVIRONMENT, "value", app_settings.ENVIRONMENT
-    )
+    environment = getattr(app_settings.ENVIRONMENT, "value", app_settings.ENVIRONMENT)
     if (
-        environment
-        in {Environment.STAGING.value, Environment.PRODUCTION.value}
+        environment in {Environment.STAGING.value, Environment.PRODUCTION.value}
         and not app_settings.SECRET_KEY
     ):
         raise RuntimeError("Application SECRET_KEY is required for AI sessions")
@@ -312,7 +308,9 @@ async def query_agent_stream(
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
     await _validate_patient_scope(request.patient_id, tenant.pharmacy_id, session)
     raw_session_id = request.session_id or str(uuid.uuid4())
-    session_id = _scoped_session_id(raw_session_id, tenant, current_user, request.patient_id)
+    session_id = _scoped_session_id(
+        raw_session_id, tenant, current_user, request.patient_id
+    )
     context = {
         "user_id": tenant.user_id,
         "pharmacy_id": tenant.pharmacy_id,
