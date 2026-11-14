@@ -1,6 +1,6 @@
 # Email delivery and local testing
 
-Pharmaviyum sends account setup and password-recovery messages through SMTP. The transport uses Python's standard-library smtplib and EmailMessage; synchronous SMTP I/O runs in a worker thread so it does not block the FastAPI event loop.
+Pharmaviyum's active password-recovery route sends messages through SMTP. A one-time account-setup email generator and modular user-creation route are present, but that modular user router is not mounted in the active API yet; do not assume active user creation sends setup emails. The transport uses Python's standard-library smtplib and EmailMessage; synchronous SMTP I/O runs in a worker thread so it does not block the FastAPI event loop.
 
 ## Local development with Docker Compose
 
@@ -37,7 +37,7 @@ Production configuration must be supplied through the FastAPI Cloud environment,
 
 ## Delivery semantics
 
-Account setup and recovery messages are scheduled with FastAPI background tasks after the API response is prepared. SMTP failures are logged without logging message bodies or reset tokens. FastAPI background tasks are best-effort, not a durable queue; a transactional outbox/Celery delivery worker remains a future reliability improvement for guaranteed delivery and retry.
+Password-recovery messages are scheduled with FastAPI background tasks after the API response is prepared. The account-setup helper is implemented, but its modular user router is not mounted in the active API. SMTP failures are logged without logging message bodies or reset tokens. FastAPI background tasks are best-effort, not a durable queue; a transactional outbox/Celery delivery worker remains a future reliability improvement for guaranteed delivery and retry.
 
 ## Security
 
