@@ -10,7 +10,10 @@ from datetime import datetime
 from email.message import EmailMessage
 
 from ...core.config import settings
-from ...core.security import create_password_reset_token, decode_password_reset_token
+from ...core.security import (
+    create_password_reset_token,
+    decode_password_reset_token,
+)
 
 logger = logging.getLogger(__name__)
 
