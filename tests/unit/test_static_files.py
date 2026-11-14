@@ -1,8 +1,8 @@
 from pathlib import Path
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-import pytest
 
 from src.pharmaviyum.core.static_files import get_static_path, setup_static_files
 
