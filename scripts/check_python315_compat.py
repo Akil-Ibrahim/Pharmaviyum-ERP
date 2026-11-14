@@ -1,4 +1,4 @@
-"""Validate supported CPython runtimes and critical application imports.
+""""Validate supported CPython runtimes and critical application imports.
 
 Run after installing the project with `uv sync --frozen`.
 """
@@ -30,7 +30,7 @@ def main() -> int:
 
     if current < MINIMUM_VERSION or current[:2] >= MAXIMUM_VERSION:
         print(
-            "ERROR: expected CPython >=3.14.10,<3.16; 
+            "ERROR: expected CPython >=3.14.10,<3.16; "
             f"found {current[0]}.{current[1]}.{current[2]}"
         )
         return 1
