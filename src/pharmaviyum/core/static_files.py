@@ -45,11 +45,14 @@ def get_static_path() -> Path | None:
     return None
 
 
-def setup_static_files(app: FastAPI):
-    """Serve built React frontend from FastAPI."""
+def setup_static_files(app: FastAPI, *, required: bool = False) -> None:
+    """Serve the built React frontend, optionally failing when it is required."""
     static_path = get_static_path()
     if not static_path:
-        print("WARNING: Frontend build not found - API-only mode")
+        message = "Frontend build not found - API-only mode"
+        if required:
+            raise RuntimeError(message)
+        print(f"WARNING: {message}")
         return
 
     assets_path = static_path / "assets"

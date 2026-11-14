@@ -1,6 +1,12 @@
 from pathlib import Path
 
-from src.pharmaviyum.core.static_files import get_static_path
+import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from src.pharmaviyum.core.static_files import get_static_path, setup_static_files
+
+pytestmark = pytest.mark.unit
 
 
 def test_static_path_uses_fastapi_cloud_working_directory(
@@ -54,3 +60,32 @@ def test_static_path_rejects_directory_without_spa_entrypoint(
     monkeypatch.delenv("PHARMAVIYUM_STATIC_DIR", raising=False)
 
     assert get_static_path() is None
+
+
+def test_spa_fallback_serves_system_status_route(tmp_path: Path, monkeypatch) -> None:
+    """Deep links must return the SPA entrypoint instead of a backend 404."""
+    static_dir = tmp_path / "static"
+    static_dir.mkdir()
+    (static_dir / "index.html").write_text(
+        "<!doctype html><html><body>Pharmaviyum</body></html>"
+    )
+
+    monkeypatch.setenv("PHARMAVIYUM_STATIC_DIR", str(static_dir))
+    app = FastAPI()
+    setup_static_files(app)
+
+    response = TestClient(app).get("/system-status")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "Pharmaviyum" in response.text
+
+
+def test_required_frontend_fails_fast_when_build_is_missing(monkeypatch) -> None:
+    """Production must not silently start without its required React frontend."""
+    monkeypatch.setattr(
+        "src.pharmaviyum.core.static_files.get_static_path", lambda: None
+    )
+
+    with pytest.raises(RuntimeError, match="Frontend build not found"):
+        setup_static_files(FastAPI(), required=True)
