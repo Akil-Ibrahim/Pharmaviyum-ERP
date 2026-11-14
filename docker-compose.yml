@@ -242,8 +242,6 @@ volumes:
     driver: local
   ollama_data:
     driver: local
-  mailpit_data:
-    driver: local
 
 networks:
   pharmaviyum-network:
