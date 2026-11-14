@@ -273,10 +273,25 @@ def test_agent_checkpoint_thread_id_is_opaque_and_tenant_scoped(
     other_pharmacy = PharmacistAgent._thread_id(
         "conversation-123", {"pharmacy_id": 8, "user_id": "user-1"}
     )
+    patient_a = PharmacistAgent._thread_id(
+        "conversation-123",
+        {"pharmacy_id": 7, "user_id": "user-1", "patient_id": 12},
+    )
+    patient_b = PharmacistAgent._thread_id(
+        "conversation-123",
+        {"pharmacy_id": 7, "user_id": "user-1", "patient_id": 13},
+    )
+    no_patient = PharmacistAgent._thread_id(
+        "conversation-123",
+        {"pharmacy_id": 7, "user_id": "user-1", "patient_id": None},
+    )
 
     assert first == same_scope
     assert first != other_user
     assert first != other_pharmacy
+    assert patient_a != patient_b
+    assert patient_a != no_patient
+    assert patient_a != first
     assert first.startswith("agent:v2:")
     assert "user-1" not in first
     assert "conversation-123" not in first
@@ -305,6 +320,9 @@ def test_agent_checkpoint_thread_id_uses_unambiguous_scope_encoding(
         ("session", {"pharmacy_id": 7.5, "user_id": "user-1"}),
         ("session", {"pharmacy_id": 7, "user_id": "   "}),
         ("session", {"pharmacy_id": 7, "user_id": True}),
+        ("session", {"pharmacy_id": 7, "user_id": "user-1", "patient_id": True}),
+        ("session", {"pharmacy_id": 7, "user_id": "user-1", "patient_id": 0}),
+        ("session", {"pharmacy_id": 7, "user_id": "user-1", "patient_id": "12"}),
         ("session", {"pharmacy_id": None, "user_id": "user-1"}),
         (123, {"pharmacy_id": 7, "user_id": "user-1"}),
     ],
