@@ -29,7 +29,8 @@ from src.pharmaviyum.ai.optimization.token_budget import (
     TokenBudgetExceeded,
     TokenBudgetManager,
 )
-from src.pharmaviyum.core.config import Environment, settings as app_settings
+from src.pharmaviyum.core.config import Environment
+from src.pharmaviyum.core.config import settings as app_settings
 from src.pharmaviyum.core.logging import logger
 
 from .contextual_compression import ContextualCompressor
