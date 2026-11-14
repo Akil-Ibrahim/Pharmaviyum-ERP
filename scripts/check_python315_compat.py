@@ -1,4 +1,4 @@
-"""Validate the CPython 3.15.2 runtime and critical application imports.
+"""Validate the CPython 3.15 runtime and critical application imports.
 
 Run after installing the project with `uv sync --frozen`.
 """
@@ -9,7 +9,7 @@ import importlib
 import importlib.metadata
 import sys
 
-MINIMUM_VERSION = (3, 15, 2)
+MINIMUM_VERSION = (3, 15, 0)
 MAXIMUM_VERSION = (3, 16)
 
 CRITICAL_PACKAGES = (
@@ -30,7 +30,7 @@ def main() -> int:
 
     if current < MINIMUM_VERSION or current[:2] >= MAXIMUM_VERSION:
         print(
-            "ERROR: expected CPython >=3.15.2,<3.16; "
+            "ERROR: expected CPython >=3.15,<3.16; "
             f"found {current[0]}.{current[1]}.{current[2]}"
         )
         return 1
@@ -45,7 +45,7 @@ def main() -> int:
             print(f"ERROR {module}: {type(exc).__name__}: {exc}")
             return 1
 
-    print("CPython 3.15.2 critical dependency compatibility check passed.")
+    print("CPython 3.15 critical dependency compatibility check passed.")
     return 0
 
 
