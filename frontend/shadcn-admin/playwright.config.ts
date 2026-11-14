@@ -31,7 +31,7 @@ export default defineConfig({
     ? undefined
     : {
         command:
-          'bun run dev -- --host 127.0.0.1 --port 4173 --strictPort',
+          'bun run build && bun run preview -- --host 127.0.0.1 --port 4173 --strictPort',
         url: baseURL,
         reuseExistingServer: !isCI,
         timeout: 120_000,
