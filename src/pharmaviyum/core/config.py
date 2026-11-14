@@ -77,7 +77,9 @@ class Settings(BaseSettings):
             if self.EMAILS_ENABLED and not (self.SMTP_STARTTLS or self.SMTP_SSL):
                 raise ValueError("Production email delivery requires SMTP TLS")
             if self.EMAILS_ENABLED and not self.APP_URL.startswith("https://"):
-                raise ValueError("APP_URL must use HTTPS when production email is enabled")
+                raise ValueError(
+                    "APP_URL must use HTTPS when production email is enabled"
+                )
 
         if self.ENVIRONMENT in {Environment.STAGING, Environment.PRODUCTION}:
             if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
