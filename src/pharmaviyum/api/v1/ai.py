@@ -94,8 +94,29 @@ def _set_mcp_context(tenant, current_user: CurrentUser):
     )
 
 
-def _scoped_session_id(session_id: str, tenant, current_user: CurrentUser) -> str:
-    return f"pharmacy:{tenant.pharmacy_id}:user:{current_user.id}:session:{session_id}"
+def _scoped_session_id(
+    session_id: str,
+    tenant,
+    current_user: CurrentUser,
+    patient_id: int | None,
+) -> str:
+    """Bind every conversation state store to one authenticated patient scope.
+
+    The compact, versioned value is passed to Redis memory and both LangGraph
+    checkpoint paths. "none" is an explicit scope, not a wildcard.
+    """
+    if not isinstance(session_id, str) or not session_id.strip() or len(session_id) > 64:
+        raise ValueError("AI session_id must contain 1-64 non-whitespace characters")
+    if isinstance(patient_id, bool) or (
+        patient_id is not None and (not isinstance(patient_id, int) or patient_id <= 0)
+    ):
+        raise ValueError("AI patient_id must be a positive integer or None")
+
+    patient_scope = str(patient_id) if patient_id is not None else "none"
+    return (
+        f"mortarium-session:v3|p:{tenant.pharmacy_id}|u:{current_user.id}|"
+        f"pt:{patient_scope}|s:{session_id}"
+    )
 
 
 @router.get("/context")
@@ -143,7 +164,7 @@ async def query_agent(
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
     await _validate_patient_scope(request.patient_id, tenant.pharmacy_id, session)
     raw_session_id = request.session_id or str(uuid.uuid4())
-    session_id = _scoped_session_id(raw_session_id, tenant, current_user)
+    session_id = _scoped_session_id(raw_session_id, tenant, current_user, request.patient_id)
     context = {
         "user_id": tenant.user_id,
         "pharmacy_id": tenant.pharmacy_id,
@@ -257,7 +278,7 @@ async def query_agent_stream(
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
     await _validate_patient_scope(request.patient_id, tenant.pharmacy_id, session)
     raw_session_id = request.session_id or str(uuid.uuid4())
-    session_id = _scoped_session_id(raw_session_id, tenant, current_user)
+    session_id = _scoped_session_id(raw_session_id, tenant, current_user, request.patient_id)
     context = {
         "user_id": tenant.user_id,
         "pharmacy_id": tenant.pharmacy_id,
