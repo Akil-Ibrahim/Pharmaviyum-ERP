@@ -82,7 +82,8 @@ def test_rag_checkpoint_thread_id_changes_when_secret_rotates(
 def test_rag_checkpoint_thread_id_fails_closed_without_production_secret(
     rag: LangGraphRAG, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from src.pharmaviyum.core.config import Environment, settings as app_settings
+    from src.pharmaviyum.core.config import Environment
+from src.pharmaviyum.core.config import settings as app_settings
 
     monkeypatch.setattr(app_settings, "SECRET_KEY", None)
     monkeypatch.setattr(app_settings, "ENVIRONMENT", Environment.PRODUCTION)
