@@ -115,7 +115,7 @@ jobs:
 
       - name: Pin the uploaded FastAPI Cloud runtime to Python 3.13
         run: |
-          printf '3.13\\n' > .python-version
+          printf '3.13\n' > .python-version
           test "$(cat .python-version)" = "3.13"
           uv python find 3.13
 
