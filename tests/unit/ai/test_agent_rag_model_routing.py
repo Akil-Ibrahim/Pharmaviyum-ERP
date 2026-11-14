@@ -479,6 +479,7 @@ def test_api_session_scope_rejects_invalid_patient_id(patient_id) -> None:
         )
 
 
+@pytest.mark.parametrize("session_id", ["", "   ", "x" * 65, 123])
 def test_api_session_scope_rejects_invalid_session_id(session_id) -> None:
     from types import SimpleNamespace
 
