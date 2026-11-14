@@ -69,3 +69,7 @@ jobs:
           fi
       - name: TypeScript and production build
         run: bun run build
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+      - name: Playwright end-to-end tests
+        run: bun run test:e2e

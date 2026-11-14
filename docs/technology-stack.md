@@ -44,7 +44,7 @@ Exact resolved Python versions are recorded in `uv.lock`. Frontend dependency ra
 - Python dependency and command workflow: `uv`
 - Python lint and quality checks: Ruff, Black, isort, mypy, pytest
 - Frontend package manager and scripts: Bun
-- Frontend quality gates: ESLint, Prettier, TypeScript build, Vitest
+- Frontend quality gates: ESLint, Prettier, TypeScript build, Vitest, Playwright E2E
 - Container build: Docker multi-stage build
 - CI: GitHub Actions
 
