@@ -5,6 +5,8 @@ Best practice 2026: Kubernetes-compatible health checks
 
 from fastapi import APIRouter, Response
 
+from src.pharmaviyum.ai.config import settings as application_settings
+from src.pharmaviyum.config import settings as auth_settings
 from src.pharmaviyum.core.config import settings
 from src.pharmaviyum.core.health import HealthStatus, health_checker
 from src.pharmaviyum.core.metrics import APP_HEALTH_STATUS, get_metrics
@@ -118,5 +120,9 @@ async def version():
         "name": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "environment": settings.ENVIRONMENT.value,
+        "debug": settings.DEBUG,
+        "application_environment": application_settings.environment,
+        "auth_environment": auth_settings.ENVIRONMENT,
+        "auth_debug": auth_settings.DEBUG,
         "python_version": __import__("sys").version,
     }
