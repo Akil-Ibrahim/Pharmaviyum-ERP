@@ -705,7 +705,9 @@ class LangGraphRAG:
         """Return an opaque, versioned checkpoint key bound to patient scope."""
         raw = thread_id or str(uuid4())
         if not isinstance(raw, str) or not raw.strip() or len(raw) > 128:
-            raise ValueError("RAG checkpoint thread identifier must be 1-128 characters")
+            raise ValueError(
+                "RAG checkpoint thread identifier must be 1-128 characters"
+            )
 
         scope = json.dumps(
             ["rag", context.pharmacy_id, context.user_id, context.patient_id, raw],
@@ -721,7 +723,9 @@ class LangGraphRAG:
             in {Environment.STAGING.value, Environment.PRODUCTION.value}
             and not app_settings.SECRET_KEY
         ):
-            raise RuntimeError("Application SECRET_KEY is required for RAG checkpoints")
+            raise RuntimeError(
+                "Application SECRET_KEY is required for RAG checkpoints"
+            )
 
         digest = hmac.new(
             secret.encode("utf-8"), scope.encode("utf-8"), hashlib.sha256
