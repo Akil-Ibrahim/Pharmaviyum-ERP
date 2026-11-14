@@ -74,6 +74,7 @@ def generate_new_account_email(
     """
     return EmailData(html_content=html_content, subject=subject)
 
+
 def generate_password_reset_token(email: str) -> str:
     """Generate a 48-hour password-reset token."""
     return create_password_reset_token(email)
