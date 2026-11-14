@@ -105,10 +105,15 @@ def _scoped_session_id(
     The compact, versioned value is passed to Redis memory and both LangGraph
     checkpoint paths. "none" is an explicit scope, not a wildcard.
     """
-    if not isinstance(session_id, str) or not session_id.strip() or len(session_id) > 64:
+    if (
+        not isinstance(session_id, str)
+        or not session_id.strip()
+        or len(session_id) > 64
+    ):
         raise ValueError("AI session_id must contain 1-64 non-whitespace characters")
     if isinstance(patient_id, bool) or (
-        patient_id is not None and (not isinstance(patient_id, int) or patient_id <= 0)
+        patient_id is not None
+        and (not isinstance(patient_id, int) or patient_id <= 0)
     ):
         raise ValueError("AI patient_id must be a positive integer or None")
 
