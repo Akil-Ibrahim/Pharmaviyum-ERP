@@ -70,6 +70,12 @@ class Settings(BaseSettings):
             raise ValueError("SMTP_STARTTLS and SMTP_SSL cannot both be enabled")
 
         if self.ENVIRONMENT in {Environment.STAGING, Environment.PRODUCTION}:
+            if self.EMAILS_ENABLED and not self.SMTP_HOST:
+                raise ValueError("SMTP_HOST is required when email delivery is enabled")
+            if self.EMAILS_ENABLED and not (self.SMTP_STARTTLS or self.SMTP_SSL):
+                raise ValueError("Production email delivery requires SMTP TLS")
+
+        if self.ENVIRONMENT in {Environment.STAGING, Environment.PRODUCTION}:
             if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
                 raise ValueError(
                     "SECRET_KEY must be set to at least 32 characters in staging "
