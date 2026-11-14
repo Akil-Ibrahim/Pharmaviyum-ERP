@@ -293,6 +293,14 @@ jobs:
             exit 1
           fi
 
+          system_status_code="$(curl --silent --show-error -H 'Accept: text/html' \\
+            -o /tmp/system-status.html -w '%{http_code}' "$base_url/system-status")"
+          if [ "$system_status_code" != "200" ] || ! grep -Eiq '<html([[:space:]>])' /tmp/system-status.html; then
+            echo "Frontend SPA route /system-status did not return the built HTML entrypoint (HTTP $system_status_code)."
+            head -c 1000 /tmp/system-status.html || true
+            exit 1
+          fi
+
           auth_status="$(curl --silent --show-error -o /tmp/auth-invalid.json -w '%{http_code}' \
             -X POST "$base_url/api/v1/auth/token" \
             -H 'Content-Type: application/x-www-form-urlencoded' \
