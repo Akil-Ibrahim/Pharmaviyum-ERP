@@ -7,7 +7,7 @@
     "build": "bun run tsc && bun run vite build",
     "preview": "bun run vite preview",
     "test": "bun run vitest",
-    "test:e2e": "bunx playwright test",
+    "test:e2e": "bun --cwd shadcn-admin run test:e2e",
     "lint": "bun run eslint src --ext ts,tsx",
     "generate-client": "openapi --input http://localhost:8000/openapi.json --output src/client --client axios"
   },
@@ -26,7 +26,6 @@
     "vite": "^8.3.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@playwright/test": "^1.63.0",
     "vitest": "^5.0.1"
   }
 }
