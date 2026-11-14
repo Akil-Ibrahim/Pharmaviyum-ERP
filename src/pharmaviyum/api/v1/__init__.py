@@ -17,11 +17,13 @@ from .pos import router as pos_router
 from .products import router as products_router
 from .sync import router as sync_router
 from .users import router as users_router
+from src.pharmaviyum.modules.auth.routes.login import router as modular_auth_router
 
 api_v1_router = APIRouter()
 
 api_v1_router.include_router(ai_router)
 api_v1_router.include_router(auth_router)
+api_v1_router.include_router(modular_auth_router, prefix="/api/v1")
 api_v1_router.include_router(drug_catalog_router)
 api_v1_router.include_router(drug_catalog_review_router)
 api_v1_router.include_router(dashboard_router)
