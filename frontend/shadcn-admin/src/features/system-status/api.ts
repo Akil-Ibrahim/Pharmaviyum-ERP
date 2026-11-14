@@ -8,15 +8,24 @@ export interface ServiceCheck {
   diagnostic?: string
 }
 
+interface DependencyCheck {
+  status?: string
+  message?: string
+}
+
 interface ReadinessPayload {
   status?: string
-  components?: Record<string, string>
-  errors?: Record<string, string>
+  checks?: {
+    database?: DependencyCheck
+    redis?: DependencyCheck
+    [key: string]: DependencyCheck | undefined
+  }
 }
 
 interface HealthPayload {
   status?: string
   service?: string
+  checks?: Record<string, DependencyCheck>
 }
 
 export interface SystemStatusSnapshot {
@@ -43,6 +52,19 @@ async function getJson<T>(path: string): Promise<{
   }
 }
 
+function dependencyState(status?: string): ServiceState {
+  switch (status) {
+    case 'healthy':
+      return 'operational'
+    case 'degraded':
+      return 'degraded'
+    case 'unhealthy':
+      return 'outage'
+    default:
+      return 'unknown'
+  }
+}
+
 export async function fetchSystemStatus(): Promise<SystemStatusSnapshot> {
   const [healthResult, readinessResult] = await Promise.all([
     getJson<HealthPayload>('/health'),
@@ -51,69 +73,63 @@ export async function fetchSystemStatus(): Promise<SystemStatusSnapshot> {
 
   const health = healthResult.payload
   const readiness = readinessResult.payload
-  const apiIsHealthy = healthResult.responseOk && health?.status === 'healthy'
-  const components = readiness?.components ?? {}
-  const errors = readiness?.errors ?? {}
+  const apiState: ServiceState = !healthResult.responseOk
+    ? 'outage'
+    : health?.status === 'healthy'
+      ? 'operational'
+      : health?.status === 'degraded'
+        ? 'degraded'
+        : health?.status === 'unhealthy'
+          ? 'outage'
+          : 'unknown'
+
+  const database = readiness?.checks?.database
+  const redis = readiness?.checks?.redis
 
   const checks: ServiceCheck[] = [
     {
       id: 'api',
       name: 'Application · FastAPI Cloud',
-      state: apiIsHealthy ? 'operational' : 'outage',
-      description: apiIsHealthy
-        ? 'The application health endpoint is responding.'
-        : 'The application health endpoint did not return a healthy response.',
+      state: apiState,
+      description:
+        apiState === 'operational'
+          ? 'The application health endpoint is responding.'
+          : apiState === 'degraded'
+            ? 'The application is responding with degraded health.'
+            : 'The application health endpoint did not return a healthy response.',
     },
     {
       id: 'postgres',
       name: 'PostgreSQL',
-      state:
-        components.postgres === 'ok'
-          ? 'operational'
-          : components.postgres === 'failed'
-            ? 'outage'
-            : 'unknown',
+      state: readinessResult.responseOk
+        ? dependencyState(database?.status)
+        : 'outage',
       description:
-        components.postgres === 'ok'
-          ? 'Database connectivity check passed.'
-          : components.postgres === 'failed'
-            ? 'The database connectivity check failed.'
-            : 'No database health result was returned.',
-      diagnostic: errors.postgres,
+        database?.message ??
+        (readinessResult.responseOk
+          ? 'No database health result was returned.'
+          : 'The readiness endpoint could not be reached.'),
+      diagnostic: database?.message,
     },
     {
       id: 'redis',
       name: 'Redis',
-      state:
-        components.redis === 'ok'
-          ? 'operational'
-          : components.redis === 'failed'
-            ? 'outage'
-            : 'unknown',
+      state: readinessResult.responseOk
+        ? dependencyState(redis?.status)
+        : 'outage',
       description:
-        components.redis === 'ok'
-          ? 'Redis connectivity check passed.'
-          : components.redis === 'failed'
-            ? 'The Redis connectivity check failed.'
-            : 'No Redis health result was returned.',
-      diagnostic: errors.redis,
+        redis?.message ??
+        (readinessResult.responseOk
+          ? 'No Redis health result was returned.'
+          : 'The readiness endpoint could not be reached.'),
+      diagnostic: redis?.message,
     },
     {
       id: 'ai',
       name: 'AI · LangGraph',
-      state:
-        components.ai_initialized === 'ok'
-          ? 'operational'
-          : components.ai_initialized === 'failed'
-            ? 'degraded'
-            : 'unknown',
+      state: 'unknown',
       description:
-        components.ai_initialized === 'ok'
-          ? 'AI components are initialized.'
-          : components.ai_initialized === 'failed'
-            ? 'AI components are not initialized.'
-            : 'No AI initialization result was returned.',
-      diagnostic: errors.ai,
+        'AI initialization is required at production startup but is not exposed by the current health or readiness response.',
     },
   ]
 
