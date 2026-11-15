@@ -25,16 +25,13 @@ def test_retrieval_rejects_missing_or_invalid_tenant_scope(filters):
         PgVectorStore._require_tenant_filter(filters)
 
 
-
 def test_retrieval_accepts_positive_integer_tenant_scope():
     PgVectorStore._require_tenant_filter({"pharmacy_id": 7, "access_level": "pharmacy"})
-
 
 
 def test_metadata_requires_positive_pharmacy_id():
     with pytest.raises(ValueError):
         CanonicalMetadata.model_validate({"pharmacy_id": 0, "source": "approved-sop"})
-
 
 
 def test_patient_scoped_metadata_requires_patient_id():
@@ -48,7 +45,6 @@ def test_patient_scoped_metadata_requires_patient_id():
         )
 
 
-
 def test_filter_builder_rejects_untrusted_sql_identifier():
     store = PgVectorStore(session_factory=lambda: None)
     with pytest.raises(ValueError, match="Invalid metadata filter key"):
@@ -59,7 +55,6 @@ def test_filter_builder_rejects_untrusted_sql_identifier():
                 "country') OR TRUE --": "VN",
             }
         )
-
 
 
 def test_query_filter_sets_keep_patient_records_explicitly_scoped():
@@ -120,7 +115,6 @@ def test_retrieval_rejects_ambiguous_patient_scope(filters, match):
         PgVectorStore._require_tenant_filter(filters)
 
 
-
 def test_retrieval_accepts_exact_patient_scope():
     PgVectorStore._require_tenant_filter(
         {"pharmacy_id": 7, "access_level": "patient", "patient_id": 42}
@@ -137,7 +131,6 @@ def test_retrieval_accepts_exact_patient_scope():
 def test_retrieval_rejects_non_integer_patient_ids(filters):
     with pytest.raises(ValueError, match="positive integer patient_id"):
         PgVectorStore._require_tenant_filter(filters)
-
 
 
 def test_patient_filter_clause_uses_bound_parameters():
