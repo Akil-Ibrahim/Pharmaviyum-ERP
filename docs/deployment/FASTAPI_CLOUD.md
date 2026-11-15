@@ -58,7 +58,11 @@ Configure these in the FastAPI Cloud app Environment Variables panel:
 | `QWEN_TIMEOUT_SECONDS` | `30` |
 | `QWEN_MAX_OUTPUT_TOKENS` | `500` |
 
-The QwenCloud values describe the current demo profile, not an unlimited/free production SLA. Enable the provider-console **Free quota only** switch for the selected model and verify the remaining quota and expiry before enabling requests. The application flag alone does not enforce provider billing. QwenCloud generation and embeddings are separate; configure and verify the embedding provider independently before enabling cloud RAG.
+**Model-profile clarification:** the values above are the documented FastAPI Cloud demo profile: QwenCloud `qwen3.8-flash` for fast, main and complex generation. They are not a separately approved production model profile. The repository currently defines no distinct production-only chat model. Therefore, do not infer that Production has a different model—or that this demo/free-quota model is suitable for clinical production workloads—without checking the effective protected runtime settings and completing provider, privacy, security, quota and quality approval.
+
+The local-development defaults are Ollama `qwen3.5:9b` for chat and `mxbai-embed-large` for embeddings (1024 dimensions). For the documented QwenCloud demo profile, embeddings are a separate provider: the code selects OpenAI `text-embedding-3-small` (1024 dimensions) when its API key is configured. QwenCloud chat generation does not imply QwenCloud embeddings. Confirm the effective embedding provider/model and vector dimensions before indexing or querying; changing embedding model/dimensions requires a compatible re-indexing plan.
+
+The QwenCloud values describe a demo profile, not an unlimited/free production SLA. Enable the provider-console **Free quota only** switch for the selected model and verify the remaining quota and expiry before enabling requests. The application flag alone does not enforce provider billing. Do not silently fall back to a paid model/provider.
 
 Use the same production database for the FastAPI Cloud `DATABASE_URL` and GitHub Actions `DATABASE_URL`. Keep database and Redis network access restricted to the required application/workflow sources.
 
