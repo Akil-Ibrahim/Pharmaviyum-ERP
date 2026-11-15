@@ -1,4 +1,5 @@
 # Архитектура Pharmaviyum
+[English](./pharmaviyum-architecture.en.md) · [Русский](./pharmaviyum-architecture.ru.md)
 ## Архитектурное видение и инженерные принципы
 
 **Статус:** Живой архитектурный документ  
