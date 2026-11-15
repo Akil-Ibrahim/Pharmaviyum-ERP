@@ -439,24 +439,21 @@ The development approach is **pilot-first**: where appropriate, Pharmaviyum can 
 
 ## Documentation
 
-Additional technical documentation is available under `docs/`, including:
+Browse the documentation in your preferred language:
 
-- [`docs/README.md`](docs/README.md) — documentation index
-- [`docs/technology-stack.md`](docs/technology-stack.md) · [Русская версия](docs/technology-stack.ru.md) — complete technology definitions, architecture roles, versions and dependency policy
-- [`docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md`](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) (Russian translation in progress) — Ansible operating guide for Pharmacy Edge
-- [`docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) (Russian translation in progress) — 1–10 rollout guardrails and future 100-site architecture target
-- [`docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md`](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) · [Русская версия](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) — workflow-by-workflow offline policy and limitations
-- [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-evaluation.md) · [Русская версия](docs/ai/ragas-pharmaceutical-evaluation.ru.md) — Ragas and pharmaceutical RAG evaluation contract
-- [Mortarium AI Architecture & Glossary](docs/ai/MORTARIUM_AI_ARCHITECTURE.md) (Russian translation in progress) — Mortarium's role, architecture, security boundaries and AI/RAG terminology
-- [Pharmacy workflow documentation](docs/workflows/README.md) (Russian translation in progress)
-- [System architecture and component boundaries](docs/architecture/system-context.md) (Russian translation in progress)
-- [AI / LLM system design](docs/ai/AI_LLM_SYSTEM_DESIGN.md) (Russian translation in progress)
-- [Architecture Decision Records (ADRs)](docs/adr/README.md) (Russian translation in progress)
-- [Development and testing handbook](docs/guides/DEVELOPMENT_AND_TESTING.md) (Russian translation in progress)
-- [Production operations and recovery runbook](docs/operations/PRODUCTION_OPERATIONS_RUNBOOK.md) (Russian translation in progress)
-- [Release runbook](docs/operations/RELEASE_RUNBOOK.md) (Russian translation in progress)
-- [DevOps roadmap and engineering stages](docs/devops/ENGINEERING_ROADMAP.md) (Russian translation in progress)
-- [WebSocket protocol](docs/websocket-protocol.md) (Russian translation in progress)
+- **English:** [Engineering documentation index](docs/README.md)
+- **Русский:** [Индекс инженерной документации](docs/README.ru.md)
+
+| Topic | English | Русский |
+|---|---|---|
+| Technology stack | [Technology Stack & Glossary](docs/technology-stack.md) | [Технологический стек и глоссарий](docs/technology-stack.ru.md) |
+| Repository structure | [Repository Structure Guide](docs/architecture/repository-structure.md) | [Руководство по структуре репозитория](docs/architecture/repository-structure.ru.md) |
+| Offline operations | [Pharmacy Offline Capability Matrix](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | [Матрица офлайн-возможностей](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) |
+| RAG evaluation | [Ragas pharmaceutical evaluation](docs/ai/ragas-pharmaceutical-evaluation.md) | [Фармацевтическая оценка RAG](docs/ai/ragas-pharmaceutical-evaluation.ru.md) |
+| AI safety | [Hallucination detection & red-team](docs/ai/hallucination-detection-and-red-team.md) | [Выявление галлюцинаций и red-team](docs/ai/hallucination-detection-and-red-team.ru.md) |
+| Chunking | [Mortarium chunking pipeline](docs/ai/chunking-pipeline.md) | [Pipeline чанкинга Mortarium](docs/ai/chunking-pipeline.ru.md) |
+
+**Русские переводы остальных руководств готовятся.** Их актуальный статус указан в [русском индексе документации](docs/README.ru.md); английский оригинал доступен в [английском индексе](docs/README.md).
 
 ## Demo / NDA Notice
 
