@@ -184,10 +184,10 @@ In-memory платформа данных, обычно используемая
 
 ## Связанная документация
 
-- [Проектирование Mortarium AI / LLM](./AI_LLM_SYSTEM_DESIGN.ru.md)
+- [Проектирование Mortarium AI / LLM](./AI_LLM_SYSTEM_DESIGN.md)
 - [Фармацевтический pipeline чанкинга](./chunking-pipeline.ru.md)
 - [Оценка Ragas для фармацевтического RAG](./ragas-pharmaceutical-evaluation.ru.md)
 - [Архитектура LangGraph RAG](./langgraph-rag-architecture.ru.md)
 - [ADR изоляции состояния пациента](../adr/ADR-0003-patient-scoped-ai-state.md)
-- [Политика OpenTelemetry](../observability/opentelemetry.ru.md)
-- [Аудит архитектуры RAG](../rag_architecture_audit.ru.md)
+- [Политика OpenTelemetry](../observability/opentelemetry.md)
+- [Аудит архитектуры RAG](../rag_architecture_audit.md)
