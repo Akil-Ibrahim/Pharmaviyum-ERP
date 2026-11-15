@@ -96,7 +96,10 @@ dev = [
     "types-psutil==7.2.2.20261111",
 ]
 eval = [
-    # ONNX Runtime has no CPython 3.15 wheel yet; keep this optional evaluation helper for 3.14 and older.
+    # Keep RAG quality evaluation out of the production runtime dependency set.
+    "ragas==0.4.3",
+    "langchain-community==0.3.31",
+    # ONNX Runtime has no CPython 3.15 wheel yet; keep this optional helper for 3.14 and older.
     "fastembed==0.9.1; python_version < '3.15'",
 ]
 
