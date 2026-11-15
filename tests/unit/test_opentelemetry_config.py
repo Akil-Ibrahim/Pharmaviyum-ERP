@@ -118,6 +118,46 @@ def test_ai_spans_only_allow_reviewed_names_and_operational_attributes():
     }
 
 
+def test_legacy_telemetry_delegates_to_the_canonical_provider(monkeypatch):
+    from src.pharmaviyum.core import telemetry
+
+    app = object()
+    legacy_engine = object()
+    configured = []
+    monkeypatch.setattr(
+        telemetry, "configure_opentelemetry", lambda target: configured.append(target)
+    )
+
+    telemetry.setup_telemetry(app=app, engine=legacy_engine)
+
+    assert configured == [app]
+
+
+def test_shutdown_keeps_global_provider_reference_and_is_idempotent(monkeypatch):
+    from src.pharmaviyum.observability import opentelemetry as telemetry
+
+    provider = MagicMock()
+    monkeypatch.setattr(telemetry, "_provider", provider)
+    monkeypatch.setattr(telemetry, "_shutdown", False)
+
+    telemetry.shutdown_opentelemetry()
+    telemetry.shutdown_opentelemetry()
+
+    assert telemetry._provider is provider
+    assert telemetry._shutdown is True
+    provider.force_flush.assert_called_once_with(timeout_millis=5_000)
+    provider.shutdown.assert_called_once_with()
+
+
+def test_configure_does_not_create_a_second_provider_after_shutdown(monkeypatch):
+    from src.pharmaviyum.observability import opentelemetry as telemetry
+
+    monkeypatch.setattr(telemetry, "_shutdown", True)
+    monkeypatch.setattr(telemetry.settings.otel, "enabled", True)
+
+    assert telemetry.configure_opentelemetry(app=None) is None
+
+
 def test_production_environment_aliases_are_recognized():
     from src.pharmaviyum.observability.opentelemetry import (
         _is_production_environment,
