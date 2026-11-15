@@ -161,7 +161,7 @@ Searching by an active ingredient or INN, such as **Omeprazole**, can provide a 
 
 ### Mortarium AI
 
-**Mortarium** is the AI layer of Pharmaviyum.
+**Mortarium** is the AI layer of Pharmaviyum. Its formal definition, component responsibilities and terminology are documented in [Mortarium AI Architecture & Glossary](docs/ai/MORTARIUM_AI_ARCHITECTURE.md).
 
 It is designed to work with authorized pharmacy application context rather than functioning as a generic chatbot.
 
@@ -484,6 +484,7 @@ Additional technical documentation is available under `docs/`, including:
 - [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-evaluation.md) — Ragas and pharmaceutical RAG evaluation contract
 - [Pharmacy workflow documentation](docs/workflows/README.md)
 - [System architecture and component boundaries](docs/architecture/system-context.md)
+- [Mortarium AI Architecture & Glossary](docs/ai/MORTARIUM_AI_ARCHITECTURE.md)
 - [AI / LLM system design](docs/ai/AI_LLM_SYSTEM_DESIGN.md)
 - [Architecture Decision Records (ADRs)](docs/adr/README.md)
 - [Development and testing handbook](docs/guides/DEVELOPMENT_AND_TESTING.md)
