@@ -16,7 +16,7 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 | Mortarium glossary | [Architecture & glossary](./ai/MORTARIUM_AI_ARCHITECTURE.md) | [Архитектура и глоссарий](./ai/MORTARIUM_AI_ARCHITECTURE.ru.md) | AI/LLM, PostgreSQL, pgvector, Redis, MCP, Ragas and OpenTelemetry |
 | Pharmacy operations AI | [Mortarium pharmacy operations](./ai/mortarium-pharmacy-operations.md) | [Операционная работа Mortarium](./ai/mortarium-pharmacy-operations.ru.md) | Available read-only tools and safety boundaries |
 | Patient session isolation | [Patient-scoped state](./ai/patient-session-isolation.md) | [Изоляция состояния пациента](./ai/patient-session-isolation.ru.md) | Session, memory and checkpoint isolation requirements |
-| QwenCloud demo | [QwenCloud demo](./ai/QWENCLOUD_DEMO.md) | Перевод готовится | Demo provider configuration and quota safeguards |
+| QwenCloud demo | [QwenCloud demo](./ai/QWENCLOUD_DEMO.md) | Русская версия пока не опубликована | Demo provider configuration and quota safeguards |
 | AI architecture | [AI architecture](./ai_architecture.md) | [Архитектура AI](./ai_architecture.ru.md) | Current implementation details |
 | LangGraph RAG | [RAG graph architecture](./ai/langgraph-rag-architecture.md) | [Архитектура LangGraph RAG](./ai/langgraph-rag-architecture.ru.md) | Graph nodes, state, retrieval, bounded execution and persistence |
 | RAG audit | [RAG architecture audit](./rag_architecture_audit.md) | [Аудит архитектуры RAG](./rag_architecture_audit.ru.md) | Dated findings, gaps and remediation priorities |
@@ -26,18 +26,18 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 | LLM standards | [LLM engineering standards](./llm_engineering_standards.md) | [Стандарт инженерии LLM](./llm_engineering_standards.ru.md) | Context, token budgets, model routing, cache, memory and MCP standards |
 | ADRs | [ADR index](./adr/README.md) | [Индекс архитектурных решений](./adr/README.ru.md) | Accepted and proposed architecture decisions | Accepted and proposed architecture decisions |
 | Development | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) | [Руководство по разработке и тестированию](./guides/DEVELOPMENT_AND_TESTING.ru.md) | Contributor workflow and quality gates |
-| Environment | [Environment setup](./guides/ENVIRONMENT_SETUP.md) | Перевод готовится | Local services, configuration and prerequisites |
+| Environment | [Environment setup](./guides/ENVIRONMENT_SETUP.md) | [Настройка окружения](./guides/ENVIRONMENT_SETUP.ru.md) | Local services, configuration and prerequisites |
 | Testing | [Testing guide](./guides/TESTING.md) | [Руководство по тестированию](./guides/TESTING.ru.md) | Test layout, markers and CI gates |
-| Operations | [Production operations runbook](./operations/PRODUCTION_OPERATIONS_RUNBOOK.md) | Перевод готовится | Health checks, incident triage, backup and recovery |
-| Release | [Release runbook](./operations/RELEASE_RUNBOOK.md) | Перевод готовится | Controlled release and rollback |
-| Hosted deployment | [FastAPI Cloud](./deployment/FASTAPI_CLOUD.md) | Перевод готовится | Hosting, secrets, runtime constraints and manual deployment |
-| DevOps roadmap | [Engineering stages](./devops/ENGINEERING_ROADMAP.md) | Перевод готовится | Stage goals, workstreams and exit criteria |
-| DevOps detail | [DevOps roadmap](./devops/README.md) | Перевод готовится | Capacity, observability, reliability, security and recovery |
-| WebSocket | [WebSocket protocol](./websocket-protocol.md) | Перевод готовится | Proposed v1 contract and current scaffold limitations |
+| Operations | [Production operations runbook](./operations/PRODUCTION_OPERATIONS_RUNBOOK.md) | [Эксплуатация Production](./operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md) · [Инциденты](./operations/INCIDENT_RUNBOOK.ru.md) | Health checks, incident triage, backup and recovery |
+| Release | [Release runbook](./operations/RELEASE_RUNBOOK.md) | [Runbook релиза](./operations/RELEASE_RUNBOOK.ru.md) | Controlled release and rollback |
+| Hosted deployment | [FastAPI Cloud](./deployment/FASTAPI_CLOUD.md) | [Развёртывание FastAPI Cloud](./deployment/FASTAPI_CLOUD.ru.md) | Hosting, secrets, runtime constraints and manual deployment |
+| DevOps roadmap | [Engineering stages](./devops/ENGINEERING_ROADMAP.md) | Русская версия пока не опубликована | Stage goals, workstreams and exit criteria |
+| DevOps detail | [DevOps roadmap](./devops/README.md) | Русская версия пока не опубликована | Capacity, observability, reliability, security and recovery |
+| WebSocket | [WebSocket protocol](./websocket-protocol.md) | Русская версия пока не опубликована | Proposed v1 contract and current scaffold limitations |
 | Observability | [OpenTelemetry](./observability/opentelemetry.md) | [OpenTelemetry на русском](./observability/opentelemetry.ru.md) | Tracing configuration and privacy boundaries |
 | Pharmacy Edge offline | [Offline capability matrix](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | [Матрица офлайн-возможностей](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | Offline workflow policy and controls |
-| Pharmacy Edge | [Ansible rollout](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Перевод готовится | Controlled rollout and fleet guardrails |
-| Interview material | [Interview index](./interview/README.md) | Перевод готовится | Separate learning and interview preparation material |
+| Pharmacy Edge | [Ansible rollout](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Русская версия пока не опубликована | Controlled rollout and fleet guardrails |
+| Interview material | [Interview index](./interview/README.md) | Русская версия пока не опубликована | Separate learning and interview preparation material |
 
 ## Documentation map
 
