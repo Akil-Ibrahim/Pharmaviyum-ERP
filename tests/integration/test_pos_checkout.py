@@ -500,3 +500,52 @@ async def test_cancel_pending_sale_releases_reserved_inventory(
     assert first.reserved_quantity == 0
     assert second.quantity == 5
     assert second.reserved_quantity == 0
+
+
+@pytest.mark.integration
+async def test_pos_checkout_includes_lots_expiring_today(
+    authenticated_client, test_db
+):
+    pharmacy, product, expiring_today, later = (
+        await _create_pharmacy_product_and_stock(test_db)
+    )
+    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    expiring_today.expires_at = today
+
+    lots_response = await authenticated_client.get(
+        f"/api/v1/pos/products/{product.id}/lots",
+        params={"pharmacy_id": pharmacy.id},
+    )
+    assert lots_response.status_code == 200, lots_response.text
+    assert [row["lot_number"] for row in lots_response.json()] == [
+        "EARLY-LOT",
+        "LATE-LOT",
+    ]
+
+    search_response = await authenticated_client.get(
+        "/api/v1/pos/products/search",
+        params={"q": "omeprazole", "pharmacy_id": pharmacy.id},
+    )
+    assert search_response.status_code == 200, search_response.text
+    assert search_response.json()[0]["stock"] == 7
+
+    checkout_response = await authenticated_client.post(
+        "/api/v1/pos/checkout",
+        json={
+            "pharmacy_id": pharmacy.id,
+            "idempotency_key": "pos-expiry-today-0001",
+            "items": [{"product_id": product.id, "quantity": 1}],
+            "payment_method": "cash",
+            "cash_received": "20.00",
+        },
+    )
+    assert checkout_response.status_code == 201, checkout_response.text
+    allocations = checkout_response.json()["items"][0]["allocations"]
+    assert [(row["lot_number"], row["quantity"]) for row in allocations] == [
+        ("EARLY-LOT", 1)
+    ]
+
+    await test_db.refresh(expiring_today)
+    await test_db.refresh(later)
+    assert expiring_today.quantity == 1
+    assert later.quantity == 5
