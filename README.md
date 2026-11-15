@@ -454,6 +454,7 @@ Browse the documentation in your preferred language:
 | Chunking | [Mortarium chunking pipeline](docs/ai/chunking-pipeline.md) | [Pipeline чанкинга Mortarium](docs/ai/chunking-pipeline.ru.md) |
 | Pharmacy workflow | [Pharmacy workflow specification](docs/workflows/pharmacy-workflow.en.md) | [Спецификация аптечного процесса](docs/workflows/pharmacy-workflow.ru.md) |
 | System architecture | [Architecture vision](docs/architecture/pharmaviyum-architecture.en.md) | [Архитектурное видение](docs/architecture/pharmaviyum-architecture.ru.md) |
+| Architecture decisions | [ADR index](docs/adr/README.md) | [Индекс архитектурных решений](docs/adr/README.ru.md) |
 
 **Русские переводы остальных руководств готовятся.** Их актуальный статус указан в [русском индексе документации](docs/README.ru.md); английский оригинал доступен в [английском индексе](docs/README.md).
 
