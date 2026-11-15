@@ -156,7 +156,12 @@ jobs:
           set -euo pipefail
           base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
           for attempt in $(seq 1 60); do
-            runtime_info="$(curl --silent --show-error --fail "$base_url/version" || true)"
+            # Bypass intermediary caches so this gate observes the runtime that is
+            # currently serving requests, not a stale cached /version response.
+            runtime_info="$(curl --silent --show-error --fail \
+              -H "Cache-Control: no-cache, no-store" \
+              -H "Pragma: no-cache" \
+              "$base_url/version?deploy_sha=${DEPLOY_SHA}&attempt=${attempt}" || true)"
             if printf '%s' "$runtime_info" | jq -e '
               .environment == "production" and
               .application_environment == "production" and
