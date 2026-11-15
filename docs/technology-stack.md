@@ -81,7 +81,7 @@ This section explains not only which technologies are present, but why Pharmaviy
 | **MCP (Model Context Protocol)** | A protocol for exposing tools and resources to AI applications through a defined client/server contract; this project documents a JSON-RPC-based MCP layer. | Gives Mortarium a controlled way to discover and invoke approved pharmacy operations. Tool availability is role-filtered and server-authorized; model-generated arguments never establish identity or permission. |
 | **Prompt/context engineering** | Designing instructions and selecting trusted context supplied to a model. | Keeps the assistant focused on the pharmacist's task, jurisdiction, language, selected patient scope and evidence budget. |
 | **Guardrails** | Input/output checks and policy constraints around model behavior. | Rejects invalid scope, limits unsafe tool use, checks response structure and supports safe abstention when evidence is missing or conflicting. |
-| **Ragas 0.4.3** | Framework for evaluating RAG quality using reference data and evaluator models. | Measures offline signals such as faithfulness, answer relevancy, context precision and context recall. It is an evaluation dependency, not part of the production request path. |
+| **Ragas 0.4.3** | Framework for evaluating RAG quality using reference data and evaluator models. | Measures offline signals such as faithfulness, answer relevancy, context precision and context recall. It is declared in the `eval` dependency group and used by CI/evaluation jobs; it is not installed in the production runtime or imported by the production request path. |
 | **Pharmaceutical quality metrics** | Domain-specific checks beyond generic LLM scores. | Tests citation support, medication name/strength/form, negation preservation, unsupported clinical claims, patient isolation and English/Russian retrieval. These are regression checks, not clinical certification. |
 
 **Important AI boundary:** RAG and agent workflows do not make an answer clinically authoritative. Patient and pharmacy authorization is enforced by application code and retrieval filters. The pharmacist remains responsible for professional decisions. See [Mortarium AI system design](./ai/AI_LLM_SYSTEM_DESIGN.md), [chunking pipeline](./ai/chunking-pipeline.md) and [Ragas evaluation](./ai/ragas-pharmaceutical-evaluation.md).
@@ -138,7 +138,7 @@ Python dependency definitions are maintained in:
 
 - `pyproject.toml` — direct dependencies, optional groups and tool configuration.
 - `uv.lock` — resolved, reproducible Python dependency versions.
-- `requirements-eval.txt` — isolated offline Ragas evaluation dependencies; not installed in the production runtime image.
+- `[dependency-groups].eval` in `pyproject.toml` — isolated Ragas evaluation dependencies, installed explicitly for evaluation with `uv sync --group eval`; the group is excluded from the production runtime installation.
 
 Frontend dependency definitions are maintained in:
 
@@ -206,8 +206,8 @@ Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collecto
 
 ## Dependency update procedure
 
-1. Change Python direct dependencies in `pyproject.toml`.
-2. Regenerate and commit `uv.lock`; CI uses `uv sync --frozen`, so a stale lockfile will fail reproducible installation.
+1. Change Python direct dependencies and optional dependency groups (such as `eval`) in `pyproject.toml`.
+2. Regenerate and commit `uv.lock`; CI uses frozen synchronization, and the RAG evaluation job installs its group with `uv sync --frozen --group eval`.
 3. Change frontend dependencies in `frontend/shadcn-admin/package.json` and regenerate the committed `frontend/shadcn-admin/bun.lock`.
 4. Run backend lint, formatting, typing, unit and integration checks; run frontend lint, formatting, production build and tests.
 5. Check compatibility notes and security advisories for major-version upgrades.
