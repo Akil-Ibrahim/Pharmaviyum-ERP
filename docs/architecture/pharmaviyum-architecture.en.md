@@ -1,4 +1,5 @@
 # Pharmaviyum Architecture
+[English](./pharmaviyum-architecture.en.md) · [Русский](./pharmaviyum-architecture.ru.md)
 ## Architecture Vision and Engineering Principles
 
 **Status:** Living architecture document  
