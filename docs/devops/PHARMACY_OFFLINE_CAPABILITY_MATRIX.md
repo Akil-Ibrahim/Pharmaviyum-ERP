@@ -66,3 +66,5 @@ Every Edge UI and central fleet dashboard should expose:
 - UPS/battery state where hardware monitoring is configured.
 
 A pharmacy is not considered synchronization-healthy merely because its API health endpoint returns HTTP 200.
+
+[English](PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) · [Русский](PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md)
