@@ -251,6 +251,9 @@ jobs:
           uv run pytest tests/unit/ai/test_ragas_evaluation.py -v -m unit
       - name: Validate golden dataset
         run: uv run pytest tests/test_evaluation.py -v -m unit
+      - name: Verify isolated DeepEval hallucination evaluator API
+        run: |
+          uv run --isolated --with deepeval==4.3.4 python -c "from deepeval.metrics import HallucinationMetric, FaithfulnessMetric; from deepeval.test_case import LLMTestCase; print('DeepEval hallucination and faithfulness APIs ready')"
 
   build:
     name: Build and Publish Immutable Image
