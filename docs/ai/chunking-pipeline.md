@@ -267,3 +267,5 @@ Use synthetic fixtures for at least two pharmacies and two patients. Verify:
 ## 13. Implementation status
 
 This document records the target architecture and the observed current code boundaries. It does **not** assert that parent-child retrieval, table-aware parsing, tokenizer-accurate budgets, complete Russian/English section parsing, index blue/green publication or all listed regression fixtures are already implemented. Those capabilities require code changes, tests and evidence before being marked complete.
+
+[English](chunking-pipeline.md) · [Русский](chunking-pipeline.ru.md)
