@@ -292,21 +292,48 @@ class PgVectorStore:
         """Fail closed if retrieval is attempted without a pharmacy tenant."""
         if not filters or "pharmacy_id" not in filters:
             raise ValueError("RAG retrieval requires a pharmacy_id tenant filter")
-        pharmacy_id = filters["pharmacy_id"]
-        if (
-            not isinstance(pharmacy_id, int)
-            or isinstance(pharmacy_id, bool)
-            or pharmacy_id <= 0
+        PgVectorStore._require_pharmacy_id(filters["pharmacy_id"])
+
+        access_level = filters.get("access_level")
+        patient_id = filters.get("patient_id")
+        if patient_id is not None and (
+            not isinstance(patient_id, int)
+            or isinstance(patient_id, bool)
+            or patient_id <= 0
         ):
-            raise ValueError("RAG retrieval requires a positive integer pharmacy_id")
+            raise ValueError("RAG retrieval requires a positive integer patient_id")
+        if patient_id is not None and access_level != "patient":
+            raise ValueError("RAG patient_id filter requires access_level='patient'")
+        if not isinstance(access_level, str) or access_level not in {
+            "public",
+            "pharmacy",
+            "patient",
+        }:
+            raise ValueError(
+                "RAG retrieval requires an explicit valid access_level filter"
+            )
+        if access_level == "patient" and patient_id is None:
+            raise ValueError(
+                "Patient-level RAG retrieval requires an exact patient_id filter"
+            )
 
     @staticmethod
     def _require_tenant_metadata(metadata: dict[str, Any]) -> None:
         """Fail closed if an ingested chunk has no canonical tenant metadata."""
         if "pharmacy_id" not in metadata:
             raise ValueError("RAG ingestion requires pharmacy_id tenant metadata")
-        PgVectorStore._require_tenant_filter({"pharmacy_id": metadata["pharmacy_id"]})
+        PgVectorStore._require_pharmacy_id(metadata["pharmacy_id"])
         CanonicalMetadata.model_validate(metadata)
+
+    @staticmethod
+    def _require_pharmacy_id(pharmacy_id: Any) -> None:
+        """Validate a tenant identifier independently from retrieval scope."""
+        if (
+            not isinstance(pharmacy_id, int)
+            or isinstance(pharmacy_id, bool)
+            or pharmacy_id <= 0
+        ):
+            raise ValueError("RAG scope requires a positive integer pharmacy_id")
 
     @staticmethod
     def _serialize_metadata(metadata: dict[str, Any]) -> str:
