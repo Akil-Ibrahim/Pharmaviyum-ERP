@@ -148,6 +148,34 @@ jobs:
           FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
           FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
 
+      # The deploy CLI is intentionally asynchronous. Do not let the smoke
+      # suite accidentally validate the previous production instance.
+      - name: Wait for the new production runtime to become active
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
+          for attempt in $(seq 1 60); do
+            runtime_info="$(curl --silent --show-error --fail "$base_url/version" || true)"
+            if printf '%s' "$runtime_info" | jq -e '
+              .environment == "production" and
+              .application_environment == "production" and
+              .auth_environment == "production" and
+              .debug == false and
+              .auth_debug == false and
+              (.python_version | startswith("3.15.2")) and
+              .python_implementation == "cpython"
+            ' >/dev/null 2>&1; then
+              echo "New production runtime is active."
+              exit 0
+            fi
+            echo "Waiting for the new production runtime (attempt ${attempt}/60)."
+            sleep 5
+          done
+          echo "Production runtime did not switch to production on CPython 3.15.2 within five minutes."
+          printf '%s\\n' "${runtime_info:-No /version response}" | jq '{environment, application_environment, auth_environment, debug, auth_debug, python_version}' 2>/dev/null || true
+          exit 1
+
       - name: Verify production catalog exclusions (read-only)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
