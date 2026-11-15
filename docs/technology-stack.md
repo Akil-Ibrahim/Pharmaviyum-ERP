@@ -225,3 +225,5 @@ Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collecto
 ## Documentation rule
 
 When versions change, update the dependency manifests and lockfiles first. Keep README badges, architecture diagrams, setup guides and this page consistent with the actual configuration. Never put secrets, patient information or production credentials in documentation.
+
+[English](technology-stack.md) · [Русский](technology-stack.ru.md)
