@@ -1,5 +1,7 @@
 # Mortarium Hallucination Detection and AI Safety Evaluation
 
+[English](./hallucination-detection-and-red-team.md) · [Русский](./hallucination-detection-and-red-team.ru.md)
+
 ## Purpose
 
 This document defines the evaluation controls used to detect unsupported model claims, test adversarial behavior and prevent unsafe pharmaceutical answers from reaching the pharmacist. It complements, rather than replaces, the [Ragas pharmaceutical evaluation](./ragas-pharmaceutical-evaluation.md).
@@ -107,5 +109,3 @@ Review generated attacks before execution. The target URL, bearer token and phar
 - [DeepEval installation and metrics](https://deepeval.com/tutorials/tutorial-setup)
 - [Vectara HHEM model](https://huggingface.co/vectara/hallucination_evaluation_model)
 - [Promptfoo red-team quickstart](https://www.promptfoo.dev/docs/red-team/quickstart/)
-
-[English](hallucination-detection-and-red-team.md) · [Русский](hallucination-detection-and-red-team.ru.md)
