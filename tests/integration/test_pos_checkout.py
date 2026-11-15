@@ -549,3 +549,44 @@ async def test_pos_checkout_includes_lots_expiring_today(
     await test_db.refresh(later)
     assert expiring_today.quantity == 1
     assert later.quantity == 5
+
+
+
+@pytest.mark.integration
+async def test_pos_checkout_replay_returns_original_sale_without_second_stock_decrement(
+    authenticated_client, test_db
+):
+    pharmacy, product, first, second = await _create_pharmacy_product_and_stock(test_db)
+    payload = {
+        "pharmacy_id": pharmacy.id,
+        "idempotency_key": "pos-replay-checkout-0001",
+        "items": [{"product_id": product.id, "quantity": 3}],
+        "payment_method": "cash",
+        "cash_received": "40.00",
+    }
+
+    initial = await authenticated_client.post("/api/v1/pos/checkout", json=payload)
+    assert initial.status_code == 201, initial.text
+
+    replay = await authenticated_client.post("/api/v1/pos/checkout", json=payload)
+    assert replay.status_code == 201, replay.text
+    assert replay.json()["id"] == initial.json()["id"]
+    assert replay.json()["receipt_number"] == initial.json()["receipt_number"]
+
+    conflict_payload = {**payload, "cash_received": "50.00"}
+    conflict = await authenticated_client.post(
+        "/api/v1/pos/checkout", json=conflict_payload
+    )
+    assert conflict.status_code == 409, conflict.text
+
+    await test_db.refresh(first)
+    await test_db.refresh(second)
+    assert first.quantity == 0
+    assert second.quantity == 4
+    assert first.reserved_quantity == 0
+    assert second.reserved_quantity == 0
+    assert await test_db.scalar(
+        select(func.count()).select_from(Sale).where(
+            Sale.idempotency_key == payload["idempotency_key"]
+        )
+    ) == 1
