@@ -292,21 +292,17 @@ class PgVectorStore:
         """Fail closed if retrieval is attempted without a pharmacy tenant."""
         if not filters or "pharmacy_id" not in filters:
             raise ValueError("RAG retrieval requires a pharmacy_id tenant filter")
-        pharmacy_id = filters["pharmacy_id"]
-        if (
-            not isinstance(pharmacy_id, int)
-            or isinstance(pharmacy_id, bool)
-            or pharmacy_id <= 0
-        ):
-            raise ValueError("RAG retrieval requires a positive integer pharmacy_id")
+        PgVectorStore._require_pharmacy_id(filters["pharmacy_id"])
 
         access_level = filters.get("access_level")
-        if access_level is not None and access_level not in {
+        if not isinstance(access_level, str) or access_level not in {
             "public",
             "pharmacy",
             "patient",
         }:
-            raise ValueError("RAG retrieval access_level is invalid")
+            raise ValueError(
+                "RAG retrieval requires an explicit valid access_level filter"
+            )
 
         patient_id = filters.get("patient_id")
         if patient_id is not None and (
@@ -331,8 +327,18 @@ class PgVectorStore:
         """Fail closed if an ingested chunk has no canonical tenant metadata."""
         if "pharmacy_id" not in metadata:
             raise ValueError("RAG ingestion requires pharmacy_id tenant metadata")
-        PgVectorStore._require_tenant_filter({"pharmacy_id": metadata["pharmacy_id"]})
+        PgVectorStore._require_pharmacy_id(metadata["pharmacy_id"])
         CanonicalMetadata.model_validate(metadata)
+
+    @staticmethod
+    def _require_pharmacy_id(pharmacy_id: Any) -> None:
+        """Validate a tenant identifier without applying retrieval-only rules."""
+        if (
+            not isinstance(pharmacy_id, int)
+            or isinstance(pharmacy_id, bool)
+            or pharmacy_id <= 0
+        ):
+            raise ValueError("RAG retrieval requires a positive integer pharmacy_id")
 
     @staticmethod
     def _serialize_metadata(metadata: dict[str, Any]) -> str:
