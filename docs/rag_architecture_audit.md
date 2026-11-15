@@ -11,15 +11,15 @@ Mortarium is an application-level pharmacist assistant built around two LangGrap
 
 The architecture has meaningful fail-closed controls: authenticated pharmacy context is established at the API boundary; patient IDs are checked against the selected pharmacy; pgvector retrieval requires a positive pharmacy ID; patient-level chunks require an explicit patient filter; MCP execution requires trusted request context and RBAC; and MCP writes are denied unless a trusted approval verifier is configured.
 
-**The static audit does not establish production readiness for patient-facing or patient-context workflows.** The highest-priority issue is that conversation memory and both LangGraph checkpoint threads are scoped to pharmacy/user/session, but not to patient. Reusing a session while switching patients can therefore reuse historical conversation/checkpoint state across patient contexts. The existing patient-isolation evaluator checks retrieved-source metadata; it does not establish isolation of dialogue memory or checkpoint state.
+**This audit is a historical baseline, not a statement that the patient-session fix is absent from the current source.** A follow-up source review of `main` at `ec46735476c30ffa70d5064b743a5b8e80408872` confirms that PR #287 added patient-aware HMAC namespaces for API sessions, Redis memory inheritance, Agent checkpoints and RAG checkpoints. Both synchronous and streaming API routes validate patient membership in the selected pharmacy before deriving the scope. The earlier P0/P1 findings below are therefore superseded for the code paths covered by those changes. However, CI/unit coverage and static inspection do not prove the staged end-to-end release gate against real PostgreSQL checkpoint persistence and Redis memory; production rollout remains unverified.
 
-Other material gaps: RAG checkpoint IDs are not HMAC-pseudonymized despite the previous architecture documentation claiming they are; Russian is absent from current default language lists; the runtime does not inject a reranker; several declared RAG settings are not wired into the runtime; and the separate `IngestionOrchestrator` is not the API's active ingestion path.
+The follow-up review also found a remaining metadata-boundary hardening opportunity: canonical metadata allowed a `patient_id` on non-patient access levels, and the vector-store filter guard required a pharmacy ID but did not validate the relationship between `access_level` and `patient_id`. The patient-filter hardening PR addresses those invariants. Other material gaps remain: Russian is absent from current default language lists; the runtime does not inject a reranker; several declared RAG settings are not wired into the runtime; and the separate `IngestionOrchestrator` is not the API's active ingestion path.
 
 ## Runtime map
 
 | Layer | Current implementation | Audit assessment |
 |---|---|---|
-| API boundary | `src/pharmaviyum/api/v1/ai.py`; authenticated user, pharmacy membership and patient-in-pharmacy checks | Implemented; session-to-patient binding remains missing |
+| API boundary | `src/pharmaviyum/api/v1/ai.py`; authenticated user, pharmacy membership, patient-in-pharmacy check and patient-scoped HMAC session | Implemented in source; staged end-to-end verification remains open |
 | Agent orchestration | `PharmacistAgent` LangGraph graph: router → knowledge retrieval → planner/executor loop → structured reviewer | Implemented; iteration limit is 5 |
 | Agent Harness | `AgentHarness`: memory → input guardrail → cache → model router → agent → output guardrail → memory | Implemented |
 | RAG orchestration | `LangGraphRAG` compiled `StateGraph` with explicit PostgreSQL checkpointer | Implemented |
@@ -31,37 +31,30 @@ Other material gaps: RAG checkpoint IDs are not HMAC-pseudonymized despite the p
 
 ## Findings and priorities
 
-### P0 — Patient context is not bound to a conversation/checkpoint session
+### P0 — Patient-scoped conversation state: code remediation merged; staged release gate open
 
-**Evidence**
-- The AI API scopes the supplied session ID as `pharmacy:{pharmacy_id}:user:{user_id}:session:{session_id}`; patient ID is not part of that scope.
-- `AgentHarness` loads and saves dialogue memory using this session ID.
-- `DialogueMemory._session_prefix()` HMACs the session ID, but the HMAC input still does not include patient ID.
-- `PharmacistAgent._thread_id()` HMACs pharmacy, user and thread ID, but not patient ID.
-- `LangGraphRAG._thread_id()` also omits patient ID.
-- The prompt-cache context includes patient ID, but this does not scope dialogue memory or graph checkpoints.
-- The pharmaceutical `patient_context_isolation()` evaluator checks source metadata; it does not test switching patients within one reused conversation.
+**Current source evidence (main, follow-up review 2026-11-15)**
+- Both `/api/v1/ai/query` and `/api/v1/ai/query/stream` call `_validate_patient_scope()` against the active patient and authenticated pharmacy before deriving the session namespace.
+- `_scoped_session_id()` binds pharmacy ID, authenticated user ID, patient ID (including explicit `None`) and client session ID into a versioned HMAC namespace: `mortarium-session:v3`.
+- `AgentHarness` passes this opaque scope to Redis memory, prompt cache and the agent.
+- `PharmacistAgent._thread_id()` and `LangGraphRAG._thread_id()` both bind patient scope into versioned HMAC checkpoint identifiers.
+- `LangGraphRAG._build_filter_sets()` and the compatibility `RAGPipeline._build_filter_sets()` include patient-level chunks only for an exact selected patient ID. With no patient selected, only public/pharmacy access classes are searched.
+- PR #287 is recorded as merged; see [patient-session isolation design](./ai/patient-session-isolation.md) and [ADR-0003](./adr/ADR-0003-patient-scoped-ai-state.md).
 
-**Risk**
+**Remaining release gate**
+1. Run the same client session through patient A → patient B → no patient in synchronous and streaming API modes.
+2. Verify Redis memory, summaries, cache, Agent checkpoints and RAG checkpoints against real test services; assert no cross-scope content is restored.
+3. Verify cross-pharmacy and cross-user session reuse is isolated.
+4. Confirm the deployed application uses the merged revision and the configured stable `SECRET_KEY`.
+5. Define approved retention/expiry for legacy namespaces and checkpoint records; do not silently migrate or delete them.
 
-If a client reuses one session ID while changing `patient_id`, historical messages and checkpoint state can be reused in the new patient context. This creates a patient-context mixing and confidentiality risk even when every individual database retrieval is correctly tenant-filtered.
+**Assessment:** patient-scoped code-level namespacing and retrieval filters are present in the reviewed source. Do not mark the production isolation gate complete until the staged end-to-end checks pass.
 
-**Required remediation**
-1. Bind conversation identity to authenticated pharmacy, user, and patient scope (including an explicit no-patient scope), or reject patient-scope changes within an existing session.
-2. Apply the same scope to Agent Harness memory, PharmacistAgent checkpoint IDs, and RAG checkpoint IDs.
-3. Define safe migration/expiry behavior for existing sessions; do not silently merge old and new scopes.
-4. Add adversarial tests: patient A → patient B in the same client session; patient A → no patient; no patient → patient A; cross-pharmacy session reuse; streaming and non-streaming paths.
-5. Verify that summaries, episodic facts, tool results, cache entries and checkpoint restores cannot cross patient scopes.
+### P1 — RAG checkpoint identifiers: HMAC-pseudonymization implemented
 
-**Release gate:** Do not treat patient-context isolation as complete until these tests pass against the actual API/session and checkpoint paths.
+The current `LangGraphRAG._thread_id()` constructs a versioned HMAC-SHA-256 digest over graph purpose, pharmacy, user, patient and session identity. It returns an opaque `rag:v2:<digest>` identifier and fails closed in staging/production when `SECRET_KEY` is absent. The Agent checkpoint follows the same patient-scoped principle.
 
-### P1 — RAG checkpoint identifiers are not opaque/HMAC-derived
-
-The current `LangGraphRAG._thread_id()` returns `rag:{pharmacy_id}:{user_id}:{raw_session_id}`. The Agent graph and Redis dialogue-memory namespace use versioned HMAC-SHA-256 identifiers, but the RAG graph does not.
-
-The prior `docs/ai_architecture.md` statement that both graph checkpoint identifiers are HMAC-derived was inaccurate and is corrected in this documentation update.
-
-**Remediation:** use a versioned HMAC-derived RAG checkpoint key, include the patient scope as described in P0, and define an explicit compatibility/retention policy for old checkpoint records. Keep the application secret stable across deployments; rotation must be treated as a checkpoint namespace migration, not an incidental config change.
+Secret rotation changes the derived namespace. Keep the secret stable across instances and deployments, and treat rotation as a planned checkpoint/memory namespace migration. Legacy checkpoint rows are not automatically migrated or deleted; apply the approved retention policy.
 
 ### P1 — Russian is not enabled by the current default language configuration
 
