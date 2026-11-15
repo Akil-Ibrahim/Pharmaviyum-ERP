@@ -184,6 +184,75 @@ At minimum, maintain regression fixtures for:
 
 Chunk metadata is part of the authorization boundary. Enforce tenant and patient filters in trusted server-side code, not model-generated arguments or user-supplied metadata. Do not place PHI in chunk IDs, metric labels, trace attributes or ordinary logs. Use synthetic/de-identified evaluation fixtures. Apply retention and deletion policies to source files, chunks, embeddings, parent records, checkpoints and backups.
 
+
+## 11A. Patient-scoped metadata and retrieval isolation
+
+Patient identity is an authorization scope, not a semantic hint. The current RAG schema already defines `pharmacy_id`, `access_level` (`public`, `pharmacy`, `patient`) and optional `patient_id`; `CanonicalMetadata` requires a positive `patient_id` whenever `access_level="patient"`. `QueryContext` carries the authenticated pharmacy scope and an optional patient selector. Keep this existing contract as the compatibility baseline; do not add a second `tenant_id` field that can disagree with `pharmacy_id` without a separately reviewed schema migration.
+
+### Metadata contract
+
+Use a typed canonical ingestion model as the source of truth, then serialize only supported scalar fields into the vector-store metadata payload. Vector stores commonly restrict nested objects and arrays, so a nested JSON example is useful for API/domain design but must not be assumed to be directly indexable.
+
+Illustrative canonical record (only populate facts validated from the source or trusted application context):
+
+```json
+{
+  "metadata_schema_version": "1",
+  "document_id": "patient_record_001",
+  "chunk_id": "patient_record_001_v1_014",
+  "chunk_type": "patient_context",
+  "pharmacy_id": 42,
+  "access_level": "patient",
+  "patient_id": 12345,
+  "language": "en",
+  "source": "record_001",
+  "version": "record-revision-7",
+  "category": "medication_history",
+  "doc_type": "patient_record",
+  "source_page": null,
+  "section_code": "medication_history",
+  "drug_name": "Omeprazole",
+  "active_ingredient": "omeprazole",
+  "strength": "20 mg",
+  "dosage_form": "capsule",
+  "route": "oral",
+  "chunking_version": "medical-v2"
+}
+```
+
+The example is illustrative, not a new runtime schema. In the current implementation, the authoritative fields are those in `CanonicalMetadata`; pharmaceutical enrichment fields such as `drug_name`, `strength`, page anchors and `chunking_version` remain optional until their extraction, validation and persistence are implemented. Do not fabricate values. Public SmPC/guideline chunks must not carry a patient ID. Pharmacy-scoped records use `access_level="pharmacy"`. Patient records use `access_level="patient"` and require both the authorized pharmacy scope and the exact patient scope.
+
+### Server-side retrieval policy (fail closed)
+
+1. Authenticate the pharmacist and derive `pharmacy_id` from trusted membership/authorization state. Never accept pharmacy scope from a prompt or model-generated tool argument.
+2. Treat a request's `patient_id` as a selector only. Verify that the patient exists, is active where applicable, and belongs to the authenticated pharmacy before constructing the immutable `QueryContext`.
+3. Build the retrieval filter in trusted server code. Always constrain by the authorized `pharmacy_id`; explicitly allow only the intended access levels. Include patient chunks only when a validated patient is selected, using exact `patient_id` equality. With no selected patient, omit patient-level records entirely—never use a wildcard, null-as-anything, or an unfiltered fallback.
+4. If scope validation or filter construction fails, return an authorization/validation error and do not perform a broader search. Do not silently retry without filters.
+5. Apply the same filters to vector, full-text/BM25, hybrid, reranker candidate fetches, parent expansion, citation/source lookup and any secondary retrieval path. Re-check authorization when loading a parent or source record; a permitted child does not authorize its parent.
+6. Scope cache keys, Redis memory, LangGraph checkpoints and any derived summaries to the authenticated pharmacy, user, patient (including explicit no-patient), and client session. Follow [ADR-0003](../adr/ADR-0003-patient-scoped-ai-state.md); retrieval filters alone do not isolate conversation state.
+7. Do not expose raw patient identifiers in chunk IDs, prompts where avoidable, logs, traces, metric labels or error messages. Use opaque references for externally visible identifiers and keyed HMAC namespaces for persisted state as specified by ADR-0003. Apply retention/deletion to source records, chunks, embeddings, caches, checkpoints and backups.
+
+### Storage and indexing
+
+- Keep the chunk body in the content field; metadata is not a substitute for source text.
+- Flatten metadata for vector-store filtering (for example, `pharmacy_id`, `access_level`, `patient_id`, `country`, `language`, `doc_type`). Do not serialize arbitrary nested objects into a vector store unless its adapter explicitly supports and tests them.
+- Enforce the invariant `access_level == "patient" => patient_id is present` at ingestion and persistence boundaries, not only in a Pydantic request model.
+- Treat public/pharmacy/patient as access classes, not confidence levels. A public document may be broadly reusable only if the storage and authorization model explicitly supports global scope; the current schema still requires `pharmacy_id`.
+- If a source contains multiple patients, split it into separately authorized records/chunks or keep it out of patient-scoped indexing. Never attach several patient IDs to one searchable chunk.
+
+### Mandatory isolation tests
+
+Use synthetic fixtures for at least two pharmacies and two patients. Verify:
+- Patient A cannot retrieve Patient B's chunk even when query text, medicine names and scores are identical.
+- Patient A cannot retrieve Patient B's content through vector, lexical, hybrid, reranked, parent-expansion, citation or source-fetch paths.
+- A request with no patient cannot retrieve any patient-level chunk.
+- A forged, unknown or cross-pharmacy patient selector is rejected before retrieval.
+- A filter/storage error fails closed and never triggers an unscoped fallback.
+- Cache, Redis memory, summaries and PostgreSQL checkpoints remain isolated for Patient A → Patient B → explicit no-patient while reusing a client session, in streaming and non-streaming flows.
+- Tests assert both returned content and absence of cross-scope identifiers/provenance; do not rely only on mocked filter-builder unit tests.
+
+**Implementation status:** the schema and compatibility pipeline expose pharmacy/patient scope fields and scoped filter construction, and ADR-0003 documents patient-aware state namespaces. This documentation does not prove every active ingestion, LangGraph, vector-store, cache, parent-expansion or production path enforces the complete policy. Audit and test each path before marking the isolation gate complete.
+
 ## 12. Code map
 
 - Chunker: `src/pharmaviyum/ai/mortarium_rag/chunking.py`
