@@ -31,9 +31,7 @@ class CanonicalMetadata(BaseModel):
         if self.access_level == "patient" and self.patient_id is None:
             raise ValueError("patient access_level requires patient_id")
         if self.access_level != "patient" and self.patient_id is not None:
-            raise ValueError(
-                "patient_id is only valid when access_level is 'patient'"
-            )
+            raise ValueError("patient_id is only valid when access_level is 'patient'")
         if (
             self.effective_from is not None
             and self.effective_to is not None
