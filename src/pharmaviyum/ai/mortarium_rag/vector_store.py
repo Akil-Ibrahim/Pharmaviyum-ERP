@@ -301,13 +301,9 @@ class PgVectorStore:
             or isinstance(patient_id, bool)
             or patient_id <= 0
         ):
-            raise ValueError(
-                "RAG retrieval requires a positive integer patient_id"
-            )
+            raise ValueError("RAG retrieval requires a positive integer patient_id")
         if patient_id is not None and access_level != "patient":
-            raise ValueError(
-                "RAG patient_id filter requires access_level='patient'"
-            )
+            raise ValueError("RAG patient_id filter requires access_level='patient'")
         if not isinstance(access_level, str) or access_level not in {
             "public",
             "pharmacy",
