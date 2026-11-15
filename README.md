@@ -440,6 +440,7 @@ The development approach is **pilot-first**: where appropriate, Pharmaviyum can 
 Additional technical documentation is available under `docs/`, including:
 
 - [`docs/README.md`](docs/README.md) — documentation index
+- [`docs/technology-stack.md`](docs/technology-stack.md) — complete technology definitions, architecture roles, versions and dependency policy
 - [`docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md`](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) — Ansible operating guide for Pharmacy Edge
 - [`docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) — 1–10 rollout guardrails and future 100-site architecture target
 - [`docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md`](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) — workflow-by-workflow offline policy and limitations
