@@ -189,5 +189,5 @@ In-memory платформа данных, обычно используемая
 - [Оценка Ragas для фармацевтического RAG](./ragas-pharmaceutical-evaluation.ru.md)
 - [Архитектура LangGraph RAG](./langgraph-rag-architecture.ru.md)
 - [ADR изоляции состояния пациента](../adr/ADR-0003-patient-scoped-ai-state.md)
-- [Политика OpenTelemetry](../observability/opentelemetry.md)
+- [Политика OpenTelemetry](../observability/opentelemetry.ru.md)
 - [Аудит архитектуры RAG](../rag_architecture_audit.md)
