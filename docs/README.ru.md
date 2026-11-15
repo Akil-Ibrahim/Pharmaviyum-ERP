@@ -23,7 +23,7 @@
 
 | Раздел | Что содержит | Статус русской версии |
 |---|---|---|
-| Системный контекст | [Английский оригинал](./architecture/system-context.md) | Русская версия пока не опубликована | Границы компонентов, владение данными и Central/Edge |
+| Системный контекст | [Английский оригинал](./architecture/system-context.md) | Доступен только английский оригинал | Границы компонентов, владение данными и Central/Edge |
 | ADR | [Индекс архитектурных решений](./adr/README.ru.md) · [ADR-0001](./adr/ADR-0001-websocket-gateway.ru.md) · [ADR-0002](./adr/ADR-0002-offline-first-central-edge.ru.md) · [ADR-0003](./adr/ADR-0003-patient-scoped-ai-state.ru.md) | [ADR index](./adr/README.md) | Архитектурные решения и история изменений | Решения, статусы и жизненный цикл архитектурных изменений |
 | AI / LLM | [Демо QwenCloud](./ai/QWENCLOUD_DEMO.ru.md) · [Архитектура Mortarium и глоссарий](./ai/MORTARIUM_AI_ARCHITECTURE.ru.md) · [Проектирование AI-системы](./ai/AI_LLM_SYSTEM_DESIGN.ru.md) · [Архитектура AI](./ai_architecture.ru.md) · [Аудит архитектуры RAG](./rag_architecture_audit.ru.md) · [Стандарт инженерии LLM](./llm_engineering_standards.ru.md) · [Архитектура LangGraph RAG](./ai/langgraph-rag-architecture.ru.md) · [Операционная работа Mortarium](./ai/mortarium-pharmacy-operations.ru.md) · [Изоляция состояния пациента](./ai/patient-session-isolation.ru.md) | [English originals](./README.md) | Mortarium, Agent Harness, LangGraph, RAG, MCP, безопасность и наблюдаемость |
 | Разработка | [Руководство по разработке и тестированию](./guides/DEVELOPMENT_AND_TESTING.ru.md) · [Настройка окружения](./guides/ENVIRONMENT_SETUP.ru.md) · [GitHub Codespaces](./guides/CODESPACES_GUIDE.ru.md) | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) | Локальная среда, Codespaces, quality gates и контроль PR |
@@ -32,8 +32,8 @@
 | Развёртывание | [FastAPI Cloud](./deployment/FASTAPI_CLOUD.ru.md) · [Настройка окружения](./guides/ENVIRONMENT_SETUP.ru.md) | [FastAPI Cloud deployment](./deployment/FASTAPI_CLOUD.md) · [Environment setup](./guides/ENVIRONMENT_SETUP.md) | Hosted deployment, secrets, runtime и ручной release |
 | DevOps и Pharmacy Edge | [Индекс DevOps](./devops/README.md) · [Roadmap](./devops/ENGINEERING_ROADMAP.md) · [Ansible rollout](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Русские версии части документов пока не опубликованы | Roadmap, Ansible, нагрузочные испытания, резервное копирование и rollout |
 | Наблюдаемость | [OpenTelemetry](./observability/opentelemetry.ru.md) | [English original](./observability/opentelemetry.md) | Tracing, защита данных и критерии приёмки telemetry |
-| WebSocket | [Английский оригинал](./websocket-protocol.md) | Русская версия пока не опубликована | Протокол и ограничения текущей реализации |
-| Материалы для интервью | [Английский оригинал](./interview/README.md) | Русская версия пока не опубликована | Python, system design и инженерные вопросы |
+| WebSocket | [Английский оригинал](./websocket-protocol.md) | Доступен только английский оригинал | Протокол и ограничения текущей реализации |
+| Материалы для интервью | [Английский оригинал](./interview/README.md) | Доступен только английский оригинал | Python, system design и инженерные вопросы |
 
 ## Карта каталогов
 
