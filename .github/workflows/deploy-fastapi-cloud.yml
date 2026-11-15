@@ -287,9 +287,10 @@ jobs:
             .auth_environment == "production" and
             .debug == false and
             .auth_debug == false and
-            (.python_version | startswith("3.15."))
+            (.python_version | startswith("3.15.")) and
+            .python_implementation == "cpython"
           ' >/dev/null; then
-            echo "Production runtime assertion failed; expected production mode, debug=false, and Python 3.15.x."
+            echo "Production runtime assertion failed; expected production mode, debug=false, and CPython 3.15.x."
             printf '%s\n' "$runtime_info" | jq '{environment, application_environment, auth_environment, debug, auth_debug, python_version}'
             exit 1
           fi
