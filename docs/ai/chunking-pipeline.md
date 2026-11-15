@@ -1,5 +1,7 @@
 # Mortarium Pharmaceutical Chunking Pipeline
 
+[English](./chunking-pipeline.md) · [Русский](./chunking-pipeline.ru.md)
+
 **Status:** Architecture documentation of the current implementation and a staged target design. This document distinguishes shipped behavior from capabilities that still require implementation and tests.
 
 ## 1. Purpose and safety properties
@@ -184,7 +186,6 @@ At minimum, maintain regression fixtures for:
 
 Chunk metadata is part of the authorization boundary. Enforce tenant and patient filters in trusted server-side code, not model-generated arguments or user-supplied metadata. Do not place PHI in chunk IDs, metric labels, trace attributes or ordinary logs. Use synthetic/de-identified evaluation fixtures. Apply retention and deletion policies to source files, chunks, embeddings, parent records, checkpoints and backups.
 
-
 ## 11A. Patient-scoped metadata and retrieval isolation
 
 Patient identity is an authorization scope, not a semantic hint. The current RAG schema already defines `pharmacy_id`, `access_level` (`public`, `pharmacy`, `patient`) and optional `patient_id`; `CanonicalMetadata` requires a positive `patient_id` whenever `access_level="patient"`. `QueryContext` carries the authenticated pharmacy scope and an optional patient selector. Keep this existing contract as the compatibility baseline; do not add a second `tenant_id` field that can disagree with `pharmacy_id` without a separately reviewed schema migration.
@@ -267,5 +268,3 @@ Use synthetic fixtures for at least two pharmacies and two patients. Verify:
 ## 13. Implementation status
 
 This document records the target architecture and the observed current code boundaries. It does **not** assert that parent-child retrieval, table-aware parsing, tokenizer-accurate budgets, complete Russian/English section parsing, index blue/green publication or all listed regression fixtures are already implemented. Those capabilities require code changes, tests and evidence before being marked complete.
-
-[English](chunking-pipeline.md) · [Русский](chunking-pipeline.ru.md)
