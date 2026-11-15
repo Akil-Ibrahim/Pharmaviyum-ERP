@@ -56,6 +56,18 @@ The active API ingestion path dispatches tenant-authorized Celery tasks. Worker 
 
 Jobs must be idempotent, bounded and safe to retry. Retain source, jurisdiction, language, version and tenant metadata.
 
+## 6A. Pharmaceutical chunking pipeline
+
+Chunking is an explicit ingestion concern, not a generic text-splitting detail. The current `MedicalChunker` provides medical heading heuristics, sentence-grouped chunking and recursive fallback. Its default 512-token limit and 50 overlap are estimates based on characters divided by four, not exact model-tokenizer counts. The current semantic strategy groups sentence boundaries; it is not embedding-based semantic segmentation.
+
+The target design is versioned and structure-aware: preserve section heading paths, table headers/rows, medicine identity, strength/units, dosage form, route, negation, conditions, jurisdiction, source version and page anchors. Parent-child retrieval and table-aware parsing are target capabilities and must not be described as shipped until implemented and covered by tests.
+
+Every chunk must retain source provenance and the same trusted pharmacy/patient access scope as its parent document. Parent expansion must reapply authorization filters. Re-indexing should publish a validated new index revision and retain a rollback path rather than destructively replacing the active index.
+
+Chunking revisions are evaluated offline using Ragas plus deterministic pharmaceutical checks for citation correctness, medication entity/strength/form/route, negation, table integrity, multilingual retrieval, freshness and patient/pharmacy isolation. Evaluation uses synthetic or de-identified data; LLM-judge scores are regression signals, not clinical validation.
+
+See the [Mortarium Pharmaceutical Chunking Pipeline](./chunking-pipeline.md) for current implementation boundaries, metadata contract, tuning experiments, versioning, acceptance tests and the code map.
+
 ## 7. MCP tool boundary
 The registry filters tools by role; execution requires trusted request-scoped authorization context.
 - The model may propose a tool call; the server decides whether it is authorized.
