@@ -143,3 +143,17 @@ def test_patient_filter_clause_keeps_patient_and_pharmacy_as_bound_parameters():
     assert "metadata ->> 'access_level'" in clause
     assert "metadata ->> 'patient_id'" in clause
     assert set(params.values()) == {7, "patient", 42}
+
+
+@pytest.mark.parametrize("field,value", [("pharmacy_id", True), ("patient_id", "42")])
+def test_canonical_metadata_rejects_coerced_identifier_types(field, value):
+    metadata = {
+        "pharmacy_id": 7,
+        "source": "patient-record",
+        "access_level": "patient",
+        "patient_id": 42,
+    }
+    metadata[field] = value
+
+    with pytest.raises(ValueError):
+        CanonicalMetadata.model_validate(metadata)
