@@ -7,7 +7,6 @@ from src.pharmaviyum.ai.mortarium_rag.pipeline import RAGPipeline
 from src.pharmaviyum.ai.mortarium_rag.schemas import CanonicalMetadata, QueryContext
 from src.pharmaviyum.ai.mortarium_rag.vector_store import PgVectorStore
 
-
 @pytest.mark.parametrize(
     "filters",
     [
@@ -79,7 +78,6 @@ def test_query_filter_sets_keep_patient_records_explicitly_scoped():
     assert patient_filters["pharmacy_id"] == 7
     assert patient_filters["patient_id"] == 42
 
-
 @pytest.mark.parametrize("access_level", ["pharmacy", "public"])
 def test_non_patient_metadata_rejects_patient_identifier(access_level):
     with pytest.raises(ValueError, match="only valid when access_level"):
@@ -91,7 +89,6 @@ def test_non_patient_metadata_rejects_patient_identifier(access_level):
                 "patient_id": 42,
             }
         )
-
 
 @pytest.mark.parametrize(
     "filters,match",
@@ -120,8 +117,6 @@ def test_retrieval_accepts_exact_patient_scope():
         {"pharmacy_id": 7, "access_level": "patient", "patient_id": 42}
     )
 
-
-
 @pytest.mark.parametrize(
     "filters",
     [
@@ -145,7 +140,6 @@ def test_patient_filter_clause_uses_bound_parameters():
     assert "metadata ->> 'patient_id'" in clause
     assert set(params.values()) == {7, "patient", 42}
 
-
 @pytest.mark.parametrize("field,value", [("pharmacy_id", True), ("patient_id", "42")])
 def test_canonical_metadata_rejects_coerced_identifier_types(field, value):
     metadata = {
@@ -158,7 +152,6 @@ def test_canonical_metadata_rejects_coerced_identifier_types(field, value):
 
     with pytest.raises(ValueError):
         CanonicalMetadata.model_validate(metadata)
-
 
 @pytest.mark.parametrize("builder", [LangGraphRAG, RAGPipeline])
 def test_patient_scope_filter_sets_isolate_patient_contexts(builder):
