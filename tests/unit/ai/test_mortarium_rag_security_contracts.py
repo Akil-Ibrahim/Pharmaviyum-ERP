@@ -127,7 +127,7 @@ def test_non_patient_metadata_rejects_patient_identifier(access_level, patient_i
         ),
         (
             {"pharmacy_id": 7, "access_level": "unknown"},
-            "access_level is invalid",
+            "explicit valid access_level",
         ),
     ],
 )
