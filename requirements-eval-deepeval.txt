@@ -1,0 +1,3 @@
+# DeepEval is isolated from the application runtime and from the Ragas environment.
+# Use only with synthetic/de-identified evaluation cases and an explicitly configured judge.
+deepeval==4.3.4
