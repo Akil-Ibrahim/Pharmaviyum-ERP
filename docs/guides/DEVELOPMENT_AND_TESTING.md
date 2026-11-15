@@ -55,9 +55,10 @@ Integration tests must use isolated disposable services and must not depend on p
 Use package scripts as the source of truth if script names change.
 
 ## AI / RAG evaluation
-Ragas is an offline evaluation dependency, not a runtime dependency:
+Ragas is an evaluation-only dependency declared in the `eval` group in `pyproject.toml` and locked in `uv.lock`. Install that group only in the evaluation environment:
 
-    uv run --with-requirements requirements-eval.txt python -m pytest tests/unit/ai/test_ragas_evaluation.py
+    uv sync --frozen --group eval
+    uv run pytest tests/unit/ai/test_ragas_evaluation.py -v -m unit
 
 See [Ragas Pharmaceutical Evaluation](../ai/ragas-pharmaceutical-evaluation.md) for dataset rules and metric semantics. A passing adapter/unit test does not prove measured clinical quality is acceptable.
 
