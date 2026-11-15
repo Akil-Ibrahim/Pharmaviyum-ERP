@@ -184,7 +184,7 @@ In-memory платформа данных, обычно используемая
 
 ## Связанная документация
 
-- [Проектирование Mortarium AI / LLM](./AI_LLM_SYSTEM_DESIGN.md)
+- [Проектирование Mortarium AI / LLM](./AI_LLM_SYSTEM_DESIGN.ru.md)
 - [Фармацевтический pipeline чанкинга](./chunking-pipeline.ru.md)
 - [Оценка Ragas для фармацевтического RAG](./ragas-pharmaceutical-evaluation.ru.md)
 - [Архитектура LangGraph RAG](./langgraph-rag-architecture.ru.md)
