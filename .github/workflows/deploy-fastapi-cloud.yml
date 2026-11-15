@@ -112,12 +112,10 @@ jobs:
             echo "- Commit: $DEPLOY_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Set FastAPI Cloud runtime environment to production
-        run: uv run fastapi cloud env set ENVIRONMENT production --no-redeploy --path . --json
-        env:
-          FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
-          FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
-
+      # FASTAPI_CLOUD_TOKEN is a deploy token. It authorizes deployments,
+      # not account-authenticated app-management commands such as "cloud env set".
+      # Configure ENVIRONMENT=production once in the FastAPI Cloud dashboard;
+      # the runtime smoke test below refuses to pass unless production mode is active.
       - name: Deploy application and wait for verification
         run: uv run fastapi cloud deploy .
         env:
