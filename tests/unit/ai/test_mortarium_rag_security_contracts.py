@@ -81,7 +81,6 @@ def test_query_filter_sets_keep_patient_records_explicitly_scoped():
     assert patient_filters["patient_id"] == 42
 
 
-
 @pytest.mark.parametrize(
     "access_level,patient_id",
     [
