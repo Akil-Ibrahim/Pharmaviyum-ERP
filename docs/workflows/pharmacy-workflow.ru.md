@@ -1,4 +1,5 @@
 # Pharmaviyum — Pharmacy Workflow
+[English](./pharmacy-workflow.en.md) · [Русский](./pharmacy-workflow.ru.md)
 
 **Тип документа:** бизнес- и операционная спецификация workflow  
 **Язык:** Русский  
