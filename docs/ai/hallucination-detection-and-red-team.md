@@ -81,7 +81,7 @@ Use a dedicated evaluator model configured explicitly for the test run. Do not u
 
 ### Promptfoo red-team workflow
 
-Use the official CLI against a dedicated test deployment, with synthetic fixtures and a scoped test token:
+Use the committed [Promptfoo configuration](../../promptfooconfig.yaml) against a dedicated non-production deployment. Set the following environment variables before running it: `MORTARIUM_EVAL_TARGET_URL` (full URL ending in `/api/v1/ai/query`), `MORTARIUM_EVAL_API_TOKEN` (least-privilege test-user bearer token), `MORTARIUM_EVAL_PHARMACY_ID` (numeric synthetic test tenant), and `OPENAI_API_KEY` (attacker/grader provider key). The API token must belong to a test account and the pharmacy ID must refer only to synthetic test data.
 
 ```bash
 npx promptfoo@latest redteam init --no-gui
@@ -89,7 +89,7 @@ npx promptfoo@latest redteam run
 npx promptfoo@latest redteam report
 ```
 
-Review generated configuration before execution. Configure the target and attacker/grader provider explicitly; keep API keys in the CI secret store or local environment, never in YAML or committed files. Red-team scans may generate harmful or adversarial prompts, so restrict access to artifacts and never use real patient data.
+Review generated attacks before execution. The target URL, bearer token and pharmacy ID are environment-driven; the attacker/grader provider is explicitly set to `openai:gpt-5`. Keep all credentials in the CI secret store or local environment, never in YAML or committed files. Do not set the target URL to production. Red-team scans may generate harmful or adversarial prompts, so restrict access to artifacts and never use real patient data.
 
 ## Release gates
 
