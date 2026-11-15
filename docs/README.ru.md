@@ -31,7 +31,7 @@
 | Эксплуатация | Проверки работоспособности, инциденты, backup и recovery | Перевод готовится |
 | Развёртывание | FastAPI Cloud, секреты, runtime и контролируемый release | Перевод готовится |
 | DevOps и Pharmacy Edge | Roadmap, Ansible, нагрузочные испытания, резервное копирование и rollout | Перевод готовится |
-| Наблюдаемость | OpenTelemetry, tracing и защита данных | Перевод готовится |
+| Наблюдаемость | [OpenTelemetry](./observability/opentelemetry.ru.md) | [English original](./observability/opentelemetry.md) | Tracing, защита данных и критерии приёмки telemetry |
 | WebSocket | Протокол и ограничения текущей реализации | Перевод готовится |
 | Материалы для интервью | Python, system design и инженерные вопросы | Перевод готовится |
 
