@@ -25,7 +25,7 @@ concurrency:
 jobs:
   lint:
     name: Lint, Format and Types
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4.4.0
@@ -89,7 +89,7 @@ jobs:
 
   frontend-checks:
     name: Frontend Build, Lint and Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4.4.0
@@ -125,7 +125,7 @@ jobs:
 
   test-unit:
     name: Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     needs: lint
     services:
@@ -166,7 +166,7 @@ jobs:
 
   test-integration:
     name: Integration Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     needs: lint
     services:
@@ -211,7 +211,7 @@ jobs:
 
   security:
     name: Security Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4.4.0
@@ -233,7 +233,7 @@ jobs:
 
   rag-evaluation:
     name: RAG Safety Regression
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     needs: [test-unit, security]
     steps:
@@ -254,7 +254,7 @@ jobs:
 
   build:
     name: Build and Publish Immutable Image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     needs: [test-unit, test-integration, security, rag-evaluation]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

@@ -20,7 +20,7 @@ jobs:
   stage:
     name: Validate and optionally stage reference records
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}

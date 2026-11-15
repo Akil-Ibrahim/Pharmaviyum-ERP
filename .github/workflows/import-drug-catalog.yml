@@ -34,7 +34,7 @@ concurrency:
 jobs:
   import-catalog:
     name: Validate and import official medicine reference sources
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
