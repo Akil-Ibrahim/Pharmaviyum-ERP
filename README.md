@@ -445,6 +445,7 @@ Additional technical documentation is available under `docs/`, including:
 - [`docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) — 1–10 rollout guardrails and future 100-site architecture target
 - [`docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md`](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) — workflow-by-workflow offline policy and limitations
 - [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-evaluation.md) — Ragas and pharmaceutical RAG evaluation contract
+- [Mortarium AI Architecture & Glossary](docs/ai/MORTARIUM_AI_ARCHITECTURE.md) — Mortarium's role, architecture, security boundaries and AI/RAG terminology
 - [Pharmacy workflow documentation](docs/workflows/README.md)
 - [System architecture and component boundaries](docs/architecture/system-context.md)
 - [AI / LLM system design](docs/ai/AI_LLM_SYSTEM_DESIGN.md)
