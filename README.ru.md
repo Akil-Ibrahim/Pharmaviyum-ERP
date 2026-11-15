@@ -264,7 +264,7 @@ DeepEval изолирован в зависимостях для оценки; H
 
 Для включения трассировки используются настройки `OTEL_ENABLED=true` и `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
-Подробности об инструментации, sampling и защите данных: [политика OpenTelemetry](docs/observability/opentelemetry.md).
+Подробности об инструментации, sampling и защите данных: [политика OpenTelemetry](docs/observability/opentelemetry.md) (русская версия готовится).
 
 ## Архитектура AI / RAG
 
@@ -292,7 +292,7 @@ AI-слой находится в `src/pharmaviyum/ai` и предоставля
 - область контекста диалога и checkpoint задаётся явно;
 - для меток наблюдаемости используются метрики с низкой кардинальностью.
 
-Подробная архитектура: [AI architecture](docs/ai_architecture.md), [Mortarium AI Architecture & Glossary](docs/ai/MORTARIUM_AI_ARCHITECTURE.md), [AI / LLM System Design](docs/ai/AI_LLM_SYSTEM_DESIGN.md).
+Подробная архитектура: [AI architecture](docs/ai_architecture.md) (русская версия готовится), [Mortarium AI Architecture & Glossary](docs/ai/MORTARIUM_AI_ARCHITECTURE.md) (русская версия готовится), [AI / LLM System Design](docs/ai/AI_LLM_SYSTEM_DESIGN.md) (русская версия готовится).
 
 ## Автоматизация Pharmacy Edge (Ansible)
 
@@ -309,7 +309,7 @@ AI-слой находится в `src/pharmaviyum/ai` и предоставля
 - миграции базы данных и операции восстановления требуют отдельной проверки и подтверждения;
 - наличие playbook в репозитории не доказывает успешное развёртывание на реальной площадке: необходимы результаты лабораторной проверки и приёмки аптекой.
 
-Документация: [руководство Ansible для Pharmacy Edge](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) и [план внедрения Pharmacy Edge](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
+Документация: [руководство Ansible для Pharmacy Edge](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) (русская версия готовится) и [план внедрения Pharmacy Edge](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) (русская версия готовится).
 
 ## Структура проекта
 
@@ -333,7 +333,7 @@ AI-слой находится в `src/pharmaviyum/ai` и предоставля
 
 Развёртывание production намеренно выполняется вручную: слияние изменений в `main` или успешный CI сами по себе не запускают приложение и не выполняют production-миграции. Release workflow проверяет CI для конкретного выбранного commit перед развёртыванием.
 
-См. [руководство FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.md): секреты, конфигурация окружения, этапы release, smoke checks и ограничения отката.
+См. [руководство FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.md) (русская версия готовится): секреты, конфигурация окружения, этапы release, smoke checks и ограничения отката.
 
 ## Разработка
 
