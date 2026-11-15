@@ -25,19 +25,19 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 | Chunking | [Chunking pipeline](./ai/chunking-pipeline.md) | [Pipeline чанкинга](./ai/chunking-pipeline.ru.md) | Current chunking implementation and target architecture |
 | LLM standards | [LLM engineering standards](./llm_engineering_standards.md) | [Стандарт инженерии LLM](./llm_engineering_standards.ru.md) | Context, token budgets, model routing, cache, memory and MCP standards |
 | ADRs | [ADR index](./adr/README.md) | [Индекс архитектурных решений](./adr/README.ru.md) | Accepted and proposed architecture decisions | Accepted and proposed architecture decisions |
-| Development | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) | [Руководство по разработке и тестированию](./guides/DEVELOPMENT_AND_TESTING.ru.md) | Contributor workflow and quality gates |
+| Development | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) | [Разработка и тестирование](./guides/DEVELOPMENT_AND_TESTING.ru.md) · [GitHub Codespaces](./guides/CODESPACES_GUIDE.ru.md) | Contributor workflow and quality gates |
 | Environment | [Environment setup](./guides/ENVIRONMENT_SETUP.md) | [Настройка окружения](./guides/ENVIRONMENT_SETUP.ru.md) | Local services, configuration and prerequisites |
 | Testing | [Testing guide](./guides/TESTING.md) | [Руководство по тестированию](./guides/TESTING.ru.md) | Test layout, markers and CI gates |
 | Operations | [Production operations runbook](./operations/PRODUCTION_OPERATIONS_RUNBOOK.md) · [Production engineering](./operations/PRODUCTION_ENGINEERING.md) | [Эксплуатация Production](./operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md) · [Production engineering](./operations/PRODUCTION_ENGINEERING.ru.md) · [Инциденты](./operations/INCIDENT_RUNBOOK.ru.md) | Health checks, incident triage, backup and recovery |
 | Release | [Release runbook](./operations/RELEASE_RUNBOOK.md) | [Runbook релиза](./operations/RELEASE_RUNBOOK.ru.md) | Controlled release and rollback |
 | Hosted deployment | [FastAPI Cloud](./deployment/FASTAPI_CLOUD.md) | [Развёртывание FastAPI Cloud](./deployment/FASTAPI_CLOUD.ru.md) | Hosting, secrets, runtime constraints and manual deployment |
-| DevOps roadmap | [Engineering stages](./devops/ENGINEERING_ROADMAP.md) | Русская версия пока не опубликована | Stage goals, workstreams and exit criteria |
-| DevOps detail | [DevOps roadmap](./devops/README.md) | Русская версия пока не опубликована | Capacity, observability, reliability, security and recovery |
-| WebSocket | [WebSocket protocol](./websocket-protocol.md) | Русская версия пока не опубликована | Proposed v1 contract and current scaffold limitations |
+| DevOps roadmap | [Engineering stages](./devops/ENGINEERING_ROADMAP.md) | Russian translation not yet available | Stage goals, workstreams and exit criteria |
+| DevOps detail | [DevOps roadmap](./devops/README.md) | Russian translation not yet available | Capacity, observability, reliability, security and recovery |
+| WebSocket | [WebSocket protocol](./websocket-protocol.md) | Russian translation not yet available | Proposed v1 contract and current scaffold limitations |
 | Observability | [OpenTelemetry](./observability/opentelemetry.md) | [OpenTelemetry на русском](./observability/opentelemetry.ru.md) | Tracing configuration and privacy boundaries |
 | Pharmacy Edge offline | [Offline capability matrix](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | [Матрица офлайн-возможностей](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | Offline workflow policy and controls |
-| Pharmacy Edge | [Ansible rollout](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Русская версия пока не опубликована | Controlled rollout and fleet guardrails |
-| Interview material | [Interview index](./interview/README.md) | Русская версия пока не опубликована | Separate learning and interview preparation material |
+| Pharmacy Edge | [Ansible rollout](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Russian translation not yet available | Controlled rollout and fleet guardrails |
+| Interview material | [Interview index](./interview/README.md) | Russian translation not yet available | Separate learning and interview preparation material |
 
 ## Documentation map
 
