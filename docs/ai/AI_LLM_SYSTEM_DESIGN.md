@@ -107,7 +107,7 @@ Ragas is an offline evaluator, not a production request dependency. Pair generic
 
 Record dataset, corpus/index revision, language, model, prompt, evaluator version, sample count and adjudication. LLM-judge scores are regression signals, not clinical validation. Thresholds require qualified review.
 
-See [Ragas evaluation](./ragas-pharmaceutical-evaluation.md) and [benchmark requirements](../devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md).
+See [Ragas evaluation](./ragas-pharmaceutical-evaluation.md), [hallucination detection and red-team strategy](./hallucination-detection-and-red-team.md), and [benchmark requirements](../devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md). The evaluation strategy combines deterministic pharmaceutical assertions with offline Ragas and DeepEval measurements, optional HHEM consistency scoring, and Promptfoo adversarial testing. These evaluators are not production safeguards by themselves; the runtime decision gate must be implemented and tested separately.
 
 ## 10. Observability and privacy
 Use bounded spans/metrics for request and graph duration, retrieval counts, rewrite count, warning codes, provider latency/error class, MCP tool name/outcome and ingestion task status.
