@@ -102,10 +102,6 @@ class Settings(BaseSettings):
     SMTP_SSL: bool = False
     SMTP_TIMEOUT_SECONDS: int = 10
     EMAILS_FROM: str = "noreply@pharmaviyum.com"
-    OTEL_ENABLED: bool = False
-    OTEL_SERVICE_NAME: str = "pharmaviyum-crm"
-    OTEL_EXPORTER_ENDPOINT: Optional[str] = None
-    OTEL_TRACES_SAMPLE_RATE: float = 0.1
     SUPPORTED_LANGUAGES: list[str] = ["vi", "en", "zh", "ko", "ms", "id", "th"]
     DEFAULT_LANGUAGE: str = "vi"
     NOTIFICATION_CHANNELS: dict = {
