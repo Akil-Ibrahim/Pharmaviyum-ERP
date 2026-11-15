@@ -300,6 +300,32 @@ class PgVectorStore:
         ):
             raise ValueError("RAG retrieval requires a positive integer pharmacy_id")
 
+        access_level = filters.get("access_level")
+        if access_level is not None and access_level not in {
+            "public",
+            "pharmacy",
+            "patient",
+        }:
+            raise ValueError("RAG retrieval access_level is invalid")
+
+        patient_id = filters.get("patient_id")
+        if patient_id is not None and (
+            not isinstance(patient_id, int)
+            or isinstance(patient_id, bool)
+            or patient_id <= 0
+        ):
+            raise ValueError(
+                "RAG retrieval requires a positive integer patient_id"
+            )
+        if access_level == "patient" and patient_id is None:
+            raise ValueError(
+                "Patient-level RAG retrieval requires an exact patient_id filter"
+            )
+        if patient_id is not None and access_level != "patient":
+            raise ValueError(
+                "RAG patient_id filter requires access_level='patient'"
+            )
+
     @staticmethod
     def _require_tenant_metadata(metadata: dict[str, Any]) -> None:
         """Fail closed if an ingested chunk has no canonical tenant metadata."""
