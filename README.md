@@ -275,7 +275,7 @@ For the exact declared runtime versions and the dependency-upgrade procedure, se
 
 RAG orchestration uses LangGraph. Ragas is isolated to offline evaluation and is not imported into the production request path. Evaluation includes standard Ragas measures (faithfulness, answer relevancy, context precision/recall) and domain-specific regression checks for citation correctness, medication name/strength/form, negation preservation, clinical hallucinations, patient/pharmacy isolation, and Russian/English retrieval. LLM-judge scores are regression signals—not clinical validation or regulatory certification. Evaluation datasets must be synthetic or de-identified.
 
-See [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-evaluation.md).
+See [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-evaluation.md) and the [Mortarium chunking pipeline](docs/ai/chunking-pipeline.md). The current chunker supports medical/section-heuristic, sentence-grouping and recursive strategies; parent-child retrieval, table-aware parsing and tokenizer-accurate chunk budgets are documented as target capabilities, not assumed to be complete.
 
 ## Observability
 
