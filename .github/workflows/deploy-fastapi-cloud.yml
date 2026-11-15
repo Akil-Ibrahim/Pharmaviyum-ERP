@@ -73,16 +73,38 @@ jobs:
           python-version: "3.15.2"
           enable-cache: true
 
-      - name: Verify CI passed for this exact main commit
+      - name: Wait for CI to pass for this exact main commit
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          CI_CONCLUSION="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${DEPLOY_SHA}&per_page=100" \
-            --jq '[.workflow_runs[] | select(.path == ".github/workflows/ci.yml" and (.event == "push" or .event == "workflow_dispatch") and .head_sha == env.DEPLOY_SHA)] | sort_by(.created_at) | last | .conclusion // empty')"
-          if [ "$CI_CONCLUSION" != "success" ]; then
-            echo "Refusing production deploy: CI for ${DEPLOY_SHA} is not successful (conclusion: ${CI_CONCLUSION:-not found})."
-            exit 1
-          fi
+          set -euo pipefail
+          for attempt in $(seq 1 60); do
+            RUNS="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${DEPLOY_SHA}&per_page=100")"
+            CI_RUN="$(printf '%s' "$RUNS" | jq -c '
+              [.workflow_runs[]
+                | select(.path == ".github/workflows/ci.yml"
+                  and (.event == "push" or .event == "workflow_dispatch")
+                  and .head_sha == env.DEPLOY_SHA)]
+              | sort_by(.created_at) | last // empty')"
+            if [ -n "$CI_RUN" ]; then
+              STATUS="$(printf '%s' "$CI_RUN" | jq -r '.status')"
+              CONCLUSION="$(printf '%s' "$CI_RUN" | jq -r '.conclusion // empty')"
+              if [ "$STATUS" = "completed" ]; then
+                if [ "$CONCLUSION" = "success" ]; then
+                  echo "CI passed for ${DEPLOY_SHA}."
+                  exit 0
+                fi
+                echo "Refusing production deploy: CI concluded ${CONCLUSION:-without a conclusion}."
+                exit 1
+              fi
+              echo "CI is still ${STATUS}; waiting (attempt ${attempt}/60)."
+            else
+              echo "CI run for ${DEPLOY_SHA} has not appeared yet (attempt ${attempt}/60)."
+            fi
+            sleep 10
+          done
+          echo "Refusing production deploy: timed out waiting for CI on ${DEPLOY_SHA}."
+          exit 1
 
       # Alembic migrations are a separate, explicitly approved operation.
       # This deployment workflow must not mutate the production schema.
