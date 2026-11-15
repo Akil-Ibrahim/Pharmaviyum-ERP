@@ -9,6 +9,14 @@ It is not a system of record, substitute for a licensed professional, authorizat
 
 Deterministic application code owns permissions, calculations, transactional changes and regulatory constraints. AI output is advisory and evidence-bounded.
 
+## 2. Official definition
+
+**Mortarium AI is the secure, context-aware, agentic pharmaceutical intelligence layer integrated into Pharmaviyum ERP/CRM.** It combines LLM-based reasoning, LangGraph orchestration, retrieval-augmented generation (RAG), pharmaceutical document processing, scoped memory and controlled tool integrations to provide traceable, evidence-grounded assistance to pharmacy professionals. Its design includes pharmacy- and patient-aware authorization, evaluation and observability.
+
+Mortarium is decision support, not a system of record, clinical authority, autonomous prescriber or dispensing authorization engine. Deterministic application services remain authoritative for identity, permissions, calculations, inventory, transactions and regulated workflows.
+
+See the [Mortarium AI Architecture & Glossary](./MORTARIUM_AI_ARCHITECTURE.md) for definitions of RAG, LangGraph, AI Harness, MCP, pgvector, embeddings, chunking, reranking, Redis, Celery, Ragas and OpenTelemetry, plus the component responsibility map.
+
 ## 2. Logical architecture
 The request path is: authenticated pharmacist → FastAPI AI API → tenant/patient validation → Agent Harness → bounded Redis memory and prompt cache → model routing → LangGraph pharmacist agent → LangGraph RAG and/or role-filtered MCP registry → grounded response with sources and warnings → pharmacist review.
 
@@ -123,6 +131,7 @@ See [OpenTelemetry policy](../observability/opentelemetry.md).
 - [ ] Stale corpus, wrong jurisdiction or language mismatch.
 
 ## Related material
+- [Mortarium AI Architecture & Glossary](./MORTARIUM_AI_ARCHITECTURE.md)
 - [AI architecture](../ai_architecture.md)
 - [LangGraph RAG architecture](./langgraph-rag-architecture.md)
 - [Mortarium pharmacy operations](./mortarium-pharmacy-operations.md)
