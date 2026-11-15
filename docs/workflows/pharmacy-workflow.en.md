@@ -1,4 +1,5 @@
 # Pharmaviyum Pharmacy Workflow
+[English](./pharmacy-workflow.en.md) · [Русский](./pharmacy-workflow.ru.md)
 
 **Document type:** Business & Operational Workflow Specification  
 **Language:** English  
