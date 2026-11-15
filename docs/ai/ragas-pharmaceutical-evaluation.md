@@ -5,12 +5,17 @@
 ## Purpose and boundary
 
 Pharmaviyum uses LangGraph for production RAG orchestration. Ragas is an
-**offline evaluation dependency**, not a production request-path dependency.
-Install it only in the evaluation environment:
+**evaluation-only dependency**, not a production runtime or request-path dependency.
+It is declared in the `eval` dependency group in `pyproject.toml`, locked in
+`uv.lock`, and installed explicitly by the CI evaluation job:
 
 ```bash
-uv run --with-requirements requirements-eval.txt python -m pytest tests/unit/ai/test_ragas_evaluation.py
+uv sync --frozen --group eval
+uv run pytest tests/unit/ai/test_ragas_evaluation.py -v -m unit
 ```
+
+The production installation does not select the `eval` group, so Ragas is not
+installed in the production runtime image.
 
 The adapter targets the Ragas 0.4 collections API. Evaluator LLM and embeddings
 are injected; production provider credentials are not read implicitly.
