@@ -452,6 +452,8 @@ Browse the documentation in your preferred language:
 | RAG evaluation | [Ragas pharmaceutical evaluation](docs/ai/ragas-pharmaceutical-evaluation.md) | [Фармацевтическая оценка RAG](docs/ai/ragas-pharmaceutical-evaluation.ru.md) |
 | AI safety | [Hallucination detection & red-team](docs/ai/hallucination-detection-and-red-team.md) | [Выявление галлюцинаций и red-team](docs/ai/hallucination-detection-and-red-team.ru.md) |
 | Chunking | [Mortarium chunking pipeline](docs/ai/chunking-pipeline.md) | [Pipeline чанкинга Mortarium](docs/ai/chunking-pipeline.ru.md) |
+| Pharmacy workflow | [Pharmacy workflow specification](docs/workflows/pharmacy-workflow.en.md) | [Спецификация аптечного процесса](docs/workflows/pharmacy-workflow.ru.md) |
+| System architecture | [Architecture vision](docs/architecture/pharmaviyum-architecture.en.md) | [Архитектурное видение](docs/architecture/pharmaviyum-architecture.ru.md) |
 
 **Русские переводы остальных руководств готовятся.** Их актуальный статус указан в [русском индексе документации](docs/README.ru.md); английский оригинал доступен в [английском индексе](docs/README.md).
 
