@@ -52,3 +52,14 @@ def test_duplicate_product_lines_are_rejected() -> None:
             ],
             payment_method="online",
         )
+
+
+
+def test_pos_idempotency_lock_key_is_stable_and_tenant_scoped() -> None:
+    from src.pharmaviyum.api.v1.pos import _pos_idempotency_lock_key
+
+    first = _pos_idempotency_lock_key(1, "same-request-key")
+    assert first == _pos_idempotency_lock_key(1, "same-request-key")
+    assert first != _pos_idempotency_lock_key(2, "same-request-key")
+    assert first != _pos_idempotency_lock_key(1, "different-request-key")
+    assert -(2**63) <= first < 2**63
