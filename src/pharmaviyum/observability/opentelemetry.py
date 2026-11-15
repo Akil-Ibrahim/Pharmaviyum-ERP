@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 _provider: TracerProvider | None = None
 _instrumented = False
+_shutdown = False
 
 
 def _is_production_environment(environment: str | None) -> bool:
@@ -48,6 +49,10 @@ def _allow_sensitive_client_instrumentation(
 def configure_opentelemetry(app: Any) -> TracerProvider | None:
     """Configure process-wide tracing and instrument application dependencies."""
     global _provider, _instrumented
+
+    if _shutdown:
+        logger.warning("OpenTelemetry provider has already been shut down")
+        return None
 
     if not settings.otel.enabled:
         logger.info("OpenTelemetry is disabled")
@@ -158,9 +163,9 @@ def configure_opentelemetry(app: Any) -> TracerProvider | None:
 
 def shutdown_opentelemetry() -> None:
     """Flush and shut down the SDK provider during application shutdown."""
-    global _provider, _instrumented
+    global _shutdown
 
-    if _provider is not None:
+    if _provider is not None and not _shutdown:
         try:
             _provider.force_flush(timeout_millis=5_000)
         except Exception:
@@ -169,5 +174,6 @@ def shutdown_opentelemetry() -> None:
             _provider.shutdown()
         except Exception:
             logger.exception("OpenTelemetry provider shutdown failed")
-        _provider = None
-        _instrumented = False
+        # The OpenTelemetry global provider cannot be replaced safely in-process.
+        # Keep the closed provider reference and prevent accidental re-creation.
+        _shutdown = True
