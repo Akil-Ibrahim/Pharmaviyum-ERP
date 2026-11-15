@@ -14,13 +14,13 @@ class CanonicalMetadata(BaseModel):
 
     model_config = ConfigDict(extra="allow", frozen=True)
 
-    pharmacy_id: int = Field(..., gt=0)
+    pharmacy_id: int = Field(..., gt=0, strict=True)
     source: str = Field(..., min_length=1)
     version: str | None = None
     effective_from: datetime | None = None
     effective_to: datetime | None = None
     access_level: Literal["public", "pharmacy", "patient"] = "pharmacy"
-    patient_id: int | None = Field(default=None, gt=0)
+    patient_id: int | None = Field(default=None, gt=0, strict=True)
     country: str | None = Field(default=None, min_length=2, max_length=8)
     language: str = Field(default="en", min_length=2, max_length=8)
     category: str | None = None
@@ -30,6 +30,8 @@ class CanonicalMetadata(BaseModel):
     def validate_effective_window(self) -> "CanonicalMetadata":
         if self.access_level == "patient" and self.patient_id is None:
             raise ValueError("patient access_level requires patient_id")
+        if self.access_level != "patient" and self.patient_id is not None:
+            raise ValueError("patient_id is only valid when access_level is 'patient'")
         if (
             self.effective_from is not None
             and self.effective_to is not None

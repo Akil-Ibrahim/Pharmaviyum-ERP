@@ -25,7 +25,7 @@ def test_retrieval_rejects_missing_or_invalid_tenant_scope(filters):
 
 
 def test_retrieval_accepts_positive_integer_tenant_scope():
-    PgVectorStore._require_tenant_filter({"pharmacy_id": 7})
+    PgVectorStore._require_tenant_filter({"pharmacy_id": 7, "access_level": "pharmacy"})
 
 
 def test_metadata_requires_positive_pharmacy_id():
@@ -47,7 +47,13 @@ def test_patient_scoped_metadata_requires_patient_id():
 def test_filter_builder_rejects_untrusted_sql_identifier():
     store = PgVectorStore(session_factory=lambda: None)
     with pytest.raises(ValueError, match="Invalid metadata filter key"):
-        store._build_filter_clause({"pharmacy_id": 7, "country') OR TRUE --": "VN"})
+        store._build_filter_clause(
+            {
+                "pharmacy_id": 7,
+                "access_level": "pharmacy",
+                "country') OR TRUE --": "VN",
+            }
+        )
 
 
 def test_query_filter_sets_keep_patient_records_explicitly_scoped():
@@ -71,3 +77,43 @@ def test_query_filter_sets_keep_patient_records_explicitly_scoped():
     )
     assert patient_filters["pharmacy_id"] == 7
     assert patient_filters["patient_id"] == 42
+
+
+def test_non_patient_metadata_rejects_patient_identifier():
+    with pytest.raises(ValueError, match="only valid when access_level"):
+        CanonicalMetadata.model_validate(
+            {
+                "pharmacy_id": 7,
+                "source": "pharmacy-record",
+                "access_level": "pharmacy",
+                "patient_id": 42,
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    "filters,match",
+    [
+        ({"pharmacy_id": 7}, "explicit valid access_level"),
+        ({"pharmacy_id": 7, "access_level": "patient"}, "exact patient_id"),
+        ({"pharmacy_id": 7, "patient_id": 42}, "access_level='patient'"),
+        (
+            {"pharmacy_id": 7, "access_level": "patient", "patient_id": True},
+            "positive integer patient_id",
+        ),
+        (
+            {"pharmacy_id": 7, "access_level": "patient", "patient_id": 0},
+            "positive integer patient_id",
+        ),
+        ({"pharmacy_id": 7, "access_level": "unknown"}, "explicit valid access_level"),
+    ],
+)
+def test_retrieval_rejects_ambiguous_patient_scope(filters, match):
+    with pytest.raises(ValueError, match=match):
+        PgVectorStore._require_tenant_filter(filters)
+
+
+def test_retrieval_accepts_exact_patient_scope():
+    PgVectorStore._require_tenant_filter(
+        {"pharmacy_id": 7, "access_level": "patient", "patient_id": 42}
+    )

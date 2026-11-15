@@ -598,6 +598,7 @@ class LangGraphRAG:
         # when unknown; SQL equality against NULL never matches rows.
         filters: dict[str, Any] = {
             "pharmacy_id": context.pharmacy_id,
+            "access_level": "pharmacy",
             "_search_language": context.language,
         }
         if context.country:
