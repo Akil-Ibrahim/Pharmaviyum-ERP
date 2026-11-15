@@ -112,12 +112,16 @@ async def metrics():
 
 
 @router.get("/version")
-async def version():
+async def version(response: Response):
     """
     Application version endpoint
 
-    Returns version information for debugging.
+    Returns version information for debugging. Runtime identity must never be
+    served from an intermediary cache during production deployment verification.
     """
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     return {
         "name": settings.APP_NAME,
         "version": settings.APP_VERSION,
