@@ -205,6 +205,5 @@ def test_patient_scope_filter_sets_isolate_patient_contexts(builder):
         "pharmacy",
     }
     assert all(
-        item["pharmacy_id"] == 7
-        for item in filters_a + filters_b + filters_none
+        item["pharmacy_id"] == 7 for item in filters_a + filters_b + filters_none
     )
