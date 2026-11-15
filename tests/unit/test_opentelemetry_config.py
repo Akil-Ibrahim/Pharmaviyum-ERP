@@ -31,6 +31,14 @@ def test_otel_settings_accept_legacy_endpoint_name(monkeypatch: pytest.MonkeyPat
     assert settings.exporter_endpoint == "http://collector:4317"
 
 
+def test_otel_settings_accept_legacy_sampling_variable(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("OTEL_TRACES_SAMPLE_RATE", "0.35")
+
+    settings = OTelSettings(_env_file=None)
+
+    assert settings.sample_rate == 0.35
+
+
 def test_otel_sampling_rate_is_bounded():
     with pytest.raises(ValueError):
         OTelSettings(sample_rate=1.1)
