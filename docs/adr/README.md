@@ -1,5 +1,7 @@
 # Architecture Decision Records
 
+[English](README.md) · [Русский](README.ru.md)
+
 ADRs capture decisions that affect system boundaries, data ownership, security, operations or long-term implementation.
 
 ## Decision index
