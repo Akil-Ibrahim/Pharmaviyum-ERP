@@ -125,7 +125,7 @@ Ragas — offline evaluator, а не зависимость production request p
 
 Не записывайте prompts, completions, идентификаторы пациентов, данные рецептов, извлечённый клинический текст, ключи/значения Redis или исходные аргументы MCP. Автоматическая instrumentation FastAPI, SQLAlchemy и HTTPX включается только opt-in в development/test после проверки редактирования чувствительных данных; автоматическая instrumentation команд Redis остаётся отключённой.
 
-См. [политику OpenTelemetry](../observability/opentelemetry.md).
+См. [политику OpenTelemetry](../observability/opentelemetry.ru.md).
 
 ## 11. Надёжность и контроль затрат
 
