@@ -295,15 +295,6 @@ class PgVectorStore:
         PgVectorStore._require_pharmacy_id(filters["pharmacy_id"])
 
         access_level = filters.get("access_level")
-        if not isinstance(access_level, str) or access_level not in {
-            "public",
-            "pharmacy",
-            "patient",
-        }:
-            raise ValueError(
-                "RAG retrieval requires an explicit valid access_level filter"
-            )
-
         patient_id = filters.get("patient_id")
         if patient_id is not None and (
             not isinstance(patient_id, int)
@@ -313,13 +304,21 @@ class PgVectorStore:
             raise ValueError(
                 "RAG retrieval requires a positive integer patient_id"
             )
-        if access_level == "patient" and patient_id is None:
-            raise ValueError(
-                "Patient-level RAG retrieval requires an exact patient_id filter"
-            )
         if patient_id is not None and access_level != "patient":
             raise ValueError(
                 "RAG patient_id filter requires access_level='patient'"
+            )
+        if not isinstance(access_level, str) or access_level not in {
+            "public",
+            "pharmacy",
+            "patient",
+        }:
+            raise ValueError(
+                "RAG retrieval requires an explicit valid access_level filter"
+            )
+        if access_level == "patient" and patient_id is None:
+            raise ValueError(
+                "Patient-level RAG retrieval requires an exact patient_id filter"
             )
 
     @staticmethod
@@ -338,7 +337,7 @@ class PgVectorStore:
             or isinstance(pharmacy_id, bool)
             or pharmacy_id <= 0
         ):
-            raise ValueError("RAG retrieval requires a positive integer pharmacy_id")
+            raise ValueError("RAG scope requires a positive integer pharmacy_id")
 
     @staticmethod
     def _serialize_metadata(metadata: dict[str, Any]) -> str:
