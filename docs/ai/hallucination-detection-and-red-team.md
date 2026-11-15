@@ -65,7 +65,7 @@ Never send patient identifiers, prescription text, patient records or other PHI 
 
 ## Repository integration and status
 
-- **Ragas:** present in `requirements-eval.txt`; current CI runs a Ragas API/import check, pharmaceutical metric contract tests and golden-dataset validation. This is offline evaluation, not a production response filter.
+- **Ragas:** declared in the `eval` dependency group in `pyproject.toml` and locked in `uv.lock`; CI installs the group for API/import checks, pharmaceutical metric contract tests and golden-dataset validation. This is offline evaluation, not a production response filter.
 - **DeepEval:** pinned as an isolated evaluation dependency in `requirements-eval-deepeval.txt`. CI performs an import/API smoke check. The actual judge-backed hallucination suite still requires an explicitly configured evaluation model and curated cases.
 - **HHEM:** documented as an optional model-based evaluator. The model is not installed in the FastAPI production image and is not yet a live request-path gate. Before enabling it, validate its model revision, license, runtime/Python compatibility, CPU/GPU footprint, latency and pharmacist-reviewed threshold.
 - **Promptfoo:** documented for on-demand red-team testing against a dedicated non-production endpoint. A target-specific configuration and credentials are intentionally not fabricated; no production endpoint or secret is embedded in the repository.
