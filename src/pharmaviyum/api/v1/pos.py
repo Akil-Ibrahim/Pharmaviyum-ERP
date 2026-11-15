@@ -67,10 +67,11 @@ async def search_pos_products(
     await require_pharmacy_tenant(pharmacy_id, user, db)
     term = f"%{q.strip()}%"
     now = datetime.utcnow()
+    expiry_cutoff = now.replace(hour=0, minute=0, second=0, microsecond=0)
     inventory_join = (
         (Inventory.product_id == Product.id)
         & (Inventory.pharmacy_id == pharmacy_id)
-        & (Inventory.expires_at.is_(None) | (Inventory.expires_at > now))
+        & (Inventory.expires_at.is_(None) | (Inventory.expires_at >= expiry_cutoff))
     )
     statement = (
         select(
@@ -227,13 +228,14 @@ async def get_product_lots(
     if product_result.scalar_one_or_none() is None:
         raise HTTPException(status_code=404, detail="Active product not found")
     now = datetime.utcnow()
+    expiry_cutoff = now.replace(hour=0, minute=0, second=0, microsecond=0)
     result = await db.execute(
         select(Inventory)
         .where(
             Inventory.product_id == product_id,
             Inventory.pharmacy_id == pharmacy_id,
             Inventory.quantity > Inventory.reserved_quantity,
-            (Inventory.expires_at.is_(None) | (Inventory.expires_at > now)),
+            (Inventory.expires_at.is_(None) | (Inventory.expires_at >= expiry_cutoff)),
         )
         .order_by(Inventory.expires_at.asc().nullslast(), Inventory.id.asc())
     )
@@ -355,6 +357,7 @@ async def checkout(
         )
 
     now = datetime.utcnow()
+    expiry_cutoff = now.replace(hour=0, minute=0, second=0, microsecond=0)
     sale = Sale(
         receipt_number=f"PV-{now:%Y%m%d}-{uuid4().hex[:10].upper()}",
         pharmacy_id=payload.pharmacy_id,
@@ -390,7 +393,7 @@ async def checkout(
                 Inventory.product_id == product.id,
                 Inventory.pharmacy_id == payload.pharmacy_id,
                 Inventory.quantity > Inventory.reserved_quantity,
-                (Inventory.expires_at.is_(None) | (Inventory.expires_at > now)),
+                (Inventory.expires_at.is_(None) | (Inventory.expires_at >= expiry_cutoff)),
             )
             .order_by(Inventory.expires_at.asc().nulls_last(), Inventory.id.asc())
             .with_for_update()
