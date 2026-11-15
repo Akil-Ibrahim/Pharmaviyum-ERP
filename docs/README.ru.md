@@ -13,13 +13,15 @@
 | Офлайн-операции | [Матрица возможностей](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | [Pharmacy Offline Capability Matrix](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | Поддерживаемые, ограниченные, online-only и заблокированные сценарии |
 | Оценка RAG | [Фармацевтическая оценка Ragas](./ai/ragas-pharmaceutical-evaluation.ru.md) | [Ragas evaluation](./ai/ragas-pharmaceutical-evaluation.md) | Offline-метрики RAG и специализированные фармацевтические проверки |
 | Безопасность AI | [Выявление галлюцинаций и red-team](./ai/hallucination-detection-and-red-team.ru.md) | [Hallucination detection and red-team](./ai/hallucination-detection-and-red-team.md) | Оценка groundedness, adversarial-тестирование и правила безопасного отказа |
+| Аптечные процессы | [Спецификация аптечного процесса](./workflows/pharmacy-workflow.ru.md) | [Pharmacy workflow specification](./workflows/pharmacy-workflow.en.md) | POS, отпуск, склад, закупки, аудит и offline-границы |
+| Архитектура системы | [Архитектурное видение](./architecture/pharmaviyum-architecture.ru.md) | [Architecture vision](./architecture/pharmaviyum-architecture.en.md) | Компоненты, границы доверия, владение данными и Central/Edge |
 | Chunking | [Pipeline чанкинга](./ai/chunking-pipeline.ru.md) | [Chunking pipeline](./ai/chunking-pipeline.md) | Текущая реализация разбиения документов и целевая архитектура |
 
 ## Остальные разделы документации
 
 | Раздел | Что содержит | Статус русской версии |
 |---|---|---|
-| Архитектура системы | Контекст системы, границы компонентов, владение данными и Central/Edge | Перевод готовится |
+| Системный контекст | Границы компонентов, владение данными и Central/Edge | Перевод готовится |
 | ADR | Архитектурные решения и их жизненный цикл | Перевод готовится |
 | AI / LLM | Mortarium, Agent Harness, LangGraph, RAG, MCP, безопасность и наблюдаемость | Перевод готовится |
 | Разработка | Настройка окружения, рабочий процесс и quality gates | Перевод готовится |
