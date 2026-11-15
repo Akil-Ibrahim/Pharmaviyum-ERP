@@ -25,7 +25,9 @@ def test_retrieval_rejects_missing_or_invalid_tenant_scope(filters):
 
 
 def test_retrieval_accepts_positive_integer_tenant_scope():
-    PgVectorStore._require_tenant_filter({"pharmacy_id": 7})
+    PgVectorStore._require_tenant_filter(
+        {"pharmacy_id": 7, "access_level": "pharmacy"}
+    )
 
 
 def test_metadata_requires_positive_pharmacy_id():
@@ -96,6 +98,10 @@ def test_non_patient_metadata_rejects_patient_identifier(access_level, patient_i
 @pytest.mark.parametrize(
     "filters,match",
     [
+        (
+            {"pharmacy_id": 7},
+            "explicit valid access_level",
+        ),
         (
             {"pharmacy_id": 7, "access_level": "patient"},
             "exact patient_id",
