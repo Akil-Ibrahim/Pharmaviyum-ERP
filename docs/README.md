@@ -8,7 +8,7 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 |---|---|---|
 | Pharmacy workflows | [Workflow index](./workflows/README.md) | Pharmacy operations, POS, dispensing, inventory, procurement, audit and offline boundaries |
 | System architecture | [System context](./architecture/system-context.md) | Component boundaries, trust model, data ownership and Central/Edge target |
-| Technology | [Technology stack](./technology-stack.md) | Runtime versions, dependency sources of truth and upgrade policy |
+| Technology | [Technology Stack & Glossary](./technology-stack.md) | Definitions, architectural roles, version policy, environment boundaries and dependency updates |
 | AI / LLM system design | [AI system design](./ai/AI_LLM_SYSTEM_DESIGN.md) | Mortarium lifecycle, Agent Harness, LangGraph, RAG, MCP, safety, evaluation and observability |
 | AI architecture | [AI architecture](./ai_architecture.md) | Current implementation details |
 | LangGraph RAG | [RAG graph architecture](./ai/langgraph-rag-architecture.md) | Graph nodes, state, retrieval, bounded execution and persistence |
