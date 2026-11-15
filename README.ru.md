@@ -239,7 +239,7 @@ Pharmaviyum отделяет международный справочный с�
 
 ## Оценка качества RAG
 
-Оркестрация RAG выполняется с помощью LangGraph. Ragas изолирован для автономной оценки и не импортируется в production request path.
+Оркестрация RAG выполняется с помощью LangGraph. Ragas объявлен в группе зависимостей `eval` файла `pyproject.toml`, зафиксирован в `uv.lock` и явно устанавливается CI evaluation job командой `uv sync --frozen --group eval`. Production-установка исключает эту группу, поэтому Ragas не входит в production runtime и не участвует в обработке production-запросов.
 
 Оценка включает стандартные метрики Ragas — faithfulness, answer relevancy, context precision и context recall — и специализированные регрессионные проверки:
 
