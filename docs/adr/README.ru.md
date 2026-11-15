@@ -8,9 +8,9 @@ ADR (Architecture Decision Record) фиксируют решения, влияю
 
 | ID | Тема решения | Русская версия | Английский оригинал | Статус |
 |---|---|---|---|---|
-| ADR-0001 | WebSocket Gateway внутри FastAPI | Перевод готовится | [WebSocket Gateway](./ADR-0001-websocket-gateway.md) | Принято; реализация пока является development template |
-| ADR-0002 | Offline-first Central + Pharmacy Edge | Перевод готовится | [Central + Pharmacy Edge](./ADR-0002-offline-first-central-edge.md) | Предложено; rollout и production-валидация не завершены |
-| ADR-0003 | Изоляция состояния Mortarium по пациенту | Перевод готовится | [Patient-scoped AI state](./ADR-0003-patient-scoped-ai-state.md) | Предложено; staging E2E gate ожидает подтверждения |
+| ADR-0001 | WebSocket Gateway внутри FastAPI | [Русская версия](./ADR-0001-websocket-gateway.ru.md) | [WebSocket Gateway](./ADR-0001-websocket-gateway.md) | Принято; реализация пока является development template |
+| ADR-0002 | Offline-first Central + Pharmacy Edge | [Русская версия](./ADR-0002-offline-first-central-edge.ru.md) | [Central + Pharmacy Edge](./ADR-0002-offline-first-central-edge.md) | Предложено; rollout и production-валидация не завершены |
+| ADR-0003 | Изоляция состояния Mortarium по пациенту | [Русская версия](./ADR-0003-patient-scoped-ai-state.ru.md) | [Patient-scoped AI state](./ADR-0003-patient-scoped-ai-state.md) | Предложено; staging E2E gate ожидает подтверждения |
 | ADR-0004 | Изолированная offline-оценка Ragas | [Русская версия](./ADR-0004-offline-ragas-evaluation.ru.md) | [Offline Ragas evaluation](./ADR-0004-offline-ragas-evaluation.md) | Принято; группа `eval` в `pyproject.toml`, вне production request path |
 
 ## Значения статусов
