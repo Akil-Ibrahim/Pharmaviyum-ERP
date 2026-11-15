@@ -85,3 +85,5 @@ Evaluation datasets must not contain identifiable patient information. Do not
 send patient identifiers, prescription text, prompts, retrieved patient records
 or PHI to third-party judges. Store aggregate scores and sanitized case IDs;
 apply access control and retention to detailed evaluation artifacts.
+
+[English](ragas-pharmaceutical-evaluation.md) · [Русский](ragas-pharmaceutical-evaluation.ru.md)
