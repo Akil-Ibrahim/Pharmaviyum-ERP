@@ -137,7 +137,12 @@ class OTelSettings(BaseSettings):
         ),
     )
     service_name: str = "pharmaviyum-ai"
-    sample_rate: float = Field(default=0.1, ge=0.0, le=1.0)
+    sample_rate: float = Field(
+        default=0.1,
+        ge=0.0,
+        le=1.0,
+        validation_alias=AliasChoices("OTEL_SAMPLE_RATE", "OTEL_TRACES_SAMPLE_RATE"),
+    )
 
 
 class RAGSettings(BaseSettings):

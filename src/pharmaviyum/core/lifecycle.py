@@ -15,7 +15,7 @@ from src.pharmaviyum.core.database import engine
 from src.pharmaviyum.core.health import register_all_health_checks
 from src.pharmaviyum.core.logging import get_logger, setup_logging
 from src.pharmaviyum.core.metrics import APP_UPTIME_SECONDS
-from src.pharmaviyum.core.telemetry import setup_telemetry
+from src.pharmaviyum.core.telemetry import setup_telemetry, shutdown_opentelemetry
 
 logger = get_logger(__name__)
 
@@ -96,6 +96,9 @@ class LifecycleManager:
         # 2. Close database connections
         await engine.dispose()
         logger.info("Database connections closed")
+
+        # Flush the same process-wide provider configured during startup.
+        shutdown_opentelemetry()
 
         # 3. Log uptime
         if self._start_time:
