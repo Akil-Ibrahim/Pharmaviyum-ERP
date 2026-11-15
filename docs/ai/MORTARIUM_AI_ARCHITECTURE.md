@@ -51,6 +51,17 @@ An application architectural layer that brings together models, retrieval, agent
 ### LLM — Large Language Model
 A model trained to understand and generate natural language. It interprets pharmacist questions and drafts responses. An LLM can produce plausible but unsupported statements; it must be grounded in trusted evidence and constrained by deterministic application policy.
 
+### Model configuration: Demo, local development and Production
+The repository separates the chat/generation model from the embedding model. The provider and model are selected by environment settings; the values below describe checked-in defaults and the documented FastAPI Cloud demo profile, not proof of the model currently active in a running deployment.
+
+| Profile | Chat provider / model | Embedding provider / model | Status and constraints |
+|---|---|---|---|
+| Local development default | Ollama / `qwen3.5:9b` for fast, main and complex tasks | Ollama / `mxbai-embed-large` (1024 dimensions) | Code defaults when `USE_CLOUD_LLM=false`; requires a reachable Ollama service and pulled models |
+| FastAPI Cloud demo profile | QwenCloud / `qwen3.8-flash` for main, fast and complex tasks | Separate OpenAI embeddings / `text-embedding-3-small` (1024 dimensions) when configured | Demo profile documented in the deployment runbook; QwenCloud free-quota-only guard and provider-console setting are required. QwenCloud chat generation does not itself provide the embedding model |
+| Production | No distinct production-only model is defined in the repository configuration | Must be explicitly configured and validated independently | The current FastAPI Cloud runbook repeats the demo QwenCloud profile. Do not interpret that as an approved production SLA or as proof of the live runtime configuration. Production model selection must be verified from protected runtime configuration and provider telemetry before release |
+
+The code also contains optional Gemini and Groq provider settings. Their presence in configuration does not mean they are active. In particular, never infer the live model solely from defaults: inspect the effective `USE_CLOUD_LLM`, `CLOUD_LLM_PROVIDER`, provider-specific model variables and embedding credentials in the deployment environment without exposing secret values. A production profile must have an explicitly approved provider, model/version, quota/billing policy, data-processing approval, timeout/retry policy and fallback behavior. Do not silently fall back to a paid provider.
+
 ### RAG — Retrieval-Augmented Generation
 A pattern in which the system retrieves relevant external knowledge before asking an LLM to generate an answer. In Mortarium, the intended sequence is query preparation → scoped retrieval → evidence grading/selection → context assembly → generation → output checks and citations. RAG reduces reliance on model-parametric knowledge but does not guarantee correctness.
 
@@ -74,13 +85,18 @@ Numerical vectors representing text or other content in a model's embedding spac
 ### Vector store
 A data store that persists embeddings and supports nearest-neighbor similarity search. Mortarium's documented storage design uses PostgreSQL with pgvector.
 
+### PostgreSQL
+PostgreSQL is the primary relational database management system (RDBMS) used by Pharmaviyum. It stores durable, structured application data and provides transactions, constraints, indexes, SQL queries and migrations. It is the system of record for business entities and transactional state; AI-generated text must never become authoritative database state without validated application workflows.
+
+In Mortarium, PostgreSQL also stores RAG chunk records and supports durable LangGraph checkpoint persistence. Production connections are supplied through the protected `DATABASE_URL` / `PGVECTOR_DATABASE_URL` settings; credentials must never appear in documentation or logs.
+
 ### pgvector
-A PostgreSQL extension that adds a vector data type and similarity-search operators/indexes, including HNSW and IVFFlat. It enables vector retrieval alongside relational data and SQL filters. pgvector does not generate embeddings and does not independently enforce application authorization.
+A PostgreSQL extension that adds a vector data type and similarity-search operators/indexes, including HNSW and IVFFlat. It enables vector retrieval alongside relational data and SQL filters. pgvector does not generate embeddings and does not independently enforce application authorization. PostgreSQL remains the database; pgvector is an extension, not a separate database.
 
 ### Chunking
 Splitting a source document into bounded retrievable units while preserving meaning, structure, provenance and metadata. Pharmaceutical chunking must keep medicine identity, strength, units, dosage form, route, conditions, warnings and negation attached to the relevant text.
 
-**Current implementation boundary:** the repository's MedicalChunker supports medical heading heuristics, sentence-grouped chunking and recursive fallback. Its token estimate is character-based; the current semantic strategy is sentence grouping, not embedding-based semantic segmentation. Table-aware parsing, exact tokenizer budgets, full bilingual section parsing, parent-child retrieval and page anchors must not be described as shipped unless separately implemented and tested. See [chunking pipeline](./chunking-pipeline.md).
+**Current implementation boundary:** the repository's `MedicalChunker` exposes three strategies: `medical`, `semantic` and `recursive`. Medical mode recognizes a limited set of section headings (indications, dosage, contraindications, interactions and side effects), then splits oversized sections. Semantic mode groups sentence-like spans up to the configured budget; it is not embedding-based semantic boundary detection. Recursive mode falls back through paragraph/newline/sentence/whitespace separators. The default is 512 estimated tokens with 50 overlap units. The estimate uses `len(text) // 4`, not the embedding model's tokenizer. The Celery ingestion task defaults to `medical` unless `chunking_strategy` overrides it. Table-aware parsing, exact tokenizer budgets, full bilingual section parsing, parent-child retrieval and page anchors must not be described as shipped unless separately implemented and tested. See [chunking pipeline](./chunking-pipeline.md).
 
 ### Metadata
 Structured attributes attached to documents/chunks, such as source, document type, language, jurisdiction, pharmacy scope, access level and patient scope. Metadata supports filtering, provenance and lifecycle management; it must be derived from trusted ingestion context, not invented by the model.
