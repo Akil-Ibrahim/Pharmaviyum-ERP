@@ -1,5 +1,7 @@
 # Repository structure
 
+[English](./repository-structure.md) · [Русский](./repository-structure.ru.md)
+
 This document defines the current repository layout and the ownership rules for new files. It is intentionally descriptive: directory moves must be performed separately with all CI, Docker, deployment, tooling, and documentation references updated in the same change.
 
 ## Application code
@@ -57,5 +59,3 @@ Tool-specific configuration (for example Copilot, Pi, Qwen, or agent skills) may
 6. Keep scripts that target distinct deployment topologies separate until those topologies are unified and tested.
 7. Do not delete historical evidence, migrations, or operational recovery procedures merely to reduce the file count.
 8. Prefer small PRs that include a path/reference audit and CI validation over broad directory moves.
-
-[English](repository-structure.md) · [Русский](repository-structure.ru.md)
