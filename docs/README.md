@@ -20,7 +20,7 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 | Hallucination and red-team | [Safety evaluation](./ai/hallucination-detection-and-red-team.md) | [Выявление галлюцинаций и red-team](./ai/hallucination-detection-and-red-team.ru.md) | Groundedness, adversarial testing and safe abstention |
 | Chunking | [Chunking pipeline](./ai/chunking-pipeline.md) | [Pipeline чанкинга](./ai/chunking-pipeline.ru.md) | Current chunking implementation and target architecture |
 | LLM standards | [LLM engineering standards](./llm_engineering_standards.md) | Перевод готовится | Context, token budgets, model routing, cache, memory and MCP standards |
-| ADRs | [ADR index](./adr/README.md) | Перевод готовится | Accepted and proposed architecture decisions |
+| ADRs | [ADR index](./adr/README.md) | [Индекс архитектурных решений](./adr/README.ru.md) | Accepted and proposed architecture decisions | Accepted and proposed architecture decisions |
 | Development | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) | Перевод готовится | Contributor workflow and quality gates |
 | Environment | [Environment setup](./guides/ENVIRONMENT_SETUP.md) | Перевод готовится | Local services, configuration and prerequisites |
 | Testing | [Testing guide](./guides/TESTING.md) | Перевод готовится | Test layout, markers and CI gates |
