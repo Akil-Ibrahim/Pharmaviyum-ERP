@@ -1,5 +1,22 @@
 # OpenTelemetry
 
+## Single provider ownership
+
+The sole owner of the process-wide OpenTelemetry SDK provider is
+`src/pharmaviyum/observability/opentelemetry.py`. The FastAPI application
+configures it once from `main.py` during lifespan startup and flushes/shuts it
+down during lifespan shutdown. `src/pharmaviyum/core/telemetry.py` is a
+backwards-compatible facade only: it delegates to the canonical module and
+must never create or register a provider. The legacy `core.lifecycle` entry
+point uses the same facade. Configuration is sourced from `AISettings.otel`
+in `src/pharmaviyum/ai/config.py`; duplicate OpenTelemetry fields were removed
+from `core.config.Settings`. The old `OTEL_TRACES_SAMPLE_RATE` environment
+name remains accepted as an alias for `OTEL_SAMPLE_RATE`.
+
+Provider shutdown is idempotent. Because the OpenTelemetry global provider
+cannot be safely replaced in the same process, the closed provider reference
+is retained and a second provider is not created after shutdown.
+
 Pharmaviyum uses the OpenTelemetry SDK for distributed tracing. AI/RAG/MCP
 application spans use reviewed, bounded attributes. Automatic FastAPI request,
 SQLAlchemy, and HTTPX instrumentation is disabled by default and can be enabled
@@ -57,8 +74,8 @@ prevent the pharmacy API from starting.
 - Mortarium model routing and agent execution, without recording prompts, patient data, tool arguments, or retrieved clinical text.
 
 The SDK uses a parent-based, ratio sampler. Child spans follow the sampled state
-of their parent. The provider is flushed and shut down during application
-lifespan shutdown.
+of their parent. The single provider is flushed and shut down during application
+lifespan shutdown; repeated shutdown calls are safe and do not register a new provider.
 
 ## Observability acceptance criteria
 
