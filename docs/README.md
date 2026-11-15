@@ -8,8 +8,8 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 
 | Area | English | Русский | What it covers |
 |---|---|---|---|
-| Pharmacy workflows | [Workflow index](./workflows/README.md) | Перевод готовится | Pharmacy operations, POS, dispensing, inventory, procurement, audit and offline boundaries |
-| System architecture | [System context](./architecture/system-context.md) | Перевод готовится | Component boundaries, trust model, data ownership and Central/Edge target |
+| Pharmacy workflows | [Workflow specification](./workflows/pharmacy-workflow.en.md) | [Спецификация аптечного процесса](./workflows/pharmacy-workflow.ru.md) | Pharmacy operations, POS, dispensing, inventory, procurement, audit and offline boundaries |
+| System architecture | [Architecture vision](./architecture/pharmaviyum-architecture.en.md) | [Архитектурное видение](./architecture/pharmaviyum-architecture.ru.md) | Component boundaries, trust model, data ownership and Central/Edge target |
 | Technology | [Technology Stack & Glossary](./technology-stack.md) | [Стек и глоссарий](./technology-stack.ru.md) | Definitions, architectural roles, version policy, environment boundaries and dependency updates |
 | Repository structure | [Repository Structure Guide](./architecture/repository-structure.md) | [Структура репозитория](./architecture/repository-structure.ru.md) | Directory ownership, file placement and safe moves |
 | AI / LLM system design | [AI system design](./ai/AI_LLM_SYSTEM_DESIGN.md) | Перевод готовится | Mortarium lifecycle, Agent Harness, LangGraph, RAG, MCP, safety, evaluation and observability |
