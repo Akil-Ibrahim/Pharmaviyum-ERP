@@ -1,5 +1,7 @@
 # Pharmacy Offline Capability Matrix
 
+[English](./PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) · [Русский](./PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md)
+
 **Status:** Conservative planning baseline; requires product, pharmacy-operations, provider and jurisdictional approval before production.  
 **Principle:** A local Edge database can preserve a transaction, but it cannot make an unavailable external authority or payment provider available.
 
@@ -66,5 +68,3 @@ Every Edge UI and central fleet dashboard should expose:
 - UPS/battery state where hardware monitoring is configured.
 
 A pharmacy is not considered synchronization-healthy merely because its API health endpoint returns HTTP 200.
-
-[English](PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) · [Русский](PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md)
