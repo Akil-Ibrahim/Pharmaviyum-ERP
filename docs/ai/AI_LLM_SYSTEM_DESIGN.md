@@ -17,10 +17,24 @@ Mortarium is decision support, not a system of record, clinical authority, auton
 
 See the [Mortarium AI Architecture & Glossary](./MORTARIUM_AI_ARCHITECTURE.md) for definitions of RAG, LangGraph, AI Harness, MCP, pgvector, embeddings, chunking, reranking, Redis, Celery, Ragas and OpenTelemetry, plus the component responsibility map.
 
-## 2. Logical architecture
+## 2. Model and embedding configuration
+
+The application has separate chat-generation and embedding providers. Current repository defaults and the documented demo profile are:
+
+| Environment/profile | Chat model | Embedding model | Interpretation |
+|---|---|---|---|
+| Local development defaults | Ollama `qwen3.5:9b` (fast/main/complex) | Ollama `mxbai-embed-large`, 1024 dimensions | Active when `USE_CLOUD_LLM=false`; requires local/reachable Ollama |
+| FastAPI Cloud demo profile | QwenCloud `qwen3.8-flash` (fast/main/complex) | OpenAI `text-embedding-3-small`, 1024 dimensions, separately configured | Requires Qwen API key and both application and provider Free quota only controls; embeddings require their own OpenAI credentials/configuration |
+| Production | No separate production-only model is defined in the current configuration | Must be explicitly selected and verified | The current deployment runbook documents the demo model profile, not a production-approved model/SLA. Effective live settings must be verified in FastAPI Cloud without exposing secrets |
+
+Gemini and Groq adapters are also present in code, but their presence does not prove they are enabled. Do not claim a live model is active based on defaults or documentation alone. Before production use, approve the provider/model version, data-processing terms, billing/quota policy, embedding compatibility and dimensions, latency/retry limits, monitoring and fallback policy. Never silently switch to a paid provider.
+
+## 3. Logical architecture
 The request path is: authenticated pharmacist → FastAPI AI API → tenant/patient validation → Agent Harness → bounded Redis memory and prompt cache → model routing → LangGraph pharmacist agent → LangGraph RAG and/or role-filtered MCP registry → grounded response with sources and warnings → pharmacist review.
 
 These are logical application components, not separate deployable services.
+
+PostgreSQL is the durable relational system of record for Pharmaviyum's business data and transactional state. The Mortarium RAG vector store uses the PostgreSQL `pgvector` extension for embedding storage and similarity search; pgvector is not a separate database. PostgreSQL also supports durable LangGraph checkpoint persistence. Redis is used for scoped ephemeral memory/cache/coordination, not as the authoritative patient or transaction database.
 
 ## 3. Request lifecycle
 1. FastAPI authenticates the user.
