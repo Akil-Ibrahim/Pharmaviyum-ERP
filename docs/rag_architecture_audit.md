@@ -143,7 +143,7 @@ The graph requires an explicit checkpointer, uses a 90-second default graph dead
 
 ### Ragas and pharmaceutical evaluators
 
-- Ragas is pinned at `0.4.3` in `requirements-eval.txt`, not in production `pyproject.toml` dependencies.
+- Ragas is pinned at `0.4.3` in the `eval` dependency group in `pyproject.toml` and resolved in `uv.lock`; the group is selected for CI/offline evaluation, not production runtime installation.
 - `RagasEvaluationAdapter` lazily imports the Ragas 0.4 collections API; evaluator LLM and embeddings are injected.
 - CI's RAG evaluation job verifies the collections API import and runs `tests/unit/ai/test_ragas_evaluation.py` plus the golden-dataset validation suite.
 - The adapter unit tests stub Ragas metric classes; this is contract coverage, not a measured run against a real judge model.
