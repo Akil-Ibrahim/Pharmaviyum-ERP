@@ -36,6 +36,14 @@ router = APIRouter(prefix="/api/v1/pos", tags=["Point of Sale"])
 CENT = Decimal("0.01")
 
 
+def _pos_idempotency_lock_key(pharmacy_id: int, idempotency_key: str) -> int:
+    """Return a stable signed 64-bit PostgreSQL advisory-lock key."""
+    digest = hashlib.sha256(
+        f"pharmaviyum:pos-checkout:{pharmacy_id}:{idempotency_key}".encode()
+    ).digest()
+    return int.from_bytes(digest[:8], byteorder="big", signed=True)
+
+
 def _money(value: Decimal | float | int) -> Decimal:
     return Decimal(str(value)).quantize(CENT, rounding=ROUND_HALF_UP)
 
@@ -265,6 +273,15 @@ async def checkout(
 ) -> SaleResponse:
     """Create an idempotent sale, allocate FEFO stock, and record its payment state."""
     await require_pharmacy_tenant(payload.pharmacy_id, cashier, db)
+
+    # Serialize requests sharing a tenant-scoped key before checking for an
+    # existing sale. The transaction-level lock is released on commit/rollback.
+    # This prevents a retry from observing "no sale" while the first request is
+    # still allocating stock and committing the unique idempotency record.
+    lock_key = _pos_idempotency_lock_key(
+        payload.pharmacy_id, payload.idempotency_key
+    )
+    await db.execute(select(func.pg_advisory_xact_lock(lock_key)))
 
     existing_result = await db.execute(
         select(Sale)
