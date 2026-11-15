@@ -711,13 +711,26 @@ async def cancel_pending_sale(
     user: CurrentUser,
 ) -> SaleResponse:
     """Cancel an unpaid POS sale and release its reserved FEFO lots."""
-    sale_result = await db.execute(
-        select(Sale).where(Sale.id == sale_id).with_for_update()
-    )
+    # Authorize the tenant before taking a row lock. Otherwise an unrelated
+    # tenant member could contend on another pharmacy's sale row before the
+    # membership check rejects the request.
+    sale_result = await db.execute(select(Sale).where(Sale.id == sale_id))
     sale = sale_result.scalar_one_or_none()
     if sale is None:
         raise HTTPException(status_code=404, detail="Sale not found")
     await require_pharmacy_tenant(sale.pharmacy_id, user, db)
+
+    # Re-read under lock after authorization so the state transition is based
+    # on the latest committed sale state, not the pre-authorization snapshot.
+    locked_result = await db.execute(
+        select(Sale)
+        .where(Sale.id == sale_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    sale = locked_result.scalar_one_or_none()
+    if sale is None:
+        raise HTTPException(status_code=404, detail="Sale not found")
     if sale.status != "awaiting_payment":
         raise HTTPException(
             status_code=409, detail="Only pending-payment sales can be cancelled"
