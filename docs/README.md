@@ -25,7 +25,7 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 | Chunking | [Chunking pipeline](./ai/chunking-pipeline.md) | [Pipeline чанкинга](./ai/chunking-pipeline.ru.md) | Current chunking implementation and target architecture |
 | LLM standards | [LLM engineering standards](./llm_engineering_standards.md) | [Стандарт инженерии LLM](./llm_engineering_standards.ru.md) | Context, token budgets, model routing, cache, memory and MCP standards |
 | ADRs | [ADR index](./adr/README.md) | [Индекс архитектурных решений](./adr/README.ru.md) | Accepted and proposed architecture decisions | Accepted and proposed architecture decisions |
-| Development | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) | Перевод готовится | Contributor workflow and quality gates |
+| Development | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) | [Руководство по разработке и тестированию](./guides/DEVELOPMENT_AND_TESTING.ru.md) | Contributor workflow and quality gates |
 | Environment | [Environment setup](./guides/ENVIRONMENT_SETUP.md) | Перевод готовится | Local services, configuration and prerequisites |
 | Testing | [Testing guide](./guides/TESTING.md) | Перевод готовится | Test layout, markers and CI gates |
 | Operations | [Production operations runbook](./operations/PRODUCTION_OPERATIONS_RUNBOOK.md) | Перевод готовится | Health checks, incident triage, backup and recovery |
