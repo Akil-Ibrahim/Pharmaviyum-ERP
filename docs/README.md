@@ -12,14 +12,14 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 | System architecture | [Architecture vision](./architecture/pharmaviyum-architecture.en.md) | [Архитектурное видение](./architecture/pharmaviyum-architecture.ru.md) | Component boundaries, trust model, data ownership and Central/Edge target |
 | Technology | [Technology Stack & Glossary](./technology-stack.md) | [Стек и глоссарий](./technology-stack.ru.md) | Definitions, architectural roles, version policy, environment boundaries and dependency updates |
 | Repository structure | [Repository Structure Guide](./architecture/repository-structure.md) | [Структура репозитория](./architecture/repository-structure.ru.md) | Directory ownership, file placement and safe moves |
-| AI / LLM system design | [AI system design](./ai/AI_LLM_SYSTEM_DESIGN.md) | [Проектирование AI-системы](./ai/AI_LLM_SYSTEM_DESIGN.ru.md) | Mortarium lifecycle, Agent Harness, LangGraph, RAG, MCP, safety, evaluation and observability |
+| AI / LLM system design | [AI system design](./ai/AI_LLM_SYSTEM_DESIGN.md) | Перевод готовится | Mortarium lifecycle, Agent Harness, LangGraph, RAG, MCP, safety, evaluation and observability |
 | Mortarium glossary | [Architecture & glossary](./ai/MORTARIUM_AI_ARCHITECTURE.md) | [Архитектура и глоссарий](./ai/MORTARIUM_AI_ARCHITECTURE.ru.md) | AI/LLM, PostgreSQL, pgvector, Redis, MCP, Ragas and OpenTelemetry |
 | Pharmacy operations AI | [Mortarium pharmacy operations](./ai/mortarium-pharmacy-operations.md) | [Операционная работа Mortarium](./ai/mortarium-pharmacy-operations.ru.md) | Available read-only tools and safety boundaries |
 | Patient session isolation | [Patient-scoped state](./ai/patient-session-isolation.md) | [Изоляция состояния пациента](./ai/patient-session-isolation.ru.md) | Session, memory and checkpoint isolation requirements |
 | QwenCloud demo | [QwenCloud demo](./ai/QWENCLOUD_DEMO.md) | Перевод готовится | Demo provider configuration and quota safeguards |
-| AI architecture | [AI architecture](./ai_architecture.md) | [Архитектура AI](./ai_architecture.ru.md) | Current implementation details |
+| AI architecture | [AI architecture](./ai_architecture.md) | Перевод готовится | Current implementation details |
 | LangGraph RAG | [RAG graph architecture](./ai/langgraph-rag-architecture.md) | [Архитектура LangGraph RAG](./ai/langgraph-rag-architecture.ru.md) | Graph nodes, state, retrieval, bounded execution and persistence |
-| RAG audit | [RAG architecture audit](./rag_architecture_audit.md) | [Аудит архитектуры RAG](./rag_architecture_audit.ru.md) | Dated findings, gaps and remediation priorities |
+| RAG audit | [RAG architecture audit](./rag_architecture_audit.md) | Перевод готовится | Dated findings, gaps and remediation priorities |
 | Pharmaceutical evaluation | [Ragas evaluation](./ai/ragas-pharmaceutical-evaluation.md) | [Оценка RAG](./ai/ragas-pharmaceutical-evaluation.ru.md) | Offline evaluator and pharmacy-specific quality metrics |
 | Hallucination and red-team | [Safety evaluation](./ai/hallucination-detection-and-red-team.md) | [Выявление галлюцинаций и red-team](./ai/hallucination-detection-and-red-team.ru.md) | Groundedness, adversarial testing and safe abstention |
 | Chunking | [Chunking pipeline](./ai/chunking-pipeline.md) | [Pipeline чанкинга](./ai/chunking-pipeline.ru.md) | Current chunking implementation and target architecture |
