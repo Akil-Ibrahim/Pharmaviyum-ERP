@@ -3,6 +3,8 @@ Health and readiness endpoints
 Best practice 2026: Kubernetes-compatible health checks
 """
 
+import sys
+
 from fastapi import APIRouter, Response
 
 from src.pharmaviyum.ai.config import settings as application_settings
@@ -124,5 +126,6 @@ async def version():
         "application_environment": application_settings.environment,
         "auth_environment": auth_settings.ENVIRONMENT,
         "auth_debug": auth_settings.DEBUG,
-        "python_version": __import__("sys").version,
+        "python_version": sys.version,
+        "python_implementation": sys.implementation.name,
     }
