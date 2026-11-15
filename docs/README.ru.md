@@ -26,7 +26,7 @@
 | Системный контекст | Границы компонентов, владение данными и Central/Edge | Перевод готовится |
 | ADR | [Индекс архитектурных решений](./adr/README.ru.md) | [ADR index](./adr/README.md) | Решения, статусы и жизненный цикл архитектурных изменений |
 | AI / LLM | [Архитектура Mortarium и глоссарий](./ai/MORTARIUM_AI_ARCHITECTURE.ru.md) · [Проектирование AI-системы](./ai/AI_LLM_SYSTEM_DESIGN.ru.md) · [Архитектура AI](./ai_architecture.ru.md) · [Аудит архитектуры RAG](./rag_architecture_audit.ru.md) · [Стандарт инженерии LLM](./llm_engineering_standards.ru.md) · [Архитектура LangGraph RAG](./ai/langgraph-rag-architecture.ru.md) · [Операционная работа Mortarium](./ai/mortarium-pharmacy-operations.ru.md) · [Изоляция состояния пациента](./ai/patient-session-isolation.ru.md) | [English originals](./README.md) | Mortarium, Agent Harness, LangGraph, RAG, MCP, безопасность и наблюдаемость |
-| Разработка | Настройка окружения, рабочий процесс и quality gates | Перевод готовится |
+| Разработка | [Руководство по разработке и тестированию](./guides/DEVELOPMENT_AND_TESTING.ru.md) · Настройка окружения и quality gates | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) | Рабочий процесс, критерии качества и контроль PR |
 | Тестирование | Структура тестов, markers и CI | Перевод готовится |
 | Эксплуатация | Проверки работоспособности, инциденты, backup и recovery | Перевод готовится |
 | Развёртывание | FastAPI Cloud, секреты, runtime и контролируемый release | Перевод готовится |
