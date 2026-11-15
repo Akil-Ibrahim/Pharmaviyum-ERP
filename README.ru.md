@@ -466,21 +466,21 @@ React frontend можно запускать отдельно командами
 
 ## Документация
 
-Полный каталог инженерной документации доступен в [русском индексе документации](docs/README.ru.md). Английский оригинал: [Documentation index](docs/README.ru.md).
+Полный каталог инженерной документации доступен в [русском индексе документации](docs/README.ru.md). Английский оригинал: [Documentation index](docs/README.md).
 
 | Раздел | Русская версия | Английский оригинал | Содержание |
 |---|---|---|---|
 | Аптечные процессы | Перевод готовится | [Workflow index](docs/workflows/README.md) | POS, отпуск, склад, закупки, аудит и offline-ограничения |
 | Архитектура системы | Перевод готовится | [System context](docs/architecture/system-context.md) | Компоненты, границы доверия, владение данными, Central/Edge |
-| Технологии | [Технологический стек и глоссарий](docs/technology-stack.ru.md) | [Technology Stack & Glossary](docs/technology-stack.ru.md) | Определения, роли, версии, различия окружений и обновление зависимостей |
-| Структура репозитория | [Руководство](docs/architecture/repository-structure.ru.md) | [Repository Structure Guide](docs/architecture/repository-structure.ru.md) | Назначение каталогов, размещение файлов и безопасные перемещения |
+| Технологии | [Технологический стек и глоссарий](docs/technology-stack.ru.md) | [Technology Stack & Glossary](docs/technology-stack.md) | Определения, роли, версии, различия окружений и обновление зависимостей |
+| Структура репозитория | [Руководство](docs/architecture/repository-structure.ru.md) | [Repository Structure Guide](docs/architecture/repository-structure.md) | Назначение каталогов, размещение файлов и безопасные перемещения |
 | AI / LLM | Перевод готовится | [AI system design](docs/ai/AI_LLM_SYSTEM_DESIGN.md) | Mortarium, Agent Harness, LangGraph, RAG, MCP, безопасность и оценка |
 | AI-архитектура | Перевод готовится | [AI architecture](docs/ai_architecture.md) | Детали текущей реализации |
 | LangGraph RAG | Перевод готовится | [RAG graph architecture](docs/ai/langgraph-rag-architecture.md) | Узлы графа, состояние, retrieval и persistence |
 | Аудит RAG | Перевод готовится | [RAG architecture audit](docs/rag_architecture_audit.md) | Выводы аудита, пробелы и приоритеты исправления |
-| Оценка RAG | [Фармацевтическая оценка RAG](docs/ai/ragas-pharmaceutical-evaluation.ru.md) | [Ragas evaluation](docs/ai/ragas-pharmaceutical-evaluation.ru.md) | Offline evaluation и аптечные метрики качества |
-| Безопасность AI | [Выявление галлюцинаций и red-team](docs/ai/hallucination-detection-and-red-team.ru.md) | [Hallucination detection and red-team](docs/ai/hallucination-detection-and-red-team.ru.md) | Проверка groundedness, adversarial-тесты и безопасный отказ |
-| Chunking | [Pipeline чанкинга](docs/ai/chunking-pipeline.ru.md) | [Chunking pipeline](docs/ai/chunking-pipeline.ru.md) | Текущая реализация и целевая архитектура разбиения документов |
+| Оценка RAG | [Фармацевтическая оценка RAG](docs/ai/ragas-pharmaceutical-evaluation.ru.md) | [Ragas evaluation](docs/ai/ragas-pharmaceutical-evaluation.md) | Offline evaluation и аптечные метрики качества |
+| Безопасность AI | [Выявление галлюцинаций и red-team](docs/ai/hallucination-detection-and-red-team.ru.md) | [Hallucination detection and red-team](docs/ai/hallucination-detection-and-red-team.md) | Проверка groundedness, adversarial-тесты и безопасный отказ |
+| Chunking | [Pipeline чанкинга](docs/ai/chunking-pipeline.ru.md) | [Chunking pipeline](docs/ai/chunking-pipeline.md) | Текущая реализация и целевая архитектура разбиения документов |
 | Стандарты LLM | Перевод готовится | [LLM engineering standards](docs/llm_engineering_standards.md) | Контекст, токены, маршрутизация моделей, cache, memory и MCP |
 | ADR | Перевод готовится | [ADR index](docs/adr/README.md) | Принятые и предлагаемые архитектурные решения |
 | Разработка | Перевод готовится | [Development and testing handbook](docs/guides/DEVELOPMENT_AND_TESTING.md) | Настройка разработки и quality gates |
@@ -492,7 +492,7 @@ React frontend можно запускать отдельно командами
 | DevOps | Перевод готовится | [Engineering stages](docs/devops/ENGINEERING_ROADMAP.md) | Этапы, направления работ и критерии завершения |
 | WebSocket | Перевод готовится | [WebSocket protocol](docs/websocket-protocol.md) | Контракт v1 и ограничения текущего scaffold |
 | Наблюдаемость | Перевод готовится | [OpenTelemetry](docs/observability/opentelemetry.md) | Настройка telemetry и защита данных |
-| Pharmacy Edge offline | [Матрица офлайн-возможностей](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | [Offline capability matrix](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | Offline-политика и операционные ограничения |
+| Pharmacy Edge offline | [Матрица офлайн-возможностей](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | [Offline capability matrix](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | Offline-политика и операционные ограничения |
 | Pharmacy Edge | Перевод готовится | [Ansible rollout](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Контролируемое внедрение и ограничения fleet |
 
 Правила ведения документации:
