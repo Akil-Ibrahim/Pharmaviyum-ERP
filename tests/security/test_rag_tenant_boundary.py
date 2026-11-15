@@ -14,7 +14,9 @@ def test_vector_store_rejects_invalid_tenant_id() -> None:
 
 
 def test_vector_store_accepts_tenant_scoped_filter() -> None:
-    PgVectorStore._require_tenant_filter({"pharmacy_id": 42})
+    PgVectorStore._require_tenant_filter(
+        {"pharmacy_id": 42, "access_level": "pharmacy"}
+    )
 
 
 def test_vector_store_rejects_non_canonical_chunk_metadata() -> None:
