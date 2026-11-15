@@ -25,9 +25,7 @@ def test_retrieval_rejects_missing_or_invalid_tenant_scope(filters):
 
 
 def test_retrieval_accepts_positive_integer_tenant_scope():
-    PgVectorStore._require_tenant_filter(
-        {"pharmacy_id": 7, "access_level": "pharmacy"}
-    )
+    PgVectorStore._require_tenant_filter({"pharmacy_id": 7, "access_level": "pharmacy"})
 
 
 def test_metadata_requires_positive_pharmacy_id():
