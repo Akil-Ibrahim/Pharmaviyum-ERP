@@ -112,6 +112,12 @@ jobs:
             echo "- Commit: $DEPLOY_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Set FastAPI Cloud runtime environment to production
+        run: uv run fastapi cloud env set ENVIRONMENT production .
+        env:
+          FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
+          FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
+
       - name: Deploy application and wait for verification
         run: uv run fastapi cloud deploy .
         env:
