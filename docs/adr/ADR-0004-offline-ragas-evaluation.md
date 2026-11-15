@@ -7,7 +7,7 @@ Accepted — Ragas is an offline evaluation dependency, not part of the producti
 Mortarium uses LangGraph for production agent and RAG orchestration. Ragas provides evaluation metrics, but evaluator LLM calls, embeddings and reference datasets have different cost, privacy and reproducibility characteristics from live pharmacist requests. Installing evaluation frameworks into the production runtime would expand the attack surface and introduce unnecessary dependencies/provider calls.
 
 ## Decision
-- Keep Ragas in the isolated evaluation dependency set (requirements-eval.txt).
+- Keep Ragas in the `eval` dependency group in `pyproject.toml`, with its resolved dependencies recorded in `uv.lock`. Install it for CI/offline evaluation using `uv sync --frozen --group eval`; do not select this group for production runtime installation.
 - Run evaluation from CI or a controlled offline environment, not FastAPI request handling.
 - Inject evaluator LLM and embedding adapters explicitly; do not implicitly reuse production credentials.
 - Use synthetic or approved de-identified datasets. Never commit real patient records, prescriptions or clinical conversations.
