@@ -17,13 +17,13 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 | Pharmacy operations AI | [Mortarium pharmacy operations](./ai/mortarium-pharmacy-operations.md) | [Операционная работа Mortarium](./ai/mortarium-pharmacy-operations.ru.md) | Available read-only tools and safety boundaries |
 | Patient session isolation | [Patient-scoped state](./ai/patient-session-isolation.md) | [Изоляция состояния пациента](./ai/patient-session-isolation.ru.md) | Session, memory and checkpoint isolation requirements |
 | QwenCloud demo | [QwenCloud demo](./ai/QWENCLOUD_DEMO.md) | Перевод готовится | Demo provider configuration and quota safeguards |
-| AI architecture | [AI architecture](./ai_architecture.md) | Перевод готовится | Current implementation details |
+| AI architecture | [AI architecture](./ai_architecture.md) | [Архитектура AI](./ai_architecture.ru.md) | Current implementation details |
 | LangGraph RAG | [RAG graph architecture](./ai/langgraph-rag-architecture.md) | [Архитектура LangGraph RAG](./ai/langgraph-rag-architecture.ru.md) | Graph nodes, state, retrieval, bounded execution and persistence |
-| RAG audit | [RAG architecture audit](./rag_architecture_audit.md) | Перевод готовится | Dated findings, gaps and remediation priorities |
+| RAG audit | [RAG architecture audit](./rag_architecture_audit.md) | [Аудит архитектуры RAG](./rag_architecture_audit.ru.md) | Dated findings, gaps and remediation priorities |
 | Pharmaceutical evaluation | [Ragas evaluation](./ai/ragas-pharmaceutical-evaluation.md) | [Оценка RAG](./ai/ragas-pharmaceutical-evaluation.ru.md) | Offline evaluator and pharmacy-specific quality metrics |
 | Hallucination and red-team | [Safety evaluation](./ai/hallucination-detection-and-red-team.md) | [Выявление галлюцинаций и red-team](./ai/hallucination-detection-and-red-team.ru.md) | Groundedness, adversarial testing and safe abstention |
 | Chunking | [Chunking pipeline](./ai/chunking-pipeline.md) | [Pipeline чанкинга](./ai/chunking-pipeline.ru.md) | Current chunking implementation and target architecture |
-| LLM standards | [LLM engineering standards](./llm_engineering_standards.md) | Перевод готовится | Context, token budgets, model routing, cache, memory and MCP standards |
+| LLM standards | [LLM engineering standards](./llm_engineering_standards.md) | [Стандарт инженерии LLM](./llm_engineering_standards.ru.md) | Context, token budgets, model routing, cache, memory and MCP standards |
 | ADRs | [ADR index](./adr/README.md) | [Индекс архитектурных решений](./adr/README.ru.md) | Accepted and proposed architecture decisions | Accepted and proposed architecture decisions |
 | Development | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) | Перевод готовится | Contributor workflow and quality gates |
 | Environment | [Environment setup](./guides/ENVIRONMENT_SETUP.md) | Перевод готовится | Local services, configuration and prerequisites |
