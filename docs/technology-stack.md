@@ -145,7 +145,7 @@ Frontend dependency definitions are maintained in:
 
 Do not maintain a second authoritative Python dependency list. Change dependencies in their source manifests, regenerate the relevant lockfile and run the corresponding CI checks.
 
-For exact declared versions, environment boundaries and the upgrade procedure, see [docs/technology-stack.md](./technology-stack.md).
+For exact declared versions, environment boundaries and the upgrade procedure, see the version policy below.
 
 
 ---
