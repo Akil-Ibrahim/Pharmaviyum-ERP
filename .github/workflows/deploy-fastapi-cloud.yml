@@ -393,11 +393,11 @@ jobs:
 
           curl --fail --silent --show-error \
             -H "Authorization: Bearer $access_token" \
-            "$base_url/api/v1/drug-catalog/search?q=omeprazole" \
+            "$base_url/drug-catalog/search?q=omeprazole" \
             -o /tmp/drug-catalog-smoke.json
           curl --fail --silent --show-error \
             -H "Authorization: Bearer $access_token" \
-            "$base_url/api/v1/products/search?q=omeprazole" \
+            "$base_url/products/search?q=omeprazole" \
             -o /tmp/products-smoke.json
           uv run python - <<'PY'
           import json
