@@ -65,7 +65,7 @@ Golden dataset должен использовать синтетические 
 
 ## Интеграция в репозиторий и текущий статус
 
-- **Ragas:** указан в `requirements-eval.txt`; текущий CI проверяет импорт/API, контракт фармацевтических метрик и golden dataset. Это offline-оценка, а не production-фильтр ответов.
+- **Ragas:** объявлен в группе `eval` файла `pyproject.toml` и зафиксирован в `uv.lock`; CI устанавливает эту группу для проверки API/import, контракта фармацевтических метрик и golden dataset. Это offline-оценка, а не production-фильтр ответов.
 - **DeepEval:** закреплён как изолированная зависимость оценки в `requirements-eval-deepeval.txt`. CI выполняет import/API smoke check. Полный hallucination suite с judge требует явно настроенной evaluation-модели и подготовленных кейсов.
 - **HHEM:** описан как дополнительный model-based evaluator. Модель не устанавливается в production image FastAPI и пока не является live request-path gate. Перед включением проверьте revision, лицензию, совместимость runtime/Python, CPU/GPU, latency и порог, проверенный фармацевтом.
 - **Promptfoo:** предназначен для red-team тестирования по требованию против отдельного non-production endpoint. Конфигурация target и credentials намеренно не выдумываются; production endpoint и secrets в репозитории не зашиты.
