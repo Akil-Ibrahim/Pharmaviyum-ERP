@@ -482,7 +482,7 @@ React frontend можно запускать отдельно командами
 | Безопасность AI | [Выявление галлюцинаций и red-team](docs/ai/hallucination-detection-and-red-team.ru.md) | [Hallucination detection and red-team](docs/ai/hallucination-detection-and-red-team.md) | Проверка groundedness, adversarial-тесты и безопасный отказ |
 | Chunking | [Pipeline чанкинга](docs/ai/chunking-pipeline.ru.md) | [Chunking pipeline](docs/ai/chunking-pipeline.md) | Текущая реализация и целевая архитектура разбиения документов |
 | Стандарты LLM | Перевод готовится | [LLM engineering standards](docs/llm_engineering_standards.md) | Контекст, токены, маршрутизация моделей, cache, memory и MCP |
-| ADR | Перевод готовится | [ADR index](docs/adr/README.md) | Принятые и предлагаемые архитектурные решения |
+| ADR | [Индекс архитектурных решений](docs/adr/README.ru.md) | [ADR index](docs/adr/README.md) | Принятые и предлагаемые архитектурные решения |
 | Разработка | Перевод готовится | [Development and testing handbook](docs/guides/DEVELOPMENT_AND_TESTING.md) | Настройка разработки и quality gates |
 | Окружение | Перевод готовится | [Environment setup](docs/guides/ENVIRONMENT_SETUP.md) | Локальные сервисы, конфигурация и требования |
 | Тестирование | Перевод готовится | [Testing guide](docs/guides/TESTING.md) | Структура тестов, markers и CI |
