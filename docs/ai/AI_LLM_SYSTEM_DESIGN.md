@@ -138,6 +138,7 @@ See [OpenTelemetry policy](../observability/opentelemetry.md).
 - [ ] Stale corpus, wrong jurisdiction or language mismatch.
 
 ## Related material
+- [Mortarium AI Architecture & Glossary](./MORTARIUM_AI_ARCHITECTURE.md)
 - [AI architecture](../ai_architecture.md)
 - [LangGraph RAG architecture](./langgraph-rag-architecture.md)
 - [Mortarium pharmacy operations](./mortarium-pharmacy-operations.md)
