@@ -28,7 +28,7 @@ This section explains not only which technologies are present, but why Pharmaviy
 | **Redis Python client 8.1.0** | Python client library for Redis-compatible servers. | Lets backend services and workers communicate with configured Redis-compatible infrastructure. |
 | **PostgreSQL full-text search** | Database-native lexical search over textual documents. | Complements vector similarity in hybrid RAG retrieval, helping exact medication terms, identifiers and phrases remain searchable. |
 
-**Environment boundary:** PostgreSQL 18 with pgvector 0.8.7 and Redis 8.8.4 are disposable development/CI Compose targets. The production Compose profile remains on PostgreSQL 16 and Redis 7; managed production services are not upgraded by changing local container images. The Pharmacy Edge profile uses its separately managed PostgreSQL/Valkey configuration. See [Technology Stack and Version Policy](docs/technology-stack.md).
+**Environment boundary:** PostgreSQL 18 with pgvector 0.8.7 and Redis 8.8.4 are disposable development/CI Compose targets. The production Compose profile remains on PostgreSQL 16 and Redis 7; managed production services are not upgraded by changing local container images. The Pharmacy Edge profile uses its separately managed PostgreSQL/Valkey configuration. See [version policy](#version-policy-and-dependency-management).
 
 ### 3. Background jobs and asynchronous processing
 
@@ -82,7 +82,7 @@ This section explains not only which technologies are present, but why Pharmaviy
 | **Ragas 0.4.3** | Framework for evaluating RAG quality using reference data and evaluator models. | Measures offline signals such as faithfulness, answer relevancy, context precision and context recall. It is an evaluation dependency, not part of the production request path. |
 | **Pharmaceutical quality metrics** | Domain-specific checks beyond generic LLM scores. | Tests citation support, medication name/strength/form, negation preservation, unsupported clinical claims, patient isolation and English/Russian retrieval. These are regression checks, not clinical certification. |
 
-**Important AI boundary:** RAG and agent workflows do not make an answer clinically authoritative. Patient and pharmacy authorization is enforced by application code and retrieval filters. The pharmacist remains responsible for professional decisions. See [Mortarium AI system design](docs/ai/AI_LLM_SYSTEM_DESIGN.md), [chunking pipeline](docs/ai/chunking-pipeline.md) and [Ragas evaluation](docs/ai/ragas-pharmaceutical-evaluation.md).
+**Important AI boundary:** RAG and agent workflows do not make an answer clinically authoritative. Patient and pharmacy authorization is enforced by application code and retrieval filters. The pharmacist remains responsible for professional decisions. See [Mortarium AI system design](./ai/AI_LLM_SYSTEM_DESIGN.md), [chunking pipeline](./ai/chunking-pipeline.md) and [Ragas evaluation](./ai/ragas-pharmaceutical-evaluation.md).
 
 ### 6. Observability and operations
 
@@ -145,7 +145,7 @@ Frontend dependency definitions are maintained in:
 
 Do not maintain a second authoritative Python dependency list. Change dependencies in their source manifests, regenerate the relevant lockfile and run the corresponding CI checks.
 
-For exact declared versions, environment boundaries and the upgrade procedure, see [docs/technology-stack.md](docs/technology-stack.md).
+For exact declared versions, environment boundaries and the upgrade procedure, see [docs/technology-stack.md](./technology-stack.md).
 
 
 ---
