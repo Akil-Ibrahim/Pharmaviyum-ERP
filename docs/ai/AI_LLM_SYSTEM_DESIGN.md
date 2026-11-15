@@ -56,6 +56,9 @@ The active API ingestion path dispatches tenant-authorized Celery tasks. Worker 
 
 Jobs must be idempotent, bounded and safe to retry. Retain source, jurisdiction, language, version and tenant metadata.
 
+
+Patient-scoped RAG metadata uses the current `CanonicalMetadata` contract: `pharmacy_id` is the required pharmacy/tenant boundary, `access_level` is one of `public`, `pharmacy` or `patient`, and `patient_id` is optional except that it is mandatory for patient-level chunks. Do not introduce a parallel `tenant_id` field without a reviewed migration. Patient IDs are validated against the authenticated pharmacy on the server; they are never trusted from prompts or model-generated arguments. With no selected patient, patient-level chunks are excluded, not wildcard-matched. Every retrieval stage, parent/source expansion and cache/state path must preserve the same scope and fail closed. See the detailed metadata contract and mandatory tests in [chunking-pipeline.md](./chunking-pipeline.md#11a-patient-scoped-metadata-and-retrieval-isolation).
+
 ## 6A. Pharmaceutical chunking pipeline
 
 Chunking is an explicit ingestion concern, not a generic text-splitting detail. The current `MedicalChunker` provides medical heading heuristics, sentence-grouped chunking and recursive fallback. Its default 512-token limit and 50 overlap are estimates based on characters divided by four, not exact model-tokenizer counts. The current semantic strategy groups sentence boundaries; it is not embedding-based semantic segmentation.
