@@ -34,7 +34,7 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 | DevOps roadmap | [Engineering stages](./devops/ENGINEERING_ROADMAP.md) | Перевод готовится | Stage goals, workstreams and exit criteria |
 | DevOps detail | [DevOps roadmap](./devops/README.md) | Перевод готовится | Capacity, observability, reliability, security and recovery |
 | WebSocket | [WebSocket protocol](./websocket-protocol.md) | Перевод готовится | Proposed v1 contract and current scaffold limitations |
-| Observability | [OpenTelemetry](./observability/opentelemetry.md) | Перевод готовится | Tracing configuration and privacy boundaries |
+| Observability | [OpenTelemetry](./observability/opentelemetry.md) | [OpenTelemetry на русском](./observability/opentelemetry.ru.md) | Tracing configuration and privacy boundaries |
 | Pharmacy Edge offline | [Offline capability matrix](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | [Матрица офлайн-возможностей](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | Offline workflow policy and controls |
 | Pharmacy Edge | [Ansible rollout](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Перевод готовится | Controlled rollout and fleet guardrails |
 | Interview material | [Interview index](./interview/README.md) | Перевод готовится | Separate learning and interview preparation material |
