@@ -107,3 +107,5 @@ Review generated attacks before execution. The target URL, bearer token and phar
 - [DeepEval installation and metrics](https://deepeval.com/tutorials/tutorial-setup)
 - [Vectara HHEM model](https://huggingface.co/vectara/hallucination_evaluation_model)
 - [Promptfoo red-team quickstart](https://www.promptfoo.dev/docs/red-team/quickstart/)
+
+[English](hallucination-detection-and-red-team.md) · [Русский](hallucination-detection-and-red-team.ru.md)
