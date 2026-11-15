@@ -113,7 +113,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Set FastAPI Cloud runtime environment to production
-        run: uv run fastapi cloud env set ENVIRONMENT production .
+        run: uv run fastapi cloud env set ENVIRONMENT production --no-redeploy --path . --json
         env:
           FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
           FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
