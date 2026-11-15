@@ -123,7 +123,7 @@ async def test_bm25_uses_simple_text_search_for_non_english_queries():
 
     await store.bm25_search(
         "парацетамол",
-        filters={"pharmacy_id": 7},
+        filters={"pharmacy_id": 7, "access_level": "pharmacy"},
         language="uk",
     )
 
