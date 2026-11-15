@@ -169,8 +169,8 @@ Kubernetes намеренно не входит в обязательные пе
 ## Связанные документы
 
 - [Инженерные benchmarks и требования к качеству](./ENGINEERING_BENCHMARK_REQUIREMENTS.ru.md) — канонический контракт метрик.
-- [Английский оригинал Engineering Roadmap](./ENGINEERING_ROADMAP.md) — этапы, владельцы, доказательства и критерии выхода; русский перевод ещё не опубликован.
+- [Инженерная дорожная карта](./ENGINEERING_ROADMAP.ru.md) · [English](./ENGINEERING_ROADMAP.md) — этапы, владельцы, доказательства и критерии выхода; русский перевод ещё не опубликован.
 - [Stage 1 Load Testing](./STAGE_1_LOAD_TESTING.md) — процедура нагрузочного тестирования; пока только английская версия.
-- [Pharmacy Edge Ansible Rollout](./PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) — rollout Edge; пока только английская версия.
+- [Off-site backup architecture](./OFFSITE_BACKUP_ARCHITECTURE.ru.md) · [Pharmacy Edge Ansible Rollout](./PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) — rollout Edge; пока только английская версия.
 - [FastAPI Cloud runbook](../deployment/FASTAPI_CLOUD.ru.md) — размещение hosted-приложения.
 - [Руководство по тестированию](../guides/TESTING.ru.md) — тесты и CI.
