@@ -57,3 +57,5 @@ Tool-specific configuration (for example Copilot, Pi, Qwen, or agent skills) may
 6. Keep scripts that target distinct deployment topologies separate until those topologies are unified and tested.
 7. Do not delete historical evidence, migrations, or operational recovery procedures merely to reduce the file count.
 8. Prefer small PRs that include a path/reference audit and CI validation over broad directory moves.
+
+[English](repository-structure.md) · [Русский](repository-structure.ru.md)
