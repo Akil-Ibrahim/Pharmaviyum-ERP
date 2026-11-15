@@ -23,17 +23,17 @@
 
 | Раздел | Что содержит | Статус русской версии |
 |---|---|---|
-| Системный контекст | Границы компонентов, владение данными и Central/Edge | Перевод готовится |
+| Системный контекст | [Английский оригинал](./architecture/system-context.md) | Русская версия пока не опубликована | Границы компонентов, владение данными и Central/Edge |
 | ADR | [Индекс архитектурных решений](./adr/README.ru.md) | [ADR index](./adr/README.md) | Решения, статусы и жизненный цикл архитектурных изменений |
 | AI / LLM | [Архитектура Mortarium и глоссарий](./ai/MORTARIUM_AI_ARCHITECTURE.ru.md) · [Проектирование AI-системы](./ai/AI_LLM_SYSTEM_DESIGN.ru.md) · [Архитектура AI](./ai_architecture.ru.md) · [Аудит архитектуры RAG](./rag_architecture_audit.ru.md) · [Стандарт инженерии LLM](./llm_engineering_standards.ru.md) · [Архитектура LangGraph RAG](./ai/langgraph-rag-architecture.ru.md) · [Операционная работа Mortarium](./ai/mortarium-pharmacy-operations.ru.md) · [Изоляция состояния пациента](./ai/patient-session-isolation.ru.md) | [English originals](./README.md) | Mortarium, Agent Harness, LangGraph, RAG, MCP, безопасность и наблюдаемость |
-| Разработка | [Руководство по разработке и тестированию](./guides/DEVELOPMENT_AND_TESTING.ru.md) · Настройка окружения и quality gates | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) | Рабочий процесс, критерии качества и контроль PR |
+| Разработка | [Руководство по разработке и тестированию](./guides/DEVELOPMENT_AND_TESTING.ru.md) · [Настройка окружения](./guides/ENVIRONMENT_SETUP.ru.md) · [GitHub Codespaces](./guides/CODESPACES_GUIDE.ru.md) | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) | Локальная среда, Codespaces, quality gates и контроль PR |
 | Тестирование | [Руководство по тестированию](./guides/TESTING.ru.md) | [Testing guide](./guides/TESTING.md) | Структура тестов, маркеры pytest, CI и критерии качества |
-| Эксплуатация | Проверки работоспособности, инциденты, backup и recovery | Перевод готовится |
-| Развёртывание | FastAPI Cloud, секреты, runtime и контролируемый release | Перевод готовится |
-| DevOps и Pharmacy Edge | Roadmap, Ansible, нагрузочные испытания, резервное копирование и rollout | Перевод готовится |
+| Эксплуатация | [Production operations](./operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md) · [Реагирование на инциденты](./operations/INCIDENT_RUNBOOK.ru.md) · [Релиз](./operations/RELEASE_RUNBOOK.ru.md) | [English originals](./README.md) | Health checks, инциденты, backup/restore и rollback |
+| Развёртывание | [FastAPI Cloud](./deployment/FASTAPI_CLOUD.ru.md) | [FastAPI Cloud deployment](./deployment/FASTAPI_CLOUD.md) | Hosted deployment, secrets, runtime и ручной release |
+| DevOps и Pharmacy Edge | [Индекс DevOps](./devops/README.md) · [Roadmap](./devops/ENGINEERING_ROADMAP.md) · [Ansible rollout](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Русские версии части документов пока не опубликованы | Roadmap, Ansible, нагрузочные испытания, резервное копирование и rollout |
 | Наблюдаемость | [OpenTelemetry](./observability/opentelemetry.ru.md) | [English original](./observability/opentelemetry.md) | Tracing, защита данных и критерии приёмки telemetry |
-| WebSocket | Протокол и ограничения текущей реализации | Перевод готовится |
-| Материалы для интервью | Python, system design и инженерные вопросы | Перевод готовится |
+| WebSocket | [Английский оригинал](./websocket-protocol.md) | Русская версия пока не опубликована | Протокол и ограничения текущей реализации |
+| Материалы для интервью | [Английский оригинал](./interview/README.md) | Русская версия пока не опубликована | Python, system design и инженерные вопросы |
 
 ## Карта каталогов
 
