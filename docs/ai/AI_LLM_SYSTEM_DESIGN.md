@@ -17,7 +17,7 @@ Mortarium is decision support, not a system of record, clinical authority, auton
 
 See the [Mortarium AI Architecture & Glossary](./MORTARIUM_AI_ARCHITECTURE.md) for definitions of RAG, LangGraph, AI Harness, MCP, pgvector, embeddings, chunking, reranking, Redis, Celery, Ragas and OpenTelemetry, plus the component responsibility map.
 
-## 2. Model and embedding configuration
+## 3. Model and embedding configuration
 
 The application has separate chat-generation and embedding providers. Current repository defaults and the documented demo profile are:
 
@@ -29,14 +29,14 @@ The application has separate chat-generation and embedding providers. Current re
 
 Gemini and Groq adapters are also present in code, but their presence does not prove they are enabled. Do not claim a live model is active based on defaults or documentation alone. Before production use, approve the provider/model version, data-processing terms, billing/quota policy, embedding compatibility and dimensions, latency/retry limits, monitoring and fallback policy. Never silently switch to a paid provider.
 
-## 3. Logical architecture
+## 4. Logical architecture
 The request path is: authenticated pharmacist → FastAPI AI API → tenant/patient validation → Agent Harness → bounded Redis memory and prompt cache → model routing → LangGraph pharmacist agent → LangGraph RAG and/or role-filtered MCP registry → grounded response with sources and warnings → pharmacist review.
 
 These are logical application components, not separate deployable services.
 
 PostgreSQL is the durable relational system of record for Pharmaviyum's business data and transactional state. The Mortarium RAG vector store uses the PostgreSQL `pgvector` extension for embedding storage and similarity search; pgvector is not a separate database. PostgreSQL also supports durable LangGraph checkpoint persistence. Redis is used for scoped ephemeral memory/cache/coordination, not as the authoritative patient or transaction database.
 
-## 3. Request lifecycle
+## 5. Request lifecycle
 1. FastAPI authenticates the user.
 2. The API resolves authorized pharmacy context.
 3. If a patient is selected, the API verifies that the patient is active and belongs to the pharmacy.
@@ -51,14 +51,14 @@ PostgreSQL is the durable relational system of record for Pharmaviyum's business
 
 Exact request/response schemas are defined in code and generated OpenAPI, not duplicated here.
 
-## 4. Agent Harness
+## 6. Agent Harness
 The Harness owns cross-cutting input/output guardrails, bounded dialogue memory, prompt/cache orchestration, model routing, agent execution/streaming, structured response construction and telemetry.
 
 Memory is contextual convenience, not an authoritative patient record. Memory summaries must not override current validated patient data, prescription state or source documents.
 
 Cache identity must include every context dimension that can change correctness or authorization. Never reuse patient-specific answers across patient, tenant, user or permission boundaries.
 
-## 5. LangGraph agent and RAG
+## 7. LangGraph agent and RAG
 The pharmacist agent and RAG are separate LangGraph workflows. RAG uses bounded query transformation, retrieval, document grading, compression, generation and guardrails.
 
 Retrieval rules:
@@ -73,12 +73,12 @@ Retrieval rules:
 
 Do not describe a reranker as active unless a concrete reranker is injected and tested. The audit identifies declared settings that are not all wired into runtime; see [RAG audit](../rag_architecture_audit.md) and [LLM engineering standard](../llm_engineering_standards.md).
 
-## 6. Ingestion
+## 8. Ingestion
 The active API ingestion path dispatches tenant-authorized Celery tasks. Worker processing loads/preprocesses documents, stamps tenant metadata, chunks, embeds and persists them. Do not assume a separate orchestrator path has equivalent metadata and authorization behavior without tests.
 
 Jobs must be idempotent, bounded and safe to retry. Retain source, jurisdiction, language, version and tenant metadata.
 
-## 7. MCP tool boundary
+## 9. MCP tool boundary
 The registry filters tools by role; execution requires trusted request-scoped authorization context.
 - The model may propose a tool call; the server decides whether it is authorized.
 - Never trust tenant/user/role identifiers supplied inside model-generated arguments.
@@ -90,7 +90,7 @@ The registry filters tools by role; execution requires trusted request-scoped au
 
 The currently documented pharmacist operations tools are read-only. Do not infer write capability from MCP's existence.
 
-## 8. Patient-context isolation
+## 10. Patient-context isolation
 PR #287 merged the patient-scoped session and checkpoint namespace implementation into `main` (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`). Its RAG Safety Regression, Unit Tests and Integration Tests checks passed on the merge commit.
 
 This is not evidence of production activation or a completed staging release gate. The required end-to-end test remains: reuse one client session across Patient A → Patient B → no patient in synchronous and streaming modes, including PostgreSQL checkpoint persistence and Redis memory. Until that test is evidenced and the release is explicitly deployed, do not claim patient-context isolation is operationally proven in production.
@@ -99,7 +99,7 @@ Required invariant: pharmacy + authenticated user + patient (including explicit 
 
 Namespace changes require a compatibility, retention and rollback plan. See [ADR-0003](../adr/ADR-0003-patient-scoped-ai-state.md) and [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287).
 
-## 9. Pharmaceutical evaluation
+## 11. Pharmaceutical evaluation
 Ragas is an offline evaluator, not a production request dependency. Pair generic RAG metrics with deterministic pharmacy-specific metrics.
 
 | Dimension | Evaluation |
@@ -116,14 +116,14 @@ Record dataset, corpus/index revision, language, model, prompt, evaluator versio
 
 See [Ragas evaluation](./ragas-pharmaceutical-evaluation.md) and [benchmark requirements](../devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md).
 
-## 10. Observability and privacy
+## 12. Observability and privacy
 Use bounded spans/metrics for request and graph duration, retrieval counts, rewrite count, warning codes, provider latency/error class, MCP tool name/outcome and ingestion task status.
 
 Do not record prompts, completions, patient identifiers, prescription data, retrieved clinical text, Redis keys/values or raw MCP arguments. Automatic FastAPI, SQLAlchemy and HTTPX instrumentation is opt-in only in development/test after redaction review; Redis command auto-instrumentation remains disabled.
 
 See [OpenTelemetry policy](../observability/opentelemetry.md).
 
-## 11. Reliability and cost controls
+## 13. Reliability and cost controls
 - Bound graph recursion, rewrites, retrieval concurrency and execution time.
 - Use explicit timeouts and bounded retries with jitter.
 - Apply token budgets without dropping warnings or dosage units.
@@ -132,7 +132,7 @@ See [OpenTelemetry policy](../observability/opentelemetry.md).
 - Handle provider quota, rate limit and outage as expected failures.
 - Avoid hidden model calls in deterministic CRUD paths.
 
-## 12. Threat model checklist
+## 14. Threat model checklist
 - [ ] Cross-tenant retrieval and tool invocation.
 - [ ] Cross-patient memory, cache and checkpoint reuse.
 - [ ] Prompt injection in uploaded/retrieved documents.
