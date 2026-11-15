@@ -9,14 +9,14 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 | Area | English | Русский | What it covers |
 |---|---|---|---|
 | Pharmacy workflows | [Workflow specification](./workflows/pharmacy-workflow.en.md) | [Спецификация аптечного процесса](./workflows/pharmacy-workflow.ru.md) | Pharmacy operations, POS, dispensing, inventory, procurement, audit and offline boundaries |
-| System architecture | [Architecture vision](./architecture/pharmaviyum-architecture.en.md) | [Архитектурное видение](./architecture/pharmaviyum-architecture.ru.md) | Component boundaries, trust model, data ownership and Central/Edge target |
+| System architecture | [Architecture vision](./architecture/pharmaviyum-architecture.en.md) · [System context](./architecture/system-context.md) | [Архитектурное видение](./architecture/pharmaviyum-architecture.ru.md) · [Системный контекст](./architecture/system-context.ru.md) | Component boundaries, trust model, data ownership and Central/Edge target |
 | Technology | [Technology Stack & Glossary](./technology-stack.md) | [Стек и глоссарий](./technology-stack.ru.md) | Definitions, architectural roles, version policy, environment boundaries and dependency updates |
 | Repository structure | [Repository Structure Guide](./architecture/repository-structure.md) | [Структура репозитория](./architecture/repository-structure.ru.md) | Directory ownership, file placement and safe moves |
 | AI / LLM system design | [AI system design](./ai/AI_LLM_SYSTEM_DESIGN.md) | [Проектирование AI-системы](./ai/AI_LLM_SYSTEM_DESIGN.ru.md) | Mortarium lifecycle, Agent Harness, LangGraph, RAG, MCP, safety, evaluation and observability |
 | Mortarium glossary | [Architecture & glossary](./ai/MORTARIUM_AI_ARCHITECTURE.md) | [Архитектура и глоссарий](./ai/MORTARIUM_AI_ARCHITECTURE.ru.md) | AI/LLM, PostgreSQL, pgvector, Redis, MCP, Ragas and OpenTelemetry |
 | Pharmacy operations AI | [Mortarium pharmacy operations](./ai/mortarium-pharmacy-operations.md) | [Операционная работа Mortarium](./ai/mortarium-pharmacy-operations.ru.md) | Available read-only tools and safety boundaries |
 | Patient session isolation | [Patient-scoped state](./ai/patient-session-isolation.md) | [Изоляция состояния пациента](./ai/patient-session-isolation.ru.md) | Session, memory and checkpoint isolation requirements |
-| QwenCloud demo | [QwenCloud demo](./ai/QWENCLOUD_DEMO.md) | Русская версия пока не опубликована | Demo provider configuration and quota safeguards |
+| QwenCloud demo | [QwenCloud demo](./ai/QWENCLOUD_DEMO.md) | [Демо QwenCloud](./ai/QWENCLOUD_DEMO.ru.md) | Demo provider configuration and quota safeguards |
 | AI architecture | [AI architecture](./ai_architecture.md) | [Архитектура AI](./ai_architecture.ru.md) | Current implementation details |
 | LangGraph RAG | [RAG graph architecture](./ai/langgraph-rag-architecture.md) | [Архитектура LangGraph RAG](./ai/langgraph-rag-architecture.ru.md) | Graph nodes, state, retrieval, bounded execution and persistence |
 | RAG audit | [RAG architecture audit](./rag_architecture_audit.md) | [Аудит архитектуры RAG](./rag_architecture_audit.ru.md) | Dated findings, gaps and remediation priorities |
@@ -28,7 +28,7 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 | Development | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) | [Руководство по разработке и тестированию](./guides/DEVELOPMENT_AND_TESTING.ru.md) | Contributor workflow and quality gates |
 | Environment | [Environment setup](./guides/ENVIRONMENT_SETUP.md) | [Настройка окружения](./guides/ENVIRONMENT_SETUP.ru.md) | Local services, configuration and prerequisites |
 | Testing | [Testing guide](./guides/TESTING.md) | [Руководство по тестированию](./guides/TESTING.ru.md) | Test layout, markers and CI gates |
-| Operations | [Production operations runbook](./operations/PRODUCTION_OPERATIONS_RUNBOOK.md) | [Эксплуатация Production](./operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md) · [Инциденты](./operations/INCIDENT_RUNBOOK.ru.md) | Health checks, incident triage, backup and recovery |
+| Operations | [Production operations runbook](./operations/PRODUCTION_OPERATIONS_RUNBOOK.md) · [Production engineering](./operations/PRODUCTION_ENGINEERING.md) | [Эксплуатация Production](./operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md) · [Production engineering](./operations/PRODUCTION_ENGINEERING.ru.md) · [Инциденты](./operations/INCIDENT_RUNBOOK.ru.md) | Health checks, incident triage, backup and recovery |
 | Release | [Release runbook](./operations/RELEASE_RUNBOOK.md) | [Runbook релиза](./operations/RELEASE_RUNBOOK.ru.md) | Controlled release and rollback |
 | Hosted deployment | [FastAPI Cloud](./deployment/FASTAPI_CLOUD.md) | [Развёртывание FastAPI Cloud](./deployment/FASTAPI_CLOUD.ru.md) | Hosting, secrets, runtime constraints and manual deployment |
 | DevOps roadmap | [Engineering stages](./devops/ENGINEERING_ROADMAP.md) | Русская версия пока не опубликована | Stage goals, workstreams and exit criteria |
