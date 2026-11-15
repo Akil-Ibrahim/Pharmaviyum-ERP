@@ -86,8 +86,8 @@ class RagasEvaluationAdapter:
             )
         except ImportError as exc:
             raise RuntimeError(
-                "Ragas evaluation is optional. Install requirements-eval.txt "
-                "in the offline evaluation environment."
+                "Ragas evaluation is optional. Install the project eval group "
+                "with `uv sync --group eval` in the evaluation environment."
             ) from exc
 
         metric_specs: list[tuple[str, Any, dict[str, Any]]] = [
