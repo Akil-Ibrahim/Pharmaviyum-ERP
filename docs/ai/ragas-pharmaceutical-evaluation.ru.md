@@ -4,11 +4,14 @@
 
 ## Назначение и границы применения
 
-В Pharmaviyum для production-оркестрации RAG используется LangGraph. Ragas является **зависимостью для offline-оценки**, а не частью production request path. Устанавливайте его только в среде оценки:
+В Pharmaviyum для production-оркестрации RAG используется LangGraph. Ragas — **зависимость только для оценки качества**, а не production runtime и не часть production request path. Он объявлен в группе `eval` файла `pyproject.toml`, зафиксирован в `uv.lock` и явно устанавливается CI evaluation job:
 
 ```bash
-uv run --with-requirements requirements-eval.txt python -m pytest tests/unit/ai/test_ragas_evaluation.py
+uv sync --frozen --group eval
+uv run pytest tests/unit/ai/test_ragas_evaluation.py -v -m unit
 ```
+
+Production-установка не выбирает группу `eval`, поэтому Ragas не устанавливается в production runtime image.
 
 Адаптер ориентирован на Ragas Collections API версии 0.4. LLM-оценщик и embeddings передаются явно; production credentials провайдера не считываются автоматически.
 
