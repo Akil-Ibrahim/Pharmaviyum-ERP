@@ -252,7 +252,7 @@ Pharmaviyum отделяет международный справочный с�
 
 Оценки LLM-as-a-judge являются сигналами регрессии, а не клинической валидацией или подтверждением соответствия нормативным требованиям. Для наборов оценки используются синтетические или обезличенные данные.
 
-Подробнее: [оценка Ragas для фармацевтической области](docs/ai/ragas-pharmaceutical-evaluation.md), [обнаружение галлюцинаций и red-team стратегия](docs/ai/hallucination-detection-and-red-team.md), [pipeline чанкинга Mortarium](docs/ai/chunking-pipeline.md).
+Подробнее: [оценка Ragas для фармацевтической области](docs/ai/ragas-pharmaceutical-evaluation.ru.md), [обнаружение галлюцинаций и red-team стратегия](docs/ai/hallucination-detection-and-red-team.ru.md), [pipeline чанкинга Mortarium](docs/ai/chunking-pipeline.ru.md).
 
 DeepEval изолирован в зависимостях для оценки; HHEM описан как дополнительный evaluator; Promptfoo предназначен для контролируемых red-team проверок на непроизводственных целях. Ни один из этих инструментов не считается production response gate, пока соответствующее runtime-применение не реализовано и не протестировано.
 
@@ -477,7 +477,7 @@ React frontend можно запускать отдельно командами
 | AI-архитектура | [AI architecture](docs/ai_architecture.md) | Детали текущей реализации |
 | LangGraph RAG | [RAG graph architecture](docs/ai/langgraph-rag-architecture.md) | Узлы графа, состояние, retrieval и persistence |
 | Аудит RAG | [RAG architecture audit](docs/rag_architecture_audit.md) | Выводы аудита, пробелы и приоритеты исправления |
-| Оценка RAG | [Ragas evaluation](docs/ai/ragas-pharmaceutical-evaluation.md) | Offline evaluation и аптечные метрики качества |
+| Оценка RAG | [Ragas evaluation](docs/ai/ragas-pharmaceutical-evaluation.ru.md) | Offline evaluation и аптечные метрики качества |
 | Стандарты LLM | [LLM engineering standards](docs/llm_engineering_standards.md) | Контекст, токены, маршрутизация моделей, cache, memory и MCP |
 | ADR | [Индекс ADR](docs/adr/README.md) | Принятые и предлагаемые архитектурные решения |
 | Разработка | [Development and testing handbook](docs/guides/DEVELOPMENT_AND_TESTING.md) | Настройка разработки и quality gates |
