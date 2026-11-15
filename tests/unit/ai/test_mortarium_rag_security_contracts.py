@@ -3,6 +3,7 @@
 import pytest
 
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
+from src.pharmaviyum.ai.mortarium_rag.pipeline import RAGPipeline
 from src.pharmaviyum.ai.mortarium_rag.schemas import CanonicalMetadata, QueryContext
 from src.pharmaviyum.ai.mortarium_rag.vector_store import PgVectorStore
 
@@ -166,3 +167,50 @@ def test_canonical_metadata_rejects_coerced_identifier_types(field, value):
 
     with pytest.raises(ValueError):
         CanonicalMetadata.model_validate(metadata)
+
+
+@pytest.mark.parametrize("builder", [LangGraphRAG, RAGPipeline])
+def test_patient_scope_filters_never_include_another_patient_or_wildcard(builder):
+    patient_a = QueryContext(
+        user_id="pharmacist-1",
+        pharmacy_id=7,
+        patient_id=101,
+        country="UA",
+        language="en",
+    )
+    patient_b = QueryContext(
+        user_id="pharmacist-1",
+        pharmacy_id=7,
+        patient_id=202,
+        country="UA",
+        language="en",
+    )
+    no_patient = QueryContext(
+        user_id="pharmacist-1",
+        pharmacy_id=7,
+        patient_id=None,
+        country="UA",
+        language="en",
+    )
+
+    filters_a = builder._build_filter_sets(patient_a)
+    filters_b = builder._build_filter_sets(patient_b)
+    filters_none = builder._build_filter_sets(no_patient)
+
+    patient_filters_a = [
+        item for item in filters_a if item["access_level"] == "patient"
+    ]
+    patient_filters_b = [
+        item for item in filters_b if item["access_level"] == "patient"
+    ]
+
+    assert len(patient_filters_a) == 1
+    assert patient_filters_a[0]["patient_id"] == 101
+    assert len(patient_filters_b) == 1
+    assert patient_filters_b[0]["patient_id"] == 202
+    assert all("patient_id" not in item for item in filters_none)
+    assert {item["access_level"] for item in filters_none} == {
+        "public",
+        "pharmacy",
+    }
+    assert all(item["pharmacy_id"] == 7 for item in filters_a + filters_b + filters_none)
