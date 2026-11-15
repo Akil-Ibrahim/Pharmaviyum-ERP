@@ -56,7 +56,7 @@ The canonical integration branch is `main`. Changes are reviewed through pull re
 
 The repository follows clearly defined architectural boundaries and directory ownership rules to keep the codebase consistent, maintainable, and easy to navigate.
 
-The **[Repository Structure Guide](docs/architecture/repository-structure.md)** is the source of truth for:
+The **[Repository Structure Guide](docs/architecture/repository-structure.md) · [Русская версия](docs/architecture/repository-structure.ru.md)** is the source of truth for:
 
 - Directory responsibilities and ownership.
 - Where application code, infrastructure, tests, and documentation belong.
@@ -118,7 +118,7 @@ Pharmaviyum follows a **pilot-first, offline-capable** operating model. The docu
 - Explicit separation between supported, restricted, online-only, and validation-blocked offline workflows
 - Ansible-based infrastructure automation for controlled Edge host provisioning, deployment, backup, restore drills, and rollback
 
-Offline behavior is policy-controlled, not universal. Local persistence does not make an unavailable payment provider, fiscal authority, e-prescription service, or other external authority available. Consult the [Pharmacy Offline Capability Matrix](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) before treating any workflow as available offline.
+Offline behavior is policy-controlled, not universal. Local persistence does not make an unavailable payment provider, fiscal authority, e-prescription service, or other external authority available. Consult the [Pharmacy Offline Capability Matrix](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) · [Русская версия](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) before treating any workflow as available offline.
 
 ### Inventory Management
 
@@ -233,7 +233,7 @@ Pharmaviyum is built with the following technology stack, grouped by architectur
 - **Testing & security:** Pytest, Playwright, Vitest, Ruff, Black, isort, mypy, Bandit, pip-audit, ESLint, Prettier.
 - **Email testing:** Mailpit.
 
-For definitions, each component's role, architecture boundaries, declared versions, environment differences and dependency-update policy, see the complete [Technology Stack & Glossary](docs/technology-stack.md).
+For definitions, each component's role, architecture boundaries, declared versions, environment differences and dependency-update policy, see the complete [Technology Stack & Glossary](docs/technology-stack.md) · [Русская версия](docs/technology-stack.ru.md).
 
 ## RAG Evaluation & Quality
 
@@ -302,7 +302,7 @@ The repository is organized by responsibility, with clear boundaries between app
 | `tests/` | Automated backend and cross-layer tests |
 | `docs/` | Architecture decisions, engineering guides, and operational runbooks |
 
-For directory ownership, root-level configuration rules, and safe file-movement procedures, use the canonical [Repository Structure Guide](docs/architecture/repository-structure.md).
+For directory ownership, root-level configuration rules, and safe file-movement procedures, use the canonical [Repository Structure Guide](docs/architecture/repository-structure.md) · [Русская версия](docs/architecture/repository-structure.ru.md).
 
 ## Deployment
 
@@ -442,10 +442,10 @@ The development approach is **pilot-first**: where appropriate, Pharmaviyum can 
 Additional technical documentation is available under `docs/`, including:
 
 - [`docs/README.md`](docs/README.md) — documentation index
-- [`docs/technology-stack.md`](docs/technology-stack.md) — complete technology definitions, architecture roles, versions and dependency policy
+- [`docs/technology-stack.md`](docs/technology-stack.md) · [Русская версия](docs/technology-stack.ru.md) — complete technology definitions, architecture roles, versions and dependency policy
 - [`docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md`](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) — Ansible operating guide for Pharmacy Edge
 - [`docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) — 1–10 rollout guardrails and future 100-site architecture target
-- [`docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md`](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) — workflow-by-workflow offline policy and limitations
+- [`docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md`](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) · [Русская версия](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) — workflow-by-workflow offline policy and limitations
 - [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-evaluation.md) — Ragas and pharmaceutical RAG evaluation contract
 - [Mortarium AI Architecture & Glossary](docs/ai/MORTARIUM_AI_ARCHITECTURE.md) — Mortarium's role, architecture, security boundaries and AI/RAG terminology
 - [Pharmacy workflow documentation](docs/workflows/README.md)
