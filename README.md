@@ -243,7 +243,7 @@ See [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-
 
 ## Observability
 
-The application uses the OpenTelemetry SDK for distributed tracing. Automatic FastAPI, SQLAlchemy, and HTTPX instrumentation is disabled by default and requires an explicit development/test opt-in; Redis command auto-instrumentation remains disabled. Configure tracing with `OTEL_ENABLED=true` and `OTEL_EXPORTER_OTLP_ENDPOINT`. See [`docs/observability/opentelemetry.md`](docs/observability/opentelemetry.md) for instrumentation boundaries, sampling, and data-protection requirements.
+The application uses the OpenTelemetry SDK for distributed tracing. Automatic FastAPI, SQLAlchemy, and HTTPX instrumentation is disabled by default and requires an explicit development/test opt-in; Redis command auto-instrumentation remains disabled. Configure tracing with `OTEL_ENABLED=true` and `OTEL_EXPORTER_OTLP_ENDPOINT`. See [`docs/observability/opentelemetry.md`](docs/observability/opentelemetry.md) (Russian translation in progress) for instrumentation boundaries, sampling, and data-protection requirements (Russian translation in progress).
 
 ## AI / RAG Architecture
 
@@ -271,7 +271,7 @@ Key design properties include:
 - explicit conversation/checkpoint scope;
 - low-cardinality observability labels.
 
-Detailed AI architecture is documented in [`docs/ai_architecture.md`](docs/ai_architecture.md).
+Detailed AI architecture is documented in [`docs/ai_architecture.md`](docs/ai_architecture.md) (Russian translation in progress).
 
 ## Pharmacy Edge Automation (Ansible)
 
@@ -286,7 +286,7 @@ Current repository assets include deployment, migration, backup, restore, rollba
 - Database migrations and restore operations require separate review and approval.
 - A repository playbook is not proof of a successful real-site deployment; lab and pharmacy acceptance evidence is required.
 
-See [`docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md`](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) and [`docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
+See [`docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md`](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) (Russian translation in progress) and [`docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) (Russian translation in progress).
 
 ## Project Structure
 
@@ -306,7 +306,7 @@ For directory ownership, root-level configuration rules, and safe file-movement 
 
 ## Deployment
 
-The hosted application target is **FastAPI Cloud**. Production deployment is intentionally manual: merging to `main` or passing CI does not deploy the application or run production migrations. The release workflow verifies CI for the exact selected commit before deployment. See [`docs/deployment/FASTAPI_CLOUD.md`](docs/deployment/FASTAPI_CLOUD.md) for secrets, environment configuration, release steps, smoke checks, and rollback constraints.
+The hosted application target is **FastAPI Cloud**. Production deployment is intentionally manual: merging to `main` or passing CI does not deploy the application or run production migrations. The release workflow verifies CI for the exact selected commit before deployment. See [`docs/deployment/FASTAPI_CLOUD.md`](docs/deployment/FASTAPI_CLOUD.md) (Russian translation in progress) for secrets, environment configuration, release steps, smoke checks, and rollback constraints.
 
 ## Development
 
@@ -443,20 +443,20 @@ Additional technical documentation is available under `docs/`, including:
 
 - [`docs/README.md`](docs/README.md) — documentation index
 - [`docs/technology-stack.md`](docs/technology-stack.md) · [Русская версия](docs/technology-stack.ru.md) — complete technology definitions, architecture roles, versions and dependency policy
-- [`docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md`](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) — Ansible operating guide for Pharmacy Edge
-- [`docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) — 1–10 rollout guardrails and future 100-site architecture target
+- [`docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md`](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) (Russian translation in progress) — Ansible operating guide for Pharmacy Edge
+- [`docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) (Russian translation in progress) — 1–10 rollout guardrails and future 100-site architecture target
 - [`docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md`](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) · [Русская версия](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) — workflow-by-workflow offline policy and limitations
 - [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-evaluation.md) · [Русская версия](docs/ai/ragas-pharmaceutical-evaluation.ru.md) — Ragas and pharmaceutical RAG evaluation contract
-- [Mortarium AI Architecture & Glossary](docs/ai/MORTARIUM_AI_ARCHITECTURE.md) — Mortarium's role, architecture, security boundaries and AI/RAG terminology
-- [Pharmacy workflow documentation](docs/workflows/README.md)
-- [System architecture and component boundaries](docs/architecture/system-context.md)
-- [AI / LLM system design](docs/ai/AI_LLM_SYSTEM_DESIGN.md)
-- [Architecture Decision Records (ADRs)](docs/adr/README.md)
-- [Development and testing handbook](docs/guides/DEVELOPMENT_AND_TESTING.md)
-- [Production operations and recovery runbook](docs/operations/PRODUCTION_OPERATIONS_RUNBOOK.md)
-- [Release runbook](docs/operations/RELEASE_RUNBOOK.md)
-- [DevOps roadmap and engineering stages](docs/devops/ENGINEERING_ROADMAP.md)
-- [WebSocket protocol](docs/websocket-protocol.md)
+- [Mortarium AI Architecture & Glossary](docs/ai/MORTARIUM_AI_ARCHITECTURE.md) (Russian translation in progress) — Mortarium's role, architecture, security boundaries and AI/RAG terminology
+- [Pharmacy workflow documentation](docs/workflows/README.md) (Russian translation in progress)
+- [System architecture and component boundaries](docs/architecture/system-context.md) (Russian translation in progress)
+- [AI / LLM system design](docs/ai/AI_LLM_SYSTEM_DESIGN.md) (Russian translation in progress)
+- [Architecture Decision Records (ADRs)](docs/adr/README.md) (Russian translation in progress)
+- [Development and testing handbook](docs/guides/DEVELOPMENT_AND_TESTING.md) (Russian translation in progress)
+- [Production operations and recovery runbook](docs/operations/PRODUCTION_OPERATIONS_RUNBOOK.md) (Russian translation in progress)
+- [Release runbook](docs/operations/RELEASE_RUNBOOK.md) (Russian translation in progress)
+- [DevOps roadmap and engineering stages](docs/devops/ENGINEERING_ROADMAP.md) (Russian translation in progress)
+- [WebSocket protocol](docs/websocket-protocol.md) (Russian translation in progress)
 
 ## Demo / NDA Notice
 
