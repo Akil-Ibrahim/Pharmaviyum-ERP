@@ -20,7 +20,9 @@ permissions:
 
 concurrency:
   group: pharmaviyum-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel an in-flight main-branch validation run when another PR merges.
+  # PR runs remain replaceable to avoid wasting CI minutes on outdated commits.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:
