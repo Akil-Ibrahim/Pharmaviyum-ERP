@@ -1,11 +1,13 @@
 import pytest
 
 from src.pharmaviyum.api.v1.pharmacy_entities import (
+    InventoryAdjustmentIn,
     InventoryIn,
     _validate_inventory_levels,
 )
 from src.pharmaviyum.models.erp_sync import ERPSyncEvent
 from src.pharmaviyum.models.inventory import Inventory
+from src.pharmaviyum.models.inventory_movement import InventoryMovement
 
 
 @pytest.mark.unit
@@ -41,6 +43,42 @@ def test_inventory_foreign_keys_and_constraints_match_domain() -> None:
     }
     assert "uq_inventory_product_pharmacy_lot" in constraint_names
     assert "ck_inventory_reserved_lte_quantity" in constraint_names
+
+
+@pytest.mark.unit
+def test_inventory_adjustment_requires_nonzero_delta_and_reason() -> None:
+    with pytest.raises(ValueError, match="non-zero"):
+        InventoryAdjustmentIn(
+            quantity_delta=0,
+            reason="No change",
+            idempotency_key="adjustment-test-0001",
+        )
+
+    with pytest.raises(ValueError):
+        InventoryAdjustmentIn(
+            quantity_delta=1,
+            reason="",
+            idempotency_key="adjustment-test-0001",
+        )
+
+
+@pytest.mark.unit
+def test_inventory_movement_has_tenant_bound_composite_lot_foreign_key() -> None:
+    constraints = {
+        constraint.name: constraint
+        for constraint in InventoryMovement.__table__.foreign_key_constraints
+    }
+    lot_fk = constraints["fk_inventory_movements_lot_identity"]
+    assert [column.name for column in lot_fk.columns] == [
+        "inventory_id",
+        "pharmacy_id",
+        "product_id",
+    ]
+    assert [element.target_fullname for element in lot_fk.elements] == [
+        "inventory.id",
+        "inventory.pharmacy_id",
+        "inventory.product_id",
+    ]
 
 
 @pytest.mark.unit
