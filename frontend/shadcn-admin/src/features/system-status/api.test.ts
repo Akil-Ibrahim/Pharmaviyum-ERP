@@ -32,9 +32,7 @@ describe('fetchSystemStatus', () => {
     vi.unstubAllGlobals()
   })
 
-  it(
-    'maps the current backend readiness contract to operational states',
-    async () => {
+  it('maps ready components', async () => {
       const result = await fetchSystemStatus()
 
       expect(
@@ -47,12 +45,9 @@ describe('fetchSystemStatus', () => {
         result.checks.find((check) => check.id === 'ai')?.state
       ).toBe('operational')
       expect(result.overall).toBe('operational')
-    }
-  )
+  })
 
-  it(
-    'preserves individual dependency results from a 503 readiness response',
-    async () => {
+  it('preserves component results on HTTP 503', async () => {
       vi.stubGlobal(
         'fetch',
         vi.fn(async (input: RequestInfo | URL) => {
@@ -88,16 +83,14 @@ describe('fetchSystemStatus', () => {
       expect(
         result.checks.find((check) => check.id === 'redis')?.diagnostic
       ).toBe('ConnectionError')
-      expect(result.checks.find((check) => check.id === 'ai')?.state).toBe(
-        'operational'
-      )
+      expect(
+        result.checks.find((check) => check.id === 'ai')?.state
+      ).toBe('operational')
       expect(result.overall).toBe('outage')
     }
   )
 
-  it(
-    'keeps missing dependency data unknown instead of inferring health',
-    async () => {
+  it('keeps missing component data unknown', async () => {
       vi.stubGlobal(
         'fetch',
         vi.fn(async (input: RequestInfo | URL) => {
@@ -121,9 +114,9 @@ describe('fetchSystemStatus', () => {
       expect(
         result.checks.find((check) => check.id === 'redis')?.state
       ).toBe('unknown')
-      expect(result.checks.find((check) => check.id === 'ai')?.state).toBe(
-        'unknown'
-      )
+      expect(
+        result.checks.find((check) => check.id === 'ai')?.state
+      ).toBe('unknown')
       expect(result.overall).toBe('unknown')
     }
   )
