@@ -332,7 +332,7 @@ AI-слой находится в `src/pharmaviyum/ai` и предоставля
 - миграции базы данных и операции восстановления требуют отдельной проверки и подтверждения;
 - наличие playbook в репозитории не доказывает успешное развёртывание на реальной площадке: необходимы результаты лабораторной проверки и приёмки аптекой.
 
-Документация: [руководство Ansible для Pharmacy Edge](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) и [план внедрения Pharmacy Edge](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md). Русские переводы этих двух документов пока отсутствуют.
+Документация: [руководство Ansible для Pharmacy Edge](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md) · [English](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md); [план внедрения Pharmacy Edge](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) · [English](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
 
 ## Структура проекта
 
@@ -521,7 +521,7 @@ React frontend можно запускать отдельно командами
 | WebSocket | [Протокол WebSocket](docs/websocket-protocol.ru.md) | [WebSocket protocol](docs/websocket-protocol.md) | Контракт v1 и ограничения текущего scaffold |
 | Наблюдаемость | [Политика OpenTelemetry](docs/observability/opentelemetry.ru.md) | [OpenTelemetry](docs/observability/opentelemetry.md) | Настройка telemetry и защита данных |
 | Pharmacy Edge offline | [Матрица офлайн-возможностей](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | [Offline capability matrix](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | Offline-политика и операционные ограничения |
-| Pharmacy Edge | [Руководство Ansible](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md) · [План внедрения (EN)](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | [Ansible rollout](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) · [Ansible guide](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) | Подготовка Edge-хостов, deployment, backup/recovery и ограничения fleet |
+| Pharmacy Edge | [Руководство Ansible](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md) · [План внедрения](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) | [Ansible rollout](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) · [Ansible guide](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) | Подготовка Edge-хостов, deployment, backup/recovery и ограничения fleet |
 
 Правила ведения документации:
 
