@@ -131,6 +131,15 @@ class MetadataExtractor:
         if re.search(r"\b(dengan|untuk|yang|dan)\b", text_sample):
             return "id"
 
+        # Detect Russian/Cyrillic content without classifying isolated symbols
+        # or short product codes as Russian.
+        cyrillic_count = len(re.findall(r"[\u0400-\u04FF]", text_sample))
+        latin_count = len(re.findall(r"[a-z]", text_sample))
+        if cyrillic_count >= 3 and cyrillic_count >= max(
+            3, (cyrillic_count + latin_count) // 4
+        ):
+            return "ru"
+
         return "en"  # Default fallback
 
 

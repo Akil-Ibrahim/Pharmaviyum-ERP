@@ -159,7 +159,7 @@ class RAGSettings(BaseSettings):
     enable_hyde: bool = True
     enable_multi_query: bool = True
     enable_contextual_compression: bool = True
-    default_languages: list[str] = ["vi", "en", "ar", "th", "id"]
+    default_languages: list[str] = ["vi", "en", "ru", "ar", "th", "id"]
 
 
 class TokenBudgetSettings(BaseSettings):

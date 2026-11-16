@@ -21,6 +21,7 @@ from opentelemetry import trace
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.pharmaviyum.ai.llm_utils import response_text
+from src.pharmaviyum.ai.mortarium_rag.preprocessing import MetadataExtractor
 from src.pharmaviyum.ai.mortarium_rag.schemas import QueryContext
 from src.pharmaviyum.core.config import settings as app_settings
 from src.pharmaviyum.core.logging import logger
@@ -136,13 +137,16 @@ class PharmacistAgent:
                 raise ValueError("RAG requires authenticated user and pharmacy context")
 
             query = str(state["messages"][-1].content)
+            request_language = context.get("language")
+            if not request_language:
+                request_language = MetadataExtractor._detect_language_simple(query)
             rag_context = QueryContext(
                 user_id=str(user_id),
                 pharmacy_id=int(pharmacy_id),
                 patient_id=context.get("patient_id"),
                 prescription_id=context.get("prescription_id"),
                 country=context.get("country"),
-                language=context.get("language") or "en",
+                language=request_language,
                 halal_filter=bool(context.get("halal_filter", False)),
                 force_fresh=bool(context.get("force_fresh", False)),
             )

@@ -74,6 +74,33 @@ class TestDocumentPreprocessing:
 
         assert metadata.get("language") == "vi"
 
+    @pytest.mark.parametrize(
+        ("text", "expected_language"),
+        [
+            ("Омепразол применяется для лечения изжоги и рефлюкса.", "ru"),
+            ("Омепразол 20 mg omeprazole capsule", "ru"),
+            ("Omeprazole is used to reduce stomach acid.", "en"),
+        ],
+    )
+    def test_metadata_extraction_detects_russian_and_english(
+        self, text, expected_language
+    ):
+        from src.pharmaviyum.ai.mortarium_rag.preprocessing import MetadataExtractor
+
+        metadata = MetadataExtractor.extract(text, {})
+
+        assert metadata["language"] == expected_language
+
+    def test_explicit_language_metadata_is_preserved(self):
+        from src.pharmaviyum.ai.mortarium_rag.preprocessing import MetadataExtractor
+
+        metadata = MetadataExtractor.extract(
+            "Омепразол применяется для лечения рефлюкса.",
+            {"language": "en"},
+        )
+
+        assert metadata["language"] == "en"
+
     def test_content_hash_generation(self):
         """Test content hash is generated for deduplication."""
         from src.pharmaviyum.ai.mortarium_rag.preprocessing import DocumentPreprocessor
