@@ -260,7 +260,7 @@ async def receive_inventory(
             reason="Goods receipt",
             idempotency_key=receipt_key,
             reference_type="receipt",
-            reference_id=payload.idempotency_key,
+            reference_id=receipt_reference,
         )
         response = InventoryReceiptResponse(
             inventory_id=lot.id,
