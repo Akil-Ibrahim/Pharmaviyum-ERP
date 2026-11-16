@@ -38,7 +38,7 @@ The repository contains the upstream Library Skills tool skill at `.agents/skill
 
 ## CI audit
 
-The `Library Skills Audit` GitHub Actions workflow scans both environments when manually dispatched or when dependency manifests/lockfiles or agent skills change in a pull request. It uploads JSON reports as a workflow artifact.
+The existing CI workflow scans the Python environment in the backend lint job and the JavaScript/TypeScript environment in the frontend-checks job. Each job uploads a JSON discovery report as a workflow artifact on pull requests and main-branch pushes.
 
 The audit is intentionally discovery-only. It does not install arbitrary third-party instructions, modify dependencies, create symlinks, or deploy to production. After reviewing the reports, a developer can install selected skills and commit the resulting managed links.
 
