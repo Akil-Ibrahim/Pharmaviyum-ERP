@@ -107,6 +107,14 @@ async def test_inventory_adjustment_cannot_increase_excluded_stock(
     await test_db.refresh(inventory)
     assert inventory.quantity == 4
 
+    metadata_change = await authenticated_client.patch(
+        f"/api/v1/inventory/{inventory.id}",
+        json={"lot_number": "RENAMED-LOT"},
+    )
+    assert metadata_change.status_code == 409, metadata_change.text
+    await test_db.refresh(inventory)
+    assert inventory.lot_number == "TEVA-LOT-001"
+
 
 async def test_inventory_patch_cannot_change_pos_owned_reservations(
     authenticated_client: AsyncClient,
@@ -118,8 +126,13 @@ async def test_inventory_patch_cannot_change_pos_owned_reservations(
         f"/api/v1/inventory/{inventory.id}",
         json={"reserved_quantity": 1},
     )
+    quantity_response = await authenticated_client.patch(
+        f"/api/v1/inventory/{inventory.id}",
+        json={"quantity": 4},
+    )
 
     assert response.status_code == 422
+    assert quantity_response.status_code == 422
     await test_db.refresh(inventory)
     assert inventory.quantity == 5
     assert inventory.reserved_quantity == 0
