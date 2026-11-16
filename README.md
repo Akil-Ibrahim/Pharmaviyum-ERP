@@ -294,7 +294,7 @@ Key design properties include:
 - explicit conversation/checkpoint scope;
 - low-cardinality observability labels.
 
-Detailed AI architecture is documented in [`docs/ai_architecture.md`](docs/ai_architecture.md) (Russian translation in progress).
+Detailed AI architecture is documented in [`docs/ai_architecture.md`](docs/ai_architecture.md) · [Русская версия](docs/ai_architecture.ru.md).
 
 ## Pharmacy Edge Automation (Ansible)
 
@@ -329,7 +329,7 @@ For directory ownership, root-level configuration rules, and safe file-movement 
 
 ## Deployment
 
-The hosted application target is **FastAPI Cloud**. Production deployment is intentionally manual: merging to `main` or passing CI does not deploy the application or run production migrations. The release workflow verifies CI for the exact selected commit before deployment. See [`docs/deployment/FASTAPI_CLOUD.md`](docs/deployment/FASTAPI_CLOUD.md) (Russian translation in progress) for secrets, environment configuration, release steps, smoke checks, and rollback constraints.
+The hosted application target is **FastAPI Cloud**. Production deployment is intentionally manual: merging to `main` or passing CI does not deploy the application or run production migrations. The release workflow verifies CI for the exact selected commit before deployment. See [`docs/deployment/FASTAPI_CLOUD.md`](docs/deployment/FASTAPI_CLOUD.md) · [Русская версия](docs/deployment/FASTAPI_CLOUD.ru.md) for secrets, environment configuration, release steps, smoke checks, and rollback constraints.
 
 ## Development
 
