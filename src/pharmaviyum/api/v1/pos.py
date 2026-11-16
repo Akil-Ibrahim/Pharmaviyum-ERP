@@ -34,6 +34,7 @@ from src.pharmaviyum.services.outbox import record_outbox_event
 from src.pharmaviyum.services.inventory_movements import (
     InventoryMovementConflict,
     apply_inventory_movement,
+    movement_idempotency_key,
 )
 
 router = APIRouter(prefix="/api/v1/pos", tags=["Point of Sale"])
@@ -209,7 +210,9 @@ async def receive_inventory(
             actor_type="user",
             actor_user_id=user.id,
             reason="Goods receipt",
-            idempotency_key=f"receipt:{payload.idempotency_key}",
+            idempotency_key=movement_idempotency_key(
+                "receipt", payload.pharmacy_id, payload.idempotency_key
+            ),
             reference_type="receipt",
             reference_id=payload.idempotency_key,
         )
@@ -462,7 +465,9 @@ async def checkout(
                         if payload.payment_method == "cash"
                         else "External payment reservation"
                     ),
-                    idempotency_key=f"pos-checkout:{sale.idempotency_key}:{lot.id}",
+                    idempotency_key=movement_idempotency_key(
+                        "checkout", sale.idempotency_key, lot.id
+                    ),
                     reference_type="sale",
                     reference_id=str(sale.id),
                 )
@@ -722,8 +727,8 @@ async def payment_webhook(
                     if event_status == "succeeded"
                     else "External payment failed; reservation released"
                 ),
-                idempotency_key=(
-                    f"pos-payment:{payment.id}:{event_status}:{allocation.id}"
+                idempotency_key=movement_idempotency_key(
+                    "payment", payment.id, event_status, allocation.id
                 ),
                 reference_type="payment",
                 reference_id=str(payment.id),
@@ -844,7 +849,9 @@ async def cancel_pending_sale(
                 actor_type="user",
                 actor_user_id=user.id,
                 reason="Pending POS sale cancelled; reservation released",
-                idempotency_key=f"pos-cancel:{sale.id}:{allocation.id}",
+                idempotency_key=movement_idempotency_key(
+                    "cancel", sale.id, allocation.id
+                ),
                 reference_type="sale",
                 reference_id=str(sale.id),
             )
