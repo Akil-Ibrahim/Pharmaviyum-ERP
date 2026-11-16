@@ -182,9 +182,7 @@ async def test_concurrent_distinct_adjustments_cannot_oversell_same_lot(
     test_db, test_engine
 ):
     pharmacy, _product, lot = await _inventory_fixture(test_db)
-    session_factory = async_sessionmaker(
-        test_engine, expire_on_commit=False
-    )
+    session_factory = async_sessionmaker(test_engine, expire_on_commit=False)
 
     async def attempt(key: str):
         async with session_factory() as session:
