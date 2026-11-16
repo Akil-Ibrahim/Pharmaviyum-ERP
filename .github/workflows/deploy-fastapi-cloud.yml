@@ -134,6 +134,43 @@ jobs:
             echo "- Commit: $DEPLOY_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Verify production database schema is compatible (read-only)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          uv run python - <<'PY'
+          import os
+          import sys
+
+          import psycopg
+          from alembic.config import Config
+          from alembic.script import ScriptDirectory
+
+          expected_heads = set(ScriptDirectory.from_config(Config("alembic.ini")).get_heads())
+          with psycopg.connect(os.environ["DATABASE_URL"]) as connection:
+              actual_heads = {
+                  row[0]
+                  for row in connection.execute(
+                      "SELECT version_num FROM alembic_version"
+                  ).fetchall()
+              }
+              inventory_ledger = connection.execute(
+                  "SELECT to_regclass('public.inventory_movements') IS NOT NULL"
+              ).fetchone()[0]
+
+          if actual_heads != expected_heads:
+              print(
+                  "Refusing application deployment: production Alembic revisions "
+                  f"{sorted(actual_heads)} do not match code heads {sorted(expected_heads)}."
+              )
+              print("Apply and verify the separately approved migrations before deploying.")
+              sys.exit(1)
+          if not inventory_ledger:
+              print("Refusing application deployment: inventory_movements table is missing.")
+              sys.exit(1)
+          print(f"Production schema is at expected Alembic heads: {sorted(actual_heads)}")
+          PY
+
       # FASTAPI_CLOUD_TOKEN is a deploy token. It authorizes deployments,
       # not account-authenticated app-management commands such as "cloud env set".
       # Configure ENVIRONMENT=production once in the FastAPI Cloud dashboard;
