@@ -81,18 +81,26 @@ async def test_inventory_adjustment_cannot_increase_excluded_stock(
 ):
     _, product, inventory = await _create_excluded_inventory_fixture(test_db)
 
-    increase = await authenticated_client.patch(
-        f"/api/v1/inventory/{inventory.id}",
-        json={"quantity": 6},
+    increase = await authenticated_client.post(
+        f"/api/v1/inventory/{inventory.id}/adjustments",
+        json={
+            "quantity_delta": 1,
+            "reason": "Attempted excluded product restock",
+            "idempotency_key": "excluded-stock-increase-001",
+        },
     )
 
     assert increase.status_code == 404
     await test_db.refresh(inventory)
     assert inventory.quantity == 5
 
-    reduction = await authenticated_client.patch(
-        f"/api/v1/inventory/{inventory.id}",
-        json={"quantity": 4},
+    reduction = await authenticated_client.post(
+        f"/api/v1/inventory/{inventory.id}/adjustments",
+        json={
+            "quantity_delta": -1,
+            "reason": "Damaged stock reconciliation",
+            "idempotency_key": "excluded-stock-reduction-001",
+        },
     )
 
     assert reduction.status_code == 200, reduction.text
