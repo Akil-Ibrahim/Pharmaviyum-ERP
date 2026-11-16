@@ -285,7 +285,7 @@ DeepEval изолирован в зависимостях для оценки; H
 
 Для включения трассировки используются настройки `OTEL_ENABLED=true` и `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
-Подробности об инструментации, sampling и защите данных: [политика OpenTelemetry](docs/observability/opentelemetry.md) (русская версия готовится).
+Подробности об инструментации, sampling и защите данных: [политика OpenTelemetry](docs/observability/opentelemetry.ru.md) · [English](docs/observability/opentelemetry.md).
 
 Наблюдаемость должна связывать трассировки, журналы приложения и метрики сервисов/бизнес-процессов, не помещая в telemetry идентификаторы пациентов, credentials, prompts или другие чувствительные данные. Дашборды и оповещения следует связывать с измеримыми SLI/SLO: например, доступностью и задержкой API, задержкой синхронизации, размером outbox backlog, количеством ошибок синхронизации/сверки и сбоями фоновых задач. Это цели мониторинга; нельзя утверждать, что SLO действует, пока не настроены целевое значение, измерение, alert и ответственный.
 
@@ -315,7 +315,7 @@ AI-слой находится в `src/pharmaviyum/ai` и предоставля
 - область контекста диалога и checkpoint задаётся явно;
 - для меток наблюдаемости используются метрики с низкой кардинальностью.
 
-Подробная архитектура: [AI architecture](docs/ai_architecture.md) (русская версия готовится), [Mortarium AI Architecture & Glossary](docs/ai/MORTARIUM_AI_ARCHITECTURE.md) (русская версия готовится), [AI / LLM System Design](docs/ai/AI_LLM_SYSTEM_DESIGN.md) (русская версия готовится).
+Подробная архитектура: [архитектура AI на русском](docs/ai_architecture.ru.md) · [English](docs/ai_architecture.md), [архитектура Mortarium AI и глоссарий](docs/ai/MORTARIUM_AI_ARCHITECTURE.ru.md) · [English](docs/ai/MORTARIUM_AI_ARCHITECTURE.md), [проектирование системы Mortarium AI / LLM](docs/ai/AI_LLM_SYSTEM_DESIGN.ru.md) · [English](docs/ai/AI_LLM_SYSTEM_DESIGN.md).
 
 ## Автоматизация Pharmacy Edge (Ansible)
 
@@ -502,8 +502,8 @@ React frontend можно запускать отдельно командами
 | Архитектура системы | [Архитектурное видение](docs/architecture/pharmaviyum-architecture.ru.md) | [Architecture vision](docs/architecture/pharmaviyum-architecture.en.md) | Компоненты, границы доверия, владение данными, Central/Edge |
 | Технологии | [Технологический стек и глоссарий](docs/technology-stack.ru.md) | [Technology Stack & Glossary](docs/technology-stack.md) | Определения, роли, версии, различия окружений и обновление зависимостей |
 | Структура репозитория | [Руководство](docs/architecture/repository-structure.ru.md) | [Repository Structure Guide](docs/architecture/repository-structure.md) | Назначение каталогов, размещение файлов и безопасные перемещения |
-| AI / LLM | Перевод готовится | [AI system design](docs/ai/AI_LLM_SYSTEM_DESIGN.md) | Mortarium, Agent Harness, LangGraph, RAG, MCP, безопасность и оценка |
-| AI-архитектура | Перевод готовится | [AI architecture](docs/ai_architecture.md) | Детали текущей реализации |
+| AI / LLM | [Проектирование Mortarium AI / LLM](docs/ai/AI_LLM_SYSTEM_DESIGN.ru.md) | [AI system design](docs/ai/AI_LLM_SYSTEM_DESIGN.md) | Mortarium, Agent Harness, LangGraph, RAG, MCP, безопасность и оценка |
+| AI-архитектура | [Архитектура AI](docs/ai_architecture.ru.md) | [AI architecture](docs/ai_architecture.md) | Детали текущей реализации |
 | LangGraph RAG | Перевод готовится | [RAG graph architecture](docs/ai/langgraph-rag-architecture.md) | Узлы графа, состояние, retrieval и persistence |
 | Аудит RAG | Перевод готовится | [RAG architecture audit](docs/rag_architecture_audit.md) | Выводы аудита, пробелы и приоритеты исправления |
 | Оценка RAG | [Фармацевтическая оценка RAG](docs/ai/ragas-pharmaceutical-evaluation.ru.md) | [Ragas evaluation](docs/ai/ragas-pharmaceutical-evaluation.md) | Offline evaluation и аптечные метрики качества |
@@ -519,7 +519,7 @@ React frontend можно запускать отдельно командами
 | Hosting | Перевод готовится | [FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.md) | Hosting, секреты, runtime и ручное развёртывание |
 | DevOps | Перевод готовится | [Engineering stages](docs/devops/ENGINEERING_ROADMAP.md) | Этапы, направления работ и критерии завершения |
 | WebSocket | Перевод готовится | [WebSocket protocol](docs/websocket-protocol.md) | Контракт v1 и ограничения текущего scaffold |
-| Наблюдаемость | Перевод готовится | [OpenTelemetry](docs/observability/opentelemetry.md) | Настройка telemetry и защита данных |
+| Наблюдаемость | [Политика OpenTelemetry](docs/observability/opentelemetry.ru.md) | [OpenTelemetry](docs/observability/opentelemetry.md) | Настройка telemetry и защита данных |
 | Pharmacy Edge offline | [Матрица офлайн-возможностей](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | [Offline capability matrix](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | Offline-политика и операционные ограничения |
 | Pharmacy Edge | Перевод готовится | [Ansible rollout](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Контролируемое внедрение и ограничения fleet |
 
