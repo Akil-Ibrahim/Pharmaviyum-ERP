@@ -7,6 +7,7 @@ from src.pharmaviyum.models.drug_catalog import (
     MedicinalProduct,
 )
 from src.pharmaviyum.models.outbox import OutboxEvent
+from src.pharmaviyum.models.inventory_movement import InventoryMovement
 
 # Import POS entities so Alembic registers their tables in Base.metadata.
 from src.pharmaviyum.models.pos import Payment, Sale, SaleItem, SaleItemAllocation
@@ -22,6 +23,7 @@ __all__ = [
     "DrugReferenceIngredient",
     "MedicinalProduct",
     "OutboxEvent",
+    "InventoryMovement",
     "Payment",
     "PharmacyEdgeNode",
     "Sale",
