@@ -199,7 +199,8 @@ class SyncEventEnvelope(BaseModel):
         # JSON-mode validation parses ISO timestamps while preserving strict
         # primitive types (notably bool is never accepted as an integer).
         validated = payload_model.model_validate_json(json.dumps(self.payload))
-        if validated.receipt_number != self.aggregate_id:
+        receipt_number = getattr(validated, "receipt_number", None)
+        if receipt_number != self.aggregate_id:
             raise ValueError("aggregate_id must match the POS receipt_number")
         if len(json.dumps(self.payload, separators=(",", ":"))) > 262144:
             raise ValueError("Event payload exceeds the 256 KiB limit")
