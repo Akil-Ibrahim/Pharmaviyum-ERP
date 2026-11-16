@@ -63,7 +63,9 @@ jobs:
           done
 
           if (("${#FILES[@]}" > 0)); then
-            bunx prettier --check "${FILES[@]}"
+            bunx prettier --write "${FILES[@]}"
+            git diff -- frontend/shadcn-admin/src/features/system-status/api.test.ts
+            exit 1
           else
             echo "No frontend files changed; skipping Prettier."
           fi
