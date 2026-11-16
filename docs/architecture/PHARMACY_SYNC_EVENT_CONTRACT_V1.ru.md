@@ -20,7 +20,9 @@ Exactly-once доставка по сети не гарантируется.
 
 ## 2. Обязательная оболочка события (event envelope)
 
-Таблица описывает **целевую** неизменяемую оболочку события. Текущий wire envelope v1 содержит: `event_id`, `edge_node_id`, `event_type`, `schema_version`, `aggregate_type`, `aggregate_id`, `aggregate_version`, `occurred_at` и `payload`. Central получает `pharmacy_id` из аутентифицированной регистрации Edge. Поля `recorded_at`, `correlation_id`, `causation_id` и `idempotency_key` сейчас не передаются.
+Таблица описывает **целевую** неизменяемую оболочку события. Текущая валидация payload v1 отклоняет неизвестные ключи, проверяет вложенную структуру объектов/списков и размер payload. При этом она **пока не проверяет** все примитивные типы, числовые диапазоны, формат денежных значений и доменные enum-значения. До внедрения Central consumer необходимо добавить строгие typed payload models и negative tests.
+
+Текущий wire envelope v1 содержит: `event_id`, `edge_node_id`, `event_type`, `schema_version`, `aggregate_type`, `aggregate_id`, `aggregate_version`, `occurred_at` и `payload`. Central получает `pharmacy_id` из аутентифицированной регистрации Edge. Поля `recorded_at`, `correlation_id`, `causation_id` и `idempotency_key` сейчас не передаются.
 
 Целевые поля оболочки:
 
