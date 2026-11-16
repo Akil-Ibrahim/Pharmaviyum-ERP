@@ -1,87 +1,81 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fetchSystemStatus } from './api'
 
-const healthyReadiness = {
-  status: 'ready',
-  checks: {
-    database: { status: 'healthy', message: 'Database OK' },
-    redis: { status: 'healthy', message: 'Redis OK' },
-  },
+type Snapshot = Awaited<ReturnType<typeof fetchSystemStatus>>
+
+function stubEndpoints(readiness: unknown, readinessStatus = 200) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((input: RequestInfo | URL) => {
+      const isHealth = String(input).endsWith('/health')
+      const body = isHealth ? { status: 'healthy' } : readiness
+      const status = isHealth ? 200 : readinessStatus
+
+      return Promise.resolve(new Response(JSON.stringify(body), { status }))
+    })
+  )
 }
 
+function expectState(snapshot: Snapshot, id: string, state: string) {
+  expect(snapshot.checks.find((check) => check.id === id)?.state).toBe(state)
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
 describe('fetchSystemStatus', () => {
-  beforeEach(() => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL) => {
-        if (String(input).endsWith('/health')) {
-          return new Response(JSON.stringify({ status: 'healthy' }), {
-            status: 200,
-          })
-        }
+  it('maps healthy backend components to operational states', async () => {
+    stubEndpoints({
+      status: 'ready',
+      components: {
+        postgres: 'ok',
+        redis: 'ok',
+        ai_initialized: 'ok',
+      },
+    })
 
-        return new Response(JSON.stringify(healthyReadiness), {
-          status: 200,
-        })
-      })
-    )
-  })
-
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('maps healthy dependencies', async () => {
     const result = await fetchSystemStatus()
 
-    expect(result.checks.find((check) => check.id === 'postgres')?.state).toBe(
-      'operational'
-    )
-    expect(result.checks.find((check) => check.id === 'redis')?.state).toBe(
-      'operational'
-    )
+    expectState(result, 'postgres', 'operational')
+    expectState(result, 'redis', 'operational')
+    expectState(result, 'ai', 'operational')
+    expect(result.overall).toBe('operational')
   })
 
-  it('does not infer AI health from missing API data', async () => {
-    const result = await fetchSystemStatus()
-
-    expect(result.checks.find((check) => check.id === 'ai')?.state).toBe(
-      'unknown'
-    )
-    expect(result.overall).toBe('unknown')
-  })
-
-  it('reports failed dependencies', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL) => {
-        if (String(input).endsWith('/health')) {
-          return new Response(JSON.stringify({ status: 'healthy' }), {
-            status: 200,
-          })
-        }
-
-        return new Response(
-          JSON.stringify({
-            status: 'not_ready',
-            checks: {
-              database: { status: 'unhealthy' },
-              redis: { status: 'unhealthy' },
-            },
-          }),
-          { status: 503 }
-        )
-      })
+  it('preserves component failures returned with HTTP 503', async () => {
+    stubEndpoints(
+      {
+        status: 'not_ready',
+        components: {
+          postgres: 'ok',
+          redis: 'failed',
+          ai_initialized: 'ok',
+        },
+        errors: { redis: 'ConnectionError' },
+      },
+      503
     )
 
     const result = await fetchSystemStatus()
 
-    expect(result.checks.find((check) => check.id === 'postgres')?.state).toBe(
-      'outage'
-    )
-    expect(result.checks.find((check) => check.id === 'redis')?.state).toBe(
-      'outage'
-    )
+    expectState(result, 'postgres', 'operational')
+    expectState(result, 'redis', 'outage')
+    expect(
+      result.checks.find((check) => check.id === 'redis')?.diagnostic
+    ).toBe('ConnectionError')
+    expectState(result, 'ai', 'operational')
     expect(result.overall).toBe('outage')
+  })
+
+  it('keeps missing component data unknown', async () => {
+    stubEndpoints({ status: 'ready' })
+
+    const result = await fetchSystemStatus()
+
+    expectState(result, 'postgres', 'unknown')
+    expectState(result, 'redis', 'unknown')
+    expectState(result, 'ai', 'unknown')
+    expect(result.overall).toBe('unknown')
   })
 })

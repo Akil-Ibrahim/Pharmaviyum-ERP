@@ -8,24 +8,19 @@ export interface ServiceCheck {
   diagnostic?: string
 }
 
-interface DependencyCheck {
+interface HealthPayload {
   status?: string
-  message?: string
+  service?: string
 }
 
 interface ReadinessPayload {
   status?: string
-  checks?: {
-    database?: DependencyCheck
-    redis?: DependencyCheck
-    [key: string]: DependencyCheck | undefined
+  components?: {
+    postgres?: string
+    redis?: string
+    ai_initialized?: string
   }
-}
-
-interface HealthPayload {
-  status?: string
-  service?: string
-  checks?: Record<string, DependencyCheck>
+  errors?: Record<string, string>
 }
 
 export interface SystemStatusSnapshot {
@@ -54,15 +49,30 @@ async function getJson<T>(path: string): Promise<{
 
 function dependencyState(status?: string): ServiceState {
   switch (status) {
+    case 'ok':
     case 'healthy':
       return 'operational'
-    case 'degraded':
-      return 'degraded'
+    case 'failed':
     case 'unhealthy':
       return 'outage'
+    case 'degraded':
+      return 'degraded'
     default:
       return 'unknown'
   }
+}
+
+function dependencyDescription(
+  component: string | undefined,
+  diagnostic: string | undefined,
+  endpointReachable: boolean,
+  componentName: string
+): string {
+  if (diagnostic) return diagnostic
+  if (component === 'ok') return 'Connection check passed.'
+  if (component === 'failed') return 'The readiness check reported a failure.'
+  if (!endpointReachable) return 'The readiness endpoint could not be reached.'
+  return `No ${componentName} health result was returned.`
 }
 
 export async function fetchSystemStatus(): Promise<SystemStatusSnapshot> {
@@ -83,8 +93,15 @@ export async function fetchSystemStatus(): Promise<SystemStatusSnapshot> {
           ? 'outage'
           : 'unknown'
 
-  const database = readiness?.checks?.database
-  const redis = readiness?.checks?.redis
+  // /ready returns HTTP 503 when any critical dependency fails. Its JSON body
+  // still contains per-component results, so preserve each individual result.
+  const components = readiness?.components
+  const errors = readiness?.errors
+  const readinessReachable = readiness !== null
+
+  const postgresDiagnostic = errors?.postgres
+  const redisDiagnostic = errors?.redis
+  const aiDiagnostic = errors?.ai
 
   const checks: ServiceCheck[] = [
     {
@@ -101,35 +118,50 @@ export async function fetchSystemStatus(): Promise<SystemStatusSnapshot> {
     {
       id: 'postgres',
       name: 'PostgreSQL',
-      state: readinessResult.responseOk
-        ? dependencyState(database?.status)
-        : 'outage',
-      description:
-        database?.message ??
-        (readinessResult.responseOk
-          ? 'No database health result was returned.'
-          : 'The readiness endpoint could not be reached.'),
-      diagnostic: database?.message,
+      state: components
+        ? dependencyState(components.postgres)
+        : readinessReachable
+          ? 'unknown'
+          : 'outage',
+      description: dependencyDescription(
+        components?.postgres,
+        postgresDiagnostic,
+        readinessReachable,
+        'PostgreSQL'
+      ),
+      diagnostic: postgresDiagnostic,
     },
     {
       id: 'redis',
       name: 'Redis',
-      state: readinessResult.responseOk
-        ? dependencyState(redis?.status)
-        : 'outage',
-      description:
-        redis?.message ??
-        (readinessResult.responseOk
-          ? 'No Redis health result was returned.'
-          : 'The readiness endpoint could not be reached.'),
-      diagnostic: redis?.message,
+      state: components
+        ? dependencyState(components.redis)
+        : readinessReachable
+          ? 'unknown'
+          : 'outage',
+      description: dependencyDescription(
+        components?.redis,
+        redisDiagnostic,
+        readinessReachable,
+        'Redis'
+      ),
+      diagnostic: redisDiagnostic,
     },
     {
       id: 'ai',
       name: 'AI · LangGraph',
-      state: 'unknown',
-      description:
-        'AI initialization is required at production startup but is not exposed by the current health or readiness response.',
+      state: components
+        ? dependencyState(components.ai_initialized)
+        : readinessReachable
+          ? 'unknown'
+          : 'outage',
+      description: dependencyDescription(
+        components?.ai_initialized,
+        aiDiagnostic,
+        readinessReachable,
+        'LangGraph initialization'
+      ),
+      diagnostic: aiDiagnostic,
     },
   ]
 
