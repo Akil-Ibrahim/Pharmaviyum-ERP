@@ -50,8 +50,11 @@ class InventoryIn(BaseModel):
 
 
 class InventoryUpdate(BaseModel):
+    # Reservation state is owned by the POS payment lifecycle. Administrative
+    # stock adjustments must not be able to release or create reservations.
+    model_config = ConfigDict(extra="forbid")
+
     quantity: int | None = Field(default=None, ge=0)
-    reserved_quantity: int | None = Field(default=None, ge=0)
     reorder_level: int | None = Field(default=None, ge=0)
     lot_number: str | None = Field(default=None, max_length=100)
     expires_at: datetime | None = None
