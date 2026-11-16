@@ -23,7 +23,9 @@ jobs:
     name: Build frontend and deploy
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    environment: production
+    environment:
+      name: production
+      deployment: false
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     env:
       DEPLOY_SHA: ${{ github.sha }}
@@ -221,77 +223,24 @@ jobs:
       # Reference catalog contents are validated by dedicated data-import tests.
       # Deployment smoke tests must verify the API contract, not require a seeded drug dataset.
 
-      - name: Verify production health, authentication and POS protection (temporary test account)
+      - name: Verify production health, authentication and POS protection (read-only)
         shell: bash
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           set -euo pipefail
           base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
 
-          # This smoke test intentionally writes one temporary non-superuser account
-          # to production through the public registration endpoint. It is not read-only.
-          # Cleanup runs on normal exits and catchable INT/TERM signals; forced runner
-          # termination (for example SIGKILL or host loss) can still prevent cleanup.
-          SMOKE_USERNAME="pharmaviyum-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          SMOKE_EMAIL="${SMOKE_USERNAME}@pharmaviyum.invalid"
-          SMOKE_PASSWORD="$(openssl rand -hex 32)"
-          SMOKE_USER_ATTEMPTED=false
+          health_status="$(curl --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors \
+            -o /tmp/health.json -w '%{http_code}' "$base_url/health")"
+          if [ "$health_status" != "200" ] || ! jq -e '.status == "healthy" or .status == "degraded"' /tmp/health.json >/dev/null; then
+            echo "Production liveness check failed: HTTP $health_status."
+            cat /tmp/health.json
+            exit 1
+          fi
+          echo "Production liveness check passed."
 
-          cleanup_smoke_user() {
-            local exit_code=$?
-            trap - EXIT INT TERM
-            if [ "$SMOKE_USER_ATTEMPTED" = "true" ]; then
-              if ! uv run python - <<'PY'
-          import os
-          import psycopg
-
-          database_url = os.environ["DATABASE_URL"]
-          # FastAPI's SQLAlchemy setting commonly uses the asyncpg dialect;
-          # psycopg requires a synchronous PostgreSQL URL.
-          if database_url.startswith("postgresql+asyncpg://"):
-              database_url = database_url.replace(
-                  "postgresql+asyncpg://", "postgresql://", 1
-              )
-          elif database_url.startswith("postgres+asyncpg://"):
-              database_url = database_url.replace(
-                  "postgres+asyncpg://", "postgresql://", 1
-              )
-
-          with psycopg.connect(database_url) as conn:
-              result = conn.execute(
-                  """
-                  DELETE FROM users
-                  WHERE username = %s AND email = %s AND is_superuser = FALSE
-                  """,
-                  (os.environ["SMOKE_USERNAME"], os.environ["SMOKE_EMAIL"]),
-              )
-              if result.rowcount not in (0, 1):
-                  raise RuntimeError(
-                      "Expected to remove zero or one temporary smoke user; "
-                      f"removed {result.rowcount} rows."
-                  )
-          PY
-              then
-                echo "ERROR: failed to remove the temporary smoke user." >&2
-                exit_code=1
-              fi
-            fi
-            exit "$exit_code"
-          }
-          export SMOKE_USERNAME SMOKE_EMAIL DATABASE_URL
-          trap cleanup_smoke_user EXIT
-          trap 'exit 130' INT
-          trap 'exit 143' TERM
-
-          health="$(curl --fail --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors "$base_url/health")"
-          # /health returns the aggregate status. Optional subsystem checks may
-          # legitimately make it "degraded" while the liveness endpoint remains
-          # HTTP 200; curl --fail above rejects HTTP 5xx responses.
-          printf '%s\n' "$health" | jq -e '.status == "healthy" or .status == "degraded"' >/dev/null
-
-          runtime_info="$(curl --fail --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors "$base_url/version")"
-          if ! printf '%s\n' "$runtime_info" | jq -e '
+          runtime_status="$(curl --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors \
+            -o /tmp/version.json -w '%{http_code}' "$base_url/version")"
+          if [ "$runtime_status" != "200" ] || ! jq -e '
             .environment == "production" and
             .application_environment == "production" and
             .auth_environment == "production" and
@@ -299,21 +248,28 @@ jobs:
             .auth_debug == false and
             (.python_version | startswith("3.15.")) and
             .python_implementation == "cpython"
-          ' >/dev/null; then
-            echo "Production runtime assertion failed; expected production mode, debug=false, and CPython 3.15.x."
-            printf '%s\n' "$runtime_info" | jq '{environment, application_environment, auth_environment, debug, auth_debug, python_version}'
+          ' /tmp/version.json >/dev/null; then
+            echo "Production runtime assertion failed: HTTP $runtime_status; expected production mode, debug=false, and CPython 3.15.x."
+            cat /tmp/version.json
             exit 1
           fi
+          echo "Production runtime identity check passed."
 
-          # /ready intentionally reports only critical dependencies. Its current
-          # public contract is checks.database.status / checks.redis.status;
-          # AI initialization is not exposed by this endpoint and is not asserted.
-          readiness="$(curl --fail --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors "$base_url/ready")"
-          printf '%s\n' "$readiness" | jq -e '
+          # /ready exposes component states as strings: postgres, redis,
+          # and ai_initialized. Keep this assertion aligned with monitoring.py.
+          readiness_status="$(curl --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors \
+            -o /tmp/ready.json -w '%{http_code}' "$base_url/ready")"
+          if [ "$readiness_status" != "200" ] || ! jq -e '
             .status == "ready" and
-            .checks.database.status == "healthy" and
-            .checks.redis.status == "healthy"
-          ' >/dev/null
+            .components.postgres == "ok" and
+            .components.redis == "ok" and
+            .components.ai_initialized == "ok"
+          ' /tmp/ready.json >/dev/null; then
+            echo "Production readiness check failed: HTTP $readiness_status."
+            cat /tmp/ready.json
+            exit 1
+          fi
+          echo "Production readiness check passed."
 
           appearance_status="$(curl --silent --show-error -o /tmp/appearance.html -w '%{http_code}' \
             "$base_url/settings/appearance")"
@@ -350,47 +306,5 @@ jobs:
             exit 1
           fi
 
-          # Mark the attempt before sending the request: the server may commit
-          # the user even if the client loses the HTTP response.
-          SMOKE_USER_ATTEMPTED=true
-          registration_response="$(curl --fail --silent --show-error \
-            -X POST "$base_url/api/v1/auth/register" \
-            -H 'Content-Type: application/json' \
-            --data "$(jq -n --arg email "$SMOKE_EMAIL" --arg password "$SMOKE_PASSWORD" \
-              '{email: $email, password: $password}')")"
-          printf '%s\n' "$registration_response" | jq -e --arg username "$SMOKE_USERNAME" \
-            '.username == $username and .email == ($username + "@pharmaviyum.invalid")' >/dev/null
-
-          login_response="$(curl --fail --silent --show-error \
-            -X POST "$base_url/api/v1/auth/token" \
-            -H 'Content-Type: application/x-www-form-urlencoded' \
-            --data-urlencode "username=$SMOKE_USERNAME" \
-            --data-urlencode "password=$SMOKE_PASSWORD")"
-          access_token="$(printf '%s' "$login_response" | jq -er '.access_token')"
-          profile="$(curl --fail --silent --show-error \
-            -H "Authorization: Bearer $access_token" "$base_url/api/v1/auth/me")"
-          printf '%s\n' "$profile" | jq -e '.accountNo and .email' >/dev/null
-
-          curl --fail --silent --show-error \
-            -H "Authorization: Bearer $access_token" \
-            "$base_url/drug-catalog/search?q=omeprazole" \
-            -o /tmp/drug-catalog-smoke.json
-          curl --fail --silent --show-error \
-            -H "Authorization: Bearer $access_token" \
-            "$base_url/products/search?q=omeprazole" \
-            -o /tmp/products-smoke.json
-          uv run python - <<'PY'
-          import json
-          from pathlib import Path
-
-          for path in ("/tmp/drug-catalog-smoke.json", "/tmp/products-smoke.json"):
-              payload = json.loads(Path(path).read_text())
-              if not isinstance(payload, list):
-                  raise SystemExit(f"Expected a list response from {path}")
-              print(f"{path}: API contract valid; {len(payload)} result(s).")
-          PY
-
-          echo "Authenticated sign-in, /auth/me and catalog search API contract checks passed."
-
-          echo "Production liveness, readiness, invalid-credential handling and protected POS access checks passed."
-          echo "POS checkout exclusion and stock immutability are covered by the PostgreSQL integration suite; no production sale or stock mutation was created by this smoke run."
+          echo "Production liveness, runtime identity, readiness, invalid-credential handling and protected POS access checks passed."
+          echo "No production user, sale, inventory, or catalog data was created or modified by this smoke run."
