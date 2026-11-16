@@ -61,8 +61,9 @@ describe('fetchSystemStatus', () => {
 
     expectState(result, 'postgres', 'operational')
     expectState(result, 'redis', 'outage')
-    expect(result.checks.find((check) => check.id === 'redis')?.diagnostic)
-      .toBe('ConnectionError')
+    expect(
+      result.checks.find((check) => check.id === 'redis')?.diagnostic
+    ).toBe('ConnectionError')
     expectState(result, 'ai', 'operational')
     expect(result.overall).toBe('outage')
   })
