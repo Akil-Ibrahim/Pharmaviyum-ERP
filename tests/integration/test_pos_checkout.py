@@ -501,6 +501,27 @@ async def test_cancel_pending_sale_releases_reserved_inventory(
     assert second.quantity == 5
     assert second.reserved_quantity == 0
 
+    # A retry after a client timeout returns the terminal state and does not
+    # release the same reservation or emit a duplicate domain event.
+    replay = await authenticated_client.post(
+        f"/api/v1/pos/sales/{receipt['id']}/cancel"
+    )
+    assert replay.status_code == 200, replay.text
+    assert replay.json()["status"] == "cancelled"
+    assert await test_db.scalar(
+        select(func.count())
+        .select_from(OutboxEvent)
+        .where(
+            OutboxEvent.aggregate_id == receipt["receipt_number"],
+            OutboxEvent.event_type == "pos.sale.cancelled",
+        )
+    ) == 1
+
+    await test_db.refresh(first)
+    await test_db.refresh(second)
+    assert first.reserved_quantity == 0
+    assert second.reserved_quantity == 0
+
 
 @pytest.mark.integration
 async def test_pos_checkout_includes_lots_expiring_today(
