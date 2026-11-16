@@ -17,26 +17,22 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    op.create_unique_constraint(
+        "uq_inventory_id_pharmacy_product",
+        "inventory",
+        ["id", "pharmacy_id", "product_id"],
+    )
     op.create_table(
         "inventory_movements",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column(
-            "pharmacy_id",
-            sa.Integer(),
-            sa.ForeignKey("pharmacies.id", ondelete="RESTRICT"),
-            nullable=False,
-        ),
-        sa.Column(
-            "inventory_id",
-            sa.Integer(),
-            sa.ForeignKey("inventory.id", ondelete="RESTRICT"),
-            nullable=False,
-        ),
-        sa.Column(
-            "product_id",
-            sa.Integer(),
-            sa.ForeignKey("products.id", ondelete="RESTRICT"),
-            nullable=False,
+        sa.Column("pharmacy_id", sa.Integer(), nullable=False),
+        sa.Column("inventory_id", sa.Integer(), nullable=False),
+        sa.Column("product_id", sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["inventory_id", "pharmacy_id", "product_id"],
+            ["inventory.id", "inventory.pharmacy_id", "inventory.product_id"],
+            ondelete="RESTRICT",
+            name="fk_inventory_movements_lot_identity",
         ),
         sa.Column("movement_type", sa.String(32), nullable=False),
         sa.Column("quantity_delta", sa.Integer(), nullable=False),
@@ -130,9 +126,20 @@ def upgrade() -> None:
         FOR EACH ROW EXECUTE FUNCTION prevent_inventory_movement_mutation()
         """
     )
+    op.execute(
+        """
+        CREATE TRIGGER trg_inventory_movements_no_truncate
+        BEFORE TRUNCATE ON inventory_movements
+        FOR EACH STATEMENT EXECUTE FUNCTION prevent_inventory_movement_mutation()
+        """
+    )
 
 
 def downgrade() -> None:
+    op.execute(
+        "DROP TRIGGER IF EXISTS trg_inventory_movements_no_truncate "
+        "ON inventory_movements"
+    )
     op.execute(
         "DROP TRIGGER IF EXISTS trg_inventory_movements_append_only "
         "ON inventory_movements"
@@ -147,3 +154,8 @@ def downgrade() -> None:
         table_name="inventory_movements",
     )
     op.drop_table("inventory_movements")
+    op.drop_constraint(
+        "uq_inventory_id_pharmacy_product",
+        "inventory",
+        type_="unique",
+    )
