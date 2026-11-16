@@ -350,35 +350,70 @@ jobs:
             exit 1
           fi
 
+          # Keep HTTP status and response bodies so a failed production
+          # contract check identifies the exact endpoint and server response.
           # Mark the attempt before sending the request: the server may commit
           # the user even if the client loses the HTTP response.
           SMOKE_USER_ATTEMPTED=true
-          registration_response="$(curl --fail --silent --show-error \
+          registration_status="$(curl --silent --show-error -o /tmp/register.json -w '%{http_code}' \
             -X POST "$base_url/api/v1/auth/register" \
             -H 'Content-Type: application/json' \
             --data "$(jq -n --arg email "$SMOKE_EMAIL" --arg password "$SMOKE_PASSWORD" \
               '{email: $email, password: $password}')")"
-          printf '%s\n' "$registration_response" | jq -e --arg username "$SMOKE_USERNAME" \
-            '.username == $username and .email == ($username + "@pharmaviyum.invalid")' >/dev/null
+          if [ "$registration_status" != "200" ] && [ "$registration_status" != "201" ]; then
+            echo "Registration smoke test failed: HTTP $registration_status."
+            cat /tmp/register.json
+            exit 1
+          fi
+          jq -e --arg username "$SMOKE_USERNAME" --arg email "$SMOKE_EMAIL" \
+            '.username == $username and .email == $email' /tmp/register.json >/dev/null || {
+              echo "Registration response did not match the documented username/email contract."
+              cat /tmp/register.json
+              exit 1
+            }
+          echo "Registration smoke test passed (HTTP $registration_status)."
 
-          login_response="$(curl --fail --silent --show-error \
+          login_status="$(curl --silent --show-error -o /tmp/login.json -w '%{http_code}' \
             -X POST "$base_url/api/v1/auth/token" \
             -H 'Content-Type: application/x-www-form-urlencoded' \
             --data-urlencode "username=$SMOKE_USERNAME" \
             --data-urlencode "password=$SMOKE_PASSWORD")"
-          access_token="$(printf '%s' "$login_response" | jq -er '.access_token')"
-          profile="$(curl --fail --silent --show-error \
-            -H "Authorization: Bearer $access_token" "$base_url/api/v1/auth/me")"
-          printf '%s\n' "$profile" | jq -e '.accountNo and .email' >/dev/null
+          if [ "$login_status" != "200" ]; then
+            echo "Login smoke test failed: HTTP $login_status."
+            cat /tmp/login.json
+            exit 1
+          fi
+          access_token="$(jq -er '.access_token' /tmp/login.json)" || {
+            echo "Login endpoint returned HTTP 200 without an access_token."
+            exit 1
+          }
+          echo "Login smoke test passed (HTTP $login_status)."
 
-          curl --fail --silent --show-error \
-            -H "Authorization: Bearer $access_token" \
-            "$base_url/drug-catalog/search?q=omeprazole" \
-            -o /tmp/drug-catalog-smoke.json
-          curl --fail --silent --show-error \
-            -H "Authorization: Bearer $access_token" \
-            "$base_url/products/search?q=omeprazole" \
-            -o /tmp/products-smoke.json
+          profile_status="$(curl --silent --show-error -o /tmp/profile.json -w '%{http_code}' \
+            -H "Authorization: Bearer $access_token" "$base_url/api/v1/auth/me")"
+          if [ "$profile_status" != "200" ]; then
+            echo "Authenticated profile smoke test failed: HTTP $profile_status."
+            cat /tmp/profile.json
+            exit 1
+          fi
+          jq -e '.accountNo and .email' /tmp/profile.json >/dev/null || {
+            echo "Authenticated profile response did not contain accountNo and email."
+            cat /tmp/profile.json
+            exit 1
+          }
+          echo "Authenticated profile smoke test passed."
+
+          for endpoint in "drug-catalog/search?q=omeprazole" "products/search?q=omeprazole"; do
+            filename="$(printf '%s' "$endpoint" | cut -d '/' -f1 | tr '-' '_')"
+            status="$(curl --silent --show-error -o "/tmp/$filename-smoke.json" -w '%{http_code}' \
+              -H "Authorization: Bearer $access_token" "$base_url/$endpoint")"
+            if [ "$status" != "200" ]; then
+              echo "Catalog smoke test failed for /$endpoint: HTTP $status."
+              cat "/tmp/$filename-smoke.json"
+              exit 1
+            fi
+            echo "Catalog endpoint /$endpoint returned HTTP 200."
+          done
           uv run python - <<'PY'
           import json
           from pathlib import Path
