@@ -284,14 +284,18 @@ jobs:
           trap 'exit 130' INT
           trap 'exit 143' TERM
 
-          health="$(curl --fail --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors "$base_url/health")"
-          # /health returns the aggregate status. Optional subsystem checks may
-          # legitimately make it "degraded" while the liveness endpoint remains
-          # HTTP 200; curl --fail above rejects HTTP 5xx responses.
-          printf '%s\n' "$health" | jq -e '.status == "healthy" or .status == "degraded"' >/dev/null
+          health_status="$(curl --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors \
+            -o /tmp/health.json -w '%{http_code}' "$base_url/health")"
+          if [ "$health_status" != "200" ] || ! jq -e '.status == "healthy" or .status == "degraded"' /tmp/health.json >/dev/null; then
+            echo "Production liveness check failed: HTTP $health_status."
+            cat /tmp/health.json
+            exit 1
+          fi
+          echo "Production liveness check passed."
 
-          runtime_info="$(curl --fail --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors "$base_url/version")"
-          if ! printf '%s\n' "$runtime_info" | jq -e '
+          runtime_status="$(curl --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors \
+            -o /tmp/version.json -w '%{http_code}' "$base_url/version")"
+          if [ "$runtime_status" != "200" ] || ! jq -e '
             .environment == "production" and
             .application_environment == "production" and
             .auth_environment == "production" and
@@ -299,21 +303,28 @@ jobs:
             .auth_debug == false and
             (.python_version | startswith("3.15.")) and
             .python_implementation == "cpython"
-          ' >/dev/null; then
-            echo "Production runtime assertion failed; expected production mode, debug=false, and CPython 3.15.x."
-            printf '%s\n' "$runtime_info" | jq '{environment, application_environment, auth_environment, debug, auth_debug, python_version}'
+          ' /tmp/version.json >/dev/null; then
+            echo "Production runtime assertion failed: HTTP $runtime_status; expected production mode, debug=false, and CPython 3.15.x."
+            cat /tmp/version.json
             exit 1
           fi
+          echo "Production runtime identity check passed."
 
           # /ready intentionally reports only critical dependencies. Its current
           # public contract is checks.database.status / checks.redis.status;
           # AI initialization is not exposed by this endpoint and is not asserted.
-          readiness="$(curl --fail --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors "$base_url/ready")"
-          printf '%s\n' "$readiness" | jq -e '
+          readiness_status="$(curl --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors \
+            -o /tmp/ready.json -w '%{http_code}' "$base_url/ready")"
+          if [ "$readiness_status" != "200" ] || ! jq -e '
             .status == "ready" and
             .checks.database.status == "healthy" and
             .checks.redis.status == "healthy"
-          ' >/dev/null
+          ' /tmp/ready.json >/dev/null; then
+            echo "Production readiness check failed: HTTP $readiness_status."
+            cat /tmp/ready.json
+            exit 1
+          fi
+          echo "Production readiness check passed."
 
           appearance_status="$(curl --silent --show-error -o /tmp/appearance.html -w '%{http_code}' \
             "$base_url/settings/appearance")"
