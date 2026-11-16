@@ -147,6 +147,47 @@ async def receive_inventory(
 ) -> InventoryReceiptResponse:
     """Receive a traceable medicine lot into one authorized pharmacy."""
     await require_pharmacy_tenant(payload.pharmacy_id, user, db)
+    receipt_key = movement_idempotency_key(
+        "receipt", payload.pharmacy_id, payload.idempotency_key
+    )
+    prior_receipt = await db.scalar(
+        select(InventoryMovement).where(
+            InventoryMovement.pharmacy_id == payload.pharmacy_id,
+            InventoryMovement.idempotency_key == receipt_key,
+        )
+    )
+    if prior_receipt is not None:
+        try:
+            await apply_inventory_movement(
+                db,
+                inventory_id=prior_receipt.inventory_id,
+                pharmacy_id=payload.pharmacy_id,
+                movement_type="goods_receipt",
+                quantity_delta=payload.quantity,
+                reserved_delta=0,
+                actor_type="user",
+                actor_user_id=user.id,
+                reason="Goods receipt",
+                idempotency_key=receipt_key,
+                reference_type="receipt",
+                reference_id=payload.idempotency_key,
+            )
+        except InventoryMovementConflict as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        lot = await db.get(Inventory, prior_receipt.inventory_id)
+        if lot is None:
+            raise HTTPException(status_code=409, detail="Receipt lot history is unavailable")
+        return InventoryReceiptResponse(
+            inventory_id=lot.id,
+            pharmacy_id=lot.pharmacy_id,
+            product_id=lot.product_id,
+            lot_number=lot.lot_number or "",
+            expiry_date=lot.expires_at or payload.expiry_date,
+            received_quantity=payload.quantity,
+            lot_quantity=lot.quantity,
+            available_quantity=lot.quantity - lot.reserved_quantity,
+            message="Stock receipt already recorded",
+        )
     product_result = await db.execute(
         select(Product).where(
             Product.id == payload.product_id,
@@ -210,9 +251,7 @@ async def receive_inventory(
             actor_type="user",
             actor_user_id=user.id,
             reason="Goods receipt",
-            idempotency_key=movement_idempotency_key(
-                "receipt", payload.pharmacy_id, payload.idempotency_key
-            ),
+            idempotency_key=receipt_key,
             reference_type="receipt",
             reference_id=payload.idempotency_key,
         )
@@ -732,7 +771,7 @@ async def payment_webhook(
                 ),
                 reference_type="payment",
                 reference_id=str(payment.id),
-                correlation_id=provider_payment_id,
+                correlation_id=provider_payment_id[:128],
             )
         except InventoryMovementConflict as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
