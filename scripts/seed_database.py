@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta
 from sqlalchemy import delete, select
 
 from src.pharmaviyum.core.database import AsyncSessionLocal
+from src.pharmaviyum.config import settings
 from src.pharmaviyum.models import Inventory, Patient, Pharmacy, Prescription, Product, ProductBatch
 from src.pharmaviyum.models.patients import PatientPurchase
 from src.pharmaviyum.models.patients.patient_condition import PatientCondition
@@ -789,6 +790,13 @@ async def seed_inventory(
 
 
 async def seed_patients() -> None:
+    environment = settings.ENVIRONMENT.strip().lower()
+    if environment in {"production", "prod", "staging"}:
+        raise RuntimeError(
+            "Synthetic demo seeding is disabled in production and staging; "
+            "refusing to create demo patients or reset pharmacy inventory."
+        )
+
     async with AsyncSessionLocal() as session:
         pharmacy = await session.scalar(
             select(Pharmacy)
