@@ -11,6 +11,10 @@ from src.pharmaviyum.models import Inventory, Patient, Pharmacy, Prescription, P
 from src.pharmaviyum.models.patients import PatientPurchase
 from src.pharmaviyum.models.patients.patient_condition import PatientCondition
 from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
+from src.pharmaviyum.services.inventory_movements import (
+    apply_inventory_movement,
+    movement_idempotency_key,
+)
 
 random.seed(20260918)
 
@@ -747,7 +751,7 @@ async def seed_inventory(
             inventory_record = Inventory(
                 product_id=product.id,
                 pharmacy_id=pharmacy.id,
-                quantity=batch.available_quantity,
+                quantity=0,
                 reserved_quantity=0,
                 reorder_level=10,
                 lot_number=batch.batch_number,
@@ -755,9 +759,26 @@ async def seed_inventory(
             )
             session.add(inventory_record)
             await session.flush()
+            await apply_inventory_movement(
+                session,
+                inventory_id=inventory_record.id,
+                pharmacy_id=pharmacy.id,
+                movement_type="opening_balance",
+                quantity_delta=batch.available_quantity,
+                reserved_delta=0,
+                actor_type="system",
+                actor_user_id=None,
+                reason="Synthetic demo seed opening balance",
+                idempotency_key=movement_idempotency_key(
+                    "demo-opening", pharmacy.id, product.id, batch.id
+                ),
+                reference_type="demo_seed",
+                reference_id=str(batch.id),
+            )
         else:
-            inventory_record.quantity = batch.available_quantity
-            inventory_record.reserved_quantity = 0
+            # Re-running the demo seed must not overwrite sales or reservations.
+            # Existing balances are operational state; only lot metadata is refreshed.
+            inventory_record.reorder_level = 10
             inventory_record.lot_number = batch.batch_number
             inventory_record.expires_at = datetime.combine(
                 batch.expiry_date, datetime.min.time()
