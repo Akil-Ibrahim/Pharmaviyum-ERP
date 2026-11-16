@@ -91,7 +91,9 @@ async def test_inventory_movement_is_atomic_and_idempotent(test_db):
 
 
 @pytest.mark.integration
-async def test_inventory_movement_rejects_idempotency_key_reuse_with_new_command(test_db):
+async def test_inventory_movement_rejects_idempotency_key_reuse_with_new_command(
+    test_db,
+):
     pharmacy, _product, lot = await _inventory_fixture(test_db)
     kwargs = {
         "db": test_db,
@@ -139,12 +141,11 @@ async def test_inventory_movement_rejects_reservation_above_on_hand(test_db):
     assert persisted_lot.quantity == 10
     assert persisted_lot.reserved_quantity == 0
 
+
 @pytest.mark.integration
 async def test_concurrent_same_movement_key_applies_balance_once(test_db, test_engine):
     pharmacy, _product, lot = await _inventory_fixture(test_db)
-    session_factory = async_sessionmaker(
-        test_engine, expire_on_commit=False
-    )
+    session_factory = async_sessionmaker(test_engine, expire_on_commit=False)
 
     async def apply_once():
         async with session_factory() as session:
@@ -181,9 +182,7 @@ async def test_concurrent_distinct_adjustments_cannot_oversell_same_lot(
     test_db, test_engine
 ):
     pharmacy, _product, lot = await _inventory_fixture(test_db)
-    session_factory = async_sessionmaker(
-        test_engine, expire_on_commit=False
-    )
+    session_factory = async_sessionmaker(test_engine, expire_on_commit=False)
 
     async def attempt(key: str):
         async with session_factory() as session:
@@ -220,3 +219,72 @@ async def test_concurrent_distinct_adjustments_cannot_oversell_same_lot(
         .where(InventoryMovement.pharmacy_id == pharmacy.id)
     )
     assert count == 1
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    ("movement_type", "quantity_delta", "reserved_delta"),
+    [
+        ("goods_receipt", -1, 0),
+        ("accepted_return", 0, 0),
+        ("transfer_in", 1, 1),
+        ("opening_balance", -1, 0),
+        ("cash_sale", 1, 0),
+        ("write_off", 0, 0),
+        ("expiry_disposal", -1, 1),
+        ("transfer_out", 1, 0),
+        ("payment_reservation", 1, 1),
+        ("payment_reservation", 0, -1),
+        ("payment_settlement", -1, 0),
+        ("payment_settlement", 0, -1),
+        ("payment_failure", 0, 1),
+        ("sale_cancellation", -1, -1),
+        ("stock_adjustment", 0, 1),
+        ("unknown_type", 1, 0),
+    ],
+)
+async def test_inventory_movement_rejects_type_delta_mismatch(
+    test_db, movement_type, quantity_delta, reserved_delta
+):
+    pharmacy, _product, lot = await _inventory_fixture(test_db)
+    with pytest.raises(InventoryMovementConflict):
+        await apply_inventory_movement(
+            test_db,
+            inventory_id=lot.id,
+            pharmacy_id=pharmacy.id,
+            movement_type=movement_type,
+            quantity_delta=quantity_delta,
+            reserved_delta=reserved_delta,
+            actor_type="system",
+            actor_user_id=None,
+            reason="Invalid movement semantics test",
+            idempotency_key=f"invalid-semantics-{movement_type}-{quantity_delta}-{reserved_delta}",
+        )
+
+
+@pytest.mark.integration
+async def test_database_rejects_movement_type_delta_mismatch(test_db):
+    from sqlalchemy.exc import IntegrityError
+
+    pharmacy, product, lot = await _inventory_fixture(test_db)
+    test_db.add(
+        InventoryMovement(
+            pharmacy_id=pharmacy.id,
+            inventory_id=lot.id,
+            product_id=product.id,
+            movement_type="goods_receipt",
+            quantity_delta=-1,
+            reserved_delta=0,
+            quantity_before=10,
+            quantity_after=9,
+            reserved_before=0,
+            reserved_after=0,
+            actor_type="system",
+            actor_user_id=None,
+            reason="Direct database constraint test",
+            idempotency_key="direct-invalid-goods-receipt-0001",
+        )
+    )
+    with pytest.raises(IntegrityError):
+        await test_db.flush()
+    await test_db.rollback()

@@ -88,6 +88,21 @@ Inventory lots referenced by movements must not be deleted. A later lifecycle ch
 5. Remove direct administrative writes to reserved_quantity; replace direct quantity edits with an explicit reasoned adjustment workflow before declaring the ledger complete.
 6. Roll out behind a controlled migration/reconciliation plan; verify existing data and concurrency behavior before enabling the new write path.
 
+## Movement type semantics
+
+The movement type constrains the sign and combination of balance deltas. The application service validates this contract before acquiring locks, and PostgreSQL enforces the same contract with a CHECK constraint:
+
+| Movement type | Quantity delta | Reserved delta |
+|---|---:|---:|
+| `goods_receipt`, `accepted_return`, `transfer_in`, `opening_balance` | positive | zero |
+| `cash_sale`, `write_off`, `expiry_disposal`, `transfer_out` | negative | zero |
+| `payment_reservation` | zero | positive |
+| `payment_settlement` | negative | same negative value |
+| `payment_failure`, `sale_cancellation` | zero | negative |
+| `stock_adjustment` | non-zero, either sign | zero |
+
+Unknown movement types and type/delta mismatches are rejected. New movement types require an explicit semantic rule in both the service and database constraint, plus tests and an additive migration.
+
 ## Invariants
 
 - quantity >= 0
