@@ -98,6 +98,7 @@ async def apply_inventory_movement(
             Inventory.pharmacy_id == pharmacy_id,
         )
         .with_for_update()
+        .execution_options(populate_existing=True)
     )
     lot = lot_result.scalar_one_or_none()
     if lot is None:
