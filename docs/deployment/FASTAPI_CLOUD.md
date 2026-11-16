@@ -76,7 +76,7 @@ The workflow:
 - installs Bun (with a package-manager fallback) and builds `frontend/shadcn-admin`;
 - verifies CI succeeded for the exact commit SHA;
 - validates the change reference and required deployment secrets;
-- runs `uv run fastapi cloud deploy .`;
+- submits the deployment with `uv run fastapi cloud deploy . --no-wait`, then waits for the live `/version` endpoint to report the new runtime before running production smoke checks;
 - performs a read-only production catalog exclusion check;
 - verifies `/health` and `/ready`;
 - verifies `/version` reports `production` for API/core, application, and authentication settings, confirms API and authentication debug modes are disabled, and checks the FastAPI Cloud managed runtime is CPython `3.15.x` (CI and Docker remain pinned to `3.15.2`);
