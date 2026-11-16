@@ -24,6 +24,7 @@ from src.pharmaviyum.services.catalog_exclusions import (
 from src.pharmaviyum.services.inventory_movements import (
     InventoryMovementConflict,
     apply_inventory_movement,
+    movement_idempotency_key,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["Pharmacy Domain"])
@@ -289,7 +290,9 @@ async def adjust_inventory(
             actor_type="user",
             actor_user_id=user.id,
             reason=data.reason,
-            idempotency_key=f"admin-adjustment:{data.idempotency_key}",
+            idempotency_key=movement_idempotency_key(
+                "admin-adjustment", inventory.pharmacy_id, data.idempotency_key
+            ),
             reference_type="manual_adjustment",
             reference_id=data.idempotency_key,
         )
