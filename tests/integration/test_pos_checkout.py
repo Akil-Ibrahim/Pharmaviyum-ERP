@@ -416,6 +416,85 @@ async def test_card_payment_reserves_stock_until_signed_webhook(
 
 
 @pytest.mark.integration
+async def test_failed_payment_webhook_releases_stock_and_is_idempotent(
+    authenticated_client, test_db, monkeypatch
+):
+    pharmacy, product, first, second = await _create_pharmacy_product_and_stock(test_db)
+    secret = "test-webhook-secret"
+    monkeypatch.setenv("PAYMENT_WEBHOOK_SECRET", secret)
+
+    checkout = await authenticated_client.post(
+        "/api/v1/pos/checkout",
+        json={
+            "pharmacy_id": pharmacy.id,
+            "idempotency_key": "pos-card-failure-0001",
+            "items": [{"product_id": product.id, "quantity": 3}],
+            "payment_method": "card_terminal",
+        },
+    )
+    assert checkout.status_code == 201, checkout.text
+    receipt = checkout.json()
+    payment_id = receipt["payments"][0]["id"]
+
+    event = {
+        "payment_id": payment_id,
+        "provider_name": "test_terminal",
+        "provider_payment_id": "terminal-tx-failed-001",
+        "status": "failed",
+        "amount": "31.50",
+    }
+    body = json.dumps(event, separators=(",", ":")).encode()
+    signature = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+    headers = {
+        "Content-Type": "application/json",
+        "X-Pharmaviyum-Signature": signature,
+    }
+
+    failed = await authenticated_client.post(
+        "/api/v1/pos/payments/webhook", content=body, headers=headers
+    )
+    assert failed.status_code == 200, failed.text
+    assert failed.json()["status"] == "processed"
+
+    sale = await test_db.scalar(select(Sale).where(Sale.id == receipt["id"]))
+    payment = await test_db.scalar(
+        select(Payment).where(Payment.id == payment_id)
+    )
+    assert sale is not None and sale.status == "cancelled"
+    assert payment is not None and payment.status == "failed"
+
+    event_record = await test_db.scalar(
+        select(OutboxEvent).where(
+            OutboxEvent.aggregate_id == receipt["receipt_number"],
+            OutboxEvent.event_type == "pos.payment.failed",
+        )
+    )
+    assert event_record is not None
+    assert event_record.payload["inventory_effect"] == "release_reservation"
+
+    await test_db.refresh(first)
+    await test_db.refresh(second)
+    assert first.quantity == 2
+    assert first.reserved_quantity == 0
+    assert second.quantity == 5
+    assert second.reserved_quantity == 0
+
+    replay = await authenticated_client.post(
+        "/api/v1/pos/payments/webhook", content=body, headers=headers
+    )
+    assert replay.status_code == 200
+    assert replay.json()["status"] == "already_processed"
+    assert await test_db.scalar(
+        select(func.count())
+        .select_from(OutboxEvent)
+        .where(
+            OutboxEvent.aggregate_id == receipt["receipt_number"],
+            OutboxEvent.event_type == "pos.payment.failed",
+        )
+    ) == 1
+
+
+@pytest.mark.integration
 async def test_checkout_rejects_insufficient_stock_without_partial_decrement(
     authenticated_client, test_db
 ):
