@@ -1,6 +1,6 @@
 # ADR-0006: Append-only Inventory Movement Ledger
 
-**Status:** Proposed  
+**Status:** Accepted — implementation in progress; not production-complete  
 **Date:** 2026-11-16  
 **Owners:** Pharmaviyum engineering
 
@@ -12,22 +12,34 @@ The current model enforces non-negative quantities and reserved_quantity <= quan
 
 SaleItemAllocation records which lots were allocated to a sale, and the transactional outbox records integration events. Neither is a general inventory audit ledger: allocation does not represent receipts, adjustments or reservation lifecycle; outbox is an integration-delivery mechanism, not the authoritative stock journal.
 
-## Verified implementation gaps (2026-11-16)
+## Current implementation status (2026-11-16)
 
-The current code was inspected before implementation. The following write paths must be migrated; this list is a code-level finding, not a claim that the ledger already exists:
+The append-only ledger has been introduced in the codebase. This is a code-level status, not a production-readiness claim.
 
-| Path | Current behavior | Required ledger treatment |
-|---|---|---|
-| `POST /api/v1/pos/inventory/receive` | Adds to an existing lot or creates a lot and commits the balance. The request has no receipt idempotency key, so a client retry can add the same received quantity again. | Require a stable receipt idempotency key and append one receipt movement atomically. |
-| POS cash checkout | Decrements `Inventory.quantity` directly while allocating FEFO lots. | Append one on-hand decrement movement per allocation in the same sale transaction. |
-| POS external checkout | Increments `reserved_quantity` directly. | Append one reservation movement per allocation. |
-| Payment webhook | Releases reservations and, on success, decrements on-hand stock directly. | Append settlement or failure movements atomically with payment/sale transitions. |
-| Pending sale cancellation | Decrements reserved quantity directly. | Append reservation-release movements in the cancellation transaction. |
-| `POST /api/v1/inventory` | Superuser endpoint can create lots with non-zero on-hand and reserved balances, bypassing the receipt workflow. | Replace with the controlled receipt/opening-balance workflow; do not allow unjournaled positive balances. |
-| `PATCH /api/v1/inventory/{id}` | Can change `quantity` directly without a mandatory reason or idempotency key. The schema rejects extra fields, including `reserved_quantity`, which is a useful existing safeguard. | Replace quantity writes with a reasoned, actor-attributed, idempotent adjustment command. Keep reservation fields POS-owned. |
-| `DELETE /api/v1/inventory/{id}` | Rejects deletion when on-hand or reserved quantity is non-zero; permits deletion of zero-balance lots. | Preserve the guard and reject deletion once a lot has any movement history; use close/archive semantics instead. |
+| Path | Current implementation |
+|---|---|
+| `InventoryMovement` | Append-only movement model, database check constraints, pharmacy-scoped unique idempotency constraint, and PostgreSQL UPDATE/DELETE rejection trigger. |
+| `apply_inventory_movement` | Shared transactional service: pharmacy-scoped advisory lock, replay comparison, inventory row lock, balance invariant checks, balance update and movement insert in the caller's transaction. |
+| POS goods receipt | Requires an idempotency key and records a `goods_receipt` movement atomically with the lot balance change. |
+| POS cash checkout | Records a `cash_sale` movement for each FEFO lot allocation. |
+| POS external checkout | Records a `payment_reservation` movement for each lot allocation. |
+| Payment webhook | Records `payment_settlement` or `payment_failure` movements atomically with the sale/payment transition. |
+| Pending sale cancellation | Records `sale_cancellation` reservation-release movements. |
+| `POST /api/v1/inventory` | Creates zero-balance lots only; non-zero balances must use a movement workflow. |
+| `PATCH /api/v1/inventory/{id}` | Metadata-only fields; physical and reserved balances are not writable through this endpoint. |
+| Inventory adjustment | A reasoned, actor-attributed, idempotent adjustment endpoint uses the shared movement service. |
+| Lot deletion | Requires zero balances and no movement history. |
 
-The checkout path already has pharmacy-scoped idempotency and row locking, and the webhook/cancellation paths have retry protections. Those controls reduce duplicate business transitions but do not substitute for an append-only stock journal. The current `Inventory` model has no movement relationship/table, and the inspected POS/admin handlers update its balance fields directly.
+The API write paths above no longer directly assign on-hand or reserved balances outside the shared movement service. Demo seeding still constructs initial inventory rows directly and must remain a non-production fixture; production opening balances require a separately approved, auditable migration/reconciliation process.
+
+## Remaining validation and rollout gaps
+
+- The current integration tests cover atomic movement, idempotent replay, conflicting key reuse, and reservation bounds. Dedicated tests are still required for database trigger immutability, concurrent requests, rollback/failure injection, and full ledger-to-balance reconciliation.
+- Verify the migration against a clean PostgreSQL database and the existing production schema before rollout; do not infer production migration success from the migration file alone.
+- Add an operator-approved opening-balance process for legacy stock. Do not fabricate historical movements from unverified balances.
+- Add lot archival/closure semantics before removing historical lots from operational views.
+- The Edge Central consumer must apply accepted POS events through the same domain movement service, with its own event-to-movement idempotency mapping. The Central Inbox currently stores durable receipts only.
+- Production acceptance requires evidence from concurrency, retry, recovery, tenant-isolation, and reconciliation tests.
 
 ## Decision
 
