@@ -257,7 +257,7 @@ export function syntheticWrites() {
   const inventory = post('/api/v1/inventory', {
     product_id: productId,
     pharmacy_id: pharmacyId,
-    quantity: 10,
+    quantity: 0,
     reserved_quantity: 0,
     reorder_level: 2,
     lot_number: `LOAD-${unique}`,
@@ -268,15 +268,8 @@ export function syntheticWrites() {
     inventoryId = Number(inventory.json('id'));
     if (!inventoryId) lifecycleOk = false;
     else {
-      // The API refuses to delete lots that still carry stock or reservations.
-      // This is a synthetic staging fixture, so zero it before cleanup.
-      const zeroStock = http.patch(
-        `${baseUrl}/api/v1/inventory/${inventoryId}`,
-        JSON.stringify({ quantity: 0 }),
-        { headers: headers(true), tags: { endpoint: 'write_inventory_zero_stock' } },
-      );
-      check(zeroStock, { 'synthetic inventory cleanup adjustment returns 200': (r) => r.status === 200 });
-      if (zeroStock.status !== 200) lifecycleOk = false;
+      // Synthetic load fixtures start with zero stock. Real stock changes must
+      // use the audited receipt/adjustment commands and historical lots are retained.
       const cleanup = del(`/api/v1/inventory/${inventoryId}`, 'write_inventory_cleanup');
       if (cleanup.status !== 204) lifecycleOk = false;
     }
