@@ -518,10 +518,10 @@ React frontend можно запускать отдельно командами
 | Release | [Руководство по выпуску](docs/operations/RELEASE_RUNBOOK.ru.md) | [Release runbook](docs/operations/RELEASE_RUNBOOK.md) | Контролируемый выпуск и rollback |
 | Hosting | [FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.ru.md) | [FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.md) | Hosting, секреты, runtime и ручное развёртывание |
 | DevOps | [Инженерная дорожная карта](docs/devops/ENGINEERING_ROADMAP.ru.md) | [Engineering stages](docs/devops/ENGINEERING_ROADMAP.md) | Этапы, направления работ и критерии завершения |
-| WebSocket | Перевод готовится | [WebSocket protocol](docs/websocket-protocol.md) | Контракт v1 и ограничения текущего scaffold |
+| WebSocket | [Протокол WebSocket](docs/websocket-protocol.ru.md) | [WebSocket protocol](docs/websocket-protocol.md) | Контракт v1 и ограничения текущего scaffold |
 | Наблюдаемость | [Политика OpenTelemetry](docs/observability/opentelemetry.ru.md) | [OpenTelemetry](docs/observability/opentelemetry.md) | Настройка telemetry и защита данных |
 | Pharmacy Edge offline | [Матрица офлайн-возможностей](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | [Offline capability matrix](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | Offline-политика и операционные ограничения |
-| Pharmacy Edge | Перевод готовится | [Ansible rollout](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | Контролируемое внедрение и ограничения fleet |
+| Pharmacy Edge | [Руководство Ansible](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md) · [План внедрения (EN)](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) | [Ansible rollout](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) · [Ansible guide](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) | Подготовка Edge-хостов, deployment, backup/recovery и ограничения fleet |
 
 Правила ведения документации:
 
