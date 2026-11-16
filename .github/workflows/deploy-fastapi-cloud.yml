@@ -404,7 +404,11 @@ jobs:
           echo "Authenticated profile smoke test passed."
 
           for endpoint in "drug-catalog/search?q=omeprazole" "products/search?q=omeprazole"; do
-            filename="$(printf '%s' "$endpoint" | cut -d '/' -f1 | tr '-' '_')"
+            case "$endpoint" in
+              drug-catalog/*) filename="drug-catalog" ;;
+              products/*) filename="products" ;;
+              *) echo "Unexpected smoke-test endpoint: $endpoint"; exit 1 ;;
+            esac
             status="$(curl --silent --show-error -o "/tmp/$filename-smoke.json" -w '%{http_code}' \
               -H "Authorization: Bearer $access_token" "$base_url/$endpoint")"
             if [ "$status" != "200" ]; then
