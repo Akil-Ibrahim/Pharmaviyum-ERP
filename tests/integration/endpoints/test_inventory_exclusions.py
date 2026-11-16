@@ -100,6 +100,23 @@ async def test_inventory_adjustment_cannot_increase_excluded_stock(
     assert inventory.quantity == 4
 
 
+async def test_inventory_patch_cannot_change_pos_owned_reservations(
+    authenticated_client: AsyncClient,
+    test_db: AsyncSession,
+):
+    _, _, inventory = await _create_excluded_inventory_fixture(test_db)
+
+    response = await authenticated_client.patch(
+        f"/api/v1/inventory/{inventory.id}",
+        json={"reserved_quantity": 1},
+    )
+
+    assert response.status_code == 422
+    await test_db.refresh(inventory)
+    assert inventory.quantity == 5
+    assert inventory.reserved_quantity == 0
+
+
 async def test_inventory_lot_with_stock_cannot_be_deleted(
     authenticated_client: AsyncClient,
     test_db: AsyncSession,
