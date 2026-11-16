@@ -63,3 +63,47 @@ def test_pos_idempotency_lock_key_is_stable_and_tenant_scoped() -> None:
     assert first != _pos_idempotency_lock_key(2, "same-request-key")
     assert first != _pos_idempotency_lock_key(1, "different-request-key")
     assert -(2**63) <= first < 2**63
+
+
+def test_inventory_receipt_idempotency_key_fits_journal_prefix() -> None:
+    from datetime import datetime, timedelta
+
+    from src.pharmaviyum.schemas.pos import InventoryReceiptCreate
+
+    payload = InventoryReceiptCreate(
+        pharmacy_id=1,
+        product_id=1,
+        lot_number="LOT-1",
+        expiry_date=datetime.utcnow() + timedelta(days=30),
+        quantity=1,
+        idempotency_key="r" * 120,
+    )
+    assert len("receipt:" + payload.idempotency_key) == 128
+
+    with pytest.raises(ValidationError):
+        InventoryReceiptCreate(
+            pharmacy_id=1,
+            product_id=1,
+            lot_number="LOT-1",
+            expiry_date=datetime.utcnow() + timedelta(days=30),
+            quantity=1,
+            idempotency_key="r" * 121,
+        )
+
+
+def test_inventory_adjustment_idempotency_key_fits_journal_prefix() -> None:
+    from src.pharmaviyum.api.v1.pharmacy_entities import InventoryAdjustmentIn
+
+    payload = InventoryAdjustmentIn(
+        quantity_delta=-1,
+        reason="Cycle count correction",
+        idempotency_key="a" * 110,
+    )
+    assert len("admin-adjustment:" + payload.idempotency_key) <= 128
+
+    with pytest.raises(ValidationError):
+        InventoryAdjustmentIn(
+            quantity_delta=-1,
+            reason="Cycle count correction",
+            idempotency_key="a" * 111,
+        )
