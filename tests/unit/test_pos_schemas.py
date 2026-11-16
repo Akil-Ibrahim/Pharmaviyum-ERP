@@ -65,10 +65,13 @@ def test_pos_idempotency_lock_key_is_stable_and_tenant_scoped() -> None:
     assert -(2**63) <= first < 2**63
 
 
-def test_inventory_receipt_idempotency_key_fits_journal_prefix() -> None:
+def test_inventory_receipt_idempotency_key_is_bounded_after_hashing() -> None:
     from datetime import datetime, timedelta
 
     from src.pharmaviyum.schemas.pos import InventoryReceiptCreate
+    from src.pharmaviyum.services.inventory_movements import (
+        movement_idempotency_key,
+    )
 
     payload = InventoryReceiptCreate(
         pharmacy_id=1,
@@ -76,9 +79,12 @@ def test_inventory_receipt_idempotency_key_fits_journal_prefix() -> None:
         lot_number="LOT-1",
         expiry_date=datetime.utcnow() + timedelta(days=30),
         quantity=1,
-        idempotency_key="r" * 120,
+        idempotency_key="r" * 128,
     )
-    assert len("receipt:" + payload.idempotency_key) == 128
+    journal_key = movement_idempotency_key(
+        "receipt", payload.pharmacy_id, payload.idempotency_key
+    )
+    assert len(journal_key) <= 128
 
     with pytest.raises(ValidationError):
         InventoryReceiptCreate(
@@ -87,23 +93,29 @@ def test_inventory_receipt_idempotency_key_fits_journal_prefix() -> None:
             lot_number="LOT-1",
             expiry_date=datetime.utcnow() + timedelta(days=30),
             quantity=1,
-            idempotency_key="r" * 121,
+            idempotency_key="r" * 129,
         )
 
 
-def test_inventory_adjustment_idempotency_key_fits_journal_prefix() -> None:
+def test_inventory_adjustment_idempotency_key_is_bounded_after_hashing() -> None:
     from src.pharmaviyum.api.v1.pharmacy_entities import InventoryAdjustmentIn
+    from src.pharmaviyum.services.inventory_movements import (
+        movement_idempotency_key,
+    )
 
     payload = InventoryAdjustmentIn(
         quantity_delta=-1,
         reason="Cycle count correction",
-        idempotency_key="a" * 110,
+        idempotency_key="a" * 128,
     )
-    assert len("admin-adjustment:" + payload.idempotency_key) <= 128
+    journal_key = movement_idempotency_key(
+        "admin-adjustment", 1, payload.idempotency_key
+    )
+    assert len(journal_key) <= 128
 
     with pytest.raises(ValidationError):
         InventoryAdjustmentIn(
             quantity_delta=-1,
             reason="Cycle count correction",
-            idempotency_key="a" * 111,
+            idempotency_key="a" * 129,
         )
