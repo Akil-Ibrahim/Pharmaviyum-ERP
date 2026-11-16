@@ -85,6 +85,28 @@ async def test_knowledge_retrieval_node_calls_tenant_scoped_rag() -> None:
 
 
 @pytest.mark.asyncio
+async def test_knowledge_retrieval_infers_russian_when_language_is_unset() -> None:
+    rag = AsyncMock()
+    rag.run.return_value = SimpleNamespace(
+        answer="Ответ на русском [src-chunk-ru].",
+        citations=[],
+        sources=[],
+        warnings=[],
+    )
+    agent = PharmacistAgent.__new__(PharmacistAgent)
+    agent.rag_pipeline = rag
+
+    await agent.knowledge_retrieval_node(
+        {
+            "messages": [HumanMessage(content="Для чего применяется омепразол?")],
+            "context": {"user_id": "user-1", "pharmacy_id": 7},
+        }
+    )
+
+    assert rag.run.await_args.kwargs["context"].language == "ru"
+
+
+@pytest.mark.asyncio
 async def test_planner_uses_model_selected_by_router() -> None:
     agent = PharmacistAgent.__new__(PharmacistAgent)
     agent.main_llm = MagicMock()
