@@ -6,7 +6,14 @@ from decimal import Decimal, InvalidOperation
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictInt,
+    field_validator,
+    model_validator,
+)
 
 
 class EdgeNodeProvisionRequest(BaseModel):
@@ -34,7 +41,9 @@ def _money(value: str, *, field_name: str) -> Decimal:
     except (InvalidOperation, TypeError, ValueError) as exc:
         raise ValueError(f"{field_name} must be a decimal string") from exc
     if not parsed.is_finite() or parsed < 0 or parsed.as_tuple().exponent != -2:
-        raise ValueError(f"{field_name} must be a non-negative amount with two decimals")
+        raise ValueError(
+            f"{field_name} must be a non-negative amount with two decimals"
+        )
     return parsed
 
 
@@ -102,10 +111,17 @@ class SyncSaleCreatedPayload(_SyncPayloadModel):
         if payment_amount != total:
             raise ValueError("payment.amount must equal sale total")
         if self.status == "completed":
-            if self.inventory_effect != "decrement" or self.payment.status != "succeeded":
-                raise ValueError("completed sale must decrement stock and have succeeded payment")
+            if (
+                self.inventory_effect != "decrement"
+                or self.payment.status != "succeeded"
+            ):
+                raise ValueError(
+                    "completed sale must decrement stock and have succeeded payment"
+                )
         elif self.inventory_effect != "reserve" or self.payment.status != "pending":
-            raise ValueError("awaiting-payment sale must reserve stock and have pending payment")
+            raise ValueError(
+                "awaiting-payment sale must reserve stock and have pending payment"
+            )
         return self
 
 
@@ -128,9 +144,17 @@ class SyncPaymentEventPayload(_SyncPayloadModel):
     def validate_payment_state(self) -> "SyncPaymentEventPayload":
         _money(self.amount, field_name="amount")
         if self.payment_status == "succeeded":
-            if self.sale_status != "completed" or self.inventory_effect != "commit_reservation":
-                raise ValueError("successful payment must complete sale and commit reservation")
-        elif self.sale_status != "cancelled" or self.inventory_effect != "release_reservation":
+            if (
+                self.sale_status != "completed"
+                or self.inventory_effect != "commit_reservation"
+            ):
+                raise ValueError(
+                    "successful payment must complete sale and commit reservation"
+                )
+        elif (
+            self.sale_status != "cancelled"
+            or self.inventory_effect != "release_reservation"
+        ):
             raise ValueError("failed payment must cancel sale and release reservation")
         return self
 
