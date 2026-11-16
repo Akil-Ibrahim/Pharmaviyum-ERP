@@ -3,9 +3,10 @@ import { fetchSystemStatus } from './api'
 
 const healthyReadiness = {
   status: 'ready',
-  checks: {
-    database: { status: 'healthy', message: 'Database OK' },
-    redis: { status: 'healthy', message: 'Redis OK' },
+  components: {
+    postgres: 'ok',
+    redis: 'ok',
+    ai_initialized: 'ok',
   },
 }
 
@@ -31,7 +32,7 @@ describe('fetchSystemStatus', () => {
     vi.unstubAllGlobals()
   })
 
-  it('maps healthy dependencies', async () => {
+  it('maps the current backend readiness contract to operational states', async () => {
     const result = await fetchSystemStatus()
 
     expect(result.checks.find((check) => check.id === 'postgres')?.state).toBe(
@@ -40,18 +41,13 @@ describe('fetchSystemStatus', () => {
     expect(result.checks.find((check) => check.id === 'redis')?.state).toBe(
       'operational'
     )
-  })
-
-  it('does not infer AI health from missing API data', async () => {
-    const result = await fetchSystemStatus()
-
     expect(result.checks.find((check) => check.id === 'ai')?.state).toBe(
-      'unknown'
+      'operational'
     )
-    expect(result.overall).toBe('unknown')
+    expect(result.overall).toBe('operational')
   })
 
-  it('reports failed dependencies', async () => {
+  it('preserves individual dependency results from a 503 readiness response', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
@@ -64,10 +60,12 @@ describe('fetchSystemStatus', () => {
         return new Response(
           JSON.stringify({
             status: 'not_ready',
-            checks: {
-              database: { status: 'unhealthy' },
-              redis: { status: 'unhealthy' },
+            components: {
+              postgres: 'ok',
+              redis: 'failed',
+              ai_initialized: 'ok',
             },
+            errors: { redis: 'ConnectionError' },
           }),
           { status: 503 }
         )
@@ -77,11 +75,47 @@ describe('fetchSystemStatus', () => {
     const result = await fetchSystemStatus()
 
     expect(result.checks.find((check) => check.id === 'postgres')?.state).toBe(
-      'outage'
+      'operational'
     )
     expect(result.checks.find((check) => check.id === 'redis')?.state).toBe(
       'outage'
     )
+    expect(result.checks.find((check) => check.id === 'redis')?.diagnostic).toBe(
+      'ConnectionError'
+    )
+    expect(result.checks.find((check) => check.id === 'ai')?.state).toBe(
+      'operational'
+    )
     expect(result.overall).toBe('outage')
+  })
+
+  it('keeps missing dependency data unknown instead of inferring health', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).endsWith('/health')) {
+          return new Response(JSON.stringify({ status: 'healthy' }), {
+            status: 200,
+          })
+        }
+
+        return new Response(JSON.stringify({ status: 'ready' }), {
+          status: 200,
+        })
+      })
+    )
+
+    const result = await fetchSystemStatus()
+
+    expect(result.checks.find((check) => check.id === 'postgres')?.state).toBe(
+      'unknown'
+    )
+    expect(result.checks.find((check) => check.id === 'redis')?.state).toBe(
+      'unknown'
+    )
+    expect(result.checks.find((check) => check.id === 'ai')?.state).toBe(
+      'unknown'
+    )
+    expect(result.overall).toBe('unknown')
   })
 })
