@@ -12,6 +12,23 @@ The current model enforces non-negative quantities and reserved_quantity <= quan
 
 SaleItemAllocation records which lots were allocated to a sale, and the transactional outbox records integration events. Neither is a general inventory audit ledger: allocation does not represent receipts, adjustments or reservation lifecycle; outbox is an integration-delivery mechanism, not the authoritative stock journal.
 
+## Verified implementation gaps (2026-11-16)
+
+The current code was inspected before implementation. The following write paths must be migrated; this list is a code-level finding, not a claim that the ledger already exists:
+
+| Path | Current behavior | Required ledger treatment |
+|---|---|---|
+| `POST /api/v1/pos/inventory/receive` | Adds to an existing lot or creates a lot and commits the balance. The request has no receipt idempotency key, so a client retry can add the same received quantity again. | Require a stable receipt idempotency key and append one receipt movement atomically. |
+| POS cash checkout | Decrements `Inventory.quantity` directly while allocating FEFO lots. | Append one on-hand decrement movement per allocation in the same sale transaction. |
+| POS external checkout | Increments `reserved_quantity` directly. | Append one reservation movement per allocation. |
+| Payment webhook | Releases reservations and, on success, decrements on-hand stock directly. | Append settlement or failure movements atomically with payment/sale transitions. |
+| Pending sale cancellation | Decrements reserved quantity directly. | Append reservation-release movements in the cancellation transaction. |
+| `POST /api/v1/inventory` | Superuser endpoint can create lots with non-zero on-hand and reserved balances, bypassing the receipt workflow. | Replace with the controlled receipt/opening-balance workflow; do not allow unjournaled positive balances. |
+| `PATCH /api/v1/inventory/{id}` | Can change `quantity` directly without a mandatory reason or idempotency key. The schema rejects extra fields, including `reserved_quantity`, which is a useful existing safeguard. | Replace quantity writes with a reasoned, actor-attributed, idempotent adjustment command. Keep reservation fields POS-owned. |
+| `DELETE /api/v1/inventory/{id}` | Rejects deletion when on-hand or reserved quantity is non-zero; permits deletion of zero-balance lots. | Preserve the guard and reject deletion once a lot has any movement history; use close/archive semantics instead. |
+
+The checkout path already has pharmacy-scoped idempotency and row locking, and the webhook/cancellation paths have retry protections. Those controls reduce duplicate business transitions but do not substitute for an append-only stock journal. The current `Inventory` model has no movement relationship/table, and the inspected POS/admin handlers update its balance fields directly.
+
 ## Decision
 
 Introduce an append-only InventoryMovement journal while retaining Inventory as the authoritative, query-efficient current-balance projection. Do not introduce a second competing stock-balance table.
