@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fetchSystemStatus } from './api'
 
+type Snapshot = Awaited<ReturnType<typeof fetchSystemStatus>>
+
 function stubEndpoints(readiness: unknown, readinessStatus = 200) {
   vi.stubGlobal(
     'fetch',
@@ -12,6 +14,10 @@ function stubEndpoints(readiness: unknown, readinessStatus = 200) {
       return Promise.resolve(new Response(JSON.stringify(body), { status }))
     })
   )
+}
+
+function expectState(snapshot: Snapshot, id: string, state: string) {
+  expect(snapshot.checks.find((check) => check.id === id)?.state).toBe(state)
 }
 
 afterEach(() => {
@@ -31,12 +37,9 @@ describe('fetchSystemStatus', () => {
 
     const result = await fetchSystemStatus()
 
-    expect(result.checks.find((check) => check.id === 'postgres')?.state)
-      .toBe('operational')
-    expect(result.checks.find((check) => check.id === 'redis')?.state)
-      .toBe('operational')
-    expect(result.checks.find((check) => check.id === 'ai')?.state)
-      .toBe('operational')
+    expectState(result, 'postgres', 'operational')
+    expectState(result, 'redis', 'operational')
+    expectState(result, 'ai', 'operational')
     expect(result.overall).toBe('operational')
   })
 
@@ -56,14 +59,11 @@ describe('fetchSystemStatus', () => {
 
     const result = await fetchSystemStatus()
 
-    expect(result.checks.find((check) => check.id === 'postgres')?.state)
-      .toBe('operational')
-    expect(result.checks.find((check) => check.id === 'redis')?.state)
-      .toBe('outage')
+    expectState(result, 'postgres', 'operational')
+    expectState(result, 'redis', 'outage')
     expect(result.checks.find((check) => check.id === 'redis')?.diagnostic)
       .toBe('ConnectionError')
-    expect(result.checks.find((check) => check.id === 'ai')?.state)
-      .toBe('operational')
+    expectState(result, 'ai', 'operational')
     expect(result.overall).toBe('outage')
   })
 
@@ -72,12 +72,9 @@ describe('fetchSystemStatus', () => {
 
     const result = await fetchSystemStatus()
 
-    expect(result.checks.find((check) => check.id === 'postgres')?.state)
-      .toBe('unknown')
-    expect(result.checks.find((check) => check.id === 'redis')?.state)
-      .toBe('unknown')
-    expect(result.checks.find((check) => check.id === 'ai')?.state)
-      .toBe('unknown')
+    expectState(result, 'postgres', 'unknown')
+    expectState(result, 'redis', 'unknown')
+    expectState(result, 'ai', 'unknown')
     expect(result.overall).toBe('unknown')
   })
 })
