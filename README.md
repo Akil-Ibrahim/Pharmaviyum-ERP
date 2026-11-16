@@ -309,7 +309,7 @@ Current repository assets include deployment, migration, backup, restore, rollba
 - Database migrations and restore operations require separate review and approval.
 - A repository playbook is not proof of a successful real-site deployment; lab and pharmacy acceptance evidence is required.
 
-See [`docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md`](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) (Russian translation in progress) and [`docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) (Russian translation in progress).
+- See [`docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md`](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) · [Русская версия](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md) and [`docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md`](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) (Russian translation not yet available).
 
 ## Project Structure
 
