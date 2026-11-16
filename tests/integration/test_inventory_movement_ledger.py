@@ -91,7 +91,9 @@ async def test_inventory_movement_is_atomic_and_idempotent(test_db):
 
 
 @pytest.mark.integration
-async def test_inventory_movement_rejects_idempotency_key_reuse_with_new_command(test_db):
+async def test_inventory_movement_rejects_idempotency_key_reuse_with_new_command(
+    test_db,
+):
     pharmacy, _product, lot = await _inventory_fixture(test_db)
     kwargs = {
         "db": test_db,
@@ -139,12 +141,11 @@ async def test_inventory_movement_rejects_reservation_above_on_hand(test_db):
     assert persisted_lot.quantity == 10
     assert persisted_lot.reserved_quantity == 0
 
+
 @pytest.mark.integration
 async def test_concurrent_same_movement_key_applies_balance_once(test_db, test_engine):
     pharmacy, _product, lot = await _inventory_fixture(test_db)
-    session_factory = async_sessionmaker(
-        test_engine, expire_on_commit=False
-    )
+    session_factory = async_sessionmaker(test_engine, expire_on_commit=False)
 
     async def apply_once():
         async with session_factory() as session:
