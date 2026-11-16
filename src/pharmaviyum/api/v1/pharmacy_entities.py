@@ -262,6 +262,14 @@ async def delete_inventory(
     inventory = await session.get(Inventory, inventory_id)
     if inventory is None:
         raise HTTPException(status_code=404, detail="Inventory record not found")
+    if inventory.quantity != 0 or inventory.reserved_quantity != 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Inventory lots with on-hand or reserved stock cannot be deleted; "
+                "use a stock movement workflow instead"
+            ),
+        )
     await session.delete(inventory)
     await session.commit()
 
