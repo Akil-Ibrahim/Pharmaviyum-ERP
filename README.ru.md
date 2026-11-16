@@ -332,7 +332,7 @@ AI-слой находится в `src/pharmaviyum/ai` и предоставля
 - миграции базы данных и операции восстановления требуют отдельной проверки и подтверждения;
 - наличие playbook в репозитории не доказывает успешное развёртывание на реальной площадке: необходимы результаты лабораторной проверки и приёмки аптекой.
 
-Документация: [руководство Ansible для Pharmacy Edge](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) (русская версия готовится) и [план внедрения Pharmacy Edge](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) (русская версия готовится).
+Документация: [руководство Ansible для Pharmacy Edge](docs/devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) и [план внедрения Pharmacy Edge](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md). Русские переводы этих двух документов пока отсутствуют.
 
 ## Структура проекта
 
@@ -356,7 +356,7 @@ AI-слой находится в `src/pharmaviyum/ai` и предоставля
 
 Развёртывание production намеренно выполняется вручную: слияние изменений в `main` или успешный CI сами по себе не запускают приложение и не выполняют production-миграции. Release workflow проверяет CI для конкретного выбранного commit перед развёртыванием.
 
-См. [руководство FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.md) (русская версия готовится): секреты, конфигурация окружения, этапы release, smoke checks и ограничения отката.
+См. [руководство FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.ru.md) · [English](docs/deployment/FASTAPI_CLOUD.md): секреты, конфигурация окружения, этапы release, smoke checks и ограничения отката.
 
 ## Разработка
 
@@ -504,20 +504,20 @@ React frontend можно запускать отдельно командами
 | Структура репозитория | [Руководство](docs/architecture/repository-structure.ru.md) | [Repository Structure Guide](docs/architecture/repository-structure.md) | Назначение каталогов, размещение файлов и безопасные перемещения |
 | AI / LLM | [Проектирование Mortarium AI / LLM](docs/ai/AI_LLM_SYSTEM_DESIGN.ru.md) | [AI system design](docs/ai/AI_LLM_SYSTEM_DESIGN.md) | Mortarium, Agent Harness, LangGraph, RAG, MCP, безопасность и оценка |
 | AI-архитектура | [Архитектура AI](docs/ai_architecture.ru.md) | [AI architecture](docs/ai_architecture.md) | Детали текущей реализации |
-| LangGraph RAG | Перевод готовится | [RAG graph architecture](docs/ai/langgraph-rag-architecture.md) | Узлы графа, состояние, retrieval и persistence |
-| Аудит RAG | Перевод готовится | [RAG architecture audit](docs/rag_architecture_audit.md) | Выводы аудита, пробелы и приоритеты исправления |
+| LangGraph RAG | [Архитектура RAG-графа](docs/ai/langgraph-rag-architecture.ru.md) | [RAG graph architecture](docs/ai/langgraph-rag-architecture.md) | Узлы графа, состояние, retrieval и persistence |
+| Аудит RAG | [Аудит архитектуры RAG](docs/rag_architecture_audit.ru.md) | [RAG architecture audit](docs/rag_architecture_audit.md) | Выводы аудита, пробелы и приоритеты исправления |
 | Оценка RAG | [Фармацевтическая оценка RAG](docs/ai/ragas-pharmaceutical-evaluation.ru.md) | [Ragas evaluation](docs/ai/ragas-pharmaceutical-evaluation.md) | Offline evaluation и аптечные метрики качества |
 | Безопасность AI | [Выявление галлюцинаций и red-team](docs/ai/hallucination-detection-and-red-team.ru.md) | [Hallucination detection and red-team](docs/ai/hallucination-detection-and-red-team.md) | Проверка groundedness, adversarial-тесты и безопасный отказ |
 | Chunking | [Pipeline чанкинга](docs/ai/chunking-pipeline.ru.md) | [Chunking pipeline](docs/ai/chunking-pipeline.md) | Текущая реализация и целевая архитектура разбиения документов |
-| Стандарты LLM | Перевод готовится | [LLM engineering standards](docs/llm_engineering_standards.md) | Контекст, токены, маршрутизация моделей, cache, memory и MCP |
+| Стандарты LLM | [Инженерные стандарты LLM](docs/llm_engineering_standards.ru.md) | [LLM engineering standards](docs/llm_engineering_standards.md) | Контекст, токены, маршрутизация моделей, cache, memory и MCP |
 | ADR | [Индекс архитектурных решений](docs/adr/README.ru.md) | [ADR index](docs/adr/README.md) | Принятые и предлагаемые архитектурные решения |
-| Разработка | Перевод готовится | [Development and testing handbook](docs/guides/DEVELOPMENT_AND_TESTING.md) | Настройка разработки и quality gates |
-| Окружение | Перевод готовится | [Environment setup](docs/guides/ENVIRONMENT_SETUP.md) | Локальные сервисы, конфигурация и требования |
-| Тестирование | Перевод готовится | [Testing guide](docs/guides/TESTING.md) | Структура тестов, markers и CI |
-| Эксплуатация | Перевод готовится | [Production operations runbook](docs/operations/PRODUCTION_OPERATIONS_RUNBOOK.md) | Проверки работоспособности, инциденты, backup и recovery |
-| Release | Перевод готовится | [Release runbook](docs/operations/RELEASE_RUNBOOK.md) | Контролируемый выпуск и rollback |
-| Hosting | Перевод готовится | [FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.md) | Hosting, секреты, runtime и ручное развёртывание |
-| DevOps | Перевод готовится | [Engineering stages](docs/devops/ENGINEERING_ROADMAP.md) | Этапы, направления работ и критерии завершения |
+| Разработка | [Руководство по разработке и тестированию](docs/guides/DEVELOPMENT_AND_TESTING.ru.md) | [Development and testing handbook](docs/guides/DEVELOPMENT_AND_TESTING.md) | Настройка разработки и quality gates |
+| Окружение | [Настройка окружения](docs/guides/ENVIRONMENT_SETUP.ru.md) | [Environment setup](docs/guides/ENVIRONMENT_SETUP.md) | Локальные сервисы, конфигурация и требования |
+| Тестирование | [Руководство по тестированию](docs/guides/TESTING.ru.md) | [Testing guide](docs/guides/TESTING.md) | Структура тестов, markers и CI |
+| Эксплуатация | [Операционное руководство production](docs/operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md) | [Production operations runbook](docs/operations/PRODUCTION_OPERATIONS_RUNBOOK.md) | Проверки работоспособности, инциденты, backup и recovery |
+| Release | [Руководство по выпуску](docs/operations/RELEASE_RUNBOOK.ru.md) | [Release runbook](docs/operations/RELEASE_RUNBOOK.md) | Контролируемый выпуск и rollback |
+| Hosting | [FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.ru.md) | [FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.md) | Hosting, секреты, runtime и ручное развёртывание |
+| DevOps | [Инженерная дорожная карта](docs/devops/ENGINEERING_ROADMAP.ru.md) | [Engineering stages](docs/devops/ENGINEERING_ROADMAP.md) | Этапы, направления работ и критерии завершения |
 | WebSocket | Перевод готовится | [WebSocket protocol](docs/websocket-protocol.md) | Контракт v1 и ограничения текущего scaffold |
 | Наблюдаемость | [Политика OpenTelemetry](docs/observability/opentelemetry.ru.md) | [OpenTelemetry](docs/observability/opentelemetry.md) | Настройка telemetry и защита данных |
 | Pharmacy Edge offline | [Матрица офлайн-возможностей](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | [Offline capability matrix](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | Offline-политика и операционные ограничения |
