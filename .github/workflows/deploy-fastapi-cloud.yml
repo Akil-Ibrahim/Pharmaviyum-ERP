@@ -249,7 +249,7 @@ jobs:
             (.python_version == "3.15.2") and
             .python_implementation == "cpython"
           ' /tmp/version.json >/dev/null; then
-            echo "Production runtime assertion failed: HTTP $runtime_status; expected production mode, debug=false, and CPython 3.15.x."
+            echo "Production runtime assertion failed: HTTP $runtime_status; expected production mode, debug=false, and CPython 3.15.2."
             cat /tmp/version.json
             exit 1
           fi
