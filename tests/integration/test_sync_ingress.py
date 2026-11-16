@@ -26,7 +26,13 @@ def _sale_created_payload(sale_id: int) -> dict:
                 "quantity": 1,
                 "unit_price": "10.00",
                 "line_total": "10.00",
-                "allocations": [],
+                "allocations": [
+                    {
+                        "lot_number": "TEST-LOT-1",
+                        "expires_at": None,
+                        "quantity": 1,
+                    }
+                ],
             }
         ],
         "payment": {"method": "cash", "status": "succeeded", "amount": "10.00"},
