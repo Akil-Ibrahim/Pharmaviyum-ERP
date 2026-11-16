@@ -13,6 +13,7 @@ ADR (Architecture Decision Record) фиксируют решения, влияю
 | ADR-0003 | Изоляция состояния Mortarium по пациенту | [Русская версия](./ADR-0003-patient-scoped-ai-state.ru.md) | [Patient-scoped AI state](./ADR-0003-patient-scoped-ai-state.md) | Предложено; staging E2E gate ожидает подтверждения |
 | ADR-0004 | Изолированная offline-оценка Ragas | [Русская версия](./ADR-0004-offline-ragas-evaluation.ru.md) | [Offline Ragas evaluation](./ADR-0004-offline-ragas-evaluation.md) | Принято; группа `eval` в `pyproject.toml`, вне production request path |
 | ADR-0005 | Цены в рамках аптечного tenant и операционные роли | [Русская версия](./ADR-0005-tenant-scoped-pricing-and-pharmacy-rbac.ru.md) | [Tenant-scoped pricing and pharmacy RBAC](./ADR-0005-tenant-scoped-pricing-and-pharmacy-rbac.md) | Предложено; требуется утвердить валютную политику, миграцию данных и управление аптечными ролями |
+| ADR-0006 | Неизменяемый журнал движений запасов | [Русская версия](./ADR-0006-inventory-movement-ledger.ru.md) | [Append-only Inventory Movement Ledger](./ADR-0006-inventory-movement-ledger.md) | Предложено; требуется перевести все пути изменения запасов и подтвердить сверку остатков |
 
 ## Значения статусов
 
