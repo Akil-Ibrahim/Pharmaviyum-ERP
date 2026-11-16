@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.inventory_movement import InventoryMovement
@@ -135,3 +138,85 @@ async def test_inventory_movement_rejects_reservation_above_on_hand(test_db):
     assert persisted_lot is not None
     assert persisted_lot.quantity == 10
     assert persisted_lot.reserved_quantity == 0
+
+@pytest.mark.integration
+async def test_concurrent_same_movement_key_applies_balance_once(test_db, test_engine):
+    pharmacy, _product, lot = await _inventory_fixture(test_db)
+    session_factory = async_sessionmaker(
+        test_engine, expire_on_commit=False
+    )
+
+    async def apply_once():
+        async with session_factory() as session:
+            movement = await apply_inventory_movement(
+                session,
+                inventory_id=lot.id,
+                pharmacy_id=pharmacy.id,
+                movement_type="stock_adjustment",
+                quantity_delta=-1,
+                reserved_delta=0,
+                actor_type="system",
+                actor_user_id=None,
+                reason="Concurrent idempotency test",
+                idempotency_key="movement-concurrent-same-key-0001",
+            )
+            await session.commit()
+            return movement.id
+
+    movement_ids = await asyncio.gather(apply_once(), apply_once())
+    assert movement_ids[0] == movement_ids[1]
+
+    await test_db.refresh(lot)
+    assert lot.quantity == 9
+    count = await test_db.scalar(
+        select(func.count())
+        .select_from(InventoryMovement)
+        .where(InventoryMovement.pharmacy_id == pharmacy.id)
+    )
+    assert count == 1
+
+
+@pytest.mark.integration
+async def test_concurrent_distinct_adjustments_cannot_oversell_same_lot(
+    test_db, test_engine
+):
+    pharmacy, _product, lot = await _inventory_fixture(test_db)
+    session_factory = async_sessionmaker(
+        test_engine, expire_on_commit=False
+    )
+
+    async def attempt(key: str):
+        async with session_factory() as session:
+            try:
+                await apply_inventory_movement(
+                    session,
+                    inventory_id=lot.id,
+                    pharmacy_id=pharmacy.id,
+                    movement_type="stock_adjustment",
+                    quantity_delta=-7,
+                    reserved_delta=0,
+                    actor_type="system",
+                    actor_user_id=None,
+                    reason="Concurrent oversell test",
+                    idempotency_key=key,
+                )
+                await session.commit()
+                return "applied"
+            except InventoryMovementConflict:
+                await session.rollback()
+                return "rejected"
+
+    outcomes = await asyncio.gather(
+        attempt("movement-concurrent-distinct-0001"),
+        attempt("movement-concurrent-distinct-0002"),
+    )
+    assert sorted(outcomes) == ["applied", "rejected"]
+
+    await test_db.refresh(lot)
+    assert lot.quantity == 3
+    count = await test_db.scalar(
+        select(func.count())
+        .select_from(InventoryMovement)
+        .where(InventoryMovement.pharmacy_id == pharmacy.id)
+    )
+    assert count == 1
