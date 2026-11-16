@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.models.erp_sync import ERPIntegration, ERPSyncEvent
 from src.pharmaviyum.models.inventory import Inventory
+from src.pharmaviyum.models.inventory_movement import InventoryMovement
 from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.prescription import Prescription
 from src.pharmaviyum.models.product import Product
@@ -19,6 +20,10 @@ from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser, Ses
 from src.pharmaviyum.modules.auth.models import PharmacyMembership
 from src.pharmaviyum.services.catalog_exclusions import (
     allowed_pharmacy_product_conditions,
+)
+from src.pharmaviyum.services.inventory_movements import (
+    InventoryMovementConflict,
+    apply_inventory_movement,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["Pharmacy Domain"])
@@ -50,14 +55,20 @@ class InventoryIn(BaseModel):
 
 
 class InventoryUpdate(BaseModel):
-    # Reservation state is owned by the POS payment lifecycle. Administrative
-    # stock adjustments must not be able to release or create reservations.
+    # Physical stock and reservation balances are owned by the movement service.
+    # This schema intentionally exposes metadata only.
     model_config = ConfigDict(extra="forbid")
 
-    quantity: int | None = Field(default=None, ge=0)
     reorder_level: int | None = Field(default=None, ge=0)
     lot_number: str | None = Field(default=None, max_length=100)
     expires_at: datetime | None = None
+
+
+class InventoryAdjustmentIn(BaseModel):
+    quantity_delta: int = Field(ne=0, ge=-100000, le=100000)
+    reason: str = Field(min_length=3, max_length=500)
+    idempotency_key: str = Field(min_length=8, max_length=128)
+
 
 
 class PrescriptionIn(BaseModel):
@@ -196,7 +207,11 @@ async def list_inventory(
 async def create_inventory(
     data: InventoryIn, _: CurrentSuperuser, session: SessionDep
 ) -> Inventory:
-    _validate_inventory_levels(data.quantity, data.reserved_quantity)
+    if data.quantity != 0 or data.reserved_quantity != 0:
+        raise HTTPException(
+            status_code=422,
+            detail="Create zero-balance lots only; use the POS receipt workflow to add stock",
+        )
     await _require_inventory_dependencies(session, data.product_id, data.pharmacy_id)
 
     existing = await session.scalar(
@@ -228,16 +243,6 @@ async def update_inventory(
         raise HTTPException(status_code=404, detail="Inventory record not found")
 
     values = data.model_dump(exclude_unset=True)
-    quantity = values.get("quantity", inventory.quantity)
-    reserved_quantity = values.get("reserved_quantity", inventory.reserved_quantity)
-    _validate_inventory_levels(quantity, reserved_quantity)
-
-    # Allow stock reductions for reconciliation, but never increase stock for an
-    # excluded or inactive product through the inventory-adjustment endpoint.
-    if quantity > inventory.quantity:
-        await _require_inventory_dependencies(
-            session, inventory.product_id, inventory.pharmacy_id
-        )
 
     if "lot_number" in values and values["lot_number"] != inventory.lot_number:
         duplicate = await session.scalar(
@@ -258,6 +263,44 @@ async def update_inventory(
     return inventory
 
 
+@router.post("/inventory/{inventory_id}/adjustments", response_model=None)
+async def adjust_inventory(
+    inventory_id: int,
+    data: InventoryAdjustmentIn,
+    user: CurrentSuperuser,
+    session: SessionDep,
+) -> Inventory:
+    """Apply a reasoned, idempotent physical stock adjustment."""
+    inventory = await session.get(Inventory, inventory_id)
+    if inventory is None:
+        raise HTTPException(status_code=404, detail="Inventory record not found")
+    if data.quantity_delta > 0:
+        await _require_inventory_dependencies(
+            session, inventory.product_id, inventory.pharmacy_id
+        )
+    try:
+        await apply_inventory_movement(
+            session,
+            inventory_id=inventory.id,
+            pharmacy_id=inventory.pharmacy_id,
+            movement_type="stock_adjustment",
+            quantity_delta=data.quantity_delta,
+            reserved_delta=0,
+            actor_type="user",
+            actor_user_id=user.id,
+            reason=data.reason,
+            idempotency_key=f"admin-adjustment:{data.idempotency_key}",
+            reference_type="manual_adjustment",
+            reference_id=data.idempotency_key,
+        )
+        await session.commit()
+    except InventoryMovementConflict as exc:
+        await session.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    await session.refresh(inventory)
+    return inventory
+
+
 @router.delete("/inventory/{inventory_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_inventory(
     inventory_id: int, _: CurrentSuperuser, session: SessionDep
@@ -272,6 +315,16 @@ async def delete_inventory(
                 "Inventory lots with on-hand or reserved stock cannot be deleted; "
                 "use a stock movement workflow instead"
             ),
+        )
+    has_movements = await session.scalar(
+        select(InventoryMovement.id)
+        .where(InventoryMovement.inventory_id == inventory.id)
+        .limit(1)
+    )
+    if has_movements is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Inventory lots with movement history cannot be deleted; archive them instead",
         )
     await session.delete(inventory)
     await session.commit()
