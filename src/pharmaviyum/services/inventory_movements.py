@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.models.inventory import Inventory
@@ -35,13 +35,27 @@ async def apply_inventory_movement(
     atomic with the inventory movement. A repeated key with the same immutable
     command returns the existing movement; a different command is rejected.
     """
-    if not idempotency_key or not idempotency_key.strip():
+    idempotency_key = idempotency_key.strip()
+    reason = reason.strip()
+    if not idempotency_key:
         raise InventoryMovementConflict("An idempotency key is required")
-    if not reason or not reason.strip():
+    if not reason:
         raise InventoryMovementConflict("A reason is required")
     if (actor_type == "user") != (actor_user_id is not None):
         raise InventoryMovementConflict("Actor identity does not match actor type")
 
+    # Serialize retries using the pharmacy-scoped key before reading the journal.
+    # The unique constraint remains the final database-level idempotency guard.
+    await db.execute(
+        select(
+            func.pg_advisory_xact_lock(
+                func.hashtextextended(
+                    f"pharmaviyum:inventory-movement:{pharmacy_id}:{idempotency_key}",
+                    0,
+                )
+            )
+        )
+    )
     existing_result = await db.execute(
         select(InventoryMovement).where(
             InventoryMovement.pharmacy_id == pharmacy_id,
@@ -59,6 +73,8 @@ async def apply_inventory_movement(
             and existing.actor_user_id == actor_user_id
             and existing.reference_type == reference_type
             and existing.reference_id == reference_id
+            and existing.reason == reason
+            and existing.correlation_id == correlation_id
         )
         if not same_command:
             raise InventoryMovementConflict(
@@ -104,10 +120,10 @@ async def apply_inventory_movement(
         reserved_after=reserved_after,
         actor_type=actor_type,
         actor_user_id=actor_user_id,
-        reason=reason.strip(),
+        reason=reason,
         reference_type=reference_type,
         reference_id=reference_id,
-        idempotency_key=idempotency_key.strip(),
+        idempotency_key=idempotency_key,
         correlation_id=correlation_id,
     )
     lot.quantity = quantity_after
