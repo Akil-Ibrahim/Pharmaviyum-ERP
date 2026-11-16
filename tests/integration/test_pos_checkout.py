@@ -752,3 +752,53 @@ async def test_pos_checkout_replay_returns_original_sale_without_second_stock_de
             Sale.idempotency_key == payload["idempotency_key"]
         )
     ) == 1
+
+@pytest.mark.integration
+async def test_inventory_receipt_is_journaled_and_idempotent(
+    authenticated_client, test_db
+):
+    pharmacy = Pharmacy(name="Receipt Journal Pharmacy", code="RECEIPT-JOURNAL")
+    product = Product(
+        name="Receipt Journal Product",
+        sku="RECEIPT-JOURNAL-001",
+        price=2.50,
+        stock=0,
+        is_active=True,
+    )
+    test_db.add_all([pharmacy, product])
+    await test_db.flush()
+    payload = {
+        "pharmacy_id": pharmacy.id,
+        "product_id": product.id,
+        "lot_number": "RECEIPT-LOT-001",
+        "expiry_date": (datetime.utcnow() + timedelta(days=120)).isoformat(),
+        "quantity": 7,
+        "idempotency_key": "receipt-journal-idempotency-001",
+    }
+
+    first = await authenticated_client.post(
+        "/api/v1/pos/inventory/receive", json=payload
+    )
+    assert first.status_code == 201, first.text
+    replay = await authenticated_client.post(
+        "/api/v1/pos/inventory/receive", json=payload
+    )
+    assert replay.status_code == 201, replay.text
+    assert replay.json()["inventory_id"] == first.json()["inventory_id"]
+    assert replay.json()["lot_quantity"] == 7
+
+    lot = await test_db.get(Inventory, first.json()["inventory_id"])
+    assert lot is not None and lot.quantity == 7
+    movements = list(
+        (
+            await test_db.scalars(
+                select(InventoryMovement).where(
+                    InventoryMovement.pharmacy_id == pharmacy.id
+                )
+            )
+        ).all()
+    )
+    assert len(movements) == 1
+    assert movements[0].movement_type == "goods_receipt"
+    assert movements[0].quantity_delta == 7
+    assert movements[0].reserved_delta == 0
