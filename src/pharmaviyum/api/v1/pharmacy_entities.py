@@ -207,12 +207,12 @@ async def list_inventory(
 async def create_inventory(
     data: InventoryIn, _: CurrentSuperuser, session: SessionDep
 ) -> Inventory:
+    await _require_inventory_dependencies(session, data.product_id, data.pharmacy_id)
     if data.quantity != 0 or data.reserved_quantity != 0:
         raise HTTPException(
             status_code=422,
             detail="Create zero-balance lots only; use the POS receipt workflow to add stock",
         )
-    await _require_inventory_dependencies(session, data.product_id, data.pharmacy_id)
 
     existing = await session.scalar(
         select(Inventory).where(
