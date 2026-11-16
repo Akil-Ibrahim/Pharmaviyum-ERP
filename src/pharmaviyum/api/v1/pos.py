@@ -147,8 +147,19 @@ async def receive_inventory(
 ) -> InventoryReceiptResponse:
     """Receive a traceable medicine lot into one authorized pharmacy."""
     await require_pharmacy_tenant(payload.pharmacy_id, user, db)
+    expiry = payload.expiry_date
+    if expiry.tzinfo is not None:
+        expiry = expiry.replace(tzinfo=None)
+    expiry = expiry.replace(hour=0, minute=0, second=0, microsecond=0)
     receipt_key = movement_idempotency_key(
         "receipt", payload.pharmacy_id, payload.idempotency_key
+    )
+    receipt_reference = movement_idempotency_key(
+        "receipt-payload",
+        payload.product_id,
+        payload.lot_number.strip(),
+        expiry.isoformat(),
+        payload.quantity,
     )
     prior_receipt = await db.scalar(
         select(InventoryMovement).where(
@@ -170,7 +181,7 @@ async def receive_inventory(
                 reason="Goods receipt",
                 idempotency_key=receipt_key,
                 reference_type="receipt",
-                reference_id=payload.idempotency_key,
+                reference_id=receipt_reference,
             )
         except InventoryMovementConflict as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -199,10 +210,6 @@ async def receive_inventory(
     if product is None:
         raise HTTPException(status_code=404, detail="Active sellable product not found")
 
-    expiry = payload.expiry_date
-    if expiry.tzinfo is not None:
-        expiry = expiry.replace(tzinfo=None)
-    expiry = expiry.replace(hour=0, minute=0, second=0, microsecond=0)
     if expiry.date() < datetime.utcnow().date():
         raise HTTPException(
             status_code=422, detail="Cannot receive an expired medicine lot"
