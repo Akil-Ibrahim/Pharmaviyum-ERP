@@ -120,6 +120,19 @@ Pharmaviyum follows a **pilot-first, offline-capable** operating model. The docu
 
 Offline behavior is policy-controlled, not universal. Local persistence does not make an unavailable payment provider, fiscal authority, e-prescription service, or other external authority available. Consult the [Pharmacy Offline Capability Matrix](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) · [Русская версия](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) before treating any workflow as available offline.
 
+### POS & Transaction Integrity
+
+POS is a financial and inventory boundary, not merely a checkout screen. The design and implementation must preserve the following invariants:
+
+- A sale, its line items, payment state, and stock movements must have explicit transaction boundaries and auditable relationships.
+- Database constraints and domain validation must reject invalid quantities, invalid batch references, and prohibited stock transitions.
+- Concurrency control must prevent two simultaneous sales from overselling the same available batch; the chosen locking or reservation strategy must match the transaction model.
+- Retries from clients, payment callbacks, and synchronization consumers must be idempotent and must not create duplicate sales, payments, or stock movements.
+- Reversals, refunds, voids, and corrections must be represented as traceable compensating operations rather than silent edits to historical transactions.
+- Inventory allocation must retain batch/lot traceability and apply FEFO where the product and workflow policy require it.
+
+These are correctness requirements; a successful API response or passing unit test alone is not proof of end-to-end financial or fiscal compliance. External payment and fiscal-authority behavior remains subject to the relevant provider and jurisdiction.
+
 ### Inventory Management
 
 - Product and batch management
@@ -178,7 +191,10 @@ Current architectural areas include:
 - LangGraph orchestration
 - AI-assisted analytics and forecasting
 - Application observability (OpenTelemetry traces + Prometheus metrics)
-- Access-controlled AI workflows
+- Versioned prompts, model configuration, retrieval configuration, and evaluation datasets so behavior changes can be reviewed and reproduced
+- Structured output schemas and validation at tool/API boundaries
+- Explicit tool allowlists, scoped credentials, and least-privilege execution for agent actions
+- Human review for workflows that require professional authorization or consequential decisions
 - Offline RAG evaluation with Ragas plus pharmaceutical-specific checks for citation support, medication entities, negation, patient-context isolation, and Russian/English retrieval
 
 The pharmacist remains the professional decision-maker. Mortarium provides decision support; it does not authorize dispensing, replace professional judgment, or serve as an independent clinical authority.
@@ -244,6 +260,8 @@ See [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-
 ## Observability
 
 The application uses the OpenTelemetry SDK for distributed tracing. Automatic FastAPI, SQLAlchemy, and HTTPX instrumentation is disabled by default and requires an explicit development/test opt-in; Redis command auto-instrumentation remains disabled. Configure tracing with `OTEL_ENABLED=true` and `OTEL_EXPORTER_OTLP_ENDPOINT`. See [`docs/observability/opentelemetry.md`](docs/observability/opentelemetry.md) (Russian translation in progress) for instrumentation boundaries, sampling, and data-protection requirements (Russian translation in progress).
+
+Observability should correlate traces, application logs, and service/business metrics without placing patient identifiers, credentials, prompts, or other sensitive payloads in telemetry. Operational dashboards and alerts should be tied to measurable SLIs/SLOs (for example API availability/latency, synchronization lag, outbox backlog, failed sync/reconciliation counts, and background-job failures). These are monitoring objectives; do not imply an SLO is active until its target, measurement, alert, and owner are configured.
 
 ## AI / RAG Architecture
 
@@ -418,13 +436,18 @@ The React frontend can be developed separately using the frontend commands above
 
 Security is treated as a cross-cutting concern across the application.
 
-- Authentication and authorization are part of the application boundary.
+- Authentication and authorization are part of the application boundary; authorization should follow RBAC/least-privilege principles and be checked server-side for every protected operation.
 - Pharmacy/tenant isolation is enforced before protected retrieval and AI operations.
 - Patient-specific data is subject to access control and filtering.
 - Retrieved documents are considered untrusted input.
 - AI output is not treated as an authoritative source of truth.
 - Audit and transaction records support operational traceability.
 - Observability avoids unnecessary high-cardinality identifiers.
+- Secrets must be supplied through managed secret/configuration mechanisms and must never be committed to source control or exposed in logs.
+- Data in transit and at rest must use the protections provided by the deployment and storage layers; key ownership, rotation, and backup access require operational controls.
+- Audit events should record actor, tenant/site scope, action, target, timestamp, and outcome without copying unnecessary patient or credential data.
+- Data retention, deletion, backup, and restore policies must be defined for each data class and deployment boundary.
+- Security controls require negative tests for cross-tenant access, patient-context leakage, privilege escalation, and unauthorized tool invocation.
 - Demo data is synthetic and does not represent real client records.
 
 ## Project Status
