@@ -223,68 +223,11 @@ jobs:
       # Reference catalog contents are validated by dedicated data-import tests.
       # Deployment smoke tests must verify the API contract, not require a seeded drug dataset.
 
-      - name: Verify production health, authentication and POS protection (temporary test account)
+      - name: Verify production health, authentication and POS protection (read-only)
         shell: bash
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           set -euo pipefail
           base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
-
-          # This smoke test intentionally writes one temporary non-superuser account
-          # to production through the public registration endpoint. It is not read-only.
-          # Cleanup runs on normal exits and catchable INT/TERM signals; forced runner
-          # termination (for example SIGKILL or host loss) can still prevent cleanup.
-          SMOKE_USERNAME="pharmaviyum-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          SMOKE_EMAIL="${SMOKE_USERNAME}@pharmaviyum.invalid"
-          SMOKE_PASSWORD="$(openssl rand -hex 32)"
-          SMOKE_USER_ATTEMPTED=false
-
-          cleanup_smoke_user() {
-            local exit_code=$?
-            trap - EXIT INT TERM
-            if [ "$SMOKE_USER_ATTEMPTED" = "true" ]; then
-              if ! uv run python - <<'PY'
-          import os
-          import psycopg
-
-          database_url = os.environ["DATABASE_URL"]
-          # FastAPI's SQLAlchemy setting commonly uses the asyncpg dialect;
-          # psycopg requires a synchronous PostgreSQL URL.
-          if database_url.startswith("postgresql+asyncpg://"):
-              database_url = database_url.replace(
-                  "postgresql+asyncpg://", "postgresql://", 1
-              )
-          elif database_url.startswith("postgres+asyncpg://"):
-              database_url = database_url.replace(
-                  "postgres+asyncpg://", "postgresql://", 1
-              )
-
-          with psycopg.connect(database_url) as conn:
-              result = conn.execute(
-                  """
-                  DELETE FROM users
-                  WHERE username = %s AND email = %s AND is_superuser = FALSE
-                  """,
-                  (os.environ["SMOKE_USERNAME"], os.environ["SMOKE_EMAIL"]),
-              )
-              if result.rowcount not in (0, 1):
-                  raise RuntimeError(
-                      "Expected to remove zero or one temporary smoke user; "
-                      f"removed {result.rowcount} rows."
-                  )
-          PY
-              then
-                echo "ERROR: failed to remove the temporary smoke user." >&2
-                exit_code=1
-              fi
-            fi
-            exit "$exit_code"
-          }
-          export SMOKE_USERNAME SMOKE_EMAIL DATABASE_URL
-          trap cleanup_smoke_user EXIT
-          trap 'exit 130' INT
-          trap 'exit 143' TERM
 
           health_status="$(curl --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors \
             -o /tmp/health.json -w '%{http_code}' "$base_url/health")"
@@ -363,86 +306,5 @@ jobs:
             exit 1
           fi
 
-          # Keep HTTP status and response bodies so a failed production
-          # contract check identifies the exact endpoint and server response.
-          # Mark the attempt before sending the request: the server may commit
-          # the user even if the client loses the HTTP response.
-          SMOKE_USER_ATTEMPTED=true
-          registration_status="$(curl --silent --show-error -o /tmp/register.json -w '%{http_code}' \
-            -X POST "$base_url/api/v1/auth/register" \
-            -H 'Content-Type: application/json' \
-            --data "$(jq -n --arg email "$SMOKE_EMAIL" --arg password "$SMOKE_PASSWORD" \
-              '{email: $email, password: $password}')")"
-          if [ "$registration_status" != "200" ] && [ "$registration_status" != "201" ]; then
-            echo "Registration smoke test failed: HTTP $registration_status."
-            cat /tmp/register.json
-            exit 1
-          fi
-          jq -e --arg username "$SMOKE_USERNAME" --arg email "$SMOKE_EMAIL" \
-            '.username == $username and .email == $email' /tmp/register.json >/dev/null || {
-              echo "Registration response did not match the documented username/email contract."
-              cat /tmp/register.json
-              exit 1
-            }
-          echo "Registration smoke test passed (HTTP $registration_status)."
-
-          login_status="$(curl --silent --show-error -o /tmp/login.json -w '%{http_code}' \
-            -X POST "$base_url/api/v1/auth/token" \
-            -H 'Content-Type: application/x-www-form-urlencoded' \
-            --data-urlencode "username=$SMOKE_USERNAME" \
-            --data-urlencode "password=$SMOKE_PASSWORD")"
-          if [ "$login_status" != "200" ]; then
-            echo "Login smoke test failed: HTTP $login_status."
-            cat /tmp/login.json
-            exit 1
-          fi
-          access_token="$(jq -er '.access_token' /tmp/login.json)" || {
-            echo "Login endpoint returned HTTP 200 without an access_token."
-            exit 1
-          }
-          echo "Login smoke test passed (HTTP $login_status)."
-
-          profile_status="$(curl --silent --show-error -o /tmp/profile.json -w '%{http_code}' \
-            -H "Authorization: Bearer $access_token" "$base_url/api/v1/auth/me")"
-          if [ "$profile_status" != "200" ]; then
-            echo "Authenticated profile smoke test failed: HTTP $profile_status."
-            cat /tmp/profile.json
-            exit 1
-          fi
-          jq -e '.accountNo and .email' /tmp/profile.json >/dev/null || {
-            echo "Authenticated profile response did not contain accountNo and email."
-            cat /tmp/profile.json
-            exit 1
-          }
-          echo "Authenticated profile smoke test passed."
-
-          for endpoint in "drug-catalog/search?q=omeprazole" "products/search?q=omeprazole"; do
-            case "$endpoint" in
-              drug-catalog/*) filename="drug-catalog" ;;
-              products/*) filename="products" ;;
-              *) echo "Unexpected smoke-test endpoint: $endpoint"; exit 1 ;;
-            esac
-            status="$(curl --silent --show-error -o "/tmp/$filename-smoke.json" -w '%{http_code}' \
-              -H "Authorization: Bearer $access_token" "$base_url/$endpoint")"
-            if [ "$status" != "200" ]; then
-              echo "Catalog smoke test failed for /$endpoint: HTTP $status."
-              cat "/tmp/$filename-smoke.json"
-              exit 1
-            fi
-            echo "Catalog endpoint /$endpoint returned HTTP 200."
-          done
-          uv run python - <<'PY'
-          import json
-          from pathlib import Path
-
-          for path in ("/tmp/drug-catalog-smoke.json", "/tmp/products-smoke.json"):
-              payload = json.loads(Path(path).read_text())
-              if not isinstance(payload, list):
-                  raise SystemExit(f"Expected a list response from {path}")
-              print(f"{path}: API contract valid; {len(payload)} result(s).")
-          PY
-
-          echo "Authenticated sign-in, /auth/me and catalog search API contract checks passed."
-
-          echo "Production liveness, readiness, invalid-credential handling and protected POS access checks passed."
-          echo "POS checkout exclusion and stock immutability are covered by the PostgreSQL integration suite; no production sale or stock mutation was created by this smoke run."
+          echo "Production liveness, runtime identity, readiness, invalid-credential handling and protected POS access checks passed."
+          echo "No production user, sale, inventory, or catalog data was created or modified by this smoke run."
