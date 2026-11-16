@@ -30,7 +30,7 @@ The append-only ledger has been introduced in the codebase. This is a code-level
 | Inventory adjustment | A reasoned, actor-attributed, idempotent adjustment endpoint uses the shared movement service. |
 | Lot deletion | Requires zero balances and no movement history. |
 
-The API write paths above no longer directly assign on-hand or reserved balances outside the shared movement service. Demo seeding still constructs initial inventory rows directly and must remain a non-production fixture; production opening balances require a separately approved, auditable migration/reconciliation process.
+The API write paths above no longer directly assign on-hand or reserved balances outside the shared movement service. Demo seeding creates synthetic opening balances through the movement service and now fails closed in production/staging. However, a repeated dev/test seed run can still rewrite synthetic balances directly; do not rerun it after operational movements exist until the seed lifecycle is corrected. Production opening balances require a separately approved, auditable migration/reconciliation process.
 
 ## Remaining validation and rollout gaps
 
