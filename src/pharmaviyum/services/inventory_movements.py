@@ -16,7 +16,6 @@ class InventoryMovementConflict(ValueError):
     """Raised when a movement violates stock invariants or idempotency."""
 
 
-
 def movement_idempotency_key(namespace: str, *parts: object) -> str:
     """Build a bounded stable key from a business operation identity."""
     material = json.dumps(
@@ -27,13 +26,24 @@ def movement_idempotency_key(namespace: str, *parts: object) -> str:
     digest = hashlib.sha256(material.encode("utf-8")).hexdigest()
     return f"{namespace}:{digest}"
 
+
 def _validate_movement_semantics(
     movement_type: str, quantity_delta: int, reserved_delta: int
 ) -> None:
     """Reject balance deltas that contradict the declared business movement."""
-    if movement_type in {"goods_receipt", "accepted_return", "transfer_in", "opening_balance"}:
+    if movement_type in {
+        "goods_receipt",
+        "accepted_return",
+        "transfer_in",
+        "opening_balance",
+    }:
         valid = quantity_delta > 0 and reserved_delta == 0
-    elif movement_type in {"cash_sale", "write_off", "expiry_disposal", "transfer_out"}:
+    elif movement_type in {
+        "cash_sale",
+        "write_off",
+        "expiry_disposal",
+        "transfer_out",
+    }:
         valid = quantity_delta < 0 and reserved_delta == 0
     elif movement_type == "payment_reservation":
         valid = quantity_delta == 0 and reserved_delta > 0
