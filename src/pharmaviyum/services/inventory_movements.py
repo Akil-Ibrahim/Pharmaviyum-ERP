@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +14,13 @@ from src.pharmaviyum.models.inventory_movement import InventoryMovement
 class InventoryMovementConflict(ValueError):
     """Raised when a movement violates stock invariants or idempotency."""
 
+
+
+def movement_idempotency_key(namespace: str, *parts: object) -> str:
+    """Build a bounded stable key from a business operation identity."""
+    material = ":".join(str(part) for part in parts)
+    digest = hashlib.sha256(material.encode("utf-8")).hexdigest()
+    return f"{namespace}:{digest}"
 
 async def apply_inventory_movement(
     db: AsyncSession,
