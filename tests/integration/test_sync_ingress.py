@@ -99,7 +99,7 @@ async def test_edge_enrollment_and_event_ingress_are_durable_and_idempotent(
     assert replay.status_code == 202, replay.text
     assert replay.json()["duplicate"] is True
 
-    altered = {**event, "payload": {**_sale_created_payload(1001), "total": "11.00"}}
+    altered = {**event, "payload": {**_sale_created_payload(1001), "items": [{**_sale_created_payload(1001)["items"][0], "product_name": "Altered Test Medicine"}]}}
     conflict = await authenticated_client.post(
         "/api/v1/sync/events", json=altered, headers=headers
     )
