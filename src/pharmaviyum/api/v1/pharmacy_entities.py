@@ -280,7 +280,16 @@ async def adjust_inventory(
     inventory = await session.get(Inventory, inventory_id)
     if inventory is None:
         raise HTTPException(status_code=404, detail="Inventory record not found")
-    if data.quantity_delta > 0:
+    adjustment_key = movement_idempotency_key(
+        "admin-adjustment", inventory.pharmacy_id, data.idempotency_key
+    )
+    prior_adjustment = await session.scalar(
+        select(InventoryMovement).where(
+            InventoryMovement.pharmacy_id == inventory.pharmacy_id,
+            InventoryMovement.idempotency_key == adjustment_key,
+        )
+    )
+    if data.quantity_delta > 0 and prior_adjustment is None:
         await _require_inventory_dependencies(
             session, inventory.product_id, inventory.pharmacy_id
         )
@@ -295,9 +304,7 @@ async def adjust_inventory(
             actor_type="user",
             actor_user_id=user.id,
             reason=data.reason,
-            idempotency_key=movement_idempotency_key(
-                "admin-adjustment", inventory.pharmacy_id, data.idempotency_key
-            ),
+            idempotency_key=adjustment_key,
             reference_type="manual_adjustment",
             reference_id=data.idempotency_key,
         )
