@@ -16,6 +16,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.models.inventory import Inventory
+from src.pharmaviyum.models.inventory_movement import InventoryMovement
 from src.pharmaviyum.models.pos import Payment, Sale, SaleItem, SaleItemAllocation
 from src.pharmaviyum.models.product import Product
 from src.pharmaviyum.modules.auth.deps import CurrentUser, SessionDep
@@ -505,7 +506,7 @@ async def checkout(
                     quantity_delta=-take if payload.payment_method == "cash" else 0,
                     reserved_delta=0 if payload.payment_method == "cash" else take,
                     actor_type="user",
-                    actor_user_id=user.id,
+                    actor_user_id=cashier.id,
                     reason=(
                         "Cash POS sale"
                         if payload.payment_method == "cash"
