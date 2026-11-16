@@ -1,7 +1,9 @@
 # Pharmacy Synchronization Event Contract v1
 
-**Status:** Proposed contract for implementation review.  
-**Scope:** Pharmacy Edge to Central event delivery. This document does not claim that the Sync Engine or Central Inbox is implemented.
+**Status:** Partially implemented; production acceptance is not established.  
+**Scope:** Pharmacy Edge to Central event delivery.
+
+The repository currently implements a transactional POS outbox, a Celery dispatcher, per-node Edge enrollment/revocation, and durable Central Inbox receipt. It does **not** yet implement the Central domain-event consumer, inventory/finance application, gap recovery, quarantine/DLQ operations, or end-to-end reconciliation. The contract below distinguishes the current v1 wire format from target protocol requirements.
 
 ## 1. Delivery guarantees
 
@@ -10,7 +12,7 @@ The protocol uses **at-least-once transport** and **effectively-once business ef
 - Edge commits the business transaction and its outbox event in one local PostgreSQL transaction.
 - A dispatcher may send an event more than once after timeouts, process restarts or lost acknowledgements.
 - Central persists the event in an inbox protected by a unique constraint on `event_id`.
-- Central acknowledges only after the inbox record and the corresponding processing decision are durable.
+- Central currently acknowledges only after the inbox row is committed. `accepted` means durable receipt, not that a domain handler applied the event.
 - Duplicate delivery returns the original durable acknowledgement and must not reapply business effects.
 - Neither Redis/Valkey nor an in-memory queue is the source of truth.
 
@@ -18,7 +20,9 @@ Exactly-once network delivery is not promised.
 
 ## 2. Required event envelope
 
-Every event must have the following immutable envelope fields:
+The table describes the **target** immutable envelope. The current v1 wire envelope contains: `event_id`, `edge_node_id`, `event_type`, `schema_version`, `aggregate_type`, `aggregate_id`, `aggregate_version`, `occurred_at`, and `payload`. Central derives `pharmacy_id` from the authenticated Edge registration. `recorded_at`, `correlation_id`, `causation_id`, and `idempotency_key` are not currently transmitted.
+
+The target envelope fields are:
 
 | Field | Type | Contract |
 |---|---|---|
@@ -37,21 +41,22 @@ Every event must have the following immutable envelope fields:
 | `idempotency_key` | string | Stable command key where the originating operation supports replay protection. |
 | `payload` | object | Event-specific, versioned, data-minimized domain facts. |
 
-The existing producer-side outbox in PR #239 contains event ID, pharmacy scope, aggregate identity/version, schema version and timestamps. It does **not** yet carry registered Edge identity, correlation/causation metadata or the complete contract above. Add these through a reviewed migration and compatibility plan before enabling network delivery.
+Current implementation detail: the outbox persists event identity, pharmacy scope, event type/schema, aggregate identity/version, payload and timestamps. The dispatcher adds the registered `edge_node_id` to the wire envelope. It does not yet persist correlation/causation metadata or a command-level idempotency key. Do not treat the target-only fields in the table as present in the current v1 payload.
 
 ## 3. Identity and authentication
 
 - Central is the authority for pharmacy/site registration and Edge-node enrollment.
 - Every Edge installation receives a unique node identity and its own revocable credential or certificate.
-- Authenticate Edge-to-Central using mutually authenticated TLS (mTLS) or an equivalent per-node credential scheme with rotation and revocation.
+- Current implementation: each enrolled node receives a random high-entropy bearer credential; only its SHA-256 digest is stored, and the credential can be revoked. The dispatcher requires HTTPS and sends the token in `X-Edge-Token`.
+- Not yet implemented: mTLS, automated credential rotation/overlap, and certificate lifecycle management.
 - Derive the authorized pharmacy scope from the authenticated node registration. Reject an event whose claimed `pharmacy_id` does not match that registration.
 - Never ship one fleet-wide static secret in an image, Ansible defaults or source control.
-- Keep credential rotation overlap bounded and observable. A revoked node must not be able to submit new events.
+- A revoked node must not be able to submit new events. Credential rotation and overlap controls remain a production-hardening requirement.
 - Ansible provisions the identity material securely; the application validates it and enforces event authorization.
 
 ## 4. Ordering and inbox processing
 
-Ordering is guaranteed only within a single aggregate stream:
+The dispatcher currently prevents a later unpublished version from being sent while an earlier version for the same aggregate remains unpublished. Central rejects duplicate aggregate versions, but it does not yet enforce the next expected version or run a domain consumer. The following describes the **target** inbox-processing semantics, not current behavior:
 
 1. Central validates the envelope, node identity, pharmacy scope and supported schema version.
 2. Central inserts the raw event into a durable inbox with a unique `event_id`.
@@ -70,10 +75,10 @@ Do not impose global ordering across pharmacies. Do not use client clocks to res
 - Use a unique lease token plus lease expiry. Only the worker holding the current token may update the row after delivery.
 - Perform HTTP/network I/O outside the database transaction.
 - Mark an event delivered only after a durable Central acknowledgement.
-- Retry transient network errors and retryable server responses using exponential backoff with jitter and a maximum delay.
-- Do not retry permanent schema/auth/scope failures indefinitely; quarantine them and alert.
+- Current implementation retries HTTP errors and unsuccessful HTTP responses using exponential backoff with jitter and a one-hour maximum exponential component. This includes permanent 4xx responses, so invalid credentials/schema/scope can remain in retry indefinitely.
+- Not yet implemented: permanent-error classification, dead-letter/quarantine workflow, operator replay endpoint, or alerting for poison events.
 - Preserve failed events for inspection and controlled replay. Replay must retain the original `event_id`.
-- Track oldest pending event age, backlog count, attempts, last error, last successful sync and per-site acknowledgement lag.
+- Track oldest pending event age, backlog count, attempts, last error, last successful sync and per-site acknowledgement lag. These sync-specific operational metrics/dashboards are not yet implemented.
 
 ## 6. Domain conflict policy
 
