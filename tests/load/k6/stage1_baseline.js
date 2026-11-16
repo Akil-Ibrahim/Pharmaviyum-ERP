@@ -268,6 +268,15 @@ export function syntheticWrites() {
     inventoryId = Number(inventory.json('id'));
     if (!inventoryId) lifecycleOk = false;
     else {
+      // The API refuses to delete lots that still carry stock or reservations.
+      // This is a synthetic staging fixture, so zero it before cleanup.
+      const zeroStock = http.patch(
+        `${baseUrl}/api/v1/inventory/${inventoryId}`,
+        JSON.stringify({ quantity: 0 }),
+        { headers: headers(true), tags: { endpoint: 'write_inventory_zero_stock' } },
+      );
+      check(zeroStock, { 'synthetic inventory cleanup adjustment returns 200': (r) => r.status === 200 });
+      if (zeroStock.status !== 200) lifecycleOk = false;
       const cleanup = del(`/api/v1/inventory/${inventoryId}`, 'write_inventory_cleanup');
       if (cleanup.status !== 204) lifecycleOk = false;
     }
