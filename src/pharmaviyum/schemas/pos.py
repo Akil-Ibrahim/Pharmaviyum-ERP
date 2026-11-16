@@ -101,6 +101,7 @@ class InventoryReceiptCreate(BaseModel):
     lot_number: str = Field(min_length=1, max_length=100)
     expiry_date: datetime
     quantity: int = Field(gt=0, le=100000)
+    idempotency_key: str = Field(min_length=8, max_length=128)
 
     @model_validator(mode="after")
     def expiry_must_not_be_in_past(self):
