@@ -67,7 +67,7 @@ class InventoryUpdate(BaseModel):
 class InventoryAdjustmentIn(BaseModel):
     quantity_delta: int = Field(ne=0, ge=-100000, le=100000)
     reason: str = Field(min_length=3, max_length=500)
-    idempotency_key: str = Field(min_length=8, max_length=128)
+    idempotency_key: str = Field(min_length=8, max_length=110)
 
 
 
