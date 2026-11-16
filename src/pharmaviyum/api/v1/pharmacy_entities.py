@@ -250,6 +250,22 @@ async def update_inventory(
 
     values = data.model_dump(exclude_unset=True)
 
+    lot_identity_changed = (
+        ("lot_number" in values and values["lot_number"] != inventory.lot_number)
+        or ("expires_at" in values and values["expires_at"] != inventory.expires_at)
+    )
+    if lot_identity_changed:
+        has_movements = await session.scalar(
+            select(InventoryMovement.id)
+            .where(InventoryMovement.inventory_id == inventory.id)
+            .limit(1)
+        )
+        if has_movements is not None:
+            raise HTTPException(
+                status_code=409,
+                detail="Lot identity and expiry are immutable after stock movement history exists",
+            )
+
     if "lot_number" in values and values["lot_number"] != inventory.lot_number:
         duplicate = await session.scalar(
             select(Inventory).where(
