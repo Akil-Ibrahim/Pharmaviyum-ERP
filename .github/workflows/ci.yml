@@ -46,6 +46,8 @@ jobs:
         run: |
           uvx --from "library-skills==0.0.21" library-skills scan --json > python-library-skills.json
           cat python-library-skills.json
+      - name: Validate committed Library Skills links
+        run: uvx --from "library-skills==0.0.21" library-skills --check
       - name: Upload Python Library Skills discovery report
         uses: actions/upload-artifact@v4
         with:
