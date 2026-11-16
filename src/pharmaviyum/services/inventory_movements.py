@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +19,11 @@ class InventoryMovementConflict(ValueError):
 
 def movement_idempotency_key(namespace: str, *parts: object) -> str:
     """Build a bounded stable key from a business operation identity."""
-    material = ":".join(str(part) for part in parts)
+    material = json.dumps(
+        [str(part) for part in parts],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
     digest = hashlib.sha256(material.encode("utf-8")).hexdigest()
     return f"{namespace}:{digest}"
 
