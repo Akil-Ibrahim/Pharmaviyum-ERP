@@ -37,7 +37,11 @@ def _event(payload: dict | None = None) -> dict:
                     "unit_price": "10.00",
                     "line_total": "20.00",
                     "allocations": [
-                        {"lot_number": "LOT-1", "expires_at": "2027-01-01T00:00:00", "quantity": 2}
+                        {
+                            "lot_number": "LOT-1",
+                            "expires_at": "2027-01-01T00:00:00",
+                            "quantity": 2,
+                        }
                     ],
                 }
             ],
@@ -58,7 +62,10 @@ def test_valid_sale_event_accepts_strict_typed_payload() -> None:
         (lambda p: p["items"][0].update(quantity=0), "greater than 0"),
         (lambda p: p["items"][0].update(unit_price="10.0"), "two decimals"),
         (lambda p: p["items"][0].update(line_total="19.99"), "line_total must equal"),
-        (lambda p: p["items"][0]["allocations"][0].update(quantity=1), "allocation quantities"),
+        (
+            lambda p: p["items"][0]["allocations"][0].update(quantity=1),
+            "allocation quantities",
+        ),
         (lambda p: p["payment"].update(method="crypto"), "payment.method"),
         (lambda p: p["payment"].update(extra_field="not-allowed"), "Extra inputs"),
         (lambda p: p.update(patient_name="not-allowed"), "Extra inputs"),
