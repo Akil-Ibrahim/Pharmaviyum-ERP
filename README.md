@@ -264,7 +264,7 @@ See [`docs/ai/ragas-pharmaceutical-evaluation.md`](docs/ai/ragas-pharmaceutical-
 
 ## Observability
 
-The application uses the OpenTelemetry SDK for distributed tracing. Automatic FastAPI, SQLAlchemy, and HTTPX instrumentation is disabled by default and requires an explicit development/test opt-in; Redis command auto-instrumentation remains disabled. Configure tracing with `OTEL_ENABLED=true` and `OTEL_EXPORTER_OTLP_ENDPOINT`. See [`docs/observability/opentelemetry.md`](docs/observability/opentelemetry.md) (Russian translation in progress) for instrumentation boundaries, sampling, and data-protection requirements (Russian translation in progress).
+The application uses the OpenTelemetry SDK for distributed tracing. Automatic FastAPI, SQLAlchemy, and HTTPX instrumentation is disabled by default and requires an explicit development/test opt-in; Redis command auto-instrumentation remains disabled. Configure tracing with `OTEL_ENABLED=true` and `OTEL_EXPORTER_OTLP_ENDPOINT`. See [`docs/observability/opentelemetry.md`](docs/observability/opentelemetry.md) · [Русская версия](docs/observability/opentelemetry.ru.md) for instrumentation boundaries, sampling, and data-protection requirements.
 
 Observability should correlate traces, application logs, and service/business metrics without placing patient identifiers, credentials, prompts, or other sensitive payloads in telemetry. Operational dashboards and alerts should be tied to measurable SLIs/SLOs (for example API availability/latency, synchronization lag, outbox backlog, failed sync/reconciliation counts, and background-job failures). These are monitoring objectives; do not imply an SLO is active until its target, measurement, alert, and owner are configured.
 
