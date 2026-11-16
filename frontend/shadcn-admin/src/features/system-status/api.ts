@@ -66,7 +66,7 @@ function dependencyDescription(
   component: string | undefined,
   diagnostic: string | undefined,
   endpointReachable: boolean,
-  componentName: string,
+  componentName: string
 ): string {
   if (diagnostic) return diagnostic
   if (component === 'ok') return 'Connection check passed.'
@@ -127,7 +127,7 @@ export async function fetchSystemStatus(): Promise<SystemStatusSnapshot> {
         components?.postgres,
         postgresDiagnostic,
         readinessReachable,
-        'PostgreSQL',
+        'PostgreSQL'
       ),
       diagnostic: postgresDiagnostic,
     },
@@ -143,7 +143,7 @@ export async function fetchSystemStatus(): Promise<SystemStatusSnapshot> {
         components?.redis,
         redisDiagnostic,
         readinessReachable,
-        'Redis',
+        'Redis'
       ),
       diagnostic: redisDiagnostic,
     },
@@ -159,7 +159,7 @@ export async function fetchSystemStatus(): Promise<SystemStatusSnapshot> {
         components?.ai_initialized,
         aiDiagnostic,
         readinessReachable,
-        'LangGraph initialization',
+        'LangGraph initialization'
       ),
       diagnostic: aiDiagnostic,
     },
