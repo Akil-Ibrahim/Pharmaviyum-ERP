@@ -44,6 +44,26 @@ class InventoryMovement(Base):
             name="ck_inventory_movements_type",
         ),
         CheckConstraint(
+            "("
+            "movement_type IN ('goods_receipt', 'accepted_return', 'transfer_in', 'opening_balance') "
+            "AND quantity_delta > 0 AND reserved_delta = 0"
+            ") OR ("
+            "movement_type IN ('cash_sale', 'write_off', 'expiry_disposal', 'transfer_out') "
+            "AND quantity_delta < 0 AND reserved_delta = 0"
+            ") OR ("
+            "movement_type = 'payment_reservation' AND quantity_delta = 0 AND reserved_delta > 0"
+            ") OR ("
+            "movement_type = 'payment_settlement' AND quantity_delta < 0 "
+            "AND reserved_delta = quantity_delta"
+            ") OR ("
+            "movement_type IN ('payment_failure', 'sale_cancellation') "
+            "AND quantity_delta = 0 AND reserved_delta < 0"
+            ") OR ("
+            "movement_type = 'stock_adjustment' AND quantity_delta <> 0 AND reserved_delta = 0"
+            ")",
+            name="ck_inventory_movements_type_delta_semantics",
+        ),
+        CheckConstraint(
             "actor_type IN ('user', 'system')",
             name="ck_inventory_movements_actor_type",
         ),
