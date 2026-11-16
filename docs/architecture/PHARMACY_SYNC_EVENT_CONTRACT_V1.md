@@ -20,7 +20,9 @@ Exactly-once network delivery is not promised.
 
 ## 2. Required event envelope
 
-The table describes the **target** immutable envelope. The current v1 wire envelope contains: `event_id`, `edge_node_id`, `event_type`, `schema_version`, `aggregate_type`, `aggregate_id`, `aggregate_version`, `occurred_at`, and `payload`. Central derives `pharmacy_id` from the authenticated Edge registration. `recorded_at`, `correlation_id`, `causation_id`, and `idempotency_key` are not currently transmitted.
+The table describes the **target** immutable envelope. Current v1 payload validation rejects unknown keys and checks nested object/list shapes and the payload size. It does **not** yet enforce every primitive field type, numeric range, monetary format, or domain enum. Add strict typed payload models and negative tests before a Central consumer applies these events.
+
+The current v1 wire envelope contains: `event_id`, `edge_node_id`, `event_type`, `schema_version`, `aggregate_type`, `aggregate_id`, `aggregate_version`, `occurred_at`, and `payload`. Central derives `pharmacy_id` from the authenticated Edge registration. `recorded_at`, `correlation_id`, `causation_id`, and `idempotency_key` are not currently transmitted.
 
 The target envelope fields are:
 
