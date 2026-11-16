@@ -812,18 +812,6 @@ async def seed_patients() -> None:
         inventory = await seed_inventory(session, pharmacy)
         created = 0
 
-        # Reset synthetic inventory before rebuilding synthetic sales history.
-        # This keeps repeated SEED_DEMO_DATA runs deterministic instead of
-        # decrementing the same demo batches on every run.
-        for product, batch, inventory_record in inventory.values():
-            batch.available_quantity = batch.received_quantity
-            inventory_record.quantity = batch.received_quantity
-            inventory_record.reserved_quantity = 0
-            inventory_record.expires_at = datetime.combine(
-                batch.expiry_date, datetime.min.time()
-            )
-            product.stock = batch.received_quantity
-
         for index, (first, last, category, city, country) in enumerate(CUSTOMERS, 1):
             external_id = f"demo-patient-{index:03d}"
             patient = await session.scalar(
@@ -910,9 +898,31 @@ async def seed_patients() -> None:
                         purchased_at=datetime.utcnow() - timedelta(days=index % 5),
                     )
                 )
-                batch.available_quantity = max(0, batch.available_quantity - packs)
-                inventory_record.quantity = batch.available_quantity
-                product.stock = batch.available_quantity
+                await apply_inventory_movement(
+                    session,
+                    inventory_id=inventory_record.id,
+                    pharmacy_id=pharmacy.id,
+                    movement_type="cash_sale",
+                    quantity_delta=-packs,
+                    reserved_delta=0,
+                    actor_type="system",
+                    actor_user_id=None,
+                    reason="Synthetic demo patient purchase",
+                    idempotency_key=movement_idempotency_key(
+                        "demo-patient-purchase",
+                        pharmacy.id,
+                        patient.id,
+                        product.id,
+                        batch.id,
+                        receipt,
+                        line_number,
+                    ),
+                    reference_type="demo_patient_purchase",
+                    reference_id=f"{patient.id}:{receipt}:{line_number}",
+                )
+                # ProductBatch is a legacy mirror; Inventory is authoritative.
+                batch.available_quantity = inventory_record.quantity
+                product.stock = inventory_record.quantity
 
             rx_spec = next(
                 (
