@@ -27,6 +27,31 @@ def movement_idempotency_key(namespace: str, *parts: object) -> str:
     digest = hashlib.sha256(material.encode("utf-8")).hexdigest()
     return f"{namespace}:{digest}"
 
+def _validate_movement_semantics(
+    movement_type: str, quantity_delta: int, reserved_delta: int
+) -> None:
+    """Reject balance deltas that contradict the declared business movement."""
+    if movement_type in {"goods_receipt", "accepted_return", "transfer_in", "opening_balance"}:
+        valid = quantity_delta > 0 and reserved_delta == 0
+    elif movement_type in {"cash_sale", "write_off", "expiry_disposal", "transfer_out"}:
+        valid = quantity_delta < 0 and reserved_delta == 0
+    elif movement_type == "payment_reservation":
+        valid = quantity_delta == 0 and reserved_delta > 0
+    elif movement_type == "payment_settlement":
+        valid = quantity_delta < 0 and reserved_delta == quantity_delta
+    elif movement_type in {"payment_failure", "sale_cancellation"}:
+        valid = quantity_delta == 0 and reserved_delta < 0
+    elif movement_type == "stock_adjustment":
+        valid = quantity_delta != 0 and reserved_delta == 0
+    else:
+        raise InventoryMovementConflict(f"Unsupported movement type: {movement_type}")
+
+    if not valid:
+        raise InventoryMovementConflict(
+            f"Balance deltas are invalid for movement type: {movement_type}"
+        )
+
+
 async def apply_inventory_movement(
     db: AsyncSession,
     *,
@@ -57,6 +82,7 @@ async def apply_inventory_movement(
         raise InventoryMovementConflict("A reason is required")
     if (actor_type == "user") != (actor_user_id is not None):
         raise InventoryMovementConflict("Actor identity does not match actor type")
+    _validate_movement_semantics(movement_type, quantity_delta, reserved_delta)
 
     # Serialize retries using the pharmacy-scoped key before reading the journal.
     # The unique constraint remains the final database-level idempotency guard.
