@@ -49,17 +49,14 @@ async function getJson<T>(path: string): Promise<{
 
 function dependencyState(status?: string): ServiceState {
   switch (status) {
-    // Current backend readiness contract.
     case 'ok':
+    case 'healthy':
       return 'operational'
     case 'failed':
-    // Compatibility with older health payloads.
     case 'unhealthy':
       return 'outage'
     case 'degraded':
       return 'degraded'
-    case 'healthy':
-      return 'operational'
     default:
       return 'unknown'
   }
@@ -97,8 +94,7 @@ export async function fetchSystemStatus(): Promise<SystemStatusSnapshot> {
           : 'unknown'
 
   // /ready returns HTTP 503 when any critical dependency fails. Its JSON body
-  // still contains per-component results, so do not mark every dependency down
-  // merely because the aggregate readiness response is non-2xx.
+  // still contains per-component results, so preserve each individual result.
   const components = readiness?.components
   const errors = readiness?.errors
   const readinessReachable = readiness !== null
