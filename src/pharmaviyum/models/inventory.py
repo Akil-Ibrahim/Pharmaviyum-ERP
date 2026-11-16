@@ -22,6 +22,12 @@ class Inventory(Base):
             "lot_number",
             name="uq_inventory_product_pharmacy_lot",
         ),
+        UniqueConstraint(
+            "id",
+            "pharmacy_id",
+            "product_id",
+            name="uq_inventory_id_pharmacy_product",
+        ),
         CheckConstraint("quantity >= 0", name="ck_inventory_quantity_nonnegative"),
         CheckConstraint(
             "reserved_quantity >= 0", name="ck_inventory_reserved_nonnegative"
