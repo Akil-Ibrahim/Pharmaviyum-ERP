@@ -28,7 +28,7 @@ SaleItemAllocation хранит распределение партий по п�
 | Корректировка остатка | Endpoint с обязательными причиной, actor attribution и idempotency использует общий movement service. |
 | Удаление партии | Разрешено только при нулевых остатках и отсутствии истории движений. |
 
-Перечисленные API write paths больше не присваивают физический остаток или резерв напрямую вне общего movement service. Demo seed script по-прежнему создаёт начальные строки Inventory напрямую и должен оставаться исключительно non-production fixture. Production opening balance требует отдельно утверждённой аудируемой процедуры миграции и reconciliation.
+Перечисленные API write paths больше не присваивают физический остаток или резерв напрямую вне общего movement service. Demo seed script создаёт синтетические opening balances через movement service и теперь аварийно завершается в production/staging. Однако повторный запуск в dev/test всё ещё может переписывать синтетические балансы напрямую; его нельзя запускать повторно после появления операционных движений до отдельного исправления seed lifecycle. Production opening balance требует отдельно утверждённой аудируемой процедуры миграции и reconciliation.
 
 ## Оставшиеся проверки и пробелы перед rollout
 
