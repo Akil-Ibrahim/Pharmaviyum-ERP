@@ -31,6 +31,10 @@ from src.pharmaviyum.services.catalog_exclusions import (
     allowed_pharmacy_product_conditions,
 )
 from src.pharmaviyum.services.outbox import record_outbox_event
+from src.pharmaviyum.services.inventory_movements import (
+    InventoryMovementConflict,
+    apply_inventory_movement,
+)
 
 router = APIRouter(prefix="/api/v1/pos", tags=["Point of Sale"])
 CENT = Decimal("0.01")
@@ -180,13 +184,12 @@ async def receive_inventory(
             )
         if lot.expires_at is None:
             lot.expires_at = expiry
-        lot.quantity += payload.quantity
         lot.reorder_level = max(lot.reorder_level, 0)
     else:
         lot = Inventory(
             product_id=payload.product_id,
             pharmacy_id=payload.pharmacy_id,
-            quantity=payload.quantity,
+            quantity=0,
             reserved_quantity=0,
             reorder_level=0,
             lot_number=payload.lot_number.strip(),
@@ -196,6 +199,20 @@ async def receive_inventory(
 
     try:
         await db.flush()
+        await apply_inventory_movement(
+            db,
+            inventory_id=lot.id,
+            pharmacy_id=payload.pharmacy_id,
+            movement_type="goods_receipt",
+            quantity_delta=payload.quantity,
+            reserved_delta=0,
+            actor_type="user",
+            actor_user_id=user.id,
+            reason="Goods receipt",
+            idempotency_key=f"receipt:{payload.idempotency_key}",
+            reference_type="receipt",
+            reference_id=payload.idempotency_key,
+        )
         response = InventoryReceiptResponse(
             inventory_id=lot.id,
             pharmacy_id=lot.pharmacy_id,
@@ -208,6 +225,9 @@ async def receive_inventory(
             message="Stock receipt recorded",
         )
         await db.commit()
+    except InventoryMovementConflict as exc:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except IntegrityError as exc:
         await db.rollback()
         raise HTTPException(
@@ -423,10 +443,31 @@ async def checkout(
             take = min(available, remaining)
             if take <= 0:
                 continue
-            if payload.payment_method == "cash":
-                lot.quantity -= take
-            else:
-                lot.reserved_quantity += take
+            try:
+                await apply_inventory_movement(
+                    db,
+                    inventory_id=lot.id,
+                    pharmacy_id=payload.pharmacy_id,
+                    movement_type=(
+                        "cash_sale"
+                        if payload.payment_method == "cash"
+                        else "payment_reservation"
+                    ),
+                    quantity_delta=-take if payload.payment_method == "cash" else 0,
+                    reserved_delta=0 if payload.payment_method == "cash" else take,
+                    actor_type="user",
+                    actor_user_id=user.id,
+                    reason=(
+                        "Cash POS sale"
+                        if payload.payment_method == "cash"
+                        else "External payment reservation"
+                    ),
+                    idempotency_key=f"pos-checkout:{sale.idempotency_key}:{lot.id}",
+                    reference_type="sale",
+                    reference_id=str(sale.id),
+                )
+            except InventoryMovementConflict as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
             allocation = SaleItemAllocation(
                 sale_item_id=item.id,
                 inventory_id=lot.id,
@@ -662,9 +703,34 @@ async def payment_webhook(
 
     for allocation in allocations:
         lot = inventory_by_id[allocation.inventory_id]
-        lot.reserved_quantity -= allocation.quantity
-        if event_status == "succeeded":
-            lot.quantity -= allocation.quantity
+        try:
+            await apply_inventory_movement(
+                db,
+                inventory_id=lot.id,
+                pharmacy_id=sale.pharmacy_id,
+                movement_type=(
+                    "payment_settlement"
+                    if event_status == "succeeded"
+                    else "payment_failure"
+                ),
+                quantity_delta=-allocation.quantity if event_status == "succeeded" else 0,
+                reserved_delta=-allocation.quantity,
+                actor_type="system",
+                actor_user_id=None,
+                reason=(
+                    "External payment settled"
+                    if event_status == "succeeded"
+                    else "External payment failed; reservation released"
+                ),
+                idempotency_key=(
+                    f"pos-payment:{payment.id}:{event_status}:{allocation.id}"
+                ),
+                reference_type="payment",
+                reference_id=str(payment.id),
+                correlation_id=provider_payment_id,
+            )
+        except InventoryMovementConflict as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     payment.status = event_status
     payment.provider_name = provider_name[:80]
@@ -767,7 +833,23 @@ async def cancel_pending_sale(
     inventory_by_id = {lot.id: lot for lot in inventory_result.scalars().all()}
     for allocation in allocations:
         lot = inventory_by_id[allocation.inventory_id]
-        lot.reserved_quantity -= allocation.quantity
+        try:
+            await apply_inventory_movement(
+                db,
+                inventory_id=lot.id,
+                pharmacy_id=sale.pharmacy_id,
+                movement_type="sale_cancellation",
+                quantity_delta=0,
+                reserved_delta=-allocation.quantity,
+                actor_type="user",
+                actor_user_id=user.id,
+                reason="Pending POS sale cancelled; reservation released",
+                idempotency_key=f"pos-cancel:{sale.id}:{allocation.id}",
+                reference_type="sale",
+                reference_id=str(sale.id),
+            )
+        except InventoryMovementConflict as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
     for payment in payments:
         if payment.status == "pending":
             payment.status = "failed"
