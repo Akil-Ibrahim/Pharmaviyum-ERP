@@ -18,7 +18,7 @@ The append-only ledger has been introduced in the codebase. This is a code-level
 
 | Path | Current implementation |
 |---|---|
-| `InventoryMovement` | Append-only movement model, database check constraints, pharmacy-scoped unique idempotency constraint, and PostgreSQL UPDATE/DELETE rejection trigger. |
+| `InventoryMovement` | Append-only movement model, database check constraints, pharmacy-scoped unique idempotency constraint, and PostgreSQL UPDATE/DELETE/TRUNCATE rejection triggers. |
 | `apply_inventory_movement` | Shared transactional service: pharmacy-scoped advisory lock, replay comparison, inventory row lock, balance invariant checks, balance update and movement insert in the caller's transaction. |
 | POS goods receipt | Requires an idempotency key and records a `goods_receipt` movement atomically with the lot balance change. |
 | POS cash checkout | Records a `cash_sale` movement for each FEFO lot allocation. |
@@ -34,7 +34,7 @@ The API write paths above no longer directly assign on-hand or reserved balances
 
 ## Remaining validation and rollout gaps
 
-- The current integration tests cover atomic movement, idempotent replay, conflicting key reuse, and reservation bounds. Dedicated tests are still required for database trigger immutability, concurrent requests, rollback/failure injection, and full ledger-to-balance reconciliation.
+- The current integration tests cover service-level atomic movement, idempotent replay, conflicting key reuse, reservation bounds, receipt replay, and POS checkout/payment/cancellation journal entries. Dedicated tests are still required for migrated database trigger immutability, concurrent requests, rollback/failure injection, and full ledger-to-balance reconciliation.
 - Verify the migration against a clean PostgreSQL database and the existing production schema before rollout; do not infer production migration success from the migration file alone.
 - Add an operator-approved opening-balance process for legacy stock. Do not fabricate historical movements from unverified balances.
 - Add lot archival/closure semantics before removing historical lots from operational views.
