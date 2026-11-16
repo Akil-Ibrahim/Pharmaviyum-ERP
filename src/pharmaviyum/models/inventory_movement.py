@@ -6,6 +6,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     String,
@@ -26,6 +27,12 @@ class InventoryMovement(Base):
             "pharmacy_id",
             "idempotency_key",
             name="uq_inventory_movements_pharmacy_idempotency",
+        ),
+        ForeignKeyConstraint(
+            ["inventory_id", "pharmacy_id", "product_id"],
+            ["inventory.id", "inventory.pharmacy_id", "inventory.product_id"],
+            ondelete="RESTRICT",
+            name="fk_inventory_movements_lot_identity",
         ),
         CheckConstraint(
             "movement_type IN ("
@@ -66,15 +73,9 @@ class InventoryMovement(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    pharmacy_id: Mapped[int] = mapped_column(
-        ForeignKey("pharmacies.id", ondelete="RESTRICT"), nullable=False
-    )
-    inventory_id: Mapped[int] = mapped_column(
-        ForeignKey("inventory.id", ondelete="RESTRICT"), nullable=False
-    )
-    product_id: Mapped[int] = mapped_column(
-        ForeignKey("products.id", ondelete="RESTRICT"), nullable=False
-    )
+    pharmacy_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    inventory_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    product_id: Mapped[int] = mapped_column(Integer, nullable=False)
     movement_type: Mapped[str] = mapped_column(String(32), nullable=False)
     quantity_delta: Mapped[int] = mapped_column(Integer, nullable=False)
     reserved_delta: Mapped[int] = mapped_column(Integer, nullable=False)
