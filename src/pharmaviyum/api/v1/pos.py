@@ -759,7 +759,10 @@ async def cancel_pending_sale(
     allocation_skus = {allocation.id: sku for allocation, sku in allocation_rows}
     inventory_ids = [allocation.inventory_id for allocation in allocations]
     inventory_result = await db.execute(
-        select(Inventory).where(Inventory.id.in_(inventory_ids)).with_for_update()
+        select(Inventory)
+        .where(Inventory.id.in_(inventory_ids))
+        .order_by(Inventory.id.asc())
+        .with_for_update()
     )
     inventory_by_id = {lot.id: lot for lot in inventory_result.scalars().all()}
     for allocation in allocations:
