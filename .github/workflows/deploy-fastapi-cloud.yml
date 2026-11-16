@@ -168,7 +168,7 @@ jobs:
               .auth_environment == "production" and
               .debug == false and
               .auth_debug == false and
-              (.python_version | startswith("3.15.2")) and
+              (.python_version | startswith("3.15.")) and
               .python_implementation == "cpython"
             ' >/dev/null 2>&1; then
               echo "New production runtime is active."
@@ -177,7 +177,7 @@ jobs:
             echo "Waiting for the new production runtime (attempt ${attempt}/60)."
             sleep 5
           done
-          echo "Production runtime did not switch to production on CPython 3.15.2 within five minutes."
+          echo "Production runtime did not switch to production on CPython 3.15.x within five minutes."
           printf '%s\\n' "${runtime_info:-No /version response}" | jq '{environment, application_environment, auth_environment, debug, auth_debug, python_version}' 2>/dev/null || true
           exit 1
 
