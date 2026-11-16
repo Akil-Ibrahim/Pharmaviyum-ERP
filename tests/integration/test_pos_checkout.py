@@ -12,6 +12,7 @@ from sqlalchemy import func, select
 
 from src.pharmaviyum.models.drug_catalog import DrugReference, MedicinalProduct
 from src.pharmaviyum.models.inventory import Inventory
+from src.pharmaviyum.models.inventory_movement import InventoryMovement
 from src.pharmaviyum.models.outbox import OutboxEvent
 from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.pos import Payment, Sale, SaleItemAllocation
@@ -248,6 +249,19 @@ async def test_cash_checkout_records_receipt_and_allocates_fefo(
     assert second.quantity == 4
     assert first.reserved_quantity == 0
     assert second.reserved_quantity == 0
+    movements = list(
+        (
+            await test_db.scalars(
+                select(InventoryMovement).where(
+                    InventoryMovement.pharmacy_id == pharmacy.id
+                )
+            )
+        ).all()
+    )
+    assert len(movements) == 2
+    assert {movement.movement_type for movement in movements} == {"cash_sale"}
+    assert sum(movement.quantity_delta for movement in movements) == -3
+    assert all(movement.reserved_delta == 0 for movement in movements)
 
 
 @pytest.mark.integration
@@ -402,6 +416,22 @@ async def test_card_payment_reserves_stock_until_signed_webhook(
     payment = await test_db.scalar(select(Payment).where(Payment.id == payment_id))
     assert sale is not None and sale.status == "completed"
     assert payment is not None and payment.status == "succeeded"
+    movements = list(
+        (
+            await test_db.scalars(
+                select(InventoryMovement).where(
+                    InventoryMovement.pharmacy_id == pharmacy.id
+                )
+            )
+        ).all()
+    )
+    assert len(movements) == 4
+    assert sum(m.quantity_delta for m in movements) == -3
+    assert sum(m.reserved_delta for m in movements) == 0
+    assert {m.movement_type for m in movements} == {
+        "payment_reservation",
+        "payment_settlement",
+    }
 
     replay = await authenticated_client.post(
         "/api/v1/pos/payments/webhook",
@@ -492,6 +522,22 @@ async def test_failed_payment_webhook_releases_stock_and_is_idempotent(
             OutboxEvent.event_type == "pos.payment.failed",
         )
     ) == 1
+    movements = list(
+        (
+            await test_db.scalars(
+                select(InventoryMovement).where(
+                    InventoryMovement.pharmacy_id == pharmacy.id
+                )
+            )
+        ).all()
+    )
+    assert len(movements) == 4
+    assert {m.movement_type for m in movements} == {
+        "payment_reservation",
+        "payment_failure",
+    }
+    assert all(m.quantity_delta == 0 for m in movements)
+    assert sum(m.reserved_delta for m in movements) == 0
 
 
 @pytest.mark.integration
@@ -600,6 +646,22 @@ async def test_cancel_pending_sale_releases_reserved_inventory(
     await test_db.refresh(second)
     assert first.reserved_quantity == 0
     assert second.reserved_quantity == 0
+    movements = list(
+        (
+            await test_db.scalars(
+                select(InventoryMovement).where(
+                    InventoryMovement.pharmacy_id == pharmacy.id
+                )
+            )
+        ).all()
+    )
+    assert len(movements) == 4
+    assert {m.movement_type for m in movements} == {
+        "payment_reservation",
+        "sale_cancellation",
+    }
+    assert all(m.quantity_delta == 0 for m in movements)
+    assert sum(m.reserved_delta for m in movements) == 0
 
 
 @pytest.mark.integration
