@@ -731,6 +731,10 @@ async def cancel_pending_sale(
     sale = locked_result.scalar_one_or_none()
     if sale is None:
         raise HTTPException(status_code=404, detail="Sale not found")
+    # Cancellation retries are safe: return the already-cancelled sale
+    # without releasing reservations again or emitting another outbox event.
+    if sale.status == "cancelled":
+        return SaleResponse.model_validate(await _load_sale(db, sale.id))
     if sale.status != "awaiting_payment":
         raise HTTPException(
             status_code=409, detail="Only pending-payment sales can be cancelled"
