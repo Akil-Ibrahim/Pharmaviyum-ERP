@@ -117,6 +117,11 @@ Pharmaviyum follows a **pilot-first, offline-capable** operating model. The docu
 - Per-pharmacy site identity and credentials
 - Explicit separation between supported, restricted, online-only, and validation-blocked offline workflows
 - Ansible-based infrastructure automation for controlled Edge host provisioning, deployment, backup, restore drills, and rollback
+- Synchronization contracts must define stable event identity, idempotent processing, retry/backoff behavior, and observable handling of poison messages; a dead-letter workflow must not silently discard business events.
+- Ordering and conflict handling must be explicit at the aggregate/business-entity level. Concurrent updates to stock, batches, prescriptions, or sales must not be resolved by blind last-write-wins.
+- Reconciliation must compare Edge and Central state and surface discrepancies for controlled resolution; replay and recovery procedures must be safe to execute more than once.
+
+**Consistency boundary:** an outbox provides durable publication intent, but does not by itself guarantee exactly-once delivery, conflict-free replication, or globally consistent inventory. The effective guarantee depends on transaction boundaries, idempotent consumers, ordering rules, conflict policy, and reconciliation evidence.
 
 Offline behavior is policy-controlled, not universal. Local persistence does not make an unavailable payment provider, fiscal authority, e-prescription service, or other external authority available. Consult the [Pharmacy Offline Capability Matrix](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) · [Русская версия](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) before treating any workflow as available offline.
 
