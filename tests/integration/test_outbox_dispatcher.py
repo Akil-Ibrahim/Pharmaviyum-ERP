@@ -49,7 +49,18 @@ async def _add_outbox_event(
             "discount_total": "0.00",
             "total": "10.00",
             "inventory_effect": "decrement",
-            "items": [],
+            "items": [
+                {
+                    "product_sku": "TEST-SKU",
+                    "product_name": "Test Medicine",
+                    "quantity": 1,
+                    "unit_price": "10.00",
+                    "line_total": "10.00",
+                    "allocations": [
+                        {"lot_number": "LOT-501", "expires_at": None, "quantity": 1}
+                    ],
+                }
+            ],
             "payment": {"method": "cash", "status": "succeeded", "amount": "10.00"},
         }
     else:
