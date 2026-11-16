@@ -20,7 +20,7 @@ Exactly-once network delivery is not promised.
 
 ## 2. Required event envelope
 
-The table describes the **target** immutable envelope. Current v1 payload validation rejects unknown keys and checks nested object/list shapes and the payload size. It does **not** yet enforce every primitive field type, numeric range, monetary format, or domain enum. Add strict typed payload models and negative tests before a Central consumer applies these events.
+The table describes the **target** immutable envelope. Current v1 payload validation uses strict nested Pydantic models with `extra=forbid`, strict integer quantities, bounded collection sizes, positive quantities, canonical two-decimal money strings, sale/payment state constraints, item-total reconciliation, lot-allocation quantity reconciliation, and a 256 KiB payload limit. Unit tests cover malformed types, invalid amounts, arithmetic mismatches, unknown fields, and inconsistent inventory/payment state. This validates the event contract; it does not replace domain-level validation when Central applies events.
 
 The current v1 wire envelope contains: `event_id`, `edge_node_id`, `event_type`, `schema_version`, `aggregate_type`, `aggregate_id`, `aggregate_version`, `occurred_at`, and `payload`. Central derives `pharmacy_id` from the authenticated Edge registration. `recorded_at`, `correlation_id`, `causation_id`, and `idempotency_key` are not currently transmitted.
 
