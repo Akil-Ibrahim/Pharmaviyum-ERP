@@ -47,6 +47,13 @@ jobs:
           enable-cache: true
       - name: Regenerate uv.lock
         run: uv lock --upgrade-package fastapi
+      - name: Upload regenerated lockfile for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: fastapi-0.163.1-uv-lock
+          path: uv.lock
+          if-no-files-found: error
+          retention-days: 3
       - name: Install exact locked environment
         run: uv sync --frozen
       - name: Run full test suite
