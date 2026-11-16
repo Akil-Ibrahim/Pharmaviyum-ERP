@@ -256,11 +256,28 @@ jobs:
         run: |
           uv run --isolated --with deepeval==4.3.4 python -c "from deepeval.metrics import HallucinationMetric, FaithfulnessMetric; from deepeval.test_case import LLMTestCase; print('DeepEval hallucination and faithfulness APIs ready')"
 
+  cloud-runtime-compat:
+    name: FastAPI Cloud CPython 3.15.0 Compatibility
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: Set up uv with the managed FastAPI Cloud Python patch
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.8"
+          python-version: "3.15.0"
+          enable-cache: true
+      - name: Install production dependencies from the universal lockfile
+        run: uv sync --frozen --no-dev
+      - name: Verify critical imports on the actual FastAPI Cloud runtime patch
+        run: uv run python scripts/check_python315_compat.py
+
   build:
     name: Build and Publish Immutable Image
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    needs: [test-unit, test-integration, security, rag-evaluation]
+    needs: [test-unit, test-integration, security, rag-evaluation, cloud-runtime-compat]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
