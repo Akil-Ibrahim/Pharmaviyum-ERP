@@ -1,121 +1,83 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fetchSystemStatus } from './api'
 
-const healthyReadiness = {
-  status: 'ready',
-  components: {
-    postgres: 'ok',
-    redis: 'ok',
-    ai_initialized: 'ok',
-  },
+function stubEndpoints(readiness: unknown, readinessStatus = 200) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((input: RequestInfo | URL) => {
+      const isHealth = String(input).endsWith('/health')
+      const body = isHealth ? { status: 'healthy' } : readiness
+      const status = isHealth ? 200 : readinessStatus
+
+      return Promise.resolve(new Response(JSON.stringify(body), { status }))
+    })
+  )
 }
 
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
 describe('fetchSystemStatus', () => {
-  beforeEach(() => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL) => {
-        if (String(input).endsWith('/health')) {
-          return new Response(JSON.stringify({ status: 'healthy' }), {
-            status: 200,
-          })
-        }
+  it('maps healthy backend components to operational states', async () => {
+    stubEndpoints({
+      status: 'ready',
+      components: {
+        postgres: 'ok',
+        redis: 'ok',
+        ai_initialized: 'ok',
+      },
+    })
 
-        return new Response(JSON.stringify(healthyReadiness), {
-          status: 200,
-        })
-      })
-    )
-  })
-
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('maps ready components', async () => {
     const result = await fetchSystemStatus()
 
-    expect(
-      result.checks.find((check) => check.id === 'postgres')?.state
-    ).toBe('operational')
-    expect(
-      result.checks.find((check) => check.id === 'redis')?.state
-    ).toBe('operational')
-    expect(
-      result.checks.find((check) => check.id === 'ai')?.state
-    ).toBe('operational')
+    expect(result.checks.find((check) => check.id === 'postgres')?.state)
+      .toBe('operational')
+    expect(result.checks.find((check) => check.id === 'redis')?.state)
+      .toBe('operational')
+    expect(result.checks.find((check) => check.id === 'ai')?.state)
+      .toBe('operational')
     expect(result.overall).toBe('operational')
   })
 
-  it('preserves component results on HTTP 503', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL) => {
-        if (String(input).endsWith('/health')) {
-          return new Response(JSON.stringify({ status: 'healthy' }), {
-            status: 200,
-          })
-        }
-
-        return new Response(
-          JSON.stringify({
-            status: 'not_ready',
-            components: {
-              postgres: 'ok',
-              redis: 'failed',
-              ai_initialized: 'ok',
-            },
-            errors: { redis: 'ConnectionError' },
-          }),
-          { status: 503 }
-        )
-      })
+  it('preserves component failures returned with HTTP 503', async () => {
+    stubEndpoints(
+      {
+        status: 'not_ready',
+        components: {
+          postgres: 'ok',
+          redis: 'failed',
+          ai_initialized: 'ok',
+        },
+        errors: { redis: 'ConnectionError' },
+      },
+      503
     )
 
     const result = await fetchSystemStatus()
 
-    expect(
-      result.checks.find((check) => check.id === 'postgres')?.state
-    ).toBe('operational')
-    expect(
-      result.checks.find((check) => check.id === 'redis')?.state
-    ).toBe('outage')
-    expect(
-      result.checks.find((check) => check.id === 'redis')?.diagnostic
-    ).toBe('ConnectionError')
-    expect(
-      result.checks.find((check) => check.id === 'ai')?.state
-    ).toBe('operational')
+    expect(result.checks.find((check) => check.id === 'postgres')?.state)
+      .toBe('operational')
+    expect(result.checks.find((check) => check.id === 'redis')?.state)
+      .toBe('outage')
+    expect(result.checks.find((check) => check.id === 'redis')?.diagnostic)
+      .toBe('ConnectionError')
+    expect(result.checks.find((check) => check.id === 'ai')?.state)
+      .toBe('operational')
     expect(result.overall).toBe('outage')
   })
 
   it('keeps missing component data unknown', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL) => {
-        if (String(input).endsWith('/health')) {
-          return new Response(JSON.stringify({ status: 'healthy' }), {
-            status: 200,
-          })
-        }
-
-        return new Response(JSON.stringify({ status: 'ready' }), {
-          status: 200,
-        })
-      })
-    )
+    stubEndpoints({ status: 'ready' })
 
     const result = await fetchSystemStatus()
 
-    expect(
-      result.checks.find((check) => check.id === 'postgres')?.state
-    ).toBe('unknown')
-    expect(
-      result.checks.find((check) => check.id === 'redis')?.state
-    ).toBe('unknown')
-    expect(
-      result.checks.find((check) => check.id === 'ai')?.state
-    ).toBe('unknown')
+    expect(result.checks.find((check) => check.id === 'postgres')?.state)
+      .toBe('unknown')
+    expect(result.checks.find((check) => check.id === 'redis')?.state)
+      .toBe('unknown')
+    expect(result.checks.find((check) => check.id === 'ai')?.state)
+      .toBe('unknown')
     expect(result.overall).toBe('unknown')
   })
 })
