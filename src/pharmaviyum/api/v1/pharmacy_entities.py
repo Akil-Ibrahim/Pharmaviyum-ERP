@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, status
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -66,10 +66,15 @@ class InventoryUpdate(BaseModel):
 
 
 class InventoryAdjustmentIn(BaseModel):
-    quantity_delta: int = Field(ne=0, ge=-100000, le=100000)
+    quantity_delta: int = Field(ge=-100000, le=100000)
     reason: str = Field(min_length=3, max_length=500)
     idempotency_key: str = Field(min_length=8, max_length=110)
 
+    @model_validator(mode="after")
+    def require_nonzero_delta(self):
+        if self.quantity_delta == 0:
+            raise ValueError("quantity_delta must be non-zero")
+        return self
 
 
 class PrescriptionIn(BaseModel):
