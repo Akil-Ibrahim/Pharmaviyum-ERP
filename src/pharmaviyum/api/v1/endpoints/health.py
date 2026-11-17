@@ -7,6 +7,7 @@ import sys
 
 from fastapi import APIRouter, Response
 
+from src.pharmaviyum.build_info import BUILD_COMMIT
 from src.pharmaviyum.ai.config import settings as application_settings
 from src.pharmaviyum.config import settings as auth_settings
 from src.pharmaviyum.core.config import settings
@@ -124,6 +125,7 @@ async def version(response: Response):
     response.headers["Expires"] = "0"
     return {
         "name": settings.APP_NAME,
+        "build_commit": BUILD_COMMIT,
         "version": settings.APP_VERSION,
         "environment": settings.ENVIRONMENT.value,
         "debug": settings.DEBUG,
