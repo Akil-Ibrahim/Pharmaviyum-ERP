@@ -75,10 +75,10 @@ Workflow выполняет следующие действия:
 - установку Bun (с fallback на package manager) и сборку `frontend/shadcn-admin`;
 - проверку успешного CI для точного commit SHA;
 - проверку change reference и обязательных deployment secrets;
-- запуск `uv run fastapi cloud deploy .`;
+- внедрение точного `DEPLOY_SHA` в пакет приложения как build metadata и запуск `uv run fastapi cloud deploy . --no-wait`;
 - read-only production catalog exclusion check;
 - проверку `/health` и `/ready`;
-- проверку, что `/version` сообщает `production` для API/core, application и authentication settings, debug выключен и runtime — CPython `3.15.2`;
+- проверку, что `/version` сообщает точный SHA развёрнутого commit, `production` для API/core, application и authentication settings, debug выключен и runtime — CPython `3.15.2`;
 - проверку, что `/settings/appearance` и `/system-status` возвращают SPA HTML;
 - проверку HTTP 401 для неверных credentials и неавторизованного POS search;
 - создание временной учётной записи pharmacist, проверку auth/profile и непустого поиска Omeprazole в catalog/product endpoints, затем попытку удалить именно эту учётную запись.
@@ -118,7 +118,7 @@ Endpoint `/ready` проверяет только PostgreSQL и Redis. AI initia
 
 Также проверьте:
 
-- `/version` сообщает production environment и ожидаемую версию Python;
+- `/version` сообщает точный SHA релиза, production environment и ожидаемую версию Python;
 - `/settings/appearance` и `/system-status` отдают собранный frontend (HTTP 200);
 - login и `/api/v1/auth/me` работают для разрешённой непривилегированной тестовой учётной записи;
 - POS endpoints отклоняют неавторизованные запросы;
