@@ -27,6 +27,58 @@ class TestHealthEndpoints:
         assert data["status"] == "healthy"
         assert "service" in data
 
+    def test_readiness_endpoint_reports_production_component_contract(
+        self, test_client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ):
+        """Expose the exact component contract consumed by production deploy gates."""
+        from src.pharmaviyum.api.v1.endpoints import health as health_endpoint
+        from src.pharmaviyum.core.health import HealthCheckResult, HealthStatus
+
+        async def healthy_database():
+            return HealthCheckResult(name="database", status=HealthStatus.HEALTHY)
+
+        async def healthy_redis():
+            return HealthCheckResult(name="redis", status=HealthStatus.HEALTHY)
+
+        monkeypatch.setattr(health_endpoint, "check_database", healthy_database)
+        monkeypatch.setattr(health_endpoint, "check_redis", healthy_redis)
+        test_client.app.state.ai_initialized = True
+
+        response = test_client.get("/ready")
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "status": "ready",
+            "components": {
+                "postgres": "ok",
+                "redis": "ok",
+                "ai_initialized": "ok",
+            },
+        }
+
+    def test_readiness_endpoint_fails_closed_when_ai_is_not_initialized(
+        self, test_client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ):
+        """Never report ready while the AI container is unavailable."""
+        from src.pharmaviyum.api.v1.endpoints import health as health_endpoint
+        from src.pharmaviyum.core.health import HealthCheckResult, HealthStatus
+
+        async def healthy_database():
+            return HealthCheckResult(name="database", status=HealthStatus.HEALTHY)
+
+        async def healthy_redis():
+            return HealthCheckResult(name="redis", status=HealthStatus.HEALTHY)
+
+        monkeypatch.setattr(health_endpoint, "check_database", healthy_database)
+        monkeypatch.setattr(health_endpoint, "check_redis", healthy_redis)
+        test_client.app.state.ai_initialized = False
+
+        response = test_client.get("/ready")
+
+        assert response.status_code == 503
+        assert response.json()["status"] == "not_ready"
+        assert response.json()["components"]["ai_initialized"] == "error"
+
     def test_root_endpoint(self, test_client: TestClient):
         """Test root endpoint returns API info."""
         response = test_client.get("/")

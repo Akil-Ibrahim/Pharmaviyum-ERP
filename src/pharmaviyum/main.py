@@ -22,6 +22,7 @@ from src.pharmaviyum.api.exceptions import (
 from src.pharmaviyum.api.middleware import LoggingMiddleware, RequestIDMiddleware
 from src.pharmaviyum.api.v1 import api_v1_router
 from src.pharmaviyum.api.v1.endpoints.health import router as health_router
+from src.pharmaviyum.core.health import register_all_health_checks
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.core.static_files import setup_static_files
 from src.pharmaviyum.database import AsyncSessionLocal
@@ -36,6 +37,8 @@ from src.pharmaviyum.redis_client import close_redis, get_redis
 async def lifespan(app: FastAPI):
     """Initialize shared infrastructure once for the application lifetime."""
     logger.info("Starting Pharmaviyum AI Application")
+    register_all_health_checks()
+    app.state.ai_initialized = False
     configure_opentelemetry(app)
 
     try:
@@ -47,6 +50,7 @@ async def lifespan(app: FastAPI):
             redis=redis_client,
             db_session_factory=AsyncSessionLocal,
         )
+        app.state.ai_initialized = True
         logger.info("Application dependencies initialized")
     except Exception:
         logger.exception("Failed to initialize critical application dependencies")

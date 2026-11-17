@@ -5,13 +5,18 @@ Best practice 2026: Kubernetes-compatible health checks
 
 import sys
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Request, Response
 
 from src.pharmaviyum.ai.config import settings as application_settings
 from src.pharmaviyum.build_info import BUILD_COMMIT
 from src.pharmaviyum.config import settings as auth_settings
 from src.pharmaviyum.core.config import settings
-from src.pharmaviyum.core.health import HealthStatus, health_checker
+from src.pharmaviyum.core.health import (
+    HealthStatus,
+    check_database,
+    check_redis,
+    health_checker,
+)
 from src.pharmaviyum.core.metrics import APP_HEALTH_STATUS, get_metrics
 
 router = APIRouter(tags=["health"])
@@ -52,46 +57,32 @@ async def health_check():
 
 
 @router.get("/ready")
-async def readiness_check():
+async def readiness_check(request: Request):
     """
-    Readiness probe endpoint
+    Readiness probe for production dependencies.
 
-    Checks if application is ready to accept traffic.
-    Used by Kubernetes readinessProbe.
-
-    Returns:
-        200 if ready
-        503 if not ready
+    Checks PostgreSQL and Redis with real read-only probes and confirms that
+    the application AI container completed startup initialization.
     """
-    # For readiness, we check only critical dependencies
-    critical_checks = ["database", "redis"]
+    database_result, redis_result = await check_database(), await check_redis()
+    ai_initialized = bool(getattr(request.app.state, "ai_initialized", False))
 
-    results = []
-    all_healthy = True
-
-    for check_name in critical_checks:
-        result = await health_checker.check(check_name)
-        results.append(result)
-        if result.status != HealthStatus.HEALTHY:
-            all_healthy = False
-
-    status_code = 200 if all_healthy else 503
+    components = {
+        "postgres": "ok" if database_result.status == HealthStatus.HEALTHY else "error",
+        "redis": "ok" if redis_result.status == HealthStatus.HEALTHY else "error",
+        "ai_initialized": "ok" if ai_initialized else "error",
+    }
+    all_healthy = all(value == "ok" for value in components.values())
 
     return Response(
         content=__import__("json").dumps(
             {
                 "status": "ready" if all_healthy else "not_ready",
-                "checks": {
-                    r.name: {
-                        "status": r.status.value,
-                        "message": r.message,
-                    }
-                    for r in results
-                },
+                "components": components,
             },
             ensure_ascii=False,
         ),
-        status_code=status_code,
+        status_code=200 if all_healthy else 503,
         media_type="application/json",
     )
 
