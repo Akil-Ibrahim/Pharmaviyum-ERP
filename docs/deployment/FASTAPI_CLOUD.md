@@ -20,6 +20,8 @@ Pull request
 
 The workflow uses the exact commit selected on `main`, verifies successful CI for that same SHA, and serializes production deployments through a concurrency group.
 
+Coding-agent setup and the FastAPI Cloud plugin are documented in [Library Skills and FastAPI agent tooling](../development/library-skills.md). The plugin may help inspect logs or prepare cloud operations, but it must not bypass this repository's manual production workflow, exact-commit CI gate, production checks, or approval controls. Do not deploy Pharmaviyum production directly from an agent session.
+
 ## 2. GitHub Actions secrets
 
 Configure the following as repository Actions secrets or secrets on the protected GitHub Actions `production` environment:
