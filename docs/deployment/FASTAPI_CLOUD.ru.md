@@ -18,6 +18,8 @@ Pull request
 
 Workflow использует выбранный commit из `main`, проверяет успешный CI именно для этого SHA и сериализует production deployments через concurrency group.
 
+Настройка coding agents и плагина FastAPI Cloud описана в [руководстве Library Skills и инструментов FastAPI для ИИ-агентов](../development/library-skills.ru.md). Плагин может помогать просматривать логи и готовить облачные операции, но не должен обходить ручной production workflow репозитория, CI gate по точному commit SHA, production-проверки или approvals. Не развёртывайте Pharmaviyum production напрямую из сессии агента.
+
 ## 2. GitHub Actions secrets
 
 Добавьте следующие значения как repository Actions secrets или secrets защищённого GitHub Actions environment `production`:
