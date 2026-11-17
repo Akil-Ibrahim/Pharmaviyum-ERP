@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          printf 'BUILD_COMMIT = "%s"\\n' "$DEPLOY_SHA" > src/pharmaviyum/build_info.py
+          printf 'BUILD_COMMIT = "%s"\n' "$DEPLOY_SHA" > src/pharmaviyum/build_info.py
           grep -Fx "BUILD_COMMIT = \"$DEPLOY_SHA\"" src/pharmaviyum/build_info.py
 
       - name: Set up Bun
@@ -225,7 +225,7 @@ jobs:
             sleep 5
           done
           echo "Production runtime did not switch to production on CPython 3.15.2 within five minutes."
-          printf '%s\\n' "${runtime_info:-No /version response}" | jq '{environment, application_environment, auth_environment, debug, auth_debug, python_version}' 2>/dev/null || true
+          printf '%s\\n' "${runtime_info:-No /version response}" | jq '{build_commit, environment, application_environment, auth_environment, debug, auth_debug, python_version, python_implementation}' 2>/dev/null || true
           exit 1
 
       # Reference catalog contents are validated by dedicated data-import tests.
