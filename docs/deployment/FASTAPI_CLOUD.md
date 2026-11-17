@@ -76,10 +76,10 @@ The workflow:
 - installs Bun (with a package-manager fallback) and builds `frontend/shadcn-admin`;
 - verifies CI succeeded for the exact commit SHA;
 - validates the change reference and required deployment secrets;
-- submits the deployment with `uv run fastapi cloud deploy . --no-wait`, then waits for the live `/version` endpoint to report the new runtime before running production smoke checks;
+- injects the immutable `DEPLOY_SHA` into the packaged application as build metadata, submits the deployment with `uv run fastapi cloud deploy . --no-wait`, and requires the live `/version` endpoint to report that exact SHA before running production smoke checks;
 - performs a read-only production catalog exclusion check;
 - verifies `/health` and `/ready`;
-- verifies `/version` reports `production` for API/core, application, and authentication settings, confirms API and authentication debug modes are disabled, and checks the FastAPI Cloud managed runtime is exactly CPython `3.15.2`;
+- verifies `/version` reports the exact deployed commit SHA, `production` for API/core, application, and authentication settings, confirms API and authentication debug modes are disabled, and checks the FastAPI Cloud managed runtime is exactly CPython `3.15.2`;
 - verifies `/settings/appearance` and `/system-status` return the SPA HTML;
 - verifies invalid credentials return HTTP 401 and unauthenticated POS search is protected by HTTP 401;
 - creates a temporary pharmacist account, verifies authentication/profile and non-empty Omeprazole catalog/product searches, and attempts to remove the exact temporary account.
@@ -118,7 +118,7 @@ Expected readiness response:
 The `/ready` endpoint checks only PostgreSQL and Redis. AI initialization is a startup-critical dependency in the production application lifespan; it is not a field in the `/ready` response. The deployment workflow separately verifies `/version` and the application startup outcome.
 
 Also verify:
-- `/version` reports the production environment and the expected Python runtime;
+- `/version` reports the exact release commit SHA, production environment, and expected Python runtime;
 - `/settings/appearance` and `/system-status` serve the built frontend (HTTP 200);
 - login and `/api/v1/auth/me` work with an authorized non-privileged test account;
 - POS endpoints reject unauthenticated requests;
