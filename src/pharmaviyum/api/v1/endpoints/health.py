@@ -86,6 +86,7 @@ async def readiness_check(request: Request):
         media_type="application/json",
     )
 
+
 @router.get("/metrics")
 async def metrics():
     """
