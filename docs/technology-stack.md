@@ -8,7 +8,7 @@ This section explains not only which technologies are present, but why Pharmaviy
 
 | Technology | Definition | Why Pharmaviyum uses it |
 |---|---|---|
-| **Python 3.15** | High-level, general-purpose programming language. | Implements the backend, pharmacy domain rules, integrations, background jobs and Mortarium AI services. The application runtime is pinned exactly to CPython `==3.15.0` in `pyproject.toml` and `.python-version`; CI and Docker use the same patch. FastAPI Cloud production must independently report `3.15.2` before a rollout is considered successful. |
+| **Python 3.15** | High-level, general-purpose programming language. | Implements the backend, pharmacy domain rules, integrations, background jobs and Mortarium AI services. The application runtime is pinned exactly to CPython `==3.15.0` in `pyproject.toml` and `.python-version`; CI and Docker use the same patch. FastAPI Cloud production must independently report the exact target `3.15.0` and expected build SHA before a rollout is considered successful. |
 | **FastAPI 0.163.1** | Python framework for building APIs using type hints and ASGI. | Exposes the ERP/CRM and AI endpoints, validates requests, applies dependency-based authorization and publishes the OpenAPI contract. |
 | **Uvicorn 0.54.0** | ASGI web server. | Runs the FastAPI application and handles asynchronous HTTP connections. FastAPI is the application framework; Uvicorn is the server process. |
 | **Pydantic 2.14.3** | Data validation and serialization library. | Defines and validates request/response schemas and structured configuration data, including medication-related fields. |
@@ -159,7 +159,7 @@ This page records the versions declared by the repository configuration. It is n
 
 | Area | Version declared in repository | Source of truth |
 |---|---|---|
-| Python | Application runtime pinned exactly to `==3.15.0` in `pyproject.toml` and `.python-version`; CI, Docker and the deployment gate require CPython 3.15.0. Last known FastAPI Cloud `/version` check (2026-11-15) reported 3.15.0, so production on 3.15.2 is not yet verified. Ansible controller CI separately uses Python 3.14.10 for ansible-core 2.21. | `pyproject.toml`, `.python-version`, `.github/workflows/ci.yml`, `.github/workflows/deploy-fastapi-cloud.yml`, `.github/workflows/ansible-quality.yml`, `Dockerfile` |
+| Python | Application runtime pinned exactly to `==3.15.0` in `pyproject.toml` and `.python-version`; CI, Docker and the deployment gate require CPython 3.15.0. The temporary 3.15.0 pin matches the last known FastAPI Cloud `/version` result (2026-11-15); a new rollout still requires live confirmation of the expected build SHA, CPython 3.15.0, health and readiness. Ansible controller CI separately uses Python 3.14.10 for ansible-core 2.21. | `pyproject.toml`, `.python-version`, `.github/workflows/ci.yml`, `.github/workflows/deploy-fastapi-cloud.yml`, `.github/workflows/ansible-quality.yml`, `Dockerfile` |
 | FastAPI | `0.163.1` | `pyproject.toml` and `uv.lock` |
 | Uvicorn | `0.54.0` | `pyproject.toml` |
 | Pydantic | `2.14.3` | `pyproject.toml` |
@@ -191,7 +191,7 @@ This page records the versions declared by the repository configuration. It is n
 | Vitest | `^4.1.11` | `frontend/shadcn-admin/package.json` |
 | Mailpit | `1.33.1` local SMTP sink for development; production SMTP is configured separately | `docker-compose.yml` |
 
-Exact resolved Python package versions are recorded in `uv.lock`. The application interpreter is pinned to CPython 3.15.0 in `pyproject.toml` and `.python-version`. FastAPI 0.163.1 was released on 2026-11-15 and includes an upstream OpenAPI fix for response models with nested computed fields ([FastAPI release notes](https://fastapi.tiangolo.com/release-notes/)). Python 3.15.2 was released on 2026-10-25 and includes security fixes ([Python 3.15.2 release](https://www.python.org/downloads/release/python-3152/)). The last known hosted `/version` result was CPython 3.15.0 on 2026-11-15; do not describe production as running 3.15.2 until the deployment endpoint confirms it. Frontend dependency ranges are declared in `frontend/shadcn-admin/package.json`; do not assume a version range means a particular patch release is installed.
+Exact resolved Python package versions are recorded in `uv.lock`. The application interpreter is pinned to CPython 3.15.0 in `pyproject.toml` and `.python-version`. FastAPI 0.163.1 was released on 2026-11-15 and includes an upstream OpenAPI fix for response models with nested computed fields ([FastAPI release notes](https://fastapi.tiangolo.com/release-notes/)). Python 3.15.2 was released on 2026-10-25 and includes security fixes ([Python 3.15.2 release](https://www.python.org/downloads/release/python-3152/)). The last known hosted `/version` result was CPython 3.15.0 on 2026-11-15; do not describe production as running the new build until `/version` confirms the expected SHA and CPython 3.15.0. Frontend dependency ranges are declared in `frontend/shadcn-admin/package.json`; do not assume a version range means a particular patch release is installed.
 
 ## Tooling
 
