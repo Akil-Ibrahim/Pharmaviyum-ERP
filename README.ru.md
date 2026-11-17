@@ -6,7 +6,7 @@
 
 # Pharmaviyum — аптечная ERP/CRM-система
 
-![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.15-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162.5-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-dev%2FCI-blue) ![React](https://img.shields.io/badge/React-19.3.1-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.3.8-646CFF)
+![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.15.2-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.163.1-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-dev%2FCI-blue) ![React](https://img.shields.io/badge/React-19.3.1-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.3.8-646CFF)
 
 [English](README.md) · **Русский**
 
@@ -362,7 +362,7 @@ AI-слой находится в `src/pharmaviyum/ai` и предоставля
 
 ### Требования
 
-- Python 3.15 (ограничение проекта: `>=3.15,<3.16`; Docker/CI проверяют 3.15.2);
+- CPython 3.15.2 (точная версия зафиксирована в `pyproject.toml` и `.python-version`);
 - `uv` для установки и запуска Python-зависимостей;
 - Docker и Docker Compose;
 - Bun для frontend toolchain.
