@@ -35,6 +35,13 @@ jobs:
         with:
           ref: ${{ env.DEPLOY_SHA }}
 
+      - name: Embed immutable source commit in deployment package
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'BUILD_COMMIT = "%s"\n' "$DEPLOY_SHA" > src/pharmaviyum/build_info.py
+          grep -Fx "BUILD_COMMIT = \"$DEPLOY_SHA\"" src/pharmaviyum/build_info.py
+
       - name: Set up Bun
         id: setup-bun
         uses: oven-sh/setup-bun@v2
@@ -72,7 +79,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.13.8"
-          python-version: "3.15.2"
+          python-version: "3.15.0"
           enable-cache: true
 
       - name: Wait for CI to pass for this exact main commit
@@ -201,13 +208,14 @@ jobs:
               -H "Cache-Control: no-cache, no-store" \
               -H "Pragma: no-cache" \
               "$base_url/version?deploy_sha=${DEPLOY_SHA}&attempt=${attempt}" || true)"
-            if printf '%s' "$runtime_info" | jq -e '
+            if printf '%s' "$runtime_info" | jq -e --arg expected_sha "$DEPLOY_SHA" '
+              .build_commit == $expected_sha and
               .environment == "production" and
               .application_environment == "production" and
               .auth_environment == "production" and
               .debug == false and
               .auth_debug == false and
-              (.python_version == "3.15.2") and
+              (.python_version == "3.15.0") and
               .python_implementation == "cpython"
             ' >/dev/null 2>&1; then
               echo "New production runtime is active."
@@ -216,8 +224,8 @@ jobs:
             echo "Waiting for the new production runtime (attempt ${attempt}/60)."
             sleep 5
           done
-          echo "Production runtime did not switch to production on CPython 3.15.2 within five minutes."
-          printf '%s\\n' "${runtime_info:-No /version response}" | jq '{environment, application_environment, auth_environment, debug, auth_debug, python_version}' 2>/dev/null || true
+          echo "Production runtime did not switch to production on CPython 3.15.0 within five minutes."
+          printf '%s\\n' "${runtime_info:-No /version response}" | jq '{build_commit, environment, application_environment, auth_environment, debug, auth_debug, python_version, python_implementation}' 2>/dev/null || true
           exit 1
 
       # Reference catalog contents are validated by dedicated data-import tests.
@@ -240,16 +248,17 @@ jobs:
 
           runtime_status="$(curl --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors \
             -o /tmp/version.json -w '%{http_code}' "$base_url/version")"
-          if [ "$runtime_status" != "200" ] || ! jq -e '
+          if [ "$runtime_status" != "200" ] || ! jq -e --arg expected_sha "$DEPLOY_SHA" '
+            .build_commit == $expected_sha and
             .environment == "production" and
             .application_environment == "production" and
             .auth_environment == "production" and
             .debug == false and
             .auth_debug == false and
-            (.python_version == "3.15.2") and
+            (.python_version == "3.15.0") and
             .python_implementation == "cpython"
           ' /tmp/version.json >/dev/null; then
-            echo "Production runtime assertion failed: HTTP $runtime_status; expected production mode, debug=false, and CPython 3.15.2."
+            echo "Production runtime assertion failed: HTTP $runtime_status; expected production mode, debug=false, and CPython 3.15.0."
             cat /tmp/version.json
             exit 1
           fi

@@ -75,10 +75,10 @@ Workflow выполняет следующие действия:
 - установку Bun (с fallback на package manager) и сборку `frontend/shadcn-admin`;
 - проверку успешного CI для точного commit SHA;
 - проверку change reference и обязательных deployment secrets;
-- запуск `uv run fastapi cloud deploy .`;
+- внедрение точного `DEPLOY_SHA` в пакет приложения как build metadata и запуск `uv run fastapi cloud deploy . --no-wait`;
 - read-only production catalog exclusion check;
 - проверку `/health` и `/ready`;
-- проверку, что `/version` сообщает `production` для API/core, application и authentication settings, debug выключен и runtime — CPython `3.15.2`;
+- проверку, что `/version` сообщает точный SHA развёрнутого commit, `production` для API/core, application и authentication settings, debug выключен и runtime — CPython `3.15.0`;
 - проверку, что `/settings/appearance` и `/system-status` возвращают SPA HTML;
 - проверку HTTP 401 для неверных credentials и неавторизованного POS search;
 - создание временной учётной записи pharmacist, проверку auth/profile и непустого поиска Omeprazole в catalog/product endpoints, затем попытку удалить именно эту учётную запись.
@@ -118,7 +118,7 @@ Endpoint `/ready` проверяет только PostgreSQL и Redis. AI initia
 
 Также проверьте:
 
-- `/version` сообщает production environment и ожидаемую версию Python;
+- `/version` сообщает точный SHA релиза, production environment и ожидаемую версию Python;
 - `/settings/appearance` и `/system-status` отдают собранный frontend (HTTP 200);
 - login и `/api/v1/auth/me` работают для разрешённой непривилегированной тестовой учётной записи;
 - POS endpoints отклоняют неавторизованные запросы;
@@ -131,7 +131,7 @@ Endpoint `/ready` проверяет только PostgreSQL и Redis. AI initia
 ## 7. Ограничения runtime и эксплуатационные заметки
 
 - Native deployment FastAPI Cloud использует Python project configuration; workflow отдельно собирает React frontend.
-- Приложение фиксирует `requires-python = "==3.15.2"` в `pyproject.toml` и `3.15.2` в корневом `.python-version`. CI, Docker и deployment workflow требуют точную версию CPython 3.15.2; deployment gate отклоняет любой другой runtime, указанный в `/version`. Последняя известная проверка hosted `/version` от 2026-11-15 показывала CPython 3.15.0, а предыдущая попытка strict build на 3.15.2 завершилась ошибкой: в managed interpreter catalog FastAPI Cloud не было этой версии. Поэтому нельзя считать production работающим на 3.15.2, пока новая deployment-попытка и live `/version` независимо это не подтвердят; если у провайдера всё ещё нет CPython 3.15.2, deployment заблокирован. Успешная CI compatibility job подтверждает установку зависимостей и critical imports в CI, но не доступность managed runtime у провайдера. Production считается обновлённым только после подтверждения CPython 3.15.2 через `/version` и успешных startup, `/health`, `/ready`, authentication и POS smoke checks. Major version Neon PostgreSQL этим обновлением приложения не меняется.
+- Приложение фиксирует `requires-python = "==3.15.0"` в `pyproject.toml` и `3.15.0` в корневом `.python-version`. CI, Docker и deployment workflow требуют строго CPython 3.15.0 — эта версия совпадает с последним известным результатом FastAPI Cloud `/version` от 2026-11-15. Предыдущая попытка принудительно использовать CPython 3.15.2 не переключила managed runtime, поскольку этого patch-релиза не было в каталоге интерпретаторов провайдера. Это временная фиксация ради совместимости, а не утверждение, что 3.15.0 — самый новый patch; переход на 3.15.2 выполним после появления поддержки в FastAPI Cloud и успешного полного CI/runtime-проверочного цикла. Production нельзя считать обновлённым, пока `/version` не подтвердит ожидаемый build SHA и CPython 3.15.0, а startup, `/health`, `/ready`, authentication и POS protection smoke checks не пройдут. Major version Neon PostgreSQL этим обновлением приложения не меняется.
 - Dockerfile устанавливает Tesseract и OCR language packs; native FastAPI Cloud автоматически эти системные пакеты не устанавливает. Для OCR требуется отдельно проверенный runtime или внешний OCR service.
 - PostgreSQL/pgvector и Redis provisioned отдельно; deployment приложения их не создаёт.
 - Celery worker/Beat не запускаются web deployment workflow. При необходимости развёртывайте и мониторьте worker отдельно.

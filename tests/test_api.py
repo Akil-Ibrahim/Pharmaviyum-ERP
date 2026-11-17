@@ -54,6 +54,7 @@ class TestHealthEndpoints:
         assert data["application_environment"] == application_settings.environment
         assert data["auth_environment"] == auth_settings.ENVIRONMENT
         assert data["auth_debug"] is auth_settings.DEBUG
+        assert data["build_commit"] == "unknown"
 
     def test_metrics_endpoint(self, test_client: TestClient):
         """Test Prometheus metrics endpoint."""

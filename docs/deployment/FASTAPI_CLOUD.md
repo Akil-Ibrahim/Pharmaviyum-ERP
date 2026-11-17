@@ -76,10 +76,10 @@ The workflow:
 - installs Bun (with a package-manager fallback) and builds `frontend/shadcn-admin`;
 - verifies CI succeeded for the exact commit SHA;
 - validates the change reference and required deployment secrets;
-- submits the deployment with `uv run fastapi cloud deploy . --no-wait`, then waits for the live `/version` endpoint to report the new runtime before running production smoke checks;
+- injects the immutable `DEPLOY_SHA` into the packaged application as build metadata, submits the deployment with `uv run fastapi cloud deploy . --no-wait`, and requires the live `/version` endpoint to report that exact SHA before running production smoke checks;
 - performs a read-only production catalog exclusion check;
 - verifies `/health` and `/ready`;
-- verifies `/version` reports `production` for API/core, application, and authentication settings, confirms API and authentication debug modes are disabled, and checks the FastAPI Cloud managed runtime is exactly CPython `3.15.2`;
+- verifies `/version` reports the exact deployed commit SHA, `production` for API/core, application, and authentication settings, confirms API and authentication debug modes are disabled, and checks the FastAPI Cloud managed runtime is exactly CPython `3.15.0`;
 - verifies `/settings/appearance` and `/system-status` return the SPA HTML;
 - verifies invalid credentials return HTTP 401 and unauthenticated POS search is protected by HTTP 401;
 - creates a temporary pharmacist account, verifies authentication/profile and non-empty Omeprazole catalog/product searches, and attempts to remove the exact temporary account.
@@ -118,7 +118,7 @@ Expected readiness response:
 The `/ready` endpoint checks only PostgreSQL and Redis. AI initialization is a startup-critical dependency in the production application lifespan; it is not a field in the `/ready` response. The deployment workflow separately verifies `/version` and the application startup outcome.
 
 Also verify:
-- `/version` reports the production environment and the expected Python runtime;
+- `/version` reports the exact release commit SHA, production environment, and expected Python runtime;
 - `/settings/appearance` and `/system-status` serve the built frontend (HTTP 200);
 - login and `/api/v1/auth/me` work with an authorized non-privileged test account;
 - POS endpoints reject unauthenticated requests;
@@ -131,7 +131,7 @@ A green GitHub Actions workflow is necessary but does not prove that all pharmac
 ## 7. Runtime limitations and operational notes
 
 - FastAPI Cloud native deployment uses the Python project configuration; the workflow explicitly builds the React frontend.
-- The application pins `requires-python = "==3.15.2"` in `pyproject.toml` and `3.15.2` in the root `.python-version`. CI, Docker and the deployment workflow require the exact CPython 3.15.2 patch; the deployment gate rejects any other runtime reported by `/version`. The last known hosted `/version` check (2026-11-15) reported CPython 3.15.0, and an earlier strict 3.15.2 build failed because the FastAPI Cloud managed interpreter catalog did not contain that patch. Therefore production must not be described as running 3.15.2 until a new deployment and live `/version` check confirm it; deployment remains blocked if the provider still lacks CPython 3.15.2. A successful CI compatibility job proves dependency installation and critical imports in CI, not the provider's managed runtime availability. Production is not considered upgraded until `/version` reports CPython 3.15.2 and application startup, `/health`, `/ready`, authentication, and POS smoke checks all pass. The production Neon PostgreSQL major version is not changed by this application upgrade.
+- The application pins `requires-python = "==3.15.0"` in `pyproject.toml` and `3.15.0` in the root `.python-version`. CI, Docker and the deployment workflow require exactly CPython 3.15.0, matching the last known FastAPI Cloud `/version` result (2026-11-15). The earlier attempt to force CPython 3.15.2 did not switch the managed runtime because that patch was unavailable in the provider's interpreter catalog. This is a temporary compatibility pin, not a claim that 3.15.0 is the newest patch; move to 3.15.2 after FastAPI Cloud supports it and the full CI/runtime verification passes. Production is not considered updated until `/version` reports the expected build SHA and CPython 3.15.0, and startup, `/health`, `/ready`, authentication, and POS protection smoke checks pass. The production Neon PostgreSQL major version is not changed by this application upgrade.
 - The Dockerfile installs Tesseract and OCR language packs; native FastAPI Cloud does not automatically install those system packages. OCR features requiring the Tesseract executable need a separately validated runtime or external OCR service.
 - PostgreSQL/pgvector and Redis are separately provisioned services; deploying the app does not create them.
 - Celery worker/Beat processes are not started by the web deployment workflow. Deploy and monitor workers separately where required.
