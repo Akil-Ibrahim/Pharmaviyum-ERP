@@ -8,8 +8,8 @@
 
 | Технология | Определение | Для чего используется в Pharmaviyum |
 |---|---|---|
-| **Python 3.15** | Высокоуровневый язык программирования общего назначения. | Реализует backend, аптечные доменные правила, интеграции, фоновые задачи и сервисы Mortarium AI. Проект требует Python `>=3.15,<3.16`; CI/Docker ориентированы на Python 3.15.2. |
-| **FastAPI 0.162.5** | Python-фреймворк для создания API на основе type hints и ASGI. | Предоставляет ERP/CRM- и AI-endpoints, проверяет запросы, применяет авторизацию через зависимости и публикует контракт OpenAPI. |
+| **Python 3.15** | Высокоуровневый язык программирования общего назначения. | Реализует backend, аптечные доменные правила, интеграции, фоновые задачи и сервисы Mortarium AI. Версия runtime приложения зафиксирована строго как CPython `==3.15.2` в `pyproject.toml` и `.python-version`; CI и Docker используют тот же patch-релиз. Перед признанием rollout успешным FastAPI Cloud должен независимо подтвердить `3.15.2`. |
+| **FastAPI 0.163.1** | Python-фреймворк для создания API на основе type hints и ASGI. | Предоставляет ERP/CRM- и AI-endpoints, проверяет запросы, применяет авторизацию через зависимости и публикует контракт OpenAPI. |
 | **Uvicorn 0.54.0** | ASGI web-сервер. | Запускает FastAPI и обрабатывает асинхронные HTTP-соединения. FastAPI — фреймворк приложения, Uvicorn — серверный процесс. |
 | **Pydantic 2.14.3** | Библиотека валидации и сериализации данных. | Определяет и проверяет схемы запросов/ответов и структурированные настройки, включая поля лекарственных препаратов. |
 | **Pydantic Settings 2.16.2** | Управление настройками на основе Pydantic. | Загружает типизированную конфигурацию из переменных окружения и поддерживаемых источников. Секреты хранятся в secret store платформы, а не в Git. |
@@ -159,8 +159,8 @@ Frontend-зависимости определяются в следующих �
 
 | Область | Версия, объявленная в репозитории | Источник истины |
 |---|---|---|
-| Python | `>=3.15,<3.16`; app CI и Docker ориентированы на проверенную версию Python 3.15.2. FastAPI Cloud может разрешить доступный patch-релиз 3.15.x. Ansible controller CI использует отдельный Python 3.14.10, поддерживаемый ansible-core 2.21 | `pyproject.toml`, `.github/workflows/ci.yml`, `.github/workflows/ansible-quality.yml`, `Dockerfile` |
-| FastAPI | `0.162.5` | `pyproject.toml` |
+| Python | Runtime приложения строго зафиксирован как `==3.15.2` в `pyproject.toml` и `.python-version`; CI, Docker и deployment gate требуют CPython 3.15.2. Последняя известная проверка FastAPI Cloud `/version` от 2026-11-15 показала 3.15.0, поэтому production на 3.15.2 пока не подтверждён. Ansible controller CI отдельно использует Python 3.14.10 для ansible-core 2.21. | `pyproject.toml`, `.python-version`, `.github/workflows/ci.yml`, `.github/workflows/deploy-fastapi-cloud.yml`, `.github/workflows/ansible-quality.yml`, `Dockerfile` |
+| FastAPI | `0.163.1` | `pyproject.toml` и `uv.lock` |
 | Uvicorn | `0.54.0` | `pyproject.toml` |
 | Pydantic | `2.14.3` | `pyproject.toml` |
 | Pydantic Settings | `2.16.2` | `pyproject.toml` |
@@ -191,7 +191,7 @@ Frontend-зависимости определяются в следующих �
 | Vitest | `^4.1.11` | `frontend/shadcn-admin/package.json` |
 | Mailpit | `1.33.1` — локальный SMTP sink для разработки; production SMTP настраивается отдельно | `docker-compose.yml` |
 
-Точные разрешённые версии Python записаны в `uv.lock`. Диапазоны frontend-зависимостей объявлены в `frontend/shadcn-admin/package.json`; диапазон версий не означает, что установлена конкретная patch-версия.
+Точные разрешённые версии Python-пакетов записаны в `uv.lock`. Runtime приложения зафиксирован на CPython 3.15.2 в `pyproject.toml` и `.python-version`. FastAPI 0.163.1 выпущен 2026-11-15 и содержит upstream-исправление OpenAPI для response model с вложенными computed fields ([release notes FastAPI](https://fastapi.tiangolo.com/release-notes/)). Python 3.15.2 выпущен 2026-10-25 и включает исправления безопасности ([релиз Python 3.15.2](https://www.python.org/downloads/release/python-3152/)). Последний известный результат hosted `/version` от 2026-11-15 показывал CPython 3.15.0; не указывайте 3.15.2 как production runtime, пока это не подтверждено deployment endpoint. Диапазоны frontend-зависимостей объявлены в `frontend/shadcn-admin/package.json`; диапазон версий не означает, что установлена конкретная patch-версия.
 
 ## Инструменты
 

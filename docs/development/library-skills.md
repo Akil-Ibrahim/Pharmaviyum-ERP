@@ -4,7 +4,7 @@ Pharmaviyum uses [Library Skills](https://library-skills.io/) to discover agent 
 
 These instructions are versioned with the libraries that provide them. They help coding agents follow supported APIs and current library conventions; they do not execute application code or change production dependencies.
 
-The Python discovery audit currently finds the official `fastapi` skill bundled by FastAPI 0.162.5. Pharmaviyum exposes it at `.agents/skills/fastapi` through a relative, repository-managed symlink to the installed FastAPI package. This keeps the guidance aligned with the FastAPI version installed by the project. The skill is sourced from the official FastAPI distribution, not copied into the repository. The frontend scan currently reports no package-provided skills.
+The Python discovery audit currently finds the official `fastapi` skill bundled by FastAPI 0.163.1. Pharmaviyum exposes it at `.agents/skills/fastapi` through a relative, repository-managed symlink to the installed FastAPI package. This keeps the guidance aligned with the FastAPI version installed by the project. The skill is sourced from the official FastAPI distribution, not copied into the repository. The frontend scan currently reports no package-provided skills.
 
 ## Local setup
 

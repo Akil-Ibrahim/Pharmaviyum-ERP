@@ -7,7 +7,7 @@ This change set upgrades the application build and test stack. It does not deplo
 ## Target versions
 
 - CPython 3.15.2 for CI/Docker; FastAPI Cloud native runtime uses an available managed CPython 3.15.x patch release
-- FastAPI 0.162.5
+- FastAPI 0.163.1 (released 2026-11-15; OpenAPI fix for response models with nested computed fields)
 - Pydantic 2.14.3 / pydantic-settings 2.16.2
 - SQLAlchemy 2.1.8, Alembic 1.20.1
 - asyncpg 0.32.0, psycopg 3.3.9
@@ -23,7 +23,7 @@ Versions are pinned in the dependency manifests and image tags where practical. 
 
 ## Compatibility gates
 
-CI and Docker use CPython 3.15.2 as the reproducible application test/build target. FastAPI Cloud's native builder uses `requires-python = ">=3.15,<3.16"` and `.python-version = 3.15` so it can select an available managed CPython 3.15.x patch. The last verified hosted runtime reported 3.15.0 on 2026-11-15; a strict 3.15.2 hosted build then failed because that patch was not present in the platform's managed interpreter catalog. Therefore the hosted production patch is not guaranteed to be 3.15.2. The optional FastEmbed evaluation helper is excluded on Python 3.15 because its ONNX Runtime dependency does not publish a matching CPython 3.15 wheel yet. CI must prove that native extensions, async database drivers, Celery workers, AI dependencies, and the FastAPI application install and execute successfully on CPython 3.15.2; the production rollout gate must independently verify the actual FastAPI Cloud CPython 3.15.x runtime.
+The application manifest now pins `requires-python = "==3.15.2"`, and the root `.python-version` is `3.15.2`. CI and Docker use CPython 3.15.2 as the reproducible application test/build target; the FastAPI Cloud deployment workflow also fails closed unless the live `/version` endpoint reports CPython 3.15.2. The last known hosted runtime check (2026-11-15) reported 3.15.0, and an earlier strict 3.15.2 hosted build failed because that patch was absent from the platform's managed interpreter catalog. Therefore production must not be described as running 3.15.2 until a new deployment and live runtime check confirm it; the exact-patch deployment remains blocked while the provider lacks that interpreter. The optional FastEmbed evaluation helper is excluded on Python 3.15 because its ONNX Runtime dependency does not publish a matching CPython 3.15 wheel yet. CI validates installation and imports of native extensions, async database drivers, Celery workers, AI dependencies and the FastAPI application on CPython 3.15.2; passing CI does not prove the hosted runtime has switched.
 
 The Celery release documentation and some dependency classifiers may lag the newest CPython release. TypeScript remains on the latest compatible 6.0 line until the project's typescript-eslint toolchain supports TypeScript 7. A successful resolver run alone is not sufficient: the full unit, integration, worker-import, Docker build, and smoke-test suite must pass.
 
@@ -57,7 +57,7 @@ The current application uses one Redis URL for cache operations and Celery broke
 1. Wait for lockfile generation and all CI checks on this pull request.
 2. Verify migrations against a fresh PostgreSQL 18 + pgvector 0.8.7 database.
 3. Verify POS, offline outbox replay, authentication, catalog search, Celery worker/Beat, RAG evaluation, and frontend browser tests.
-4. Verify FastAPI Cloud managed CPython 3.15.x availability and dependency compatibility; do not claim the hosted patch is 3.15.2 unless `/version` confirms it.
+4. Verify FastAPI Cloud supports CPython 3.15.2 exactly and that the live `/version` endpoint confirms it; do not accept a 3.15.0 or other 3.15.x runtime as equivalent.
 5. Plan and approve Neon and pharmacy-edge database upgrades separately, including backups and rollback.
 6. Only after explicit production approval, deploy the application and perform the separately approved database migration.
 
