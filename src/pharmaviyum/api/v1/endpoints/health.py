@@ -7,8 +7,8 @@ import sys
 
 from fastapi import APIRouter, Response
 
-from src.pharmaviyum.build_info import BUILD_COMMIT
 from src.pharmaviyum.ai.config import settings as application_settings
+from src.pharmaviyum.build_info import BUILD_COMMIT
 from src.pharmaviyum.config import settings as auth_settings
 from src.pharmaviyum.core.config import settings
 from src.pharmaviyum.core.health import HealthStatus, health_checker
