@@ -79,7 +79,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.13.8"
-          python-version: "3.15.2"
+          python-version: "3.15.0"
           enable-cache: true
 
       - name: Wait for CI to pass for this exact main commit
@@ -215,7 +215,7 @@ jobs:
               .auth_environment == "production" and
               .debug == false and
               .auth_debug == false and
-              (.python_version == "3.15.2") and
+              (.python_version == "3.15.0") and
               .python_implementation == "cpython"
             ' >/dev/null 2>&1; then
               echo "New production runtime is active."
@@ -224,7 +224,7 @@ jobs:
             echo "Waiting for the new production runtime (attempt ${attempt}/60)."
             sleep 5
           done
-          echo "Production runtime did not switch to production on CPython 3.15.2 within five minutes."
+          echo "Production runtime did not switch to production on CPython 3.15.0 within five minutes."
           printf '%s\\n' "${runtime_info:-No /version response}" | jq '{build_commit, environment, application_environment, auth_environment, debug, auth_debug, python_version, python_implementation}' 2>/dev/null || true
           exit 1
 
@@ -255,10 +255,10 @@ jobs:
             .auth_environment == "production" and
             .debug == false and
             .auth_debug == false and
-            (.python_version == "3.15.2") and
+            (.python_version == "3.15.0") and
             .python_implementation == "cpython"
           ' /tmp/version.json >/dev/null; then
-            echo "Production runtime assertion failed: HTTP $runtime_status; expected production mode, debug=false, and CPython 3.15.2."
+            echo "Production runtime assertion failed: HTTP $runtime_status; expected production mode, debug=false, and CPython 3.15.0."
             cat /tmp/version.json
             exit 1
           fi

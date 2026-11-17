@@ -28,7 +28,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
       - uses: actions/setup-python@v7
         with:
-          python-version: '3.15.2'
+          python-version: '3.15.0'
       - name: Install uv
         run: pip install uv==0.13.8
       - name: Resolve the complete lockfile for the upgraded Python and direct dependencies

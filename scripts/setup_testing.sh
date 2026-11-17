@@ -475,7 +475,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.15.2'
+          python-version: '3.15.0'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip uv
@@ -506,7 +506,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.15.2'
+          python-version: '3.15.0'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip uv
@@ -538,7 +538,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.15.2'
+          python-version: '3.15.0'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip uv
