@@ -147,7 +147,8 @@ Never test restore by overwriting the live pharmacy database. Review a successfu
 - Use SSH key authentication, host-key verification, least privilege, and protected controller credentials.
 - Keep secrets out of Git, logs, process arguments, and plaintext inventories.
 - Pin production container images by immutable digest.
-- Expose only required services; database ports must not be publicly reachable.
+- Expose only required services; database ports must not be publicly reachable. **Current implementation gap:** `ansible/roles/app-backend/files/docker-compose-backend.yml` publishes the backend as `HOST_PORT:8000` without an explicit host-IP bind. The host firewall/network policy must therefore restrict access; before a real site rollout, either bind the port to the intended private interface or put it behind the approved reverse proxy and verify reachability from both POS and untrusted networks. Do not assume the Compose mapping itself is private.
+- **PostgreSQL role boundary:** the current `ansible/roles/postgresql` tasks are status/preparation checks, while the actual database lifecycle is Compose-managed. Do not describe this role as PostgreSQL HA, full lifecycle management, or automated database hardening until those capabilities are implemented and tested.
 - Use unique database credentials and Edge synchronization identities per pharmacy.
 - Use Ansible check mode where supported, but never treat it as a substitute for lab testing.
 - Keep roles idempotent and verify that a second run produces no unexpected changes.
