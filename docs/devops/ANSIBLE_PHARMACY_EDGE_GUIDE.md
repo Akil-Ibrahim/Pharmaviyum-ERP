@@ -20,7 +20,7 @@ Each pharmacy must have a unique site identity, database credentials, Edge sync 
 
 The target architecture is designed to accommodate up to **100 independent Pharmacy Edge sites**. This is a future capacity objective, not the current active rollout size and not evidence that a 100-site fleet has been load-tested or accepted.
 
-The Ansible configuration deliberately separates `max_supported_pharmacy_sites: 100` from `active_rollout_limit: 10`. The starter deployment and migration playbooks must continue to reject inventories larger than ten until a separate capacity, security, resilience, and operational review authorizes expansion.
+The Ansible configuration deliberately separates `max_supported_pharmacy_sites: 100` from `active_rollout_limit: 10`. The fleet validator permits an inventory of up to 100 sites but rejects a selected run containing more than the configured active rollout limit (10 by default). Therefore, the ten-site guardrail applies to the hosts selected for a run, not to the total inventory size. Do not raise `active_rollout_limit` without a separate capacity, security, resilience, and operational review.
 
 For a future fleet:
 
