@@ -105,7 +105,7 @@ Do not put secrets in shell history, command-line arguments, tickets, or source 
 ## 9. Deployment workflow
 
 1. Review the target commit and playbook diff.
-2. Confirm the inventory contains only the approved pharmacy hosts and no more than ten sites.
+2. Confirm the selected host set contains only the approved pharmacy hosts and no more than ten sites; the full inventory may contain up to 100 sites, but each run is capped by `active_rollout_limit`.
 3. Run syntax, lint, unit, and role tests in CI.
 4. Test in an isolated lab before any pharmacy pilot.
 5. Verify immutable image reference, unique site credentials, and change approval.
