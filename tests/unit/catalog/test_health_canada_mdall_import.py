@@ -103,3 +103,38 @@ def test_normalizer_joins_licences_devices_companies_and_identifiers():
     )
     assert archived["regulatory_status"] == "Cancelled"
     assert archived["authorizations"][0]["end_date"].isoformat() == "2023-05-01"
+
+
+def test_identifiers_are_joined_by_licence_and_device_pair():
+    datasets = {
+        "active_licences": [
+            {"original_licence_no": 100, "company_id": 1, "licence_status": "I"},
+            {"original_licence_no": 200, "company_id": 2, "licence_status": "I"},
+        ],
+        "companies": [
+            {"company_id": 1, "company_name": "Manufacturer A"},
+            {"company_id": 2, "company_name": "Manufacturer B"},
+        ],
+        "active_devices": [
+            {"original_licence_no": 100, "device_id": 7, "trade_name": "Device A"},
+            {"original_licence_no": 200, "device_id": 7, "trade_name": "Device B"},
+        ],
+        "active_identifiers": [
+            {
+                "original_licence_no": 100,
+                "device_id": 7,
+                "device_identifier": "UDI-A",
+            },
+            {
+                "original_licence_no": 200,
+                "device_id": 7,
+                "device_identifier": "UDI-B",
+            },
+        ],
+    }
+
+    rows = normalize_mdall_records(datasets)
+
+    by_license = {row["source_record_id"]: row for row in rows}
+    assert by_license["MDALL:100:7"]["identifiers"][0]["identifier_value"] == "UDI-A"
+    assert by_license["MDALL:200:7"]["identifiers"][0]["identifier_value"] == "UDI-B"
