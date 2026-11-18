@@ -8,8 +8,10 @@ on:
       - ".github/workflows/ansible.yml"
   workflow_dispatch:
 
+# Isolate runs per pull request/ref. A run from one PR must not cancel
+# another PR's Ansible validation; only superseded runs for the same ref cancel.
 concurrency:
-  group: ansible
+  group: ansible-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
