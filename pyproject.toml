@@ -154,3 +154,5 @@ python_version = "3.15"
 [[tool.mypy.overrides]]
 module = ["boto3", "botocore.*", "langdetect", "fitz", "pytesseract", "readability", "celery.*"]
 ignore_missing_imports = true
+
+# Keep uv.lock synchronized through .github/workflows/regenerate-uv-lock.yml (uv 0.13.8).
