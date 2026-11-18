@@ -85,6 +85,8 @@ Controller должен иметь сетевой доступ только к �
 
 В репозитории есть изолированный lab inventory: `ansible/inventory/lab/hosts.yml`. Он получает lab host, SSH user и пароль лабораторной базы из защищённых runtime environment variables; используются непроизводственные pharmacy ID и site code. Перед использованием изучите этот файл. Не переносите его lab identity или credentials в production.
 
+**Не путайте этот inventory с Molecule.** Molecule создаёт собственный временный Docker-контейнер и не использует удалённый Lab inventory. Текущие GitHub Actions выполняют lint, guardrail-тесты, Molecule и syntax checks; workflow проверки синтаксиса читает Lab inventory, но не подключается по SSH к Lab-хосту и не выполняет удалённый deployment. Реальное развёртывание в лаборатории пока является отдельной операцией, требующей явного одобрения. Наличие inventory-файла само по себе не доказывает, что Lab VM и защищённые credentials уже настроены.
+
 Production inventory должен определять реальный SSH endpoint/user, уникальные `pharmacy_id` и `site_code`, а также уникальный `postgres_password` для каждого хоста.
 
 ## 8. Release inputs и секреты
