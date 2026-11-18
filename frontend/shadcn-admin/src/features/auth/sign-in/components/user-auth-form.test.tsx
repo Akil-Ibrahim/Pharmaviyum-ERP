@@ -160,6 +160,39 @@ describe('UserAuthForm', () => {
     )
   })
 
+  it('shows the server request ID when authentication returns HTTP 500', async () => {
+    vi.clearAllMocks()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'An unexpected error occurred. Please contact support.',
+              request_id: 'auth-request-123',
+            },
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      )
+    )
+
+    const screen = await render(<UserAuthForm />)
+    await userEvent.fill(screen.getByRole('textbox', { name: /Login/i }), 'admin')
+    await userEvent.fill(screen.getByLabelText('Password'), 'not-a-real-password')
+    await userEvent.click(screen.getByRole('button', { name: /Sign in/i }))
+
+    await vi.waitFor(() =>
+      expect(toastMocks.error).toHaveBeenCalledWith(
+        'An unexpected error occurred. Please contact support. (Request ID: auth-request-123)'
+      )
+    )
+  })
+
   it('navigates to redirectTo when provided', async () => {
     vi.clearAllMocks()
 
