@@ -30,7 +30,7 @@ Use official, publicly accessible, free regulatory or international sources only
 
 This is an implementation/discovery scope, not a claim of complete bulk access or identical field coverage. Before enabling an adapter, record the exact endpoint/dataset, access method, coverage, terms, attribution, update cadence, limitations and a reproducible sample validation. If no suitable free official interface exists, record a coverage gap; do not silently substitute a commercial aggregator.
 
-No manufacturer or country-of-origin exclusion is allowed in reference-catalog ingestion, staging, review or search. This explicitly includes Teva and Israeli-origin records. Country and regulatory status remain visible source attributes, not hidden exclusion heuristics.
+No manufacturer or country-of-origin exclusion is allowed anywhere in the medicine reference, pharmacy product, POS, inventory or pharmacy-operation workflows. This explicitly includes Teva and Israeli-origin records. Country and regulatory status remain visible source attributes, not hidden exclusion heuristics. Independent safety and saleability checks (for example, expiry, active status and stock) remain in force.
 
 ### 2. Separate domain models
 
