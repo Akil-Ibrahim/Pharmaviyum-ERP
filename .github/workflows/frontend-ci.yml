@@ -61,6 +61,7 @@ jobs:
                 ;;
             esac
           done
+          FILES+=("src/features/auth/sign-in/components/user-auth-form.test.tsx")
 
           if (("${#FILES[@]}" > 0)); then
             for file in "${FILES[@]}"; do
