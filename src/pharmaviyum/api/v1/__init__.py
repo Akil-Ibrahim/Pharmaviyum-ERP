@@ -11,8 +11,8 @@ from .drug_catalog import review_router as drug_catalog_review_router
 from .drug_catalog import router as drug_catalog_router
 from .endpoints import patients_router
 from .ingestion import router as ingestion_router
-from .monitoring import router as monitoring_router
 from .medical_devices import router as medical_devices_router
+from .monitoring import router as monitoring_router
 from .orders import router as orders_router
 from .patient_purchases import router as patient_purchases_router
 from .pharmacy_entities import router as pharmacy_entities_router
