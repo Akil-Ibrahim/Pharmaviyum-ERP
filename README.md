@@ -28,6 +28,16 @@ The canonical integration branch is `main`. Changes are reviewed through pull re
 - **Infrastructure:** PostgreSQL, Redis-compatible services, Docker, and Pharmacy Edge automation.
 - **Delivery:** GitHub Actions CI with a separately controlled FastAPI Cloud deployment workflow.
 
+## Demo System Access
+
+Use the demo environment to review the current Pharmaviyum system status:
+
+- **System Status:** https://pharmaviyum-erp.fastapicloud.dev/system-status
+- **Demo login:** `admin`
+- **Demo password:** `V9#qL2!mR7@xP4$kT8&nW5zB`
+
+These credentials are published for demonstration access only. The demo environment must contain synthetic data only; do not store real patient, prescription, customer, or other confidential information in it.
+
 ## Contents
 
 - [Overview](#overview)
@@ -462,16 +472,6 @@ Security is treated as a cross-cutting concern across the application.
 - Data retention, deletion, backup, and restore policies must be defined for each data class and deployment boundary.
 - Security controls require negative tests for cross-tenant access, patient-context leakage, privilege escalation, and unauthorized tool invocation.
 - Demo data is synthetic and does not represent real client records.
-
-## Demo System Access
-
-Use the demo environment to review the current Pharmaviyum system status:
-
-- **System Status:** https://pharmaviyum-erp.fastapicloud.dev/system-status
-- **Demo login:** `admin`
-- **Demo password:** `V9#qL2!mR7@xP4$kT8&nW5zB`
-
-These credentials are published for demonstration access only. The demo environment must contain synthetic data only; do not store real patient, prescription, customer, or other confidential information in it.
 
 ## Project Status
 
