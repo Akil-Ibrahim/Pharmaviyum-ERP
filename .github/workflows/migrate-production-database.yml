@@ -119,11 +119,11 @@ jobs:
           if table_count == 0 and alembic_table is None:
               print("Empty production database confirmed; bootstrap migration is required.")
               with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-                  output.write("migration_required=true\\n")
+                  output.write("migration_required=true\n")
           elif alembic_table is not None and revisions == [expected_revision] and all(required_tables):
               print("Production schema is already at the expected Alembic head; skipping migration.")
               with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-                  output.write("migration_required=false\\n")
+                  output.write("migration_required=false\n")
           else:
               raise SystemExit(
                   "Refusing migration: database is non-empty but is not at the verified expected schema. "
