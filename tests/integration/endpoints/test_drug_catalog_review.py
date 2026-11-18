@@ -1,6 +1,6 @@
 """PostgreSQL-backed integration tests for Drug Catalog source review endpoints."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from itertools import count
 
 import pytest
