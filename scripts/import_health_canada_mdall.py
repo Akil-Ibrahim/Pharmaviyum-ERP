@@ -80,12 +80,13 @@ def normalize_mdall_records(
         for row in datasets.get("companies", [])
         if row.get("company_id") is not None
     }
-    identifiers_by_device: dict[str, list[dict[str, Any]]] = {}
+    identifiers_by_device: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for source_name in ("active_identifiers", "archived_identifiers"):
         for row in datasets.get(source_name, []):
+            licence_no = str(row.get("original_licence_no") or "").strip()
             device_id = str(row.get("device_id") or "").strip()
-            if device_id:
-                identifiers_by_device.setdefault(device_id, []).append(row)
+            if licence_no and device_id:
+                identifiers_by_device.setdefault((licence_no, device_id), []).append(row)
 
     normalized: dict[str, dict[str, Any]] = {}
     for source_name in ("active_devices", "archived_devices"):
@@ -100,7 +101,7 @@ def normalize_mdall_records(
             company = companies.get(str(licence.get("company_id") or ""), {})
             status_code = str(licence.get("licence_status") or "").strip().upper()
             record_id = f"MDALL:{licence_no}:{device_id}"
-            identifier_rows = identifiers_by_device.get(device_id, [])
+            identifier_rows = identifiers_by_device.get((licence_no, device_id), [])
             identifiers = [
                 {
                     "identifier_type": "MDALL_DEVICE_IDENTIFIER",
