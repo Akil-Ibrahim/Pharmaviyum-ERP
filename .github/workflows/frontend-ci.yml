@@ -64,14 +64,7 @@ jobs:
           FILES+=("src/features/auth/sign-in/components/user-auth-form.test.tsx")
 
           if (("${#FILES[@]}" > 0)); then
-            for file in "${FILES[@]}"; do
-              cp "$file" "/tmp/prettier-original-$(basename "$file")"
-              bunx prettier --write "$file"
-              echo "=== PRETTIER DIFF: $file ==="
-              git --no-pager diff -- "$file" || true
-              cp "/tmp/prettier-original-$(basename "$file")" "$file"
-              bunx prettier --check "$file"
-            done
+            bunx prettier --check "${FILES[@]}"
           else
             echo "No frontend files changed; skipping Prettier."
           fi
