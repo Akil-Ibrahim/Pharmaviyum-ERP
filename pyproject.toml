@@ -156,3 +156,4 @@ module = ["boto3", "botocore.*", "langdetect", "fitz", "pytesseract", "readabili
 ignore_missing_imports = true
 
 # Keep uv.lock synchronized through .github/workflows/regenerate-uv-lock.yml (uv 0.13.8).
+# Canonical regeneration uses uv lock without --no-upgrade for deployment parity.
