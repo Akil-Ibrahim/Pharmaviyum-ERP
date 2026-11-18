@@ -14,11 +14,11 @@ import re
 import tempfile
 import zipfile
 from pathlib import Path
+from typing import Any
 from xml.etree import ElementTree as ET
 
 import httpx
 
-from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
 EMA_URL = "https://www.ema.europa.eu/en/documents/other/article-57-product-data_en.xlsx"
 NS = {
@@ -52,7 +52,7 @@ def _normalize_header(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
 
 
-def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
+def parse_ema_xlsx(path: Path) -> list[dict[str, Any]]:
     """Parse EMA Article 57 rows by header names rather than fixed column order."""
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
@@ -172,7 +172,7 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
     if product_col is None or ingredient_col is None or country_col is None:
         raise ValueError(f"EMA workbook is missing required columns: {headers!r}")
 
-    parsed: list[dict[str, str]] = []
+    parsed: list[dict[str, Any]] = []
     for row in rows[header_index + 1:]:
         def value(index: int | None) -> str:
             return row[index].strip() if index is not None and index < len(row) else ""
@@ -182,32 +182,19 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
         country = value(country_col)
         holder = value(holder_col)
         manufacturer_country = value(manufacturer_country_col)
-        if (
-            not product_name
-            or not ingredient_text
-            or not country
-            or not manufacturer_country
-        ):
-            # Article 57 does not publish manufacturing origin in its standard
-            # export. Do not surface a branded product without verified origin.
-            continue
-        if is_excluded_catalog_entry(
-            brand_name=product_name,
-            manufacturer=holder,
-            authorization_country=country,
-            manufacturer_country=manufacturer_country,
-        ):
+        if not product_name or not ingredient_text or not country:
             continue
         ingredients = [
             part.strip()
             for part in SEPARATOR_RE.split(ingredient_text)
             if part.strip()
         ]
-        if len(ingredients) != 1:
+        if not ingredients:
             continue
         parsed.append({
             "product_name": product_name,
             "ingredient": ingredients[0],
+            "ingredients": ingredients,
             "strength": value(strength_col),
             "dosage_form": value(form_col),
             "route": value(route_col),
@@ -218,17 +205,18 @@ def parse_ema_xlsx(path: Path) -> list[dict[str, str]]:
     return parsed
 
 
-def _regulatory_id(row: dict[str, str]) -> str:
+def _regulatory_id(row: dict[str, Any]) -> str:
+    ingredient_identity = "|".join(row.get("ingredients") or [row.get("ingredient", "")])
     identity = "|".join(
-        row[key].casefold().strip()
-        for key in (
-            "product_name",
-            "ingredient",
-            "strength",
-            "dosage_form",
-            "route",
-            "country",
-            "holder",
+        value.casefold().strip()
+        for value in (
+            row["product_name"],
+            ingredient_identity,
+            row["strength"],
+            row["dosage_form"],
+            row["route"],
+            row["country"],
+            row["holder"],
         )
     )
     digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:24]
@@ -242,19 +230,9 @@ async def import_catalog(path: Path) -> tuple[int, int]:
 
     from src.pharmaviyum.database import AsyncSessionLocal
     from src.pharmaviyum.models.drug_catalog import DrugCatalogSourceRecord
-    from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
-
+    
     parsed_rows = parse_ema_xlsx(path)
-    rows = [
-        row
-        for row in parsed_rows
-        if not is_excluded_catalog_entry(
-            brand_name=row.get("product_name"),
-            manufacturer=row.get("holder"),
-            authorization_country=row.get("country"),
-            payload=row,
-        )
-    ]
+    rows = parsed_rows
     version = f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}"
     records = [
         DrugCatalogSourceRecord(
@@ -315,8 +293,8 @@ async def main() -> None:
         if args.dry_run:
             rows = parse_ema_xlsx(path)
             print(
-                f"EMA Article 57 dry run: {len(rows)} single-ingredient "
-                "records with verified manufacturer origin parsed; database unchanged."
+                f"EMA Article 57 dry run: {len(rows)} source records parsed; "
+                "manufacturer origin is retained when published; database unchanged."
             )
             return
         references, products = await import_catalog(path)

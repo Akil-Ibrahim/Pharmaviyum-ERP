@@ -2,8 +2,8 @@
 
 The DPD is Canadian regulatory reference data. It is not a global catalogue and
 its inclusion/status must not be interpreted as authorization in another market.
-Only single-ingredient products with current Approved or Marketed status are
-staged because the current canonical medicinal-product model is single-ingredient.
+Ingredient composition and the latest source status are preserved, including
+combination products and records that are no longer actively marketed.
 """
 
 from __future__ import annotations
@@ -18,7 +18,6 @@ from typing import Any
 
 import httpx
 
-from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
 BASE_URL = "https://health-products.canada.ca/api/drug/"
 SOURCE_NAME = "Health Canada DPD"
@@ -50,8 +49,8 @@ def normalize_dpd_records(
     statuses: list[dict[str, Any]],
     packaging: list[dict[str, Any]],
     companies: list[dict[str, Any]] | None = None,
-) -> list[dict[str, str]]:
-    """Normalize single-ingredient products with verified manufacturer origin."""
+) -> list[dict[str, Any]]:
+    """Normalize DPD products with complete available active-ingredient composition."""
     company_countries: dict[str, set[str]] = defaultdict(set)
     for company in companies or []:
         company_name = " ".join(str(company.get("company_name") or "").split())
@@ -92,25 +91,44 @@ def normalize_dpd_records(
         if code and (code not in status_by_code or history_date > status_by_code[code][0]):
             status_by_code[code] = (history_date, name)
 
-    normalized: list[dict[str, str]] = []
+    normalized: list[dict[str, Any]] = []
     for product in products:
         code = str(product.get("drug_code", "")).strip()
         if not code:
             continue
         current_status = status_by_code.get(code, ("", ""))[1]
-        if current_status not in {"Approved", "Marketed"}:
+        product_ingredients = [
+            ingredient
+            for ingredient in ingredients_by_code.get(code, [])
+            if str(ingredient.get("ingredient_name") or "").strip()
+        ]
+        if not product_ingredients:
             continue
-        product_ingredients = ingredients_by_code.get(code, [])
-        if str(product.get("number_of_ais", "")) != "1" or len(product_ingredients) != 1:
-            continue
-        ingredient = product_ingredients[0]
-        ingredient_name = str(ingredient.get("ingredient_name") or "").strip()
-        if not ingredient_name:
-            continue
-
-        strength_value = str(ingredient.get("strength") or "").strip()
-        strength_unit = str(ingredient.get("strength_unit") or "").strip()
-        strength = " ".join(part for part in (strength_value, strength_unit) if part)
+        ingredient_components = [
+            {
+                "ingredient_name": str(ingredient.get("ingredient_name")).strip(),
+                "strength_value": str(ingredient.get("strength") or "").strip() or None,
+                "strength_unit": str(ingredient.get("strength_unit") or "").strip() or None,
+                "source_identifier": str(
+                    ingredient.get("active_ingredient_id")
+                    or ingredient.get("ingredient_id")
+                    or ""
+                ).strip() or None,
+            }
+            for ingredient in product_ingredients
+        ]
+        ingredient_names = [
+            component["ingredient_name"] for component in ingredient_components
+        ]
+        ingredient_name = ingredient_names[0]
+        strength_parts = [
+            " ".join(
+                part for part in (component["strength_value"], component["strength_unit"])
+                if part
+            )
+            for component in ingredient_components
+        ]
+        strength = " + ".join(part for part in strength_parts if part)
         din = str(product.get("drug_identification_number") or "").strip()
         brand = str(product.get("brand_name") or "").strip()
         manufacturer = str(product.get("company_name") or "").strip()
@@ -125,15 +143,14 @@ def normalize_dpd_records(
             country_value = str(product.get(field) or "").strip()
             if country_value:
                 origin_countries.add(country_value)
-        # DPD's product endpoint omits manufacturer country. Resolve it through
-        # the official company endpoint; unknown origin fails closed.
-        if not manufacturer or not origin_countries:
-            continue
+        # Manufacturer and origin are descriptive metadata, not import gates.
         candidate = {
             "source_record_id": f"DPD:{code}",
             "product_name": brand or str(product.get("descriptor") or ingredient_name),
             "brand_name": brand,
             "ingredient_name": ingredient_name,
+            "ingredient_names": ingredient_names,
+            "ingredients": ingredient_components,
             "strength": strength,
             "dosage_form": " / ".join(sorted(forms_by_code.get(code, set()))),
             "route": " / ".join(sorted(routes_by_code.get(code, set()))),
@@ -141,18 +158,12 @@ def normalize_dpd_records(
             "manufacturer_country": " / ".join(sorted(origin_countries)),
             "country": "CA",
             "regulatory_id": din,
-            "authorization_status": current_status,
+            "authorization_status": current_status or "Unknown",
             "product_class": str(product.get("class_name") or "").strip(),
             "package_description": " / ".join(sorted(packaging_by_code.get(code, set()))),
             "last_update_date": str(product.get("last_update_date") or ""),
         }
-        if not is_excluded_catalog_entry(
-            brand_name=candidate["brand_name"] or candidate["product_name"],
-            manufacturer=candidate["manufacturer"],
-            authorization_country=candidate["country"],
-            payload=candidate,
-        ):
-            normalized.append(candidate)
+        normalized.append(candidate)
     return normalized
 
 
@@ -254,8 +265,8 @@ async def main() -> None:
     )
     if args.dry_run:
         print(
-            f"Health Canada DPD dry run: {len(rows)} current single-ingredient "
-            "products normalized; database unchanged."
+            f"Health Canada DPD dry run: {len(rows)} products with available "
+            "ingredient composition normalized; database unchanged."
         )
         return
     staged, skipped = await stage_catalog(datasets, version)

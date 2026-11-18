@@ -11,8 +11,6 @@ from collections.abc import Sequence
 from difflib import SequenceMatcher
 from typing import Any
 
-from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
-
 
 def _normalize(value: Any) -> str:
     if value is None:
@@ -34,14 +32,39 @@ def _best_similarity(value: Any, candidates: list[str]) -> float:
 
 
 def _score_candidate(payload: dict, reference, product=None) -> tuple[float, list[str]]:
+    raw_ingredients = payload.get("ingredients")
+    source_ingredients = []
+    if isinstance(raw_ingredients, list):
+        for item in raw_ingredients:
+            name = (
+                item.get("ingredient_name") or item.get("name")
+                if isinstance(item, dict)
+                else item
+            )
+            if name and str(name).strip():
+                source_ingredients.append(str(name).strip())
     ingredient = payload.get("ingredient_name") or payload.get("ingredient")
-    if not ingredient:
+    if not source_ingredients and ingredient:
+        source_ingredients = [str(ingredient).strip()]
+    if not source_ingredients:
         return 0.0, []
 
-    ingredient_names = [reference.inn_name] + [
+    reference_names = [reference.inn_name] + [
         item.ingredient_name for item in (reference.ingredients or [])
     ]
-    ingredient_score = _best_similarity(ingredient, ingredient_names)
+    target_names = (
+        [item.ingredient_name for item in (product.ingredients or [])]
+        if product is not None and getattr(product, "ingredients", None)
+        else reference_names
+    )
+    source_normalized = {_normalize(item) for item in source_ingredients}
+    target_normalized = {_normalize(item) for item in target_names}
+    if len(source_normalized) > 1 or len(target_normalized) > 1:
+        intersection = source_normalized & target_normalized
+        union = source_normalized | target_normalized
+        ingredient_score = len(intersection) / len(union) if union else 0.0
+    else:
+        ingredient_score = _best_similarity(source_ingredients[0], target_names)
     if ingredient_score < 0.72:
         return 0.0, []
 
@@ -93,13 +116,6 @@ def suggest_matches(payload: dict | None, references: list) -> list[dict]:
             )
 
         for product in reference.medicinal_products or []:
-            if is_excluded_catalog_entry(
-                brand_name=getattr(product, "brand_name", None),
-                manufacturer=getattr(product, "manufacturer", None),
-                authorization_country=getattr(product, "authorization_country", None),
-                manufacturer_country=getattr(product, "manufacturer_country", None),
-            ):
-                continue
             score, reasons = _score_candidate(source, reference, product)
             if score < 0.50:
                 continue

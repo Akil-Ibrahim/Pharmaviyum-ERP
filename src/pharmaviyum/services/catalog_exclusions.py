@@ -1,13 +1,14 @@
-"""Central policy for excluding Teva and Israeli-origin/authorized medicines.
+"""Legacy policy for local pharmacy-product workflows.
 
-The policy is enabled by default and is shared by catalog ingestion, review,
-autocomplete, pharmacy product search, POS add-to-cart, and checkout.
+International reference-catalog ingestion, review, matching and search must not
+apply manufacturer or country exclusions. Pharmacy-product predicates remain
+isolated for legacy local POS/product eligibility behavior.
 """
 
 import re
 from collections.abc import Mapping
 
-# Enforce the user's catalog exclusion policy in every environment.
+# Legacy local pharmacy-product eligibility policy; never use for reference-catalog ingestion/search.
 CATALOG_EXCLUSIONS_ENABLED = True
 
 _ISRAEL_COUNTRY_VALUES = {
@@ -81,7 +82,7 @@ def is_excluded_catalog_entry(
     manufacturer_country: object = None,
     payload: object = None,
 ) -> bool:
-    """Return whether an entry is excluded when the policy is enabled."""
+    """Return whether a local pharmacy-product entry matches the legacy policy."""
     if not CATALOG_EXCLUSIONS_ENABLED:
         return False
 
@@ -144,27 +145,5 @@ def allowed_pharmacy_product_conditions():
 
 
 def allowed_medicinal_product_conditions():
-    """SQL predicates that prevent excluded medicines from catalog autocomplete."""
-    if not CATALOG_EXCLUSIONS_ENABLED:
-        return ()
-
-    from sqlalchemy import func, not_, or_
-
-    from src.pharmaviyum.models.drug_catalog import MedicinalProduct
-
-    israel_codes = ("il", "isr", "israel", "state of israel", "израиль", "ізраїль")
-
-    def israeli_country_clause(column):
-        normalized = func.lower(func.trim(func.coalesce(column, "")))
-        return or_(
-            normalized.in_(israel_codes),
-            normalized.ilike("%israel%"),
-            normalized.op("~*")(r"(^|[^a-z])(il|isr)([^a-z]|$)"),
-        )
-
-    return (
-        not_(func.coalesce(MedicinalProduct.brand_name, "").ilike("%teva%")),
-        not_(func.coalesce(MedicinalProduct.manufacturer, "").ilike("%teva%")),
-        not_(israeli_country_clause(MedicinalProduct.authorization_country)),
-        not_(israeli_country_clause(MedicinalProduct.manufacturer_country)),
-    )
+    """Deprecated compatibility helper: reference catalog has no origin exclusions."""
+    return ()
