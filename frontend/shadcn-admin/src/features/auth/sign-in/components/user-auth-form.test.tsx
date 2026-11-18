@@ -66,7 +66,7 @@ describe('UserAuthForm', () => {
               access_token: 'mock-access-token',
               token_type: 'bearer',
             }),
-            { status: 200 },
+            { status: 200 }
           )
         )
         .mockResolvedValue(
