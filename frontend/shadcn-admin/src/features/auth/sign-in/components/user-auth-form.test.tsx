@@ -77,7 +77,7 @@ describe('UserAuthForm', () => {
               role: ['admin'],
               exp: Date.now() + 86_400_000,
             }),
-            { status: 200, }
+            { status: 200 }
           )
         )
     )
