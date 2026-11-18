@@ -127,8 +127,9 @@ async def token(
     ):
         admin_result = await db.execute(select(User).where(User.username == admin_user))
         admin = admin_result.scalar_one_or_none()
+        admin_changed = False
         if admin is None:
-            admin_email = f"{admin_user}@pharmaviyum.local"
+            admin_email = f"{settings.ADMIN_EMAIL}"
             admin = User(
                 email=admin_email,
                 username=admin_user,
@@ -137,20 +138,23 @@ async def token(
                 is_superuser=True,
             )
             db.add(admin)
+            admin_changed = True
         else:
-            # Keep the bootstrap path idempotent: do not run bcrypt and write to
-            # PostgreSQL on every successful login. Reconcile the hash only when
-            # the configured credential no longer matches the stored hash.
+            # Keep bootstrap login idempotent: bcrypt and PostgreSQL writes are
+            # needed only when the stored account no longer matches config.
             if not _verify_password(admin_pass, admin.hashed_password):
                 admin.hashed_password = pwd_context.hash(_bcrypt_password(admin_pass))
-            admin.is_active = True
-            admin.is_superuser = True
+                admin_changed = True
+            if not admin.is_active:
+                admin.is_active = True
+                admin_changed = True
+            if not admin.is_superuser:
+                admin.is_superuser = True
+                admin_changed = True
 
-        # A newly created administrator must be persisted before its ID can be
-        # used as the JWT subject. Existing administrators need a commit only
-        # when their privilege/active state or password hash was reconciled.
-        await db.commit()
-        await db.refresh(admin)
+        if admin_changed:
+            await db.commit()
+            await db.refresh(admin)
         subject = str(admin.id)
     else:
         user = await _get_user_by_username_or_email(db, username_or_email)
