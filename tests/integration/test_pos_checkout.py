@@ -53,10 +53,10 @@ async def _create_pharmacy_product_and_stock(test_db):
 
 
 @pytest.mark.integration
-async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
+async def test_pos_search_and_checkout_allow_all_medicine_origins(
     authenticated_client, test_db
 ):
-    pharmacy = Pharmacy(name="POS Exclusion Test Pharmacy", code="POS-EXCLUSION")
+    pharmacy = Pharmacy(name="POS Origin Neutral Test Pharmacy", code="POS-ORIGIN-NEUTRAL")
     reference = DrugReference(inn_name="omeprazole")
     test_db.add_all([pharmacy, reference])
     await test_db.flush()
@@ -74,7 +74,7 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
 
     teva_product = Product(
         name="Teva Omeprazole 20 mg",
-        sku="POS-EXCLUDED-TEVA",
+        sku="POS-ORIGIN-TEVA",
         price=10.50,
         stock=0,
         is_active=True,
@@ -82,7 +82,7 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
     )
     israeli_origin_product = Product(
         name="ExampleOrigin Omeprazole 20 mg",
-        sku="POS-EXCLUDED-ORIGIN",
+        sku="POS-ORIGIN-MANUFACTURER-COUNTRY",
         price=10.50,
         stock=0,
         is_active=True,
@@ -91,7 +91,7 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
     )
     israeli_authorized_product = Product(
         name="ExampleAuthorized Omeprazole 20 mg",
-        sku="POS-EXCLUDED-AUTH",
+        sku="POS-ORIGIN-AUTHORIZATION-COUNTRY",
         price=10.50,
         stock=0,
         is_active=True,
@@ -110,7 +110,7 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
             pharmacy_id=pharmacy.id,
             quantity=5,
             reserved_quantity=0,
-            lot_number=f"EXCLUDED-{index}",
+            lot_number=f"ORIGIN-{index}",
             expires_at=now + timedelta(days=30),
         )
         for index, product in enumerate(products, start=1)
@@ -123,14 +123,19 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
         params={"q": "omeprazole", "pharmacy_id": pharmacy.id},
     )
     assert search.status_code == 200, search.text
-    assert search.json() == []
+    search_by_sku = {item["sku"]: item for item in search.json()}
+    assert set(search_by_sku) == {product.sku for product in products}
+    assert search_by_sku[teva_product.sku]["manufacturer"] == "Teva Pharmaceutical Industries"
+    assert search_by_sku[israeli_origin_product.sku]["manufacturer"] == "Example Pharma"
+    assert search_by_sku[israeli_authorized_product.sku]["medicinal_product_id"] == israeli_authorized.id
+    assert all(item["stock"] == 5 for item in search_by_sku.values())
 
     for product, key in zip(
         products,
         (
-            "pos-excluded-teva-0001",
-            "pos-excluded-origin-0001",
-            "pos-excluded-auth-0001",
+            "pos-origin-teva-0001",
+            "pos-origin-manufacturer-country-0001",
+            "pos-origin-authorization-country-0001",
         ),
     ):
         response = await authenticated_client.post(
@@ -143,17 +148,16 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
                 "cash_received": "20.00",
             },
         )
-        assert response.status_code == 404
-        assert (
-            await test_db.scalar(select(Sale).where(Sale.idempotency_key == key))
-            is None
-        )
+        assert response.status_code == 201, response.text
+        assert response.json()["status"] == "completed"
+        sale = await test_db.scalar(select(Sale).where(Sale.idempotency_key == key))
+        assert sale is not None
+        assert sale.status == "completed"
 
     for lot in lots:
         await test_db.refresh(lot)
-        assert lot.quantity == 5
+        assert lot.quantity == 4
         assert lot.reserved_quantity == 0
-
 
 @pytest.mark.integration
 async def test_pos_product_search_returns_regulatory_identifier(
