@@ -19,7 +19,7 @@ Run from the `ansible/` directory:
 ./scripts/test.sh
 ```
 
-The script runs the repository's YAML lint, Ansible lint, syntax/guardrail checks and configured Molecule tests. A successful local run is useful evidence, but the protected GitHub Actions checks remain the merge gate.
+**Important current limitation:** this helper is not a reliable pass/fail gate yet. In the current implementation, YAML lint and Molecule failures are suppressed with `|| true`, and the script does not run the fleet/recovery guardrail scripts or playbook syntax checks. Do not use its final exit code as proof that the full suite passed. Run the checks below individually and rely on the required GitHub Actions jobs for the merge gate. A separate test-harness change should remove the swallowed failures before this helper is treated as authoritative.
 
 ## Molecule
 
@@ -45,7 +45,21 @@ To open the test container after a successful converge:
 molecule login -s default -h pharmaviyum-ansible-test
 ```
 
-Molecule uses a privileged Docker container with systemd for the current Docker-role scenario. Run it only in an isolated CI runner or disposable development environment; never point it at a pharmacy host.
+Molecule uses a privileged Docker container with systemd for the current Docker-role scenario. This is a disposable container test, not a real remote Pharmacy Edge server. Run it only in an isolated CI runner or disposable development environment; never point it at a pharmacy host.
+
+## Real Lab host (separate from Molecule)
+
+The repository has a separate inventory at `inventory/lab/hosts.yml`. It expects these runtime environment variables: `PHARMAVIYUM_LAB_EDGE_HOST`, `PHARMAVIYUM_LAB_EDGE_USER`, and `PHARMAVIYUM_LAB_POSTGRES_PASSWORD`, plus the release inputs and Docker package pins required by the playbook. The inventory file alone does not prove that a lab VM exists or that credentials are configured.
+
+The current GitHub Actions workflows do **not** SSH to this host or run the deployment playbook against it. `ansible-quality.yml` only uses the lab inventory for syntax checks; that does not establish remote connectivity or deployment success. A real lab deployment is a separate, explicitly approved operation, and must only be run after verifying that the environment variables point to a disposable, non-production lab host.
+
+From the `ansible/` directory, after the lab host and protected runtime variables have been provisioned:
+
+```bash
+ansible-playbook -i inventory/lab/hosts.yml playbooks/deploy.yml --limit pharmacy-edge-lab-01
+```
+
+Do not run this command in CI until a dedicated protected Lab environment, scoped credentials, approval gate, and safe teardown/recovery procedure are in place.
 
 ## Fleet and recovery guardrails
 
@@ -92,7 +106,7 @@ Inspect the workflow files for the current triggers, Python version, pinned depe
 ## Production safety
 
 - Always pass the intended inventory explicitly; do not rely on the production default in `ansible.cfg`.
-- Use a synthetic/local inventory for guardrail tests and the isolated lab inventory for Molecule or deployment validation.
+- Use synthetic/local inventories for guardrail tests, Molecule's own Docker inventory for container tests, and `inventory/lab/hosts.yml` only for an explicitly approved real Lab host run.
 - Never run production deployment, migration, backup, restore or rollback as part of a documentation/test command.
 - Keep Vault passwords and all credentials in a protected secret store; never put them in shell arguments, committed files or CI logs.
 - Treat a clean second run (idempotence) as a required acceptance signal for configuration roles, while documenting tasks that are intentionally state-changing.
