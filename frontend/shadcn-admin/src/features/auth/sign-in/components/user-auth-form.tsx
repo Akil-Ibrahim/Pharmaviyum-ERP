@@ -65,10 +65,20 @@ export function UserAuthForm({
       const result = await response.json().catch(() => ({}))
 
       if (!response.ok) {
-        throw new Error(
+        const requestId =
+          response.headers.get('X-Request-ID') ??
+          (typeof result?.error?.request_id === 'string'
+            ? result.error.request_id
+            : undefined)
+        const message =
           result?.detail && typeof result.detail === 'string'
             ? result.detail
-            : `Authentication request failed (HTTP ${response.status})`
+            : typeof result?.error?.message === 'string'
+              ? result.error.message
+              : `Authentication request failed (HTTP ${response.status})`
+
+        throw new Error(
+          requestId ? `${message} (Request ID: ${requestId})` : message
         )
       }
 
@@ -83,10 +93,20 @@ export function UserAuthForm({
 
       if (!meResponse.ok) {
         auth.reset()
-        throw new Error(
+        const requestId =
+          meResponse.headers.get('X-Request-ID') ??
+          (typeof me?.error?.request_id === 'string'
+            ? me.error.request_id
+            : undefined)
+        const message =
           me?.detail && typeof me.detail === 'string'
             ? me.detail
-            : `Authenticated user request failed (HTTP ${meResponse.status})`
+            : typeof me?.error?.message === 'string'
+              ? me.error.message
+              : `Authenticated user request failed (HTTP ${meResponse.status})`
+
+        throw new Error(
+          requestId ? `${message} (Request ID: ${requestId})` : message
         )
       }
 
