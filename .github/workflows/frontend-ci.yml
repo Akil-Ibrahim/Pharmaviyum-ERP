@@ -63,7 +63,14 @@ jobs:
           done
 
           if (("${#FILES[@]}" > 0)); then
-            bunx prettier --check "${FILES[@]}"
+            for file in "${FILES[@]}"; do
+              cp "$file" "/tmp/prettier-original-$(basename "$file")"
+              bunx prettier --write "$file"
+              echo "=== PRETTIER DIFF: $file ==="
+              git --no-pager diff -- "$file" || true
+              cp "/tmp/prettier-original-$(basename "$file")" "$file"
+              bunx prettier --check "$file"
+            done
           else
             echo "No frontend files changed; skipping Prettier."
           fi
