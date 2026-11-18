@@ -54,7 +54,8 @@ jobs:
           test "$count" -eq 1
           grep -q '^2026_11_16_000004 ' <<< "$heads"
 
-      - name: Verify exact empty production database
+      - name: Inspect production database state
+        id: inspect_database
         shell: bash
         run: |
           set -euo pipefail
@@ -93,11 +94,46 @@ jobs:
           print(f"Verified database={database}, role={role}, PostgreSQL={version}, public_tables={table_count}, alembic_version={alembic_table}")
           if database != expected_database or role != "neondb_owner":
               raise SystemExit("Refusing migration: database identity does not match the approved production target.")
-          if table_count != 0 or alembic_table is not None:
-              raise SystemExit("Refusing bootstrap migration: target is not empty.")
+
+          expected_revision = "2026_11_16_000004"
+          revisions = []
+          required_tables = ()
+          with psycopg.connect(normalized, connect_timeout=15) as connection:
+              with connection.cursor() as cursor:
+                  if alembic_table is not None:
+                      cursor.execute("SELECT version_num FROM public.alembic_version")
+                      revisions = [row[0] for row in cursor.fetchall()]
+                  cursor.execute(
+                      """
+                      SELECT
+                        to_regclass('public.inventory_movements') IS NOT NULL,
+                        to_regclass('public.users') IS NOT NULL,
+                        to_regclass('public.pharmacies') IS NOT NULL,
+                        to_regclass('public.sales') IS NOT NULL
+                      """
+                  )
+                  required_tables = cursor.fetchone()
+
+          print(f"Existing Alembic revisions: {revisions}")
+          print(f"Required application tables present: {all(required_tables)}")
+          if table_count == 0 and alembic_table is None:
+              print("Empty production database confirmed; bootstrap migration is required.")
+              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                  output.write("migration_required=true\\n")
+          elif alembic_table is not None and revisions == [expected_revision] and all(required_tables):
+              print("Production schema is already at the expected Alembic head; skipping migration.")
+              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                  output.write("migration_required=false\\n")
+          else:
+              raise SystemExit(
+                  "Refusing migration: database is non-empty but is not at the verified expected schema. "
+                  f"Expected revision={expected_revision}; found revisions={revisions}; "
+                  f"required_tables_present={required_tables}."
+              )
           PY
 
       - name: Apply all Alembic migrations
+        if: steps.inspect_database.outputs.migration_required == 'true'
         run: uv run alembic upgrade head
 
       - name: Verify final production schema revision
