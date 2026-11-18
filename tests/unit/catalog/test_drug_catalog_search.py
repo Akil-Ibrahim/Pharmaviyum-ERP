@@ -51,9 +51,11 @@ async def test_search_includes_medicinal_product_strength() -> None:
         ({"payload": {"country_of_origin": "IL"}}, "nested origin metadata"),
     ],
 )
-def test_origin_never_excludes_catalog_entries(kwargs: dict, description: str) -> None:
+def test_origin_never_excludes_catalog_entries(
+    kwargs: dict, description: str, monkeypatch
+) -> None:
     # Even legacy callers setting the compatibility flag cannot re-enable filtering.
-    catalog_exclusions.CATALOG_EXCLUSIONS_ENABLED = True
+    monkeypatch.setattr(catalog_exclusions, "CATALOG_EXCLUSIONS_ENABLED", True)
     assert is_excluded_catalog_entry(**kwargs) is False
 
 
