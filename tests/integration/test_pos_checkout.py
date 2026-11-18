@@ -56,7 +56,9 @@ async def _create_pharmacy_product_and_stock(test_db):
 async def test_pos_search_and_checkout_allow_all_medicine_origins(
     authenticated_client, test_db
 ):
-    pharmacy = Pharmacy(name="POS Origin Neutral Test Pharmacy", code="POS-ORIGIN-NEUTRAL")
+    pharmacy = Pharmacy(
+        name="POS Origin Neutral Test Pharmacy", code="POS-ORIGIN-NEUTRAL"
+    )
     reference = DrugReference(inn_name="omeprazole")
     test_db.add_all([pharmacy, reference])
     await test_db.flush()
@@ -125,9 +127,15 @@ async def test_pos_search_and_checkout_allow_all_medicine_origins(
     assert search.status_code == 200, search.text
     search_by_sku = {item["sku"]: item for item in search.json()}
     assert set(search_by_sku) == {product.sku for product in products}
-    assert search_by_sku[teva_product.sku]["manufacturer"] == "Teva Pharmaceutical Industries"
+    assert (
+        search_by_sku[teva_product.sku]["manufacturer"]
+        == "Teva Pharmaceutical Industries"
+    )
     assert search_by_sku[israeli_origin_product.sku]["manufacturer"] == "Example Pharma"
-    assert search_by_sku[israeli_authorized_product.sku]["medicinal_product_id"] == israeli_authorized.id
+    assert (
+        search_by_sku[israeli_authorized_product.sku]["medicinal_product_id"]
+        == israeli_authorized.id
+    )
     assert all(item["stock"] == 5 for item in search_by_sku.values())
 
     for product, key in zip(
