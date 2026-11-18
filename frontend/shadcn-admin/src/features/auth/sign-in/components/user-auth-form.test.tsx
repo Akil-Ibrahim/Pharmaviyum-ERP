@@ -61,7 +61,10 @@ describe('UserAuthForm', () => {
       'fetch',
       vi.fn()
         .mockResolvedValueOnce(
-          new Response(JSON.stringify({ access_token: 'mock-access-token', token_type: 'bearer' }), { status: 200 })
+          new Response(
+            JSON.stringify({ access_token: 'mock-access-token', token_type: 'bearer' }),
+            { status: 200 }
+          )
         )
         .mockResolvedValue(
           new Response(
@@ -156,7 +159,9 @@ describe('UserAuthForm', () => {
     await userEvent.click(screen.getByRole('button', { name: /Sign in/i }))
 
     await vi.waitFor(() =>
-      expect(toastMocks.error).toHaveBeenCalledWith('Authentication request failed (HTTP 404)')
+      expect(toastMocks.error).toHaveBeenCalledWith(
+        'Authentication request failed (HTTP 404)'
+      )
     )
   })
 
