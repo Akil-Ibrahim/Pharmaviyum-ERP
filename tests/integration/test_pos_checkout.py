@@ -167,6 +167,7 @@ async def test_pos_search_and_checkout_allow_all_medicine_origins(
         assert lot.quantity == 4
         assert lot.reserved_quantity == 0
 
+
 @pytest.mark.integration
 async def test_pos_product_search_returns_regulatory_identifier(
     authenticated_client, test_db
@@ -499,9 +500,7 @@ async def test_failed_payment_webhook_releases_stock_and_is_idempotent(
     assert failed.json()["status"] == "processed"
 
     sale = await test_db.scalar(select(Sale).where(Sale.id == receipt["id"]))
-    payment = await test_db.scalar(
-        select(Payment).where(Payment.id == payment_id)
-    )
+    payment = await test_db.scalar(select(Payment).where(Payment.id == payment_id))
     assert sale is not None and sale.status == "cancelled"
     assert payment is not None and payment.status == "failed"
 
@@ -526,14 +525,17 @@ async def test_failed_payment_webhook_releases_stock_and_is_idempotent(
     )
     assert replay.status_code == 200
     assert replay.json()["status"] == "already_processed"
-    assert await test_db.scalar(
-        select(func.count())
-        .select_from(OutboxEvent)
-        .where(
-            OutboxEvent.aggregate_id == receipt["receipt_number"],
-            OutboxEvent.event_type == "pos.payment.failed",
+    assert (
+        await test_db.scalar(
+            select(func.count())
+            .select_from(OutboxEvent)
+            .where(
+                OutboxEvent.aggregate_id == receipt["receipt_number"],
+                OutboxEvent.event_type == "pos.payment.failed",
+            )
         )
-    ) == 1
+        == 1
+    )
     movements = list(
         (
             await test_db.scalars(
@@ -645,14 +647,17 @@ async def test_cancel_pending_sale_releases_reserved_inventory(
     )
     assert replay.status_code == 200, replay.text
     assert replay.json()["status"] == "cancelled"
-    assert await test_db.scalar(
-        select(func.count())
-        .select_from(OutboxEvent)
-        .where(
-            OutboxEvent.aggregate_id == receipt["receipt_number"],
-            OutboxEvent.event_type == "pos.sale.cancelled",
+    assert (
+        await test_db.scalar(
+            select(func.count())
+            .select_from(OutboxEvent)
+            .where(
+                OutboxEvent.aggregate_id == receipt["receipt_number"],
+                OutboxEvent.event_type == "pos.sale.cancelled",
+            )
         )
-    ) == 1
+        == 1
+    )
 
     await test_db.refresh(first)
     await test_db.refresh(second)
@@ -677,11 +682,9 @@ async def test_cancel_pending_sale_releases_reserved_inventory(
 
 
 @pytest.mark.integration
-async def test_pos_checkout_includes_lots_expiring_today(
-    authenticated_client, test_db
-):
-    pharmacy, product, expiring_today, later = (
-        await _create_pharmacy_product_and_stock(test_db)
+async def test_pos_checkout_includes_lots_expiring_today(authenticated_client, test_db):
+    pharmacy, product, expiring_today, later = await _create_pharmacy_product_and_stock(
+        test_db
     )
     today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     expiring_today.expires_at = today
@@ -725,7 +728,6 @@ async def test_pos_checkout_includes_lots_expiring_today(
     assert later.quantity == 5
 
 
-
 @pytest.mark.integration
 async def test_pos_checkout_replay_returns_original_sale_without_second_stock_decrement(
     authenticated_client, test_db
@@ -759,11 +761,14 @@ async def test_pos_checkout_replay_returns_original_sale_without_second_stock_de
     assert second.quantity == 4
     assert first.reserved_quantity == 0
     assert second.reserved_quantity == 0
-    assert await test_db.scalar(
-        select(func.count()).select_from(Sale).where(
-            Sale.idempotency_key == payload["idempotency_key"]
+    assert (
+        await test_db.scalar(
+            select(func.count())
+            .select_from(Sale)
+            .where(Sale.idempotency_key == payload["idempotency_key"])
         )
-    ) == 1
+        == 1
+    )
 
 @pytest.mark.integration
 async def test_inventory_receipt_is_journaled_and_idempotent(
