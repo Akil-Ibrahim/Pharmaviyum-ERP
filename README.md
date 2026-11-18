@@ -327,6 +327,14 @@ The repository is organized by responsibility, with clear boundaries between app
 
 For directory ownership, root-level configuration rules, and safe file-movement procedures, use the canonical [Repository Structure Guide](docs/architecture/repository-structure.md) · [Русская версия](docs/architecture/repository-structure.ru.md).
 
+## Production System Status
+
+Open the live Pharmaviyum system status page:
+
+- **System status:** https://pharmaviyum-erp.fastapicloud.dev/system-status
+- **Admin login:** `admin`
+- **Password:** Not published in this repository. The production password is managed privately through FastAPI Cloud environment variables. Never commit credentials to Git or share them in documentation.
+
 ## Deployment
 
 The hosted application target is **FastAPI Cloud**. Production deployment is intentionally manual: merging to `main` or passing CI does not deploy the application or run production migrations. The release workflow verifies CI for the exact selected commit before deployment. See [`docs/deployment/FASTAPI_CLOUD.md`](docs/deployment/FASTAPI_CLOUD.md) · [Русская версия](docs/deployment/FASTAPI_CLOUD.ru.md) for secrets, environment configuration, release steps, smoke checks, and rollback constraints.
