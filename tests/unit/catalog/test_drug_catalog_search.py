@@ -45,9 +45,18 @@ async def test_search_includes_medicinal_product_strength() -> None:
         ({"brand_name": "Teva"}, "Teva brand"),
         ({"brand_name": "TevaCare"}, "Teva-derived brand"),
         ({"manufacturer": "Teva Pharmaceutical Industries"}, "Teva manufacturer"),
-        ({"brand_name": "ExampleMed", "authorization_country": "Israel"}, "Israeli authorization"),
-        ({"brand_name": "ExampleMed", "authorization_country": "IL"}, "IL country code"),
-        ({"brand_name": "ExampleMed", "manufacturer_country": "ISR"}, "Israeli manufacturer"),
+        (
+            {"brand_name": "ExampleMed", "authorization_country": "Israel"},
+            "Israeli authorization",
+        ),
+        (
+            {"brand_name": "ExampleMed", "authorization_country": "IL"},
+            "IL country code",
+        ),
+        (
+            {"brand_name": "ExampleMed", "manufacturer_country": "ISR"},
+            "Israeli manufacturer",
+        ),
         ({"payload": {"country_of_origin": "IL"}}, "nested origin metadata"),
     ],
 )
