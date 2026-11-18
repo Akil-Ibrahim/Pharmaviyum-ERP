@@ -61,7 +61,13 @@ describe('UserAuthForm', () => {
       'fetch',
       vi.fn()
         .mockResolvedValueOnce(
-          new Response(JSON.stringify({ access_token: 'mock-access-token', token_type: 'bearer' }), { status: 200 })
+          new Response(
+            JSON.stringify({
+              access_token: 'mock-access-token',
+              token_type: 'bearer',
+            }),
+            { status: 200 }
+          )
         )
         .mockResolvedValue(
           new Response(
@@ -90,7 +96,7 @@ describe('UserAuthForm', () => {
       emailInput = screen.getByRole('textbox', { name: /^Login$/i })
       passwordInput = screen.getByLabelText(/^Password$/i)
       signInButton = screen.getByRole('button', { name: /^Sign in$/i })
-      forgotPasswordLink = screen.getByText(/^Forgot password\?$/i)
+      forgotPasswordLink = screen.getByText(/^Forgot password\\?$/i)
     })
 
     it('renders fields, submit button, and forgot password link', async () => {
@@ -156,7 +162,9 @@ describe('UserAuthForm', () => {
     await userEvent.click(screen.getByRole('button', { name: /Sign in/i }))
 
     await vi.waitFor(() =>
-      expect(toastMocks.error).toHaveBeenCalledWith('Authentication request failed (HTTP 404)')
+      expect(toastMocks.error).toHaveBeenCalledWith(
+        'Authentication request failed (HTTP 404)'
+      )
     )
   })
 
@@ -183,7 +191,10 @@ describe('UserAuthForm', () => {
 
     const screen = await render(<UserAuthForm />)
     await userEvent.fill(screen.getByRole('textbox', { name: /Login/i }), 'admin')
-    await userEvent.fill(screen.getByLabelText('Password'), 'not-a-real-password')
+    await userEvent.fill(
+      screen.getByLabelText('Password'),
+      'not-a-real-password'
+    )
     await userEvent.click(screen.getByRole('button', { name: /Sign in/i }))
 
     await vi.waitFor(() =>
