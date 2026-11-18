@@ -1,0 +1,134 @@
+name: Migrate production database
+
+# Schema changes are isolated from application deployments and require an
+# explicit manual dispatch against the verified Neon production endpoint.
+on:
+  workflow_dispatch:
+    inputs:
+      change_reference:
+        description: "Approved change reference (for example: initial-production-schema-2026-11-18)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pharmaviyum-production-database-migrations
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Apply Alembic migrations to Neon production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: production
+    if: github.ref == 'refs/heads/main'
+    env:
+      PYTHON_VERSION: "3.15.0"
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      EXPECTED_NEON_HOST: "ep-withered-heart-bd47b8z1.c-8.us-east-2.aws.neon.tech"
+      EXPECTED_DATABASE: "neondb"
+    steps:
+      - name: Checkout approved main revision
+        uses: actions/checkout@v5
+
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.8"
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Validate migration graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          heads="$(uv run alembic heads)"
+          printf '%s\n' "$heads"
+          count="$(printf '%s\n' "$heads" | grep -c ' (head)$' || true)"
+          test "$count" -eq 1
+          grep -q '^2026_11_16_000004 ' <<< "$heads"
+
+      - name: Verify exact empty production database
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$DATABASE_URL"
+          uv run python - <<'PY'
+          import os
+          from urllib.parse import urlsplit
+          import psycopg
+
+          raw_url = os.environ["DATABASE_URL"]
+          normalized = raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+          if normalized.startswith("postgres://"):
+              normalized = normalized.replace("postgres://", "postgresql://", 1)
+          parsed = urlsplit(normalized)
+          expected_host = os.environ["EXPECTED_NEON_HOST"]
+          expected_database = os.environ["EXPECTED_DATABASE"]
+
+          if parsed.hostname != expected_host:
+              raise SystemExit("Refusing migration: DATABASE_URL is not the verified direct Neon production endpoint.")
+          if parsed.path.lstrip("/") != expected_database:
+              raise SystemExit("Refusing migration: DATABASE_URL points to an unexpected database.")
+
+          with psycopg.connect(normalized, connect_timeout=15) as connection:
+              with connection.cursor() as cursor:
+                  cursor.execute(
+                      """
+                      SELECT current_database(), current_user,
+                             current_setting('server_version'),
+                             (SELECT count(*) FROM information_schema.tables
+                              WHERE table_schema = 'public' AND table_type = 'BASE TABLE'),
+                             to_regclass('public.alembic_version')
+                      """
+                  )
+                  database, role, version, table_count, alembic_table = cursor.fetchone()
+
+          print(f"Verified database={database}, role={role}, PostgreSQL={version}, public_tables={table_count}, alembic_version={alembic_table}")
+          if database != expected_database or role != "neondb_owner":
+              raise SystemExit("Refusing migration: database identity does not match the approved production target.")
+          if table_count != 0 or alembic_table is not None:
+              raise SystemExit("Refusing bootstrap migration: target is not empty.")
+          PY
+
+      - name: Apply all Alembic migrations
+        run: uv run alembic upgrade head
+
+      - name: Verify final production schema revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run alembic current
+          uv run python - <<'PY'
+          import os
+          from urllib.parse import urlsplit
+          import psycopg
+
+          raw_url = os.environ["DATABASE_URL"]
+          normalized = raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+          if normalized.startswith("postgres://"):
+              normalized = normalized.replace("postgres://", "postgresql://", 1)
+
+          with psycopg.connect(normalized, connect_timeout=15) as connection:
+              with connection.cursor() as cursor:
+                  cursor.execute("SELECT version_num FROM alembic_version")
+                  revisions = [row[0] for row in cursor.fetchall()]
+                  cursor.execute(
+                      "SELECT count(*) FROM information_schema.tables "
+                      "WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
+                  )
+                  table_count = cursor.fetchone()[0]
+
+          print(f"Applied Alembic revisions: {revisions}")
+          print(f"Public base tables: {table_count}")
+          if revisions != ["2026_11_16_000004"]:
+              raise SystemExit("Production schema did not reach the expected single Alembic head.")
+          if table_count < 1:
+              raise SystemExit("Migration completed without creating the expected schema.")
+          PY
