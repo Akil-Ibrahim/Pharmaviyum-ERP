@@ -59,7 +59,8 @@ describe('UserAuthForm', () => {
   beforeEach(() => {
     vi.stubGlobal(
       'fetch',
-      vi.fn()
+      vi
+        .fn()
         .mockResolvedValueOnce(
           new Response(
             JSON.stringify({
