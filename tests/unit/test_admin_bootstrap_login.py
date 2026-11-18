@@ -71,7 +71,9 @@ async def test_existing_bootstrap_admin_is_reconciled_when_hash_is_stale(monkeyp
     monkeypatch.setattr(auth.settings, "ADMIN_PASSWORD", "a-secure-bootstrap-password")
     monkeypatch.setattr(auth, "_verify_password", lambda plain, hashed: False)
     monkeypatch.setattr(auth.pwd_context, "hash", lambda password: "fresh-hash")
-    monkeypatch.setattr(auth, "create_access_token", lambda subject: f"token-for-{subject}")
+    monkeypatch.setattr(
+        auth, "create_access_token", lambda subject: f"token-for-{subject}"
+    )
 
     response = await auth.token(
         SimpleNamespace(
