@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 10
     env:
       BASE_URL: https://pharmaviyum-erp-crm.fastapicloud.dev
-      EXPECTED_COMMIT: \${{ inputs.expected_commit }}
+      EXPECTED_COMMIT: ${{ inputs.expected_commit }}
     steps:
       - name: Check production endpoints without modifying data
         shell: bash
@@ -35,15 +35,15 @@ jobs:
           fetch_endpoint() {
             local name="$1"
             local path="$2"
-            local accept="\${3:-application/json}"
-            local output="/tmp/pharmaviyum-diagnostics/\${name}.body"
+            local accept="${3:-application/json}"
+            local output="/tmp/pharmaviyum-diagnostics/${name}.body"
             local code
             code="$(curl --silent --show-error --connect-timeout 5 --max-time 20 \
-              -H "Accept: \${accept}" \
+              -H "Accept: ${accept}" \
               -H "Cache-Control: no-cache, no-store" \
               -H "Pragma: no-cache" \
-              -o "$output" -w '%{http_code}' "\${BASE_URL}\${path}" || true)"
-            code="\${code:-000}"
+              -o "$output" -w '%{http_code}' "${BASE_URL}${path}" || true)"
+            code="${code:-000}"
             printf '%s=%s\n' "$name" "$code" | tee -a "$GITHUB_STEP_SUMMARY" >&2
             if [[ "$code" == "000" ]]; then
               echo "Request failed or the production host could not be reached." >&2
@@ -57,12 +57,12 @@ jobs:
           }
 
           echo "## Pharmaviyum production diagnostics" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Target: \${BASE_URL}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Target: ${BASE_URL}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Mode: read-only; no deployment or database writes" >> "$GITHUB_STEP_SUMMARY"
 
           version_code="$(fetch_endpoint version "/version")"
           if [[ "$version_code" != "200" ]]; then
-            echo "::error::/version returned HTTP \${version_code}"
+            echo "::error::/version returned HTTP ${version_code}"
             exit 1
           fi
           version_file="/tmp/pharmaviyum-diagnostics/version.body"
@@ -81,7 +81,7 @@ jobs:
             echo "- Debug: $debug"
           } >> "$GITHUB_STEP_SUMMARY"
           if [[ -n "$EXPECTED_COMMIT" && "$actual_commit" != "$EXPECTED_COMMIT" ]]; then
-            echo "::error::Production commit mismatch: expected \${EXPECTED_COMMIT}, got \${actual_commit}"
+            echo "::error::Production commit mismatch: expected ${EXPECTED_COMMIT}, got ${actual_commit}"
             exit 1
           fi
           if [[ "$environment" != "production" || "$debug" != "false" ]]; then
@@ -114,7 +114,7 @@ jobs:
 
           pos_code="$(fetch_endpoint pos_unauthorized "/api/v1/pos/products/search?q=omeprazole&pharmacy_id=1")"
           if [[ "$pos_code" != "401" ]]; then
-            echo "::error::Protected POS endpoint expected HTTP 401 without a token; got \${pos_code}"
+            echo "::error::Protected POS endpoint expected HTTP 401 without a token; got ${pos_code}"
             exit 1
           fi
 
