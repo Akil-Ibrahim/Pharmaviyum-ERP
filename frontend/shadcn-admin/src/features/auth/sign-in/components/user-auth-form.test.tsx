@@ -66,7 +66,7 @@ describe('UserAuthForm', () => {
               access_token: 'mock-access-token',
               token_type: 'bearer',
             }),
-            { status: 200 }
+            { status: 200 },
           )
         )
         .mockResolvedValue(
@@ -163,7 +163,7 @@ describe('UserAuthForm', () => {
 
     await vi.waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith(
-        'Authentication request failed (HTTP 404)'
+        'Authentication request failed (HTTP 404)',
       )
     )
   })
