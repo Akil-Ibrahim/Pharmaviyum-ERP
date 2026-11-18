@@ -20,7 +20,7 @@ Ansible не заменяет приложение Pharmaviyum, PostgreSQL, ло
 
 Целевая архитектура рассчитана на поддержку до **100 независимых площадок Pharmacy Edge**. Это будущая цель по ёмкости, а не текущий размер rollout и не доказательство нагрузочного тестирования или приёмки fleet из 100 площадок.
 
-Конфигурация Ansible намеренно разделяет `max_supported_pharmacy_sites: 100` и `active_rollout_limit: 10`. Начальные playbooks развёртывания и миграции должны отклонять inventory более чем из десяти площадок, пока отдельная оценка ёмкости, безопасности, устойчивости и эксплуатации не разрешит расширение.
+Конфигурация Ansible намеренно разделяет `max_supported_pharmacy_sites: 100` и `active_rollout_limit: 10`. Валидатор допускает inventory размером до 100 площадок, но отклоняет конкретный запуск, если количество выбранных хостов превышает установленный active rollout limit (по умолчанию 10). Следовательно, ограничение в десять площадок относится к выбранным для запуска хостам, а не к общему размеру inventory. Не повышайте `active_rollout_limit` без отдельной оценки ёмкости, безопасности, устойчивости и эксплуатации.
 
 Для будущего fleet:
 - Используйте dynamic inventory на основе CMDB; держите Central hosts отдельно от Pharmacy Edge hosts.
@@ -85,6 +85,8 @@ Controller должен иметь сетевой доступ только к �
 
 В репозитории есть изолированный lab inventory: `ansible/inventory/lab/hosts.yml`. Он получает lab host, SSH user и пароль лабораторной базы из защищённых runtime environment variables; используются непроизводственные pharmacy ID и site code. Перед использованием изучите этот файл. Не переносите его lab identity или credentials в production.
 
+**Не путайте этот inventory с Molecule.** Molecule создаёт собственный временный Docker-контейнер и не использует удалённый Lab inventory. Текущие GitHub Actions выполняют lint, guardrail-тесты, Molecule и syntax checks; workflow проверки синтаксиса читает Lab inventory, но не подключается по SSH к Lab-хосту и не выполняет удалённый deployment. Реальное развёртывание в лаборатории пока является отдельной операцией, требующей явного одобрения. Наличие inventory-файла само по себе не доказывает, что Lab VM и защищённые credentials уже настроены.
+
 Production inventory должен определять реальный SSH endpoint/user, уникальные `pharmacy_id` и `site_code`, а также уникальный `postgres_password` для каждого хоста.
 
 ## 8. Release inputs и секреты
@@ -103,7 +105,7 @@ Production inventory должен определять реальный SSH endp
 ## 9. Процесс развёртывания
 
 1. Проверьте целевой commit и diff playbook.
-2. Убедитесь, что inventory содержит только одобренные аптечные хосты и не более десяти площадок.
+2. Убедитесь, что выбранный для запуска набор содержит только одобренные аптечные хосты и не более десяти площадок; полный inventory может содержать до 100 площадок, но каждый запуск ограничивается `active_rollout_limit`.
 3. Запустите syntax, lint, unit и role tests в CI.
 4. Проведите тестирование в изолированной лаборатории до аптечного pilot.
 5. Проверьте immutable image reference, уникальные site credentials и change approval.
@@ -145,6 +147,8 @@ Deployment приложения не должен автоматически з�
 - Не храните secrets в Git, logs, process arguments или открытых inventory.
 - Фиксируйте production container images по immutable digest.
 - Открывайте только необходимые сервисы; порты базы данных не должны быть доступны из публичной сети.
+- **Текущий пробел реализации:** `ansible/roles/app-backend/files/docker-compose-backend.yml` публикует backend как `HOST_PORT:8000` без явной привязки к IP интерфейса хоста. Поэтому host firewall/network policy обязаны ограничивать доступ. До реального rollout привяжите порт к нужному private interface либо разместите его за утверждённым reverse proxy и проверьте доступность как из POS-сети, так и из недоверенных сетей. Не считайте само Compose mapping приватным.
+- **Граница роли PostgreSQL:** текущие задачи `ansible/roles/postgresql` выполняют подготовительные проверки и проверку состояния; фактический lifecycle БД управляется через Compose. Не описывайте эту роль как PostgreSQL HA, полноценное lifecycle management или автоматическое hardening БД, пока такие возможности не реализованы и не протестированы.
 - Используйте уникальные database credentials и Edge sync identities для каждой аптеки.
 - Используйте Ansible check mode там, где он поддерживается, но не считайте его заменой лабораторному тестированию.
 - Поддерживайте идемпотентность roles и проверяйте, что повторный запуск не создаёт неожиданных изменений.

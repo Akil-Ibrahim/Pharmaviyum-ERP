@@ -20,7 +20,7 @@ Each pharmacy must have a unique site identity, database credentials, Edge sync 
 
 The target architecture is designed to accommodate up to **100 independent Pharmacy Edge sites**. This is a future capacity objective, not the current active rollout size and not evidence that a 100-site fleet has been load-tested or accepted.
 
-The Ansible configuration deliberately separates `max_supported_pharmacy_sites: 100` from `active_rollout_limit: 10`. The starter deployment and migration playbooks must continue to reject inventories larger than ten until a separate capacity, security, resilience, and operational review authorizes expansion.
+The Ansible configuration deliberately separates `max_supported_pharmacy_sites: 100` from `active_rollout_limit: 10`. The fleet validator permits an inventory of up to 100 sites but rejects a selected run containing more than the configured active rollout limit (10 by default). Therefore, the ten-site guardrail applies to the hosts selected for a run, not to the total inventory size. Do not raise `active_rollout_limit` without a separate capacity, security, resilience, and operational review.
 
 For a future fleet:
 
@@ -88,6 +88,8 @@ Begin with one lab host. Supply actual connection details through a protected in
 
 The repository includes an isolated lab inventory at `ansible/inventory/lab/hosts.yml`. It reads the lab host, SSH user, and lab database password from protected runtime environment variables; it uses a non-production pharmacy ID and site code. Review that file before use. Do not copy its lab identity or credentials into production. Production inventory must define a real SSH endpoint/user, unique `pharmacy_id` and `site_code`, and a unique per-pharmacy `postgres_password` for every host.
 
+**Do not confuse this inventory with Molecule.** Molecule creates its own disposable Docker test container and does not use this remote Lab inventory. The current GitHub Actions workflows run lint, guardrail tests, Molecule and syntax checks; the syntax workflow reads the Lab inventory but does not SSH to the Lab host or execute a remote deployment. A real Lab deployment is currently a separate, explicitly approved operation. The presence of the inventory file does not prove that a Lab VM or its protected credentials have been provisioned.
+
 ## 8. Configure release inputs and secrets
 
 Provide required values at job runtime or through encrypted variables:
@@ -105,7 +107,7 @@ Do not put secrets in shell history, command-line arguments, tickets, or source 
 ## 9. Deployment workflow
 
 1. Review the target commit and playbook diff.
-2. Confirm the inventory contains only the approved pharmacy hosts and no more than ten sites.
+2. Confirm the selected host set contains only the approved pharmacy hosts and no more than ten sites; the full inventory may contain up to 100 sites, but each run is capped by `active_rollout_limit`.
 3. Run syntax, lint, unit, and role tests in CI.
 4. Test in an isolated lab before any pharmacy pilot.
 5. Verify immutable image reference, unique site credentials, and change approval.
@@ -147,7 +149,8 @@ Never test restore by overwriting the live pharmacy database. Review a successfu
 - Use SSH key authentication, host-key verification, least privilege, and protected controller credentials.
 - Keep secrets out of Git, logs, process arguments, and plaintext inventories.
 - Pin production container images by immutable digest.
-- Expose only required services; database ports must not be publicly reachable.
+- Expose only required services; database ports must not be publicly reachable. **Current implementation gap:** `ansible/roles/app-backend/files/docker-compose-backend.yml` publishes the backend as `HOST_PORT:8000` without an explicit host-IP bind. The host firewall/network policy must therefore restrict access; before a real site rollout, either bind the port to the intended private interface or put it behind the approved reverse proxy and verify reachability from both POS and untrusted networks. Do not assume the Compose mapping itself is private.
+- **PostgreSQL role boundary:** the current `ansible/roles/postgresql` tasks are status/preparation checks, while the actual database lifecycle is Compose-managed. Do not describe this role as PostgreSQL HA, full lifecycle management, or automated database hardening until those capabilities are implemented and tested.
 - Use unique database credentials and Edge synchronization identities per pharmacy.
 - Use Ansible check mode where supported, but never treat it as a substitute for lab testing.
 - Keep roles idempotent and verify that a second run produces no unexpected changes.

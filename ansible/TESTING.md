@@ -1,101 +1,112 @@
 # Ansible Testing Guide
 
-## Prerequisites
+## Supported toolchain
+
+Use the repository-pinned controller toolchain rather than installing floating latest versions:
 
 ```bash
-pip install molecule molecule-plugins[docker] ansible-lint yamllint pre-commit
+python -m pip install -r requirements.txt
+ansible-galaxy collection install -r requirements.yml
 ```
 
-## Quick Start
+The CI controller currently uses Python 3.14.10. Tool versions are pinned in `requirements.txt`; update them through a reviewed dependency change.
 
-### Run All Tests
+## Run the test suite
+
+Run from the `ansible/` directory:
 
 ```bash
 ./scripts/test.sh
 ```
 
-### Run Molecule Tests
+**Important current limitation:** this helper is not a reliable pass/fail gate yet. In the current implementation, YAML lint and Molecule failures are suppressed with `|| true`, and the script does not run the fleet/recovery guardrail scripts or playbook syntax checks. Do not use its final exit code as proof that the full suite passed. Run the checks below individually and rely on the required GitHub Actions jobs for the merge gate. A separate test-harness change should remove the swallowed failures before this helper is treated as authoritative.
+
+## Molecule
+
+The default scenario targets the Docker-role test container named `pharmaviyum-ansible-test`:
 
 ```bash
-# Run the repository's default Docker-role scenario
 molecule test -s default
-
-# Test with debug output
-molecule test --debug
+molecule test -s default -- --debug
 ```
 
-### Test pharmacy fleet selection
+For an iterative development cycle:
 
 ```bash
-# Verify that a ten-site wave can be selected from a 100-site inventory,
-# while an eleven-site wave and a 101-site inventory fail closed.
+molecule converge -s default
+molecule idempotence -s default
+molecule verify -s default
+molecule destroy -s default
+```
+
+To open the test container after a successful converge:
+
+```bash
+molecule login -s default -h pharmaviyum-ansible-test
+```
+
+Molecule uses a privileged Docker container with systemd for the current Docker-role scenario. This is a disposable container test, not a real remote Pharmacy Edge server. Run it only in an isolated CI runner or disposable development environment; never point it at a pharmacy host.
+
+## Real Lab host (separate from Molecule)
+
+The repository has a separate inventory at `inventory/lab/hosts.yml`. It expects these runtime environment variables: `PHARMAVIYUM_LAB_EDGE_HOST`, `PHARMAVIYUM_LAB_EDGE_USER`, and `PHARMAVIYUM_LAB_POSTGRES_PASSWORD`, plus the release inputs and Docker package pins required by the playbook. The inventory file alone does not prove that a lab VM exists or that credentials are configured.
+
+The current GitHub Actions workflows do **not** SSH to this host or run the deployment playbook against it. `ansible-quality.yml` only uses the lab inventory for syntax checks; that does not establish remote connectivity or deployment success. A real lab deployment is a separate, explicitly approved operation, and must only be run after verifying that the environment variables point to a disposable, non-production lab host.
+
+From the `ansible/` directory, after the lab host and protected runtime variables have been provisioned:
+
+```bash
+ansible-playbook -i inventory/lab/hosts.yml playbooks/deploy.yml --limit pharmacy-edge-lab-01
+```
+
+Do not run this command in CI until a dedicated protected Lab environment, scoped credentials, approval gate, and safe teardown/recovery procedure are in place.
+
+## Fleet and recovery guardrails
+
+Run these from `ansible/`:
+
+```bash
+# A 100-site inventory is allowed as an architecture fixture;
+# the selected execution wave is capped at 10 by default.
 bash tests/test_fleet_selection.sh
-```
 
-### Test restore and rollback recovery preflight gates
-
-```bash
 # Synthetic localhost-only inventories; no pharmacy host is contacted.
 bash tests/test_recovery_guardrails.sh
-```
-
-### Test off-site backup preflight gates
-
-```bash
-# Synthetic localhost-only inventories; no credentials or pharmacy host are contacted.
 bash tests/test_offsite_backup_guardrails.sh
 ```
 
-### Linting
+These scripts test preflight/guardrail behavior. They do not prove that a real fleet, remote backup repository, or disaster-recovery procedure is operational.
+
+## Lint and syntax checks
 
 ```bash
-# YAML syntax
 yamllint -c .yamllint .
-
-# Ansible best practices
 ansible-lint --profile production
-
-# Pre-commit hooks
 pre-commit run --all-files
 ```
 
-## Development Workflow
+Use check mode only for tasks/modules that implement it meaningfully:
 
-1. **Before commit:**
 ```bash
-   pre-commit install
-   pre-commit run --all-files
+ansible-playbook -i inventory/lab/hosts.yml playbooks/deploy.yml \
+  --limit pharmacy-edge-lab-01 --check --diff
 ```
 
-2. **Test changes:**
-```bash
-   molecule converge  # Quick test without destroy
-   molecule verify    # Run verification only
-```
+Check mode is not a substitute for a disposable lab run. Review any task that uses `command`, `shell`, external APIs, Docker operations or handlers separately because check-mode prediction may be incomplete.
 
-3. **Debug:**
-```bash
-   molecule login -h ubuntu-focal  # SSH into test container
-```
+## CI workflows
 
-## CI/CD Integration
+The repository already defines Ansible CI workflows; do not create a duplicate workflow from an old example:
 
-Add to GitHub Actions (`.github/workflows/ansible-test.yml`):
+- `.github/workflows/ansible.yml` runs the broader Ansible quality/test pipeline.
+- `.github/workflows/ansible-quality.yml` runs the focused quality and syntax checks.
 
-```yaml
-name: Ansible Test
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      - name: Install dependencies
-        run: pip install molecule molecule-plugins[docker] ansible-lint
-      - name: Run tests
-        run: ./scripts/test.sh
-```
+Inspect the workflow files for the current triggers, Python version, pinned dependencies and exact test commands. CI results must be green before merging Ansible changes.
+
+## Production safety
+
+- Always pass the intended inventory explicitly; do not rely on the production default in `ansible.cfg`.
+- Use synthetic/local inventories for guardrail tests, Molecule's own Docker inventory for container tests, and `inventory/lab/hosts.yml` only for an explicitly approved real Lab host run.
+- Never run production deployment, migration, backup, restore or rollback as part of a documentation/test command.
+- Keep Vault passwords and all credentials in a protected secret store; never put them in shell arguments, committed files or CI logs.
+- Treat a clean second run (idempotence) as a required acceptance signal for configuration roles, while documenting tasks that are intentionally state-changing.
