@@ -67,7 +67,7 @@ describe('UserAuthForm', () => {
               token_type: 'bearer',
             }),
             { status: 200 },
-          )
+          ),
         )
         .mockResolvedValue(
           new Response(
@@ -77,8 +77,8 @@ describe('UserAuthForm', () => {
               role: ['admin'],
               exp: Date.now() + 86_400_000,
             }),
-            { status: 200 }
-          )
+            { status: 200 },
+          ),
         )
     )
   })
