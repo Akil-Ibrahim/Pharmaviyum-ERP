@@ -49,8 +49,8 @@ jobs:
         run: |
           set -euo pipefail
           heads="$(uv run alembic heads)"
-          printf '%s\\n' "$heads"
-          count="$(printf '%s\\n' "$heads" | grep -c ' (head)$' || true)"
+          printf '%s\n' "$heads"
+          count="$(printf '%s\n' "$heads" | grep -c ' (head)$' || true)"
           test "$count" -eq 1
           grep -q '^2026_11_16_000004 ' <<< "$heads"
 
