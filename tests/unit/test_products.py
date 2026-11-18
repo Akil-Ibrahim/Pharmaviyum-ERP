@@ -86,18 +86,5 @@ def test_product_manufacturer_country_is_supported_across_schemas() -> None:
 
 
 @pytest.mark.unit
-def test_pharmacy_product_visibility_enforces_catalog_exclusions_by_default() -> None:
-    from sqlalchemy import select
-
-    conditions = allowed_pharmacy_product_conditions()
-    assert conditions
-
-    statement = select(Product).where(*conditions)
-    sql = str(statement.compile(compile_kwargs={"literal_binds": True})).lower()
-    assert "\nwhere " in sql
-    assert "products.name" in sql
-    assert "products.manufacturer" in sql
-    assert "products.manufacturer_country" in sql
-    assert "medicinal_products.authorization_country" in sql
-    assert "teva" in sql
-    assert "israel" in sql
+def test_pharmacy_product_visibility_does_not_filter_by_origin() -> None:
+    assert allowed_pharmacy_product_conditions() == ()
