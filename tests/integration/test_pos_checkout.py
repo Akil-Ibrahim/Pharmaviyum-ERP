@@ -770,6 +770,7 @@ async def test_pos_checkout_replay_returns_original_sale_without_second_stock_de
         == 1
     )
 
+
 @pytest.mark.integration
 async def test_inventory_receipt_is_journaled_and_idempotent(
     authenticated_client, test_db
