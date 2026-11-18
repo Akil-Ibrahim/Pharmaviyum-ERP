@@ -138,10 +138,17 @@ async def token(
             )
             db.add(admin)
         else:
-            admin.hashed_password = pwd_context.hash(_bcrypt_password(admin_pass))
+            # Keep the bootstrap path idempotent: do not run bcrypt and write to
+            # PostgreSQL on every successful login. Reconcile the hash only when
+            # the configured credential no longer matches the stored hash.
+            if not _verify_password(admin_pass, admin.hashed_password):
+                admin.hashed_password = pwd_context.hash(_bcrypt_password(admin_pass))
             admin.is_active = True
             admin.is_superuser = True
 
+        # A newly created administrator must be persisted before its ID can be
+        # used as the JWT subject. Existing administrators need a commit only
+        # when their privilege/active state or password hash was reconciled.
         await db.commit()
         await db.refresh(admin)
         subject = str(admin.id)
