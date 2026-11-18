@@ -11,6 +11,7 @@ from .drug_catalog import review_router as drug_catalog_review_router
 from .drug_catalog import router as drug_catalog_router
 from .endpoints import patients_router
 from .ingestion import router as ingestion_router
+from .medical_devices import router as medical_devices_router
 from .monitoring import router as monitoring_router
 from .orders import router as orders_router
 from .patient_purchases import router as patient_purchases_router
@@ -30,6 +31,7 @@ api_v1_router.include_router(drug_catalog_review_router)
 api_v1_router.include_router(dashboard_router)
 api_v1_router.include_router(ingestion_router)
 api_v1_router.include_router(monitoring_router)
+api_v1_router.include_router(medical_devices_router)
 api_v1_router.include_router(orders_router)
 api_v1_router.include_router(patients_router)
 api_v1_router.include_router(patient_purchases_router)

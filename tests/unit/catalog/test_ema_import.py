@@ -46,7 +46,9 @@ def _xlsx(path: Path, rows: list[list[str]]) -> None:
         archive.writestr("xl/worksheets/sheet1.xml", sheet)
 
 
-def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> None:
+def test_parse_ema_article_57_keeps_combinations_and_all_origins(
+    tmp_path: Path,
+) -> None:
     path = tmp_path / "ema.xlsx"
     rows = [
         [
@@ -132,18 +134,20 @@ def test_parse_ema_article_57_headers_and_single_ingredient(tmp_path: Path) -> N
 
     parsed = parse_ema_xlsx(path)
 
-    # Teva and Israeli-authorized or Israeli-manufactured products are excluded.
-    assert [row["product_name"] for row in parsed] == ["ExampleMed"]
-    assert parsed[0] == {
-        "product_name": "ExampleMed",
-        "ingredient": "ibuprofen",
-        "strength": "200 mg",
-        "dosage_form": "Tablet",
-        "route": "Oral use",
-        "country": "Germany",
-        "holder": "Example GmbH",
-        "manufacturer_country": "Germany",
-    }
+    assert [row["product_name"] for row in parsed] == [
+        "ExampleMed",
+        "Combination semicolon",
+        "Combination slash",
+        "Combination plus",
+        "Israeli Example",
+        "Israeli manufacturer",
+        "Example Teva",
+    ]
+    assert parsed[0]["ingredients"] == ["ibuprofen"]
+    assert parsed[1]["ingredients"] == ["ingredient A", "ingredient B"]
+    assert parsed[4]["country"] == "Israel"
+    assert parsed[5]["manufacturer_country"] == "Israel"
+    assert parsed[6]["holder"] == "Teva Pharmaceutical Industries"
 
 
 def test_parse_common_alternate_headers(tmp_path: Path) -> None:
@@ -161,9 +165,9 @@ def test_parse_common_alternate_headers(tmp_path: Path) -> None:
     )
     rows = parse_ema_xlsx(path)
 
-    # The standard Article 57 export has no manufacturing-country field.
-    # Do not stage records whose origin cannot be verified.
-    assert rows == []
+    # Missing manufacturer origin is retained as unknown metadata.
+    assert len(rows) == 1
+    assert rows[0]["manufacturer_country"] == ""
 
 
 def test_missing_required_columns_fails_clearly(tmp_path: Path) -> None:

@@ -3,9 +3,9 @@
 Run after database migrations:
     uv run python scripts/import_rxnorm_catalog.py
 
-The importer intentionally excludes multi-ingredient clinical products because the
-current schema links a medicinal product to one canonical drug reference only.
-It never creates sellable POS inventory, prices, batches, or expiry dates.
+The importer preserves every linked active ingredient for clinical and branded
+products, including combinations. It stages reference records only and never
+creates sellable POS inventory, prices, batches, or expiry dates.
 """
 from __future__ import annotations
 
@@ -18,11 +18,11 @@ import tempfile
 import zipfile
 from html.parser import HTMLParser
 from pathlib import Path
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import httpx
 
-from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
 
 RXNORM_FILES_URL = (
     "https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html"
@@ -177,8 +177,8 @@ def _rrf_rows(path: Path):
 
 def parse_rxnorm_archive(
     archive_path: Path,
-) -> tuple[dict[str, str], list[dict[str, str]]]:
-    """Return canonical ingredient names and single-ingredient clinical products."""
+) -> tuple[dict[str, str], list[dict[str, Any]]]:
+    """Return canonical ingredient names and products with full composition."""
     with zipfile.ZipFile(archive_path) as archive:
         names = set(archive.namelist())
         conso_name = next(
@@ -272,18 +272,28 @@ def parse_rxnorm_archive(
                 elif right in concepts and concepts[right][0] in PRODUCT_TERMS and left in ingredients:
                     product_ingredients.setdefault(right, set()).add(left)
 
-            products: list[dict[str, str]] = []
+            products: list[dict[str, Any]] = []
             for rxcui, (tty, term) in concepts.items():
                 linked = set(product_ingredients.get(rxcui, set()))
                 for component_id in product_components.get(rxcui, set()):
                     linked.update(component_ingredients.get(component_id, set()))
-                # Do not silently misrepresent combination medicines. RxNorm
-                # does not publish manufacturer-country provenance for branded
-                # SBD concepts, so only unbranded SCD concepts are eligible.
-                if tty != "SCD" or len(linked) != 1:
+                # Preserve all linked ingredients. Missing manufacturer origin is
+                # metadata absence, not a reason to discard branded concepts.
+                if tty not in PRODUCT_TERMS or not linked:
                     continue
 
-                ingredient_id = next(iter(linked))
+                ingredient_ids = sorted(linked)
+                ingredient_id = ingredient_ids[0]
+                ingredient_components = [
+                    {
+                        "ingredient_name": ingredients[item_id],
+                        "source_identifier": item_id,
+                    }
+                    for item_id in ingredient_ids
+                    if item_id in ingredients
+                ]
+                if not ingredient_components:
+                    continue
                 strength_match = STRENGTH_RE.search(term)
                 words = term.split()
                 route = next(
@@ -308,17 +318,15 @@ def parse_rxnorm_archive(
                     "brand_name": brand_name,
                     "tty": tty,
                     "ingredient_id": ingredient_id,
+                    "ingredient_name": ingredients[ingredient_id],
+                    "ingredients": ingredient_components,
                     "strength": (
                         strength_match.group(0) if strength_match else ""
                     ),
                     "route": route,
                     "dosage_form": dosage_form,
                 }
-                if not is_excluded_catalog_entry(
-                    brand_name=brand_name or term,
-                    payload=candidate,
-                ):
-                    products.append(candidate)
+                products.append(candidate)
 
             return ingredients, products
 
@@ -340,18 +348,9 @@ async def import_catalog(path: Path, *, source_url: str) -> tuple[int, int]:
 
     from src.pharmaviyum.database import AsyncSessionLocal
     from src.pharmaviyum.models.drug_catalog import DrugCatalogSourceRecord
-    from src.pharmaviyum.services.catalog_exclusions import is_excluded_catalog_entry
-
+    
     ingredient_terms, parsed_products = parse_rxnorm_archive(path)
-    products = [
-        product
-        for product in parsed_products
-        if not is_excluded_catalog_entry(
-            brand_name=product.get("brand_name") or product.get("term"),
-            manufacturer=product.get("manufacturer"),
-            payload=product,
-        )
-    ]
+    products = parsed_products
     version = _archive_version(path)
     records = [
         DrugCatalogSourceRecord(

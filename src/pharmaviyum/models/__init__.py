@@ -5,9 +5,15 @@ from src.pharmaviyum.models.drug_catalog import (
     DrugReference,
     DrugReferenceIngredient,
     MedicinalProduct,
+    MedicinalProductIngredient,
+)
+from src.pharmaviyum.models.inventory_movement import InventoryMovement
+from src.pharmaviyum.models.medical_device import (
+    MedicalDevice,
+    MedicalDeviceAuthorization,
+    MedicalDeviceIdentifier,
 )
 from src.pharmaviyum.models.outbox import OutboxEvent
-from src.pharmaviyum.models.inventory_movement import InventoryMovement
 
 # Import POS entities so Alembic registers their tables in Base.metadata.
 from src.pharmaviyum.models.pos import Payment, Sale, SaleItem, SaleItemAllocation
@@ -22,8 +28,12 @@ __all__ = [
     "DrugReference",
     "DrugReferenceIngredient",
     "MedicinalProduct",
+    "MedicinalProductIngredient",
     "OutboxEvent",
     "InventoryMovement",
+    "MedicalDevice",
+    "MedicalDeviceAuthorization",
+    "MedicalDeviceIdentifier",
     "Payment",
     "PharmacyEdgeNode",
     "Sale",

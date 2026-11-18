@@ -7,7 +7,7 @@ from scripts.import_health_canada_dpd import normalize_dpd_records
 pytestmark = pytest.mark.unit
 
 
-def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> None:
+def test_normalizer_keeps_all_origins_statuses_and_ingredient_compositions() -> None:
     products = [
         {
             "drug_code": 101,
@@ -153,9 +153,14 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
         products, ingredients, forms, routes, statuses, packaging, companies
     )
 
-    # Teva manufacturers and Israeli-origin products are excluded.
-    # Multi-ingredient and non-current products are also rejected.
-    assert [row["source_record_id"] for row in rows] == ["DPD:101"]
+    assert [row["source_record_id"] for row in rows] == [
+        "DPD:101",
+        "DPD:102",
+        "DPD:103",
+        "DPD:104",
+        "DPD:105",
+        "DPD:106",
+    ]
     row = rows[0]
     assert row["ingredient_name"] == "OMEPRAZOLE"
     assert row["strength"] == "20 MG"
@@ -165,9 +170,32 @@ def test_normalizer_keeps_current_single_ingredient_products_and_variants() -> N
     assert row["manufacturer_country"] == "Canada"
     assert row["regulatory_id"] == "01234567"
     assert row["authorization_status"] == "Approved"
+    combination = next(row for row in rows if row["source_record_id"] == "DPD:102")
+    assert combination["ingredient_names"] == ["INGREDIENT A", "INGREDIENT B"]
+    assert combination["strength"] == "5 MG + 10 MG"
+    cancelled = next(row for row in rows if row["source_record_id"] == "DPD:103")
+    assert cancelled["authorization_status"] == "Cancelled Post Market"
+    assert (
+        next(row for row in rows if row["source_record_id"] == "DPD:104")[
+            "manufacturer"
+        ]
+        == "Teva Pharmaceutical Industries"
+    )
+    assert (
+        next(row for row in rows if row["source_record_id"] == "DPD:105")[
+            "manufacturer_country"
+        ]
+        == "Canada / IL"
+    )
+    assert (
+        next(row for row in rows if row["source_record_id"] == "DPD:106")[
+            "manufacturer_country"
+        ]
+        == ""
+    )
 
 
-def test_normalizer_rejects_products_without_single_active_ingredient() -> None:
+def test_normalizer_rejects_products_without_any_active_ingredient() -> None:
     rows = normalize_dpd_records(
         products=[
             {

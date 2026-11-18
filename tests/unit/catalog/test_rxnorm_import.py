@@ -74,7 +74,7 @@ def test_resolver_rejects_non_nlm_download_hosts():
         resolve_current_rxnorm_url(html)
 
 
-def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path: Path):
+def test_parser_keeps_branded_and_multi_ingredient_products(tmp_path: Path):
     archive_path = tmp_path / "rxnorm.zip"
     conso = "".join(
         [
@@ -116,8 +116,13 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
     ingredients, products = parse_rxnorm_archive(archive_path)
 
     assert ingredients == {"100": "ibuprofen", "300": "acetaminophen"}
-    # Branded SBD concepts have no manufacturer-country provenance in RxNorm.
-    assert {product["rxcui"] for product in products} == {"200", "301"}
+    assert {product["rxcui"] for product in products} == {
+        "200",
+        "201",
+        "202",
+        "301",
+        "400",
+    }
     generic = next(product for product in products if product["rxcui"] == "200")
     assert generic["strength"] == "200 MG"
     assert generic["dosage_form"] == "Oral Tablet"
@@ -125,6 +130,13 @@ def test_parser_keeps_single_ingredient_products_and_skips_combinations(tmp_path
     liquid = next(product for product in products if product["rxcui"] == "301")
     assert liquid["strength"] == "160 MG/5 ML"
     assert liquid["dosage_form"] == "Oral Suspension"
+    branded = next(product for product in products if product["rxcui"] == "202")
+    assert branded["brand_name"] == "Teva"
+    combination = next(product for product in products if product["rxcui"] == "400")
+    assert [item["ingredient_name"] for item in combination["ingredients"]] == [
+        "ibuprofen",
+        "acetaminophen",
+    ]
 
 
 def test_current_rxnorm_release_resolves_prescribable_download(monkeypatch):

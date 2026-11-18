@@ -56,6 +56,35 @@ def test_brand_mismatch_does_not_override_ingredient_match():
     assert "brand: 100%" not in product_match["reasons"]
 
 
+def test_combination_product_matches_only_with_complete_composition():
+    reference = _reference()
+    reference.medicinal_products[0].ingredients = [
+        SimpleNamespace(ingredient_name="ibuprofen"),
+        SimpleNamespace(ingredient_name="acetaminophen"),
+    ]
+
+    matches = suggest_matches(
+        {
+            "ingredient_name": "ibuprofen",
+            "ingredients": [
+                {"ingredient_name": "ibuprofen"},
+                {"ingredient_name": "acetaminophen"},
+            ],
+            "brand_name": "ExampleMed",
+            "strength": "200 mg + 325 mg",
+            "dosage_form": "Tablet",
+            "route": "Oral use",
+            "country": "Germany",
+        },
+        [reference],
+    )
+
+    product_match = next(
+        item for item in matches if item["target_type"] == "medicinal_product"
+    )
+    assert product_match["confidence"] == 1.0
+
+
 def test_unrelated_ingredient_returns_no_candidates():
     assert (
         suggest_matches(
@@ -105,7 +134,7 @@ def test_rank_reference_ids_keeps_fuzzy_candidates_and_bounds_hydration():
         ("manufacturer_country", "IL"),
     ],
 )
-def test_excluded_medicinal_products_are_never_suggested(field, value):
+def test_reference_matching_does_not_exclude_manufacturer_or_country(field, value):
     reference = _reference()
     setattr(reference.medicinal_products[0], field, value)
 
@@ -115,5 +144,5 @@ def test_excluded_medicinal_products_are_never_suggested(field, value):
     )
 
     assert matches
-    assert all(item["target_type"] == "drug_reference" for item in matches)
-    assert all(item["medicinal_product_id"] is None for item in matches)
+    assert any(item["target_type"] == "medicinal_product" for item in matches)
+    assert any(item["medicinal_product_id"] == 22 for item in matches)

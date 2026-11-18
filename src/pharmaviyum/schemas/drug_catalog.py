@@ -1,6 +1,13 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class DrugCatalogIngredientResult(BaseModel):
+    ingredient_name: str
+    strength_value: str | None = None
+    strength_unit: str | None = None
+    source_identifier: str | None = None
+
+
 class DrugCatalogResult(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -9,6 +16,9 @@ class DrugCatalogResult(BaseModel):
     inn_name: str
     atc_code: str | None = None
     ingredient_names: list[str] = Field(default_factory=list)
+    ingredient_components: list[DrugCatalogIngredientResult] = Field(
+        default_factory=list
+    )
     brand_name: str | None = None
     product_type: str = "reference"
     manufacturer: str | None = None

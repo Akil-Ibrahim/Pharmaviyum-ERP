@@ -53,10 +53,12 @@ async def _create_pharmacy_product_and_stock(test_db):
 
 
 @pytest.mark.integration
-async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
+async def test_pos_search_and_checkout_allow_all_medicine_origins(
     authenticated_client, test_db
 ):
-    pharmacy = Pharmacy(name="POS Exclusion Test Pharmacy", code="POS-EXCLUSION")
+    pharmacy = Pharmacy(
+        name="POS Origin Neutral Test Pharmacy", code="POS-ORIGIN-NEUTRAL"
+    )
     reference = DrugReference(inn_name="omeprazole")
     test_db.add_all([pharmacy, reference])
     await test_db.flush()
@@ -74,7 +76,7 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
 
     teva_product = Product(
         name="Teva Omeprazole 20 mg",
-        sku="POS-EXCLUDED-TEVA",
+        sku="POS-ORIGIN-TEVA",
         price=10.50,
         stock=0,
         is_active=True,
@@ -82,7 +84,7 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
     )
     israeli_origin_product = Product(
         name="ExampleOrigin Omeprazole 20 mg",
-        sku="POS-EXCLUDED-ORIGIN",
+        sku="POS-ORIGIN-MANUFACTURER-COUNTRY",
         price=10.50,
         stock=0,
         is_active=True,
@@ -91,7 +93,7 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
     )
     israeli_authorized_product = Product(
         name="ExampleAuthorized Omeprazole 20 mg",
-        sku="POS-EXCLUDED-AUTH",
+        sku="POS-ORIGIN-AUTHORIZATION-COUNTRY",
         price=10.50,
         stock=0,
         is_active=True,
@@ -110,7 +112,7 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
             pharmacy_id=pharmacy.id,
             quantity=5,
             reserved_quantity=0,
-            lot_number=f"EXCLUDED-{index}",
+            lot_number=f"ORIGIN-{index}",
             expires_at=now + timedelta(days=30),
         )
         for index, product in enumerate(products, start=1)
@@ -123,14 +125,25 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
         params={"q": "omeprazole", "pharmacy_id": pharmacy.id},
     )
     assert search.status_code == 200, search.text
-    assert search.json() == []
+    search_by_sku = {item["sku"]: item for item in search.json()}
+    assert set(search_by_sku) == {product.sku for product in products}
+    assert (
+        search_by_sku[teva_product.sku]["manufacturer"]
+        == "Teva Pharmaceutical Industries"
+    )
+    assert search_by_sku[israeli_origin_product.sku]["manufacturer"] == "Example Pharma"
+    assert (
+        search_by_sku[israeli_authorized_product.sku]["medicinal_product_id"]
+        == israeli_authorized.id
+    )
+    assert all(item["stock"] == 5 for item in search_by_sku.values())
 
     for product, key in zip(
         products,
         (
-            "pos-excluded-teva-0001",
-            "pos-excluded-origin-0001",
-            "pos-excluded-auth-0001",
+            "pos-origin-teva-0001",
+            "pos-origin-manufacturer-country-0001",
+            "pos-origin-authorization-country-0001",
         ),
     ):
         response = await authenticated_client.post(
@@ -143,15 +156,15 @@ async def test_pos_search_and_checkout_block_teva_and_israeli_medicines(
                 "cash_received": "20.00",
             },
         )
-        assert response.status_code == 404
-        assert (
-            await test_db.scalar(select(Sale).where(Sale.idempotency_key == key))
-            is None
-        )
+        assert response.status_code == 201, response.text
+        assert response.json()["status"] == "completed"
+        sale = await test_db.scalar(select(Sale).where(Sale.idempotency_key == key))
+        assert sale is not None
+        assert sale.status == "completed"
 
     for lot in lots:
         await test_db.refresh(lot)
-        assert lot.quantity == 5
+        assert lot.quantity == 4
         assert lot.reserved_quantity == 0
 
 
@@ -487,9 +500,7 @@ async def test_failed_payment_webhook_releases_stock_and_is_idempotent(
     assert failed.json()["status"] == "processed"
 
     sale = await test_db.scalar(select(Sale).where(Sale.id == receipt["id"]))
-    payment = await test_db.scalar(
-        select(Payment).where(Payment.id == payment_id)
-    )
+    payment = await test_db.scalar(select(Payment).where(Payment.id == payment_id))
     assert sale is not None and sale.status == "cancelled"
     assert payment is not None and payment.status == "failed"
 
@@ -514,14 +525,17 @@ async def test_failed_payment_webhook_releases_stock_and_is_idempotent(
     )
     assert replay.status_code == 200
     assert replay.json()["status"] == "already_processed"
-    assert await test_db.scalar(
-        select(func.count())
-        .select_from(OutboxEvent)
-        .where(
-            OutboxEvent.aggregate_id == receipt["receipt_number"],
-            OutboxEvent.event_type == "pos.payment.failed",
+    assert (
+        await test_db.scalar(
+            select(func.count())
+            .select_from(OutboxEvent)
+            .where(
+                OutboxEvent.aggregate_id == receipt["receipt_number"],
+                OutboxEvent.event_type == "pos.payment.failed",
+            )
         )
-    ) == 1
+        == 1
+    )
     movements = list(
         (
             await test_db.scalars(
@@ -633,14 +647,17 @@ async def test_cancel_pending_sale_releases_reserved_inventory(
     )
     assert replay.status_code == 200, replay.text
     assert replay.json()["status"] == "cancelled"
-    assert await test_db.scalar(
-        select(func.count())
-        .select_from(OutboxEvent)
-        .where(
-            OutboxEvent.aggregate_id == receipt["receipt_number"],
-            OutboxEvent.event_type == "pos.sale.cancelled",
+    assert (
+        await test_db.scalar(
+            select(func.count())
+            .select_from(OutboxEvent)
+            .where(
+                OutboxEvent.aggregate_id == receipt["receipt_number"],
+                OutboxEvent.event_type == "pos.sale.cancelled",
+            )
         )
-    ) == 1
+        == 1
+    )
 
     await test_db.refresh(first)
     await test_db.refresh(second)
@@ -665,11 +682,9 @@ async def test_cancel_pending_sale_releases_reserved_inventory(
 
 
 @pytest.mark.integration
-async def test_pos_checkout_includes_lots_expiring_today(
-    authenticated_client, test_db
-):
-    pharmacy, product, expiring_today, later = (
-        await _create_pharmacy_product_and_stock(test_db)
+async def test_pos_checkout_includes_lots_expiring_today(authenticated_client, test_db):
+    pharmacy, product, expiring_today, later = await _create_pharmacy_product_and_stock(
+        test_db
     )
     today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     expiring_today.expires_at = today
@@ -713,7 +728,6 @@ async def test_pos_checkout_includes_lots_expiring_today(
     assert later.quantity == 5
 
 
-
 @pytest.mark.integration
 async def test_pos_checkout_replay_returns_original_sale_without_second_stock_decrement(
     authenticated_client, test_db
@@ -747,11 +761,15 @@ async def test_pos_checkout_replay_returns_original_sale_without_second_stock_de
     assert second.quantity == 4
     assert first.reserved_quantity == 0
     assert second.reserved_quantity == 0
-    assert await test_db.scalar(
-        select(func.count()).select_from(Sale).where(
-            Sale.idempotency_key == payload["idempotency_key"]
+    assert (
+        await test_db.scalar(
+            select(func.count())
+            .select_from(Sale)
+            .where(Sale.idempotency_key == payload["idempotency_key"])
         )
-    ) == 1
+        == 1
+    )
+
 
 @pytest.mark.integration
 async def test_inventory_receipt_is_journaled_and_idempotent(

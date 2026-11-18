@@ -61,3 +61,8 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 - Never place credentials, real customer/patient data, provider secrets or unredacted logs in documentation.
 - Use synthetic examples. Any clinical evaluation threshold requires qualified pharmacy/clinical review.
 - Every production runbook must identify its environment, preconditions, owner, verification and rollback/recovery boundary.
+
+## International medicine and medical-device reference catalog
+
+- [International catalog sources and coverage](./catalog/INTERNATIONAL_CATALOG_SOURCES.md)
+- [ADR-0008: International medicine and medical-device reference catalog](./adr/ADR-0008-international-medicine-and-device-reference-catalog.md)

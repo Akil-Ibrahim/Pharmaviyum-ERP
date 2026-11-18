@@ -95,6 +95,46 @@ class MedicinalProduct(Base):
     drug_reference: Mapped["DrugReference"] = relationship(
         back_populates="medicinal_products"
     )
+    ingredients: Mapped[list["MedicinalProductIngredient"]] = relationship(
+        back_populates="medicinal_product",
+        cascade="all, delete-orphan",
+        order_by="MedicinalProductIngredient.position",
+    )
+
+
+class MedicinalProductIngredient(Base):
+    """One active ingredient component of a medicinal product presentation."""
+
+    __tablename__ = "medicinal_product_ingredients"
+    __table_args__ = (
+        UniqueConstraint(
+            "medicinal_product_id",
+            "position",
+            name="uq_medicinal_product_ingredient_position",
+        ),
+        CheckConstraint(
+            "position >= 0", name="ck_medicinal_product_ingredient_position"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    medicinal_product_id: Mapped[int] = mapped_column(
+        ForeignKey("medicinal_products.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    ingredient_name: Mapped[str] = mapped_column(
+        String(200), nullable=False, index=True
+    )
+    strength_value: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    strength_unit: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    source_identifier: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    medicinal_product: Mapped["MedicinalProduct"] = relationship(
+        back_populates="ingredients"
+    )
 
 
 class DrugCatalogSourceRecord(Base):
