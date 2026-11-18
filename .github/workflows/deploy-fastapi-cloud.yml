@@ -200,7 +200,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
+          base_url="https://pharmaviyum-erp.fastapicloud.dev"
           for attempt in $(seq 1 60); do
             # Bypass intermediary caches so this gate observes the runtime that is
             # currently serving requests, not a stale cached /version response.
@@ -235,7 +235,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
+          base_url="https://pharmaviyum-erp.fastapicloud.dev"
 
           health_status="$(curl --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors \
             -o /tmp/health.json -w '%{http_code}' "$base_url/health")"
