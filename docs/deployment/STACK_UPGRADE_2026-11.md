@@ -7,7 +7,7 @@ This change set upgrades the application build and test stack. It does not deplo
 ## Target versions
 
 - CPython 3.15.0 for CI/Docker and the FastAPI Cloud runtime target;
-- FastAPI 0.163.1 (released 2026-11-15; OpenAPI fix for response models with nested computed fields)
+- FastAPI 0.164.0 (target pin; lockfile and CI verification required)
 - Pydantic 2.14.3 / pydantic-settings 2.16.2
 - SQLAlchemy 2.1.8, Alembic 1.20.1
 - asyncpg 0.32.0, psycopg 3.3.9
