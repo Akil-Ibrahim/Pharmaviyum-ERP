@@ -62,7 +62,10 @@ describe('UserAuthForm', () => {
       vi.fn()
         .mockResolvedValueOnce(
           new Response(
-            JSON.stringify({ access_token: 'mock-access-token', token_type: 'bearer' }),
+            JSON.stringify({
+              access_token: 'mock-access-token',
+              token_type: 'bearer',
+            }),
             { status: 200 }
           )
         )
