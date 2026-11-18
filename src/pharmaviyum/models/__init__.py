@@ -7,8 +7,8 @@ from src.pharmaviyum.models.drug_catalog import (
     MedicinalProduct,
     MedicinalProductIngredient,
 )
-from src.pharmaviyum.models.outbox import OutboxEvent
 from src.pharmaviyum.models.inventory_movement import InventoryMovement
+from src.pharmaviyum.models.outbox import OutboxEvent
 from src.pharmaviyum.models.medical_device import (
     MedicalDevice,
     MedicalDeviceAuthorization,
