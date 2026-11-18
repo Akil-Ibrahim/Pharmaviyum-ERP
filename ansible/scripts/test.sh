@@ -1,43 +1,41 @@
-#!/bin/bash
-# Ansible testing script
-# Runs linting, syntax checks, and molecule tests
+#!/usr/bin/env bash
+# Fail-closed Ansible validation entry point.
+# Run from any directory; all paths are resolved relative to this script.
 
-set -euo pipefail
+set -Eeuo pipefail
 
-# Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# Go to ansible directory
-cd "$SCRIPT_DIR/.."
+ANSIBLE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ANSIBLE_DIR"
 
 echo "========================================="
-echo "🧪 Testing Ansible Configuration"
+echo "Ansible validation"
 echo "========================================="
 
-# Step 1: YAML syntax check
-echo -e "\n📝 Checking YAML syntax..."
-if [ -f ".yamllint" ]; then
-    yamllint -c .yamllint . || true
-else
-    echo "⚠️  .yamllint not found, skipping..."
-fi
+echo
+echo "[1/5] YAML lint"
+yamllint -c .yamllint .
 
-# Step 2: Ansible-lint
-echo -e "\n🎯 Running ansible-lint..."
+echo
+echo "[2/5] Ansible lint"
 ansible-lint --profile production
 
-# Step 3: Molecule tests
-if [ -d "molecule" ]; then
-    echo -e "\n🧪 Running molecule tests..."
-    cd molecule
-    for scenario in */; do
-        if [ -d "$scenario" ]; then
-            echo "🔹 Testing scenario: ${scenario%/}"
-            cd "$scenario"
-            molecule test || true
-            cd ..
-        fi
-    done
-    cd ..
-fi
+echo
+echo "[3/5] Fleet and recovery guardrails"
+bash tests/test_fleet_selection.sh
+bash tests/test_recovery_guardrails.sh
+bash tests/test_offsite_backup_guardrails.sh
 
-echo -e "\n✅ Testing completed!"
+echo
+echo "[4/5] Playbook syntax against isolated Lab inventory"
+while IFS= read -r playbook; do
+    echo "Checking $playbook"
+    ansible-playbook --syntax-check -i inventory/lab/hosts.yml "$playbook"
+done < <(find playbooks -maxdepth 1 -type f -name '*.yml' | sort)
+
+echo
+echo "[5/5] Molecule default scenario"
+molecule test -s default
+
+echo
+echo "All Ansible validation stages passed."
