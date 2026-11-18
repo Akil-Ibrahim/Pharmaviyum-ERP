@@ -44,14 +44,14 @@ jobs:
               -H "Pragma: no-cache" \
               -o "$output" -w '%{http_code}' "\${BASE_URL}\${path}" || true)"
             code="\${code:-000}"
-            printf '%s=%s\n' "$name" "$code" | tee -a "$GITHUB_STEP_SUMMARY"
+            printf '%s=%s\n' "$name" "$code" | tee -a "$GITHUB_STEP_SUMMARY" >&2
             if [[ "$code" == "000" ]]; then
-              echo "Request failed or the production host could not be reached."
+              echo "Request failed or the production host could not be reached." >&2
             elif jq -e . "$output" >/dev/null 2>&1; then
-              jq . "$output"
+              jq . "$output" >&2
             else
-              head -c 1200 "$output" || true
-              echo
+              head -c 1200 "$output" >&2 || true
+              echo >&2
             fi
             printf '%s' "$code"
           }
