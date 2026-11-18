@@ -28,7 +28,7 @@ jobs:
     env:
       PYTHON_VERSION: "3.15.0"
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      EXPECTED_NEON_HOST: "ep-withered-heart-bd47b8z1.c-8.us-east-2.aws.neon.tech"
+      EXPECTED_NEON_HOST: "ep-odd-wind-beh1cx41.c-9.us-east-2.aws.neon.tech"
       EXPECTED_DATABASE: "neondb"
     steps:
       - name: Checkout approved main revision
@@ -49,8 +49,8 @@ jobs:
         run: |
           set -euo pipefail
           heads="$(uv run alembic heads)"
-          printf '%s\n' "$heads"
-          count="$(printf '%s\n' "$heads" | grep -c ' (head)$' || true)"
+          printf '%s\\n' "$heads"
+          count="$(printf '%s\\n' "$heads" | grep -c ' (head)$' || true)"
           test "$count" -eq 1
           grep -q '^2026_11_16_000004 ' <<< "$heads"
 
@@ -107,7 +107,6 @@ jobs:
           uv run alembic current
           uv run python - <<'PY'
           import os
-          from urllib.parse import urlsplit
           import psycopg
 
           raw_url = os.environ["DATABASE_URL"]
