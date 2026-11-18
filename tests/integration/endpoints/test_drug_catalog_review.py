@@ -89,7 +89,7 @@ class TestDrugCatalogSourceReviewEndpoints:
             },
         ],
     )
-    async def test_excluded_sources_are_hidden_and_cannot_be_matched_or_reviewed(
+    async def test_reference_sources_keep_origin_metadata_without_exclusion(
         self,
         normalized_payload: dict,
         authenticated_client: AsyncClient,
@@ -97,7 +97,7 @@ class TestDrugCatalogSourceReviewEndpoints:
     ):
         record = DrugCatalogSourceRecord(
             source_name="test-source",
-            source_record_id=f"excluded-{next(_source_ids)}",
+            source_record_id=f"origin-metadata-{next(_source_ids)}",
             source_version="2026-01",
             extracted_at=datetime.now(timezone.utc).replace(tzinfo=None),
             normalized_payload=normalized_payload,
@@ -108,54 +108,19 @@ class TestDrugCatalogSourceReviewEndpoints:
 
         listed = await authenticated_client.get("/api/v1/drug-catalog/sources")
         assert listed.status_code == 200, listed.text
-        assert record.id not in {item["id"] for item in listed.json()}
+        assert record.id in {item["id"] for item in listed.json()}
 
         matches = await authenticated_client.get(
             f"/api/v1/drug-catalog/sources/{record.id}/matches"
         )
-        assert matches.status_code == 422
+        assert matches.status_code == 200, matches.text
 
         reviewed = await authenticated_client.patch(
             f"/api/v1/drug-catalog/sources/{record.id}/review",
             json={"review_status": "rejected"},
         )
-        assert reviewed.status_code == 422
-        assert record.review_status == "pending_review"
-
-    async def test_source_review_list_refills_after_excluded_rows(
-        self,
-        authenticated_client: AsyncClient,
-        test_db: AsyncSession,
-    ):
-        excluded_rows = [
-            DrugCatalogSourceRecord(
-                source_name="test-source",
-                source_record_id=f"excluded-page-{index}",
-                source_version="2026-01",
-                extracted_at=datetime(2026, 1, 1) + timedelta(seconds=index),
-                normalized_payload={"brand_name": "Teva"},
-                review_status="pending_review",
-            )
-            for index in range(201)
-        ]
-        eligible = DrugCatalogSourceRecord(
-            source_name="test-source",
-            source_record_id=f"eligible-after-exclusions-{next(_source_ids)}",
-            source_version="2026-01",
-            extracted_at=datetime(2025, 12, 31),
-            normalized_payload={"ingredient_name": "ibuprofen"},
-            review_status="pending_review",
-        )
-        test_db.add_all([*excluded_rows, eligible])
-        await test_db.flush()
-
-        response = await authenticated_client.get(
-            "/api/v1/drug-catalog/sources",
-            params={"limit": 1},
-        )
-
-        assert response.status_code == 200, response.text
-        assert [item["id"] for item in response.json()] == [eligible.id]
+        assert reviewed.status_code == 200, reviewed.text
+        assert reviewed.json()["review_status"] == "rejected"
 
     async def test_invalid_approval_payload_returns_422(
         self,
@@ -389,7 +354,7 @@ class TestDrugCatalogSourcePromotion:
             },
         ],
     )
-    async def test_excluded_sources_cannot_create_catalog_products(
+    async def test_reference_catalog_can_promote_teva_and_israeli_origin_records(
         self,
         normalized_payload: dict,
         authenticated_client: AsyncClient,
@@ -397,7 +362,7 @@ class TestDrugCatalogSourcePromotion:
     ):
         record = DrugCatalogSourceRecord(
             source_name="test-source",
-            source_record_id=f"excluded-promotion-{next(_source_ids)}",
+            source_record_id=f"origin-promotion-{next(_source_ids)}",
             source_version="2026-01",
             extracted_at=datetime.now(timezone.utc).replace(tzinfo=None),
             normalized_payload=normalized_payload,
@@ -415,8 +380,14 @@ class TestDrugCatalogSourcePromotion:
             },
         )
 
-        assert response.status_code == 422
-        assert record.review_status == "pending_review"
-        assert await test_db.scalar(select(MedicinalProduct)) is None
+        assert response.status_code == 200, response.text
+        result = response.json()
+        assert result["review_status"] == "approved"
+        assert result["matched_medicinal_product_id"] is not None
+        medicinal_product = await test_db.get(
+            MedicinalProduct, result["matched_medicinal_product_id"]
+        )
+        assert medicinal_product is not None
+        assert medicinal_product.brand_name == normalized_payload["brand_name"]
+        assert medicinal_product.manufacturer == normalized_payload["manufacturer"]
         assert await test_db.scalar(select(Product)) is None
-        assert await test_db.scalar(select(DrugReference)) is None
