@@ -1,4 +1,4 @@
-"""Regression tests for reference-catalog search and POS policy separation."""
+"""Regression tests for origin-neutral reference-catalog search."""
 
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -40,97 +40,23 @@ async def test_search_includes_medicinal_product_strength() -> None:
 
 
 @pytest.mark.parametrize(
-    ("kwargs", "expected"),
+    ("kwargs", "description"),
     [
-        ({"brand_name": "Teva"}, True),
-        ({"brand_name": "TevaCare"}, True),
-        ({"manufacturer": "Teva Pharmaceutical Industries"}, True),
-        ({"brand_name": "Generic brand", "authorization_country": "Israel"}, True),
-        ({"brand_name": "Generic brand", "authorization_country": "IL - Israel"}, True),
-        ({"brand_name": "Generic brand", "manufacturer_country": "ISR (Israel)"}, True),
-        (
-            {
-                "brand_name": "Generic brand",
-                "payload": {"country_of_origin": "IL"},
-            },
-            True,
-        ),
-        (
-            {
-                "brand_name": "Generic brand",
-                "payload": {"manufacturer_country": "IL"},
-            },
-            True,
-        ),
-        (
-            {
-                "brand_name": "Generic brand",
-                "payload": {"country_of_manufacture": "State of Israel"},
-            },
-            True,
-        ),
-        (
-            {
-                "brand_name": "Generic brand",
-                "manufacturer": "Example Pharma",
-                "authorization_country": "Germany",
-            },
-            False,
-        ),
+        ({"brand_name": "Teva"}, "Teva brand"),
+        ({"brand_name": "TevaCare"}, "Teva-derived brand"),
+        ({"manufacturer": "Teva Pharmaceutical Industries"}, "Teva manufacturer"),
+        ({"brand_name": "ExampleMed", "authorization_country": "Israel"}, "Israeli authorization"),
+        ({"brand_name": "ExampleMed", "authorization_country": "IL"}, "IL country code"),
+        ({"brand_name": "ExampleMed", "manufacturer_country": "ISR"}, "Israeli manufacturer"),
+        ({"payload": {"country_of_origin": "IL"}}, "nested origin metadata"),
     ],
 )
-def test_exclusion_policy_when_enabled(
-    kwargs: dict, expected: bool, monkeypatch
-) -> None:
-    monkeypatch.setattr(catalog_exclusions, "CATALOG_EXCLUSIONS_ENABLED", True)
-    assert is_excluded_catalog_entry(**kwargs) is expected
+def test_origin_never_excludes_catalog_entries(kwargs: dict, description: str) -> None:
+    # Even legacy callers setting the compatibility flag cannot re-enable filtering.
+    catalog_exclusions.CATALOG_EXCLUSIONS_ENABLED = True
+    assert is_excluded_catalog_entry(**kwargs) is False
 
 
-@pytest.mark.parametrize(
-    "payload",
-    [
-        {"manufacturerCountry": "IL"},
-        {"metadata": {"countryOfOrigin": "Israel"}},
-        {"details": [{"country_of_manufacture": "State of Israel"}]},
-    ],
-)
-def test_excludes_nested_israeli_country_metadata_when_enabled(
-    payload: dict, monkeypatch
-) -> None:
-    monkeypatch.setattr(catalog_exclusions, "CATALOG_EXCLUSIONS_ENABLED", True)
-    assert is_excluded_catalog_entry(payload=payload)
-
-
-def test_does_not_match_teva_as_part_of_another_word(monkeypatch) -> None:
-    monkeypatch.setattr(catalog_exclusions, "CATALOG_EXCLUSIONS_ENABLED", True)
-    assert not is_excluded_catalog_entry(manufacturer="Whatever Pharmaceutical")
-
-
-def test_excludes_explicit_manufacturer_country_even_when_authorized_elsewhere(
-    monkeypatch,
-) -> None:
-    monkeypatch.setattr(catalog_exclusions, "CATALOG_EXCLUSIONS_ENABLED", True)
-    assert is_excluded_catalog_entry(
-        manufacturer="Example Pharma",
-        authorization_country="Germany",
-        manufacturer_country="IL",
-    )
-
-
-def test_reference_catalog_has_no_manufacturer_or_country_exclusions() -> None:
+def test_reference_and_pharmacy_queries_have_no_origin_exclusion_predicates() -> None:
     assert allowed_medicinal_product_conditions() == ()
-
-
-def test_pos_product_queries_enforce_exclusions_by_default() -> None:
-    from sqlalchemy import select
-
-    from src.pharmaviyum.models.product import Product
-
-    statement = select(Product).where(*allowed_pharmacy_product_conditions())
-    sql = str(statement.compile(compile_kwargs={"literal_binds": True})).lower()
-    assert "products.name" in sql
-    assert "products.manufacturer" in sql
-    assert "products.manufacturer_country" in sql
-    assert "medicinal_products.authorization_country" in sql
-    assert "teva" in sql
-    assert "israel" in sql
+    assert allowed_pharmacy_product_conditions() == ()
