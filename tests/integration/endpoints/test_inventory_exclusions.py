@@ -91,6 +91,7 @@ async def test_origin_neutral_tevaproduct_can_be_received_into_inventory(
     assert inventory.quantity == 5
     assert inventory.reserved_quantity == 0
 
+
 async def test_inventory_adjustment_allows_origin_neutral_products(
     authenticated_client: AsyncClient,
     test_db: AsyncSession,
@@ -132,6 +133,7 @@ async def test_inventory_adjustment_allows_origin_neutral_products(
     await test_db.refresh(inventory)
     assert inventory.lot_number == "TEVA-LOT-001"
 
+
 async def test_inventory_patch_cannot_change_pos_owned_reservations(
     authenticated_client: AsyncClient,
     test_db: AsyncSession,
@@ -160,9 +162,7 @@ async def test_inventory_lot_with_stock_cannot_be_deleted(
 ):
     _, _, inventory = await _create_origin_neutral_inventory_fixture(test_db)
 
-    response = await authenticated_client.delete(
-        f"/api/v1/inventory/{inventory.id}"
-    )
+    response = await authenticated_client.delete(f"/api/v1/inventory/{inventory.id}")
 
     assert response.status_code == 409
     await test_db.refresh(inventory)
