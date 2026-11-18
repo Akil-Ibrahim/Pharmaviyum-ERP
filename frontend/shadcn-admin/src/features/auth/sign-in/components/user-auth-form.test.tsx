@@ -163,7 +163,7 @@ describe('UserAuthForm', () => {
 
     await vi.waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith(
-        'Authentication request failed (HTTP 404)',
+        'Authentication request failed (HTTP 404)'
       )
     )
   })
