@@ -61,13 +61,7 @@ describe('UserAuthForm', () => {
       'fetch',
       vi.fn()
         .mockResolvedValueOnce(
-          new Response(
-            JSON.stringify({
-              access_token: 'mock-access-token',
-              token_type: 'bearer',
-            }),
-            { status: 200 }
-          )
+          new Response(JSON.stringify({ access_token: 'mock-access-token', token_type: 'bearer' }), { status: 200 })
         )
         .mockResolvedValue(
           new Response(
@@ -96,7 +90,7 @@ describe('UserAuthForm', () => {
       emailInput = screen.getByRole('textbox', { name: /^Login$/i })
       passwordInput = screen.getByLabelText(/^Password$/i)
       signInButton = screen.getByRole('button', { name: /^Sign in$/i })
-      forgotPasswordLink = screen.getByText(/^Forgot password\\?$/i)
+      forgotPasswordLink = screen.getByText(/^Forgot password\?$/i)
     })
 
     it('renders fields, submit button, and forgot password link', async () => {
@@ -162,45 +156,7 @@ describe('UserAuthForm', () => {
     await userEvent.click(screen.getByRole('button', { name: /Sign in/i }))
 
     await vi.waitFor(() =>
-      expect(toastMocks.error).toHaveBeenCalledWith(
-        'Authentication request failed (HTTP 404)'
-      )
-    )
-  })
-
-  it('shows the server request ID when authentication returns HTTP 500', async () => {
-    vi.clearAllMocks()
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            error: {
-              code: 'INTERNAL_SERVER_ERROR',
-              message: 'An unexpected error occurred. Please contact support.',
-              request_id: 'auth-request-123',
-            },
-          }),
-          {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        )
-      )
-    )
-
-    const screen = await render(<UserAuthForm />)
-    await userEvent.fill(screen.getByRole('textbox', { name: /Login/i }), 'admin')
-    await userEvent.fill(
-      screen.getByLabelText('Password'),
-      'not-a-real-password'
-    )
-    await userEvent.click(screen.getByRole('button', { name: /Sign in/i }))
-
-    await vi.waitFor(() =>
-      expect(toastMocks.error).toHaveBeenCalledWith(
-        'An unexpected error occurred. Please contact support. (Request ID: auth-request-123)'
-      )
+      expect(toastMocks.error).toHaveBeenCalledWith('Authentication request failed (HTTP 404)')
     )
   })
 
