@@ -88,6 +88,8 @@ Begin with one lab host. Supply actual connection details through a protected in
 
 The repository includes an isolated lab inventory at `ansible/inventory/lab/hosts.yml`. It reads the lab host, SSH user, and lab database password from protected runtime environment variables; it uses a non-production pharmacy ID and site code. Review that file before use. Do not copy its lab identity or credentials into production. Production inventory must define a real SSH endpoint/user, unique `pharmacy_id` and `site_code`, and a unique per-pharmacy `postgres_password` for every host.
 
+**Do not confuse this inventory with Molecule.** Molecule creates its own disposable Docker test container and does not use this remote Lab inventory. The current GitHub Actions workflows run lint, guardrail tests, Molecule and syntax checks; the syntax workflow reads the Lab inventory but does not SSH to the Lab host or execute a remote deployment. A real Lab deployment is currently a separate, explicitly approved operation. The presence of the inventory file does not prove that a Lab VM or its protected credentials have been provisioned.
+
 ## 8. Configure release inputs and secrets
 
 Provide required values at job runtime or through encrypted variables:
