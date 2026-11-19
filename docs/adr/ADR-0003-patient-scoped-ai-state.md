@@ -1,7 +1,7 @@
 # ADR-0003: Patient-Scoped Mortarium Conversation State
 
 ## Status
-Accepted — implementation merged into `main` by [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287) (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f). The architectural decision is accepted; staged end-to-end validation and production rollout remain release gates. A merge and passing CI do not establish production activation or clinical safety.
+Accepted — implementation merged into `main` by [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287) (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`). The architectural decision is accepted; staged end-to-end validation and production rollout remain release gates. A merge and passing CI do not establish production activation or clinical safety.
 
 ## Context
 Before PR #287, Mortarium used an authenticated pharmacy context, an Agent Harness with Redis dialogue memory, and two LangGraph workflows with checkpoint persistence, but API session and checkpoint identities were not consistently bound to patient identity. Reusing a client session while switching patients could therefore risk reusing prior dialogue or checkpoint state.
