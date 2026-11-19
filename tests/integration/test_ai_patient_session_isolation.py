@@ -11,11 +11,11 @@ from collections.abc import AsyncIterator
 from typing import Any
 from uuid import uuid4
 
+import pytest
 from httpx import AsyncClient
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.graph import END, START, MessagesState, StateGraph
 from psycopg.conninfo import make_conninfo
-import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -189,12 +189,8 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
         "general pharmacy prompt",
         "general pharmacy answer",
     ]
-    patient_a_content = " ".join(
-        str(message.content) for message in patient_a_messages
-    )
-    patient_b_content = " ".join(
-        str(message.content) for message in patient_b_messages
-    )
+    patient_a_content = " ".join(str(message.content) for message in patient_a_messages)
+    patient_b_content = " ".join(str(message.content) for message in patient_b_messages)
     assert "patient B" not in patient_a_content
     assert "patient A" not in patient_b_content
 
@@ -236,7 +232,6 @@ async def test_ai_api_rejects_patient_from_another_pharmacy_before_harness(
 
     assert response.status_code == 404
     assert harness.calls == []
-
 
 
 @pytest.mark.integration
@@ -294,9 +289,7 @@ async def test_patient_scoped_langgraph_checkpoints_are_durable_and_separate(
             )
 
         snapshots = {
-            label: await graph.aget_state(
-                {"configurable": {"thread_id": thread_id}}
-            )
+            label: await graph.aget_state({"configurable": {"thread_id": thread_id}})
             for label, thread_id in thread_ids.items()
         }
         for label, snapshot in snapshots.items():
