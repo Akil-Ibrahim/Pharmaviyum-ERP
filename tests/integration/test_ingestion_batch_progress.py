@@ -45,9 +45,7 @@ async def test_batch_child_results_are_atomic_and_idempotent(
     # A late duplicate after completion must not increment counters or regress
     # the terminal parent status.
     await tracker.record_batch_result(batch_job_id, "child-1", True)
-    assert await test_redis.hgetall(
-        f"ingestion:job:{batch_job_id}:batch"
-    ) == counters
+    assert await test_redis.hgetall(f"ingestion:job:{batch_job_id}:batch") == counters
     final_job = await tracker.get_job(batch_job_id)
     assert final_job is not None
     assert final_job["status"] == "failed"
