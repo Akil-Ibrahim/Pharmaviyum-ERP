@@ -9,13 +9,22 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from typing import Any
+from uuid import uuid4
 
 import pytest
 from httpx import AsyncClient
+from langchain_core.messages import AIMessage, HumanMessage
+from langgraph.graph import END, START, MessagesState, StateGraph
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from psycopg.conninfo import make_conninfo
 
+from src.pharmaviyum.ai.agents.checkpointer import AgentCheckpointer
+from src.pharmaviyum.ai.config import settings as ai_settings
 from src.pharmaviyum.ai.dependencies import get_agent_harness
 from src.pharmaviyum.ai.harness.memory import DialogueMemory
+from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
+from src.pharmaviyum.ai.mortarium_rag.schemas import QueryContext
 from src.pharmaviyum.api.v1.ai import _scoped_session_id
 from src.pharmaviyum.core.config import settings as app_settings
 from src.pharmaviyum.main import app
@@ -206,3 +215,74 @@ async def test_ai_api_rejects_patient_from_another_pharmacy_before_harness(
 
     assert response.status_code == 404
     assert harness.calls == []
+
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_patient_scoped_langgraph_checkpoints_are_durable_and_separate(
+    test_db: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Real PostgreSQL checkpoints must remain isolated across patient scopes."""
+    from src.pharmaviyum.core.config import settings as core_settings
+
+    monkeypatch.setattr(core_settings, "SECRET_KEY", "patient-isolation-checkpoint-secret")
+    schema = f"ai_isolation_{uuid4().hex}"
+    await test_db.execute(text(f'CREATE SCHEMA "{schema}"'))
+    await test_db.commit()
+
+    base_url = ai_settings.pgvector.database_url.get_secret_value().replace(
+        "postgresql+asyncpg://", "postgresql://", 1
+    )
+    isolated_dsn = make_conninfo(
+        base_url,
+        options=f"-c search_path={schema}",
+    )
+    checkpointer = AgentCheckpointer(database_url=isolated_dsn, max_size=2)
+    try:
+        saver = await checkpointer.initialize()
+
+        async def record_message(state: MessagesState) -> dict[str, Any]:
+            original = state["messages"][-1].content
+            return {"messages": [AIMessage(content=f"persisted:{original}")]}
+
+        workflow = StateGraph(MessagesState)
+        workflow.add_node("record", record_message)
+        workflow.add_edge(START, "record")
+        workflow.add_edge("record", END)
+        graph = workflow.compile(checkpointer=saver)
+
+        contexts = {
+            "patient_a": QueryContext(user_id="user-1", pharmacy_id=7, patient_id=101),
+            "patient_b": QueryContext(user_id="user-1", pharmacy_id=7, patient_id=202),
+            "no_patient": QueryContext(user_id="user-1", pharmacy_id=7),
+        }
+        thread_ids = {
+            label: LangGraphRAG._thread_id("same-browser-session", context)
+            for label, context in contexts.items()
+        }
+        assert len(set(thread_ids.values())) == 3
+
+        for label, thread_id in thread_ids.items():
+            await graph.ainvoke(
+                {"messages": [HumanMessage(content=f"synthetic:{label}")]},
+                config={"configurable": {"thread_id": thread_id}},
+            )
+
+        snapshots = {
+            label: await graph.aget_state(
+                {"configurable": {"thread_id": thread_id}}
+            )
+            for label, thread_id in thread_ids.items()
+        }
+        for label, snapshot in snapshots.items():
+            contents = [message.content for message in snapshot.values["messages"]]
+            assert f"synthetic:{label}" in contents
+            assert f"persisted:synthetic:{label}" in contents
+            for other_label in set(contexts) - {label}:
+                assert f"synthetic:{other_label}" not in contents
+    finally:
+        await checkpointer.close()
+        await test_db.execute(text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
+        await test_db.commit()
