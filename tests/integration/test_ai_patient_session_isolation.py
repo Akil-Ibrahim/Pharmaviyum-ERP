@@ -102,11 +102,10 @@ async def test_sync_and_stream_routes_bind_reused_session_to_patient_scope(
     ]
     scopes = {
         patient_id: (
-            harness.calls[index]["session_id"],
-            harness.calls[index + 1]["session_id"],
+            harness.calls[position * 2]["session_id"],
+            harness.calls[position * 2 + 1]["session_id"],
         )
-        for index, patient_id in enumerate((patient_a.id, patient_b.id, None), start=0)
-        for index in [index * 2]
+        for position, patient_id in enumerate((patient_a.id, patient_b.id, None))
     }
     for sync_scope, stream_scope in scopes.values():
         assert sync_scope == stream_scope
@@ -139,9 +138,21 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
     patient_b_scope = _scoped_session_id(client_session, tenant, user, 202)
     no_patient_scope = _scoped_session_id(client_session, tenant, user, None)
 
-    await memory.save(patient_a_scope, "synthetic patient A prompt", "synthetic patient A answer")
-    await memory.save(patient_b_scope, "synthetic patient B prompt", "synthetic patient B answer")
-    await memory.save(no_patient_scope, "general pharmacy prompt", "general pharmacy answer")
+    await memory.save(
+        patient_a_scope,
+        "synthetic patient A prompt",
+        "synthetic patient A answer",
+    )
+    await memory.save(
+        patient_b_scope,
+        "synthetic patient B prompt",
+        "synthetic patient B answer",
+    )
+    await memory.save(
+        no_patient_scope,
+        "general pharmacy prompt",
+        "general pharmacy answer",
+    )
 
     patient_a_messages = await memory.load(patient_a_scope)
     patient_b_messages = await memory.load(patient_b_scope)
