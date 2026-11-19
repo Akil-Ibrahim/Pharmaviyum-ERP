@@ -6,7 +6,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-
 ReplayReasonCode = Literal[
     "credential_rotated",
     "central_endpoint_fixed",
