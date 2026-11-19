@@ -1,7 +1,7 @@
 # Аудит архитектуры Mortarium AI / RAG
 
-**Дата аудита:** 2026-11-14  
-**Проверенная ревизия:** `main` на коммите `2833bafa0cb505aedf8e4e9c9447f26dd5a5c83f`  
+**Дата аудита:** 2026-11-19  
+**Проверенная ревизия:** `main` на коммите `cec7ba8ad4fa8bc40cc0b3f870a17509ca4e2743`  
 **Метод:** статическая проверка исходного кода, конфигурации, документации и контрактов тестирования  
 **Статус выполнения:** в рамках этого аудита документации не запускались тесты приложения, live-вызовы моделей, production-запросы или изменения deployment.
 
@@ -11,15 +11,17 @@ Mortarium — прикладной помощник фармацевта, пос
 
 В архитектуре есть существенные fail-closed механизмы: аутентифицированный контекст аптеки устанавливается на границе API; ID пациента проверяются относительно выбранной аптеки; pgvector retrieval требует положительный pharmacy ID; для чанков уровня пациента обязателен явный patient filter; выполнение MCP требует доверенного контекста запроса и RBAC; операции записи MCP запрещены, если не настроен доверенный verifier подтверждения.
 
-**Статический аудит не подтверждает готовность к production для сценариев с пациентами или пациентским контекстом.** Самая приоритетная проблема: память диалога и thread ID checkpoint обоих графов ограничены аптекой/пользователем/сессией, но не пациентом. Если повторно использовать сессию при переключении пациентов, историческое состояние диалога/checkpoint может быть повторно использовано в контексте другого пациента. Существующий evaluator изоляции пациента проверяет метаданные найденных источников, но не подтверждает изоляцию памяти диалога или состояния checkpoint.
+**Первоначальная P0-проблема изоляции контекста пациента устранена в `main` через PR #287** (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`). Synchronous и streaming API теперь формируют версионируемый HMAC namespace `mortarium-session:v3` на основе pharmacy, аутентифицированного user, patient (включая явную область без пациента) и client session. Agent и RAG checkpoints независимо формируют непрозрачные версионируемые HMAC identifiers с учетом patient scope. Regression tests покрывают разделение областей, неверные идентификаторы, tenant isolation и secret rotation. В merge record проверки RAG Safety Regression, Unit Tests и Integration Tests указаны как успешные.
 
-Другие существенные пробелы: ID checkpoint RAG не псевдонимизируются через HMAC, хотя прежняя документация архитектуры утверждала обратное; русский язык отсутствует в текущих языковых настройках по умолчанию; runtime не внедряет reranker; некоторые объявленные настройки RAG не подключены к runtime; отдельный `IngestionOrchestrator` не является активным путём ingestion API.
+**Production readiness пока не доказана.** Остаётся staged end-to-end release gate: переключение Patient A → Patient B → no patient с повторным использованием одной client session в streaming и non-streaming режимах, с реальной Redis memory и PostgreSQL checkpoint persistence. Старые plaintext RAG checkpoint records автоматически не мигрируются и не удаляются; до rollout необходимо утвердить retention/deletion plan и rollback behavior. Этот статический обзор не запускал тесты и не проверял production state.
+
+Другие существенные пробелы остаются: качество русского языка/OCR/embeddings требует измеримых RU/EN benchmarks; runtime не внедряет отдельный reranker; некоторые объявленные настройки RAG не подключены к runtime; отдельный `IngestionOrchestrator` не является активным путём ingestion API.
 
 ## Карта runtime
 
 | Уровень | Текущая реализация | Оценка аудита |
 |---|---|---|
-| Граница API | `src/pharmaviyum/api/v1/ai.py`; аутентифицированный пользователь, членство в аптеке и проверка принадлежности пациента аптеке | Реализовано; привязка сессии к пациенту отсутствует |
+| Граница API | `src/pharmaviyum/api/v1/ai.py`; аутентифицированный пользователь, членство в аптеке и проверка принадлежности пациента аптеке | Patient-aware HMAC session scope влит; staged integration gate открыт |
 | Оркестрация агента | Граф LangGraph `PharmacistAgent`: router → извлечение знаний → цикл planner/executor → структурированный reviewer | Реализовано; лимит итераций — 5 |
 | Agent Harness | `AgentHarness`: memory → input guardrail → cache → model router → agent → output guardrail → memory | Реализовано |
 | Оркестрация RAG | Скомпилированный `StateGraph` `LangGraphRAG` с явным PostgreSQL checkpointer | Реализовано |
@@ -31,39 +33,24 @@ Mortarium — прикладной помощник фармацевта, пос
 
 ## Выводы и приоритеты
 
-### P0 — Контекст пациента не привязан к сессии диалога/checkpoint
+### P0 — Изоляция контекста пациента: исправление кода влито; staged release gate открыт
 
-**Доказательства**
+PR #287 добавил в `main` следующие механизмы:
 
-- AI API формирует область session ID как `pharmacy:{pharmacy_id}:user:{user_id}:session:{session_id}`; ID пациента в эту область не входит.
-- `AgentHarness` загружает и сохраняет память диалога с использованием этого session ID.
-- `DialogueMemory._session_prefix()` применяет HMAC к session ID, но вход HMAC по-прежнему не включает ID пациента.
-- `PharmacistAgent._thread_id()` применяет HMAC к pharmacy, user и thread ID, но не к ID пациента.
-- `LangGraphRAG._thread_id()` также не включает ID пациента.
-- Контекст prompt cache включает ID пациента, но это не ограничивает память диалога или checkpoint графов.
-- Фармацевтический evaluator `patient_context_isolation()` проверяет метаданные источников; он не проверяет переключение пациентов в одной повторно используемой беседе.
+- API session namespace `mortarium-session:v3` связывает pharmacy, аутентифицированного user, patient (включая явный `None`) и client session с помощью HMAC-SHA-256.
+- Оба endpoint — synchronous и streaming — проверяют tenant/patient scope до формирования внутреннего session namespace.
+- `PharmacistAgent._thread_id()` использует `agent:v2:<digest>` и учитывает patient scope.
+- `LangGraphRAG._thread_id()` использует `rag:v2:<digest>` и учитывает patient scope.
+- Прямое создание checkpoint проверяет формат идентификаторов и завершает запрос fail-closed в staging/production при отсутствии `SECRET_KEY`.
+- Regression tests проверяют разделение Patient A/B/no-patient, некорректные идентификаторы, tenant isolation и secret rotation.
 
-**Риск**
+**Оставшийся release gate:** провести staged end-to-end тесты с реальными Redis и PostgreSQL checkpoint persistence, повторно используя одну client session для Patient A → Patient B → no patient в streaming и non-streaming режимах. Проверить memory, summaries, checkpoints и cache behavior. Этот статический аудит не утверждает, что staged-проверка выполнена или production активирован. См. [ADR-0003](./adr/ADR-0003-patient-scoped-ai-state.ru.md) и [контракт изоляции patient session](./ai/patient-session-isolation.md).
 
-Если клиент повторно использует один session ID, меняя `patient_id`, исторические сообщения и состояние checkpoint могут быть повторно использованы в новом контексте пациента. Это создаёт риск смешения контекста пациентов и нарушения конфиденциальности, даже если каждый отдельный запрос к БД правильно фильтруется по tenant.
+### P1 — Псевдонимизация RAG checkpoint: исправление кода влито; retention старых записей открыт
 
-**Необходимые исправления**
+PR #287 заменил plaintext composite RAG checkpoint identifier на `rag:v2:<HMAC-SHA256 digest>`, ограниченный pharmacy, user, patient и session. В production/staging отсутствие `SECRET_KEY` также приводит к fail-closed. Это закрывает code-level finding в `main`.
 
-1. Привязать идентичность диалога к аутентифицированной области аптеки, пользователя и пациента (включая явную область «без пациента») либо отклонять изменение области пациента внутри существующей сессии.
-2. Применить ту же область к памяти Agent Harness, ID checkpoint PharmacistAgent и ID checkpoint RAG.
-3. Определить безопасную миграцию/истечение существующих сессий; не объединять старые и новые области незаметно.
-4. Добавить adversarial-тесты: пациент A → пациент B в той же клиентской сессии; пациент A → без пациента; без пациента → пациент A; повторное использование сессии между аптеками; streaming и non-streaming пути.
-5. Проверить, что сводки, эпизодические факты, результаты инструментов, записи кеша и восстановление checkpoint не пересекают области пациентов.
-
-**Release gate:** изоляцию контекста пациента нельзя считать завершённой, пока эти тесты не пройдут на реальных путях API/session и checkpoint.
-
-### P1 — Идентификаторы checkpoint RAG не являются непрозрачными/HMAC-производными
-
-Текущий `LangGraphRAG._thread_id()` возвращает `rag:{pharmacy_id}:{user_id}:{raw_session_id}`. Граф агента и namespace памяти диалога Redis используют версионируемые HMAC-SHA-256 идентификаторы, а граф RAG — нет.
-
-Прежнее утверждение в `docs/ai_architecture.md`, что идентификаторы checkpoint обоих графов производятся через HMAC, было неверным и исправлено в обновлении документации.
-
-**Исправление:** использовать версионируемый HMAC-идентификатор checkpoint RAG, включить область пациента, как описано в P0, и определить явную политику совместимости/хранения старых checkpoint. Секрет приложения должен оставаться стабильным между deployment; ротацию следует считать миграцией namespace checkpoint, а не случайным изменением конфигурации.
+**Оставшаяся операционная работа:** старые plaintext checkpoint rows автоматически не переписываются и не удаляются. Необходимо утвердить retention/deletion и backup-expiry policy, подтвердить стабильное распространение/ротацию secret и проверить rollback до production rollout. Удаление checkpoint data не входит в этот документационный change.
 
 ### P1 — Русский язык не включён в текущую конфигурацию языков по умолчанию
 
@@ -173,8 +160,8 @@ ERP остаётся источником истины для цен, остат
 
 ## Приоритетный backlog исправлений
 
-1. **P0:** Привязать память диалога и thread ID checkpoint обоих LangGraph к области пациента; добавить регрессионные тесты переключения пациента в одной сессии.
-2. **P1:** Псевдонимизировать ID checkpoint RAG через HMAC и спланировать безопасное истечение/миграцию старых checkpoint.
+1. **P0 release gate:** Выполнить staged-тесты Patient A → Patient B → no-patient в одной client session для streaming/non-streaming API, Redis memory и PostgreSQL checkpoints; зафиксировать доказательства до production activation.
+2. **P1 operational:** Утвердить retention/deletion старых plaintext RAG checkpoints и backup-expiry policy; проверить secret distribution, rotation и rollback.
 3. **P1:** Согласовать ingestion на одном каноническом пути с одинаковыми гарантиями tenant stamping и жизненного цикла.
 4. **P1:** Подключить или удалить неэффективные настройки RAG; добавить тесты, доказывающие влияние environment overrides на runtime.
 5. **P1:** Определить и проверить поддержку русского языка/OCR/embeddings; запускать отдельные retrieval benchmarks RU и EN.
@@ -186,4 +173,4 @@ ERP остаётся источником истины для цен, остат
 
 ## Заявление о статусе релиза
 
-Это статический архитектурный аудит, а не клиническая валидация, регуляторная оценка, сертификация production-безопасности, нагрузочный тест или разрешение на deployment. Изоляция сессий по контексту пациента, псевдонимизация checkpoint RAG, измеренное качество RU/EN и deployment-specific меры жизненного цикла PHI остаются открытыми задачами. В рамках этого аудита документации production-конфигурация, база данных, провайдер моделей и deployment не изменялись.
+Это статический архитектурный аудит, а не клиническая валидация, регуляторная оценка, сертификация production-безопасности, нагрузочный тест или разрешение на deployment. Код patient-aware session/checkpoint namespace влит, но staged-проверка изоляции и production activation остаются открытыми. Также остаются открытыми retention старых checkpoints, измеренное качество RU/EN и deployment-specific меры жизненного цикла PHI. В рамках этого аудита документации production-конфигурация, база данных, провайдер моделей и deployment не изменялись.

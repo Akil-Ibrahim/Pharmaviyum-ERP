@@ -2,7 +2,7 @@
 
 ## Статус
 
-Proposed — реализация была влита в `main` через [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287) (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`). ADR остаётся в статусе Proposed, поскольку требуемая поэтапная end-to-end проверка и production rollout не подтверждены. Merge и успешный CI не доказывают активацию в production или клиническую безопасность.
+Accepted — архитектурное решение принято, реализация влита в `main` через [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287) (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`). Staged end-to-end validation и production rollout остаются release gates. Merge и успешный CI не доказывают активацию в production или клиническую безопасность.
 
 ## Контекст
 
@@ -10,7 +10,7 @@ Proposed — реализация была влита в `main` через [PR #
 
 Одних patient retrieval filters недостаточно: memory и graph checkpoints — отдельные хранилища состояния.
 
-## Предлагаемое решение
+## Решение
 
 Формировать namespace каждого диалога, содержащего patient context, из аутентифицированного server-side набора:
 
