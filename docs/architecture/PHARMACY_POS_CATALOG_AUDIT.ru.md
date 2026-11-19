@@ -58,7 +58,7 @@ POS поддерживает локальный поиск, поиск по сп
 
 Файлы: src/pharmaviyum/models/inventory.py, src/pharmaviyum/models/product_batch.py, src/pharmaviyum/models/product.py.
 
-Существуют lot-oriented Inventory и ProductBatch. До реализации FEFO checkout определите авторитетную модель аптечного остатка, срока годности и lot traceability. Не поддерживайте два независимых количества без контракта сверки.
+`Inventory` является авторитетной моделью аптечного остатка и партии согласно ADR-0006: она содержит `pharmacy_id`, `product_id`, `lot_number`, `expires_at`, физический остаток и резерв, а также связана с append-only журналом `InventoryMovement`. `ProductBatch` — legacy-модель для обратной совместимости: в ней нет `pharmacy_id` и хранится отдельный `available_quantity`; на неё всё ещё ссылаются `PatientPurchase`, dashboard-запросы и seed-код. Её нельзя использовать как источник истины для аптечных остатков, FEFO allocation или Edge-to-Central inventory mapping. Удалять или автоматически переносить её данные в рамках этого изменения нельзя: сначала нужно инвентаризировать все оставшиеся read/write paths, определить миграцию исторических ссылок `PatientPurchase.batch_id` и доказать, что операционные сценарии больше не зависят от её полей количества. Новая работа со складом и интеграцией должна разрешать партии через `Inventory` и общий movement service.
 
 Product содержит legacy aggregate stock и цену Float. Сохраняйте их в период совместимости; для новых денежных транзакций используйте Decimal, а аптечный/партионный складской учёт считайте авторитетным там, где он уже определён.
 
