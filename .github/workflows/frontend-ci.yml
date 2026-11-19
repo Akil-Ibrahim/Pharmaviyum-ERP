@@ -19,6 +19,10 @@ jobs:
   validate:
     name: Frontend Lint, Format and Build
     runs-on: ubuntu-24.04
+    # Keep the browser runtime and OS dependencies aligned with the exact
+    # Playwright version pinned in frontend/shadcn-admin/package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.59.1-noble
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4.4.0
@@ -70,7 +74,9 @@ jobs:
           fi
       - name: TypeScript and production build
         run: bun run build
-      - name: Install Playwright Chromium
-        run: bunx playwright install --with-deps chromium
+      - name: Verify pinned Playwright browser runtime
+        run: |
+          bunx playwright --version
+          bunx playwright install --list
       - name: Playwright end-to-end tests
         run: bun run test:e2e
