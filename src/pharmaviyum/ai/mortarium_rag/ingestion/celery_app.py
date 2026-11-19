@@ -121,6 +121,25 @@ def create_celery_app() -> Celery:
         worker_max_tasks_per_child=100,
         task_acks_late=True,
         task_reject_on_worker_lost=True,
+        # Explicit startup and post-start reconnect behavior for Redis outages.
+        broker_connection_retry=True,
+        broker_connection_retry_on_startup=settings.CELERY_BROKER_RETRY_ON_STARTUP,
+        broker_connection_max_retries=settings.CELERY_BROKER_CONNECTION_MAX_RETRIES,
+        broker_connection_timeout=settings.CELERY_BROKER_CONNECTION_TIMEOUT_SECONDS,
+        broker_transport_options={
+            "socket_connect_timeout": settings.CELERY_BROKER_CONNECTION_TIMEOUT_SECONDS,
+            "socket_timeout": settings.CELERY_BROKER_SOCKET_TIMEOUT_SECONDS,
+            "retry_on_timeout": True,
+            "health_check_interval": 30,
+            "max_retries": settings.CELERY_BROKER_CONNECTION_MAX_RETRIES,
+        },
+        result_backend_transport_options={
+            "socket_connect_timeout": settings.CELERY_BROKER_CONNECTION_TIMEOUT_SECONDS,
+            "socket_timeout": settings.CELERY_BROKER_SOCKET_TIMEOUT_SECONDS,
+            "retry_on_timeout": True,
+            "health_check_interval": 30,
+        },
+        worker_enable_prefetch_count_reduction=True,
         result_expires=86400,
         result_extended=True,
         task_routes={

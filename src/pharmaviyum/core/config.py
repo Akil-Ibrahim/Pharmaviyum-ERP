@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_CACHE_TTL: int = 3600
 
+    # Celery broker recovery. Retries are bounded so an unavailable broker
+    # cannot leave worker startup/reconnect loops running indefinitely.
+    CELERY_BROKER_CONNECTION_MAX_RETRIES: int = 12
+    CELERY_BROKER_CONNECTION_TIMEOUT_SECONDS: float = 5.0
+    CELERY_BROKER_SOCKET_TIMEOUT_SECONDS: float = 5.0
+    CELERY_BROKER_RETRY_ON_STARTUP: bool = True
+
     OBJECT_STORAGE_BUCKET: Optional[str] = None
     OBJECT_STORAGE_REGION: str = "auto"
     OBJECT_STORAGE_ENDPOINT: Optional[str] = None
