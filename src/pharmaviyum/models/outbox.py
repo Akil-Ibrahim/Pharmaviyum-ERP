@@ -87,7 +87,6 @@ class OutboxEvent(Base):
     last_error: Mapped[str | None] = mapped_column(String(1000), nullable=True)
 
 
-
 class OutboxReplayAudit(Base):
     """Durable audit record for an operator-authorized outbox replay."""
 
