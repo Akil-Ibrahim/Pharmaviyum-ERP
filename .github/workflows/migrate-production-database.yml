@@ -45,6 +45,7 @@ jobs:
         run: uv sync --frozen
 
       - name: Validate migration graph
+        id: validate_graph
         shell: bash
         run: |
           set -euo pipefail
