@@ -557,31 +557,19 @@ This allows the system to function as an operational tool, not just a reporting 
 
 ---
 
-## 22. Architecture Decision Records
+## 22. Architecture decisions and ADR governance
 
-### ADR-001 — FastAPI as Backend
-FastAPI is retained as the primary backend framework because it fits the API-first, asynchronous and integration-heavy architecture.
+This section summarizes architectural principles; it is **not** a second ADR register. The canonical, numbered decision records and their current status are maintained in the [ADR index](../adr/README.md). Do not assign local ADR numbers in this vision document: doing so creates conflicting identifiers and status drift.
 
-### ADR-002 — React/Vite as Frontend
-The frontend remains React + Vite + TypeScript. A migration to Next.js is not required by the current architecture.
+The architecture is governed by these cross-cutting principles:
 
-### ADR-003 — Modular Monolith
-Pharmaviyum starts as a modular monolith to reduce operational complexity and preserve development velocity.
+- deterministic Business Core remains authoritative for pharmacy transactions;
+- Mortarium is advisory and permission-scoped, with human approval for consequential actions;
+- tenant and patient isolation apply to API access, retrieval, memory, checkpoints and cache;
+- Central + Pharmacy Edge remains a target until offline workflows pass operational and jurisdictional validation;
+- security, data ownership, rollback and operational evidence are required parts of each accepted decision.
 
-### ADR-004 — Mortarium Is Not the Business Core
-AI is an intelligence layer. Critical transactions remain deterministic.
-
-### ADR-005 — Human-in-the-Loop
-AI recommendations do not automatically execute consequential pharmacy operations.
-
-### ADR-006 — Controlled AI Network
-Mortarium should eventually run with default-deny outbound network access and use approved gateways for any required external AI/web capability.
-
-### ADR-007 — ERP Coexistence
-Existing ERP systems are integrated through adapters instead of being replaced during the first deployment phase.
-
-### ADR-008 — Cloud + On-Premise
-The same core application is designed to support both managed cloud deployment and self-hosted pharmacy infrastructure.
+Create or update a canonical ADR under `docs/adr/` for any change to system boundaries, data ownership, trust relationships, deployment topology or long-lived technology choices.
 
 ---
 
