@@ -3,6 +3,7 @@
 ## Архитектурное видение и инженерные принципы
 
 **Статус:** Живой архитектурный документ  
+**Readiness roadmap:** [English](./architecture-readiness-roadmap.en.md) · [Русский](./architecture-readiness-roadmap.ru.md)  
 **Языки:** English / Russian  
 **Проект:** Pharmaviyum CRM  
 **Основной backend:** FastAPI  
