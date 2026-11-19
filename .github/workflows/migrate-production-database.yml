@@ -59,7 +59,7 @@ jobs:
               raise SystemExit(f"Refusing production migration: expected one Alembic head, found {heads}.")
           print(f"Verified single Alembic head: {heads[0]}")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"expected_head={heads[0]}\\n")
+              output.write(f"expected_head={heads[0]}" + chr(10))
           PY
 
       - name: Inspect production database state
@@ -150,7 +150,7 @@ jobs:
               )
 
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"migration_required={migration_required}\\n")
+              output.write(f"migration_required={migration_required}" + chr(10))
           PY
 
       - name: Apply all Alembic migrations
