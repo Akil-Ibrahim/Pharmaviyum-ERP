@@ -51,8 +51,10 @@ Lease token служит fencing token: worker, чей lease заменён, н�
 ## Ограничения текущей реализации и критерии rollout
 
 - Dispatcher транспортирует только POS event types, которые создаёт текущий producer. Central ordered consumer и применение inventory, payment, dispensing, returns или purchasing effects пока не реализованы.
-- Пока отсутствуют dead-letter management UI, operator replay endpoint, mTLS, автоматическая ротация secrets и per-pharmacy monitoring dashboards.
-- Все HTTP errors и неуспешные HTTP responses, включая 4xx, сейчас повторяются с backoff. Постоянная ошибка может оставаться в retry бесконечно; требуется классификация permanent/transient errors и quarantine/DLQ.
+- Отдельный management UI пока отсутствует. Superuser-only API endpoints показывают метаданные dead-letter без раскрытия event payload и поддерживают audited replay после устранения причины.
+- Transport failures, HTTP 408/425/429 и 5xx повторяются с backoff. Остальные 4xx, redirects и malformed acknowledgements помещаются в durable quarantine; они не создают бесконечный retry loop.
+- Quarantined events остаются immutable и блокируют более поздние aggregate versions. Replay сохраняет исходные event ID, payload и aggregate version; каждый replay создаёт durable audit record.
+- mTLS, автоматическая ротация credentials и per-pharmacy monitoring dashboards остаются незавершёнными.
 - Worker и Beat containers должны использовать ту же локальную PostgreSQL DB, что и POS API, и получать ту же Edge identity configuration.
 - До пилота необходимо протестировать Central unavailability, lost acknowledgements, worker termination after claim, lease expiry, duplicate deliveries, aggregate ordering и full-disk conditions.
 - Не включайте production migrations или fleet dispatch, пока stacked PRs не прошли CI, Central consumer и inventory conflict policy не реализованы, а controlled pilot не прошёл failure-injection tests.
