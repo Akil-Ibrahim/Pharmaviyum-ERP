@@ -181,7 +181,7 @@ async def test_dispatcher_releases_failed_delivery_for_retry(
         assert stored.lease_token is None
         assert stored.locked_until is None
         assert stored.attempts == 1
-        assert stored.last_error == "Central delivery failed: HTTPStatusError"
+        assert stored.last_error == "Central delivery failed: HTTP 503"
         assert stored.available_at > datetime.now(timezone.utc)
 
 
