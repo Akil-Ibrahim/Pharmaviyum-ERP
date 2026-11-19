@@ -351,9 +351,7 @@ def ingest_batch(
             except Exception:
                 failed += 1
                 loop.run_until_complete(
-                    tracker.record_batch_result(
-                        job_id, f"{job_id}_doc_{index}", False
-                    )
+                    tracker.record_batch_result(job_id, f"{job_id}_doc_{index}", False)
                 )
                 results.append(
                     {
