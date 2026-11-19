@@ -1,7 +1,7 @@
 # Mortarium AI / RAG Architecture Audit
 
-**Audit date:** 2026-11-14  
-**Audited ref:** `main` at `2833bafa0cb505aedf8e4e9c9447f26dd5a5c83f`  
+**Audit date:** 2026-11-19  
+**Audited ref:** `main` at `cec7ba8ad4fa8bc40cc0b3f870a17509ca4e2743`  
 **Method:** Static source, configuration, documentation and test-contract review  
 **Execution status:** No application tests, live model calls, production queries or deployment changes were executed as part of this documentation audit.
 
@@ -11,15 +11,17 @@ Mortarium is an application-level pharmacist assistant built around two LangGrap
 
 The architecture has meaningful fail-closed controls: authenticated pharmacy context is established at the API boundary; patient IDs are checked against the selected pharmacy; pgvector retrieval requires a positive pharmacy ID; patient-level chunks require an explicit patient filter; MCP execution requires trusted request context and RBAC; and MCP writes are denied unless a trusted approval verifier is configured.
 
-**The static audit does not establish production readiness for patient-facing or patient-context workflows.** The highest-priority issue is that conversation memory and both LangGraph checkpoint threads are scoped to pharmacy/user/session, but not to patient. Reusing a session while switching patients can therefore reuse historical conversation/checkpoint state across patient contexts. The existing patient-isolation evaluator checks retrieved-source metadata; it does not establish isolation of dialogue memory or checkpoint state.
+**The original P0 patient-context isolation finding is remediated in `main` by PR #287 (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`).** The synchronous and streaming API now derive a versioned `mortarium-session:v3` HMAC namespace from pharmacy, authenticated user, patient (including explicit no-patient scope) and client session. Agent and RAG checkpoints independently derive opaque, versioned HMAC identifiers that include patient scope. Regression tests cover scope separation, invalid identifiers, tenant separation and secret rotation. The merge record reports the RAG Safety Regression, Unit Tests and Integration Tests checks as passed.
 
-Other material gaps: RAG checkpoint IDs are not HMAC-pseudonymized despite the previous architecture documentation claiming they are; Russian is absent from current default language lists; the runtime does not inject a reranker; several declared RAG settings are not wired into the runtime; and the separate `IngestionOrchestrator` is not the API's active ingestion path.
+**Production readiness remains unproven.** The staged end-to-end release gate must still alternate Patient A → Patient B → no patient using one client session in both streaming and non-streaming paths, with actual Redis memory and PostgreSQL checkpoint persistence. Legacy plaintext RAG checkpoint records are not automatically migrated or deleted; their retention/deletion plan and rollback behavior require approval before rollout. This static review did not execute tests or inspect production state.
+
+Other material gaps remain: Russian language/OCR/embedding quality needs measured RU/EN benchmarks; the runtime does not inject a dedicated reranker; several declared RAG settings are not wired into the runtime; and the separate `IngestionOrchestrator` is not the API's active ingestion path.
 
 ## Runtime map
 
 | Layer | Current implementation | Audit assessment |
 |---|---|---|
-| API boundary | `src/pharmaviyum/api/v1/ai.py`; authenticated user, pharmacy membership and patient-in-pharmacy checks | Implemented; session-to-patient binding remains missing |
+| API boundary | `src/pharmaviyum/api/v1/ai.py`; authenticated user, pharmacy membership and patient-in-pharmacy checks | Patient-aware HMAC session scope merged; staged integration gate remains open |
 | Agent orchestration | `PharmacistAgent` LangGraph graph: router → knowledge retrieval → planner/executor loop → structured reviewer | Implemented; iteration limit is 5 |
 | Agent Harness | `AgentHarness`: memory → input guardrail → cache → model router → agent → output guardrail → memory | Implemented |
 | RAG orchestration | `LangGraphRAG` compiled `StateGraph` with explicit PostgreSQL checkpointer | Implemented |
@@ -55,13 +57,11 @@ If a client reuses one session ID while changing `patient_id`, historical messag
 
 **Release gate:** Do not treat patient-context isolation as complete until these tests pass against the actual API/session and checkpoint paths.
 
-### P1 — RAG checkpoint identifiers are not opaque/HMAC-derived
+### P1 — RAG checkpoint pseudonymization: code remediation merged; legacy retention open
 
-The current `LangGraphRAG._thread_id()` returns `rag:{pharmacy_id}:{user_id}:{raw_session_id}`. The Agent graph and Redis dialogue-memory namespace use versioned HMAC-SHA-256 identifiers, but the RAG graph does not.
+PR #287 replaced the plaintext composite RAG checkpoint identifier with `rag:v2:<HMAC-SHA256 digest>`, scoped to pharmacy, user, patient and session. Production/staging also fail closed when `SECRET_KEY` is absent. This closes the code-level finding on `main`.
 
-The prior `docs/ai_architecture.md` statement that both graph checkpoint identifiers are HMAC-derived was inaccurate and is corrected in this documentation update.
-
-**Remediation:** use a versioned HMAC-derived RAG checkpoint key, include the patient scope as described in P0, and define an explicit compatibility/retention policy for old checkpoint records. Keep the application secret stable across deployments; rotation must be treated as a checkpoint namespace migration, not an incidental config change.
+**Residual operational work:** legacy plaintext checkpoint rows are not rewritten or deleted automatically. Approve a retention/deletion and backup-expiry plan, confirm the stable secret distribution/rotation process, and test rollback semantics before production rollout. Do not delete checkpoint data as part of this documentation change.
 
 ### P1 — Russian is not enabled by the current default language configuration
 
@@ -170,8 +170,8 @@ The previous synthetic benchmark dated 2026-10-15 used deterministic test double
 
 ## Prioritized remediation backlog
 
-1. **P0:** Bind dialogue memory and both LangGraph checkpoint threads to patient scope; add same-session patient-switch regression tests.
-2. **P1:** HMAC-pseudonymize RAG checkpoint identifiers and plan safe legacy checkpoint expiry/migration.
+1. **P0 release gate:** Execute staged Patient A → Patient B → no-patient tests on the same client session across streaming/non-streaming API paths, Redis memory and PostgreSQL checkpoints; record evidence before production activation.
+2. **P1 operational:** Approve legacy plaintext RAG checkpoint retention/deletion and backup-expiry policy; validate secret distribution, rotation and rollback.
 3. **P1:** Reconcile ingestion to one canonical path with identical tenant stamping and lifecycle guarantees.
 4. **P1:** Wire or remove ineffective RAG settings; add tests proving environment overrides affect runtime.
 5. **P1:** Decide and validate Russian language/OCR/embedding support; run separate RU and EN retrieval benchmarks.
@@ -183,4 +183,4 @@ The previous synthetic benchmark dated 2026-10-15 used deterministic test double
 
 ## Release statement
 
-This is a static architecture audit, not a clinical validation, regulatory assessment, production security certification, load test or deployment approval. Patient-context session isolation, RAG checkpoint pseudonymization, measured RU/EN quality and deployment-specific PHI lifecycle controls remain open. No production configuration, database, model provider or deployment was changed by this documentation audit.
+This is a static architecture audit, not a clinical validation, regulatory assessment, production security certification, load test or deployment approval. Patient-aware session/checkpoint namespace code is merged, but staged isolation verification and production activation remain open. Legacy checkpoint retention, measured RU/EN quality and deployment-specific PHI lifecycle controls also remain open. No production configuration, database, model provider or deployment was changed by this documentation audit.
