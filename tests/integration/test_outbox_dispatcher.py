@@ -335,9 +335,10 @@ async def test_permanent_rejection_is_quarantined_and_blocks_later_aggregate_ver
 
     factory = async_sessionmaker(test_engine, expire_on_commit=False)
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        assert await dispatch_pending_outbox(
-            session_factory=factory, http_client=client
-        ) == 0
+        assert (
+            await dispatch_pending_outbox(session_factory=factory, http_client=client)
+            == 0
+        )
         assert await dispatch_pending_outbox(
             session_factory=factory, http_client=client
         ) == 0
