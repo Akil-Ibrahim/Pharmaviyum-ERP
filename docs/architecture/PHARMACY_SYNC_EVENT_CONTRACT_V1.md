@@ -77,8 +77,10 @@ Do not impose global ordering across pharmacies. Do not use client clocks to res
 - Use a unique lease token plus lease expiry. Only the worker holding the current token may update the row after delivery.
 - Perform HTTP/network I/O outside the database transaction.
 - Mark an event delivered only after a durable Central acknowledgement.
-- Current implementation retries HTTP errors and unsuccessful HTTP responses using exponential backoff with jitter and a one-hour maximum exponential component. This includes permanent 4xx responses, so invalid credentials/schema/scope can remain in retry indefinitely.
-- Not yet implemented: permanent-error classification, dead-letter/quarantine workflow, operator replay endpoint, or alerting for poison events.
+- Current implementation retries transport failures, 408, 425, 429 and 5xx responses with exponential backoff and jitter. Permanent HTTP rejections (other 4xx and redirects) and malformed acknowledgements are quarantined in the durable Edge outbox.
+- Quarantine preserves the original event and blocks later versions of the same aggregate until an operator resolves the cause and explicitly replays it.
+- Superuser-only endpoints list quarantined metadata without exposing event payloads and schedule replay with a durable audit record (actor, reason code, original failure class and attempt count). Replay preserves the original `event_id`, aggregate version, payload and attempt history.
+- Retry/quarantine state is durable in PostgreSQL; Redis/Celery is only a dispatcher trigger. Sync-specific alerting and fleet dashboards remain outstanding.
 - Preserve failed events for inspection and controlled replay. Replay must retain the original `event_id`.
 - Track oldest pending event age, backlog count, attempts, last error, last successful sync and per-site acknowledgement lag. These sync-specific operational metrics/dashboards are not yet implemented.
 
