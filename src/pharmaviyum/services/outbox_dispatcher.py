@@ -22,6 +22,9 @@ from src.pharmaviyum.models.outbox import OutboxEvent
 
 logger = logging.getLogger(__name__)
 
+# Bound retries so an unavailable Central endpoint cannot loop forever.
+MAX_AUTOMATIC_DELIVERY_ATTEMPTS = 12
+
 
 @dataclass(frozen=True)
 class ClaimedOutboxEvent:
@@ -179,10 +182,22 @@ async def _release_for_retry(
             )
             if event is None:
                 return False
-            event.available_at = now + timedelta(seconds=delay_seconds)
             event.locked_until = None
             event.lease_token = None
             event.last_error = error[:1000]
+            if attempts >= MAX_AUTOMATIC_DELIVERY_ATTEMPTS:
+                event.dead_lettered_at = now
+                event.dead_letter_reason = "max_attempts_exceeded"
+                logger.error(
+                    "sync_event_delivery_dead_lettered",
+                    extra={
+                        "event_id": event.event_id,
+                        "reason": "max_attempts_exceeded",
+                        "attempts": attempts,
+                    },
+                )
+            else:
+                event.available_at = now + timedelta(seconds=delay_seconds)
             return True
 
 

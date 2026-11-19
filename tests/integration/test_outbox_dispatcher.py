@@ -398,3 +398,49 @@ async def test_throttled_delivery_is_retried_instead_of_dead_lettered(
         assert stored.dead_letter_reason is None
         assert stored.attempts == 1
         assert stored.available_at > datetime.now(timezone.utc)
+
+
+@pytest.mark.integration
+async def test_transient_failures_are_dead_lettered_after_retry_budget(
+    test_db, test_engine, monkeypatch
+):
+    """Repeated transient Central failures eventually require operator replay."""
+    from src.pharmaviyum.services.outbox_dispatcher import (
+        MAX_AUTOMATIC_DELIVERY_ATTEMPTS,
+    )
+
+    _configure_edge(monkeypatch)
+    pharmacy = Pharmacy(name="Retry Budget Pharmacy", code="DISPATCH-RETRY-BUDGET")
+    test_db.add(pharmacy)
+    await test_db.flush()
+    event = await _add_outbox_event(
+        test_db,
+        pharmacy_id=pharmacy.id,
+        aggregate_id="603",
+        aggregate_version=1,
+    )
+    event.attempts = MAX_AUTOMATIC_DELIVERY_ATTEMPTS - 1
+    event_id = event.event_id
+    await test_db.commit()
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503, json={"detail": "temporarily unavailable"})
+
+    factory = async_sessionmaker(test_engine, expire_on_commit=False)
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        assert (
+            await dispatch_pending_outbox(session_factory=factory, http_client=client)
+            == 0
+        )
+
+    async with factory() as session:
+        stored = await session.scalar(
+            select(OutboxEvent).where(OutboxEvent.event_id == event_id)
+        )
+        assert stored is not None
+        assert stored.attempts == MAX_AUTOMATIC_DELIVERY_ATTEMPTS
+        assert stored.published_at is None
+        assert stored.dead_lettered_at is not None
+        assert stored.dead_letter_reason == "max_attempts_exceeded"
+        assert stored.lease_token is None
+        assert stored.locked_until is None
