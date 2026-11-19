@@ -5,13 +5,13 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Index,
     Integer,
     String,
     UniqueConstraint,
-    CheckConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
