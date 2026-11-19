@@ -60,6 +60,7 @@ class RecordingHarness:
         )
         yield {"event": "complete", "message": "Synthetic integration-test response."}
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_sync_and_stream_routes_bind_reused_session_to_patient_scope(
