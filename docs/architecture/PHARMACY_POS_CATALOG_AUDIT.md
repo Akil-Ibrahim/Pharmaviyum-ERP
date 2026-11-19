@@ -71,7 +71,7 @@ Files:
 - `src/pharmaviyum/models/product_batch.py`
 - `src/pharmaviyum/models/product.py`
 
-Both an `Inventory` lot-oriented record and a `ProductBatch` model exist. Before implementing FEFO checkout, establish which model is authoritative for pharmacy-level stock, expiry, and lot traceability. Avoid maintaining two independent quantities without a reconciliation contract.
+`Inventory` is the authoritative pharmacy-level stock and lot record, consistent with ADR-0006: it carries `pharmacy_id`, `product_id`, `lot_number`, `expires_at`, on-hand quantity, and reserved quantity, and is referenced by the append-only `InventoryMovement` ledger. `ProductBatch` is a legacy compatibility model: it has no `pharmacy_id` and maintains a separate `available_quantity`; it is still referenced by `PatientPurchase`, dashboard queries, and seed code. It must not be used as the source of truth for pharmacy stock, FEFO allocation, or Edge-to-Central inventory mapping. Do not delete or backfill it in this change: first inventory every remaining reader/writer, define a migration for historical `PatientPurchase.batch_id` references, and prove that no operational path depends on its quantity fields. New pharmacy stock and integration work must resolve lots through `Inventory` and the shared movement service.
 
 The `Product` model has legacy aggregate `stock` and a `Float` price. Preserve these fields during the compatibility period; use decimal arithmetic for new money-bearing transaction records and treat pharmacy/lot-level inventory as authoritative where already established.
 
