@@ -34,7 +34,7 @@ for path in sorted((*workflow_dir.rglob("*.yml"), *workflow_dir.rglob("*.yaml"))
                 break
             name_match = re.match(r"^\s+name\s*:\s*(.*?)\s*$", child)
             if name_match:
-                environment_name = name_match.group(1).strip().strip("\'\\"")
+                environment_name = name_match.group(1).strip()
                 break
 
         if environment_name and "production" in environment_name.lower():
