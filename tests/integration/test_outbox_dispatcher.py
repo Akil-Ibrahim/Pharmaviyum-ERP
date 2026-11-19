@@ -339,9 +339,10 @@ async def test_permanent_rejection_is_quarantined_and_blocks_later_aggregate_ver
             await dispatch_pending_outbox(session_factory=factory, http_client=client)
             == 0
         )
-        assert await dispatch_pending_outbox(
-            session_factory=factory, http_client=client
-        ) == 0
+        assert (
+            await dispatch_pending_outbox(session_factory=factory, http_client=client)
+            == 0
+        )
 
     assert len(received) == 1
     async with factory() as session:
@@ -383,9 +384,10 @@ async def test_throttled_delivery_is_retried_instead_of_dead_lettered(
 
     factory = async_sessionmaker(test_engine, expire_on_commit=False)
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        assert await dispatch_pending_outbox(
-            session_factory=factory, http_client=client
-        ) == 0
+        assert (
+            await dispatch_pending_outbox(session_factory=factory, http_client=client)
+            == 0
+        )
 
     async with factory() as session:
         stored = await session.scalar(
