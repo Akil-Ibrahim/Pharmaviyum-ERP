@@ -11,13 +11,13 @@ from collections.abc import AsyncIterator
 from typing import Any
 from uuid import uuid4
 
-import pytest
 from httpx import AsyncClient
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.graph import END, START, MessagesState, StateGraph
+from psycopg.conninfo import make_conninfo
+import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from psycopg.conninfo import make_conninfo
 
 from src.pharmaviyum.ai.agents.checkpointer import AgentCheckpointer
 from src.pharmaviyum.ai.config import settings as ai_settings
@@ -60,7 +60,6 @@ class RecordingHarness:
         )
         yield {"event": "complete", "message": "Synthetic integration-test response."}
 
-
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_sync_and_stream_routes_bind_reused_session_to_patient_scope(
@@ -70,16 +69,22 @@ async def test_sync_and_stream_routes_bind_reused_session_to_patient_scope(
     monkeypatch: pytest.MonkeyPatch,
 ):
     """One client session must produce distinct scopes for A, B and no patient."""
-    monkeypatch.setattr(app_settings, "SECRET_KEY", "patient-isolation-integration-secret")
+    monkeypatch.setattr(
+        app_settings, "SECRET_KEY", "patient-isolation-integration-secret"
+    )
     pharmacy = Pharmacy(name="AI Isolation Test Pharmacy", code="AI-ISOLATION-TEST")
     test_db.add(pharmacy)
     await test_db.flush()
 
     patient_a = await patient_factory.create(
-        pharmacy_id=pharmacy.id, first_name="Synthetic", last_name="Patient A"
+        pharmacy_id=pharmacy.id,
+        first_name="Synthetic",
+        last_name="Patient A",
     )
     patient_b = await patient_factory.create(
-        pharmacy_id=pharmacy.id, first_name="Synthetic", last_name="Patient B"
+        pharmacy_id=pharmacy.id,
+        first_name="Synthetic",
+        last_name="Patient B",
     )
 
     harness = RecordingHarness()
@@ -107,7 +112,12 @@ async def test_sync_and_stream_routes_bind_reused_session_to_patient_scope(
         app.dependency_overrides.pop(get_agent_harness, None)
 
     assert [call["mode"] for call in harness.calls] == [
-        "sync", "stream", "sync", "stream", "sync", "stream"
+        "sync",
+        "stream",
+        "sync",
+        "stream",
+        "sync",
+        "stream",
     ]
     scopes = {
         patient_id: (
@@ -168,16 +178,25 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
     no_patient_messages = await memory.load(no_patient_scope)
 
     assert [message.content for message in patient_a_messages] == [
-        "synthetic patient A prompt", "synthetic patient A answer"
+        "synthetic patient A prompt",
+        "synthetic patient A answer",
     ]
     assert [message.content for message in patient_b_messages] == [
-        "synthetic patient B prompt", "synthetic patient B answer"
+        "synthetic patient B prompt",
+        "synthetic patient B answer",
     ]
     assert [message.content for message in no_patient_messages] == [
-        "general pharmacy prompt", "general pharmacy answer"
+        "general pharmacy prompt",
+        "general pharmacy answer",
     ]
-    assert "patient B" not in " ".join(str(message.content) for message in patient_a_messages)
-    assert "patient A" not in " ".join(str(message.content) for message in patient_b_messages)
+    patient_a_content = " ".join(
+        str(message.content) for message in patient_a_messages
+    )
+    patient_b_content = " ".join(
+        str(message.content) for message in patient_b_messages
+    )
+    assert "patient B" not in patient_a_content
+    assert "patient A" not in patient_b_content
 
 
 @pytest.mark.integration
@@ -195,7 +214,9 @@ async def test_ai_api_rejects_patient_from_another_pharmacy_before_harness(
     test_db.add_all([pharmacy_a, pharmacy_b])
     await test_db.flush()
     foreign_patient = await patient_factory.create(
-        pharmacy_id=pharmacy_b.id, first_name="Synthetic", last_name="Foreign Patient"
+        pharmacy_id=pharmacy_b.id,
+        first_name="Synthetic",
+        last_name="Foreign Patient",
     )
 
     harness = RecordingHarness()
@@ -227,7 +248,9 @@ async def test_patient_scoped_langgraph_checkpoints_are_durable_and_separate(
     """Real PostgreSQL checkpoints must remain isolated across patient scopes."""
     from src.pharmaviyum.core.config import settings as core_settings
 
-    monkeypatch.setattr(core_settings, "SECRET_KEY", "patient-isolation-checkpoint-secret")
+    monkeypatch.setattr(
+        core_settings, "SECRET_KEY", "patient-isolation-checkpoint-secret"
+    )
     schema = f"ai_isolation_{uuid4().hex}"
     await test_db.execute(text(f'CREATE SCHEMA "{schema}"'))
     await test_db.commit()
