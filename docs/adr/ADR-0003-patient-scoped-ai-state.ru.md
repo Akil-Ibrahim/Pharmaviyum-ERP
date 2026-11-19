@@ -2,7 +2,7 @@
 
 ## Статус
 
-Accepted — архитектурное решение принято, реализация влита в `main` через [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287) (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f). Staged end-to-end validation и production rollout остаются release gates. Merge и успешный CI не доказывают активацию в production или клиническую безопасность.
+Accepted — архитектурное решение принято, реализация влита в `main` через [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287) (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`). Staged end-to-end validation и production rollout остаются release gates. Merge и успешный CI не доказывают активацию в production или клиническую безопасность.
 
 ## Контекст
 
