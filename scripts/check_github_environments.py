@@ -11,7 +11,7 @@ errors = []
 for path in sorted((*workflow_dir.rglob("*.yml"), *workflow_dir.rglob("*.yaml"))):
     lines = path.read_text(encoding="utf-8").splitlines()
     for index, line in enumerate(lines):
-        match = re.match(r"^(?P<indent>\\s*)environment\\s*:\\s*(?P<value>.*)$", line)
+        match = re.match(r"^(?P<indent>\s*)environment\s*:\s*(?P<value>.*)$", line)
         if not match:
             continue
 
@@ -32,7 +32,7 @@ for path in sorted((*workflow_dir.rglob("*.yml"), *workflow_dir.rglob("*.yaml"))
             child_indent = len(child) - len(child.lstrip())
             if child_indent <= indent:
                 break
-            name_match = re.match(r"^\\s+name\\s*:\\s*['\\\"]?([^'\\\"]+?)['\\\"]?\\s*$", child)
+            name_match = re.match(r"^\s+name\s*:\s*['\\"]?([^'\\"]+?)['\\"]?\s*$", child)
             if name_match:
                 environment_name = name_match.group(1).strip()
                 break
