@@ -1,19 +1,30 @@
-"""Database readiness checker with exponential backoff."""
+"""Database readiness checker with bounded retries for transient failures."""
 
 from sqlalchemy import text
-from sqlalchemy.exc import OperationalError, SQLAlchemyError
+from sqlalchemy.exc import DBAPIError, OperationalError
 from tenacity import (
     retry,
-    retry_if_exception_type,
+    retry_if_exception,
     stop_after_attempt,
     wait_exponential,
 )
 
 
+def _is_transient_database_error(exc: BaseException) -> bool:
+    """Retry operational failures and DBAPI errors that invalidate the connection.
+
+    Programming, integrity, and other permanent SQLAlchemy failures must fail
+    readiness immediately rather than being retried for several minutes.
+    """
+    return isinstance(exc, OperationalError) or (
+        isinstance(exc, DBAPIError) and exc.connection_invalidated
+    )
+
+
 @retry(
     stop=stop_after_attempt(10),
     wait=wait_exponential(multiplier=1, min=2, max=30),
-    retry=retry_if_exception_type((OperationalError, SQLAlchemyError)),
+    retry=retry_if_exception(_is_transient_database_error),
     reraise=True,
 )
 async def wait_for_database(engine) -> bool:
