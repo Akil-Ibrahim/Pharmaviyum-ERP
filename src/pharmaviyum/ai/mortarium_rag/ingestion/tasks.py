@@ -114,13 +114,10 @@ def _record_batch_result(
         return
     try:
         redis_client = loop.run_until_complete(get_redis())
-        marker_key = f"ingestion:batch:{batch_job_id}:child:{child_job_id}:counted"
-        if not loop.run_until_complete(
-            redis_client.set(marker_key, "1", nx=True, ex=86400)
-        ):
-            return
         tracker = IngestionProgressTracker(redis_client)
-        loop.run_until_complete(tracker.record_batch_result(batch_job_id, success))
+        loop.run_until_complete(
+            tracker.record_batch_result(batch_job_id, child_job_id, success)
+        )
     except Exception:
         logger.error("Failed to update parent batch job")
 
@@ -353,7 +350,9 @@ def ingest_batch(
                 )
             except Exception:
                 failed += 1
-                loop.run_until_complete(tracker.record_batch_result(job_id, False))
+                loop.run_until_complete(
+                    tracker.record_batch_result(job_id, f"{job_id}_doc_{index}", False)
+                )
                 results.append(
                     {
                         "source": source,

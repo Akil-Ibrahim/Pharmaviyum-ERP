@@ -97,48 +97,71 @@ class IngestionProgressTracker:
                 self.redis.expire(f"{self.prefix}:{job_id}:batch", self.ttl_seconds),
             )
 
-    async def record_batch_result(self, batch_job_id: str, success: bool) -> None:
-        """Record one child result and finalize its parent without lost updates."""
-        lock = self.redis.lock(
-            f"{self.prefix}:{batch_job_id}:batch:lock",
-            timeout=30,
-            blocking_timeout=10,
+    async def record_batch_result(
+        self,
+        batch_job_id: str,
+        child_job_id: str,
+        success: bool,
+    ) -> None:
+        """Atomically deduplicate a child result and update its parent progress."""
+        counters_key = f"{self.prefix}:{batch_job_id}:batch"
+        marker_key = f"{self.prefix}:{batch_job_id}:child:{child_job_id}:counted"
+        job_key = f"{self.prefix}:{batch_job_id}"
+        field = "processed" if success else "failed"
+        completed_at = datetime.utcnow().isoformat()
+
+        # The marker, counters, and parent JSON must move together. A crash
+        # between a separate SET NX and HINCRBY previously lost child results;
+        # a retry then saw the marker and permanently skipped the increment.
+        script = """
+        local total = tonumber(redis.call("HGET", KEYS[2], "total") or "0")
+        if total <= 0 then
+            return {0, 0, 0, 0}
+        end
+
+        local created = redis.call(
+            "SET", KEYS[1], "1", "EX", ARGV[1], "NX"
         )
-        async with lock:
-            counters_key = f"{self.prefix}:{batch_job_id}:batch"
-            field = "processed" if success else "failed"
-            await cast(Awaitable[int], self.redis.hincrby(counters_key, field, 1))
-            total_raw = await cast(
-                Awaitable[Any], self.redis.hget(counters_key, "total")
-            )
-            if not total_raw:
-                return
-            total = int(total_raw)
-            failed_raw = await cast(
-                Awaitable[Any], self.redis.hget(counters_key, "failed")
-            )
-            failed = int(failed_raw or 0)
-            processed_raw = await cast(
-                Awaitable[Any], self.redis.hget(counters_key, "processed")
-            )
-            processed = int(processed_raw or 0)
-            completed = processed + failed
-            if completed >= total:
-                await self.update_status(
-                    batch_job_id,
-                    "completed" if failed == 0 else "failed",
-                    current_step="documents processed",
-                    processed=processed,
-                    failed=failed,
-                )
-            else:
-                await self.update_status(
-                    batch_job_id,
-                    "queued",
-                    current_step="processing documents",
-                    processed=processed,
-                    failed=failed,
-                )
+        if created then
+            redis.call("HINCRBY", KEYS[2], ARGV[2], 1)
+        end
+
+        local processed = tonumber(redis.call("HGET", KEYS[2], "processed") or "0")
+        local failed = tonumber(redis.call("HGET", KEYS[2], "failed") or "0")
+        local job_raw = redis.call("GET", KEYS[3])
+        if job_raw then
+            local job = cjson.decode(job_raw)
+            local completed = processed + failed
+            job["processed_documents"] = processed
+            job["failed_documents"] = failed
+            job["progress_percent"] = math.floor((processed / total) * 10000 + 0.5) / 100
+            if completed >= total then
+                job["status"] = failed == 0 and "completed" or "failed"
+                job["current_step"] = "documents processed"
+                job["completed_at"] = ARGV[3]
+            else
+                job["status"] = "queued"
+                job["current_step"] = "processing documents"
+            end
+            redis.call("SETEX", KEYS[3], ARGV[1], cjson.encode(job))
+        end
+        redis.call("EXPIRE", KEYS[2], ARGV[1])
+        return {created and 1 or 0, total, processed, failed}
+        """
+
+        await cast(
+            Awaitable[list[Any]],
+            self.redis.eval(
+                script,
+                3,
+                marker_key,
+                counters_key,
+                job_key,
+                self.ttl_seconds,
+                field,
+                completed_at,
+            ),
+        )
 
     async def update_status(
         self,
