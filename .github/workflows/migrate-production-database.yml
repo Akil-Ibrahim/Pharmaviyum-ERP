@@ -64,6 +64,8 @@ jobs:
       - name: Inspect production database state
         id: inspect_database
         shell: bash
+        env:
+          EXPECTED_ALEMBIC_HEAD: ${{ steps.validate_graph.outputs.expected_head }}
         run: |
           set -euo pipefail
           test -n "$DATABASE_URL"
