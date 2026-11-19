@@ -5,6 +5,7 @@ Best Practice: Use connection pooling, bounded metrics, and proper error handlin
 
 from __future__ import annotations
 
+import asyncio
 import time
 from collections.abc import Awaitable, Callable
 from typing import TypeVar, cast
@@ -28,6 +29,7 @@ logger = structlog.get_logger()
 
 _redis_client: Redis | None = None
 _pool: ConnectionPool | None = None
+_initialization_lock = asyncio.Lock()
 
 T = TypeVar("T")
 
@@ -77,6 +79,9 @@ def get_redis_pool() -> ConnectionPool:
             settings.REDIS_URL,
             max_connections=settings.REDIS_MAX_CONNECTIONS,
             decode_responses=True,
+            socket_connect_timeout=settings.REDIS_CONNECT_TIMEOUT_SECONDS,
+            socket_timeout=settings.REDIS_SOCKET_TIMEOUT_SECONDS,
+            retry_on_timeout=True,
         )
         _update_pool_metrics(_pool)
         logger.info("redis_connection_pool_created")
@@ -86,27 +91,39 @@ def get_redis_pool() -> ConnectionPool:
 async def get_redis() -> Redis:
     """Get the shared Redis client and verify connectivity on first initialization."""
     global _redis_client
-    if _redis_client is None:
+    async with _initialization_lock:
+        if _redis_client is not None:
+            return _redis_client
+
         pool = get_redis_pool()
-        _redis_client = cast(Redis, Redis(connection_pool=pool))
+        client = cast(Redis, Redis(connection_pool=pool))
         try:
-            await _execute_redis_command("ping", _redis_client.ping)
-            logger.info("redis_connected")
-        except (ConnectionError, TimeoutError) as exc:
-            logger.error("redis_connection_failed", error=str(exc))
+            await _execute_redis_command("ping", client.ping)
+        except Exception as exc:
+            # Never cache a client whose initial connectivity check failed.
+            # Keep the shared pool so a later call can establish a fresh connection.
+            _redis_client = None
+            logger.warning(
+                "redis_initial_connection_failed",
+                error_type=type(exc).__name__,
+            )
             raise
-    return _redis_client
+
+        _redis_client = client
+        logger.info("redis_connected")
+        return client
 
 
 async def close_redis() -> None:
     """Close the Redis client and connection pool."""
     global _redis_client, _pool
-    if _redis_client:
-        await _redis_client.close()
-        _redis_client = None
-    if _pool:
-        await _pool.disconnect()
-        _pool = None
+    async with _initialization_lock:
+        if _redis_client is not None:
+            await _redis_client.aclose()
+            _redis_client = None
+        if _pool is not None:
+            await _pool.disconnect()
+            _pool = None
     REDIS_CONNECTIONS.set(0)
     REDIS_CONNECTIONS_AVAILABLE.set(0)
     REDIS_CONNECTIONS_IN_USE.set(0)
