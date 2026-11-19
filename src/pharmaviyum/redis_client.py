@@ -12,7 +12,6 @@ from typing import TypeVar, cast
 
 import structlog
 from redis.asyncio import ConnectionPool, Redis
-from redis.exceptions import ConnectionError, TimeoutError
 
 from src.pharmaviyum.config import settings
 from src.pharmaviyum.observability.metrics import (
