@@ -11,6 +11,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    CheckConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -37,6 +38,12 @@ class OutboxEvent(Base):
             "created_at",
         ),
         Index("ix_outbox_events_pharmacy_created", "pharmacy_id", "created_at"),
+        Index("ix_outbox_events_dead_lettered", "dead_lettered_at", "created_at"),
+        CheckConstraint(
+            "(dead_lettered_at IS NULL AND dead_letter_reason IS NULL) OR "
+            "(dead_lettered_at IS NOT NULL AND dead_letter_reason IS NOT NULL)",
+            name="ck_outbox_events_dead_letter_state",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -68,9 +75,40 @@ class OutboxEvent(Base):
     published_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    dead_lettered_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    dead_letter_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
     locked_until: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
     lease_token: Mapped[str | None] = mapped_column(String(36), nullable=True)
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_error: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+
+
+
+class OutboxReplayAudit(Base):
+    """Durable audit record for an operator-authorized outbox replay."""
+
+    __tablename__ = "outbox_replay_audits"
+    __table_args__ = (
+        Index("ix_outbox_replay_audits_event_created", "outbox_event_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    outbox_event_id: Mapped[int] = mapped_column(
+        ForeignKey("outbox_events.id", ondelete="RESTRICT"), nullable=False
+    )
+    event_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    actor_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+    )
+    reason_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    previous_dead_letter_reason: Mapped[str] = mapped_column(String(64), nullable=False)
+    attempts_at_replay: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
