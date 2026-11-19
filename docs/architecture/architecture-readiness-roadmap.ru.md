@@ -48,7 +48,7 @@ Patient-scoped HMAC namespaces для API sessions, Agent checkpoints и RAG che
 
 ### Этап 1 — Сделать целостность запасов структурным свойством
 
-Реализовать ADR-0006 как каноническую модель записи inventory:
+Завершить и довести до эксплуатационной готовности ADR-0006. Append-only movement model, общий transactional service и несколько мигрированных POS/admin write paths уже существуют; остаётся валидация и закрытие остаточных lifecycle paths:
 
 - Append-only movement records для поступлений, продаж, возвратов, корректировок и перемещений.
 - Атомарная транзакционная граница между бизнес-командой, stock projection и outbox event.
