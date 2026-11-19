@@ -1,6 +1,6 @@
 # Mortarium Patient-Scoped Conversation State
 
-**Status:** Implemented in the pull request branch; not active in production until reviewed, merged and deployed.
+**Status:** Merged into `main` by PR #287 (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f). Staged end-to-end validation and production activation are not evidenced; do not treat this document as proof of deployment.
 
 ## Scope
 
