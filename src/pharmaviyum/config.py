@@ -115,6 +115,8 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://redis:6379/0"
     REDIS_MAX_CONNECTIONS: int = 10
+    REDIS_CONNECT_TIMEOUT_SECONDS: float = 5.0
+    REDIS_SOCKET_TIMEOUT_SECONDS: float = 5.0
 
     # Pharmacy Edge → Central synchronization. Credentials are provisioned per node.
     PHARMAVIYUM_EDGE_NODE_ID: Optional[str] = None
