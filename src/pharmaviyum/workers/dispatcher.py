@@ -49,37 +49,50 @@ class TaskDispatcher:
         redis = await self._client()
         task_id = idempotency_key or str(uuid.uuid4())
 
-        if idempotency_key:
-            existing = await redis.get(f"task:{idempotency_key}")
-            if existing:
-                logger.info(
-                    "Task already dispatched",
-                    extra={"task_id": task_id, "task_name": task_name},
-                )
-                return task_id
-
+        now = datetime.now(timezone.utc)
         payload = {
             "task_id": task_id,
             "task_name": task_name,
             "task_args": task_args,
             "queue": queue,
             "priority": priority,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": now.isoformat(),
             "status": "queued",
         }
 
-        await redis.setex(
-            f"task:{task_id}",
-            86400,
-            json.dumps(payload, ensure_ascii=False),
+        queue_key = f"queue:{queue}"
+        score = (
+            scheduled_at.timestamp()
+            if scheduled_at
+            else (priority * 1_000_000_000) + now.timestamp()
         )
 
-        queue_key = f"queue:{queue}"
-        if scheduled_at:
-            await redis.zadd(queue_key, {task_id: scheduled_at.timestamp()})
-        else:
-            score = (priority * 1_000_000_000) + datetime.now(timezone.utc).timestamp()
-            await redis.zadd(queue_key, {task_id: score})
+        # Keep idempotency reservation, task payload, and queue insertion atomic.
+        # A process crash can no longer leave a task record without its queue item.
+        dispatch_script = """
+        if redis.call("EXISTS", KEYS[1]) == 1 then
+            return 0
+        end
+        redis.call("SETEX", KEYS[1], ARGV[1], ARGV[2])
+        redis.call("ZADD", KEYS[2], ARGV[4], ARGV[3])
+        return 1
+        """
+        created = await redis.eval(
+            dispatch_script,
+            2,
+            f"task:{task_id}",
+            queue_key,
+            86400,
+            json.dumps(payload, ensure_ascii=False),
+            task_id,
+            score,
+        )
+        if not created:
+            logger.info(
+                "Task already dispatched",
+                extra={"task_id": task_id, "task_name": task_name},
+            )
+            return task_id
 
         logger.info(
             "Task dispatched",
