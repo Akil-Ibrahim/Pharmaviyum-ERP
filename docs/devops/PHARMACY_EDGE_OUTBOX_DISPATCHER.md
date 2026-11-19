@@ -47,8 +47,10 @@ An earlier event that is rejected or repeatedly failing intentionally blocks lat
 ## Operational limitations and rollout gates
 
 - This dispatcher only transports the POS event types emitted by the current producer. It does not implement a Central ordered consumer or apply inventory, payment, dispensing, returns or purchasing effects.
-- It does not yet include a dead-letter management UI, operator replay endpoint, mTLS, automatic secret rotation, or per-pharmacy monitoring dashboards.
-- A 4xx response is retained and retried with backoff; investigate the event and credential rather than deleting the row.
+- A dedicated management UI is not yet available. Superuser-only API endpoints list dead-letter metadata without exposing event payloads and support audited replay after remediation.
+- Transport failures, HTTP 408/425/429 and 5xx are retried with backoff. Other 4xx responses, redirects and malformed acknowledgements are durably quarantined; they are not retried in a hot loop.
+- Quarantined events remain immutable and block later aggregate versions. Replay retains the original event ID, payload and aggregate version; every replay creates a durable audit record.
+- mTLS, automatic credential rotation and per-pharmacy monitoring dashboards remain outstanding.
 - The worker and Beat containers must use the same local PostgreSQL database as the POS API and must receive the same Edge identity configuration.
 - Test Central unavailability, lost acknowledgements, worker termination after claim, lease expiry, duplicate deliveries, aggregate ordering and full-disk conditions before enabling a pilot.
 - Do not run production migrations or enable fleet dispatch until the stacked PRs have passed CI, the Central consumer and inventory conflict policy are implemented, and a controlled pilot has passed failure-injection tests.
