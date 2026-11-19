@@ -299,3 +299,100 @@ async def test_expired_lease_fences_off_the_previous_worker(test_db, test_engine
         assert stored is not None
         assert stored.published_at is None
         assert stored.lease_token == claimed[0].lease_token
+
+
+
+@pytest.mark.integration
+async def test_permanent_rejection_is_quarantined_and_blocks_later_aggregate_versions(
+    test_db, test_engine, monkeypatch
+):
+    """A permanent 4xx must stop retries and preserve per-aggregate ordering."""
+    _configure_edge(monkeypatch)
+    pharmacy = Pharmacy(name="Dead Letter Pharmacy", code="DISPATCH-DLQ")
+    test_db.add(pharmacy)
+    await test_db.flush()
+    first = await _add_outbox_event(
+        test_db,
+        pharmacy_id=pharmacy.id,
+        aggregate_id="601",
+        aggregate_version=1,
+    )
+    second = await _add_outbox_event(
+        test_db,
+        pharmacy_id=pharmacy.id,
+        aggregate_id="601",
+        aggregate_version=2,
+        event_type="pos.sale.cancelled",
+    )
+    first_id = first.event_id
+    second_id = second.event_id
+    await test_db.commit()
+
+    received = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        received.append(request)
+        return httpx.Response(422, json={"detail": "invalid event contract"})
+
+    factory = async_sessionmaker(test_engine, expire_on_commit=False)
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        assert await dispatch_pending_outbox(
+            session_factory=factory, http_client=client
+        ) == 0
+        assert await dispatch_pending_outbox(
+            session_factory=factory, http_client=client
+        ) == 0
+
+    assert len(received) == 1
+    async with factory() as session:
+        quarantined = await session.scalar(
+            select(OutboxEvent).where(OutboxEvent.event_id == first_id)
+        )
+        blocked = await session.scalar(
+            select(OutboxEvent).where(OutboxEvent.event_id == second_id)
+        )
+        assert quarantined is not None
+        assert quarantined.dead_lettered_at is not None
+        assert quarantined.dead_letter_reason == "http_422"
+        assert quarantined.last_error == "Central permanently rejected event: HTTP 422"
+        assert quarantined.published_at is None
+        assert blocked is not None
+        assert blocked.published_at is None
+        assert blocked.attempts == 0
+
+
+@pytest.mark.integration
+async def test_throttled_delivery_is_retried_instead_of_dead_lettered(
+    test_db, test_engine, monkeypatch
+):
+    _configure_edge(monkeypatch)
+    pharmacy = Pharmacy(name="Throttle Retry Pharmacy", code="DISPATCH-429")
+    test_db.add(pharmacy)
+    await test_db.flush()
+    event = await _add_outbox_event(
+        test_db,
+        pharmacy_id=pharmacy.id,
+        aggregate_id="602",
+        aggregate_version=1,
+    )
+    event_id = event.event_id
+    await test_db.commit()
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(429, headers={"Retry-After": "30"})
+
+    factory = async_sessionmaker(test_engine, expire_on_commit=False)
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        assert await dispatch_pending_outbox(
+            session_factory=factory, http_client=client
+        ) == 0
+
+    async with factory() as session:
+        stored = await session.scalar(
+            select(OutboxEvent).where(OutboxEvent.event_id == event_id)
+        )
+        assert stored is not None
+        assert stored.dead_lettered_at is None
+        assert stored.dead_letter_reason is None
+        assert stored.attempts == 1
+        assert stored.available_at > datetime.now(timezone.utc)
