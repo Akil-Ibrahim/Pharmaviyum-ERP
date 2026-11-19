@@ -3,6 +3,7 @@
 ## Architecture Vision and Engineering Principles
 
 **Status:** Living architecture document  
+**Readiness roadmap:** [English](./architecture-readiness-roadmap.en.md) · [Русский](./architecture-readiness-roadmap.ru.md)  
 **Languages:** English / Russian  
 **Project:** Pharmaviyum CRM  
 **Primary backend:** FastAPI  
