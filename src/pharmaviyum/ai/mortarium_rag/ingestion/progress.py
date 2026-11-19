@@ -105,9 +105,7 @@ class IngestionProgressTracker:
     ) -> None:
         """Atomically deduplicate a child result and update its parent progress."""
         counters_key = f"{self.prefix}:{batch_job_id}:batch"
-        marker_key = (
-            f"{self.prefix}:{batch_job_id}:child:{child_job_id}:counted"
-        )
+        marker_key = f"{self.prefix}:{batch_job_id}:child:{child_job_id}:counted"
         job_key = f"{self.prefix}:{batch_job_id}"
         field = "processed" if success else "failed"
         completed_at = datetime.utcnow().isoformat()
