@@ -94,6 +94,7 @@ async def _claim_batch(
                 select(OutboxEvent)
                 .where(
                     OutboxEvent.published_at.is_(None),
+                    OutboxEvent.dead_lettered_at.is_(None),
                     OutboxEvent.available_at <= now,
                     (OutboxEvent.locked_until.is_(None))
                     | (OutboxEvent.locked_until <= now),
@@ -185,6 +186,43 @@ async def _release_for_retry(
             return True
 
 
+async def _dead_letter(
+    session_factory: async_sessionmaker[AsyncSession],
+    *,
+    row_id: int,
+    lease_token: str,
+    reason: str,
+    error: str,
+) -> bool:
+    """Quarantine a permanent delivery failure while retaining the immutable event."""
+    now = datetime.now(timezone.utc)
+    async with session_factory() as session:
+        async with session.begin():
+            event = await session.scalar(
+                select(OutboxEvent)
+                .where(
+                    OutboxEvent.id == row_id,
+                    OutboxEvent.lease_token == lease_token,
+                    OutboxEvent.published_at.is_(None),
+                    OutboxEvent.dead_lettered_at.is_(None),
+                )
+                .with_for_update()
+            )
+            if event is None:
+                return False
+            event.dead_lettered_at = now
+            event.dead_letter_reason = reason[:64]
+            event.locked_until = None
+            event.lease_token = None
+            event.last_error = error[:1000]
+            return True
+
+
+def _is_retryable_http_status(status_code: int) -> bool:
+    """Retry transient throttling/timeouts and server failures only."""
+    return status_code in {408, 425, 429} or status_code >= 500
+
+
 async def _acknowledge_published(
     session_factory: async_sessionmaker[AsyncSession],
     *,
@@ -261,7 +299,57 @@ async def dispatch_pending_outbox(
                     raise ValueError(
                         "Central returned an invalid event acknowledgement"
                     )
-            except (httpx.HTTPError, ValueError, KeyError, AttributeError) as exc:
+            except httpx.HTTPStatusError as exc:
+                status_code = exc.response.status_code
+                if _is_retryable_http_status(status_code):
+                    await _release_for_retry(
+                        session_factory,
+                        row_id=event.row_id,
+                        lease_token=event.lease_token,
+                        attempts=event.attempts,
+                        error=f"Central delivery failed: HTTP {status_code}",
+                    )
+                    logger.warning(
+                        "sync_event_delivery_retry_scheduled",
+                        extra={
+                            "event_id": event.event_id,
+                            "http_status": status_code,
+                        },
+                    )
+                else:
+                    await _dead_letter(
+                        session_factory,
+                        row_id=event.row_id,
+                        lease_token=event.lease_token,
+                        reason=f"http_{status_code}",
+                        error=f"Central permanently rejected event: HTTP {status_code}",
+                    )
+                    logger.error(
+                        "sync_event_delivery_dead_lettered",
+                        extra={
+                            "event_id": event.event_id,
+                            "http_status": status_code,
+                        },
+                    )
+                continue
+            except (ValueError, KeyError, AttributeError) as exc:
+                await _dead_letter(
+                    session_factory,
+                    row_id=event.row_id,
+                    lease_token=event.lease_token,
+                    reason="invalid_acknowledgement",
+                    error=f"Central returned an invalid acknowledgement: {type(exc).__name__}",
+                )
+                logger.error(
+                    "sync_event_delivery_dead_lettered",
+                    extra={
+                        "event_id": event.event_id,
+                        "reason": "invalid_acknowledgement",
+                        "error_type": type(exc).__name__,
+                    },
+                )
+                continue
+            except httpx.HTTPError as exc:
                 await _release_for_retry(
                     session_factory,
                     row_id=event.row_id,
@@ -270,7 +358,7 @@ async def dispatch_pending_outbox(
                     error=f"Central delivery failed: {type(exc).__name__}",
                 )
                 logger.warning(
-                    "sync_event_delivery_failed",
+                    "sync_event_delivery_retry_scheduled",
                     extra={
                         "event_id": event.event_id,
                         "error_type": type(exc).__name__,

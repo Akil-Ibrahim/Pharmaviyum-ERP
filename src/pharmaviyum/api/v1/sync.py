@@ -5,12 +5,19 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Header, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, Header, HTTPException, Query, status
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
+from src.pharmaviyum.models.outbox import OutboxEvent, OutboxReplayAudit
 from src.pharmaviyum.models.sync import CentralInboxEvent
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, SessionDep
+from src.pharmaviyum.schemas.outbox import (
+    OutboxDeadLetterItem,
+    OutboxDeadLetterPage,
+    OutboxReplayRequest,
+    OutboxReplayResponse,
+)
 from src.pharmaviyum.schemas.sync import (
     EdgeNodeProvisionRequest,
     EdgeNodeProvisionResponse,
@@ -65,6 +72,88 @@ async def disable_edge_node(
     if node is None:
         raise HTTPException(status_code=404, detail="Edge node not found")
     await db.commit()
+
+
+@router.get(
+    "/outbox/dead-lettered",
+    response_model=OutboxDeadLetterPage,
+)
+async def list_dead_lettered_outbox_events(
+    db: SessionDep,
+    _: CurrentSuperuser,
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> OutboxDeadLetterPage:
+    """List quarantined Edge events without exposing their business payloads."""
+    filters = (
+        OutboxEvent.dead_lettered_at.is_not(None),
+        OutboxEvent.published_at.is_(None),
+    )
+    total = await db.scalar(
+        select(func.count()).select_from(OutboxEvent).where(*filters)
+    )
+    rows = await db.scalars(
+        select(OutboxEvent)
+        .where(*filters)
+        .order_by(OutboxEvent.dead_lettered_at.asc(), OutboxEvent.id.asc())
+        .limit(limit)
+        .offset(offset)
+    )
+    return OutboxDeadLetterPage(
+        items=[OutboxDeadLetterItem.model_validate(row) for row in rows.all()],
+        total=total or 0,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.post(
+    "/outbox/{event_id}/replay",
+    response_model=OutboxReplayResponse,
+)
+async def replay_dead_lettered_outbox_event(
+    event_id: UUID,
+    payload: OutboxReplayRequest,
+    db: SessionDep,
+    actor: CurrentSuperuser,
+) -> OutboxReplayResponse:
+    """Schedule a quarantined immutable event for audited operator replay."""
+    event = await db.scalar(
+        select(OutboxEvent)
+        .where(OutboxEvent.event_id == str(event_id))
+        .with_for_update()
+    )
+    if event is None:
+        raise HTTPException(status_code=404, detail="Outbox event not found")
+    if event.published_at is not None:
+        raise HTTPException(status_code=409, detail="Outbox event is already published")
+    if event.dead_lettered_at is None or event.dead_letter_reason is None:
+        raise HTTPException(status_code=409, detail="Outbox event is not quarantined")
+
+    now = datetime.now(timezone.utc)
+    previous_reason = event.dead_letter_reason
+    audit = OutboxReplayAudit(
+        outbox_event_id=event.id,
+        event_id=event.event_id,
+        actor_user_id=actor.id,
+        reason_code=payload.reason_code,
+        previous_dead_letter_reason=previous_reason,
+        attempts_at_replay=event.attempts,
+    )
+    db.add(audit)
+    event.dead_lettered_at = None
+    event.dead_letter_reason = None
+    event.available_at = now
+    event.locked_until = None
+    event.lease_token = None
+    await db.flush()
+    await db.commit()
+    return OutboxReplayResponse(
+        event_id=event_id,
+        status="scheduled",
+        available_at=now,
+        audit_id=audit.id,
+    )
 
 
 @router.post(

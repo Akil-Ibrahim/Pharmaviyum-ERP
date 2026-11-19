@@ -45,18 +45,28 @@ jobs:
         run: uv sync --frozen
 
       - name: Validate migration graph
+        id: validate_graph
         shell: bash
         run: |
           set -euo pipefail
-          heads="$(uv run alembic heads)"
-          printf '%s\n' "$heads"
-          count="$(grep -oF ' (head)' <<< "$heads" | wc -l | tr -d ' ')"
-          test "$count" -eq 1
-          grep -q '^2026_11_16_000004 ' <<< "$heads"
+          uv run python - <<'PY'
+          import os
+          from alembic.config import Config
+          from alembic.script import ScriptDirectory
+
+          heads = ScriptDirectory.from_config(Config("alembic.ini")).get_heads()
+          if len(heads) != 1:
+              raise SystemExit(f"Refusing production migration: expected one Alembic head, found {heads}.")
+          print(f"Verified single Alembic head: {heads[0]}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"expected_head={heads[0]}" + chr(10))
+          PY
 
       - name: Inspect production database state
         id: inspect_database
         shell: bash
+        env:
+          EXPECTED_ALEMBIC_HEAD: ${{ steps.validate_graph.outputs.expected_head }}
         run: |
           set -euo pipefail
           test -n "$DATABASE_URL"
@@ -95,7 +105,8 @@ jobs:
           if database != expected_database or role != "neondb_owner":
               raise SystemExit("Refusing migration: database identity does not match the approved production target.")
 
-          expected_revision = "2026_11_16_000004"
+          expected_head = os.environ["EXPECTED_ALEMBIC_HEAD"]
+          baseline_revision = "2026_11_16_000004"
           revisions = []
           required_tables = ()
           with psycopg.connect(normalized, connect_timeout=15) as connection:
@@ -109,27 +120,37 @@ jobs:
                         to_regclass('public.inventory_movements') IS NOT NULL,
                         to_regclass('public.users') IS NOT NULL,
                         to_regclass('public.pharmacies') IS NOT NULL,
-                        to_regclass('public.sales') IS NOT NULL
+                        to_regclass('public.sales') IS NOT NULL,
+                        to_regclass('public.outbox_events') IS NOT NULL
                       """
                   )
                   required_tables = cursor.fetchone()
 
           print(f"Existing Alembic revisions: {revisions}")
           print(f"Required application tables present: {all(required_tables)}")
-          if table_count == 0 and alembic_table is None:
-              print("Empty production database confirmed; bootstrap migration is required.")
-              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-                  output.write("migration_required=true\n")
-          elif alembic_table is not None and revisions == [expected_revision] and all(required_tables):
-              print("Production schema is already at the expected Alembic head; skipping migration.")
-              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-                  output.write("migration_required=false\n")
+          if not all(required_tables):
+              raise SystemExit(
+                  "Refusing incremental production migration: one or more required baseline tables are missing. "
+                  f"Observed table checks={required_tables}."
+              )
+
+          if revisions == [expected_head]:
+              print("Production schema is already at the code's Alembic head; no migration is needed.")
+              migration_required = "false"
+          elif revisions == [baseline_revision]:
+              print(
+                  "Verified production baseline. The reviewed additive migration chain "
+                  f"will advance schema from {baseline_revision} to {expected_head}."
+              )
+              migration_required = "true"
           else:
               raise SystemExit(
-                  "Refusing migration: database is non-empty but is not at the verified expected schema. "
-                  f"Expected revision={expected_revision}; found revisions={revisions}; "
-                  f"required_tables_present={required_tables}."
+                  "Refusing production migration: database revision is not an explicitly supported state. "
+                  f"Allowed revisions={[baseline_revision, expected_head]}; found={revisions}."
               )
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"migration_required={migration_required}" + chr(10))
           PY
 
       - name: Apply all Alembic migrations
@@ -162,8 +183,15 @@ jobs:
 
           print(f"Applied Alembic revisions: {revisions}")
           print(f"Public base tables: {table_count}")
-          if revisions != ["2026_11_16_000004"]:
-              raise SystemExit("Production schema did not reach the expected single Alembic head.")
+          from alembic.config import Config
+          from alembic.script import ScriptDirectory
+
+          expected_heads = ScriptDirectory.from_config(Config("alembic.ini")).get_heads()
+          if len(expected_heads) != 1 or revisions != expected_heads:
+              raise SystemExit(
+                  "Production schema did not reach the code's single Alembic head. "
+                  f"Expected={expected_heads}; actual={revisions}."
+              )
           if table_count < 1:
               raise SystemExit("Migration completed without creating the expected schema.")
           PY

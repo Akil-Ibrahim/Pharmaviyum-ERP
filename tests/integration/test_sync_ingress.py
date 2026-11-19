@@ -6,6 +6,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy import select
 
+from src.pharmaviyum.models.outbox import OutboxEvent, OutboxReplayAudit
 from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.sync import CentralInboxEvent, PharmacyEdgeNode
 
@@ -99,7 +100,18 @@ async def test_edge_enrollment_and_event_ingress_are_durable_and_idempotent(
     assert replay.status_code == 202, replay.text
     assert replay.json()["duplicate"] is True
 
-    altered = {**event, "payload": {**_sale_created_payload(1001), "items": [{**_sale_created_payload(1001)["items"][0], "product_name": "Altered Test Medicine"}]}}
+    altered = {
+        **event,
+        "payload": {
+            **_sale_created_payload(1001),
+            "items": [
+                {
+                    **_sale_created_payload(1001)["items"][0],
+                    "product_name": "Altered Test Medicine",
+                }
+            ],
+        },
+    }
     conflict = await authenticated_client.post(
         "/api/v1/sync/events", json=altered, headers=headers
     )
@@ -259,3 +271,87 @@ async def test_ingress_rejects_patient_data_and_unregistered_event_types(
         )
         is None
     )
+
+
+@pytest.mark.integration
+async def test_superuser_can_inspect_and_audit_replay_of_dead_lettered_outbox_event(
+    authenticated_client, test_db
+):
+    pharmacy = Pharmacy(name="Outbox Replay Pharmacy", code="SYNC-REPLAY")
+    test_db.add(pharmacy)
+    await test_db.flush()
+    event = OutboxEvent(
+        event_id=str(uuid4()),
+        pharmacy_id=pharmacy.id,
+        event_type="pos.sale.created",
+        schema_version=1,
+        aggregate_type="sale",
+        aggregate_id="PV-REPLAY-1",
+        aggregate_version=1,
+        payload={"synthetic": True},
+        dead_lettered_at=datetime.now(timezone.utc),
+        dead_letter_reason="http_422",
+        last_error="Central permanently rejected event: HTTP 422",
+    )
+    test_db.add(event)
+    await test_db.commit()
+    event_id = event.event_id
+
+    listing = await authenticated_client.get("/api/v1/sync/outbox/dead-lettered")
+    assert listing.status_code == 200, listing.text
+    body = listing.json()
+    assert body["total"] == 1
+    assert len(body["items"]) == 1
+    assert body["items"][0]["event_id"] == event_id
+    assert body["items"][0]["dead_letter_reason"] == "http_422"
+    assert "payload" not in body["items"][0]
+
+    replay = await authenticated_client.post(
+        f"/api/v1/sync/outbox/{event_id}/replay",
+        json={"reason_code": "central_conflict_resolved"},
+    )
+    assert replay.status_code == 200, replay.text
+    replay_body = replay.json()
+    assert replay_body["event_id"] == event_id
+    assert replay_body["status"] == "scheduled"
+
+    await test_db.refresh(event)
+    assert event.dead_lettered_at is None
+    assert event.dead_letter_reason is None
+    assert event.available_at <= datetime.now(timezone.utc)
+
+    audit = await test_db.scalar(
+        select(OutboxReplayAudit).where(OutboxReplayAudit.event_id == event_id)
+    )
+    assert audit is not None
+    assert audit.actor_user_id > 0
+    assert audit.reason_code == "central_conflict_resolved"
+    assert audit.previous_dead_letter_reason == "http_422"
+    assert audit.attempts_at_replay == 0
+
+
+@pytest.mark.integration
+async def test_outbox_replay_rejects_events_that_are_not_quarantined(
+    authenticated_client, test_db
+):
+    pharmacy = Pharmacy(name="Outbox Replay Guard Pharmacy", code="SYNC-REPLAY-GUARD")
+    test_db.add(pharmacy)
+    await test_db.flush()
+    event = OutboxEvent(
+        event_id=str(uuid4()),
+        pharmacy_id=pharmacy.id,
+        event_type="pos.sale.created",
+        schema_version=1,
+        aggregate_type="sale",
+        aggregate_id="PV-REPLAY-2",
+        aggregate_version=1,
+        payload={"synthetic": True},
+    )
+    test_db.add(event)
+    await test_db.commit()
+
+    response = await authenticated_client.post(
+        f"/api/v1/sync/outbox/{event.event_id}/replay",
+        json={"reason_code": "operator_verified"},
+    )
+    assert response.status_code == 409

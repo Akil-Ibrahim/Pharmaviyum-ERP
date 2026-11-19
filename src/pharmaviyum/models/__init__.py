@@ -13,7 +13,7 @@ from src.pharmaviyum.models.medical_device import (
     MedicalDeviceAuthorization,
     MedicalDeviceIdentifier,
 )
-from src.pharmaviyum.models.outbox import OutboxEvent
+from src.pharmaviyum.models.outbox import OutboxEvent, OutboxReplayAudit
 
 # Import POS entities so Alembic registers their tables in Base.metadata.
 from src.pharmaviyum.models.pos import Payment, Sale, SaleItem, SaleItemAllocation
@@ -30,6 +30,7 @@ __all__ = [
     "MedicinalProduct",
     "MedicinalProductIngredient",
     "OutboxEvent",
+    "OutboxReplayAudit",
     "InventoryMovement",
     "MedicalDevice",
     "MedicalDeviceAuthorization",

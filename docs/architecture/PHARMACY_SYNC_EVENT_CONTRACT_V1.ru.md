@@ -77,8 +77,10 @@ Dispatcher уже блокирует отправку более поздней 
 - Используйте уникальный lease token и срок действия. Обновлять строку после доставки может только worker с актуальным token.
 - Выполняйте HTTP/network I/O вне транзакции БД.
 - Помечайте событие доставленным только после durable acknowledgement от Central.
-- Текущая реализация повторяет HTTP errors и неуспешные HTTP responses с exponential backoff и jitter; экспоненциальная составляющая ограничена одним часом. Сюда входят и постоянные 4xx, поэтому ошибки credentials/schema/scope могут повторяться бесконечно.
-- Пока не реализованы: классификация постоянных ошибок, dead-letter/quarantine workflow, endpoint операторского replay и alerting для poison events.
+- Текущая реализация повторяет transport failures, 408, 425, 429 и 5xx с exponential backoff и jitter. Постоянные HTTP-отказы (остальные 4xx и redirects) и некорректные acknowledgements помещаются в durable Edge outbox quarantine.
+- Quarantine сохраняет исходное событие и блокирует более поздние версии того же aggregate, пока оператор не устранит причину и явно не запустит replay.
+- Superuser-only endpoints показывают метаданные quarantine без раскрытия payload и планируют replay с durable audit record (actor, reason code, класс исходного отказа и число попыток). Replay сохраняет исходные `event_id`, aggregate version, payload и историю попыток.
+- Retry/quarantine state хранится в PostgreSQL; Redis/Celery используется только для запуска dispatcher. Sync-specific alerting и fleet dashboards остаются незавершёнными.
 - Сохраняйте ошибки для проверки и контролируемого replay. Replay сохраняет исходный event_id.
 - Отслеживайте возраст старейшего pending event, backlog, attempts, последнюю ошибку, последнюю успешную синхронизацию и задержку подтверждений по каждому сайту. Специализированные sync metrics и dashboards пока не реализованы.
 
