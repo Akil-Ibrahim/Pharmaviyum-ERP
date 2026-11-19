@@ -1,5 +1,5 @@
 [project]
-name = "pharmaviyum-crm"
+name = "pharmaviyum-erp"
 version = "0.1.0"
 description = "Pharmacy ERP/CRM platform with Mortarium AI"
 readme = "README.md"
