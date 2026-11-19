@@ -100,7 +100,18 @@ async def test_edge_enrollment_and_event_ingress_are_durable_and_idempotent(
     assert replay.status_code == 202, replay.text
     assert replay.json()["duplicate"] is True
 
-    altered = {**event, "payload": {**_sale_created_payload(1001), "items": [{**_sale_created_payload(1001)["items"][0], "product_name": "Altered Test Medicine"}]}}
+    altered = {
+        **event,
+        "payload": {
+            **_sale_created_payload(1001),
+            "items": [
+                {
+                    **_sale_created_payload(1001)["items"][0],
+                    "product_name": "Altered Test Medicine",
+                }
+            ],
+        },
+    }
     conflict = await authenticated_client.post(
         "/api/v1/sync/events", json=altered, headers=headers
     )
@@ -286,9 +297,7 @@ async def test_superuser_can_inspect_and_audit_replay_of_dead_lettered_outbox_ev
     await test_db.commit()
     event_id = event.event_id
 
-    listing = await authenticated_client.get(
-        "/api/v1/sync/outbox/dead-lettered"
-    )
+    listing = await authenticated_client.get("/api/v1/sync/outbox/dead-lettered")
     assert listing.status_code == 200, listing.text
     body = listing.json()
     assert body["total"] == 1
