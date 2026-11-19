@@ -301,7 +301,6 @@ async def test_expired_lease_fences_off_the_previous_worker(test_db, test_engine
         assert stored.lease_token == claimed[0].lease_token
 
 
-
 @pytest.mark.integration
 async def test_permanent_rejection_is_quarantined_and_blocks_later_aggregate_versions(
     test_db, test_engine, monkeypatch
