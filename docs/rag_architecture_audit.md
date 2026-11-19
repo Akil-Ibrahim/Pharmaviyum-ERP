@@ -33,29 +33,19 @@ Other material gaps remain: Russian language/OCR/embedding quality needs measure
 
 ## Findings and priorities
 
-### P0 — Patient context is not bound to a conversation/checkpoint session
+### P0 — Patient-context isolation: code remediation merged; staged release gate open
 
-**Evidence**
-- The AI API scopes the supplied session ID as `pharmacy:{pharmacy_id}:user:{user_id}:session:{session_id}`; patient ID is not part of that scope.
-- `AgentHarness` loads and saves dialogue memory using this session ID.
-- `DialogueMemory._session_prefix()` HMACs the session ID, but the HMAC input still does not include patient ID.
-- `PharmacistAgent._thread_id()` HMACs pharmacy, user and thread ID, but not patient ID.
-- `LangGraphRAG._thread_id()` also omits patient ID.
-- The prompt-cache context includes patient ID, but this does not scope dialogue memory or graph checkpoints.
-- The pharmaceutical `patient_context_isolation()` evaluator checks source metadata; it does not test switching patients within one reused conversation.
+PR #287 has merged the following controls into `main`:
 
-**Risk**
+- API session namespace `mortarium-session:v3` binds pharmacy, authenticated user, patient (including explicit `None`) and client session using HMAC-SHA-256.
+- Both synchronous and streaming endpoints validate tenant/patient scope before deriving the internal session namespace.
+- `PharmacistAgent._thread_id()` uses `agent:v2:<digest>` and includes patient scope.
+- `LangGraphRAG._thread_id()` uses `rag:v2:<digest>` and includes patient scope.
+- Direct checkpoint construction validates identifier shape and fails closed in staging/production if `SECRET_KEY` is missing.
+- Regression tests cover patient A/B/no-patient separation, malformed identifiers, tenant isolation and secret rotation.
 
-If a client reuses one session ID while changing `patient_id`, historical messages and checkpoint state can be reused in the new patient context. This creates a patient-context mixing and confidentiality risk even when every individual database retrieval is correctly tenant-filtered.
+**Residual release gate:** run staged end-to-end tests against real Redis and PostgreSQL checkpoint persistence, reusing one client session across Patient A → Patient B → no patient in both streaming and non-streaming modes. Verify memory, summaries, checkpoints and cache behavior. No staged execution evidence or production activation is asserted by this static audit. See [ADR-0003](./adr/ADR-0003-patient-scoped-ai-state.md) and [patient-session isolation contract](./ai/patient-session-isolation.md).
 
-**Required remediation**
-1. Bind conversation identity to authenticated pharmacy, user, and patient scope (including an explicit no-patient scope), or reject patient-scope changes within an existing session.
-2. Apply the same scope to Agent Harness memory, PharmacistAgent checkpoint IDs, and RAG checkpoint IDs.
-3. Define safe migration/expiry behavior for existing sessions; do not silently merge old and new scopes.
-4. Add adversarial tests: patient A → patient B in the same client session; patient A → no patient; no patient → patient A; cross-pharmacy session reuse; streaming and non-streaming paths.
-5. Verify that summaries, episodic facts, tool results, cache entries and checkpoint restores cannot cross patient scopes.
-
-**Release gate:** Do not treat patient-context isolation as complete until these tests pass against the actual API/session and checkpoint paths.
 
 ### P1 — RAG checkpoint pseudonymization: code remediation merged; legacy retention open
 
