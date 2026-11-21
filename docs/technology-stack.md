@@ -8,7 +8,7 @@ This section explains not only which technologies are present, but why Pharmaviy
 
 | Technology | Definition | Why Pharmaviyum uses it |
 |---|---|---|
-| **Python 3.15** | High-level, general-purpose programming language. | Implements the backend, pharmacy domain rules, integrations, background jobs and Mortarium AI services. The application runtime is pinned exactly to CPython `==3.15.0` in `pyproject.toml` and `.python-version`; CI and Docker use the same patch. FastAPI Cloud production must independently report the exact target `3.15.0` and expected build SHA before a rollout is considered successful. |
+| **Python 3.15** | High-level, general-purpose programming language. | Implements the backend, pharmacy domain rules, integrations, background jobs and Mortarium AI services. The application runtime is pinned exactly to CPython `==3.15.0` in `pyproject.toml` and `.python-version`; CI and Docker use the same patch. The Demo FastAPI Cloud runtime must independently report the exact target `3.15.0` and expected build SHA before a Demo rollout is considered successful. Production runtime verification is governed by its separate hosting documentation. |
 | **FastAPI 0.164.0** | Python framework for building APIs using type hints and ASGI. | Exposes the ERP/CRM and AI endpoints, validates requests, applies dependency-based authorization and publishes the OpenAPI contract. |
 | **Uvicorn 0.54.0** | ASGI web server. | Runs the FastAPI application and handles asynchronous HTTP connections. FastAPI is the application framework; Uvicorn is the server process. |
 | **Pydantic 2.14.3** | Data validation and serialization library. | Defines and validates request/response schemas and structured configuration data, including medication-related fields. |
@@ -107,7 +107,7 @@ The repository includes local observability infrastructure. Production trace del
 |---|---|---|
 | **Docker** | Platform for packaging applications and dependencies into containers. | Produces repeatable runtime images for the API and supporting processes. |
 | **Docker Compose** | Tool for defining and running multi-container applications. | Starts disposable local development/test dependencies such as PostgreSQL, Redis, workers and local observability services. |
-| **FastAPI Cloud** | Managed hosting/deployment platform for the FastAPI application. | Hosts the deployed Pharmaviyum backend. Deployment and production migrations are controlled release steps, not automatic side effects of a README change or CI pass. |
+| **FastAPI Cloud** | Managed hosting/deployment platform for the FastAPI application. | Hosts the public Demo backend. Production uses the same application technology stack on separately managed hosting; its provider and release details are restricted. |
 | **GitHub** | Source-control and collaboration platform. | Hosts the repository, branches, pull requests, code review and release history. |
 | **GitHub Actions** | CI/CD automation service integrated with GitHub. | Runs lint, formatting, type checks, tests, security scans and build validation. Passing CI is a quality signal; it does not itself prove production health. |
 | **uv 0.13.8** | Fast Python package manager and project/environment tool. | Installs Python dependencies, runs commands and keeps the resolved dependency set reproducible using `pyproject.toml` and `uv.lock`. |
@@ -220,7 +220,7 @@ Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collecto
 - The application uses the pgvector Python client and PostgreSQL extension for vector search where enabled; these are separately versioned components.
 - Hosted Production and Demo use separate managed Redis endpoints. Redis 8.8.4 is the compatibility target; the exact managed server version is provider-controlled and must be verified from provider metadata before release. Disposable development/CI Compose targets Redis 8.8.4.
 - The pharmacy-edge Ansible template uses Valkey; that server profile is intentionally kept separate from the local Redis service.
-- Local Compose captures outgoing application emails in Mailpit (`http://localhost:8025`, SMTP `localhost:1025`). See [email delivery and local testing](./development/email.md) for setup. Production delivery requires explicit SMTP host, port, sender, TLS mode, and credentials in the FastAPI Cloud environment; this PR does not change production secrets or enable production email.
+- Local Compose captures outgoing application emails in Mailpit (`http://localhost:8025`, SMTP `localhost:1025`). See [email delivery and local testing](./development/email.md) for setup. Demo delivery requires explicit SMTP host, port, sender, TLS mode, and credentials in the Demo hosting environment; Production SMTP is configured in its separately managed hosting environment.
 - Mortarium's LLM provider/model selection is environment-configured. See [AI architecture](./ai_architecture.md) and [FastAPI Cloud deployment](./deployment/FASTAPI_CLOUD.md) for the current deployment profile.
 
 ## Documentation rule
