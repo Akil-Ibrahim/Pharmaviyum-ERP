@@ -1,9 +1,15 @@
 """Authenticated patient API."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from typing import Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.core.database import get_db
+from src.pharmaviyum.models.patients import Patient
+from src.pharmaviyum.models.pharmacy_membership import PharmacyMembership
+from src.pharmaviyum.models.phi_access_audit import PHIAccessAudit
 from src.pharmaviyum.modules.auth.deps import (
     get_current_active_superuser,
     get_current_active_user,
@@ -117,15 +123,75 @@ async def get_patient(
 @router.get("/{patient_id}/ai-profile", response_model=PatientAIProfile)
 async def get_patient_ai_profile(
     patient_id: int,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     service: PatientService = Depends(get_patient_service),
     current_user=Depends(get_current_active_user),
-    pharmacy_id: int | None = Query(None, gt=0),
+    pharmacy_id: int = Query(..., gt=0),
+    purpose: Literal[
+        "dispensing_review", "medication_reconciliation", "patient_request"
+    ] = Query(...),
 ):
-    scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
-    profile = await service.get_ai_profile(patient_id, pharmacy_id=scope)
-    if not profile:
+    """Read clinical AI context only for an active pharmacist tenant membership."""
+    request_id = request.headers.get("x-request-id")
+    if request_id:
+        request_id = request_id[:128]
+
+    async def record_decision(decision: str) -> None:
+        db.add(
+            PHIAccessAudit(
+                actor_id=current_user.id,
+                pharmacy_id=pharmacy_id,
+                patient_id=patient_id,
+                action="read_ai_patient_profile",
+                decision=decision,
+                purpose=purpose,
+                request_id=request_id,
+            )
+        )
+
+    if current_user.is_superuser:
+        await record_decision("denied")
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Platform support access requires a separately governed workflow",
+        )
+
+    membership = await db.scalar(
+        select(PharmacyMembership.id).where(
+            PharmacyMembership.user_id == current_user.id,
+            PharmacyMembership.pharmacy_id == pharmacy_id,
+            PharmacyMembership.is_active.is_(True),
+        )
+    )
+    if membership is None:
+        await record_decision("denied")
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Active pharmacy membership is required",
+        )
+
+    patient_exists = await db.scalar(
+        select(Patient.id).where(
+            Patient.id == patient_id,
+            Patient.pharmacy_id == pharmacy_id,
+            Patient.is_active.is_(True),
+        )
+    )
+    if patient_exists is None:
+        await record_decision("denied")
+        await db.commit()
         raise HTTPException(status_code=404, detail="Patient not found")
+
+    profile = await service.get_ai_profile(patient_id, pharmacy_id=pharmacy_id)
+    if profile is None:
+        await record_decision("denied")
+        await db.commit()
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    await record_decision("allowed")
     return profile
 
 
