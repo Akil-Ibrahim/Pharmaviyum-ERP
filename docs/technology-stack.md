@@ -107,7 +107,8 @@ The repository includes local observability infrastructure. Production trace del
 |---|---|---|
 | **Docker** | Platform for packaging applications and dependencies into containers. | Produces repeatable runtime images for the API and supporting processes. |
 | **Docker Compose** | Tool for defining and running multi-container applications. | Starts disposable local development/test dependencies such as PostgreSQL, Redis, workers and local observability services. |
-| **FastAPI Cloud** | Managed hosting/deployment platform for the FastAPI application. | Hosts the public Demo backend. Production uses the same application technology stack on separately managed hosting; its provider and release details are restricted. |
+| **FastAPI Cloud** | Managed hosting/deployment platform for the FastAPI application. | Hosts the public Demo backend only. It is not a Production deployment target. |
+| **Ansible** | Agentless infrastructure automation tool. | Provisions and deploys reviewed application releases to pharmacy servers under the Pharmacy Edge profile; real host inventory and credentials remain private. |
 | **GitHub** | Source-control and collaboration platform. | Hosts the repository, branches, pull requests, code review and release history. |
 | **GitHub Actions** | CI/CD automation service integrated with GitHub. | Runs lint, formatting, type checks, tests, security scans and build validation. Passing CI is a quality signal; it does not itself prove production health. |
 | **uv 0.13.8** | Fast Python package manager and project/environment tool. | Installs Python dependencies, runs commands and keeps the resolved dependency set reproducible using `pyproject.toml` and `uv.lock`. |
