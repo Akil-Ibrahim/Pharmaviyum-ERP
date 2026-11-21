@@ -13,7 +13,8 @@
 Аудит исходников выявил:
 
 - `Patient.pharmacy_id` допускает `NULL` и сам по себе не подтверждает право доступа.
-- `Prescription` содержит пациента, необязательный product, глобально уникальный номер рецепта, текстовые dosage/instructions, status и даты выдачи/истечения. Нет pharmacy ownership, нормализованных строк рецепта, разрешённого количества, учёта повторных отпусков или dispense ledger.
+- `Prescription` содержит пациента, необязательный product, глобально уникальный номер рецепта, текстовые dosage/instructions, status и даты выдачи/истечения. Нет pharmacy ownership, нормализованных строк рецепта, разрешённого количества, учёта повторных отпусков или dispense ledger. Глобальная уникальность может быть слишком широкой для внешних номеров, повторяющихся в разных аптеках; нельзя менять её на tenant-scoped uniqueness до определения issuer namespace и юрисдикционной семантики.
+- Внешний ключ рецепта на пациента использует `ON DELETE CASCADE`. Hard-delete пациента может удалить историю рецептов. Миграция P0.2 должна заменить это явно утверждённой retention-safe политикой и проверить все зависимые пути удаления; одного ORM soft-delete недостаточно как единственного механизма сохранения истории.
 - Модель рецепта использует `issued_at` и `expires_at`; MCP verification обращается к `date_issued` и `date_expires`, а также к отсутствующему в модели `prescriber_name`. Текущая коллекция prescription items намеренно пуста. Unit-тесты используют `SimpleNamespace` с ожидаемыми именами полей и не подтверждают интеграцию с реальной моделью БД.
 - Привилегированный CRUD рецептов в `api/v1/pharmacy_entities.py` требует `CurrentSuperuser`; это не рабочий процесс фармацевта. Отдельный router `endpoints/prescriptions.py` является заглушкой.
 - `Sale` содержит pharmacy и cashier ownership, но не patient reference. `SaleItem` связан с product и inventory allocations, но не со строкой рецепта.
