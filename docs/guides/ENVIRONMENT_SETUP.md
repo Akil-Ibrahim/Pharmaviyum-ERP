@@ -161,60 +161,46 @@ OpenTelemetry dependencies and local Compose collector/Jaeger services are inclu
 
 Ragas evaluation dependencies are isolated in the CI evaluation job; they are not a required production runtime environment variable.
 
-## 6. FastAPI Cloud configuration
+## 6. FastAPI Cloud Demo configuration
 
-The hosted application runs on FastAPI Cloud. Configure application variables in the FastAPI Cloud app's Environment Variables section and deployment credentials in GitHub Actions secrets / the protected `production` environment.
+FastAPI Cloud is used for the public Demo only. Production uses the same application technology stack on a separately managed hosting platform; its provider, deployment credentials, release workflow and operational procedures are maintained outside this public repository.
 
-### FastAPI Cloud application variables
+The public Demo application is hosted at https://pharmaviyum-erp.fastapicloud.dev. Configure its application variables in the FastAPI Cloud Environment Variables panel and its deploy credentials in the protected GitHub Actions environment demo-pharmaviyum-erp.
 
-At minimum, configure and verify:
+### Demo application variables
 
-- `ENVIRONMENT=production`
-- `DEBUG=false`
-- `LOG_LEVEL=INFO`
-- `DATABASE_URL` — the production PostgreSQL URL, using `postgresql+asyncpg://...`
-- `PGVECTOR_DATABASE_URL` — the vector-store URL
-- `REDIS_URL` — reachable managed Redis
-- `SECRET_KEY` — unique random secret of at least 32 characters
-- `CORS_ORIGINS` — exact deployed origin
-- `USE_CLOUD_LLM=true`
-- `CLOUD_LLM_PROVIDER=qwencloud`
-- the QwenCloud variables listed above, when the demo AI profile is enabled
+- ENVIRONMENT=staging — the supported secure runtime profile used by the Demo application.
+- DEBUG=false
+- LOG_LEVEL=INFO
+- DATABASE_URL — isolated Demo PostgreSQL URL, using postgresql+asyncpg://...
+- PGVECTOR_DATABASE_URL — Demo vector-store URL.
+- REDIS_URL — dedicated managed Redis endpoint for Demo.
+- SECRET_KEY — unique Demo-only random secret of at least 32 characters.
+- CORS_ORIGINS — exact Demo HTTPS origin.
+- USE_CLOUD_LLM=true and CLOUD_LLM_PROVIDER=qwencloud when the Demo AI profile is enabled.
+- QwenCloud API, model, timeout and quota variables as described in the QwenCloud Demo guide.
 
-Use managed PostgreSQL with pgvector and a separate reachable Redis service. FastAPI Cloud deployment does not provision either service.
+The application runtime enum supports development, staging and production. The Demo uses staging so the hosted Demo does not misidentify itself as Production while retaining the secure staging configuration. PostgreSQL/pgvector and Redis are provisioned separately; FastAPI Cloud does not create these services.
 
-### GitHub Actions secrets
+### GitHub Actions Demo secrets
 
-The manual deploy workflow currently requires:
+The Demo deployment workflow requires:
 
-- `FASTAPI_CLOUD_TOKEN`
-- `FASTAPI_CLOUD_APP_ID`
-- `DATABASE_URL` — the production runtime-role URL, matching the FastAPI Cloud application's `DATABASE_URL`; used by read-only catalog checks and temporary smoke-user cleanup.
-- `VITE_CLERK_PUBLISHABLE_KEY` — only if required by the frontend build/sign-in configuration.
+- FASTAPI_CLOUD_DEMO_TOKEN — Demo-only FastAPI Cloud deploy token.
+- FASTAPI_CLOUD_DEMO_APP_ID — Demo FastAPI Cloud application ID.
+- DEMO_DATABASE_URL — isolated Demo database URL for read-only schema checks.
+- VITE_CLERK_PUBLISHABLE_KEY — only if required by the frontend build/sign-in configuration.
 
-The separate manual migration workflow additionally requires:
+The workflow must not read Production credentials or target Production infrastructure. It does not use FASTAPI_CLOUD_TOKEN, FASTAPI_CLOUD_APP_ID, DATABASE_URL or MIGRATION_DATABASE_URL.
 
-- `MIGRATION_DATABASE_URL` — a dedicated migration login for the same verified Neon host and database. It must be a different PostgreSQL role from `DATABASE_URL`, be a non-superuser role that inherits the required owner privileges from `neondb_owner`, and be used only by the protected migration workflow. Never configure this credential in the FastAPI Cloud application.
-- The migration workflow verifies that the runtime role is not a superuser, cannot create roles/databases, cannot bypass RLS, has no `CREATE` privilege on the `public` schema, is not a member of `neondb_owner`, and does not own or inherit ownership of public objects. It refuses to run if these checks fail.
+### Demo release controls
 
-The workflow no longer requires `PHARMAVIYUM_SMOKE_USERNAME` or `PHARMAVIYUM_SMOKE_PASSWORD`. It creates a unique, temporary, non-privileged pharmacist account with a random per-run password for positive auth/catalog smoke checks, then attempts to delete that exact account. Do not create static smoke credentials and do not use `admin/admin`.
+1. Merge a reviewed change to main after required CI checks pass.
+2. Manually dispatch Deploy Demo to FastAPI Cloud from main with an approved Demo change/ticket reference.
+3. Complete approval for the demo-pharmaviyum-erp environment if configured.
+4. Verify the exact deployed commit, staging runtime identity, CPython version, /health, /ready, frontend routes, invalid-auth handling and protected POS access.
 
-The `DATABASE_URL` GitHub secret is sensitive and must match the application's production database. Do not print it or expose it in logs.
-
-### Release and migration controls
-
-Production deployment is intentionally manual and protected:
-
-1. Merge a reviewed change to `main) after required CI checks pass.
-2. Manually dispatch `Deploy to FastAPI Cloud` from `main` with an approved change/ticket reference.
-3. Complete any required approval for the GitHub Actions `production` environment.
-4. The workflow verifies CI for the exact commit, builds the frontend, deploys the app, and runs read-only/temporary-account smoke checks.
-5. Inspect the workflow result and verify the live app.
-
-**The current deploy workflow does not run Alembic migrations.** Schema migrations are a separate, explicitly approved operation. Before a migration, review the migration and rollback implications, confirm a verified backup, obtain production approval, and run it once from a trusted environment against the intended database. Never put migrations into API replica startup.
-
-See [FastAPI Cloud deployment runbook](../deployment/FASTAPI_CLOUD.md) for the exact workflow and smoke checks.
-
+The Demo deployment workflow does not run Alembic migrations. Demo schema changes require a separate approved operation and verified backup/restore path. Production deployment and migrations are operated outside this public repository. See the [FastAPI Cloud Demo deployment runbook](../deployment/FASTAPI_CLOUD.md).
 ## 7. Edge / on-premises pharmacy installations
 
 The cloud demo and pharmacy Edge nodes are different deployment profiles:
