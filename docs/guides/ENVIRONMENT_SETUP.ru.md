@@ -235,19 +235,6 @@ curl --fail https://pharmaviyum-erp.fastapicloud.dev/ready
 
 Зелёный CI не доказывает корректность Demo provider quota, содержимого БД, полноты каталога или всех аптечных процессов. Перед объявлением релиза Demo успешным выполните live smoke checks. Health checks и release evidence Production относятся к отдельно управляемому Production environment.
 
-## 9. Health checks и проверка релиза
-
-Проверяйте readiness, а не только liveness:
-
-```bash
-curl --fail https://pharmaviyum-erp-crm.fastapicloud.dev/health
-curl --fail https://pharmaviyum-erp-crm.fastapicloud.dev/ready
-```
-
-Ожидаемый ready response должен показывать healthy для PostgreSQL, Redis и AI initialization. Deployment smoke workflow дополнительно проверяет SPA route `/settings/appearance`, негативный/позитивный auth, защищённый POS search и непустые результаты Omeprazole в catalog/product search.
-
-Зелёный CI не доказывает корректность production secrets, provider quota, содержимого БД или всех аптечных процессов. До объявления релиза успешным выполните live smoke checks.
-
 ## 10. Правила безопасности
 
 - Не коммитьте .env-файлы, API keys, tokens, passwords или database connection strings.
