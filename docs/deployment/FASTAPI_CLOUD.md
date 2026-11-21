@@ -4,6 +4,8 @@ This runbook describes the current manually triggered deployment workflow in `.g
 
 ## 1. Release policy
 
+Hosted data services must follow [the Production and Demo Infrastructure Baseline](PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md): Neon PostgreSQL 18 for Production, a separate PostgreSQL 18 database for Demo, and separate managed Redis endpoints. Redis 8.8.4 is the compatibility target; verify the provider-reported server version before release. Never reuse Production credentials or data in Demo.
+
 Production deployment is intentionally manual. A push or merge to `main` does not deploy automatically and must not run database migrations as a side effect.
 
 The release path is:
