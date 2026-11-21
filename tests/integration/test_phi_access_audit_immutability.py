@@ -1,64 +1,78 @@
-"""PostgreSQL enforcement tests for immutable PHI access audit records."""
+"""PostgreSQL migration tests for immutable PHI access audit records."""
+
+from __future__ import annotations
+
+import os
 
 import pytest
-from sqlalchemy import delete, select, text, update
+from sqlalchemy import select, text
 from sqlalchemy.exc import DBAPIError
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.pharmaviyum.models.phi_access_audit import PHIAccessAudit
 
 
-@pytest.mark.integration
-@pytest.mark.parametrize("mutation", ["update", "delete"])
-async def test_phi_access_audit_records_are_append_only(test_db, mutation):
-    # The shared integration fixture uses Base.metadata.create_all(), which does
-    # not execute Alembic migrations. Install the same trigger defined by
-    # 2026_11_21_000001_phi_access_audit.py in this isolated test database.
-    await test_db.execute(
-        text(
-            "CREATE OR REPLACE FUNCTION reject_phi_access_audit_mutation() "
-            "RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN "
-            "RAISE EXCEPTION 'phi_access_audits is append-only'; END; $$"
-        )
-    )
-    await test_db.execute(
-        text(
-            "CREATE TRIGGER trg_phi_access_audits_append_only "
-            "BEFORE UPDATE OR DELETE ON phi_access_audits "
-            "FOR EACH ROW EXECUTE FUNCTION reject_phi_access_audit_mutation()"
-        )
-    )
+@pytest.fixture
+async def migrated_phi_audit_db():
+    """Use the separate PostgreSQL database upgraded by the CI Alembic step."""
+    database_url = os.getenv("MIGRATION_TEST_DATABASE_URL")
+    if not database_url:
+        pytest.skip("MIGRATION_TEST_DATABASE_URL is required for migration tests")
 
+    engine = create_async_engine(database_url, pool_pre_ping=True)
+    session_factory = async_sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+    try:
+        async with session_factory() as session:
+            yield session
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("mutation", ["update", "delete", "truncate"])
+async def test_phi_access_audit_migration_enforces_append_only(
+    migrated_phi_audit_db, mutation
+):
+    """The actual Alembic migration must reject row and table mutations."""
+    db = migrated_phi_audit_db
     audit = PHIAccessAudit(
-        actor_id=9001,
-        pharmacy_id=9002,
-        patient_id=9003,
+        actor_id=9901,
+        pharmacy_id=9902,
+        patient_id=9903,
         action="read_ai_patient_profile",
         decision="allowed",
         purpose="dispensing_review",
-        request_id=f"immutability-{mutation}",
+        request_id=f"phi-audit-immutability-{mutation}",
     )
-    test_db.add(audit)
-    await test_db.flush()
+    db.add(audit)
+    await db.commit()
     audit_id = audit.id
-    await test_db.commit()
 
-    statement = (
-        update(PHIAccessAudit)
-        .where(PHIAccessAudit.id == audit_id)
-        .values(purpose="tampered")
-        if mutation == "update"
-        else delete(PHIAccessAudit).where(PHIAccessAudit.id == audit_id)
-    )
-
+    statements = {
+        "update": (
+            "UPDATE phi_access_audits SET purpose = 'tampered' WHERE id = :id",
+            {"id": audit_id},
+        ),
+        "delete": (
+            "DELETE FROM phi_access_audits WHERE id = :id",
+            {"id": audit_id},
+        ),
+        "truncate": ("TRUNCATE TABLE phi_access_audits", {}),
+    }
+    statement, parameters = statements[mutation]
     with pytest.raises(DBAPIError) as exc_info:
-        await test_db.execute(statement)
+        await db.execute(text(statement), parameters)
 
     assert "phi_access_audits is append-only" in str(exc_info.value.orig)
-    await test_db.rollback()
+    await db.rollback()
 
-    persisted = await test_db.scalar(
+    persisted = await db.scalar(
         select(PHIAccessAudit).where(PHIAccessAudit.id == audit_id)
     )
     assert persisted is not None
     assert persisted.purpose == "dispensing_review"
-    assert persisted.request_id == f"immutability-{mutation}"
+    assert persisted.request_id == f"phi-audit-immutability-{mutation}"
