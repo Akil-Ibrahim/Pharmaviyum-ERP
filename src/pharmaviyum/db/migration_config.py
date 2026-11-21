@@ -1,4 +1,4 @@
-"""Select the database URL used by Alembic without reusing production runtime credentials."""
+"""Select an Alembic URL without reusing production runtime credentials."""
 
 from collections.abc import Mapping
 
