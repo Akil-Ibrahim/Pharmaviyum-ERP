@@ -2,7 +2,7 @@
 
 This guide describes the configuration contract for local development, the FastAPI Cloud Demo, and Ansible-managed Production on a pharmacy server. Keep secrets in local ignored files or the relevant secret manager; never commit real credentials.
 
-Hosted Production and Demo data services must follow the [Production and Demo Infrastructure Baseline](../deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md). Production is verified on Neon PostgreSQL 18. Demo requires a separate PostgreSQL 18 database and separate managed Redis endpoint; do not share Production credentials, data, or Redis namespaces. The hosted Redis server version is provider-managed: Redis 8.8.4 is the compatibility target, not a verified runtime claim until provider metadata confirms it.
+Production runs on the pharmacy server and is provisioned/released through Ansible; its PostgreSQL and supporting services are local to the approved Pharmacy Edge deployment profile. Demo runs on FastAPI Cloud with isolated Demo data services. Never share database credentials, application secrets, cache namespaces or data between environments. See the [Production/Demo deployment boundary](../deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) and [Pharmacy Edge Ansible rollout](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
 
 ## 1. Configuration sources and precedence
 
