@@ -59,7 +59,7 @@ The standalone lot-receipt endpoint is not a purchase-order lifecycle. It does n
 
 ### 3.3 Patient history is a protected read surface
 
-The patient-purchase listing endpoint is superuser-only and returns a global result set in the inspected implementation. Do not expose it as an ordinary pharmacist history screen without resolving pharmacy/patient scope, authorization and audit requirements. Related source-level findings are tracked separately in the PHI governance work.
+The patient-purchase listing endpoint requires `CurrentSuperuser`, but its query selects `PatientPurchase` directly without joining `Patient` or constraining `Patient.pharmacy_id`; it also has no patient selector. The `Patient.pharmacy_id` column is nullable. This is a global administrative listing, not a pharmacist-scoped patient-history API. The superuser gate limits who can call it, so this audit does not claim ordinary pharmacist access; however, tenant-scoped authorization, explicit patient selection, legacy/unassigned-patient handling and audit requirements must be designed before exposing patient history in the pharmacist UI. Add negative tests proving that one pharmacy cannot retrieve another pharmacy's patient purchases.
 
 ### 3.4 UI navigation is not a delivered workflow
 
@@ -69,7 +69,7 @@ Several active routes currently return `null`, including POS, patients, prescrip
 
 1. **P0 — Restore real operational UI surfaces** for POS and pharmacist workflow, wired to the existing contracts; verify browser-level journeys.
 2. **P0 — Prescription and patient linkage**: define patient/prescription association, server-side validation, professional review and audit before dispensing.
-3. **P0 — Patient data access controls**: close patient-purchase and LangGraph session-scope gaps; add negative cross-pharmacy and cross-patient tests.
+3. **P0 — Patient data access controls**: implement tenant-scoped patient-purchase access and complete staged LangGraph patient-session isolation validation; add negative cross-pharmacy and cross-patient tests.
 4. **P1 — Procurement lifecycle**: purchase order, supplier lines, delivery/invoice references, partial receipt, discrepancy handling and auditable lot posting.
 5. **P1 — Returns, refunds, voids and stock reversals** with idempotent compensating movements.
 6. **P1 — Stocktake and inter-branch transfers** with dispatch/receipt confirmation, discrepancy handling and tenant-safe concurrency.
