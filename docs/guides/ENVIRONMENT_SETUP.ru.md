@@ -193,7 +193,7 @@ Managed PostgreSQL с pgvector и Redis provisioned отдельно. Deployment
 
 Отдельный ручной migration workflow дополнительно требует:
 
-- `MIGRATION_DATABASE_URL` — URL отдельной migration login role для того же проверенного Neon host/database. Это должна быть другая PostgreSQL role, чем в `DATABASE_URL`; она должна быть non-superuser member роли владельца БД `neondb_owner` и использоваться только защищённым migration workflow. Не задавайте этот credential в FastAPI Cloud application.
+- `MIGRATION_DATABASE_URL` — URL отдельной migration login role для того же проверенного Neon host/database. Это должна быть другая PostgreSQL role, чем в `DATABASE_URL`; она должна быть non-superuser role с наследуемыми owner privileges от `neondb_owner` и использоваться только защищённым migration workflow. Не задавайте этот credential в FastAPI Cloud application.
 - Migration workflow проверяет, что runtime role не является superuser, не может создавать роли/БД, обходить RLS, не имеет `CREATE` на схему `public`, не состоит в `neondb_owner` и не владеет объектами public и не наследует их ownership. При нарушении проверок workflow отказывается запускать миграцию.
 
 Workflow больше не требует `PHARMAVIYUM_SMOKE_USERNAME` или `PHARMAVIYUM_SMOKE_PASSWORD`. Он создаёт уникальную временную учётную запись pharmacist с одноразовым случайным паролем, проверяет auth/catalog и пытается удалить именно эту запись. Не создавайте статические smoke credentials и не используйте `admin/admin`.
