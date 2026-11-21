@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import os
 
 import pytest
 from sqlalchemy import func, select, text
-from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.inventory_movement import InventoryMovement
@@ -16,6 +17,26 @@ from src.pharmaviyum.services.inventory_movements import (
     InventoryMovementConflict,
     apply_inventory_movement,
 )
+
+
+
+@pytest.fixture
+async def migrated_test_db():
+    """Connect to the separate CI database after Alembic has upgraded it."""
+    database_url = os.getenv("MIGRATION_TEST_DATABASE_URL")
+    if not database_url:
+        pytest.skip("MIGRATION_TEST_DATABASE_URL is required to verify DB triggers")
+    engine = create_async_engine(database_url, pool_pre_ping=True)
+    session_factory = async_sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+    try:
+        async with session_factory() as session:
+            yield session
+    finally:
+        await engine.dispose()
 
 
 async def _inventory_fixture(test_db, *, quantity: int = 10):
@@ -324,13 +345,13 @@ async def test_inventory_movement_rollback_preserves_balance_and_ledger(test_db)
 
 
 @pytest.mark.integration
-async def test_database_triggers_reject_update_delete_and_truncate(test_db):
+async def test_database_triggers_reject_update_delete_and_truncate(migrated_test_db):
     """PostgreSQL must enforce append-only behavior below the ORM layer."""
     from sqlalchemy.exc import DBAPIError
 
-    pharmacy, _product, lot = await _inventory_fixture(test_db)
+    pharmacy, _product, lot = await _inventory_fixture(migrated_test_db)
     movement = await apply_inventory_movement(
-        test_db,
+        migrated_test_db,
         inventory_id=lot.id,
         pharmacy_id=pharmacy.id,
         movement_type="stock_adjustment",
@@ -341,7 +362,7 @@ async def test_database_triggers_reject_update_delete_and_truncate(test_db):
         reason="Append-only trigger test",
         idempotency_key="movement-append-only-trigger-0001",
     )
-    await test_db.commit()
+    await migrated_test_db.commit()
 
     statements = (
         (
@@ -353,10 +374,10 @@ async def test_database_triggers_reject_update_delete_and_truncate(test_db):
     )
     for statement, parameters in statements:
         with pytest.raises(DBAPIError):
-            await test_db.execute(text(statement), parameters)
-        await test_db.rollback()
+            await migrated_test_db.execute(text(statement), parameters)
+        await migrated_test_db.rollback()
 
-    persisted = await test_db.get(InventoryMovement, movement.id)
+    persisted = await migrated_test_db.get(InventoryMovement, movement.id)
     assert persisted is not None
     assert persisted.reason == "Append-only trigger test"
 
