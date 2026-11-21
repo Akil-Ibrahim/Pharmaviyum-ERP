@@ -58,14 +58,15 @@ class PatientService:
         if reloaded_patient is None:
             raise RuntimeError("Created patient could not be reloaded")
         PATIENTS_CREATED_TOTAL.labels(country=reloaded_patient.country).inc()
+        # Generic in-process events must not carry direct patient identifiers.
+        # Subscribers that need clinical context must use a separately
+        # authorized workflow rather than receiving PHI through notifications.
         await event_bus.emit(
             Event(
                 event_type="patient.created",
                 data={
                     "patient_id": reloaded_patient.id,
-                    "full_name": reloaded_patient.full_name,
-                    "phone": reloaded_patient.phone,
-                    "country": reloaded_patient.country,
+                    "pharmacy_id": pharmacy_id,
                     "created_by": created_by,
                 },
             )
