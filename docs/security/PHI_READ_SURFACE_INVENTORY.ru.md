@@ -36,7 +36,7 @@
 
 **Риск:** один общий patient-read contract раскрывал несколько не связанных с конкретным workflow классов данных, нарушая minimum-necessary design и увеличивая вероятность случайной выдачи PHI.
 
-**Исправление в PR:** ввести `PatientSummaryResponse` как стандартный контракт для list/create/update/get/get-by-phone/visit. Обычные patient lookup и mutation paths больше не сериализуют clinical, insurance, consultation или purchase relations. Create/update/summary repository reads явно отключают eager loading связей. AI profile сужен до purpose-bound clinical safety context: только patient_id, allergies, conditions и risk_summary; repository query не загружает insurance, consultation и purchase relations. Regression tests проверяют response allowlist и соответствие AI-profile schema.
+**Исправление в PR:** ввести `PatientSummaryResponse` как стандартный контракт для list/create/update/get/get-by-phone/visit. Обычные patient lookup и mutation paths больше не сериализуют clinical, insurance, consultation или purchase relations. Create/update/summary repository reads явно отключают eager loading связей. AI profile сужен до purpose-bound clinical safety context: только patient_id, allergies и conditions; repository query не загружает insurance, consultation и purchase relations. Regression tests проверяют response allowlist и соответствие AI-profile schema.
 
 **Оставшиеся действия:** не использовать широкую `PatientResponse` в route contracts; добавлять отдельные авторизованные и аудируемые clinical, insurance, consultation и purchase-history endpoints только при наличии конкретного workflow. До production readiness проверить authorization и PHI access logging AI profile endpoint.
 
