@@ -23,7 +23,7 @@ Act as a senior FastAPI/Python engineer, pharmacy domain engineer, QA engineer, 
 Business assumptions:
 - Opening preparation begins at 07:30; pharmacy opens at 08:00 and closes at 22:00.
 - 200 customer visits is the first daily profile; 300 visits is the stress profile.
-- Six staff are employed, but they have mixed schedules. Do not assume all six are simultaneously active without evidence. Start with 3 cashier workflows plus 1 manager workflow; optionally model up to 6 concurrent staff workflows as a separate profile.
+- Six staff are employed, but they have mixed schedules. Do not assume all six are simultaneously active without evidence. Each pharmacy has 3 POS workstations plus 1 dedicated manager-office computer (4 physical workstation/computer positions total). Start with 3 cashier workflows plus 1 manager workflow as a separately labelled four-workstation scenario; the manager is one of the six employees, not a seventh employee. The manager-office workstation is provisioned equipment, not proof of an always-active session. Optionally model up to 6 concurrent staff workflows as a separate profile only when clearly labelled; document manager session hours/overlap as assumptions until operations approves them.
 - A visit may include one or more supported operations; document the workload distribution and think time. The accelerated test must complete in a bounded time and label itself as an accelerated day, not 14 hours of real time.
 - Daily visitor counts are not RPS. Measure actual RPS and completed business transactions independently.
 
@@ -120,7 +120,7 @@ Provide explicit environment variables and documentation for:
 - 1-5 synthetic transaction smoke.
 - 200-visit accelerated pharmacy day.
 - 300-visit accelerated stress day.
-- Optional 4 concurrent workstation workflows.
+- Optional 4 concurrent workstation workflows: 3 cashier/POS workflows plus 1 manager-office workflow, with the manager counted inside the six-person roster; this is a test profile, not a claim of measured real-world concurrency.
 - Optional 6 concurrent staff workflows only as a separate profile.
 - Short soak run after all prior profiles pass.
 - Optional Mortarium profile, isolated from transaction measurements and disabled by default.
