@@ -2,63 +2,53 @@
 
 ## Scope
 
-This change set upgrades the application build and test stack. It does not deploy to FastAPI Cloud, modify Neon, change managed Redis, or run migrations against production databases.
+This record describes the repository's current application and hosted data-service baseline. It is not evidence that a deployment or database migration has completed. Production deployment remains a separately approved operation.
 
-## Target versions
+## Hosted data-service baseline
 
-- CPython 3.15.0 for CI/Docker and the FastAPI Cloud runtime target;
-- FastAPI 0.164.0 (target pin; lockfile and CI verification required)
-- Pydantic 2.14.3 / pydantic-settings 2.16.2
-- SQLAlchemy 2.1.8, Alembic 1.20.1
-- asyncpg 0.32.0, psycopg 3.3.9
-- Celery 5.6.3, redis-py 8.1.0
-- LangGraph 1.2.21
-- uv 0.13.8
-- React 19.3.1, TypeScript 6.0.3, Vite 8.3.8, Tailwind CSS 4.3.5
-- PostgreSQL 18 + pgvector 0.8.7 for disposable development and CI databases
-- Redis 8.8.4 for disposable development and CI services (redis-py 8.1.0 documents support through Redis 8.8)
-- Prometheus 3.16.0, Grafana 13.3.1, OpenTelemetry Collector Contrib 0.165.1, and Jaeger 1.76.0 for local observability
+- Hosted Production relational database: Neon PostgreSQL 18, project `pharmaviyum-production` (`odd-fog-77928192`), default branch `production`; verified from Neon project metadata on 2026-11-21.
+- Demo must use a separate PostgreSQL 18 database/branch and separate credentials. Its live provider version and isolation must be verified before Demo is marked ready.
+- Hosted Production and Demo must use separate managed Redis endpoints. Redis 8.8.4 is the compatibility target; the provider-reported server version is not pinned by the application and must be verified for each environment.
+- Local disposable development/CI services use PostgreSQL 18 with pgvector 0.8.7 and Redis 8.8.4.
+- The application Redis client is redis-py 8.1.0, pinned in `pyproject.toml` and `uv.lock`.
 
-Versions are pinned in the dependency manifests and image tags where practical. The CI lock-generation workflows regenerate uv.lock and frontend/shadcn-admin/bun.lock and run validation.
+The full environment contract, isolation requirements, and verification rules are maintained in [Production and Demo Infrastructure Baseline](PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) and its [Russian version](PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md).
 
-## Compatibility gates
+## Application runtime and framework versions
 
-The application manifest pins `requires-python = "==3.15.0"`, and the root `.python-version` is `3.15.0`. CI, Docker, auxiliary catalog-import workflows and the FastAPI Cloud deployment workflow must all use exactly CPython 3.15.0. The production runtime and deployment checks are standardized on CPython 3.15.0; do not introduce a different Python patch version without a separately approved compatibility review. The optional FastEmbed evaluation helper is excluded on Python 3.15 because its ONNX Runtime dependency does not publish a matching CPython 3.15 wheel yet. CI validates installation and imports of native extensions, async database drivers, Celery workers, AI dependencies and the FastAPI application on CPython 3.15.0; passing CI does not prove the hosted runtime has switched.
+- CPython 3.15.0 for the application, CI, Docker, and FastAPI Cloud runtime target.
+- FastAPI 0.164.0; Uvicorn 0.54.0; Pydantic 2.14.3; SQLAlchemy 2.1.8; Alembic 1.20.1.
+- Celery 5.6.3 and redis-py 8.1.0.
+- LangGraph 1.2.21 and LangChain 1.4.0.
+- Ragas 0.4.3 remains isolated in the evaluation dependency group and is not a production runtime dependency.
 
-The Celery release documentation and some dependency classifiers may lag the newest CPython release. TypeScript remains on the latest compatible 6.0 line until the project's typescript-eslint toolchain supports TypeScript 7. A successful resolver run alone is not sufficient: the full unit, integration, worker-import, Docker build, and smoke-test suite must pass.
+Exact direct and resolved dependency versions are controlled by `pyproject.toml`, `uv.lock`, frontend package manifests, and the frontend lockfile. Do not infer hosted runtime state from a repository pin; verify the deployed build through `/version`.
 
-## PostgreSQL 18 data safety
+## PostgreSQL and vector extension safety
 
-PostgreSQL 18 changes the official container image data directory layout. The development Compose files use a new named volume, `postgres_data_pg18`, mounted at `/var/lib/postgresql`, with `PGDATA=/var/lib/postgresql/18/docker`. Existing PostgreSQL 16 volumes are deliberately not reused or deleted.
+PostgreSQL major-version compatibility is a data-safety boundary. A major-version change requires a separately approved migration plan, verified full backup, extension compatibility checks, a tested dump/restore or supported upgrade procedure, a maintenance window, a restore test, and a documented rollback path. Never attach a data directory created by another major version to a PostgreSQL server.
 
-Do not point a PostgreSQL 18 container at a PostgreSQL 16 data directory. A major-version upgrade requires a separately approved migration plan (for example, a tested dump/restore or `pg_upgrade` procedure), a verified full backup, extension compatibility checks, a maintenance window, and a documented rollback path. Verify the installed extension after migration:
+Verify both components independently:
 
 ```sql
 SELECT version();
 SELECT extversion FROM pg_extension WHERE extname = 'vector';
 ```
 
-The Ansible controller CI remains on Python 3.14.10 because the current ansible-core support matrix lists controller Python only through 3.14; this is a separate automation toolchain, not the application runtime. The Ansible pharmacy-edge deployment template, the production Compose PostgreSQL 16/Redis 7 data services, and the managed Neon production database are intentionally not upgraded by this change set. The production Compose file keeps its existing database volume and major versions; do not run a major-version change through the current simple deploy script. Their current server versions and storage state must be confirmed, backed up, and migrated separately.
-
-## Redis client compatibility
-
-Redis-py 8.x exposes bytes-or-text unions in several command signatures even when response decoding is enabled. Application boundaries explicitly decode byte responses to UTF-8 text, and Redis client annotations use the current non-generic async client type. This keeps queue identifiers and cached text values deterministic while retaining `decode_responses=True` for normal application connections.
-
 ## Redis and Celery
 
-The development and CI Redis service is upgraded independently of managed Redis. The pharmacy-edge Ansible template currently uses Valkey; it is not silently replaced as part of this change.
+Hosted Production and Demo must not share Redis credentials or namespaces. Redis is used for cache/coordination and background-task infrastructure; it is not the source of truth for sales, dispensing, stock, or audit records. POS request handling and permitted local/offline sales must not depend on Redis, Celery, or AI-provider availability. The durable PostgreSQL outbox remains the source of truth for synchronization work.
 
-Celery remains an asynchronous worker layer. POS request handling and local/offline sales must not depend on Celery, Redis availability, or AI-provider availability. The durable PostgreSQL outbox remains the source of truth for synchronization work.
+Confirm the managed Redis server version, TLS/authentication requirements, memory/connection limits, persistence/eviction policy, and provider recovery guarantees before release. Do not run destructive flush or key-cleanup operations as routine maintenance.
 
-The current application uses one Redis URL for cache operations and Celery broker/result backend. Before enabling this pattern for production workloads, validate memory sizing and eviction behavior: an `allkeys-lru` policy can evict broker keys. Prefer a dedicated broker instance with a no-eviction policy, or otherwise isolate broker and cache workloads with explicit capacity and failure handling.
+## Release and verification gates
 
-## Release procedure
+1. Review the exact commit and successful CI checks.
+2. Confirm Production and Demo use distinct database and Redis endpoints and credentials.
+3. Verify PostgreSQL server and pgvector extension versions independently in each environment.
+4. Verify the provider-reported Redis server version and connectivity for each environment.
+5. Confirm backup/PITR and restore evidence for PostgreSQL.
+6. Apply Alembic migrations only through the separately approved migration procedure.
+7. Deploy through the protected FastAPI Cloud workflow and verify the exact build SHA, runtime, startup, health, readiness, authentication, and POS protection smoke checks.
 
-1. Wait for lockfile generation and all CI checks on this pull request.
-2. Verify migrations against a fresh PostgreSQL 18 + pgvector 0.8.7 database.
-3. Verify POS, offline outbox replay, authentication, catalog search, Celery worker/Beat, RAG evaluation, and frontend browser tests.
-4. Verify the live `/version` endpoint reports the exact target CPython 3.15.0 and the expected build SHA; do not accept another Python patch as equivalent.
-5. Plan and approve Neon and pharmacy-edge database upgrades separately, including backups and rollback.
-6. Only after explicit production approval, deploy the application and perform the separately approved database migration.
-
-The legacy `scripts/deploy.sh` now refuses to run unless `PHARMAVIYUM_PRODUCTION_DEPLOY_APPROVAL=VERIFIED_BACKUP_AND_ROLLBACK_PLAN` is explicitly set after a backup and rollback plan have been verified. A green CI run does not itself authorize a production deployment or a database major-version upgrade.
+A repository change or successful CI run does not by itself prove that a hosted service has been upgraded or is production-ready.

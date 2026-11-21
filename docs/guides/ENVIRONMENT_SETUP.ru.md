@@ -2,6 +2,8 @@
 
 Руководство описывает текущую конфигурацию локальной разработки, демонстрационного профиля QwenCloud и приложения на FastAPI Cloud. Секреты храните только в локальных игнорируемых файлах или менеджере секретов. Не добавляйте реальные credentials в Git.
 
+Hosted Production и Demo должны соответствовать [единому baseline инфраструктуры](../deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md). Для Production подтверждена Neon PostgreSQL 18. Для Demo требуется отдельная PostgreSQL 18 и отдельный managed Redis endpoint; нельзя совместно использовать Production credentials, данные или Redis namespaces. Версия hosted Redis контролируется провайдером: Redis 8.8.4 — целевая совместимость, но не подтверждённая версия runtime до проверки provider metadata.
+
 ## 1. Источники конфигурации и приоритет
 
 Используйте источники в следующем порядке:

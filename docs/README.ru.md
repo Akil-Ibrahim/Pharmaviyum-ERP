@@ -9,6 +9,7 @@
 | Раздел | Русская версия | Английский оригинал | Содержание |
 |---|---|---|---|
 | Технологии | [Стек и глоссарий](./technology-stack.ru.md) | [Technology Stack & Glossary](./technology-stack.md) | Определения технологий, роли в архитектуре, версии и управление зависимостями |
+| Инфраструктура Production и Demo | [Единый baseline](./deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md) | [Production and Demo baseline](./deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) | Актуальные версии PostgreSQL/Redis, изоляция окружений и live-проверки |
 | Структура репозитория | [Руководство](./architecture/repository-structure.ru.md) | [Repository Structure Guide](./architecture/repository-structure.md) | Назначение каталогов, правила размещения файлов и безопасные перемещения |
 | Офлайн-операции | [Матрица возможностей](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | [Pharmacy Offline Capability Matrix](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | Поддерживаемые, ограниченные, online-only и заблокированные сценарии |
 | Оценка RAG | [Фармацевтическая оценка Ragas](./ai/ragas-pharmaceutical-evaluation.ru.md) | [Ragas evaluation](./ai/ragas-pharmaceutical-evaluation.md) | Offline-метрики RAG и специализированные фармацевтические проверки |

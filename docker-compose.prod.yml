@@ -1,15 +1,21 @@
+# LEGACY / UNSUPPORTED DEPLOYMENT PROFILE
+# Not used for hosted FastAPI Cloud Production or Demo. Do not deploy this file.
+# It retains PostgreSQL 16 and Redis 7 image pins with persistent volumes.
+# Any future reuse requires an explicitly approved backup, restore, migration,
+# compatibility, verification, and rollback plan before changing database majors.
+
 version: '3.8'
 
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    # Keep the existing production data volume and major version until a separately approved migration.
+    # Legacy persistent volume; do not treat this as the hosted Production database.
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7-alpine
-    # Production Redis major upgrade is a separate migration; keep the existing data volume for now.
+    # Legacy cache volume; hosted Production and Demo must use separately managed endpoints.
     # ... (как в предыдущем docker-compose.yml)
 
   # vLLM вместо Ollama

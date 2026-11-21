@@ -161,7 +161,7 @@ The default development Docker Compose stack currently provides:
 - Celery ingestion worker;
 - local observability services where configured.
 
-These are disposable development targets. The separate `docker-compose.prod.yml` profile remains on PostgreSQL 16 and Redis 7 pending separately approved data migrations. Managed production databases/caches and Pharmacy Edge PostgreSQL 16/Valkey are separate environments and are not upgraded by changing the development Compose stack.
+These are disposable development/CI targets only. Hosted Production uses Neon PostgreSQL 18 and a separately managed Redis endpoint; Demo must use isolated PostgreSQL 18 and its own managed Redis endpoint. Redis 8.8.4 is the compatibility target, not a claim about a provider-managed server version until verified. The legacy `docker-compose.prod.yml` file still contains PostgreSQL 16/Redis 7 images and is not an approved deployment path; do not use it for Production or Demo. Pharmacy Edge is a separately governed profile and is not the hosted Production/Demo data plane. See [the canonical Production/Demo baseline](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md).
 
 FastAPI Cloud is the hosted application deployment target. GitHub Actions provides CI and a manually triggered deployment workflow; database, cache, and other required services must be provisioned and configured separately.
 

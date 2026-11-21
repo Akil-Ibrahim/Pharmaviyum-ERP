@@ -4,6 +4,8 @@ Runbook описывает текущий workflow ручного deployment: `.
 
 ## 1. Политика релизов
 
+Hosted data services должны соответствовать [единому baseline Production и Demo](PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md): Neon PostgreSQL 18 для Production, отдельная PostgreSQL 18 для Demo и разные managed Redis endpoints. Redis 8.8.4 — целевая версия совместимости; фактическую версию сервера у провайдера необходимо проверить до релиза. Запрещено использовать Production credentials или данные в Demo.
+
 Production deployment выполняется намеренно вручную. Push или merge в `main` не запускает автоматический deployment и не должен побочно выполнять миграции БД.
 
 ```text

@@ -30,7 +30,7 @@ This section explains not only which technologies are present, but why Pharmaviy
 | **Redis Python client 8.1.0** | Python client library for Redis-compatible servers. | Lets backend services and workers communicate with configured Redis-compatible infrastructure. |
 | **PostgreSQL full-text search** | Database-native lexical search over textual documents. | Complements vector similarity in hybrid RAG retrieval, helping exact medication terms, identifiers and phrases remain searchable. |
 
-**Environment boundary:** PostgreSQL 18 with pgvector 0.8.7 and Redis 8.8.4 are disposable development/CI Compose targets. The production Compose profile remains on PostgreSQL 16 and Redis 7; managed production services are not upgraded by changing local container images. The Pharmacy Edge profile uses its separately managed PostgreSQL/Valkey configuration. See [version policy](#version-policy-and-dependency-management).
+**Environment boundary:** Hosted Production uses Neon PostgreSQL 18; Demo requires a separate PostgreSQL 18 database. Hosted Production and Demo use separate managed Redis endpoints; Redis 8.8.4 is the compatibility target, while the actual provider-managed server version must be verified. Local development/CI Compose is disposable and must not be treated as hosted Production. The legacy `docker-compose.prod.yml` still contains PostgreSQL 16/Redis 7 and is explicitly unsupported for Production/Demo until separately migrated and revalidated. Pharmacy Edge remains a separately governed profile. See [version policy](#version-policy-and-dependency-management) and [the canonical hosted baseline](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md).
 
 ### 3. Background jobs and asynchronous processing
 
@@ -167,8 +167,8 @@ This page records the versions declared by the repository configuration. It is n
 | SQLAlchemy | `2.1.8` | `pyproject.toml` |
 | Alembic | `1.20.1` | `pyproject.toml` |
 | asyncpg / psycopg | `0.32.0` / `3.3.9` | `pyproject.toml` |
-| PostgreSQL | PostgreSQL 18 with pgvector 0.8.7 in disposable development/CI; managed production database migration remains separate | Docker Compose and CI service definitions |
-| Redis server | Redis 8.8.4 in disposable development/CI; production compose remains on Redis 7 pending a separate data migration | Docker Compose and CI service definitions |
+| PostgreSQL | Neon PostgreSQL 18 for hosted Production; isolated PostgreSQL 18 required for Demo; disposable PostgreSQL 18 for development/CI | Neon project metadata; Demo provider metadata; Docker Compose and CI service definitions |
+| Redis server | Managed Redis for hosted Production and isolated managed Redis for Demo; Redis 8.8.4 compatibility target, exact hosted server version provider-reported and must be verified; local development/CI uses Redis 8.8.4 | FastAPI Cloud integration/provider metadata; Docker Compose and CI service definitions |
 | pgvector container extension | `0.8.7` | `pgvector/pgvector:0.8.7-pg18` image tag |
 | pgvector Python client | `0.4.1` | `pyproject.toml` |
 | LangGraph | `1.2.21` | `pyproject.toml` |
@@ -216,9 +216,9 @@ Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collecto
 
 ## Runtime infrastructure notes
 
-- Disposable development/CI Compose targets PostgreSQL 18 with the pgvector 0.8.7 extension image; this does not change the managed Neon production major version or existing pharmacy-edge database volumes.
+- Hosted Production uses the verified Neon PostgreSQL 18 project; Demo must use a separate PostgreSQL 18 database. Disposable development/CI Compose also targets PostgreSQL 18 with pgvector 0.8.7.
 - The application uses the pgvector Python client and PostgreSQL extension for vector search where enabled; these are separately versioned components.
-- Disposable development/CI Compose targets Redis 8.8.4. The production Compose profile remains on Redis 7 until a separately approved migration with backup and rollback. The managed Redis/Valkey production services are not upgraded by the application PR.
+- Hosted Production and Demo use separate managed Redis endpoints. Redis 8.8.4 is the compatibility target; the exact managed server version is provider-controlled and must be verified from provider metadata before release. Disposable development/CI Compose targets Redis 8.8.4.
 - The pharmacy-edge Ansible template uses Valkey; that server profile is intentionally kept separate from the local Redis service.
 - Local Compose captures outgoing application emails in Mailpit (`http://localhost:8025`, SMTP `localhost:1025`). See [email delivery and local testing](./development/email.md) for setup. Production delivery requires explicit SMTP host, port, sender, TLS mode, and credentials in the FastAPI Cloud environment; this PR does not change production secrets or enable production email.
 - Mortarium's LLM provider/model selection is environment-configured. See [AI architecture](./ai_architecture.md) and [FastAPI Cloud deployment](./deployment/FASTAPI_CLOUD.md) for the current deployment profile.

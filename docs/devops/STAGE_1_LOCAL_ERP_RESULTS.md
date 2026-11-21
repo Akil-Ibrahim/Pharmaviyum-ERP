@@ -6,7 +6,7 @@
 - Tested revision: `7f1c20ef` plus the uncommitted migration and seed fixes listed in the worktree
 - Target: local API at `http://127.0.0.1:8000`
 - Load tool: k6 v2.3.0
-- Environment: Debian 13, Python 3.14.7, PostgreSQL 17.11, pgvector 0.8.0, Redis 8.0.2
+- Historical test environment (2026-10-15): Debian 13, Python 3.14.7, PostgreSQL 17.11, pgvector 0.8.0, Redis 8.0.2. These are recorded test-time facts, not current Production or Demo versions.
 - Test data: synthetic local pharmacy with 20 patients, 59 products, 59 inventory rows and 7 prescriptions
 - Workload: guarded, authenticated, read-only pharmacy workload; no AI or write scenario
 - Profile: 5 maximum VUs, 6-minute ramp/hold/ramp-down, 440 completed iterations
@@ -57,8 +57,7 @@ therefore validates authenticated application/database/cache behavior on
 synthetic data, but it is **not a Docker-based capacity result** and must not be
 used to claim production capacity. This profile did not include writes, AI/RAG,
 provider costs, sustained soak, or PostgreSQL/Redis/container CPU and memory
-time series. Database engine versions also differ from the Docker Compose
-targets (PostgreSQL 16 and Redis 7).
+time series. This is a historical local run and does not validate the current hosted Production/Demo baseline (Neon PostgreSQL 18 and isolated Demo PostgreSQL 18; managed Redis endpoints).
 
 Use the guarded profiles in [STAGE_1_LOAD_TESTING.md](./STAGE_1_LOAD_TESTING.md)
 after rebuilding the Codespace with Docker-in-Docker to obtain Docker-specific

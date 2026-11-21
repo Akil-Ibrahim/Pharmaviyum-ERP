@@ -12,9 +12,9 @@
 
 Pharmaviyum CRM is a modular pharmacy CRM platform built around:
 
-- **Python 3.14.7 / FastAPI** for the backend API
-- **PostgreSQL 16 + pgvector** for transactional and vector data
-- **Redis** for cache/state and supporting infrastructure
+- **CPython 3.15.0 / FastAPI** for the backend API
+- **Neon PostgreSQL 18 + pgvector** for hosted Production transactional and vector data; Demo uses a separate PostgreSQL 18 database
+- **Managed Redis** for hosted cache/coordination, with separate Production and Demo endpoints; Redis 8.8.4 is the compatibility target pending provider-reported version verification
 - **Celery** for background ingestion and asynchronous workloads
 - **React 19 + TypeScript + Vite 8** for the frontend
 - **LangGraph / LangChain / Ollama** for AI orchestration and LLM integration
