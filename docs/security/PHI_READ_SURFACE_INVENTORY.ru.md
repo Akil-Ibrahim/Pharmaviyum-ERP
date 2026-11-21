@@ -42,14 +42,15 @@
 
 Файл: `src/pharmaviyum/services/patient.py`
 
-- `create_patient` отправляет в `patient.created` поля `patient_id`, `full_name`, `phone`, `country` и `created_by`.
-- `update_patient` отправляет patient ID и список изменённых полей.
+- До PR #385 событие `patient.created` содержало `patient_id`, `full_name`, `phone`, `country` и `created_by`.
+- PR #385 удаляет `full_name`, `phone` и `country`; остаются `patient_id`, `pharmacy_id` и `created_by` для корреляции/маршрутизации.
+- `patient.updated` по-прежнему содержит patient ID и список изменённых полей.
 - Event bus — process-local и best-effort (`src/pharmaviyum/services/event_bus.py`); текущий общий лог emit записывает тип события и количество handlers, а не payload.
 - Полный граф subscribers и возможная внешняя пересылка/логирование не были исчерпывающе прослежены.
 
 **Риск:** прямые идентификаторы попадают в общий application event channel. Будущие subscribers, telemetry exporters или интеграции могут передать их в системы без PHI controls.
 
-**Необходимые действия:** заменить прямые идентификаторы в общих событиях на opaque references и минимальные метаданные; для обоснованных клинических workflow использовать отдельный permissioned clinical event contract. Добавить тесты, что event payload не содержит имя, телефон, email, DOB, clinical notes или prescription data. Проверить всех subscribers до включения внешней доставки.
+**Необходимые действия:** определить, действительно ли generic event нуждается в patient reference. Стабильный внутренний patient ID остаётся связываемыми персональными данными, а не анонимным или криптографически opaque идентификатором. Для корреляции предпочтителен краткоживущий необратимый event token с отдельно авторизованным lookup; для клинических workflow использовать отдельный permissioned event contract. Добавить тесты, что event payload не содержит имя, телефон, email, DOB, clinical notes или prescription data. Проверить всех subscribers до включения внешней доставки.
 
 ### F-04 — Tenant-scoped mutation helpers сначала выполняют unscoped lookup
 
@@ -96,7 +97,7 @@
 - [ ] Каждый repository method с pharmacy parameter действительно применяет его либо явно обозначен как global и защищён отдельной авторизацией.
 - [ ] Тесты двух tenant доказывают изоляцию patient query и mutation.
 - [ ] Patient response schemas возвращают только поля, необходимые конкретному workflow.
-- [ ] Generic events и telemetry не содержат прямых идентификаторов пациентов и клинических payload.
+- [ ] Generic events и telemetry не содержат прямых идентификаторов пациентов и клинических payload; стабильные patient ID рассматриваются как связываемые данные.
 - [ ] Доступ superuser к данным пациента ограничен purpose и аудируется.
 - [ ] Для каждой patient read-поверхности определены владелец, authorization policy, классификация ответа и поведение аудита.
 
