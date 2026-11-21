@@ -26,7 +26,7 @@ def get_patient_service(db: AsyncSession = Depends(get_db)) -> PatientService:
     return PatientService(PatientRepository(db))
 
 
-@router.post("/", response_model=PatientResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=PatientListResponse, status_code=status.HTTP_201_CREATED)
 async def create_patient(
     data: PatientCreate,
     db: AsyncSession = Depends(get_db),
@@ -41,7 +41,7 @@ async def create_patient(
         )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    return PatientResponse.model_validate(patient)
+    return PatientListResponse.model_validate(patient)
 
 
 @router.get("/", response_model=list[PatientListResponse])
@@ -128,7 +128,7 @@ async def get_patient_ai_profile(
     return profile
 
 
-@router.put("/{patient_id}", response_model=PatientResponse)
+@router.put("/{patient_id}", response_model=PatientListResponse)
 async def update_patient(
     patient_id: int,
     data: PatientUpdate,
@@ -146,7 +146,7 @@ async def update_patient(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
-    return PatientResponse.model_validate(patient)
+    return PatientListResponse.model_validate(patient)
 
 
 @router.delete("/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -166,7 +166,7 @@ async def delete_patient(
     return None
 
 
-@router.post("/{patient_id}/visit", response_model=PatientResponse)
+@router.post("/{patient_id}/visit", response_model=PatientListResponse)
 async def record_visit(
     patient_id: int,
     db: AsyncSession = Depends(get_db),
@@ -185,4 +185,4 @@ async def record_visit(
     patient = await service.record_visit(id=patient_id, pharmacy_id=scope)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
-    return PatientResponse.model_validate(patient)
+    return PatientListResponse.model_validate(patient)
