@@ -294,21 +294,33 @@ def ingest_document(
             raise self.retry(exc=exc)
         try:
             loop = get_event_loop()
-            redis_client = loop.run_until_complete(get_redis())
-            tracker = IngestionProgressTracker(redis_client)
-            loop.run_until_complete(
-                tracker.update_status(
-                    job_id, "failed", error="Document ingestion failed"
-                )
-            )
-            _record_batch_result(loop, config, False, job_id)
         except Exception:
-            logger.error("Failed to mark ingestion job as failed")
-        return {
-            "success": False,
-            "error": "Document ingestion failed",
-            "source": source,
-        }
+            logger.error(
+                "Failed to initialize event loop for terminal failure tracking"
+            )
+            loop = None
+
+        if loop is not None:
+            try:
+                redis_client = loop.run_until_complete(get_redis())
+                tracker = IngestionProgressTracker(redis_client)
+                loop.run_until_complete(
+                    tracker.update_status(
+                        job_id, "failed", error="Document ingestion failed"
+                    )
+                )
+            except Exception:
+                logger.error("Failed to mark ingestion job as failed")
+
+            # Parent accounting is independent of the child status update. A
+            # transient progress-write failure must not skip the idempotent
+            # parent result attempt.
+            _record_batch_result(loop, config, False, job_id)
+
+        # Preserve Celery's FAILURE state after retries are exhausted.
+        # Returning a failure-shaped dict would incorrectly mark this task SUCCESS
+        # and suppress task_failure monitoring/alerting.
+        raise
 
 
 @celery_app.task(
