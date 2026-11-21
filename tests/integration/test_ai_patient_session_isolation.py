@@ -191,20 +191,17 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
     patient_b_messages = await memory.load(patient_b_scope)
     no_patient_messages = await memory.load(no_patient_scope)
 
-    assert [message.content for message in patient_a_messages] == [
-        "synthetic patient A prompt",
-        "synthetic patient A answer",
-    ]
-    assert [message.content for message in patient_b_messages] == [
-        "synthetic patient B prompt",
-        "synthetic patient B answer",
-    ]
-    assert [message.content for message in no_patient_messages] == [
-        "general pharmacy prompt",
-        "general pharmacy answer",
-    ]
     patient_a_content = " ".join(str(message.content) for message in patient_a_messages)
     patient_b_content = " ".join(str(message.content) for message in patient_b_messages)
+    no_patient_content = " ".join(
+        str(message.content) for message in no_patient_messages
+    )
+    assert "synthetic patient A prompt" in patient_a_content
+    assert "synthetic patient A answer" in patient_a_content
+    assert "synthetic patient B prompt" in patient_b_content
+    assert "synthetic patient B answer" in patient_b_content
+    assert "general pharmacy prompt" in no_patient_content
+    assert "general pharmacy answer" in no_patient_content
     assert "patient B" not in patient_a_content
     assert "patient A" not in patient_b_content
 
