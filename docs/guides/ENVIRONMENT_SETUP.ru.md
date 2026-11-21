@@ -216,16 +216,24 @@ Cloud demo и аптечные Edge nodes — разные профили deploy
 
 ## 8. Миграции БД и безопасность данных
 
-Каноническое дерево Alembic находится в корне репозитория:
+Каноническое дерево Alembic находится в корне репозитория. Публичный workflow развёртывания Demo не применяет миграции.
 
-```text
-alembic/
-alembic.ini
-```
+Изменения схемы Demo требуют отдельной проверки и утверждения операции над изолированной Demo БД, подтверждённого backup/restore path и post-migration validation. Никогда не используйте Production database URL или migration credentials для Demo.
 
-FastAPI Cloud deploy workflow не применяет миграции. Запускайте их только как отдельную утверждённую release-операцию после проверки миграции и восстановления из backup.
+Миграции Production и их автоматизация управляются за пределами этого публичного репозитория. Не добавляйте Production database endpoints, migration secrets или привилегированные Production operations в публичные workflows.
 
-Новая БД пуста. Успешный deployment не импортирует лекарственный каталог, не создаёт остатки и не восстанавливает бизнес-данные. Импортируйте каталог только отдельной проверенной идемпотентной процедурой. Пустой каталог не следует ошибочно считать проблемой платформы deployment.
+Новая Demo БД пуста. Успешный deployment не импортирует лекарственный каталог, не создаёт остатки и не восстанавливает бизнес-данные. Импортируйте каталог только отдельной проверенной идемпотентной процедурой и только с синтетическими данными.
+
+## 9. Health checks и проверка релиза Demo
+
+Проверяйте readiness публичной Demo, а не только liveness:
+
+curl --fail https://pharmaviyum-erp.fastapicloud.dev/health
+curl --fail https://pharmaviyum-erp.fastapicloud.dev/ready
+
+Ожидаемый ready response должен показывать healthy для PostgreSQL, Redis и AI initialization. Workflow развёртывания Demo также проверяет SPA routes, runtime identity, обработку неверной авторизации и защиту POS.
+
+Зелёный CI не доказывает корректность Demo provider quota, содержимого БД, полноты каталога или всех аптечных процессов. Перед объявлением релиза Demo успешным выполните live smoke checks. Health checks и release evidence Production относятся к отдельно управляемому Production environment.
 
 ## 9. Health checks и проверка релиза
 
@@ -239,6 +247,19 @@ curl --fail https://pharmaviyum-erp-crm.fastapicloud.dev/ready
 Ожидаемый ready response должен показывать healthy для PostgreSQL, Redis и AI initialization. Deployment smoke workflow дополнительно проверяет SPA route `/settings/appearance`, негативный/позитивный auth, защищённый POS search и непустые результаты Omeprazole в catalog/product search.
 
 Зелёный CI не доказывает корректность production secrets, provider quota, содержимого БД или всех аптечных процессов. До объявления релиза успешным выполните live smoke checks.
+
+## 10. Правила безопасности
+
+- Не коммитьте .env-файлы, API keys, tokens, passwords или database connection strings.
+- Используйте уникальные credentials для каждого окружения и Edge node.
+- Храните Demo secrets в защищённом Demo environment и платформе хостинга Demo. Production secrets управляются за пределами этого публичного репозитория.
+- Не используйте общие или default admin credentials.
+- При подозрении на утечку ротируйте секрет.
+- Ограничьте сетевой доступ к PostgreSQL и Redis доверенными сервисами.
+- Не помещайте секреты, patient identifiers, рецепты или клинический текст в logs, traces, fixtures и документацию.
+- Изолируйте сбои AI/provider от POS и core ERP transactions.
+- Делайте backup перед изменениями схемы и регулярно проверяйте restore.
+- Не обходите branch protection, CI, environment approvals и release gates.
 
 ## 10. Правила безопасности
 
