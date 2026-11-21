@@ -19,7 +19,6 @@ from src.pharmaviyum.services.inventory_movements import (
 )
 
 
-
 @pytest.fixture
 async def migrated_test_db():
     """Connect to the separate CI database after Alembic has upgraded it."""
