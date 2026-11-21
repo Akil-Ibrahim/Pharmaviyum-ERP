@@ -192,7 +192,7 @@ Workflow развёртывания Demo требует:
 - DEMO_DATABASE_URL — URL изолированной Demo БД для read-only проверки схемы.
 - VITE_CLERK_PUBLISHABLE_KEY — только если он нужен frontend build/sign-in конфигурации.
 
-Workflow не должен читать Production credentials или обращаться к Production инфраструктуре. Он не использует FASTAPI_CLOUD_TOKEN, FASTAPI_CLOUD_APP_ID, DATABASE_URL или MIGRATION_DATABASE_URL.
+Workflow не должен читать Production credentials или обращаться к Production инфраструктуре. Он читает только указанные Demo-specific secrets; DEMO_DATABASE_URL передаётся в process variable DATABASE_URL для read-only проверки схемы.
 
 ### Контроль релиза Demo
 
