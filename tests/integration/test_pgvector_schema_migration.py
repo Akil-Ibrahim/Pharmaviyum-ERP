@@ -19,9 +19,7 @@ async def test_alembic_provisions_pgvector_table_and_search_indexes():
     engine = create_async_engine(migration_url, pool_pre_ping=True)
     try:
         async with engine.connect() as connection:
-            result = await connection.execute(
-                text(
-                    """
+            result = await connection.execute(text("""
                     SELECT
                         to_regclass('public.document_chunks') IS NOT NULL AS table_exists,
                         to_regtype('vector') IS NOT NULL AS vector_type_exists,
@@ -41,9 +39,7 @@ async def test_alembic_provisions_pgvector_table_and_search_indexes():
                             ),
                             ARRAY[]::text[]
                         ) AS index_names
-                    """
-                )
-            )
+                    """))
             schema = result.one()
     finally:
         await engine.dispose()
