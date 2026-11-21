@@ -141,6 +141,28 @@ class TestPatientServiceGet:
     """Tests for get methods"""
 
     @pytest.mark.asyncio
+    async def test_get_patient_summary_does_not_load_relationships(
+        self,
+        patient_service,
+        mock_repository,
+        sample_patient,
+    ):
+        mock_repository.get_by_id_with_relations.return_value = sample_patient
+
+        result = await patient_service.get_patient_summary(19, pharmacy_id=731)
+
+        assert result is sample_patient
+        mock_repository.get_by_id_with_relations.assert_awaited_once_with(
+            19,
+            pharmacy_id=731,
+            include_allergies=False,
+            include_conditions=False,
+            include_insurances=False,
+            include_consultations=False,
+            include_purchases=False,
+        )
+
+    @pytest.mark.asyncio
     async def test_get_patient_with_cache(
         self,
         patient_service,
