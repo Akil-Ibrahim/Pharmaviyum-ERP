@@ -114,23 +114,17 @@ uv run fastapi dev
 uv run fastapi run
 ```
 
-## Ограничения production deployment
+## Ограничения развёртывания Demo
 
-У Pharmaviyum одно production-приложение в FastAPI Cloud. Production deployment намеренно контролируется ручным GitHub Actions workflow:
+Плагин FastAPI Cloud может помогать просматривать или администрировать подключённые ресурсы FastAPI Cloud, но deployment workflow публичного репозитория предназначен только для изолированного приложения Demo.
 
-` .github/workflows/deploy-fastapi-cloud.yml `
+Для публичных релизов Demo используйте защищённый workflow Deploy Demo to FastAPI Cloud. Он требует отдельные secrets FASTAPI_CLOUD_DEMO_TOKEN, FASTAPI_CLOUD_DEMO_APP_ID и DEMO_DATABASE_URL, успешный CI для точного commit SHA, read-only проверку схемы Demo и smoke tests после deployment.
 
-Для production-релизов используйте защищённый workflow **Deploy to FastAPI Cloud**. Не используйте плагин агента или прямую команду CLI для обхода CI gate по точному commit SHA, проверок deployment inputs, проверки совместимости схемы БД, сериализации deployment и smoke tests после развёртывания.
+Не используйте этот публичный репозиторий, его workflow или плагин FastAPI Cloud для развёртывания и администрирования Production. Хостинг Production, credentials, deployment automation, миграции БД и эксплуатация управляются отдельно с соблюдением применимых ограничений конфиденциальности.
 
-Сейчас workflow отправляет deployment командой:
+Workflow отправляет Demo deployment командой FastAPI Cloud CLI. Это шаг проверенного workflow, а не инструкция развёртывать приложение из произвольной локальной сессии. Успешная отправка команды не доказывает успешный rollout: проверьте точный build SHA в /version, staging runtime profile, версию CPython, /health, /ready, авторизацию и защиту POS.
 
-```bash
-uv run fastapi cloud deploy . --no-wait
-```
-
-Эта команда является частью проверенного workflow, а не инструкцией развёртывать production из произвольной локальной сессии. Запрос агенту «deploy this app» всё равно должен соблюдать ручную release policy репозитория. Успешная отправка deployment-команды не означает успешный rollout: необходимо проверить точный build SHA в `/version`, версию CPython, `/health`, `/ready`, авторизацию и защиту POS.
-
-Никогда не вставляйте секреты в prompts, не коммитьте значения переменных окружения и не просите агента вывести значения секретов. Изменение production environment variables требует отдельного явного разрешения и соблюдения production change-control. Миграции БД выполняются отдельно и только после явного утверждения; ни плагин, ни обычный deployment workflow не должны запускать их неявно.
+Никогда не вставляйте секреты в prompts, не коммитьте environment values и не просите агента выводить секреты. Изменения переменных окружения Demo требуют явного разрешения и должны использовать только Demo values. Изменения окружения Production и миграции выполняются за пределами публичного репозитория и подчиняются отдельному change-control.
 
 ## Текущая настройка Library Skills
 
