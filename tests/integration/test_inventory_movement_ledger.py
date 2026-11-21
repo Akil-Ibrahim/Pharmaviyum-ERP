@@ -314,6 +314,7 @@ async def test_database_rejects_movement_type_delta_mismatch(test_db):
 async def test_inventory_movement_rollback_preserves_balance_and_ledger(test_db):
     """A caller rollback must undo both the balance projection and journal row."""
     pharmacy, _product, lot = await _inventory_fixture(test_db)
+    pharmacy_id = pharmacy.id
 
     await apply_inventory_movement(
         test_db,
@@ -336,7 +337,7 @@ async def test_inventory_movement_rollback_preserves_balance_and_ledger(test_db)
         select(func.count())
         .select_from(InventoryMovement)
         .where(
-            InventoryMovement.pharmacy_id == pharmacy.id,
+            InventoryMovement.pharmacy_id == pharmacy_id,
             InventoryMovement.idempotency_key == "movement-rollback-atomicity-0001",
         )
     )
@@ -361,6 +362,7 @@ async def test_database_triggers_reject_update_delete_and_truncate(migrated_test
         reason="Append-only trigger test",
         idempotency_key="movement-append-only-trigger-0001",
     )
+    movement_id = movement.id
     await migrated_test_db.commit()
 
     statements = (
@@ -376,7 +378,7 @@ async def test_database_triggers_reject_update_delete_and_truncate(migrated_test
             await migrated_test_db.execute(text(statement), parameters)
         await migrated_test_db.rollback()
 
-    persisted = await migrated_test_db.get(InventoryMovement, movement.id)
+    persisted = await migrated_test_db.get(InventoryMovement, movement_id)
     assert persisted is not None
     assert persisted.reason == "Append-only trigger test"
 
