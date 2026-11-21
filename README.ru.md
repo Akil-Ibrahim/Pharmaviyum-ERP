@@ -27,8 +27,9 @@
 - **Приложение:** backend на FastAPI и frontend на React, TypeScript и Vite.
 - **Аптечная предметная область:** POS, отпуск лекарств, справочник препаратов, склад, закупки и аптечные операции.
 - **AI-слой:** Mortarium с RAG на базе LangGraph и интеграцией MCP.
-- **Инфраструктура:** PostgreSQL, Redis-совместимые сервисы, Docker и автоматизация Pharmacy Edge.
+- **Инфраструктура:** Neon PostgreSQL 18 для hosted Production; отдельный PostgreSQL 18 для Demo; managed Redis с целевой совместимостью Redis 8.8.4; Docker для разработки и автоматизации Pharmacy Edge.
 - **Поставка:** CI в GitHub Actions и отдельный контролируемый workflow развёртывания в FastAPI Cloud.
+- **Hosted data baseline:** Neon PostgreSQL 18; managed Redis с целевой совместимостью Redis 8.8.4 (фактическую версию сервера необходимо подтвердить у провайдера).
 
 ## Доступ к демо-системе
 
@@ -77,6 +78,32 @@
 - общих правилах синхронизации инструментов, CI и конфигурации развёртывания.
 
 Перед созданием новых каталогов или изменением расположения существующих файлов изучите это руководство. Структурные изменения должны сопровождаться обновлением зависимых импортов, CI workflows, Docker/Compose, deployment assets, скриптов и документации.
+
+## Единый baseline инфраструктуры Production и Demo
+
+Это каноническая политика версий инфраструктуры для hosted Production и Demo. Не переносите устаревшие версии БД, Redis или ссылки на выведенных из эксплуатации провайдеров из исторических заметок в новые deployment-конфигурации.
+
+| Компонент | Baseline Production | Baseline Demo | Подтверждение / правило |
+|---|---|---|---|
+| Размещение приложения | FastAPI Cloud | FastAPI Cloud | Hosted-приложение развёртывается защищённым workflow с ручным approval. |
+| PostgreSQL | Neon PostgreSQL 18, проект `pharmaviyum-production`, ID проекта `odd-fog-77928192`, default branch `production` | Отдельная изолированная БД/branch PostgreSQL 18 | Production-проект и major-версия проверены в Neon 21.11.2026. Изоляцию Demo и фактическую версию её сервера необходимо проверить до заявления о готовности Demo. |
+| Векторное расширение | Целевая версия pgvector 0.8.7; фактическую версию проверить в hosted-БД | Целевая версия pgvector 0.8.7; фактическую версию проверить | Версия PostgreSQL и версия расширения pgvector — разные параметры. |
+| Redis | Managed Redis integration; целевая совместимая версия Redis 8.8.4, если провайдер позволяет зафиксировать её | Отдельная managed Redis integration; та же цель Redis 8.8.4 | Точная версия managed-сервера контролируется провайдером и здесь независимо не подтверждена. Проверять через `INFO server` или metadata провайдера; не выдавать target за фактическую версию. |
+| Redis-клиент приложения | redis-py 8.1.0 | redis-py 8.1.0 | Зафиксирован в `pyproject.toml` и `uv.lock`. |
+| Python runtime | CPython 3.15.0 | CPython 3.15.0 | Зафиксирован в `pyproject.toml`, `.python-version` и deployment checks. |
+
+### Разделение окружений и правила данных
+
+- Production и Demo обязаны использовать разные database credentials, экземпляры/branches БД, Redis credentials/endpoints, signing secrets и provider/API credentials. Demo никогда не должен подключаться к Production БД или Redis namespace.
+- В Demo разрешены только синтетические данные. Запрещено импортировать реальные данные пациентов, рецепты, клиентов, аптечные транзакции и конфиденциальную бизнес-информацию.
+- Neon Production — авторитетная hosted-реляционная БД. Локальный PostgreSQL в Compose предназначен только для disposable development/CI и не является Production-БД.
+- Managed Redis — эфемерный слой cache/coordination, а не авторитетный ledger продаж, отпуска, остатков или аудита. Постоянные бизнес-записи хранятся в PostgreSQL.
+- Connection strings и credentials хранятся только в FastAPI Cloud environment variables и защищённых GitHub Actions secrets. В документации разрешено указывать провайдера, проект, branch и версию, но запрещено публиковать credentials и URL подключения.
+- Целевая версия не доказывает, что именно она запущена. Для каждого окружения подтвердите фактическую версию сервера, версию расширения, connectivity, backup/PITR policy и readiness.
+- Смена major-версии PostgreSQL требует отдельного утверждённого плана backup, проверки совместимости, миграции, тестового восстановления, maintenance window и rollback. Нельзя подключать существующий data volume к другой major-версии PostgreSQL.
+- Не используйте выведенную из эксплуатации инфраструктуру Render как действующую зависимость Production или Demo.
+
+Запись live-проверки обновляется при каждой замене hosted-БД или cache. См. [руководство FastAPI Cloud](deployment/FASTAPI_CLOUD.ru.md) и [Production operations runbook](operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md).
 
 ## Основной аптечный процесс
 
@@ -464,7 +491,7 @@ bun run build
 - Celery background worker;
 - Ollama и локальные сервисы наблюдаемости, если они настроены.
 
-Отдельный профиль `docker-compose.prod.yml` остаётся на PostgreSQL 16 и Redis 7. Управляемые production-базы и кэши, а также Pharmacy Edge PostgreSQL 16/Valkey — отдельные окружения. Изменение development Compose images не мигрирует и не обновляет их.
+Hosted Production и Demo используют baseline из [документа инфраструктуры Production и Demo](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md). Локальный Compose является disposable-средой и не должен рассматриваться как hosted data plane. Pharmacy Edge — отдельный профиль развёртывания со своей политикой версий.
 
 Запуск локального стека:
 
