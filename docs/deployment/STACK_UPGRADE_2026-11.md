@@ -4,12 +4,13 @@
 
 This record describes the repository's current application and hosted data-service baseline. It is not evidence that a deployment or database migration has completed. Production deployment remains a separately approved operation.
 
-## Hosted data-service baseline
+## Historical hosted data-service baseline — superseded
 
-- Hosted Production relational database: Neon PostgreSQL 18, project `pharmaviyum-production` (`odd-fog-77928192`), default branch `production`; verified from Neon project metadata on 2026-11-21.
-- Demo must use a separate PostgreSQL 18 database/branch and separate credentials. Its live provider version and isolation must be verified before Demo is marked ready.
-- Hosted Production and Demo must use separate managed Redis endpoints. Redis 8.8.4 is the compatibility target; the provider-reported server version is not pinned by the application and must be verified for each environment.
-- Local disposable development/CI services use PostgreSQL 18 with pgvector 0.8.7 and Redis 8.8.4.
+This dated November 2026 record captured an earlier hosted Production configuration. It is retained only as historical change evidence and is not the current deployment architecture. The historical Production Neon project identifier and branch details are intentionally omitted from this public document. Do not use this section to provision or deploy current Production.
+
+Current architecture: FastAPI Cloud hosts the public Demo only. Production application releases target the pharmacy server through Ansible, with local PostgreSQL and supporting services defined by the approved Pharmacy Edge profile. See the [canonical Production/Demo deployment boundary](PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) and [Ansible rollout plan](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
+
+Local disposable development/CI services use PostgreSQL 18 with pgvector 0.8.7 and Redis 8.8.4.
 - The application Redis client is redis-py 8.1.0, pinned in `pyproject.toml` and `uv.lock`.
 
 The full environment contract, isolation requirements, and verification rules are maintained in [Production and Demo Infrastructure Baseline](PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) and its [Russian version](PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md).
