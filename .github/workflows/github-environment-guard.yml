@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   validate-environments:
-    name: Prevent retired production environment references
+    name: Enforce Demo-only deployment environment
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
