@@ -152,3 +152,50 @@ The UI role check is a convenience only. Backend `CurrentSuperuser` dependencies
 The match endpoint now performs a lightweight first pass over reference IDs/INN names and ingredient-name rows, using the same fuzzy similarity threshold as the matching service. It then hydrates ORM objects, related ingredients, and medicinal products only for the best 250 reference IDs before computing explainable product-level scores and returning the top 10 suggestions.
 
 This avoids materializing every DrugReference relationship graph in application memory for each review request. The lightweight name scan remains proportional to the catalog size; it deliberately preserves fuzzy matching rather than applying a restrictive exact/prefix-only SQL filter. A future database-specific trigram/full-text index can reduce scan cost after extension availability and query plans are verified on the target database.
+
+
+## Follow-up audit: legacy ProductBatch dependency inventory
+
+**Follow-up baseline:** current `main` inspected on 2026-11-21. This section records source-level findings only; it does not assert production row counts or production data quality.
+
+### Confirmed read/write paths
+
+| Surface | Observed dependency | Classification |
+|---|---|---|
+| `PatientPurchase.batch_id` and `batch` relationship | Nullable FK to `product_batches.id` with `ON DELETE SET NULL`; `batch_number` and `expiry_date` properties read through the relationship | Historical traceability/read |
+| `api/v1/patient_purchases.py` | Serializes batch ID, batch number, and expiry date | API read |
+| `api/v1/dashboard.py` | Patient medication query outer-joins `ProductBatch` to expose the historical purchase's expiry date | Dashboard read |
+| `api/v1/pharmacy_entities.py::list_batches` | Superuser-only endpoint selects `ProductBatch` rows, optionally filtered by product; no pharmacy predicate exists because the model has no pharmacy owner | Legacy administrative read |
+| `scripts/seed_database.py::seed_inventory` | Creates a demo `ProductBatch` with initial `available_quantity`; uses its batch number/expiry to create or locate a pharmacy-scoped `Inventory` row and records an opening movement | Demo/bootstrap write |
+| `Product.batches` relationship | ORM relationship remains available | Compatibility mapping |
+
+The inspected seed path initializes `ProductBatch.available_quantity` when creating a missing demo batch. For an existing batch it refreshes expiry metadata, while the paired `Inventory` record is treated as operational state. This is not evidence of a production-safe dual-write protocol.
+
+The batch list endpoint is restricted to `CurrentSuperuser`, but it still returns unscoped legacy rows. Do not treat the current authorization check as a substitute for pharmacy ownership or tenant-scoped inventory access. The frontend's standalone batches route currently renders no page; this does not remove the backend endpoint or its API consumers.
+
+### Domain boundary
+
+- `Inventory` plus `InventoryMovement` is the pharmacy-scoped stock and lot ledger.
+- `ProductBatch` is a global/legacy compatibility record and must not drive sellable quantity, FEFO allocation, reservations, or Edge synchronization.
+- `PatientPurchase` is patient history. Its batch relationship is historical metadata, not a stock balance.
+- A historical purchase must remain interpretable if its legacy batch row is eventually retired. The current `ON DELETE SET NULL` behavior can erase the relationship while leaving only the purchase row; that is not sufficient historical preservation by itself.
+
+### Safe retirement sequence (design; not yet implemented)
+
+1. **Freeze the legacy quantity contract.** Prohibit new operational code from reading or mutating `ProductBatch.available_quantity` as stock truth. Keep the field only for compatibility until all readers/writers are accounted for.
+2. **Add immutable purchase snapshots.** Introduce nullable snapshot fields on `PatientPurchase` for the batch/lot identifier and expiry date captured at dispense time. Populate them from the linked batch where available. For rows without a linked batch, preserve null and report the gap; never infer a lot from current inventory.
+3. **Dual-read validation.** Update history/API/dashboard readers to prefer purchase snapshots and use the legacy relationship only as a temporary fallback. Add tests for deleted/missing batch rows, null legacy references, and unchanged historical display.
+4. **Reconcile before changing writers.** Produce a pharmacy/product/lot comparison between legacy batch metadata and `Inventory`; compare quantities only where a defensible mapping exists. Report unmatched, ambiguous, duplicate, expired, and cross-pharmacy cases separately. Do not auto-correct discrepancies.
+5. **Remove unsafe administrative exposure.** Replace the unscoped legacy batch list with a pharmacy-scoped `Inventory`/lot query or explicitly deprecate and disable the legacy endpoint after its consumers are migrated. Preserve superuser access as an additional permission, not as tenant scope.
+6. **Retire relationships in a later release.** Only after code search, API contract review, migration tests, and telemetry show no legacy reads/writes: remove the ORM relationship and FK in a forward-only migration. Retain the snapshot data and an auditable migration report.
+
+### Required verification gates
+
+- Static dependency scan proves there are no operational writes to `ProductBatch.available_quantity` outside the approved compatibility/seed path.
+- Unit/API tests prove patient history remains stable after a legacy batch is absent.
+- Tenant tests prove a pharmacy cannot enumerate another pharmacy's `Inventory` lots.
+- Reconciliation tests cover one-to-one, unmatched, duplicate, and ambiguous lot mappings.
+- Migration tests run upgrade from a representative pre-change schema and verify snapshot backfill counts, null counts, and referential integrity.
+- A disposable staging database is used for migration rehearsal; production database state and backups are not assumed from source inspection.
+
+**Status:** dependency inventory is partial and source-level. No snapshot migration, endpoint replacement, data reconciliation, production query, or production migration has been performed. ProductBatch retirement is not approved by this audit.
