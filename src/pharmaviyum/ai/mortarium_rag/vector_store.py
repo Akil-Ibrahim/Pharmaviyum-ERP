@@ -44,12 +44,12 @@ class PgVectorStore:
             result = await session.execute(
                 text("""
                     SELECT
-                        to_regclass(:qualified_table) IS NOT NULL AS table_exists,
+                        to_regclass(:table_name) IS NOT NULL AS table_exists,
                         to_regtype('vector') IS NOT NULL AS vector_type_exists,
                         (
                             SELECT attribute.atttypmod
                             FROM pg_attribute AS attribute
-                            WHERE attribute.attrelid = to_regclass(:qualified_table)
+                            WHERE attribute.attrelid = to_regclass(:table_name)
                               AND attribute.attname = 'embedding'
                               AND NOT attribute.attisdropped
                         ) AS embedding_dimensions,
@@ -57,14 +57,19 @@ class PgVectorStore:
                             (
                                 SELECT array_agg(indexname)
                                 FROM pg_indexes
-                                WHERE schemaname = 'public'
+                                WHERE schemaname = (
+                                      SELECT namespace.nspname
+                                      FROM pg_class AS relation
+                                      JOIN pg_namespace AS namespace
+                                        ON namespace.oid = relation.relnamespace
+                                      WHERE relation.oid = to_regclass(:table_name)
+                                  )
                                   AND tablename = :table_name
                             ),
                             ARRAY[]::text[]
                         ) AS index_names
                     """),
                 {
-                    "qualified_table": f"public.{self.table_name}",
                     "table_name": self.table_name,
                 },
             )
