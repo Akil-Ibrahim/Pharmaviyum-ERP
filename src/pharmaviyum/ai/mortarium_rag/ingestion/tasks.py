@@ -304,11 +304,10 @@ def ingest_document(
             _record_batch_result(loop, config, False, job_id)
         except Exception:
             logger.error("Failed to mark ingestion job as failed")
-        return {
-            "success": False,
-            "error": "Document ingestion failed",
-            "source": source,
-        }
+        # Preserve Celery's FAILURE state after retries are exhausted.
+        # Returning a failure-shaped dict would incorrectly mark this task SUCCESS
+        # and suppress task_failure monitoring/alerting.
+        raise
 
 
 @celery_app.task(
