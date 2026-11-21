@@ -16,14 +16,14 @@
 
 Файл: `src/pharmaviyum/repositories/patient.py`
 
-- `get_recent_patients(limit, pharmacy_id)` принимает `pharmacy_id`, но не добавляет его в запрос.
-- `get_top_customers(limit, pharmacy_id)` принимает `pharmacy_id`, но не добавляет его в запрос.
+- В текущем `main` методы `get_recent_patients` и `get_top_customers` добавляют `Patient.pharmacy_id == pharmacy_id`, если scope передан.
+- `tests/unit/test_patient_repository_tenant_scope.py` компилирует оба запроса и проверяет pharmacy predicate.
 - Оба метода возвращают ORM-объекты Patient, а не агрегированную проекцию.
-- Все call sites в рамках этой проверки не перечислены.
+- Текущие тесты доказывают корректное построение SQL, но не end-to-end изоляцию между двумя сохранёнными pharmacy; все call sites ещё нужно сопоставить.
 
-**Риск:** вызывающий код может полагаться на контракт параметра и считать запрос tenant-scoped, хотя фактически получает строки из разных аптек. Это дефект изоляции на repository-уровне, если методы используются в tenant-scoped workflow.
+**Статус:** ранее описанный дефект отсутствия predicate не воспроизводится в проверенной ревизии `main`. Не следует считать его открытым дефектом исходного кода.
 
-**Необходимые действия:** найти все call sites; добавить pharmacy predicates; написать negative tests на двух аптеках, доказывающие, что tenant-scoped вызов не возвращает пациентов другого tenant. Если существует глобальный административный сценарий, выделить для него отдельно названный и явно авторизованный метод, а не использовать необязательный scope.
+**Оставшиеся действия:** добавить integration tests на двух pharmacy, доказывающие, что tenant-scoped вызов не возвращает пациентов другого tenant, и сопоставить все call sites. Если есть глобальный административный сценарий, выделить для него отдельно названный и явно авторизованный метод вместо необязательного scope.
 
 ### F-02 — Patient response schema возвращает широкий набор клинических и коммерческих связей
 
@@ -52,17 +52,17 @@
 
 **Исправление:** удалить patient identifiers из generic `patient.created`; оставить только tenant-level routing metadata. Остальные lifecycle events требуют такой же проверки. Если workflow необходим patient reference, нужно определить отдельный permissioned event contract и явную authorization path для lookup, а не повторно использовать generic event bus.
 
-### F-04 — Два patient mutation helpers используют scope; другим mutation helpers не хватает явного tenant scope
+### F-04 — Два patient mutation helpers применяют scope; другим mutation helpers не хватает явного tenant scope
 
 Файл: `src/pharmaviyum/repositories/patient.py`
 
-- `soft_delete(id, pharmacy_id)` и `record_visit(id, pharmacy_id)` сначала загружают пациента по ID без pharmacy predicate, затем сравнивают pharmacy ID, если scope передан.
-- Сейчас методы возвращают false/None при несовпадении tenant до применения мутации, но первоначальное чтение из БД уже было unscoped.
-- Другие helpers, например `restore`, `update_loyalty`, `add_allergy`, `add_condition`, не принимают pharmacy scope в сигнатуре; авторизация их callers полностью не прослежена.
+- Текущий `main` применяет `Patient.pharmacy_id == pharmacy_id` непосредственно в начальных SELECT-запросах методов `soft_delete` и `record_visit`.
+- SQL regression tests проверяют наличие predicates и отсутствие мутации, когда scoped lookup не возвращает строку.
+- Другие helpers, например `restore`, `update_loyalty`, `add_allergy`, `add_condition`, не принимают pharmacy scope в сигнатуре; авторизация их callers ещё не прослежена полностью.
 
-**Риск:** defense-in-depth и auditability слабее, чем при едином scoped query. Внутренний caller может случайно обойти предполагаемый tenant contract.
+**Статус:** ранее описанная проблема unscoped initial lookup не присутствует в проверенной ревизии `main`.
 
-**Необходимые действия:** использовать scoped SELECT/UPDATE predicates непосредственно в SQL; требовать явный trusted tenant context для patient mutations; перечислить call sites и проверить cross-tenant denial на repository и API уровнях.
+**Оставшиеся действия:** сопоставить всех callers helpers без scope; добавить явный trusted tenant context и scoped database predicates там, где это требуется. Добавить cross-tenant integration tests на repository и API уровнях.
 
 ### F-05 — Patient и order APIs сохраняют глобальную область superuser без pharmacy ID
 
@@ -81,12 +81,12 @@
 - Для обычных пользователей `resolve_pharmacy_scope` проверяет active `PharmacyMembership`; при нескольких membership требуется явный pharmacy ID.
 - MCP patient-history tool получает pharmacy ID из trusted MCP context и включает его в patient, prescription-count и order-count queries.
 - AI API проверяет переданный patient ID относительно авторизованной аптеки до вызова harness.
-- Эти контроли не заменяют отдельный PHI access audit и не компенсируют repository methods, игнорирующие переданный pharmacy parameter.
+- Эти контроли не заменяют отдельный PHI access audit и не доказывают end-to-end tenant isolation без integration tests.
 
 ## Следующая последовательность реализации
 
-1. Проследить все call sites F-01 и F-04, а также каждый путь сериализации Patient ORM.
-2. Добавить tenant predicates в repository methods и scoped mutation statements; добавить negative integration tests с двумя synthetic pharmacies.
+1. Проследить все call sites helpers без явного scope из F-01 и F-04, а также каждый путь сериализации Patient ORM.
+2. Добавить two-pharmacy integration tests для уже scoped query/mutation methods и tenant predicates в оставшиеся mutation paths, где они необходимы.
 3. Разделить широкую PatientResponse на purpose-specific DTO с allowlists и contract tests.
 4. Минимизировать generic patient event payload и проверить каждого subscriber/forwarder.
 5. Реализовать отдельный PHI access audit event и privileged-support policy из основного governance audit.
