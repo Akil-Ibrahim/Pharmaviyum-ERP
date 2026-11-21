@@ -174,7 +174,7 @@ jobs:
                       SELECT current_database(), current_user, r.rolsuper,
                              (current_user = 'neondb_owner'
                               OR pg_has_role(current_user, 'neondb_owner', 'USAGE'))
-                      FROM pg_roles AS role
+                      FROM pg_roles AS r
                       WHERE r.rolname = current_user
                       """
                   )
@@ -187,7 +187,7 @@ jobs:
               raise SystemExit("Refusing migration: database role separation validation failed.")
           if migration_is_superuser or not has_owner_membership:
               raise SystemExit(
-                  "Refusing migration: migration role must be a non-superuser member of "
+                  "Refusing migration: migration role must be a non-superuser role inheriting the required privileges from "
                   "the dedicated Neon database owner role."
               )
 
