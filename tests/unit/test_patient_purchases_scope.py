@@ -54,8 +54,10 @@ async def test_patient_purchase_read_does_not_return_unscoped_rows():
     )
 
     statement = session.execute.await_args.args[0]
-    where_clause = str(statement.whereclause.compile(
-        dialect=postgresql.dialect(),
-        compile_kwargs={"literal_binds": True},
-    ))
+    where_clause = str(
+        statement.whereclause.compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={"literal_binds": True},
+        )
+    )
     assert "patients.pharmacy_id = 731" in where_clause
