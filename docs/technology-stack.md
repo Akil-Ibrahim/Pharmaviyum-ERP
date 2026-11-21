@@ -168,7 +168,7 @@ This page records the versions declared by the repository configuration. It is n
 | SQLAlchemy | `2.1.8` | `pyproject.toml` |
 | Alembic | `1.20.1` | `pyproject.toml` |
 | asyncpg / psycopg | `0.32.0` / `3.3.9` | `pyproject.toml` |
-| PostgreSQL | Neon PostgreSQL 18 for hosted Production; isolated PostgreSQL 18 required for Demo; disposable PostgreSQL 18 for development/CI | Neon project metadata; Demo provider metadata; Docker Compose and CI service definitions |
+| PostgreSQL | Local PostgreSQL on the pharmacy server for Production; separate isolated PostgreSQL for Demo; disposable PostgreSQL for development/CI | Ansible/Compose pharmacy-server profile, Demo provider metadata, Docker Compose and CI service definitions |
 | Redis server | Managed Redis for hosted Production and isolated managed Redis for Demo; Redis 8.8.4 compatibility target, exact hosted server version provider-reported and must be verified; local development/CI uses Redis 8.8.4 | FastAPI Cloud integration/provider metadata; Docker Compose and CI service definitions |
 | pgvector container extension | `0.8.7` | `pgvector/pgvector:0.8.7-pg18` image tag |
 | pgvector Python client | `0.4.1` | `pyproject.toml` |
