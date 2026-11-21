@@ -167,8 +167,8 @@ Frontend-зависимости определяются в следующих �
 | SQLAlchemy | `2.1.8` | `pyproject.toml` |
 | Alembic | `1.20.1` | `pyproject.toml` |
 | asyncpg / psycopg | `0.32.0` / `3.3.9` | `pyproject.toml` |
-| PostgreSQL | Neon PostgreSQL 18 для hosted Production; для Demo требуется отдельный PostgreSQL 18; disposable PostgreSQL 18 для development/CI | Metadata проекта Neon; metadata провайдера Demo; Docker Compose и CI service definitions |
-| Redis server | Managed Redis для hosted Production и отдельный managed Redis для Demo; целевая совместимость Redis 8.8.4, точная версия hosted-сервера определяется провайдером и должна быть проверена; локальный development/CI использует Redis 8.8.4 | Metadata integration FastAPI Cloud/провайдера; Docker Compose и CI service definitions |
+| PostgreSQL | Локальная PostgreSQL на аптечном сервере для Production; отдельная PostgreSQL для Demo; disposable PostgreSQL для development/CI | Ansible/Compose профиль аптечного сервера, Demo provider metadata, Docker Compose и CI service definitions |
+| Redis-compatible service | Локальный Redis/Valkey по утверждённому профилю аптечного сервера; отдельный cache service для Demo; локальный development/CI service | Ansible/Compose profile и фактическая runtime metadata каждого окружения |
 | pgvector container extension | `0.8.7` | Тег образа `pgvector/pgvector:0.8.7-pg18` |
 | pgvector Python client | `0.4.1` | `pyproject.toml` |
 | LangGraph | `1.2.21` | `pyproject.toml` |
