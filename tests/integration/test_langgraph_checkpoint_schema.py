@@ -19,9 +19,7 @@ async def test_alembic_provisions_langgraph_checkpoint_schema():
     engine = create_async_engine(migration_url, pool_pre_ping=True)
     try:
         async with engine.connect() as connection:
-            result = await connection.execute(
-                text(
-                    """
+            result = await connection.execute(text("""
                     SELECT
                         to_regclass('public.checkpoint_migrations') IS NOT NULL,
                         to_regclass('public.checkpoints') IS NOT NULL,
@@ -55,9 +53,7 @@ async def test_alembic_provisions_langgraph_checkpoint_schema():
                             ),
                             ARRAY[]::text[]
                         )
-                    """
-                )
-            )
+                    """))
             schema = result.one()
             version_result = await connection.execute(
                 text("SELECT max(v) FROM public.checkpoint_migrations")
