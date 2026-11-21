@@ -51,7 +51,7 @@ Inspect worker health, queue depth, oldest task age, retry counts and error clas
 Check provider availability, rate limits, latency, timeouts and RAG dependencies. Preserve core deterministic pharmacy workflows. Degrade optional AI through an approved configuration/release change if necessary. Do not present model output as verified clinical advice during degradation.
 
 ## Release and rollback
-Production release and rollback procedures are maintained in the restricted Production operations documentation and are not part of this public repository. The public [FastAPI Cloud Demo runbook](../deployment/FASTAPI_CLOUD.md) applies only to Demo and must not be used for Production.
+Production application releases target the pharmacy server and are orchestrated through the Ansible playbooks in this repository. The production inventory, per-site credentials, real host details and execution approvals remain operator-controlled and must not be committed. Use the [Pharmacy Edge Ansible rollout plan](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) and [Ansible guide](../devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md). The public [FastAPI Cloud Demo runbook](../deployment/FASTAPI_CLOUD.md) applies only to Demo and must never be used for Production.
 
 Before release, verify latest-SHA CI, approval, backup/restore evidence, migration plan, environment variables, smoke tests and rollback target.
 
