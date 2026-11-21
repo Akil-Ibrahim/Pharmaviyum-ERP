@@ -60,7 +60,6 @@ async def test_initialize_only_verifies_the_migrated_schema():
     assert sql.lstrip().startswith("SELECT")
     assert "CREATE " not in sql
     assert session.params == {
-        "qualified_table": "public.document_chunks",
         "table_name": "document_chunks",
     }
 
