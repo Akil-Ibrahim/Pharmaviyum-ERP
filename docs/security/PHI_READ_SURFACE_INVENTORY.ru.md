@@ -12,7 +12,7 @@
 
 ## Находки
 
-### F-01 — Repository-методы принимают pharmacy scope, но не применяют его
+### F-01 — Repository query scope реализован; доказательство изоляции на уровне БД ещё требуется
 
 Файл: `src/pharmaviyum/repositories/patient.py`
 
@@ -52,7 +52,7 @@
 
 **Необходимые действия:** определить, действительно ли generic event нуждается в patient reference. Стабильный внутренний patient ID остаётся связываемыми персональными данными, а не анонимным или криптографически opaque идентификатором. Для корреляции предпочтителен краткоживущий необратимый event token с отдельно авторизованным lookup; для клинических workflow использовать отдельный permissioned event contract. Добавить тесты, что event payload не содержит имя, телефон, email, DOB, clinical notes или prescription data. Проверить всех subscribers до включения внешней доставки.
 
-### F-04 — Tenant-scoped mutation helpers сначала выполняют unscoped lookup
+### F-04 — Два patient mutation helpers используют scope; другим mutation helpers не хватает явного tenant scope
 
 Файл: `src/pharmaviyum/repositories/patient.py`
 
