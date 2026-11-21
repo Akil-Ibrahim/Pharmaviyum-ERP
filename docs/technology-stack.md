@@ -114,7 +114,7 @@ The repository includes local observability infrastructure. Production trace del
 | **uv 0.13.8** | Fast Python package manager and project/environment tool. | Installs Python dependencies, runs commands and keeps the resolved dependency set reproducible using `pyproject.toml` and `uv.lock`. |
 | **Bun 1.4.4** | JavaScript runtime, package manager and frontend toolchain. | Installs frontend dependencies and runs frontend scripts for development, builds and tests. |
 | **Ansible** | Agentless infrastructure automation tool. | Provisions pharmacy servers and deploys reviewed Production application releases under the Pharmacy Edge profile. It is infrastructure automation, not the ERP's application business logic. |
-| **Mailpit 1.33.1** | Local SMTP capture and email testing tool. | Captures development emails so password recovery and notification flows can be tested without sending real messages. Production SMTP is configured separately. |
+| **Mailpit 1.33.1** | Local SMTP capture and email testing tool. | Captures development emails so password recovery and notification flows can be tested without sending real messages. Production SMTP is configured on the pharmacy server through its protected Ansible-managed environment. |
 
 ### 8. Testing, quality and security tooling
 
