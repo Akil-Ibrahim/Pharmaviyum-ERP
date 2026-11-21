@@ -28,10 +28,11 @@ Workflow использует выбранный commit из `main`, прове�
 
 - `FASTAPI_CLOUD_TOKEN` — deploy token FastAPI Cloud.
 - `FASTAPI_CLOUD_APP_ID` — ID целевого приложения FastAPI Cloud.
-- `DATABASE_URL` — sync или async PostgreSQL URL той же production БД, что использует приложение. Workflow использует его для read-only catalog exclusion checks и очистки временного smoke-test пользователя. Cleanup нормализует `postgresql+asyncpg://` / `postgres+asyncpg://` в URL, совместимый с psycopg.
+- `DATABASE_URL` — PostgreSQL URL ограниченной production runtime-role, совпадающий с `DATABASE_URL` приложения FastAPI Cloud. Deploy workflow использует его для read-only catalog exclusion checks и очистки временного smoke-test пользователя.
+- `MIGRATION_DATABASE_URL` — отдельный login URL только для production migration workflow. Он должен указывать на тот же проверенный Neon host/database, использовать другую non-superuser role и наследовать необходимые privileges от `neondb_owner`. Не задавайте его в FastAPI Cloud и не используйте для application traffic.
 - `VITE_CLERK_PUBLISHABLE_KEY` — необязательный build-time public frontend key, если он нужен текущей конфигурации входа.
 
-Не помещайте значения секретов в репозиторий, workflow inputs, issue comments или чат. Не выводите credentials в CI logs.
+Храните `MIGRATION_DATABASE_URL` только как secret защищённого GitHub Environment `production-pharmaviyum-erp`, используемого migration workflow; не размещайте его на уровне repository secrets или FastAPI Cloud. Остальные deploy secrets задавайте в соответствующем scope deploy workflow. Не помещайте значения секретов в репозиторий, workflow inputs, issue comments или чат и не выводите credentials в CI logs.
 
 **Секреты с username/password для smoke test не нужны.** Workflow создаёт уникальную временную учётную запись pharmacist со случайным паролем на каждый запуск через существующий registration endpoint, проверяет login/profile/catalog и пытается удалить только эту non-superuser запись. Не задавайте статические `PHARMAVIYUM_SMOKE_USERNAME` / `PHARMAVIYUM_SMOKE_PASSWORD`. Не используйте `admin/admin`.
 
@@ -62,7 +63,7 @@ Workflow использует выбранный commit из `main`, прове�
 
 Значения QwenCloud описывают текущий demo profile, а не безлимитный бесплатный production SLA. В консоли провайдера включите **Free quota only** для выбранной модели и проверьте остаток/срок действия квоты до включения запросов. Одного application flag недостаточно для enforcement биллинга. Генерация QwenCloud и embeddings — отдельные возможности: embedding provider нужно настроить и проверить независимо до включения cloud RAG.
 
-Используйте одну и ту же production БД для FastAPI Cloud `DATABASE_URL` и GitHub Actions `DATABASE_URL`. Ограничьте сетевой доступ к PostgreSQL и Redis необходимыми источниками.
+FastAPI Cloud `DATABASE_URL` и GitHub Actions `DATABASE_URL` должны использовать одну и ту же ограниченную runtime-role. Production migration workflow использует отдельный credential `MIGRATION_DATABASE_URL` и проверяет, что это другая role с необходимым owner-level membership для миграций. Ограничьте сетевой доступ к PostgreSQL и Redis необходимыми источниками.
 
 ## 4. Ручная процедура deployment
 

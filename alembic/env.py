@@ -1,7 +1,9 @@
 """
 Alembic environment configuration with async SQLAlchemy support.
 
-This enables Alembic to work with asyncpg and PostgreSQL + pgvector.
+Migrations use a dedicated credential in staging/production. Application
+runtime credentials are never an implicit migration fallback in hosted
+environments.
 """
 
 import asyncio
@@ -14,6 +16,7 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from src.pharmaviyum.db.base import Base
+from src.pharmaviyum.db.migration_config import select_migration_database_url
 import src.pharmaviyum.models  # noqa: F401
 
 config = context.config
@@ -25,17 +28,11 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    """Get a PostgreSQL URL suitable for Alembic's async engine."""
-    # Migration lifecycle tests must explicitly opt into a disposable database.
-    # This override is intentionally separate from the application's DATABASE_URL.
-    # FastAPI Cloud uses DATABASE_URL; PGVECTOR_DATABASE_URL is only a fallback.
-    url = (
-        os.getenv("MIGRATION_TEST_DATABASE_URL")
-        or os.getenv("DATABASE_URL")
-        or os.getenv("PGVECTOR_DATABASE_URL")
+    """Get a dedicated PostgreSQL URL suitable for Alembic's async engine."""
+    url = select_migration_database_url(
+        os.environ,
+        config_fallback=config.get_main_option("sqlalchemy.url"),
     )
-    if not url:
-        url = config.get_main_option("sqlalchemy.url")
 
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+asyncpg://", 1)
