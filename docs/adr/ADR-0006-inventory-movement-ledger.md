@@ -34,7 +34,7 @@ The API write paths above no longer directly assign on-hand or reserved balances
 
 ## Remaining validation and rollout gaps
 
-- The current integration tests cover service-level atomic movement, idempotent replay, conflicting key reuse, reservation bounds, receipt replay, and POS checkout/payment/cancellation journal entries. Dedicated tests are still required for migrated database trigger immutability, concurrent requests, rollback/failure injection, and full ledger-to-balance reconciliation.
+- The existing integration suite covers service-level atomic movement, idempotent replay, conflicting key reuse, reservation bounds, receipt replay, POS checkout/payment/cancellation journal entries, and concurrent same-key/distinct-key operations. PR #377 adds PostgreSQL trigger tests for UPDATE/DELETE/TRUNCATE rejection, caller-transaction rollback atomicity, and zero-baseline ledger-to-balance reconciliation. These new checks are code-reviewed but remain unverified until the integration CI job passes on the PR head. Failure injection at the wider sale/payment/outbox transaction boundary and production-schema trigger verification remain release gates.
 - Verify the migration against a clean PostgreSQL database and the existing production schema before rollout; do not infer production migration success from the migration file alone.
 - Add an operator-approved opening-balance process for legacy stock. Do not fabricate historical movements from unverified balances.
 - Add lot archival/closure semantics before removing historical lots from operational views.

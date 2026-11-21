@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import os
 
 import pytest
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy import func, select, text
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.pharmaviyum.models.inventory import Inventory
 from src.pharmaviyum.models.inventory_movement import InventoryMovement
@@ -18,7 +19,26 @@ from src.pharmaviyum.services.inventory_movements import (
 )
 
 
-async def _inventory_fixture(test_db):
+@pytest.fixture
+async def migrated_test_db():
+    """Connect to the separate CI database after Alembic has upgraded it."""
+    database_url = os.getenv("MIGRATION_TEST_DATABASE_URL")
+    if not database_url:
+        pytest.skip("MIGRATION_TEST_DATABASE_URL is required to verify DB triggers")
+    engine = create_async_engine(database_url, pool_pre_ping=True)
+    session_factory = async_sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+    try:
+        async with session_factory() as session:
+            yield session
+    finally:
+        await engine.dispose()
+
+
+async def _inventory_fixture(test_db, *, quantity: int = 10):
     pharmacy = Pharmacy(name="Movement Test Pharmacy", code="MOVEMENT-TEST")
     product = Product(
         name="Movement Test Product",
@@ -32,7 +52,7 @@ async def _inventory_fixture(test_db):
     lot = Inventory(
         product_id=product.id,
         pharmacy_id=pharmacy.id,
-        quantity=10,
+        quantity=quantity,
         reserved_quantity=0,
         lot_number="MOVEMENT-LOT-001",
     )
@@ -288,3 +308,118 @@ async def test_database_rejects_movement_type_delta_mismatch(test_db):
     with pytest.raises(IntegrityError):
         await test_db.flush()
     await test_db.rollback()
+
+
+@pytest.mark.integration
+async def test_inventory_movement_rollback_preserves_balance_and_ledger(test_db):
+    """A caller rollback must undo both the balance projection and journal row."""
+    pharmacy, _product, lot = await _inventory_fixture(test_db)
+    pharmacy_id = pharmacy.id
+
+    await apply_inventory_movement(
+        test_db,
+        inventory_id=lot.id,
+        pharmacy_id=pharmacy.id,
+        movement_type="stock_adjustment",
+        quantity_delta=-3,
+        reserved_delta=0,
+        actor_type="system",
+        actor_user_id=None,
+        reason="Injected transaction rollback",
+        idempotency_key="movement-rollback-atomicity-0001",
+    )
+    await test_db.rollback()
+
+    await test_db.refresh(lot)
+    assert lot.quantity == 10
+    assert lot.reserved_quantity == 0
+    count = await test_db.scalar(
+        select(func.count())
+        .select_from(InventoryMovement)
+        .where(
+            InventoryMovement.pharmacy_id == pharmacy_id,
+            InventoryMovement.idempotency_key == "movement-rollback-atomicity-0001",
+        )
+    )
+    assert count == 0
+
+
+@pytest.mark.integration
+async def test_database_triggers_reject_update_delete_and_truncate(migrated_test_db):
+    """PostgreSQL must enforce append-only behavior below the ORM layer."""
+    from sqlalchemy.exc import DBAPIError
+
+    pharmacy, _product, lot = await _inventory_fixture(migrated_test_db)
+    movement = await apply_inventory_movement(
+        migrated_test_db,
+        inventory_id=lot.id,
+        pharmacy_id=pharmacy.id,
+        movement_type="stock_adjustment",
+        quantity_delta=-1,
+        reserved_delta=0,
+        actor_type="system",
+        actor_user_id=None,
+        reason="Append-only trigger test",
+        idempotency_key="movement-append-only-trigger-0001",
+    )
+    movement_id = movement.id
+    await migrated_test_db.commit()
+
+    statements = (
+        (
+            "UPDATE inventory_movements SET reason = 'tampered' WHERE id = :id",
+            {"id": movement.id},
+        ),
+        ("DELETE FROM inventory_movements WHERE id = :id", {"id": movement.id}),
+        ("TRUNCATE TABLE inventory_movements", {}),
+    )
+    for statement, parameters in statements:
+        with pytest.raises(DBAPIError):
+            await migrated_test_db.execute(text(statement), parameters)
+        await migrated_test_db.rollback()
+
+    persisted = await migrated_test_db.get(InventoryMovement, movement_id)
+    assert persisted is not None
+    assert persisted.reason == "Append-only trigger test"
+
+
+@pytest.mark.integration
+async def test_inventory_ledger_reconciles_on_hand_and_reserved_balances(test_db):
+    """Movement deltas from a zero baseline must equal the live lot projection."""
+    pharmacy, _product, lot = await _inventory_fixture(test_db, quantity=0)
+    movements = (
+        ("opening_balance", 10, 0, "opening"),
+        ("payment_reservation", 0, 4, "reserve"),
+        ("payment_failure", 0, -1, "release"),
+        ("payment_settlement", -2, -2, "settle"),
+        ("cash_sale", -1, 0, "cash-sale"),
+    )
+    for movement_type, quantity_delta, reserved_delta, key in movements:
+        await apply_inventory_movement(
+            test_db,
+            inventory_id=lot.id,
+            pharmacy_id=pharmacy.id,
+            movement_type=movement_type,
+            quantity_delta=quantity_delta,
+            reserved_delta=reserved_delta,
+            actor_type="system",
+            actor_user_id=None,
+            reason=f"Ledger reconciliation {key}",
+            idempotency_key=f"movement-reconcile-{key}-0001",
+        )
+    await test_db.commit()
+
+    journal = list(
+        (
+            await test_db.scalars(
+                select(InventoryMovement)
+                .where(InventoryMovement.inventory_id == lot.id)
+                .order_by(InventoryMovement.id)
+            )
+        ).all()
+    )
+    await test_db.refresh(lot)
+    assert sum(item.quantity_delta for item in journal) == lot.quantity == 7
+    assert sum(item.reserved_delta for item in journal) == lot.reserved_quantity == 1
+    assert journal[0].quantity_before == 0
+    assert journal[0].reserved_before == 0
