@@ -152,3 +152,14 @@ The UI role check is a convenience only. Backend `CurrentSuperuser` dependencies
 The match endpoint now performs a lightweight first pass over reference IDs/INN names and ingredient-name rows, using the same fuzzy similarity threshold as the matching service. It then hydrates ORM objects, related ingredients, and medicinal products only for the best 250 reference IDs before computing explainable product-level scores and returning the top 10 suggestions.
 
 This avoids materializing every DrugReference relationship graph in application memory for each review request. The lightweight name scan remains proportional to the catalog size; it deliberately preserves fuzzy matching rather than applying a restrictive exact/prefix-only SQL filter. A future database-specific trigram/full-text index can reduce scan cost after extension availability and query plans are verified on the target database.
+
+
+## Implementation status reconciliation — later source snapshot
+
+This audit records the historical baseline at commit `3d436a1b2280cb1e6d88a6c0664a1acf9b2c6dc9`. Its statement that persisted POS checkout was a critical gap was accurate for that inspected baseline, but it is no longer an accurate description of the later source snapshot `c6d35b828c1958f1bcb9077bbd0b6a71ef94613b`.
+
+The later snapshot includes a mounted `/api/v1/pos` router, transactional checkout, sale/payment/receipt records, FEFO allocation, inventory movement and outbox writes, a signed payment webhook, and integration tests in `tests/integration/test_pos_checkout.py`. The later backend implementation is therefore beyond the original audit's proposed POS step C.
+
+This does **not** mean the complete pharmacy POS workflow is finished: the active React POS feature currently returns `null`; checkout is not linked to patient/prescription validation; returns/refunds and cashier-shift reconciliation were not established by the later source audit; and the standalone lot-receipt endpoint is not a supplier purchase-order receiving lifecycle.
+
+For the current process-by-process evidence map, see [Pharmacy Workflow Implementation Traceability](../workflows/PHARMACY_WORKFLOW_TRACEABILITY.md). This addendum is source-level only; no production runtime or database was inspected.
