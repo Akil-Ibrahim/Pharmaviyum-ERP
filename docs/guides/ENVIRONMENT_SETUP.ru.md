@@ -164,7 +164,7 @@ Ragas находится в изолированной evaluation dependency gro
 
 ## 6. Конфигурация FastAPI Cloud для Demo
 
-FastAPI Cloud используется только для публичной Demo. Production использует тот же технологический стек приложения на отдельно управляемой платформе хостинга; сведения о провайдере, deploy credentials, release workflow и эксплуатационные процедуры находятся за пределами этого публичного репозитория.
+FastAPI Cloud используется только для публичной Demo. Production использует тот же технологический стек приложения и развёртывается на аптечном сервере через Ansible. Публичные playbooks определяют автоматизацию; реальные host inventory, per-site credentials, SSH access и approvals остаются под контролем оператора и никогда не коммитятся.
 
 Публичное приложение Demo размещается по адресу https://pharmaviyum-erp.fastapicloud.dev. Переменные приложения задаются в панели FastAPI Cloud Environment Variables, а deploy credentials — в защищённом GitHub Actions environment demo-pharmaviyum-erp.
 
