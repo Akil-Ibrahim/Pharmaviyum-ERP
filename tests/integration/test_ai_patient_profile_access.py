@@ -34,9 +34,7 @@ async def test_ai_patient_profile_requires_membership_and_audits_allowed_read(
     test_db.add(pharmacy)
     await test_db.flush()
     patient = await patient_factory.create(pharmacy_id=pharmacy.id)
-    test_db.add(
-        PharmacyMembership(user_id=2, pharmacy_id=pharmacy.id, is_active=True)
-    )
+    test_db.add(PharmacyMembership(user_id=2, pharmacy_id=pharmacy.id, is_active=True))
     await test_db.flush()
 
     response = await client.get(
