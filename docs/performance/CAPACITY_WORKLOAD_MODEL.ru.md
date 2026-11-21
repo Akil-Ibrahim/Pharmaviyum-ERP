@@ -95,3 +95,28 @@
 ## 8. Критерии готовности
 
 Переход к репрезентативному исполнению возможен после утверждения бизнес-владельцем нерешённых параметров из раздела 3. Capacity claim требует успешного staging-запуска, проверки репрезентативности нагрузки, анализа насыщения инфраструктуры, повторяемости и сохранённых артефактов. Успешный синтетический стресс-тест сам по себе не доказывает клиническую корректность, tenant isolation или Production readiness: это отдельные release gates.
+
+## 9. Ограничения текущего k6 стенда (подтверждены исходным кодом)
+
+Текущие `tests/load/k6/stage1_baseline.js` и `scripts/run_stage1_load_test.sh` имеют следующие границы:
+
+- `pharmacy_day` использует `shared-iterations`, параметры `CUSTOMER_VISITS` и `STAFF_VUS`; скрипт ограничивает число посещений 10 000 и VUs — 20.
+- Состав сценариев случайным образом выбирает поиск/список товаров, Drug Reference, чтение пациентов/заказов и manager reads. Три отдельные кассовые сессии и очередь касс в нём не моделируются.
+- Текущий read-сценарий не вызывает `POST /api/v1/pos/checkout`.
+- Опциональный сценарий `ENABLE_WRITES` создаёт/удаляет inventory record с нулевым остатком и создаёт/отменяет обычный заказ. Это не POS checkout и не должно учитываться как продажа.
+- В скрипте есть защита от production-like targets и staging opt-in для удалённой среды. При расширении её необходимо сохранить.
+- Сетевой объём 20 000 посещений превышает текущий лимит `CUSTOMER_VISITS` одного запуска; готового network workload сейчас нет.
+
+Backend contract checkout существует на уровне исходного кода: `POST /api/v1/pos/checkout`. Существующие integration tests формируют запрос с `pharmacy_id`, `idempotency_key`, `items` (product ID и quantity), `payment_method`, а для cash — `cash_received`. Для card-terminal дополнительно требуется обработка подписанного payment webhook. См. `tests/integration/test_pos_checkout.py`. Это ссылка на API/test contract, а не доказательство того, что k6 уже вызывает checkout.
+
+### Обязательная последовательность реализации transactional k6
+
+1. Добавить отдельный opt-in сценарий `pos_checkout`; не перегружать и не переименовывать существующий `pharmacy_day`.
+2. Требовать явный staging-only opt-in, disposable synthetic database, отдельные cashier identities с tenant scope, валидные synthetic product/lot fixtures и проверенный cleanup/restore.
+3. В профиле конкурентности одной аптеки моделировать ровно три cashier VUs. У каждого VU должна быть стабильная cashier identity и уникальный idempotency key для каждой новой продажи; повтор той же продажи обязан использовать тот же ключ.
+4. Для network-scale теста подготовить изолированные tenant fixtures и распределить cashier sessions по аптекам. Запуск на 300 VUs — upper-bound профиль, допустимый только после стабильных меньших этапов.
+5. Независимо проверить persisted postconditions после теста: количество sales/payments/receipts, lot allocations, inventory movements, outbox events, сохранение остатков и tenant isolation. Ошибочные или неоднозначные результаты должны проваливать сценарий.
+6. Card-terminal webhook тестировать отдельно и контролируемо; нельзя использовать production secrets для генерации подписей или подключать live payment provider.
+7. Сохранить текущую защиту от production-like URL и remote staging guards. Не добавлять production override.
+
+Пока этот сценарий не реализован и не пройден на зафиксированном commit в изолированном staging, transactional POS capacity имеет статус **NOT TESTED**. Существующий pharmacy-day workload остаётся симуляцией поиска и чтения.
