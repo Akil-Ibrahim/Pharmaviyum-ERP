@@ -38,7 +38,7 @@ Files: `src/pharmaviyum/schemas/patient.py`, `src/pharmaviyum/api/v1/endpoints/p
 
 **Remediation in this PR:** introduce `PatientSummaryResponse` as the standard contract for list/create/update/get/get-by-phone/visit. Standard patient endpoints no longer serialize clinical, insurance, consultation, or purchase relations. Create/update/summary repository reads explicitly disable relationship eager loading. The AI profile is narrowed to a purpose-bound clinical safety context containing only patient_id, allergies, and conditions; its repository query excludes insurance, consultation, and purchase relations. Regression tests assert the response allowlist and AI-profile schema contract.
 
-**Remaining action:** keep the broad `PatientResponse` model out of route contracts; add separately authorized, audited clinical, insurance, consultation, and purchase-history endpoints only when a real workflow requires them. Audit the AI profile endpoint's authorization and PHI access logging before treating it as production-ready.
+**Remediation in follow-up PR:** `GET /patients/{patient_id}/ai-profile` now requires an explicit purpose code and pharmacy ID, denies platform superusers, requires active `PharmacyMembership`, verifies active patient ownership in SQL, and writes metadata-only allowed/denied `PHIAccessAudit` decisions. Request IDs are bounded to 128 characters. Integration tests cover allowed access, missing membership, cross-pharmacy denial, and superuser denial. The broad `PatientResponse` remains legacy-only and must stay out of route contracts. This closes the AI-profile-specific gap, not all patient PHI read surfaces.
 
 ### F-03 — Patient lifecycle events carry linkable identifiers
 
