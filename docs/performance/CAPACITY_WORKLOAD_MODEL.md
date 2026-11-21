@@ -12,9 +12,11 @@
 | Employees (all roles) | 6 | 600 |
 | Public operating hours | 14 hours/day (08:00–22:00 local time) | 14 hours/day (08:00–22:00 local time) |
 | POS cash registers / checkout stations | 3 | 300 |
+| Dedicated manager-office computer/workstation | 1 | 100 |
+| Total physical workstation/computer positions | 4 | 400 |
 | Customer visits per operating day | 200 | 20,000 |
 
-The six employees are total staff, not six pharmacists. The pharmacist/manager/cashier role split is not specified by the canonical benchmark. The existing Stage 1 scenario proposes a 2-on/2-off roster, up to three on-shift pharmacy staff plus a manager, and opening preparation from 07:30; treat these as provisional workload assumptions until pharmacy operations confirms them. The three register workflows are included within the six staff positions, not additional employees.
+The six employees are total staff, not six pharmacists. The pharmacist/manager/cashier role split is not specified by the canonical benchmark. The existing Stage 1 scenario proposes a 2-on/2-off roster, up to three on-shift pharmacy staff plus a manager, and opening preparation from 07:30; treat these as provisional workload assumptions until pharmacy operations confirms them. The three register workflows are included within the six staff positions, not additional employees. Each pharmacy also has one dedicated manager-office computer in addition to the three POS stations. This is an equipment/workstation count, not an additional employee or an automatic extra concurrent virtual user.
 
 Three POS stations are physical/logical checkout capacity per pharmacy. This is not proof that three checkouts are continuously active, nor that 300 network-wide transactions occur at the same instant. A three-cashier-per-pharmacy concurrent checkout test is a deliberate stress scenario to validate register concurrency; 300 concurrent register sessions across the network is an upper-bound synthetic profile, not a forecast.
 
@@ -25,6 +27,7 @@ Three POS stations are physical/logical checkout capacity per pharmacy. This is 
 - **600 employees** is a staffing assumption, not a concurrent-user count.
 - The 14-hour public operating window is 08:00–22:00 local pharmacy time. Opening preparation and closing tasks may occur outside it.
 - **300 POS stations** is installed checkout capacity, not observed concurrent use.
+- **100 manager-office computers** are additional workstation equipment across the network; do not convert them into 100 additional employees or VUs without an approved usage/shift model.
 - No RPS, arrival-rate curve, peak-hour multiplier, concurrent session count, transaction-per-visit ratio, AI-request ratio or background-job volume can be derived safely from these inputs alone.
 - Do not multiply daily visits by guessed endpoint counts or convert visits/day directly into VUs.
 
@@ -78,7 +81,7 @@ Every run must record:
 
 - commit SHA, branch, timestamp and environment;
 - staging topology and resource limits (API replicas/CPU/memory, DB compute/pool, Redis limits);
-- tenant count, pharmacy count, employees/roles, POS stations and active cashier sessions;
+- tenant count, pharmacy count, employees/roles, POS stations, manager-office workstations and active cashier/manager sessions;
 - visit arrival curve, journey mix, basket distribution and think time;
 - VUs, arrival rate, duration, ramp-up and warm-up;
 - API throughput, completed business workflows, p50/p90/p95/p99, errors/timeouts and failed checks;
@@ -96,7 +99,7 @@ The repository also contains older single-pharmacy load-test scenarios that ment
 
 ## 8. Network target and intermediate milestone
 
-The canonical target is 100 pharmacies, 600 rostered employees, 300 POS stations and 20,000 visits per operating day. The existing 50-pharmacy profile is an intermediate Stage B milestone (10,000 visits/day and 150 POS stations), not the final network target. Progress to 100 only after one-pharmacy correctness and 50-pharmacy synchronization/isolation gates pass. Do not assume all 100 branches peak simultaneously without an approved arrival correlation model.
+The canonical target is 100 pharmacies, 600 rostered employees, 300 POS stations, 100 dedicated manager-office computers (400 workstation/computer positions total) and 20,000 visits per operating day. The existing 50-pharmacy profile is an intermediate Stage B milestone (10,000 visits/day and 150 POS stations), not the final network target. Progress to 100 only after one-pharmacy correctness and 50-pharmacy synchronization/isolation gates pass. Do not assume all 100 branches peak simultaneously without an approved arrival correlation model.
 
 ## 9. Exit criteria
 
