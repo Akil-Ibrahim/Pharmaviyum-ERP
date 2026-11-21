@@ -29,7 +29,7 @@ Configure these secrets for the protected GitHub Actions environment demo-pharma
 - DEMO_DATABASE_URL — connection URL for the isolated Demo database, used for read-only schema compatibility checks.
 - VITE_CLERK_PUBLISHABLE_KEY — optional public frontend build key, only if required by the current sign-in configuration.
 
-Do not reuse Production credentials or point any Demo secret at a Production resource. The workflow intentionally does not read FASTAPI_CLOUD_APP_ID, FASTAPI_CLOUD_TOKEN, DATABASE_URL or any Production environment secret.
+Do not reuse Production credentials or point any Demo secret at a Production resource. The workflow reads only the Demo-specific GitHub secrets listed above. At deploy time, the Demo token and app ID are mapped to the standard FASTAPI_CLOUD_TOKEN and FASTAPI_CLOUD_APP_ID environment variable names expected by the FastAPI Cloud CLI. For the read-only schema check, DEMO_DATABASE_URL is mapped to the DATABASE_URL process variable. No Production GitHub secret is referenced.
 
 ## 4. Demo FastAPI Cloud application configuration
 
