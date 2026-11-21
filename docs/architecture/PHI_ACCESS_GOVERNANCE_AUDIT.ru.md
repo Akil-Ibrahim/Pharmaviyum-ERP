@@ -75,6 +75,17 @@
 
 **Требование безопасности:** обычная POS-синхронизация не должна превращаться в транспорт пациентских записей или клинического контекста. Не добавлять PHI в POS event contract без отдельного одобренного clinical synchronization design. Не записывать raw Inbox payload в логи.
 
+### 1.6 Другие patient-facing поверхности, выборочно проверенные
+
+Целевой поиск по исходному коду выявил дополнительные поверхности; проверка была выборочной, а не исчерпывающей:
+
+- `src/pharmaviyum/api/v1/endpoints/patients.py`: handlers списка, карточки, поиска по телефону, статистики и AI-профиля вызывают `resolve_pharmacy_scope` и передают полученную область в patient service. Для обычных пользователей helper требует активное membership или единственное однозначное membership. Для superuser отсутствие `pharmacy_id` намеренно сохраняет глобальную область. Следовательно, patient API учитывает tenant для обычных пользователей, но глобальное чтение superuser остаётся возможным и требует отдельной управляемой support policy.
+- `src/pharmaviyum/ai/mcp/tools/patient_history.py`: запрос пациента и подсчёты prescriptions/orders явно фильтруются по `pharmacy_id` из доверенного MCP context; один только tool input не выбирает tenant. Это положительный контроль в проверенном пути, но он не заменяет аудит доступа.
+- `src/pharmaviyum/api/v1/orders.py`: чтение заказа разрешает pharmacy scope и сравнивает аптеку связанного пациента. Superuser может оставаться в глобальной области, если scope не передан. Создание и изменение статуса заказа доступны только superuser и должны входить в review привилегированного доступа.
+- `src/pharmaviyum/api/v1/ai.py`: AI-запросы требуют авторизованный pharmacy context и проверяют optional patient ID относительно этой аптеки до вызова harness; session IDs HMAC-scoped по pharmacy, user и patient. Это положительный authorization/session-isolation контроль, но исходный код не демонстрирует отдельный PHI read audit event.
+
+В репозитории также есть patient repositories и dashboard aggregates. Полный call graph, query filters, response fields и role policy остаются частью обязательной исчерпывающей инвентаризации. Результаты поиска сами по себе не доказывают безопасность каждого caller.
+
 ## 2. Целевая политика
 
 ### 2.1 Решение об авторизации
