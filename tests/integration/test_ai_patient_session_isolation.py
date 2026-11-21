@@ -263,10 +263,11 @@ def test_api_session_scope_binds_tenant_user_patient_and_secret(
     assert len(
         {base, different_patient, no_patient, different_user, different_pharmacy}
     ) == 5
+    prefix, digest = base.split(":", maxsplit=2)[1:]
+    assert prefix == "v3"
+    assert len(digest) == 64
+    assert all(character in "0123456789abcdef" for character in digest)
     assert "reused-session" not in base
-    assert "101" not in base
-    assert "42" not in base
-    assert "7" not in base
 
     monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-test-secret")
     rotated = _scoped_session_id("reused-session", tenant, user, 101)
