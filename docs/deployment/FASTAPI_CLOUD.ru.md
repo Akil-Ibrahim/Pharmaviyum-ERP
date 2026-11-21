@@ -26,8 +26,9 @@ Workflow использует выбранный commit из `main`, прове�
 
 - `FASTAPI_CLOUD_TOKEN` — deploy token FastAPI Cloud.
 - `FASTAPI_CLOUD_APP_ID` — ID целевого приложения FastAPI Cloud.
-- `DATABASE_URL` — sync или async PostgreSQL URL той же production БД, что использует приложение. Workflow использует его для read-only catalog exclusion checks и очистки временного smoke-test пользователя. Cleanup нормализует `postgresql+asyncpg://` / `postgres+asyncpg://` в URL, совместимый с psycopg.
-- `VITE_CLERK_PUBLISHABLE_KEY` — необязательный build-time public frontend key, если он нужен текущей конфигурации входа.
+- `DATABASE_URL` — PostgreSQL URL ограниченной production runtime-role, совпадающий с `DATABASE_URL` приложения FastAPI Cloud. Deploy workflow использует его для read-only catalog exclusion checks и очистки временного smoke-test пользователя.
+- `MIGRATION_DATABASE_URL` — отдельный login URL только для production migration workflow. Он должен указывать на тот же проверенный Neon host/database, использовать другую non-superuser role и быть member роли `neondb_owner`. Не задавайте его в FastAPI Cloud и не используйте для application traffic.
+- `VITE_CLERK_PUBLISHABLE_KEY — необязательный build-time public frontend key, если он нужен текущей конфигурации входа.
 
 Не помещайте значения секретов в репозиторий, workflow inputs, issue comments или чат. Не выводите credentials в CI logs.
 
@@ -60,7 +61,7 @@ Workflow использует выбранный commit из `main`, прове�
 
 Значения QwenCloud описывают текущий demo profile, а не безлимитный бесплатный production SLA. В консоли провайдера включите **Free quota only** для выбранной модели и проверьте остаток/срок действия квоты до включения запросов. Одного application flag недостаточно для enforcement биллинга. Генерация QwenCloud и embeddings — отдельные возможности: embedding provider нужно настроить и проверить независимо до включения cloud RAG.
 
-Используйте одну и ту же production БД для FastAPI Cloud `DATABASE_URL` и GitHub Actions `DATABASE_URL`. Ограничьте сетевой доступ к PostgreSQL и Redis необходимыми источниками.
+FastAPI Cloud `DATABASE_URL` и GitHub Actions `DATABASE_URL` должны использовать одну и ту же ограниченную runtime-role. Production migration workflow использует отдельный credential `MIGRATION_DATABASE_URL` и проверяет, что это другая role с необходимым owner-level membership для миграций. Ограничьте сетевой доступ к PostgreSQL и Redis необходимыми источниками.
 
 ## 4. Ручная процедура deployment
 
