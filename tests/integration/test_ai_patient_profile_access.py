@@ -27,7 +27,7 @@ async def _authenticate_as_pharmacist(client, test_db):
 
 @pytest.mark.integration
 async def test_ai_patient_profile_requires_membership_and_audits_allowed_read(
-    authenticated_client, test_db, patient_factory
+    authenticated_client, test_db, patient_factory, mock_cache_service
 ):
     client = await _authenticate_as_pharmacist(authenticated_client, test_db)
     pharmacy = Pharmacy(name="AI Profile Pharmacy A", code="AI-PROFILE-A")
