@@ -216,7 +216,7 @@ Frontend-зависимости определяются в следующих �
 
 ## Примечания по runtime-инфраструктуре
 
-- Hosted Production использует подтверждённый проект Neon PostgreSQL 18; Demo должна использовать отдельную PostgreSQL 18. Disposable development/CI Compose также ориентирован на PostgreSQL 18 с pgvector 0.8.7.
+- Production PostgreSQL работает локально на аптечном сервере в рамках утверждённого Ansible/Pharmacy Edge profile; Demo использует отдельную изолированную БД. Disposable development/CI Compose ориентирован на PostgreSQL 18 с pgvector 0.8.7.
 - Приложение использует Python-клиент pgvector и расширение PostgreSQL для векторного поиска, если оно включено; это отдельно версионируемые компоненты.
 - Hosted Production и Demo используют отдельные managed Redis endpoints. Redis 8.8.4 — целевая версия совместимости; точная версия managed-сервера контролируется провайдером и должна быть подтверждена по provider metadata до релиза. Disposable development/CI Compose использует Redis 8.8.4.
 - Шаблон Ansible для Pharmacy Edge использует Valkey; этот серверный профиль намеренно отделён от локального Redis.
