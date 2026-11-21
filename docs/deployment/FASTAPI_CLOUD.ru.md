@@ -27,7 +27,7 @@ Workflow использует выбранный commit из `main`, прове�
 - `FASTAPI_CLOUD_TOKEN` — deploy token FastAPI Cloud.
 - `FASTAPI_CLOUD_APP_ID` — ID целевого приложения FastAPI Cloud.
 - `DATABASE_URL` — PostgreSQL URL ограниченной production runtime-role, совпадающий с `DATABASE_URL` приложения FastAPI Cloud. Deploy workflow использует его для read-only catalog exclusion checks и очистки временного smoke-test пользователя.
-- `MIGRATION_DATABASE_URL` — отдельный login URL только для production migration workflow. Он должен указывать на тот же проверенный Neon host/database, использовать другую non-superuser role и быть member роли `neondb_owner`. Не задавайте его в FastAPI Cloud и не используйте для application traffic.
+- `MIGRATION_DATABASE_URL` — отдельный login URL только для production migration workflow. Он должен указывать на тот же проверенный Neon host/database, использовать другую non-superuser role и наследовать необходимые privileges от `neondb_owner`. Не задавайте его в FastAPI Cloud и не используйте для application traffic.
 - `VITE_CLERK_PUBLISHABLE_KEY` — необязательный build-time public frontend key, если он нужен текущей конфигурации входа.
 
 Не помещайте значения секретов в репозиторий, workflow inputs, issue comments или чат. Не выводите credentials в CI logs.
