@@ -2,7 +2,7 @@
 
 Руководство описывает конфигурацию локальной разработки, Demo на FastAPI Cloud и Production на аптечном сервере под управлением Ansible. Секреты храните только в локальных игнорируемых файлах или менеджере секретов. Не добавляйте реальные credentials в Git.
 
-Hosted Production и Demo должны соответствовать [единому baseline инфраструктуры](../deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md). Для Production подтверждена Neon PostgreSQL 18. Для Demo требуется отдельная PostgreSQL 18 и отдельный managed Redis endpoint; нельзя совместно использовать Production credentials, данные или Redis namespaces. Версия hosted Redis контролируется провайдером: Redis 8.8.4 — целевая совместимость, но не подтверждённая версия runtime до проверки provider metadata.
+Production работает на аптечном сервере и provision/release выполняется через Ansible; PostgreSQL и supporting services находятся локально в рамках утверждённого Pharmacy Edge deployment profile. Demo размещается в FastAPI Cloud с изолированными Demo data services. Запрещено совместно использовать credentials БД, application secrets, cache namespaces и данные между окружениями. См. [границу развёртывания Production/Demo](../deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md) и [Ansible rollout Pharmacy Edge](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md).
 
 ## 1. Источники конфигурации и приоритет
 
