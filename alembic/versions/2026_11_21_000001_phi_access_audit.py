@@ -64,6 +64,9 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Refuse to remove the audit store while retained evidence exists."""
     bind = op.get_bind()
+    # Serialize the emptiness check with all writers; otherwise an INSERT could
+    # race between SELECT EXISTS and DROP TABLE and be silently discarded.
+    bind.execute(sa.text("LOCK TABLE phi_access_audits IN ACCESS EXCLUSIVE MODE"))
     has_audit_records = bind.execute(
         sa.text("SELECT EXISTS (SELECT 1 FROM phi_access_audits)")
     ).scalar_one()
