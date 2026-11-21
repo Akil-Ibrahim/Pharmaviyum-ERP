@@ -36,7 +36,7 @@ Record timestamp, deployed SHA and redacted response. Never publish tokens or co
 ## Incident triage
 
 ### API unavailable
-Check deployment state, startup logs and recent changes. Distinguish process failure from dependency readiness failure. Stop promotion if the new revision is unhealthy. Use the hosting platform's supported recovery path to restore the last known-good application revision. Do not run a database downgrade or destructive cleanup as the first response.
+Check the Ansible rollout result, target host, container state, startup logs and recent changes. Distinguish process failure from dependency readiness failure. Stop the rollout if the new revision is unhealthy. Use the approved Ansible rollback procedure and the previous verified immutable image digest. Do not run a database downgrade or destructive cleanup as the first response.
 
 ### PostgreSQL unavailable
 Check provider status, network policy, connection limits and application errors. Avoid restart loops and unbounded retries. Do not reset, recreate or restore the database without an approved incident owner and verified recovery point. Stop promotion if schema compatibility is uncertain.
