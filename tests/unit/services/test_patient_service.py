@@ -102,11 +102,7 @@ class TestPatientServiceCreate:
         mock_event_bus.emit.assert_called_once()
         event = mock_event_bus.emit.call_args.args[0]
         assert event.event_type == "patient.created"
-        assert event.data == {
-            "patient_id": 1,
-            "pharmacy_id": 731,
-            "created_by": "user-7",
-        }
+        assert event.data == {"pharmacy_id": 731}
         assert "full_name" not in event.data
         assert "phone" not in event.data
         assert "email" not in event.data
