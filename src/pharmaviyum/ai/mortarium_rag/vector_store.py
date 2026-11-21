@@ -77,7 +77,7 @@ class PgVectorStore:
 
         if not schema.table_exists:
             raise RuntimeError(
-                f"pgvector table public.{self.table_name} is missing; "
+                f"pgvector table {self.table_name} is missing from the active search path; "
                 "apply the Alembic database migrations before enabling RAG."
             )
         if not schema.vector_type_exists:
