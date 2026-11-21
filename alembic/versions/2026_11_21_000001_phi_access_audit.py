@@ -8,6 +8,7 @@ down_revision = "2026_11_19_000001"
 branch_labels = None
 depends_on = None
 
+
 def upgrade() -> None:
     op.create_table(
         "phi_access_audits",
@@ -34,21 +35,51 @@ def upgrade() -> None:
         "patient_purchases",
         ["patient_id", "purchased_at", "id"],
     )
-    op.execute("""
+    op.execute(
+        """
         CREATE FUNCTION reject_phi_access_audit_mutation() RETURNS trigger
         LANGUAGE plpgsql AS $$
         BEGIN
             RAISE EXCEPTION 'phi_access_audits is append-only';
         END;
         $$
-    """)
-    op.execute("""
+        """
+    )
+    op.execute(
+        """
         CREATE TRIGGER trg_phi_access_audits_append_only
         BEFORE UPDATE OR DELETE ON phi_access_audits
         FOR EACH ROW EXECUTE FUNCTION reject_phi_access_audit_mutation()
-    """)
+        """
+    )
+    op.execute(
+        """
+        CREATE TRIGGER trg_phi_access_audits_no_truncate
+        BEFORE TRUNCATE ON phi_access_audits
+        FOR EACH STATEMENT EXECUTE FUNCTION reject_phi_access_audit_mutation()
+        """
+    )
+
 
 def downgrade() -> None:
+    """Refuse to remove the audit store while retained evidence exists."""
+    bind = op.get_bind()
+    # Serialize the emptiness check with all writers; otherwise an INSERT could
+    # race between SELECT EXISTS and DROP TABLE and be silently discarded.
+    bind.execute(sa.text("LOCK TABLE phi_access_audits IN ACCESS EXCLUSIVE MODE"))
+    has_audit_records = bind.execute(
+        sa.text("SELECT EXISTS (SELECT 1 FROM phi_access_audits)")
+    ).scalar_one()
+    if has_audit_records:
+        raise RuntimeError(
+            "Cannot downgrade PHI access audit migration while audit records exist; "
+            "archive and verify the audit evidence before performing a controlled "
+            "retention migration."
+        )
+
+    op.execute(
+        "DROP TRIGGER IF EXISTS trg_phi_access_audits_no_truncate ON phi_access_audits"
+    )
     op.execute(
         "DROP TRIGGER IF EXISTS trg_phi_access_audits_append_only ON phi_access_audits"
     )
