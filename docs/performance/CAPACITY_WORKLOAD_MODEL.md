@@ -95,3 +95,28 @@ The repository also contains older single-pharmacy load-test scenarios that ment
 ## 8. Exit criteria
 
 Capacity planning is ready for representative execution only when the business owner has approved the unresolved workload dimensions in section 3. A capacity claim requires successful staged execution, workload representativeness review, infrastructure saturation analysis, repeatability and retained artifacts. Passing a synthetic stress test does not itself prove clinical correctness, tenant isolation or production readiness; those remain independent release gates.
+
+## 9. Current k6 harness constraints (source-verified)
+
+The current `tests/load/k6/stage1_baseline.js` and `scripts/run_stage1_load_test.sh` have these boundaries:
+
+- `pharmacy_day` uses `shared-iterations`, `CUSTOMER_VISITS` and `STAFF_VUS`; the script validates a maximum of 10,000 visits and 20 VUs.
+- The journey mix is randomized across product search/list, drug-reference search, patient/order reads and manager reads. It does not model three named cashier sessions or a register queue.
+- The current read journey does not call `POST /api/v1/pos/checkout`.
+- The optional `ENABLE_WRITES` scenario creates/deletes a zero-stock inventory record and creates/cancels a generic order. It is not POS checkout and must not be counted as a sale.
+- The script has production-like target guards and remote-target staging opt-in. Preserve these guards in any extension.
+- The current 20,000-visit network target exceeds the single-run `CUSTOMER_VISITS` validation ceiling and is not a ready-to-run network workload.
+
+The backend checkout contract is source-observed at `POST /api/v1/pos/checkout`. Existing integration tests construct a request with `pharmacy_id`, `idempotency_key`, `items` (product ID and quantity), `payment_method`, and `cash_received` for cash. Card-terminal flows additionally require signed payment webhook settlement. See `tests/integration/test_pos_checkout.py`. This is an API/test contract reference, not evidence that k6 exercises it.
+
+### Required implementation sequence for transactional k6
+
+1. Add a separate opt-in `pos_checkout` scenario; do not overload or relabel `pharmacy_day`.
+2. Require an explicit staging-only opt-in, disposable synthetic database, dedicated tenant-scoped cashier identities, valid synthetic product/lot fixtures, and verified cleanup/restore.
+3. Model exactly three cashier VUs per pharmacy in the single-pharmacy concurrency profile. Each VU must have a stable cashier identity and unique idempotency key per intended sale; retries of the same sale must reuse the same key.
+4. For network-scale testing, provision isolated tenant fixtures and distribute cashier sessions across pharmacies. A 300-VU run is an upper-bound profile and must only follow stable smaller runs.
+5. Validate persisted postconditions independently after the run: sale/payment/receipt counts, lot allocations, inventory movements, outbox events, stock conservation, and tenant isolation. Failed or ambiguous outcomes must fail the scenario.
+6. Keep card-terminal webhook tests separately controlled; do not synthesize provider signatures from production secrets or use a live payment provider.
+7. Keep the current production-like URL rejection and remote staging guards. Never add a production override.
+
+Until this scenario exists and passes on a recorded commit in isolated staging, transactional POS capacity remains **NOT TESTED**. The existing read-only pharmacy-day workload remains a search/lookup simulation.
