@@ -14,7 +14,7 @@
 
 | Компонент | Ответственность | Проверка |
 |---|---|---|
-| FastAPI Cloud web app | API и frontend | Deployment state, logs, /health, /ready, authenticated smoke tests |
+| Production web application (отдельно управляемый хостинг) | API и frontend | Deployment state, logs, /health, /ready и authenticated smoke tests; platform-specific procedures находятся за пределами репозитория |
 | PostgreSQL | Транзакционные данные и checkpoints | Состояние провайдера, connections, latency, возраст backup и доказательства restore |
 | Redis-compatible service | Cache и dialogue memory | Доступность, memory/connection limits, evictions и latency |
 | Celery worker | Асинхронные задачи, например ingestion | Worker health, queue depth, возраст задач, retries и failed tasks |
@@ -59,7 +59,7 @@
 
 ## Release и rollback
 
-Используйте [Runbook релиза](./RELEASE_RUNBOOK.ru.md) и [развёртывание FastAPI Cloud](../deployment/FASTAPI_CLOUD.ru.md) как канонические процедуры.
+Процедуры Production release и rollback находятся в закрытой документации Production operations и не входят в этот публичный репозиторий. Публичный [runbook FastAPI Cloud Demo](../deployment/FASTAPI_CLOUD.ru.md) относится только к Demo и не должен использоваться для Production.
 
 До релиза проверьте CI для последнего SHA, approval, backup/restore evidence, migration plan, environment variables, smoke tests и rollback target.
 
