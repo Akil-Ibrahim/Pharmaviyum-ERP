@@ -81,4 +81,4 @@ Production configuration должна задавать явные CORS origins. 
 
 Изменения production behavior выполняются через reviewed commits/PRs. Прямые изменения production infrastructure допустимы только как emergency action.
 
-Ветка `main` — каноническая release branch. Hosted application deployment выполняется в FastAPI Cloud; database services, migrations, health checks, backups/restore, observability и rollback остаются отдельными требованиями production readiness.
+Ветка `main` — каноническая integration branch публичной Demo. FastAPI Cloud размещает только Demo. Production использует тот же технологический стек приложения на отдельно управляемой платформе хостинга; сведения о провайдере, deployment, migrations и release operations находятся за пределами публичного репозитория. Production database services, health checks, backups/restore, observability и rollback остаются отдельными требованиями readiness.
