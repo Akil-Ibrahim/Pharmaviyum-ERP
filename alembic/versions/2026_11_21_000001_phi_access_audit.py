@@ -1,10 +1,10 @@
 """Create metadata-only PHI access audit records."""
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision = "2026_11_21_000001"
-down_revision = "2026_11_16_000001"
+down_revision = "2026_11_19_000001"
 branch_labels = None
 depends_on = None
 
@@ -19,12 +19,21 @@ def upgrade() -> None:
         sa.Column("decision", sa.String(length=16), nullable=False),
         sa.Column("purpose", sa.String(length=48), nullable=False),
         sa.Column("request_id", sa.String(length=128), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.func.now(),
+        ),
     )
     op.create_index("ix_phi_access_audits_actor_id", "phi_access_audits", ["actor_id"])
     op.create_index("ix_phi_access_audits_pharmacy_id", "phi_access_audits", ["pharmacy_id"])
     op.create_index("ix_phi_access_audits_patient_id", "phi_access_audits", ["patient_id"])
-    op.create_index("ix_patient_purchases_patient_purchased_at_id", "patient_purchases", ["patient_id", "purchased_at", "id"])
+    op.create_index(
+        "ix_patient_purchases_patient_purchased_at_id",
+        "patient_purchases",
+        ["patient_id", "purchased_at", "id"],
+    )
     op.execute("""
         CREATE FUNCTION reject_phi_access_audit_mutation() RETURNS trigger
         LANGUAGE plpgsql AS $$
@@ -40,9 +49,14 @@ def upgrade() -> None:
     """)
 
 def downgrade() -> None:
-    op.execute("DROP TRIGGER IF EXISTS trg_phi_access_audits_append_only ON phi_access_audits")
+    op.execute(
+        "DROP TRIGGER IF EXISTS trg_phi_access_audits_append_only ON phi_access_audits"
+    )
     op.execute("DROP FUNCTION IF EXISTS reject_phi_access_audit_mutation()")
-    op.drop_index("ix_patient_purchases_patient_purchased_at_id", table_name="patient_purchases")
+    op.drop_index(
+        "ix_patient_purchases_patient_purchased_at_id",
+        table_name="patient_purchases",
+    )
     op.drop_index("ix_phi_access_audits_patient_id", table_name="phi_access_audits")
     op.drop_index("ix_phi_access_audits_pharmacy_id", table_name="phi_access_audits")
     op.drop_index("ix_phi_access_audits_actor_id", table_name="phi_access_audits")
