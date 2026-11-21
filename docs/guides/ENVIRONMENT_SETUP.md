@@ -191,7 +191,7 @@ The Demo deployment workflow requires:
 - DEMO_DATABASE_URL — isolated Demo database URL for read-only schema checks.
 - VITE_CLERK_PUBLISHABLE_KEY — only if required by the frontend build/sign-in configuration.
 
-The workflow must not read Production credentials or target Production infrastructure. It does not use FASTAPI_CLOUD_TOKEN, FASTAPI_CLOUD_APP_ID, DATABASE_URL or MIGRATION_DATABASE_URL.
+The workflow must not read Production credentials or target Production infrastructure. It reads only the Demo-specific secrets above; DEMO_DATABASE_URL is mapped to the DATABASE_URL process variable for the read-only schema check.
 
 ### Demo release controls
 
