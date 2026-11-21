@@ -67,6 +67,25 @@
 | OP-02 | Deployment, rollback и release control | [FastAPI Cloud Runbook](../deployment/FASTAPI_CLOUD.ru.md), [Release Runbook](../operations/RELEASE_RUNBOOK.ru.md) | CI workflows и ручной hosted deployment описаны. Green CI на docs branch не является доказательством production deployment. | L0 — Документировано | Проверить protected branch rules, required checks, artifact provenance, deployment approval, post-deploy smoke tests и rollback rehearsal на текущем release path. |
 | BV-01 | Бизнес-KPI и ограничения NDA | [Business Value and KPI](../workflows/PHARMACY_BUSINESS_VALUE_AND_KPIS.ru.md) | KPI framework разделяет результаты Pharmacist, Pharmacy и Company; benchmark требует измеримых доказательств. | L0 — Документировано | Привязать каждый KPI к event definition, источнику, знаменателю, когорте и окну измерения. Не публиковать финансовые метрики под NDA и не заявлять эффект без воспроизводимых измерений. |
 
+
+## 2.1 Прицельная проверка PHI исходников — 2026-11-21
+
+Проведена read-only проверка текущего исходного кода `main` в дополнение к аудитам PHI governance и read surfaces (указанный в аудите baseline: `c6d35b828c1958f1bcb9077bbd0b6a71ef94613b`). Это доказательства уровня исходного кода; база данных, Production runtime и данные пациентов не использовались.
+
+Подтверждённая реализация и ограничения доказательств:
+
+- Маршруты списка, поиска по телефону и чтения `GET /api/v1/patients/{patient_id}` разрешают pharmacy scope для обычных пользователей. `resolve_pharmacy_scope` позволяет superuser не указывать `pharmacy_id`, что намеренно даёт глобальную область доступа. Unit-тест `tests/unit/modules/auth/test_tenant.py::test_superuser_can_use_global_scope` явно закрепляет это поведение.
+- Маршруты создания/изменения/удаления пациента доступны только superuser. В create-маршруте `pharmacy_id` необязателен; если superuser его не передаёт, сервис может создать пациента с nullable `Patient.pharmacy_id`. Это путь создания записи без владельца, обнаруженный в коде, а не доказательство наличия таких записей в Production.
+- `PatientResponse` включает состояния и заметки о лечении, аллергии, номер страхового полиса, консультации и историю покупок. Маршруты чтения по ID и телефону возвращают этот широкий DTO. Минимизация полей по назначению для этих путей не доказана.
+- `GET /patient-purchases/` требует superuser и явный `pharmacy_id`, соединяет `Patient` и фильтрует по `Patient.pharmacy_id`. Текущие regression tests компилируют SQL с mock-объектами; они не доказывают двухтенантную изоляцию на сохранённых в БД записях.
+- `AuditLog` — общая модель, ориентированная на аудит изменений. Проверенные patient read handlers не создают отдельное событие разрешённого/запрещённого доступа к PHI. Append-only enforcement на уровне БД этой проверкой исходников не подтверждён.
+
+Связанные исходники и тесты: `src/pharmaviyum/api/v1/endpoints/patients.py`, `src/pharmaviyum/modules/auth/tenant.py`, `src/pharmaviyum/services/patient.py`, `src/pharmaviyum/models/patients/patient.py`, `src/pharmaviyum/schemas/patient.py`, `src/pharmaviyum/models/audit_log.py`, `src/pharmaviyum/api/v1/patient_purchases.py`, `tests/unit/modules/auth/test_tenant.py`, `tests/unit/test_patient_purchases_scope.py`.
+
+**Уровни доказательств:** SE-01 остаётся **L1** (в коде есть tenant-aware controls, но глобальный привилегированный scope и двухтенантное негативное доказательство на уровне БД остаются открытыми). SE-02 остаётся **L0** для требования отдельного PHI access audit и минимизации: общая audit-модель существует, но необходимый PHI access contract и его enforcement не подтверждены. Не повышать уровни только на основании этой проверки исходников.
+
+Следующие критерии выхода: требовать явный управляемый pharmacy context при создании пациента; внедрить DTO с полями по назначению; определить ограниченную по времени и обязательную к указанию причины privileged-support policy; реализовать надёжный аудит разрешённых/запрещённых обращений к PHI с append-only enforcement; выполнить двухтенантные integration tests на синтетических данных, включая отказ для записей без владельца и поведение при сбое аудита.
+
 ## 3. Приоритетные release blockers
 
 Это не косметические правки документации: для соответствующих процессов необходимы реализация и доказательства до объявления их production-ready.
