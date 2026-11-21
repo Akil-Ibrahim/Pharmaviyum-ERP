@@ -38,7 +38,7 @@ Tracing is disabled by default to avoid adding instrumentation overhead when no 
 | `OTEL_INCLUDE_FASTAPI_REQUEST_SPANS` | `false` | Development/test-only opt-in for FastAPI request auto-spans |
 | `OTEL_INCLUDE_SENSITIVE_CLIENT_SPANS` | `false` | Development/test-only opt-in for SQLAlchemy and HTTPX auto-spans |
 
-For the public Demo, set one OTLP endpoint on the FastAPI Cloud Demo application, for example. Production telemetry endpoints are configured in its separately managed hosting environment.
+For the public Demo, configure the OTLP endpoint on the FastAPI Cloud Demo application. For Production, configure telemetry endpoints and collector access on the pharmacy server through the approved Ansible-managed environment. Never send patient-identifying payloads or secrets to telemetry.
 
 ```dotenv
 OTEL_ENABLED=true
