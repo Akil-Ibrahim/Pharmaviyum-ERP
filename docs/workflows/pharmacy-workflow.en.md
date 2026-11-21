@@ -649,4 +649,6 @@ For every AI-assisted workflow, enforce role/tenant/patient authorization before
 
 ## Implementation traceability
 
+See the [P0 Pharmacist Workspace implementation and acceptance gates](./PHARMACIST_WORKSPACE_P0_ACCEPTANCE.md) for the delivery contract covering POS UI, patient/prescription linkage, tenant-scoped patient history and staged Mortarium isolation validation.
+
 See the [Pharmacy Workflow Implementation Traceability](./PHARMACY_WORKFLOW_TRACEABILITY.md) matrix for the source-based mapping from each pharmacy process to domain models, API contracts, frontend routes, automated tests and current implementation status. The matrix distinguishes backend capabilities from complete user-facing workflows.
