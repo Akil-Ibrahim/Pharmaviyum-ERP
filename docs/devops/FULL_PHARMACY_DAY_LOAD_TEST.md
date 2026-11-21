@@ -6,9 +6,11 @@ Simulate a pharmacy operating day for 200–300 customer visits with six staff m
 
 ## Important coverage boundary
 
-The current verified API contracts do not expose a complete POS checkout/payment/receipt/dispensing transaction or a verified procurement receiving lifecycle. Therefore the current k6 scenario can simulate customer-facing search and lookup journeys plus manager operations, but it cannot honestly claim to simulate completed sales, payment capture, FEFO dispensing, stock decrement, supplier order creation, receiving, cancellations of real procurement orders, or end-of-day financial reconciliation.
+The backend now exposes a transactional POS contract at `POST /api/v1/pos/checkout`, including sale lines, payment state, receipt identity, FEFO lot allocation, inventory movements and an outbox event. Cash checkout decrements stock; non-cash checkout reserves stock until a signed payment webhook settles or fails the payment. Integration tests in `tests/integration/test_pos_checkout.py` cover key checkout, FEFO, idempotency and payment-settlement invariants.
 
-The existing opt-in write scenario only creates/deletes an inventory record and creates/cancels a basic order. It is not a substitute for those workflows. Do not add guessed endpoints to k6.
+However, the current k6 scenario does **not** call this POS contract. It remains a customer-facing search/lookup workload plus manager reads; it cannot claim completed sales, payment capture, FEFO dispensing or stock decrement as measured load-test behavior. The active POS frontend route currently renders `null`, and checkout is not linked to patient/prescription validation. A standalone lot-receipt endpoint exists, but there is no verified supplier purchase-order and delivery-document lifecycle. Cash-shift reconciliation, returns/refunds and end-of-day close are also not established.
+
+The existing opt-in k6 write scenario only creates/deletes an inventory record and creates/cancels a basic order. It is not a substitute for transactional POS journeys. Do not add guessed endpoints to k6.
 
 ## Operating-day model
 
@@ -87,13 +89,14 @@ Unavailable infrastructure metrics must be marked unavailable, not zero.
 
 ## Required next step for genuine end-to-end coverage
 
-Implement or verify explicit API contracts and isolated fixtures for:
-1. POS cart/checkout, payment and receipt;
-2. batch-level FEFO allocation and dispensing;
-3. stock movement and audit trail;
-4. purchase-order create/update/cancel;
-5. goods receiving with batch, expiry and discrepancy handling;
-6. returns/write-offs where supported;
-7. end-of-day sales/payment/stock reconciliation.
+Add transaction-aware k6 journeys and invariant checks for the existing POS checkout contract, using synthetic data and an isolated disposable database. Include concurrency tests for two cashiers competing for the last units, idempotent retries, no negative stock, no duplicate movements, expiry exclusion, FEFO ordering, payment settlement/failure and tenant isolation. Add independent postcondition checks for persisted sale, payment, receipt, allocation, movement and outbox records.
 
-Then add transaction-aware k6 journeys and invariant checks. Include concurrency tests for two cashiers competing for the last units, idempotent retries, no negative stock, no duplicate movements, expiry exclusion, and tenant isolation. Until those contracts exist and pass, label this profile **customer-day workload simulation**, not a complete transactional pharmacy-day test.
+Implement or verify the remaining API contracts and isolated fixtures for:
+1. patient/prescription validation linked to dispensing;
+2. purchase-order create/update/cancel and supplier-document matching;
+3. purchase-linked goods receiving with batch, expiry and discrepancy handling;
+4. cross-pharmacy transfer dispatch/receipt;
+5. returns/refunds/voids and controlled write-offs;
+6. cashier shift opening/closing and end-of-day sales/payment/stock reconciliation.
+
+Until the k6 transactional journey itself exists and passes, label this profile **customer-day workload simulation**, not a complete transactional pharmacy-day test.

@@ -9,6 +9,8 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 | Area | English | Русский | What it covers |
 |---|---|---|---|
 | Pharmacy workflows | [Workflow specification](./workflows/pharmacy-workflow.en.md) | [Спецификация аптечного процесса](./workflows/pharmacy-workflow.ru.md) | Pharmacy operations, POS, dispensing, inventory, procurement, audit and offline boundaries |
+| Business value & KPIs | [Business value and KPI specification](./workflows/PHARMACY_BUSINESS_VALUE_AND_KPIS.md) | [Бизнес-ценность и KPI](./workflows/PHARMACY_BUSINESS_VALUE_AND_KPIS.ru.md) | Business outcomes, KPI definitions, measurement contracts, NDA and CV evidence rules |
+| Workflow implementation audit | [Implementation traceability](./workflows/PHARMACY_WORKFLOW_TRACEABILITY.md) | [Трассировка реализации](./workflows/PHARMACY_WORKFLOW_TRACEABILITY.ru.md) | Evidence-based mapping of pharmacy processes to models, APIs, UI routes, tests and implementation status |
 | System architecture | [Architecture vision](./architecture/pharmaviyum-architecture.en.md) · [System context](./architecture/system-context.md) | [Архитектурное видение](./architecture/pharmaviyum-architecture.ru.md) · [Системный контекст](./architecture/system-context.ru.md) | Component boundaries, trust model, data ownership and Central/Edge target |
 | Technology | [Technology Stack & Glossary](./technology-stack.md) | [Стек и глоссарий](./technology-stack.ru.md) | Definitions, architectural roles, version policy, environment boundaries and dependency updates |
 | Repository structure | [Repository Structure Guide](./architecture/repository-structure.md) | [Структура репозитория](./architecture/repository-structure.ru.md) | Directory ownership, file placement and safe moves |
