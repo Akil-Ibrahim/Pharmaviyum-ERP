@@ -646,3 +646,7 @@ Mortarium may assist with:
 - answering natural-language questions across authorized pharmacy data.
 
 For every AI-assisted workflow, enforce role/tenant/patient authorization before retrieval, source attribution, validation and audit. AI output is advisory; the pharmacist or authorized operator validates it and performs/approves consequential actions. Critical inventory, prescription, dispensing, payment and accounting state changes remain deterministic, permission-checked and auditable.
+
+## Implementation traceability
+
+See the [Pharmacy Workflow Implementation Traceability](./PHARMACY_WORKFLOW_TRACEABILITY.md) matrix for the source-based mapping from each pharmacy process to domain models, API contracts, frontend routes, automated tests and current implementation status. The matrix distinguishes backend capabilities from complete user-facing workflows.
