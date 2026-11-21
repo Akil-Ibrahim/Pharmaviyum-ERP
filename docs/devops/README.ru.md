@@ -102,7 +102,7 @@ AI — отдельный capacity domain; он не должен насыщат
 
 ### Этап 7 — CI/CD и release engineering
 
-Сохраняйте GitHub Actions в роли CI gate, а FastAPI Cloud — в роли hosting/deployment Demo. Хостинг и развёртывание Production управляются за пределами публичного репозитория. Ansible остаётся отдельной возможностью on-premises deployment.
+Сохраняйте GitHub Actions в роли CI gate, а FastAPI Cloud — в роли hosting/deployment только публичной Demo. Production application releases выполняются на аптечных серверах через проверенные Ansible playbooks. Реальные Production inventory, per-site credentials, SSH access и approvals остаются под контролем оператора и не коммитятся.
 
 Требуются immutable image с commit SHA/digest, CI gates до публикации image, проверка миграций БД, deployment health checks, процедура rollback, release metadata/audit trail, разделение окружений, контролируемое production approval и smoke tests. Не обходите обязательные checks через continue-on-error.
 
