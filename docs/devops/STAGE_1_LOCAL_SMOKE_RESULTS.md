@@ -8,7 +8,7 @@
 - Workload: `GET /health` only
 - Generator: Python standard-library HTTP client with a 10-thread pool
 - Requests: 200 total (20 per thread)
-- Environment: Python 3.14.7; API-only mode
+- Historical test-time environment (2026-10-15; not the current application runtime): Python 3.14.7; API-only mode
 
 ## Results
 
