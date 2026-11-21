@@ -120,7 +120,7 @@ The FastAPI Cloud plugin can inspect or operate on connected FastAPI Cloud resou
 
 Use the protected Deploy Demo to FastAPI Cloud workflow for public Demo releases. It requires the Demo-specific FASTAPI_CLOUD_DEMO_TOKEN, FASTAPI_CLOUD_DEMO_APP_ID and DEMO_DATABASE_URL secrets, an exact-commit CI pass, a read-only Demo schema check and post-deployment smoke tests.
 
-Do not use this public repository, its workflow or the FastAPI Cloud plugin to deploy or administer Production. Production hosting, credentials, deployment automation, database migrations and operations are maintained separately under the applicable confidentiality controls.
+Do not use the FastAPI Cloud workflow or plugin to deploy or administer Production. Production application releases target pharmacy servers through the reviewed Ansible playbooks in this repository. Real Production inventory, credentials, SSH access, migration approvals and live operations remain under restricted operator control and must never be committed or exposed to coding agents.
 
 The workflow submits the Demo deployment with the FastAPI Cloud CLI. This is a reviewed workflow step, not an instruction to deploy from an arbitrary local session. A successful deployment submission is not proof of a successful rollout: verify the exact /version build SHA, staging runtime profile, CPython runtime, /health, /ready, authentication and POS protection checks.
 
