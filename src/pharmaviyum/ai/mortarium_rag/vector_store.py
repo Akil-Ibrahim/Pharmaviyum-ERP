@@ -39,59 +39,71 @@ class PgVectorStore:
         self.reranker = reranker
 
     async def initialize(self) -> None:
-        """Initialize pgvector extension, table, and indexes."""
+        """Verify the Alembic-managed pgvector schema without issuing DDL."""
         async with self.session_factory() as session:
-            await session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-            # nosec B608: validated identifier and fixed SQL template
-            create_table_sql = f"""
-                CREATE TABLE IF NOT EXISTS {self.table_name} (
-                    id UUID PRIMARY KEY,
-                    document_id UUID NOT NULL,
-                    content TEXT NOT NULL,
-                    chunk_index INTEGER NOT NULL,
-                    chunk_type VARCHAR(50) NOT NULL,
-                    metadata JSONB NOT NULL DEFAULT '{{}}'::jsonb,
-                    token_count INTEGER NOT NULL,
-                    embedding vector({self.dimensions}),
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    CONSTRAINT unique_chunk UNIQUE (document_id, chunk_index)
-                )
-            """
-            await session.execute(text(create_table_sql))
-            # nosec B608: validated identifier and fixed SQL template
-            embedding_index_sql = f"""
-                CREATE INDEX IF NOT EXISTS idx_{self.table_name}_embedding
-                ON {self.table_name} USING hnsw (embedding vector_cosine_ops)
-                WITH (m = 16, ef_construction = 200)
-            """
-            await session.execute(text(embedding_index_sql))
-            # nosec B608: validated identifier and fixed SQL template
-            metadata_index_sql = f"""
-                CREATE INDEX IF NOT EXISTS idx_{self.table_name}_metadata
-                ON {self.table_name} USING gin (metadata)
-            """
-            await session.execute(text(metadata_index_sql))
-            # nosec B608: validated identifier and fixed SQL template
-            tenant_index_sql = f"""
-                CREATE INDEX IF NOT EXISTS idx_{self.table_name}_pharmacy_id
-                ON {self.table_name} ((metadata ->> 'pharmacy_id'))
-            """
-            await session.execute(text(tenant_index_sql))
-            # nosec B608: validated identifier and fixed SQL template
-            content_index_sql = f"""
-                CREATE INDEX IF NOT EXISTS idx_{self.table_name}_content_fts
-                ON {self.table_name} USING gin (to_tsvector('english', content))
-            """
-            await session.execute(text(content_index_sql))
-            # The simple configuration avoids applying English stemming to
-            # Vietnamese, Arabic, Thai, Indonesian, and other query languages.
-            simple_content_index_sql = f"""
-                CREATE INDEX IF NOT EXISTS idx_{self.table_name}_content_fts_simple
-                ON {self.table_name} USING gin (to_tsvector('simple', content))
-            """
-            await session.execute(text(simple_content_index_sql))
-            await session.commit()
-            logger.info("Vector store initialized: %s", self.table_name)
+            result = await session.execute(
+                text(
+                    """
+                    SELECT
+                        to_regclass(:qualified_table) IS NOT NULL AS table_exists,
+                        to_regtype('vector') IS NOT NULL AS vector_type_exists,
+                        (
+                            SELECT attribute.atttypmod
+                            FROM pg_attribute AS attribute
+                            WHERE attribute.attrelid = to_regclass(:qualified_table)
+                              AND attribute.attname = 'embedding'
+                              AND NOT attribute.attisdropped
+                        ) AS embedding_dimensions,
+                        COALESCE(
+                            (
+                                SELECT array_agg(indexname)
+                                FROM pg_indexes
+                                WHERE schemaname = 'public'
+                                  AND tablename = :table_name
+                            ),
+                            ARRAY[]::text[]
+                        ) AS index_names
+                    """
+                ),
+                {
+                    "qualified_table": f"public.{self.table_name}",
+                    "table_name": self.table_name,
+                },
+            )
+            schema = result.one()
+
+        if not schema.table_exists:
+            raise RuntimeError(
+                f"pgvector table public.{self.table_name} is missing; "
+                "apply the Alembic database migrations before enabling RAG."
+            )
+        if not schema.vector_type_exists:
+            raise RuntimeError(
+                "PostgreSQL vector type is missing; apply the pgvector Alembic migration."
+            )
+        if schema.embedding_dimensions != self.dimensions:
+            raise RuntimeError(
+                "pgvector dimension mismatch: "
+                f"configured={self.dimensions}, database={schema.embedding_dimensions}."
+            )
+
+        required_indexes = {
+            f"idx_{self.table_name}_embedding",
+            f"idx_{self.table_name}_metadata",
+            f"idx_{self.table_name}_pharmacy_id",
+            f"idx_{self.table_name}_content_fts",
+            f"idx_{self.table_name}_content_fts_simple",
+        }
+        existing_indexes = set(schema.index_names or ())
+        missing_indexes = sorted(required_indexes - existing_indexes)
+        if missing_indexes:
+            raise RuntimeError(
+                "pgvector schema is missing required indexes: "
+                + ", ".join(missing_indexes)
+                + ". Apply the Alembic database migrations."
+            )
+
+        logger.info("Verified Alembic-managed pgvector schema: %s", self.table_name)
 
     async def upsert(self, chunks: list[Chunk], embeddings: list[list[float]]) -> int:
         """Batch upsert chunks after canonical metadata validation."""
