@@ -9,11 +9,12 @@
 | Dimension | Per pharmacy | 100-pharmacy network |
 |---|---:|---:|
 | Pharmacies | 1 | 100 |
-| Employees (all roles) | 5 | 500 |
+| Employees (all roles) | 6 | 600 |
+| Public operating hours | 14 hours/day (08:00–22:00 local time) |
 | POS cash registers / checkout stations | 3 | 300 |
 | Customer visits per operating day | 200 | 20,000 |
 
-The five employees are total staff, not five pharmacists. The pharmacist/manager/cashier role split, shift overlap and number of simultaneously active staff sessions are not specified by the canonical benchmark. Do not invent that split.
+The six employees are total staff, not six pharmacists. The pharmacist/manager/cashier role split, shift overlap and number of simultaneously active staff sessions are not specified by the canonical benchmark. The three cashier/register workflows are included within the six staff positions, not additional employees. Do not invent the role split.
 
 Three POS stations are physical/logical checkout capacity per pharmacy. This is not proof that three checkouts are continuously active, nor that 300 network-wide transactions occur at the same instant. A three-cashier-per-pharmacy concurrent checkout test is a deliberate stress scenario to validate register concurrency; 300 concurrent register sessions across the network is an upper-bound synthetic profile, not a forecast.
 
@@ -21,7 +22,8 @@ Three POS stations are physical/logical checkout capacity per pharmacy. This is 
 
 - **20,000 visits/day** is a daily business-volume planning input.
 - A visit is not necessarily a sale, authenticated session, API request, prescription dispense or AI interaction.
-- **500 employees** is a staffing assumption, not a concurrent-user count.
+- **600 employees** is a staffing assumption, not a concurrent-user count.
+- The 14-hour public operating window is 08:00–22:00 local pharmacy time. Opening preparation and closing tasks may occur outside it.
 - **300 POS stations** is installed checkout capacity, not observed concurrent use.
 - No RPS, arrival-rate curve, peak-hour multiplier, concurrent session count, transaction-per-visit ratio, AI-request ratio or background-job volume can be derived safely from these inputs alone.
 - Do not multiply daily visits by guessed endpoint counts or convert visits/day directly into VUs.
@@ -30,11 +32,11 @@ Three POS stations are physical/logical checkout capacity per pharmacy. This is 
 
 | Dimension | Current state | Required evidence / decision |
 |---|---|---|
-| Opening hours and operating days | NOT SPECIFIED | Confirm by business operations; distinguish public hours from opening/closing preparation. |
+| Public operating hours | 14 hours/day (08:00–22:00 local pharmacy time) | Operating days and any seasonal exceptions still require business confirmation; model opening/closing work separately. |
 | Arrival distribution and peak periods | NOT SPECIFIED | Obtain anonymized pilot/operational observations; document weekday/seasonality and peak profile. |
 | Visit-to-sale conversion | NOT SPECIFIED | Measure or approve a synthetic scenario ratio; do not assume every visitor buys. |
 | Average basket / sale lines | NOT SPECIFIED | Define representative basket-size distribution. |
-| Pharmacist vs other staff roles | NOT SPECIFIED | Confirm role split within five employees per pharmacy. |
+| Pharmacist vs other staff roles | NOT SPECIFIED | Confirm role split within six employees per pharmacy. |
 | Shift overlap and active staff sessions | NOT SPECIFIED | Confirm schedules and concurrent sessions. |
 | Register utilization / concurrent checkout | NOT SPECIFIED | Observe pilot telemetry; retain 3 simultaneous cashiers/pharmacy as a controlled stress case. |
 | API calls per workflow | NOT SPECIFIED | Derive from traced, versioned user journeys, not guessed multipliers. |
@@ -46,7 +48,7 @@ Three POS stations are physical/logical checkout capacity per pharmacy. This is 
 
 Run only with synthetic tenants, products, inventory, patients and transactions. Use an isolated disposable staging environment for writes. Default to read-only until the POS scenario has verified cleanup/rollback and durable postcondition checks.
 
-1. **Single-pharmacy functional baseline:** one synthetic pharmacy, five employee identities (role split only when approved), three POS stations configured. Validate the business journey and baseline resource consumption.
+1. **Single-pharmacy functional baseline:** one synthetic pharmacy, six employee identities (role split only when approved), three POS stations configured. Validate the business journey and baseline resource consumption.
 2. **Single-pharmacy register concurrency:** run three independent cashier sessions concurrently against the real transactional POS checkout contract. Assert idempotency, stock conservation, FEFO, expiry exclusion, payment state, receipt identity, inventory movements and tenant scope. Do not count a successful HTTP response alone as a completed sale.
 3. **Multi-pharmacy isolation:** increase tenant count progressively (for example 1 → 10 → 25 → 50 → 100), with synthetic data and explicit per-tenant identities. Verify no cross-tenant reads, writes or shared mutable state.
 4. **Network register upper-bound:** 300 synthetic register sessions (3 × 100 pharmacies) may be used as an explicitly labelled stress profile after smaller stages pass. It is not the expected normal concurrency. Record achieved throughput and saturation; stop on security invariant failure, sustained errors or unsafe data changes.
@@ -90,7 +92,7 @@ Never describe local/Codespaces results as production capacity. Do not promote t
 
 ## 7. Existing scenario reconciliation
 
-The repository also contains older single-pharmacy load-test scenarios that mention six staff, 200–300 visits, a 14-hour opening window and provisional peak-hour rates. Those are separate scenario assumptions, not interchangeable canonical inputs. In particular, six staff and 300 visits conflict with the current canonical benchmark of five employees and 200 visits per pharmacy/day. Preserve the older scenario as historical/alternate until the business owner explicitly reconciles or supersedes it; do not silently combine the numbers.
+The repository also contains older single-pharmacy load-test scenarios that mention six staff, 200–300 visits, a 14-hour opening window and provisional peak-hour rates. Six staff and the 14-hour window now align with the canonical benchmark. The 200 visits/day value is the canonical baseline; 300 visits/day remains a higher-volume stress profile, not the baseline. Provisional peak-hour rates are assumptions, not measured traffic.
 
 ## 8. Exit criteria
 
