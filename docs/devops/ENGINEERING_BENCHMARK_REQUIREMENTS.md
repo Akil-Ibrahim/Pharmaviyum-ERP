@@ -6,17 +6,18 @@ This document defines the measurement contract for assessing Pharmaviyum ERP/CRM
 
 The benchmark is intended for repeatable runs in GitHub Codespaces/local development and, for infrastructure-dependent scenarios, an isolated staging environment. Use synthetic pharmacy tenants, synthetic products and synthetic patient records only.
 
-The canonical business sizing scenario includes three POS cash registers (checkout stations) per pharmacy:
+The canonical business sizing scenario includes three POS cash registers (checkout stations) per pharmacy and a 14-hour public operating day (08:00–22:00 local pharmacy time):
 
 | Dimension | Planning input |
 |---|---:|
 | Pharmacies | 100 |
 | Daily visitors | 200 per pharmacy |
 | Total daily visitors | 20,000 |
-| Employees | 5 per pharmacy / 500 total |
+| Employees | 6 per pharmacy / 600 total |
+| Public operating hours | 14 hours/day (08:00–22:00 local pharmacy time) |
 | POS cash registers (checkout stations) | 3 per pharmacy / 300 total |
 
-Visitors are not equivalent to authenticated users, concurrent sessions, API requests or AI requests. Actual AI request volume and peak concurrency are not yet specified. Do not infer them from visitor counts. Establish them from pilot telemetry and representative workload observations.
+The six employees are total pharmacy staff across all roles, not six pharmacists. The three cashier/register workflows are included within those six staff positions, not additional employees. The 14-hour window is public operating time; opening preparation and closing tasks may occur outside it and must be modelled separately. Visitors are not equivalent to authenticated users, concurrent sessions, API requests or AI requests. Actual AI request volume and peak concurrency are not yet specified. Do not infer them from visitor counts. Establish them from pilot telemetry and representative workload observations.
 
 ## 1. Measurement and evidence rules
 
