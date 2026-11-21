@@ -182,7 +182,7 @@ jobs:
 
       # FASTAPI_CLOUD_DEMO_TOKEN is a deploy token. It authorizes deployments,
       # not account-authenticated app-management commands such as "cloud env set".
-      # Configure ENVIRONMENT=Demo once in the FastAPI Cloud dashboard;
+      # Configure ENVIRONMENT=staging in the Demo FastAPI Cloud dashboard;
       # the runtime smoke test below refuses to pass unless staging mode is active.
       - name: Submit deployment and let Demo smoke tests verify rollout
         # The deploy token can create deployments but cannot authenticate the
