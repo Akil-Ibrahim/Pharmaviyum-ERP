@@ -1,6 +1,6 @@
 # Production Operations Runbook
 
-**Status:** Operational baseline. Verify provider-specific controls and service ownership before executing production actions.
+**Status:** Operational baseline for the Ansible-managed pharmacy-server Production deployment. Verify host, inventory, secret source and service ownership before executing production actions.
 
 ## Operating principles
 - Production is separate from local Compose, CI and test services.
