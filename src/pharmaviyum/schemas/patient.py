@@ -110,12 +110,22 @@ class PatientConsultationResponse(BaseModel):
     updated_at: datetime
 
 
-class PatientSummaryResponse(PatientBase):
-    """Minimum-necessary demographic and operational patient representation."""
+class PatientSummaryResponse(BaseModel):
+    """Explicit allowlist for minimum-necessary patient API responses."""
 
     id: int
+    first_name: str
+    last_name: str
+    full_name: str
+    phone: str
+    email: Optional[EmailStr] = None
+    city: Optional[str] = None
+    country: str
+    customer_category: str
+    loyalty_tier: str
+    loyalty_points: int = Field(default=0, ge=0)
     visit_count: int = Field(default=0, ge=0)
-    full_name: str = Field(..., max_length=200)
+    is_active: bool = True
     created_at: datetime
     updated_at: datetime
 
