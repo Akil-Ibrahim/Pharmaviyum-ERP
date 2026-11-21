@@ -39,9 +39,7 @@ async def test_patient_history_returns_minimal_fields_and_audits_allowed_read(
     test_db.add(pharmacy)
     await test_db.flush()
     patient = await patient_factory.create(pharmacy_id=pharmacy.id)
-    test_db.add(
-        PharmacyMembership(user_id=2, pharmacy_id=pharmacy.id, is_active=True)
-    )
+    test_db.add(PharmacyMembership(user_id=2, pharmacy_id=pharmacy.id, is_active=True))
     test_db.add(
         PatientPurchase(
             patient_id=patient.id,
@@ -159,9 +157,7 @@ async def test_patient_history_fails_closed_for_unassigned_legacy_patient(
     test_db.add(pharmacy)
     await test_db.flush()
     patient = await patient_factory.create(pharmacy_id=None)
-    test_db.add(
-        PharmacyMembership(user_id=2, pharmacy_id=pharmacy.id, is_active=True)
-    )
+    test_db.add(PharmacyMembership(user_id=2, pharmacy_id=pharmacy.id, is_active=True))
     await test_db.flush()
     response = await authenticated_client.get(
         f"/api/v1/patient-purchases/{patient.id}/history",
@@ -185,9 +181,7 @@ async def test_platform_superuser_cannot_use_pharmacist_history_route(
     test_db.add(pharmacy)
     await test_db.flush()
     patient = await patient_factory.create(pharmacy_id=pharmacy.id)
-    test_db.add(
-        PharmacyMembership(user_id=1, pharmacy_id=pharmacy.id, is_active=True)
-    )
+    test_db.add(PharmacyMembership(user_id=1, pharmacy_id=pharmacy.id, is_active=True))
     await test_db.flush()
     response = await authenticated_client.get(
         f"/api/v1/patient-purchases/{patient.id}/history",
