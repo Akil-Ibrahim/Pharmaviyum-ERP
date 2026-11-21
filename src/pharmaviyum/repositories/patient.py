@@ -331,5 +331,4 @@ class PatientRepository(BaseRepository[Patient]):
             "patient_id": patient.id,
             "allergies": [allergy.allergen_name for allergy in patient.allergies],
             "conditions": [condition.condition_name for condition in patient.conditions],
-            "risk_summary": "",
         }
