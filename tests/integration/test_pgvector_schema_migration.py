@@ -22,7 +22,9 @@ async def test_alembic_provisions_pgvector_table_and_search_indexes():
     engine = create_async_engine(migration_url, pool_pre_ping=True)
     try:
         async with engine.connect() as connection:
-            result = await connection.execute(text("""
+            result = await connection.execute(
+                text(
+                    """
                     SELECT
                         to_regclass('public.document_chunks') IS NOT NULL AS table_exists,
                         to_regtype('vector') IS NOT NULL AS vector_type_exists,
@@ -42,7 +44,9 @@ async def test_alembic_provisions_pgvector_table_and_search_indexes():
                             ),
                             ARRAY[]::text[]
                         ) AS index_names
-                    """))
+                    """
+                )
+            )
             schema = result.one()
     finally:
         await engine.dispose()
@@ -57,7 +61,6 @@ async def test_alembic_provisions_pgvector_table_and_search_indexes():
         "idx_document_chunks_content_fts",
         "idx_document_chunks_content_fts_simple",
     }.issubset(set(schema.index_names or ()))
-
 
 
 @pytest.mark.integration
@@ -140,14 +143,10 @@ async def test_vector_store_verifies_tables_in_the_active_search_path():
         scoped_engine = create_async_engine(
             migration_url,
             pool_pre_ping=True,
-            connect_args={
-                "server_settings": {"search_path": f"{schema_name},public"}
-            },
+            connect_args={"server_settings": {"search_path": f"{schema_name},public"}},
         )
         store = PgVectorStore(
-            session_factory=async_sessionmaker(
-                scoped_engine, expire_on_commit=False
-            ),
+            session_factory=async_sessionmaker(scoped_engine, expire_on_commit=False),
             table_name="evaluation_chunks",
             dimensions=3,
         )
@@ -156,5 +155,7 @@ async def test_vector_store_verifies_tables_in_the_active_search_path():
         if scoped_engine is not None:
             await scoped_engine.dispose()
         async with admin_engine.begin() as connection:
-            await connection.execute(text(f'DROP SCHEMA IF EXISTS "{schema_name}" CASCADE'))
+            await connection.execute(
+                text(f'DROP SCHEMA IF EXISTS "{schema_name}" CASCADE')
+            )
         await admin_engine.dispose()
