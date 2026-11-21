@@ -22,7 +22,7 @@ FastAPI Cloud размещает только публичную Demo. Demo БД
 
 В репозитории также есть opt-in Compose stack мониторинга для контролируемых развёртываний. Nginx/edge, OpenTelemetry Collector, managed data services и multi-node orchestration — целевые возможности, а не утверждение, что они входят в текущую базовую конфигурацию.
 
-GitHub Actions — CI quality gate. Отдельный FastAPI Cloud workflow — текущий путь deployment публичной Demo и не должен обращаться к Production. Docker image build jobs могут поддерживать container workflows, но не являются целевой платформой hosted deployment.
+GitHub Actions — CI quality gate, а вручную запускаемый FastAPI Cloud workflow предназначен исключительно для публичной Demo. Production artifacts развёртываются на аптечных серверах через проверенный Ansible process; CI может проверять Ansible и собирать immutable images, но не должен автоматически подключаться к действующим аптечным host без отдельного approval.
 
 ## Принципы production
 
