@@ -1,3 +1,5 @@
+"""Patient purchase history endpoints with distinct admin and pharmacist policies."""
+
 from datetime import datetime, timedelta
 from typing import Any, Literal
 
@@ -13,6 +15,12 @@ from src.pharmaviyum.models.phi_access_audit import PHIAccessAudit
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser, CurrentUser
 
 router = APIRouter(prefix="/patient-purchases", tags=["Patient Purchases"])
+
+
+def _request_id(request: Request) -> str | None:
+    """Keep correlation metadata bounded; it is never used as an auth input."""
+    value = request.headers.get("x-request-id")
+    return value[:128] if value else None
 
 
 @router.get("/")
@@ -69,9 +77,13 @@ async def get_pharmacist_patient_history(
     purpose: Literal[
         "dispensing_review", "medication_reconciliation", "patient_request"
     ] = Query(...),
+    skip: int = Query(0, ge=0, le=10000),
+    limit: int = Query(50, ge=1, le=100),
+    purchased_from: datetime | None = Query(None),
+    purchased_to: datetime | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> list[dict[str, Any]]:
-    """Return a minimal purchase history after explicit tenant authorization.
+    """Return a minimum-field purchase history after explicit tenant authorization.
 
     A superuser is not implicitly granted global PHI access by this route:
     an active pharmacy membership is required for every principal.
@@ -86,13 +98,9 @@ async def get_pharmacist_patient_history(
     if membership is None:
         db.add(
             PHIAccessAudit(
-                actor_id=current_user.id,
-                pharmacy_id=pharmacy_id,
-                patient_id=patient_id,
-                action="read_patient_history",
-                decision="denied",
-                purpose=purpose,
-                request_id=request.headers.get("x-request-id"),
+                actor_id=current_user.id, pharmacy_id=pharmacy_id,
+                patient_id=patient_id, action="read_patient_history",
+                decision="denied", purpose=purpose, request_id=_request_id(request),
             )
         )
         await db.commit()
@@ -111,22 +119,34 @@ async def get_pharmacist_patient_history(
     if patient_exists is None:
         db.add(
             PHIAccessAudit(
-                actor_id=current_user.id,
-                pharmacy_id=pharmacy_id,
-                patient_id=patient_id,
-                action="read_patient_history",
-                decision="denied",
-                purpose=purpose,
-                request_id=request.headers.get("x-request-id"),
+                actor_id=current_user.id, pharmacy_id=pharmacy_id,
+                patient_id=patient_id, action="read_patient_history",
+                decision="denied", purpose=purpose, request_id=_request_id(request),
             )
         )
         await db.commit()
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Patient not found",
+            status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found"
         )
 
-    result = await db.execute(
+    if (purchased_from is None) != (purchased_to is None):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Both purchased_from and purchased_to are required together",
+        )
+    if purchased_from is not None and purchased_to is not None:
+        if purchased_from > purchased_to:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="purchased_from must not exceed purchased_to",
+            )
+        if purchased_to - purchased_from > timedelta(days=365):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Date range must not exceed 365 days",
+            )
+
+    purchase_query = (
         select(PatientPurchase)
         .join(Patient, Patient.id == PatientPurchase.patient_id)
         .where(
@@ -135,19 +155,23 @@ async def get_pharmacist_patient_history(
             Patient.is_active.is_(True),
         )
         .options(selectinload(PatientPurchase.product))
-        .order_by(PatientPurchase.purchased_at.desc(), PatientPurchase.id.desc())
-        .limit(100)
+    )
+    if purchased_from is not None and purchased_to is not None:
+        purchase_query = purchase_query.where(
+            PatientPurchase.purchased_at >= purchased_from,
+            PatientPurchase.purchased_at <= purchased_to,
+        )
+    result = await db.execute(
+        purchase_query.order_by(
+            PatientPurchase.purchased_at.desc(), PatientPurchase.id.desc()
+        ).offset(skip).limit(limit)
     )
     purchases = result.scalars().all()
     db.add(
         PHIAccessAudit(
-            actor_id=current_user.id,
-            pharmacy_id=pharmacy_id,
-            patient_id=patient_id,
-            action="read_patient_history",
-            decision="allowed",
-            purpose=purpose,
-            request_id=request.headers.get("x-request-id"),
+            actor_id=current_user.id, pharmacy_id=pharmacy_id,
+            patient_id=patient_id, action="read_patient_history",
+            decision="allowed", purpose=purpose, request_id=_request_id(request),
         )
     )
     return [
