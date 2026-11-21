@@ -18,7 +18,7 @@
 4. Ручной запуск Demo-only deployment workflow для FastAPI Cloud.
 5. Проверка статуса deployment, логов и smoke tests.
 
-FastAPI Cloud размещает только публичную Demo. Demo БД, Redis-совместимые сервисы и отдельные Celery workers должны быть подготовлены и эксплуатироваться согласно Demo deployment runbook. Production использует тот же технологический стек приложения на отдельно управляемом хостинге за пределами публичного репозитория.
+FastAPI Cloud размещает только публичную Demo. Demo БД, cache и worker services должны быть подготовлены и эксплуатироваться согласно Demo deployment runbook. Production использует тот же технологический стек приложения на аптечном сервере; Ansible отвечает за конфигурацию инфраструктуры и выпуск приложения. Реальные Production inventory, per-site credentials и approvals остаются вне Git. Ansible rollout нельзя считать подтверждённым для Production до получения lab/pilot и site acceptance evidence.
 
 В репозитории также есть opt-in Compose stack мониторинга для контролируемых развёртываний. Nginx/edge, OpenTelemetry Collector, managed data services и multi-node orchestration — целевые возможности, а не утверждение, что они входят в текущую базовую конфигурацию.
 
