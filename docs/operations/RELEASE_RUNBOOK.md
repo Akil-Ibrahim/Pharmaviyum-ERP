@@ -1,41 +1,43 @@
-# FastAPI Cloud Release Runbook
+# FastAPI Cloud Demo Release Runbook
 
 ## Scope
 
-FastAPI Cloud is the hosted application deployment platform. GitHub Actions runs CI; the dedicated workflow `.github/workflows/deploy-fastapi-cloud.yml` is manually triggered and deploys the application after its required configuration is present. `main` is the canonical integration/release branch.
+FastAPI Cloud hosts the public Pharmaviyum Demo only. GitHub Actions runs CI; the manually dispatched workflow .github/workflows/deploy-fastapi-cloud.yml deploys only the isolated Demo application. Production uses the same application technology stack on a separately managed hosting platform. Production deployment, migrations and operational automation are maintained outside this public repository.
 
-This runbook describes the repository workflow; it does not claim that a deployment has succeeded or that production readiness has been verified.
+This runbook describes the repository's Demo workflow. It does not claim that a deployment has succeeded or that Production readiness has been verified.
 
-## Deployment prerequisites
+## Demo deployment prerequisites
 
-- FastAPI Cloud application created and linked to this repository/project.
-- GitHub Actions secrets configured: `FASTAPI_CLOUD_TOKEN` and `FASTAPI_CLOUD_APP_ID`.
-- Required FastAPI Cloud environment variables configured securely; see [FastAPI Cloud deployment](../deployment/FASTAPI_CLOUD.md).
-- PostgreSQL with pgvector and a reachable Redis-compatible service provisioned separately.
-- Database migrations applied once from a trusted environment before production traffic.
-- Frontend build configuration set, including the Clerk publishable key if that sign-in route is enabled.
+- A dedicated FastAPI Cloud Demo application is created and linked to this repository.
+- The protected GitHub Actions environment demo-pharmaviyum-erp contains FASTAPI_CLOUD_DEMO_TOKEN and FASTAPI_CLOUD_DEMO_APP_ID.
+- DEMO_DATABASE_URL points only to the isolated Demo database.
+- Demo application environment variables are configured as documented in the [FastAPI Cloud Demo runbook](../deployment/FASTAPI_CLOUD.md).
+- PostgreSQL with pgvector and a separate managed Redis endpoint are provisioned for Demo.
+- Demo contains synthetic data only.
 
-## Release flow
+## Demo release flow
 
-1. Open a pull request targeting `main`.
+1. Open a pull request targeting main.
 2. Review changes and wait for required GitHub Actions checks to pass.
 3. Merge only after required checks are green.
-4. Start the `Deploy to FastAPI Cloud` workflow manually when a release is intended.
-5. Inspect the FastAPI Cloud deployment status and logs; a submitted deployment is not necessarily a successful deployment.
-6. Verify `/health`, `/ready`, authentication, database connectivity, critical pharmacy workflows, and AI requests before using real pharmacy data.
-7. If the deployment fails, stop promotion, inspect build/runtime logs, and use FastAPI Cloud's supported deployment recovery process after identifying the failing revision.
+4. Manually start Deploy Demo to FastAPI Cloud from main with an approved Demo change reference.
+5. Complete the Demo environment approval if configured.
+6. Inspect deployment status and logs.
+7. Verify /version, /health, /ready, authentication negative-path handling, frontend routes and protected POS access.
 
-## Database safety
+A submitted deployment is not necessarily a successful deployment. The workflow must report the exact commit SHA and the staging runtime profile used by the Demo.
 
-Migrations are forward production changes. Prefer backward-compatible expand/contract migrations. Never rely on an automatic schema downgrade as the primary rollback mechanism. Keep backups and restore procedures for the separately provisioned database.
+## Demo database safety
+
+The public Demo deployment workflow performs read-only schema compatibility checks and does not run Alembic migrations. Demo schema changes require a separate approved operation, backup/restore evidence and post-migration verification. Never use Production database credentials or data for Demo.
 
 ## Runtime limitations to verify
 
 - Native FastAPI Cloud deployment does not automatically install the Dockerfile's Tesseract executable and OCR language packs.
 - Celery/background jobs require a separate worker process and are not started by the web deployment workflow.
-- PostgreSQL/pgvector and Redis-compatible infrastructure are separate from the web application deployment.
-- Verify environment-variable names against the active application settings before each release.
+- PostgreSQL/pgvector and Redis-compatible infrastructure are provisioned separately from the web application.
+- Verify environment-variable names against active application settings before each Demo release.
 
-## Current status
+## Production boundary
 
-The repository contains a manually triggered FastAPI Cloud deployment workflow. Production readiness remains unconfirmed until CI, deployment smoke tests, backups/restore, observability, background-worker operation, and recovery procedures have been verified.
+This public runbook and its workflows do not deploy, migrate or administer Production. Production hosting and its release procedures are managed separately under the applicable confidentiality controls.
