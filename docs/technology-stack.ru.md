@@ -167,8 +167,8 @@ Frontend-зависимости определяются в следующих �
 | SQLAlchemy | `2.1.8` | `pyproject.toml` |
 | Alembic | `1.20.1` | `pyproject.toml` |
 | asyncpg / psycopg | `0.32.0` / `3.3.9` | `pyproject.toml` |
-| PostgreSQL | PostgreSQL 18 с pgvector 0.8.7 во временной среде development/CI; миграция управляемой production-БД выполняется отдельно | Docker Compose и CI service definitions |
-| Redis server | Redis 8.8.4 во временной среде development/CI; production Compose остаётся на Redis 7 до отдельной миграции данных | Docker Compose и CI service definitions |
+| PostgreSQL | Neon PostgreSQL 18 для hosted Production; для Demo требуется отдельный PostgreSQL 18; disposable PostgreSQL 18 для development/CI | Metadata проекта Neon; metadata провайдера Demo; Docker Compose и CI service definitions |
+| Redis server | Managed Redis для hosted Production и отдельный managed Redis для Demo; целевая совместимость Redis 8.8.4, точная версия hosted-сервера определяется провайдером и должна быть проверена; локальный development/CI использует Redis 8.8.4 | Metadata integration FastAPI Cloud/провайдера; Docker Compose и CI service definitions |
 | pgvector container extension | `0.8.7` | Тег образа `pgvector/pgvector:0.8.7-pg18` |
 | pgvector Python client | `0.4.1` | `pyproject.toml` |
 | LangGraph | `1.2.21` | `pyproject.toml` |
@@ -216,9 +216,9 @@ Frontend-зависимости определяются в следующих �
 
 ## Примечания по runtime-инфраструктуре
 
-- Временный development/CI Compose использует PostgreSQL 18 с образом расширения pgvector 0.8.7; это не меняет major-версию управляемой production-БД Neon или существующие volumes баз Pharmacy Edge.
+- Hosted Production использует подтверждённый проект Neon PostgreSQL 18; Demo должна использовать отдельную PostgreSQL 18. Disposable development/CI Compose также ориентирован на PostgreSQL 18 с pgvector 0.8.7.
 - Приложение использует Python-клиент pgvector и расширение PostgreSQL для векторного поиска, если оно включено; это отдельно версионируемые компоненты.
-- Временный development/CI Compose использует Redis 8.8.4. Production Compose остаётся на Redis 7 до отдельно согласованной миграции с резервной копией и планом отката. Управляемые production-сервисы Redis/Valkey не обновляются прикладным PR.
+- Hosted Production и Demo используют отдельные managed Redis endpoints. Redis 8.8.4 — целевая версия совместимости; точная версия managed-сервера контролируется провайдером и должна быть подтверждена по provider metadata до релиза. Disposable development/CI Compose использует Redis 8.8.4.
 - Шаблон Ansible для Pharmacy Edge использует Valkey; этот серверный профиль намеренно отделён от локального Redis.
 - Локальный Compose перехватывает исходящую почту приложения в Mailpit (`http://localhost:8025`, SMTP `localhost:1025`). См. [доставку электронной почты и локальное тестирование](./development/email.md). Для production-доставки необходимо явно задать SMTP host, port, sender, TLS mode и credentials в окружении FastAPI Cloud; этот PR не меняет production-секреты и не включает production email.
 - Выбор LLM-провайдера/модели Mortarium задаётся переменными окружения. Текущий профиль развёртывания описан в [архитектуре AI](./ai_architecture.md) и [руководстве по FastAPI Cloud](./deployment/FASTAPI_CLOUD.md).
