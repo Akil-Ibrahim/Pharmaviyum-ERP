@@ -71,11 +71,8 @@ class PatientService:
                 },
             )
         )
-        logger.info(
-            "Created patient %s",
-            reloaded_patient.id,
-            extra={"patient_id": reloaded_patient.id, "created_by": created_by},
-        )
+        # Patient identifiers must not enter general application logs.
+        logger.info("Created patient record")
         return reloaded_patient
 
     async def get_patient(
