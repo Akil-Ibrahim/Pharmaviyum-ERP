@@ -71,7 +71,7 @@ until the authoritative workflow is implemented.
 - Inventory quantities, expiry eligibility, FEFO, prices, payment state,
   prescription requirements and authorization are determined by ERP rules.
 - Patient-specific information remains subject to patient-scope authorization.
-- Conversation memory and LangGraph checkpoint threads must be bound to the same patient scope as each request. The current implementation has an open session-scope gap; see the [Mortarium architecture audit](../rag_architecture_audit.md) and do not treat patient-context isolation as complete until its regression gates pass.
+- Conversation memory and LangGraph checkpoint threads are bound in code to the authenticated pharmacy, user, patient (including explicit no-patient scope) and client session through versioned HMAC namespaces. This implementation was merged by PR #287 and has regression coverage. Staged end-to-end validation across PostgreSQL checkpoints and Redis memory remains a release gate; do not treat merge/CI as proof of production activation. See [patient-scoped conversation state](patient-session-isolation.md) and the [Mortarium architecture audit](../rag_architecture_audit.md).
 - Tool output and retrieved documents are untrusted data, not instructions.
 - No patient data is added to evaluation fixtures or external judge prompts.
 
