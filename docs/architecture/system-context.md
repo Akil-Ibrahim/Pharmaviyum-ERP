@@ -44,7 +44,7 @@ See the [offline capability matrix](../devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX
 
 ## Current implementation versus target
 - Current public Demo application path: FastAPI Cloud, with isolated data/cache services provisioned separately.
-- Production uses the same application technology stack on a separately managed hosting platform; Production deployment and operations are outside this public repository.
+- Production uses the same application technology stack deployed to the pharmacy server through Ansible; public playbooks define the automation contract, while real host inventory, per-site secrets and execution approvals remain operator-controlled.
 - Current backend: FastAPI modular monolith.
 - Current AI orchestration: LangGraph Agent and LangGraph RAG, Agent Harness and MCP registry.
 - Current WebSocket handlers: development scaffolds, not production-safe.
