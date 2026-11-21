@@ -114,23 +114,17 @@ uv run fastapi dev
 uv run fastapi run
 ```
 
-## Production deployment guardrails
+## Demo deployment guardrails
 
-Pharmaviyum has one production application on FastAPI Cloud. Production deployment is deliberately controlled by the manual GitHub Actions workflow:
+The FastAPI Cloud plugin can inspect or operate on connected FastAPI Cloud resources, but the public repository's deployment workflow is scoped to the isolated Demo application only.
 
-` .github/workflows/deploy-fastapi-cloud.yml `
+Use the protected Deploy Demo to FastAPI Cloud workflow for public Demo releases. It requires the Demo-specific FASTAPI_CLOUD_DEMO_TOKEN, FASTAPI_CLOUD_DEMO_APP_ID and DEMO_DATABASE_URL secrets, an exact-commit CI pass, a read-only Demo schema check and post-deployment smoke tests.
 
-Use the repository's protected **Deploy to FastAPI Cloud** workflow for production releases. Do not use an agent plugin or a direct CLI command to bypass its exact-commit CI gate, production input checks, database-schema compatibility check, deployment serialization, or post-deploy smoke tests.
+Do not use this public repository, its workflow or the FastAPI Cloud plugin to deploy or administer Production. Production hosting, credentials, deployment automation, database migrations and operations are maintained separately under the applicable confidentiality controls.
 
-The workflow currently submits the deployment with:
+The workflow submits the Demo deployment with the FastAPI Cloud CLI. This is a reviewed workflow step, not an instruction to deploy from an arbitrary local session. A successful deployment submission is not proof of a successful rollout: verify the exact /version build SHA, staging runtime profile, CPython runtime, /health, /ready, authentication and POS protection checks.
 
-```bash
-uv run fastapi cloud deploy . --no-wait
-```
-
-This command is part of the reviewed workflow, not an instruction to deploy from an arbitrary local session. A plugin request such as “deploy this app” must still respect the repository's manual release policy. A successful deployment submission is not proof of a successful rollout: verify the exact `/version` build SHA, CPython runtime, `/health`, `/ready`, authentication and POS protection checks.
-
-Never paste secrets into prompts, commit environment values, or ask an agent to print secret values. Environment-variable changes in production require explicit authorization and must follow the production change-control process. Database migrations remain a separate, explicitly approved operation; neither the plugin nor the normal deployment workflow may run them implicitly.
+Never paste secrets into prompts, commit environment values or ask an agent to print secret values. Demo environment-variable changes require explicit authorization and must use Demo-only values. Production environment changes and migrations are outside the public repository and require their separate change-control process.
 
 ## Existing Library Skills setup
 
