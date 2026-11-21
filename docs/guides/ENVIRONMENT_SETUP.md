@@ -163,7 +163,7 @@ Ragas evaluation dependencies are isolated in the CI evaluation job; they are no
 
 ## 6. FastAPI Cloud Demo configuration
 
-FastAPI Cloud is used for the public Demo only. Production uses the same application technology stack on a separately managed hosting platform; its provider, deployment credentials, release workflow and operational procedures are maintained outside this public repository.
+FastAPI Cloud is used for the public Demo only. Production uses the same application technology stack deployed to the pharmacy server through Ansible. The public playbooks define the deployment automation contract; real host inventory, per-site credentials, SSH access and approvals remain operator-controlled and are never committed.
 
 The public Demo application is hosted at https://pharmaviyum-erp.fastapicloud.dev. Configure its application variables in the FastAPI Cloud Environment Variables panel and its deploy credentials in the protected GitHub Actions environment demo-pharmaviyum-erp.
 
