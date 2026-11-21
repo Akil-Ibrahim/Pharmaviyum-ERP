@@ -106,11 +106,7 @@ async def update_order_status(
 ):
     scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
 
-    result = await db.execute(
-        select(Order)
-        .join(Patient, Patient.id == Order.patient_id)
-        .where(Order.id == order_id)
-    )
+    result = await db.execute(_order_query(order_id, scope))
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
