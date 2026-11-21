@@ -122,7 +122,7 @@ jobs:
                              role.rolreplication,
                              role.rolbypassrls,
                              has_schema_privilege(current_user, 'public', 'CREATE'),
-                             pg_has_role(current_user, 'neondb_owner', 'MEMBER'),
+                             pg_has_role(current_user, 'neondb_owner', 'USAGE'),
                              EXISTS (
                                SELECT 1
                                FROM pg_class AS object
@@ -173,7 +173,7 @@ jobs:
                       """
                       SELECT current_database(), current_user, role.rolsuper,
                              (current_user = 'neondb_owner'
-                              OR pg_has_role(current_user, 'neondb_owner', 'MEMBER'))
+                              OR pg_has_role(current_user, 'neondb_owner', 'USAGE'))
                       FROM pg_roles AS role
                       WHERE role.rolname = current_user
                       """
