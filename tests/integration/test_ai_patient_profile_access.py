@@ -27,8 +27,14 @@ async def _authenticate_as_pharmacist(client, test_db):
 
 @pytest.mark.integration
 async def test_ai_patient_profile_requires_membership_and_audits_allowed_read(
-    authenticated_client, test_db, patient_factory, mock_cache_service
+    authenticated_client, test_db, patient_factory, mock_cache_service, monkeypatch
 ):
+    async def feature_enabled(_key: str) -> bool:
+        return True
+
+    monkeypatch.setattr(
+        "src.pharmaviyum.services.patient.is_feature_enabled", feature_enabled
+    )
     client = await _authenticate_as_pharmacist(authenticated_client, test_db)
     pharmacy = Pharmacy(name="AI Profile Pharmacy A", code="AI-PROFILE-A")
     test_db.add(pharmacy)
