@@ -159,7 +159,7 @@ AI endpoints реализованы в `src/pharmaviyum/api/v1/ai.py`.
 - Celery worker для ingestion;
 - локальные сервисы наблюдаемости, если они настроены.
 
-Это временные среды разработки. Отдельный профиль `docker-compose.prod.yml` остаётся на PostgreSQL 16 и Redis 7 до отдельно утверждённых миграций данных. Управляемые production-базы/кеши и Pharmacy Edge PostgreSQL 16/Valkey — отдельные среды; изменение development Compose stack не обновляет их.
+Это временные среды development/CI. Hosted Production использует Neon PostgreSQL 18 и отдельный managed Redis endpoint; Demo обязана использовать изолированную PostgreSQL 18 и собственный managed Redis endpoint. Redis 8.8.4 — целевая версия совместимости, но не утверждение о фактической версии сервера провайдера до проверки. В legacy-файле `docker-compose.prod.yml` всё ещё указаны образы PostgreSQL 16/Redis 7; он не является утверждённым путём deployment и запрещён для Production и Demo. Pharmacy Edge — отдельный профиль со своей политикой, не относящийся к hosted data plane Production/Demo. См. [единый baseline Production/Demo](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md).
 
 FastAPI Cloud является целевой платформой размещения приложения. GitHub Actions обеспечивает CI и вручную запускаемый workflow deployment; базы данных, кеш и другие необходимые сервисы должны быть подготовлены и настроены отдельно.
 
