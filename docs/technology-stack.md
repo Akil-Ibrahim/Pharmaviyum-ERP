@@ -217,7 +217,7 @@ Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collecto
 
 ## Runtime infrastructure notes
 
-- Hosted Production uses the verified Neon PostgreSQL 18 project; Demo must use a separate PostgreSQL 18 database. Disposable development/CI Compose also targets PostgreSQL 18 with pgvector 0.8.7.
+- Production PostgreSQL runs locally on the pharmacy server under the approved Ansible/Pharmacy Edge profile; Demo uses a separate isolated database. Disposable development/CI Compose targets PostgreSQL 18 with pgvector 0.8.7.
 - The application uses the pgvector Python client and PostgreSQL extension for vector search where enabled; these are separately versioned components.
 - Hosted Production and Demo use separate managed Redis endpoints. Redis 8.8.4 is the compatibility target; the exact managed server version is provider-controlled and must be verified from provider metadata before release. Disposable development/CI Compose targets Redis 8.8.4.
 - The pharmacy-edge Ansible template uses Valkey; that server profile is intentionally kept separate from the local Redis service.
