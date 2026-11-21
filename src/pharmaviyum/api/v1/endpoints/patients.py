@@ -14,7 +14,6 @@ from src.pharmaviyum.schemas.patient import (
     PatientAIProfile,
     PatientCreate,
     PatientSummaryResponse,
-    PatientSummaryResponse,
     PatientUpdate,
 )
 from src.pharmaviyum.services.patient import PatientService
