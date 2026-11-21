@@ -219,7 +219,7 @@ Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collecto
 
 - Production PostgreSQL runs locally on the pharmacy server under the approved Ansible/Pharmacy Edge profile; Demo uses a separate isolated database. Disposable development/CI Compose targets PostgreSQL 18 with pgvector 0.8.7.
 - The application uses the pgvector Python client and PostgreSQL extension for vector search where enabled; these are separately versioned components.
-- Hosted Production and Demo use separate managed Redis endpoints. Redis 8.8.4 is the compatibility target; the exact managed server version is provider-controlled and must be verified from provider metadata before release. Disposable development/CI Compose targets Redis 8.8.4.
+- Production cache/queue services run according to the approved pharmacy-server Ansible profile; Demo uses isolated supporting services. Verify actual Production runtime versions on the pharmacy server. Disposable development/CI Compose targets Redis 8.8.4.
 - The pharmacy-edge Ansible template uses Valkey; that server profile is intentionally kept separate from the local Redis service.
 - Local Compose captures outgoing application emails in Mailpit (`http://localhost:8025`, SMTP `localhost:1025`). See [email delivery and local testing](./development/email.md) for setup. Demo delivery requires explicit SMTP host, port, sender, TLS mode, and credentials in the Demo hosting environment; Production SMTP is configured in its separately managed hosting environment.
 - Mortarium's LLM provider/model selection is environment-configured. See [AI architecture](./ai_architecture.md) and [FastAPI Cloud deployment](./deployment/FASTAPI_CLOUD.md) for the current deployment profile.
