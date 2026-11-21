@@ -171,6 +171,13 @@ class TestGetPatient:
 
         assert data["id"] == patient.id
         assert data["full_name"] == patient.full_name
+        assert not {
+            "conditions",
+            "allergies",
+            "insurances",
+            "consultations",
+            "purchases",
+        }.intersection(data)
 
     @pytest.mark.asyncio
     async def test_get_patient_not_found(
