@@ -527,7 +527,7 @@ React frontend можно запускать отдельно командами
 | Тестирование | [Руководство по тестированию](docs/guides/TESTING.ru.md) | [Testing guide](docs/guides/TESTING.md) | Структура тестов, markers и CI |
 | Эксплуатация | [Операционное руководство production](docs/operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md) | [Production operations runbook](docs/operations/PRODUCTION_OPERATIONS_RUNBOOK.md) | Проверки работоспособности, инциденты, backup и recovery |
 | Release | [Руководство по выпуску](docs/operations/RELEASE_RUNBOOK.ru.md) | [Release runbook](docs/operations/RELEASE_RUNBOOK.md) | Контролируемый выпуск и rollback |
-| Hosting | [FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.ru.md) | [FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.md) | Hosting, секреты, runtime и ручное развёртывание |
+| Хостинг Demo | [FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.ru.md) | [FastAPI Cloud Demo](docs/deployment/FASTAPI_CLOUD.md) | Размещение публичной Demo, runtime и контролируемое развёртывание |
 | DevOps | [Инженерная дорожная карта](docs/devops/ENGINEERING_ROADMAP.ru.md) | [Engineering stages](docs/devops/ENGINEERING_ROADMAP.md) | Этапы, направления работ и критерии завершения |
 | WebSocket | [Протокол WebSocket](docs/websocket-protocol.ru.md) | [WebSocket protocol](docs/websocket-protocol.md) | Контракт v1 и ограничения текущего scaffold |
 | Наблюдаемость | [Политика OpenTelemetry](docs/observability/opentelemetry.ru.md) | [OpenTelemetry](docs/observability/opentelemetry.md) | Настройка telemetry и защита данных |
