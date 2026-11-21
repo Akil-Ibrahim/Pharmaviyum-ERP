@@ -67,8 +67,7 @@ class AgentCheckpointer:
 
         async with self._pool.connection() as connection:
             async with connection.cursor() as cursor:
-                await cursor.execute(
-                    """
+                await cursor.execute("""
                     SELECT
                         to_regclass('public.checkpoint_migrations') IS NOT NULL,
                         to_regclass('public.checkpoints') IS NOT NULL,
@@ -102,8 +101,7 @@ class AgentCheckpointer:
                             ),
                             ARRAY[]::text[]
                         )
-                    """
-                )
+                    """)
                 schema = await cursor.fetchone()
 
                 if schema is None or not all(schema[:6]):
@@ -112,9 +110,7 @@ class AgentCheckpointer:
                         "apply the Alembic database migrations."
                     )
 
-                await cursor.execute(
-                    "SELECT max(v) FROM public.checkpoint_migrations"
-                )
+                await cursor.execute("SELECT max(v) FROM public.checkpoint_migrations")
                 version_row = await cursor.fetchone()
 
         expected_version = len(self._saver.MIGRATIONS) - 1
