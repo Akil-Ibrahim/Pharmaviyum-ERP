@@ -142,6 +142,5 @@ class PatientAIProfile(BaseModel):
     patient_id: int
     allergies: list[str] = Field(default_factory=list)
     conditions: list[str] = Field(default_factory=list)
-    risk_summary: str = ""
 
     model_config = ConfigDict(from_attributes=True)
