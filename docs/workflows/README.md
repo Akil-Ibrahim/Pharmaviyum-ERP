@@ -46,3 +46,7 @@ This source-level audit records current endpoint contracts, authorization bounda
 
 - [P0 Pharmacist Workspace acceptance gates — English](./PHARMACIST_WORKSPACE_P0_ACCEPTANCE.md)
 - [Критерии приёмки P0 Pharmacist Workspace — Русский](./PHARMACIST_WORKSPACE_P0_ACCEPTANCE.ru.md)
+- [P0.2 Patient, Prescription and Dispensing domain contract — English](../architecture/P0_2_PRESCRIPTION_DISPENSING_DOMAIN_CONTRACT.md)
+- [Доменный контракт P0.2: пациент, рецепт и отпуск — Русский](../architecture/P0_2_PRESCRIPTION_DISPENSING_DOMAIN_CONTRACT.ru.md)
+
+The P0.2 contract is a proposed design gate. It does not claim that the workflow has been implemented or validated.
