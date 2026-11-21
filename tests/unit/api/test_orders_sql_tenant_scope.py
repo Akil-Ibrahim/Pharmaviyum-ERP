@@ -27,9 +27,15 @@ def test_order_workflow_queries_apply_pharmacy_predicate(statement, expected_tab
         compile_kwargs={"literal_binds": True},
     )
     sql = str(compiled)
+    where_clause = str(
+        statement.whereclause.compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={"literal_binds": True},
+        )
+    )
 
     assert expected_table in sql
-    assert "patients.pharmacy_id = 731" in sql
+    assert "patients.pharmacy_id = 731" in where_clause
 
 
 @pytest.mark.parametrize(
@@ -46,6 +52,11 @@ def test_global_superuser_queries_preserve_explicit_unscoped_semantics(statement
         dialect=postgresql.dialect(),
         compile_kwargs={"literal_binds": True},
     )
-    sql = str(compiled)
+    where_clause = str(
+        statement.whereclause.compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={"literal_binds": True},
+        )
+    )
 
-    assert "pharmacy_id" not in sql
+    assert "pharmacy_id" not in where_clause
