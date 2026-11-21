@@ -28,8 +28,9 @@ Configure the following as repository Actions secrets or secrets on the protecte
 
 - `FASTAPI_CLOUD_TOKEN`: FastAPI Cloud deploy token.
 - `FASTAPI_CLOUD_APP_ID`: target FastAPI Cloud application ID.
-- `DATABASE_URL`: synchronous or async PostgreSQL connection URL for the same production database used by the app. The workflow uses this secret for read-only catalog exclusion checks and to clean up the temporary smoke-test user. The cleanup step normalizes `postgresql+asyncpg://` / `postgres+asyncpg://` to a psycopg-compatible URL.
-- `VITE_CLERK_PUBLISHABLE_KEY`: optional build-time public frontend key when required by the current frontend sign-in configuration.
+- `DATABASE_URL`: PostgreSQL URL for the restricted production runtime role, matching the FastAPI Cloud application's `DATABASE_URL`. The deploy workflow uses it for read-only catalog exclusion checks and temporary smoke-user cleanup.
+- `MIGRATION_DATABASE_URL`: separate login URL for the production migration workflow only. It must target the same verified Neon host/database, use a different non-superuser role, and be a member of `neondb_owner`. Do not configure it in FastAPI Cloud or use it for application traffic.
+- `VITE_CLERK_PUBLISHABLE_KEY: optional build-time public frontend key when required by the current frontend sign-in configuration.
 
 Never put secret values in the repository, workflow inputs, issue comments, or chat. Never echo credentials into CI logs.
 
@@ -62,7 +63,7 @@ Configure these in the FastAPI Cloud app Environment Variables panel:
 
 The QwenCloud values describe the current demo profile, not an unlimited/free production SLA. Enable the provider-console **Free quota only** switch for the selected model and verify the remaining quota and expiry before enabling requests. The application flag alone does not enforce provider billing. QwenCloud generation and embeddings are separate; configure and verify the embedding provider independently before enabling cloud RAG.
 
-Use the same production database for the FastAPI Cloud `DATABASE_URL` and GitHub Actions `DATABASE_URL`. Keep database and Redis network access restricted to the required application/workflow sources.
+The FastAPI Cloud `DATABASE_URL` and GitHub Actions `DATABASE_URL` must use the same restricted runtime role. The production migration workflow uses the separate `MIGRATION_DATABASE_URL` credential and verifies that it is a distinct role with owner-level migration membership. Keep database and Redis network access restricted to the required application/workflow sources.
 
 ## 4. Manual deployment procedure
 
