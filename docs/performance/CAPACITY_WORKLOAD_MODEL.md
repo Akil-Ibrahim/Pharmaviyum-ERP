@@ -10,7 +10,7 @@
 |---|---:|---:|
 | Pharmacies | 1 | 100 |
 | Employees (all roles) | 6 | 600 |
-| Public operating hours | 14 hours/day (08:00–22:00 local pharmacy time) | 14 hours/day (08:00–22:00 local time) |
+| Public operating hours | 14 hours/day (08:00–22:00 local time) | 14 hours/day (08:00–22:00 local time) |
 | POS cash registers / checkout stations | 3 | 300 |
 | Customer visits per operating day | 200 | 20,000 |
 
