@@ -44,7 +44,9 @@
 
 - До PR #385 событие `patient.created` содержало `patient_id`, `full_name`, `phone`, `country` и `created_by`.
 - PR #385 удаляет `full_name`, `phone` и `country`; остаются `patient_id`, `pharmacy_id` и `created_by` для корреляции/маршрутизации.
-- `patient.updated` по-прежнему содержит patient ID и список изменённых полей.
+- `patient.updated`, `patient.deleted` и `patient.visit_recorded` по-прежнему содержат стабильный patient ID в generic event payload; их минимизация остаётся открытой задачей.
+- Поиск по исходному коду не обнаружил in-repository subscribers через `event_bus.on(...)`. Это не доказывает отсутствие динамически зарегистрированных или внешних consumers.
+- После дополнительного изменения в ветке PR лог создания пациента больше не содержит patient ID.
 - Event bus — process-local и best-effort (`src/pharmaviyum/services/event_bus.py`); общий лог emit записывает тип события и количество handlers, а не payload. Сервис создания пациента ранее также записывал стабильный patient ID в application log; PR #385 удаляет этот идентификатор из лога.
 - Полный граф subscribers и возможная внешняя пересылка/логирование не были исчерпывающе прослежены.
 
