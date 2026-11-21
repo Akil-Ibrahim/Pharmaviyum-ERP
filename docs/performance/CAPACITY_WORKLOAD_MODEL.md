@@ -1,0 +1,97 @@
+# Pharmaviyum — Capacity Workload Model
+
+**Status:** Planning model; not a measured capacity result.  
+**Canonical source:** [Engineering Benchmark Requirements](../devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md)  
+**Applies to:** synthetic local/staging performance and capacity validation only.
+
+## 1. Canonical business sizing inputs
+
+| Dimension | Per pharmacy | 100-pharmacy network |
+|---|---:|---:|
+| Pharmacies | 1 | 100 |
+| Employees (all roles) | 5 | 500 |
+| POS cash registers / checkout stations | 3 | 300 |
+| Customer visits per operating day | 200 | 20,000 |
+
+The five employees are total staff, not five pharmacists. The pharmacist/manager/cashier role split, shift overlap and number of simultaneously active staff sessions are not specified by the canonical benchmark. Do not invent that split.
+
+Three POS stations are physical/logical checkout capacity per pharmacy. This is not proof that three checkouts are continuously active, nor that 300 network-wide transactions occur at the same instant. A three-cashier-per-pharmacy concurrent checkout test is a deliberate stress scenario to validate register concurrency; 300 concurrent register sessions across the network is an upper-bound synthetic profile, not a forecast.
+
+## 2. What the inputs mean — and do not mean
+
+- **20,000 visits/day** is a daily business-volume planning input.
+- A visit is not necessarily a sale, authenticated session, API request, prescription dispense or AI interaction.
+- **500 employees** is a staffing assumption, not a concurrent-user count.
+- **300 POS stations** is installed checkout capacity, not observed concurrent use.
+- No RPS, arrival-rate curve, peak-hour multiplier, concurrent session count, transaction-per-visit ratio, AI-request ratio or background-job volume can be derived safely from these inputs alone.
+- Do not multiply daily visits by guessed endpoint counts or convert visits/day directly into VUs.
+
+## 3. Workload dimensions that must be measured or approved
+
+| Dimension | Current state | Required evidence / decision |
+|---|---|---|
+| Opening hours and operating days | NOT SPECIFIED | Confirm by business operations; distinguish public hours from opening/closing preparation. |
+| Arrival distribution and peak periods | NOT SPECIFIED | Obtain anonymized pilot/operational observations; document weekday/seasonality and peak profile. |
+| Visit-to-sale conversion | NOT SPECIFIED | Measure or approve a synthetic scenario ratio; do not assume every visitor buys. |
+| Average basket / sale lines | NOT SPECIFIED | Define representative basket-size distribution. |
+| Pharmacist vs other staff roles | NOT SPECIFIED | Confirm role split within five employees per pharmacy. |
+| Shift overlap and active staff sessions | NOT SPECIFIED | Confirm schedules and concurrent sessions. |
+| Register utilization / concurrent checkout | NOT SPECIFIED | Observe pilot telemetry; retain 3 simultaneous cashiers/pharmacy as a controlled stress case. |
+| API calls per workflow | NOT SPECIFIED | Derive from traced, versioned user journeys, not guessed multipliers. |
+| AI requests per visit / task | NOT SPECIFIED | Measure separately; isolate model latency, quota and cost. |
+| Background jobs / ingestion | NOT SPECIFIED | Measure event and queue volume, oldest-message age and processing time. |
+| Infrastructure limits | NOT VERIFIED HERE | Capture staging compute, DB pool, connections, Redis, network and provider quotas. |
+
+## 4. Progressive validation strategy
+
+Run only with synthetic tenants, products, inventory, patients and transactions. Use an isolated disposable staging environment for writes. Default to read-only until the POS scenario has verified cleanup/rollback and durable postcondition checks.
+
+1. **Single-pharmacy functional baseline:** one synthetic pharmacy, five employee identities (role split only when approved), three POS stations configured. Validate the business journey and baseline resource consumption.
+2. **Single-pharmacy register concurrency:** run three independent cashier sessions concurrently against the real transactional POS checkout contract. Assert idempotency, stock conservation, FEFO, expiry exclusion, payment state, receipt identity, inventory movements and tenant scope. Do not count a successful HTTP response alone as a completed sale.
+3. **Multi-pharmacy isolation:** increase tenant count progressively (for example 1 → 10 → 25 → 50 → 100), with synthetic data and explicit per-tenant identities. Verify no cross-tenant reads, writes or shared mutable state.
+4. **Network register upper-bound:** 300 synthetic register sessions (3 × 100 pharmacies) may be used as an explicitly labelled stress profile after smaller stages pass. It is not the expected normal concurrency. Record achieved throughput and saturation; stop on security invariant failure, sustained errors or unsafe data changes.
+5. **Daily-volume simulation:** model 200 visits per pharmacy and 20,000 across the network using an approved arrival curve and workflow mix. Until those inputs are approved, report the scenario as NOT CONFIGURED rather than inventing an arrival rate.
+6. **Soak and recovery:** run the approved representative mix for a defined duration; observe queue growth, DB/cache saturation, resource leaks, recovery and error budgets.
+7. **AI workload:** execute separately with controlled concurrency, provider quotas and cost ceilings; then run a deliberately bounded mixed test to measure its impact on core ERP/POS latency.
+
+Suggested tenant-count steps are test stages, not forecasts. Suggested concurrency values in other benchmark documents remain stress profiles unless tied to observed traffic.
+
+## 5. Required POS invariants
+
+For concurrent checkout tests, independently query persisted state after the run and assert:
+
+- no negative stock and no overselling beyond the defined reservation model;
+- no duplicate sale/payment/receipt on idempotent retries;
+- deterministic FEFO allocation and exclusion of expired/unavailable lots;
+- payment success/failure transitions are consistent with stock reservation/release;
+- sale lines, lot allocations, inventory movements and outbox records reconcile;
+- tenant A cannot read or mutate tenant B's sale, inventory or register state;
+- timeouts and retries do not create ambiguous duplicate outcomes.
+
+Only test API behavior that exists in the current route/schema contract. Do not fabricate endpoints for shift opening/closing, cash reconciliation, returns or prescription-linked dispensing.
+
+## 6. Reporting contract
+
+Every run must record:
+
+- commit SHA, branch, timestamp and environment;
+- staging topology and resource limits (API replicas/CPU/memory, DB compute/pool, Redis limits);
+- tenant count, pharmacy count, employees/roles, POS stations and active cashier sessions;
+- visit arrival curve, journey mix, basket distribution and think time;
+- VUs, arrival rate, duration, ramp-up and warm-up;
+- API throughput, completed business workflows, p50/p90/p95/p99, errors/timeouts and failed checks;
+- PostgreSQL pool wait, query latency, connections, locks and saturation;
+- Redis latency, memory, connections, evictions and queue metrics;
+- CPU, memory, network, restarts and recovery;
+- synthetic dataset version and artifact/report references;
+- limitations and whether the result is MEASURED, ESTIMATED, NOT TESTED or UNAVAILABLE.
+
+Never describe local/Codespaces results as production capacity. Do not promote the capacity traceability row above L0 until a repeatable staging run with representative approved workload and retained artifacts exists.
+
+## 7. Existing scenario reconciliation
+
+The repository also contains older single-pharmacy load-test scenarios that mention six staff, 200–300 visits, a 14-hour opening window and provisional peak-hour rates. Those are separate scenario assumptions, not interchangeable canonical inputs. In particular, six staff and 300 visits conflict with the current canonical benchmark of five employees and 200 visits per pharmacy/day. Preserve the older scenario as historical/alternate until the business owner explicitly reconciles or supersedes it; do not silently combine the numbers.
+
+## 8. Exit criteria
+
+Capacity planning is ready for representative execution only when the business owner has approved the unresolved workload dimensions in section 3. A capacity claim requires successful staged execution, workload representativeness review, infrastructure saturation analysis, repeatability and retained artifacts. Passing a synthetic stress test does not itself prove clinical correctness, tenant isolation or production readiness; those remain independent release gates.
