@@ -79,4 +79,4 @@ For a production incident:
 
 Changes to production behavior must be made through reviewed commits/PRs. Direct edits to production infrastructure are emergency-only.
 
-The `main` branch is the canonical release branch. Hosted application deployment targets FastAPI Cloud; database services, migrations, health checks, backups/restore, observability and rollback remain separate production-readiness requirements.
+The `main` branch is the canonical integration branch for the public Demo. FastAPI Cloud hosts the Demo only. Production uses the same application technology stack on a separately managed hosting platform; its provider, deployment, migrations and release operations are maintained outside this public repository. Production database services, health checks, backups/restore, observability and rollback remain separate readiness requirements.
