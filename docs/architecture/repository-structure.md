@@ -25,11 +25,11 @@ This document defines the current repository layout and the ownership rules for 
 | `docker-compose.yml` | Local/default Compose topology |
 | `docker-compose.codespaces.yml` | Codespaces-specific overrides |
 | `docker-compose.monitoring.yml` | Monitoring stack |
-| `docker-compose.prod.yml` | Production/Edge Compose definition; validate before use and do not assume it is the FastAPI Cloud deployment path |
+| `docker-compose.prod.yml` | Production/Edge Compose definition; validate before use and do not assume it is the FastAPI Cloud Demo deployment path |
 | `Dockerfile` | Application image build |
 | `scripts/start.sh` | Container startup and migration entrypoint |
 
-FastAPI Cloud is a separate production target. Do not treat the root Compose files as its deployment configuration. Do not merge FastAPI Cloud, Pharmacy Edge, local development, and monitoring settings into one ambiguous Compose file.
+FastAPI Cloud is the public Demo hosting/deployment target only. Production uses a separately managed hosting platform and release process outside this public repository. Do not treat the root Compose files as the Demo deployment configuration. Do not merge FastAPI Cloud Demo, Pharmacy Edge, local development, and monitoring settings into one ambiguous Compose file.
 
 ## Documentation and supporting material
 

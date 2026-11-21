@@ -1,41 +1,43 @@
-# Runbook релиза FastAPI Cloud
+# Runbook релиза Demo в FastAPI Cloud
 
 ## Область действия
 
-FastAPI Cloud — платформа hosted deployment приложения. GitHub Actions выполняет CI; отдельный workflow `.github/workflows/deploy-fastapi-cloud.yml` запускается вручную и развёртывает приложение при наличии обязательной конфигурации. Каноническая integration/release branch — `main`.
+FastAPI Cloud размещает только публичную Demo Pharmaviyum. GitHub Actions выполняет CI; workflow .github/workflows/deploy-fastapi-cloud.yml запускается вручную и развёртывает только изолированное приложение Demo. Production использует тот же технологический стек приложения на отдельно управляемой платформе хостинга. Deployment Production, миграции и эксплуатационная автоматизация находятся за пределами этого публичного репозитория.
 
-Этот документ описывает workflow репозитория. Он не утверждает, что deployment уже завершился успешно или production readiness подтверждена.
+Этот runbook описывает workflow Demo и не утверждает, что deployment уже завершился успешно или что Production readiness подтверждена.
 
-## Предварительные условия deployment
+## Предварительные условия развёртывания Demo
 
-- Создано приложение FastAPI Cloud и связано с репозиторием/проектом.
-- Настроены GitHub Actions secrets: `FASTAPI_CLOUD_TOKEN` и `FASTAPI_CLOUD_APP_ID`.
-- Безопасно заданы обязательные FastAPI Cloud environment variables; см. [Runbook FastAPI Cloud](../deployment/FASTAPI_CLOUD.ru.md).
-- Отдельно provisioned PostgreSQL с pgvector и доступный Redis-compatible service.
-- До production traffic миграции БД однократно применены из доверенного окружения.
-- Настроена frontend build configuration, включая Clerk publishable key, если включён соответствующий sign-in route.
+- Создано отдельное приложение Demo в FastAPI Cloud и связано с этим репозиторием.
+- В защищённом GitHub Actions environment demo-pharmaviyum-erp настроены FASTAPI_CLOUD_DEMO_TOKEN и FASTAPI_CLOUD_DEMO_APP_ID.
+- DEMO_DATABASE_URL указывает только на изолированную Demo БД.
+- Переменные приложения Demo настроены согласно [руководству FastAPI Cloud Demo](../deployment/FASTAPI_CLOUD.ru.md).
+- Для Demo отдельно provisioned PostgreSQL с pgvector и managed Redis.
+- В Demo используются только синтетические данные.
 
-## Процесс релиза
+## Процесс релиза Demo
 
-1. Создайте pull request в `main`.
+1. Создайте pull request в main.
 2. Проверьте изменения и дождитесь успешного завершения обязательных GitHub Actions checks.
 3. Выполняйте merge только после прохождения обязательных проверок.
-4. Когда нужен релиз, вручную запустите workflow `Deploy to FastAPI Cloud`.
-5. Проверьте deployment status и logs в FastAPI Cloud: отправленный deployment не обязательно успешен.
-6. До использования реальных аптечных данных проверьте `/health`, `/ready`, authentication, доступность БД, критические аптечные процессы и AI requests.
-7. При ошибке остановите promotion, изучите build/runtime logs и используйте поддерживаемый FastAPI Cloud recovery process после определения неисправной revision.
+4. Вручную запустите Deploy Demo to FastAPI Cloud из main с утверждённым Demo change reference.
+5. Пройдите approval Demo environment, если он настроен.
+6. Проверьте deployment status и logs.
+7. Проверьте /version, /health, /ready, негативный сценарий авторизации, frontend routes и защиту POS.
 
-## Безопасность БД
+Отправка deployment-команды не означает успешный rollout. Workflow должен подтвердить точный commit SHA и staging runtime profile, используемый Demo.
 
-Миграции — прямые изменения production. Предпочитайте backward-compatible expand/contract migrations. Не полагайтесь на автоматический schema downgrade как основной способ rollback. Для отдельно provisioned БД поддерживайте backup и проверенные restore procedures.
+## Безопасность Demo БД
+
+Публичный workflow deployment Demo выполняет read-only проверку совместимости схемы и не запускает Alembic migrations. Изменение схемы Demo требует отдельной утверждённой операции, backup/restore evidence и post-migration validation. Никогда не используйте Production credentials или данные в Demo.
 
 ## Ограничения runtime, которые необходимо учитывать
 
 - Native FastAPI Cloud deployment автоматически не устанавливает исполняемый файл Tesseract и OCR language packs из Dockerfile.
 - Celery/background jobs требуют отдельного worker process и не запускаются web deployment workflow.
-- PostgreSQL/pgvector и Redis-compatible infrastructure существуют отдельно от web deployment.
-- Перед каждым релизом сверяйте имена environment variables с активными application settings.
+- PostgreSQL/pgvector и Redis-compatible infrastructure provisioned отдельно от web application.
+- Перед каждым релизом Demo сверяйте имена environment variables с активными application settings.
 
-## Текущий статус
+## Граница Production
 
-В репозитории есть workflow ручного deployment в FastAPI Cloud. Production readiness остаётся неподтверждённой до проверки CI, deployment smoke tests, backup/restore, observability, работы background workers и recovery procedures.
+Публичный runbook и его workflows не развёртывают, не мигрируют и не администрируют Production. Хостинг Production и release procedures управляются отдельно с соблюдением применимых ограничений конфиденциальности.

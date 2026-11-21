@@ -163,7 +163,7 @@ The default development Docker Compose stack currently provides:
 
 These are disposable development/CI targets only. Hosted Production uses Neon PostgreSQL 18 and a separately managed Redis endpoint; Demo must use isolated PostgreSQL 18 and its own managed Redis endpoint. Redis 8.8.4 is the compatibility target, not a claim about a provider-managed server version until verified. The legacy `docker-compose.prod.yml` file still contains PostgreSQL 16/Redis 7 images and is not an approved deployment path; do not use it for Production or Demo. Pharmacy Edge is a separately governed profile and is not the hosted Production/Demo data plane. See [the canonical Production/Demo baseline](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md).
 
-FastAPI Cloud is the hosted application deployment target. GitHub Actions provides CI and a manually triggered deployment workflow; database, cache, and other required services must be provisioned and configured separately.
+FastAPI Cloud hosts and deploys the public Demo only. GitHub Actions provides CI and a manually triggered Demo deployment workflow; isolated database, cache and other required services must be provisioned separately. Production uses the same application technology stack on a separately managed hosting platform, with its deployment and operations maintained outside this public repository.
 
 The repository does not use a separate Kubernetes AI deployment; Mortarium remains an application-level AI layer.
 
@@ -207,5 +207,5 @@ uv run uvicorn src.pharmaviyum.main:app --reload --port 8000
 1. Tenant isolation is enforced before retrieval and generation.
 2. LLM output is not trusted as a source of truth; retrieved sources and guardrails remain authoritative.
 3. Source citations use stable chunk identifiers.
-4. Production deployment has one canonical release path.
+4. Public Demo deployment has one canonical release path in this repository; Production deployment is managed outside this public repository.
 5. Documentation describes implemented behavior, not planned infrastructure.

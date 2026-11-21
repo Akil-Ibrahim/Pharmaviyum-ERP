@@ -38,7 +38,7 @@ Tracing is disabled by default to avoid adding instrumentation overhead when no 
 | `OTEL_INCLUDE_FASTAPI_REQUEST_SPANS` | `false` | Development/test-only opt-in for FastAPI request auto-spans |
 | `OTEL_INCLUDE_SENSITIVE_CLIENT_SPANS` | `false` | Development/test-only opt-in for SQLAlchemy and HTTPX auto-spans |
 
-Set one endpoint on the FastAPI Cloud application, for example:
+For the public Demo, set one OTLP endpoint on the FastAPI Cloud Demo application, for example. Production telemetry endpoints are configured in its separately managed hosting environment.
 
 ```dotenv
 OTEL_ENABLED=true

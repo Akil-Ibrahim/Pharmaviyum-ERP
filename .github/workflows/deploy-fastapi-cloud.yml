@@ -1,12 +1,12 @@
-name: Deploy to FastAPI Cloud
+name: Deploy Demo to FastAPI Cloud
 
-# Production deployment is intentionally manual. CI completion must never deploy
-# to FastAPI Cloud or run database migrations as a side effect.
+# This workflow deploys the public Demo only. Production hosting and deployment
+# are managed outside this public repository and must never be targeted here.
 on:
   workflow_dispatch:
     inputs:
       change_reference:
-        description: "Approved production change or ticket reference"
+        description: "Approved Demo change or ticket reference"
         required: true
         type: string
 
@@ -15,7 +15,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: fastapi-cloud-production
+  group: fastapi-cloud-demo
   cancel-in-progress: false
 
 jobs:
@@ -24,23 +24,23 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment:
-      name: production-pharmaviyum-erp
+      name: demo-pharmaviyum-erp
       deployment: false
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     env:
-      DEPLOY_SHA: ${{ github.sha }}
+      DEMO_SHA: ${{ github.sha }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
-          ref: ${{ env.DEPLOY_SHA }}
+          ref: ${{ env.DEMO_SHA }}
 
       - name: Embed immutable source commit in deployment package
         shell: bash
         run: |
           set -euo pipefail
-          printf 'BUILD_COMMIT = "%s"\n' "$DEPLOY_SHA" > src/pharmaviyum/build_info.py
-          grep -Fx "BUILD_COMMIT = \"$DEPLOY_SHA\"" src/pharmaviyum/build_info.py
+          printf 'BUILD_COMMIT = "%s"\n' "$DEMO_SHA" > src/pharmaviyum/build_info.py
+          grep -Fx "BUILD_COMMIT = \"$DEMO_SHA\"" src/pharmaviyum/build_info.py
 
       - name: Set up Bun
         id: setup-bun
@@ -88,71 +88,64 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in $(seq 1 60); do
-            RUNS="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${DEPLOY_SHA}&per_page=100")"
+            RUNS="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${DEMO_SHA}&per_page=100")"
             CI_RUN="$(printf '%s' "$RUNS" | jq -c '
               [.workflow_runs[]
                 | select(.path == ".github/workflows/ci.yml"
                   and (.event == "push" or .event == "workflow_dispatch")
-                  and .head_sha == env.DEPLOY_SHA)]
+                  and .head_sha == env.DEMO_SHA)]
               | sort_by(.created_at) | last // empty')"
             if [ -n "$CI_RUN" ]; then
               STATUS="$(printf '%s' "$CI_RUN" | jq -r '.status')"
               CONCLUSION="$(printf '%s' "$CI_RUN" | jq -r '.conclusion // empty')"
               if [ "$STATUS" = "completed" ]; then
                 if [ "$CONCLUSION" = "success" ]; then
-                  echo "CI passed for ${DEPLOY_SHA}."
+                  echo "CI passed for ${DEMO_SHA}."
                   exit 0
                 fi
-                echo "Refusing production deploy: CI concluded ${CONCLUSION:-without a conclusion}."
+                echo "Refusing Demo deploy: CI concluded ${CONCLUSION:-without a conclusion}."
                 exit 1
               fi
               echo "CI is still ${STATUS}; waiting (attempt ${attempt}/60)."
             else
-              echo "CI run for ${DEPLOY_SHA} has not appeared yet (attempt ${attempt}/60)."
+              echo "CI run for ${DEMO_SHA} has not appeared yet (attempt ${attempt}/60)."
             fi
             sleep 10
           done
-          echo "Refusing production deploy: timed out waiting for CI on ${DEPLOY_SHA}."
+          echo "Refusing Demo deploy: timed out waiting for CI on ${DEMO_SHA}."
           exit 1
 
       # Alembic migrations are a separate, explicitly approved operation.
-      # This deployment workflow must not mutate the production schema.
+      # This deployment workflow must not mutate the Demo schema.
 
-      - name: Validate production deployment inputs
+      - name: Validate Demo deployment inputs
         env:
           CHANGE_REFERENCE: ${{ inputs.change_reference }}
-          FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
-          FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FASTAPI_CLOUD_DEMO_TOKEN: ${{ secrets.FASTAPI_CLOUD_DEMO_TOKEN }}
+          FASTAPI_CLOUD_DEMO_APP_ID: ${{ secrets.FASTAPI_CLOUD_DEMO_APP_ID }}
+          DATABASE_URL: ${{ secrets.DEMO_DATABASE_URL }}
         shell: bash
         run: |
           set -euo pipefail
           if [[ -z "$CHANGE_REFERENCE" ]]; then
-            echo "Refusing production deployment: provide an approved change reference."
+            echo "Refusing Demo deployment: provide an approved change reference."
             exit 1
           fi
-          for secret_name in FASTAPI_CLOUD_TOKEN FASTAPI_CLOUD_APP_ID DATABASE_URL; do
+          for secret_name in FASTAPI_CLOUD_DEMO_TOKEN FASTAPI_CLOUD_DEMO_APP_ID DATABASE_URL; do
             if [[ -z "${!secret_name}" ]]; then
-              echo "Refusing production deployment: required secret/input is missing: $secret_name"
+              echo "Refusing Demo deployment: required secret/input is missing: $secret_name"
               exit 1
             fi
           done
-          # Refuse to deploy if the configured secret points at a different app.
-          # This workflow is scoped to the explicitly approved Pharmaviyum CRM app.
-          expected_app_id="c350a85c"
-          if [[ "$FASTAPI_CLOUD_APP_ID" != "$expected_app_id" ]]; then
-            echo "Refusing production deployment: FASTAPI_CLOUD_APP_ID does not target the approved Pharmaviyum CRM app."
-            exit 1
-          fi
           {
-            echo "## Production deployment approval"
+            echo "## Demo deployment approval"
             echo "- Change reference: $CHANGE_REFERENCE"
-            echo "- Commit: $DEPLOY_SHA"
+            echo "- Commit: $DEMO_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Verify production database schema is compatible (read-only)
+      - name: Verify Demo database schema is compatible (read-only)
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DEMO_DATABASE_URL }}
         run: |
           uv run python - <<'PY'
           import os
@@ -176,7 +169,7 @@ jobs:
 
           if actual_heads != expected_heads:
               print(
-                  "Refusing application deployment: production Alembic revisions "
+                  "Refusing application deployment: Demo Alembic revisions "
                   f"{sorted(actual_heads)} do not match code heads {sorted(expected_heads)}."
               )
               print("Apply and verify the separately approved migrations before deploying.")
@@ -184,92 +177,93 @@ jobs:
           if not inventory_ledger:
               print("Refusing application deployment: inventory_movements table is missing.")
               sys.exit(1)
-          print(f"Production schema is at expected Alembic heads: {sorted(actual_heads)}")
+          print(f"Demo schema is at expected Alembic heads: {sorted(actual_heads)}")
           PY
 
-      # FASTAPI_CLOUD_TOKEN is a deploy token. It authorizes deployments,
+      # FASTAPI_CLOUD_DEMO_TOKEN is a deploy token. It authorizes deployments,
       # not account-authenticated app-management commands such as "cloud env set".
-      # Configure ENVIRONMENT=production once in the FastAPI Cloud dashboard;
-      # the runtime smoke test below refuses to pass unless production mode is active.
-      - name: Submit deployment and let production smoke tests verify rollout
+      # Configure ENVIRONMENT=staging in the Demo FastAPI Cloud dashboard;
+      # the runtime smoke test below refuses to pass unless staging mode is active.
+      - name: Submit deployment and let Demo smoke tests verify rollout
         # The deploy token can create deployments but cannot authenticate the
         # account-scoped deployment-status read API. --no-wait avoids treating
         # that unsupported status lookup as a deployment failure; the following
-        # production smoke tests remain the authoritative rollout gate.
+        # Demo smoke tests remain the authoritative rollout gate.
         run: uv run fastapi cloud deploy . --no-wait
         env:
-          FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
-          FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
+          # Map Demo-only GitHub secrets to the variable names expected by the CLI.
+          FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_DEMO_TOKEN }}
+          FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_DEMO_APP_ID }}
 
       # The deploy CLI is intentionally asynchronous. Do not let the smoke
-      # suite accidentally validate the previous production instance.
-      - name: Wait for the new production runtime to become active
+      # suite accidentally validate the previous Demo instance.
+      - name: Wait for the new Demo runtime to become active
         shell: bash
         run: |
           set -euo pipefail
-          base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
+          base_url="https://pharmaviyum-erp.fastapicloud.dev"
           for attempt in $(seq 1 60); do
             # Bypass intermediary caches so this gate observes the runtime that is
             # currently serving requests, not a stale cached /version response.
             runtime_info="$(curl --silent --show-error --fail \
               -H "Cache-Control: no-cache, no-store" \
               -H "Pragma: no-cache" \
-              "$base_url/version?deploy_sha=${DEPLOY_SHA}&attempt=${attempt}" || true)"
-            if printf '%s' "$runtime_info" | jq -e --arg expected_sha "$DEPLOY_SHA" '
+              "$base_url/version?deploy_sha=${DEMO_SHA}&attempt=${attempt}" || true)"
+            if printf '%s' "$runtime_info" | jq -e --arg expected_sha "$DEMO_SHA" '
               .build_commit == $expected_sha and
-              .environment == "production" and
-              .application_environment == "production" and
-              .auth_environment == "production" and
+              .environment == "staging" and
+              .application_environment == "staging" and
+              .auth_environment == "staging" and
               .debug == false and
               .auth_debug == false and
               (.python_version | split(" ")[0] == "3.15.0") and
               .python_implementation == "cpython"
             ' >/dev/null 2>&1; then
-              echo "New production runtime is active."
+              echo "New Demo runtime is active."
               exit 0
             fi
-            echo "Waiting for the new production runtime (attempt ${attempt}/60)."
+            echo "Waiting for the new Demo runtime (attempt ${attempt}/60)."
             sleep 5
           done
-          echo "Production runtime did not switch to production on CPython 3.15.0 within five minutes."
+          echo "Demo runtime did not switch to staging on CPython 3.15.0 within five minutes."
           printf '%s\\n' "${runtime_info:-No /version response}" | jq '{build_commit, environment, application_environment, auth_environment, debug, auth_debug, python_version, python_implementation}' 2>/dev/null || true
           exit 1
 
       # Reference catalog contents are validated by dedicated data-import tests.
       # Deployment smoke tests must verify the API contract, not require a seeded drug dataset.
 
-      - name: Verify production health, authentication and POS protection (read-only)
+      - name: Verify Demo health, authentication and POS protection (read-only)
         shell: bash
         run: |
           set -euo pipefail
-          base_url="https://pharmaviyum-erp-crm.fastapicloud.dev"
+          base_url="https://pharmaviyum-erp.fastapicloud.dev"
 
           health_status="$(curl --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors \
             -o /tmp/health.json -w '%{http_code}' "$base_url/health")"
           if [ "$health_status" != "200" ] || ! jq -e '.status == "healthy" or .status == "degraded"' /tmp/health.json >/dev/null; then
-            echo "Production liveness check failed: HTTP $health_status."
+            echo "Demo liveness check failed: HTTP $health_status."
             cat /tmp/health.json
             exit 1
           fi
-          echo "Production liveness check passed."
+          echo "Demo liveness check passed."
 
           runtime_status="$(curl --silent --show-error --retry 60 --retry-delay 5 --retry-all-errors \
             -o /tmp/version.json -w '%{http_code}' "$base_url/version")"
-          if [ "$runtime_status" != "200" ] || ! jq -e --arg expected_sha "$DEPLOY_SHA" '
+          if [ "$runtime_status" != "200" ] || ! jq -e --arg expected_sha "$DEMO_SHA" '
             .build_commit == $expected_sha and
-            .environment == "production" and
-            .application_environment == "production" and
-            .auth_environment == "production" and
+            .environment == "staging" and
+            .application_environment == "staging" and
+            .auth_environment == "staging" and
             .debug == false and
             .auth_debug == false and
             (.python_version | split(" ")[0] == "3.15.0") and
             .python_implementation == "cpython"
           ' /tmp/version.json >/dev/null; then
-            echo "Production runtime assertion failed: HTTP $runtime_status; expected production mode, debug=false, and CPython 3.15.0."
+            echo "Demo runtime assertion failed: HTTP $runtime_status; expected staging mode, debug=false, and CPython 3.15.0."
             cat /tmp/version.json
             exit 1
           fi
-          echo "Production runtime identity check passed."
+          echo "Demo runtime identity check passed."
 
           # /ready exposes component states as strings: postgres, redis,
           # and ai_initialized. Keep this assertion aligned with monitoring.py.
@@ -281,11 +275,11 @@ jobs:
             .components.redis == "ok" and
             .components.ai_initialized == "ok"
           ' /tmp/ready.json >/dev/null; then
-            echo "Production readiness check failed: HTTP $readiness_status."
+            echo "Demo readiness check failed: HTTP $readiness_status."
             cat /tmp/ready.json
             exit 1
           fi
-          echo "Production readiness check passed."
+          echo "Demo readiness check passed."
 
           appearance_status="$(curl --silent --show-error -o /tmp/appearance.html -w '%{http_code}' \
             "$base_url/settings/appearance")"
@@ -322,5 +316,5 @@ jobs:
             exit 1
           fi
 
-          echo "Production liveness, runtime identity, readiness, invalid-credential handling and protected POS access checks passed."
-          echo "No production user, sale, inventory, or catalog data was created or modified by this smoke run."
+          echo "Demo liveness, runtime identity, readiness, invalid-credential handling and protected POS access checks passed."
+          echo "No Demo user, sale, inventory, or catalog data was created or modified by this smoke run."

@@ -1,12 +1,12 @@
-name: Diagnose FastAPI Cloud Production
+name: Diagnose FastAPI Cloud Demo
 
-# Read-only diagnostics only. This workflow never deploys, migrates, or writes
-# application data. It is intentionally separate from the deployment workflow.
+# Read-only diagnostics for the public Demo only. This workflow never deploys,
+# migrates, or writes application data.
 on:
   workflow_dispatch:
     inputs:
-      expected_commit:
-        description: "Optional expected production build commit SHA"
+      expected_demo_commit:
+        description: "Optional expected Demo build commit SHA"
         required: false
         type: string
 
@@ -14,19 +14,19 @@ permissions:
   contents: read
 
 concurrency:
-  group: fastapi-cloud-production-diagnostics
+  group: fastapi-cloud-demo-diagnostics
   cancel-in-progress: false
 
 jobs:
   diagnose:
-    name: Read-only production smoke checks
+    name: Read-only Demo smoke checks
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      BASE_URL: https://pharmaviyum-erp-crm.fastapicloud.dev
-      EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+      BASE_URL: https://pharmaviyum-erp.fastapicloud.dev
+      EXPECTED_DEMO_COMMIT: ${{ inputs.expected_demo_commit }}
     steps:
-      - name: Check production endpoints without modifying data
+      - name: Check Demo endpoints without modifying data
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -46,7 +46,7 @@ jobs:
             code="${code:-000}"
             printf '%s=%s\n' "$name" "$code" | tee -a "$GITHUB_STEP_SUMMARY" >&2
             if [[ "$code" == "000" ]]; then
-              echo "Request failed or the production host could not be reached." >&2
+              echo "Request failed or the Demo host could not be reached." >&2
             elif jq -e . "$output" >/dev/null 2>&1; then
               jq . "$output" >&2
             else
@@ -56,7 +56,7 @@ jobs:
             printf '%s' "$code"
           }
 
-          echo "## Pharmaviyum production diagnostics" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Pharmaviyum Demo diagnostics" >> "$GITHUB_STEP_SUMMARY"
           echo "- Target: ${BASE_URL}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Mode: read-only; no deployment or database writes" >> "$GITHUB_STEP_SUMMARY"
 
@@ -75,23 +75,23 @@ jobs:
           environment="$(jq -r '.environment' "$version_file")"
           debug="$(jq -r '.debug' "$version_file")"
           {
-            echo "- Production commit: $actual_commit"
+            echo "- Demo commit: $actual_commit"
             echo "- Python: $python_version"
             echo "- Environment: $environment"
             echo "- Debug: $debug"
           } >> "$GITHUB_STEP_SUMMARY"
-          if [[ -n "$EXPECTED_COMMIT" && "$actual_commit" != "$EXPECTED_COMMIT" ]]; then
-            echo "::error::Production commit mismatch: expected ${EXPECTED_COMMIT}, got ${actual_commit}"
+          if [[ -n "$EXPECTED_DEMO_COMMIT" && "$actual_commit" != "$EXPECTED_DEMO_COMMIT" ]]; then
+            echo "::error::Demo commit mismatch: expected ${EXPECTED_DEMO_COMMIT}, got ${actual_commit}"
             exit 1
           fi
-          if [[ "$environment" != "production" || "$debug" != "false" ]]; then
-            echo "::error::Production environment/debug assertion failed"
+          if [[ "$environment" != "staging" || "$debug" != "false" ]]; then
+            echo "::error::Demo staging environment/debug assertion failed"
             exit 1
           fi
 
           health_code="$(fetch_endpoint health "/health")"
           if [[ "$health_code" != "200" ]] || ! jq -e '.status == "healthy" or .status == "degraded"' /tmp/pharmaviyum-diagnostics/health.body >/dev/null; then
-            echo "::error::Production liveness check failed"
+            echo "::error::Demo liveness check failed"
             exit 1
           fi
 
@@ -102,7 +102,7 @@ jobs:
             .components.redis == "ok" and
             .components.ai_initialized == "ok"
           ' /tmp/pharmaviyum-diagnostics/ready.body >/dev/null; then
-            echo "::error::Production readiness check failed"
+            echo "::error::Demo readiness check failed"
             exit 1
           fi
 
@@ -119,4 +119,4 @@ jobs:
           fi
 
           echo "## Result" >> "$GITHUB_STEP_SUMMARY"
-          echo "All read-only production smoke checks passed." >> "$GITHUB_STEP_SUMMARY"
+          echo "All read-only Demo smoke checks passed." >> "$GITHUB_STEP_SUMMARY"

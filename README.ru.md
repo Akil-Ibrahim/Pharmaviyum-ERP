@@ -27,9 +27,8 @@
 - **Приложение:** backend на FastAPI и frontend на React, TypeScript и Vite.
 - **Аптечная предметная область:** POS, отпуск лекарств, справочник препаратов, склад, закупки и аптечные операции.
 - **AI-слой:** Mortarium с RAG на базе LangGraph и интеграцией MCP.
-- **Инфраструктура:** Neon PostgreSQL 18 для hosted Production; отдельный PostgreSQL 18 для Demo; managed Redis с целевой совместимостью Redis 8.8.4; Docker для разработки и автоматизации Pharmacy Edge.
-- **Поставка:** CI в GitHub Actions и отдельный контролируемый workflow развёртывания в FastAPI Cloud.
-- **Hosted data baseline:** Neon PostgreSQL 18; managed Redis с целевой совместимостью Redis 8.8.4 (фактическую версию сервера необходимо подтвердить у провайдера).
+- **Инфраструктура:** PostgreSQL, pgvector и Redis для хранения данных и состояния; Docker для локальной разработки и автоматизации Pharmacy Edge.
+- **Хостинг:** публичная Demo размещается в FastAPI Cloud. Production использует тот же технологический стек приложения, но размещается на отдельно управляемой платформе; сведения о провайдере и развёртывании вынесены из публичного README.
 
 ## Доступ к демо-системе
 
@@ -81,31 +80,7 @@
 
 Перед созданием новых каталогов или изменением расположения существующих файлов изучите это руководство. Структурные изменения должны сопровождаться обновлением зависимых импортов, CI workflows, Docker/Compose, deployment assets, скриптов и документации.
 
-## Единый baseline инфраструктуры Production и Demo
 
-Это каноническая политика версий инфраструктуры для hosted Production и Demo. Не переносите устаревшие версии БД, Redis или ссылки на выведенных из эксплуатации провайдеров из исторических заметок в новые deployment-конфигурации.
-
-| Компонент | Baseline Production | Baseline Demo | Подтверждение / правило |
-|---|---|---|---|
-| Размещение приложения | FastAPI Cloud | FastAPI Cloud | Hosted-приложение развёртывается защищённым workflow с ручным approval. |
-| PostgreSQL | Neon PostgreSQL 18, проект `pharmaviyum-production`, ID проекта `odd-fog-77928192`, default branch `production` | Отдельная изолированная БД/branch PostgreSQL 18 | Production-проект и major-версия проверены в Neon 21.11.2026. Изоляцию Demo и фактическую версию её сервера необходимо проверить до заявления о готовности Demo. |
-| Векторное расширение | Целевая версия pgvector 0.8.7; фактическую версию проверить в hosted-БД | Целевая версия pgvector 0.8.7; фактическую версию проверить | Версия PostgreSQL и версия расширения pgvector — разные параметры. |
-| Redis | Managed Redis integration; целевая совместимая версия Redis 8.8.4, если провайдер позволяет зафиксировать её | Отдельная managed Redis integration; та же цель Redis 8.8.4 | Точная версия managed-сервера контролируется провайдером и здесь независимо не подтверждена. Проверять через `INFO server` или metadata провайдера; не выдавать target за фактическую версию. |
-| Redis-клиент приложения | redis-py 8.1.0 | redis-py 8.1.0 | Зафиксирован в `pyproject.toml` и `uv.lock`. |
-| Python runtime | CPython 3.15.0 | CPython 3.15.0 | Зафиксирован в `pyproject.toml`, `.python-version` и deployment checks. |
-
-### Разделение окружений и правила данных
-
-- Production и Demo обязаны использовать разные database credentials, экземпляры/branches БД, Redis credentials/endpoints, signing secrets и provider/API credentials. Demo никогда не должен подключаться к Production БД или Redis namespace.
-- В Demo разрешены только синтетические данные. Запрещено импортировать реальные данные пациентов, рецепты, клиентов, аптечные транзакции и конфиденциальную бизнес-информацию.
-- Neon Production — авторитетная hosted-реляционная БД. Локальный PostgreSQL в Compose предназначен только для disposable development/CI и не является Production-БД.
-- Managed Redis — эфемерный слой cache/coordination, а не авторитетный ledger продаж, отпуска, остатков или аудита. Постоянные бизнес-записи хранятся в PostgreSQL.
-- Connection strings и credentials хранятся только в FastAPI Cloud environment variables и защищённых GitHub Actions secrets. В документации разрешено указывать провайдера, проект, branch и версию, но запрещено публиковать credentials и URL подключения.
-- Целевая версия не доказывает, что именно она запущена. Для каждого окружения подтвердите фактическую версию сервера, версию расширения, connectivity, backup/PITR policy и readiness.
-- Смена major-версии PostgreSQL требует отдельного утверждённого плана backup, проверки совместимости, миграции, тестового восстановления, maintenance window и rollback. Нельзя подключать существующий data volume к другой major-версии PostgreSQL.
-- Не используйте выведенную из эксплуатации инфраструктуру Render как действующую зависимость Production или Demo.
-
-Запись live-проверки обновляется при каждой замене hosted-БД или cache. См. [руководство FastAPI Cloud](deployment/FASTAPI_CLOUD.ru.md) и [Production operations runbook](operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md).
 
 ## Основной аптечный процесс
 
@@ -291,7 +266,7 @@ Pharmaviyum отделяет международный справочный с�
 - **Frontend:** React, TypeScript, Vite, Tailwind CSS, shadcn/ui, Radix UI, TanStack Query/Router.
 - **AI / LLM:** Mortarium AI, LangChain, LangGraph, RAG, embeddings, hybrid search, MCP, Agent Harness, Ragas.
 - **Наблюдаемость:** OpenTelemetry, OTLP, Prometheus, Grafana, Jaeger, OpenTelemetry Collector.
-- **Инфраструктура и поставка:** Docker, Docker Compose, FastAPI Cloud, GitHub Actions, Ansible, uv, Bun.
+- **Инфраструктура и поставка:** Docker, Docker Compose, GitHub Actions, Ansible, uv, Bun; FastAPI Cloud используется для размещения Demo.
 - **Тестирование и безопасность:** Pytest, Playwright, Vitest, Ruff, Black, isort, mypy, Bandit, pip-audit, ESLint, Prettier.
 - **Тестирование электронной почты:** Mailpit.
 
@@ -391,11 +366,7 @@ AI-слой находится в `src/pharmaviyum/ai` и предоставля
 
 ## Развёртывание
 
-Целевая платформа размещения приложения — **FastAPI Cloud**.
-
-Развёртывание production намеренно выполняется вручную: слияние изменений в `main` или успешный CI сами по себе не запускают приложение и не выполняют production-миграции. Release workflow проверяет CI для конкретного выбранного commit перед развёртыванием.
-
-См. [руководство FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.ru.md) · [English](docs/deployment/FASTAPI_CLOUD.md): секреты, конфигурация окружения, этапы release, smoke checks и ограничения отката.
+Публичная Demo размещается в **FastAPI Cloud**. Production использует тот же технологический стек приложения, но отдельную платформу хостинга; сведения о провайдере и развёртывании относятся к закрытой документации и не публикуются в этом README. Границы окружений и инфраструктурная политика описаны в [архитектурной документации](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md).
 
 ## Разработка
 
@@ -493,7 +464,7 @@ bun run build
 - Celery background worker;
 - Ollama и локальные сервисы наблюдаемости, если они настроены.
 
-Hosted Production и Demo используют baseline из [документа инфраструктуры Production и Demo](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md). Локальный Compose является disposable-средой и не должен рассматриваться как hosted data plane. Pharmacy Edge — отдельный профиль развёртывания со своей политикой версий.
+Локальный Compose является disposable-средой и не должен рассматриваться как hosted data plane. Pharmacy Edge — отдельный профиль развёртывания со своей политикой версий.
 
 Запуск локального стека:
 
@@ -540,7 +511,6 @@ React frontend можно запускать отдельно командами
 | Аптечные процессы | [Спецификация аптечного процесса](docs/workflows/pharmacy-workflow.ru.md) | [Pharmacy workflow specification](docs/workflows/pharmacy-workflow.en.md) | POS, отпуск, склад, закупки, аудит и offline-ограничения |
 | Архитектура системы | [Архитектурное видение](docs/architecture/pharmaviyum-architecture.ru.md) | [Architecture vision](docs/architecture/pharmaviyum-architecture.en.md) | Компоненты, границы доверия, владение данными, Central/Edge |
 | Технологии | [Технологический стек и глоссарий](docs/technology-stack.ru.md) | [Technology Stack & Glossary](docs/technology-stack.md) | Определения, роли, версии, различия окружений и обновление зависимостей |
-| Инфраструктура Production / Demo | [Единый baseline](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md) | [Infrastructure baseline](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) | PostgreSQL/Redis, изоляция и подтверждение версий |
 | Структура репозитория | [Руководство](docs/architecture/repository-structure.ru.md) | [Repository Structure Guide](docs/architecture/repository-structure.md) | Назначение каталогов, размещение файлов и безопасные перемещения |
 | AI / LLM | [Проектирование Mortarium AI / LLM](docs/ai/AI_LLM_SYSTEM_DESIGN.ru.md) | [AI system design](docs/ai/AI_LLM_SYSTEM_DESIGN.md) | Mortarium, Agent Harness, LangGraph, RAG, MCP, безопасность и оценка |
 | AI-архитектура | [Архитектура AI](docs/ai_architecture.ru.md) | [AI architecture](docs/ai_architecture.md) | Детали текущей реализации |
@@ -556,7 +526,7 @@ React frontend можно запускать отдельно командами
 | Тестирование | [Руководство по тестированию](docs/guides/TESTING.ru.md) | [Testing guide](docs/guides/TESTING.md) | Структура тестов, markers и CI |
 | Эксплуатация | [Операционное руководство production](docs/operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md) | [Production operations runbook](docs/operations/PRODUCTION_OPERATIONS_RUNBOOK.md) | Проверки работоспособности, инциденты, backup и recovery |
 | Release | [Руководство по выпуску](docs/operations/RELEASE_RUNBOOK.ru.md) | [Release runbook](docs/operations/RELEASE_RUNBOOK.md) | Контролируемый выпуск и rollback |
-| Hosting | [FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.ru.md) | [FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.md) | Hosting, секреты, runtime и ручное развёртывание |
+| Хостинг Demo | [FastAPI Cloud](docs/deployment/FASTAPI_CLOUD.ru.md) | [FastAPI Cloud Demo](docs/deployment/FASTAPI_CLOUD.md) | Размещение публичной Demo, runtime и контролируемое развёртывание |
 | DevOps | [Инженерная дорожная карта](docs/devops/ENGINEERING_ROADMAP.ru.md) | [Engineering stages](docs/devops/ENGINEERING_ROADMAP.md) | Этапы, направления работ и критерии завершения |
 | WebSocket | [Протокол WebSocket](docs/websocket-protocol.ru.md) | [WebSocket protocol](docs/websocket-protocol.md) | Контракт v1 и ограничения текущего scaffold |
 | Наблюдаемость | [Политика OpenTelemetry](docs/observability/opentelemetry.ru.md) | [OpenTelemetry](docs/observability/opentelemetry.md) | Настройка telemetry и защита данных |

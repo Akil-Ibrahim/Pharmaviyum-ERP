@@ -20,7 +20,7 @@
 
 ## 2. Контракт конфигурации
 
-Настраивайте secrets в FastAPI Cloud, никогда не помещайте их в source control, issue comments или logs.
+Настраивайте эти secrets только в изолированном FastAPI Cloud Demo environment, никогда не помещайте их в source control, issue comments или logs. Production provider credentials управляются отдельно за пределами публичного репозитория.
 
 | Переменная | Demo value / назначение |
 |---|---|
@@ -112,7 +112,7 @@ Cloud embedding path конфигурируется отдельно. До за�
 
 - проверьте QwenCloud project, region, выбранную модель, остаток free quota и expiry date;
 - убедитесь, что в provider console включён **Free quota only**;
-- проверьте ожидаемые Qwen environment variables в FastAPI Cloud, не раскрывая значения секретов;
+- проверьте ожидаемые Qwen environment variables в приложении FastAPI Cloud Demo, не раскрывая значения секретов;
 - выполните небольшой synthetic smoke test и изучите token-usage telemetry;
 - остановите demo AI calls, если квота исчерпана или free-quota entitlement истёк.
 

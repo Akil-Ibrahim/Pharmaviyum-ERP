@@ -14,15 +14,15 @@ The current delivery chain is:
 Pull request targeting main
     -> GitHub Actions CI / tests / security / RAG evaluation
     -> merge after required checks pass
-    -> manually triggered FastAPI Cloud deployment workflow
-    -> deployment status, logs, and smoke checks
+    -> manually triggered FastAPI Cloud Demo deployment workflow
+    -> Demo deployment status, logs, and smoke checks
 ```
 
-FastAPI Cloud hosts the application. Database, Redis-compatible services, and separate Celery workers must be provisioned and operated according to the deployment runbook.
+FastAPI Cloud hosts the public Demo only. Demo database, Redis-compatible services, and separate Celery workers must be provisioned and operated according to the Demo deployment runbook. Production uses the same application technology stack on separately managed hosting, outside this public repository.
 
 The current repository also contains an opt-in monitoring Compose stack for controlled deployments. Nginx/edge infrastructure, OpenTelemetry Collector, managed data services and multi-node orchestration are target capabilities, not assumptions about the current base deployment.
 
-GitHub Actions is the CI quality gate. The dedicated FastAPI Cloud workflow is the current hosted application deployment path. Docker image build jobs may support container-based workflows, but they are not the hosted deployment target.
+GitHub Actions is the CI quality gate. The dedicated FastAPI Cloud workflow is the current public Demo deployment path; it must not target Production. Docker image build jobs may support container-based workflows, but they are not the hosted deployment target.
 
 ## Target production principles
 
@@ -201,7 +201,7 @@ Never place credentials in repository files, Docker images or build logs.
 
 ### Stage 7 — CI/CD & Release Engineering
 
-Keep GitHub Actions as the CI gate and FastAPI Cloud as the hosted application deployment target. Ansible remains a separate on-premises deployment capability.
+Keep GitHub Actions as the CI gate and FastAPI Cloud as the Demo hosting/deployment target. Production hosting and deployment are managed outside this public repository. Ansible remains a separate on-premises deployment capability.
 
 Required capabilities:
 
@@ -353,7 +353,7 @@ See [Engineering Roadmap and Delivery Stages](./ENGINEERING_ROADMAP.md) for the 
 - `docs/devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md` — canonical engineering, RAG, clinical AI, agent, security, observability and scalability metrics.
 - `docs/ai_architecture.md` — AI, RAG, memory, guardrails and MCP architecture.
 - `docs/guides/ENVIRONMENT_SETUP.md` — environment configuration and deployment prerequisites.
-- `docs/deployment/FASTAPI_CLOUD.md` — hosted application deployment runbook.
+- `docs/deployment/FASTAPI_CLOUD.md` — public Demo hosting and deployment runbook.
 - `docs/guides/TESTING.md` — test and CI strategy.
 - `docker-compose.monitoring.yml` — opt-in Prometheus/Grafana monitoring stack.
 - `.github/workflows/ci.yml` — CI quality, security, evaluation and image build gates.

@@ -49,6 +49,6 @@ Confirm the managed Redis server version, TLS/authentication requirements, memor
 4. Verify the provider-reported Redis server version and connectivity for each environment.
 5. Confirm backup/PITR and restore evidence for PostgreSQL.
 6. Apply Alembic migrations only through the separately approved migration procedure.
-7. Deploy through the protected FastAPI Cloud workflow and verify the exact build SHA, runtime, startup, health, readiness, authentication, and POS protection smoke checks.
+7. Deploy the public Demo through the protected Demo-only FastAPI Cloud workflow and verify the exact build SHA, staging runtime, startup, health, readiness, authentication, and POS protection smoke checks. Production deployment is managed outside this public repository.
 
 A repository change or successful CI run does not by itself prove that a hosted service has been upgraded or is production-ready.

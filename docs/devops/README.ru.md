@@ -15,14 +15,14 @@
 1. Pull request в main.
 2. GitHub Actions: CI, тесты, security и RAG evaluation.
 3. Merge после прохождения обязательных checks.
-4. Ручной запуск deployment workflow для FastAPI Cloud.
+4. Ручной запуск Demo-only deployment workflow для FastAPI Cloud.
 5. Проверка статуса deployment, логов и smoke tests.
 
-FastAPI Cloud размещает приложение. База данных, Redis-совместимые сервисы и отдельные Celery workers должны быть подготовлены и эксплуатироваться согласно deployment runbook.
+FastAPI Cloud размещает только публичную Demo. Demo БД, Redis-совместимые сервисы и отдельные Celery workers должны быть подготовлены и эксплуатироваться согласно Demo deployment runbook. Production использует тот же технологический стек приложения на отдельно управляемом хостинге за пределами публичного репозитория.
 
 В репозитории также есть opt-in Compose stack мониторинга для контролируемых развёртываний. Nginx/edge, OpenTelemetry Collector, managed data services и multi-node orchestration — целевые возможности, а не утверждение, что они входят в текущую базовую конфигурацию.
 
-GitHub Actions — CI quality gate. Отдельный FastAPI Cloud workflow — текущий путь hosted deployment. Docker image build jobs могут поддерживать container workflows, но не являются целевой платформой hosted deployment.
+GitHub Actions — CI quality gate. Отдельный FastAPI Cloud workflow — текущий путь deployment публичной Demo и не должен обращаться к Production. Docker image build jobs могут поддерживать container workflows, но не являются целевой платформой hosted deployment.
 
 ## Принципы production
 
@@ -102,7 +102,7 @@ AI — отдельный capacity domain; он не должен насыщат
 
 ### Этап 7 — CI/CD и release engineering
 
-Сохраняйте GitHub Actions в роли CI gate и FastAPI Cloud в роли hosted application deployment target. Ansible остаётся отдельной возможностью on-premises deployment.
+Сохраняйте GitHub Actions в роли CI gate, а FastAPI Cloud — в роли hosting/deployment Demo. Хостинг и развёртывание Production управляются за пределами публичного репозитория. Ansible остаётся отдельной возможностью on-premises deployment.
 
 Требуются immutable image с commit SHA/digest, CI gates до публикации image, проверка миграций БД, deployment health checks, процедура rollback, release metadata/audit trail, разделение окружений, контролируемое production approval и smoke tests. Не обходите обязательные checks через continue-on-error.
 
@@ -173,7 +173,7 @@ Kubernetes намеренно не входит в обязательные пе
 - [Stage 1 Load Testing](./STAGE_1_LOAD_TESTING.md) — процедура нагрузочного тестирования; пока только английская версия.
 - [Руководство Ansible для Pharmacy Edge](./ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md) · [Ansible Pharmacy Edge Guide](./ANSIBLE_PHARMACY_EDGE_GUIDE.md) — подготовка хостов, безопасность и deployment.
 - [План внедрения Pharmacy Edge](./PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) · [English](./PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) — границы rollout, fleet capacity, release, backup/recovery и критерии приёмки.
-- [FastAPI Cloud runbook](../deployment/FASTAPI_CLOUD.ru.md) — размещение hosted-приложения.
+- [FastAPI Cloud runbook](../deployment/FASTAPI_CLOUD.ru.md) — размещение и deployment публичной Demo.
 - [Руководство по тестированию](../guides/TESTING.ru.md) — тесты и CI.
 
 

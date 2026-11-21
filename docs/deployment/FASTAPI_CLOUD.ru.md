@@ -1,165 +1,87 @@
-# Развёртывание Pharmaviyum в FastAPI Cloud
+# Развёртывание Demo Pharmaviyum в FastAPI Cloud
 
-Runbook описывает текущий workflow ручного deployment: `.github/workflows/deploy-fastapi-cloud.yml`. Это канонический источник сведений о hosted release. Не выводите поведение deployment из устаревших описаний workflow.
+Это руководство описывает только развёртывание публичной Demo. Workflow .github/workflows/deploy-fastapi-cloud.yml не должен обращаться к Production. Хостинг Production, credentials развёртывания, release automation, миграции БД и эксплуатационные процедуры управляются за пределами этого публичного репозитория.
 
-## 1. Политика релизов
+## 1. Граница окружений
 
-Hosted data services должны соответствовать [единому baseline Production и Demo](PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md): Neon PostgreSQL 18 для Production, отдельная PostgreSQL 18 для Demo и разные managed Redis endpoints. Redis 8.8.4 — целевая версия совместимости; фактическую версию сервера у провайдера необходимо проверить до релиза. Запрещено использовать Production credentials или данные в Demo.
+- Публичный адрес Demo: https://pharmaviyum-erp.fastapicloud.dev.
+- Demo размещается в FastAPI Cloud и использует изолированные сервисы PostgreSQL/pgvector и Redis.
+- В Demo разрешены только синтетические данные. Запрещено подключать Demo к Production БД, Redis, identity providers, signing secrets или API credentials.
+- Приложение поддерживает runtime-значения development, staging и production. Для hosted Demo используется ENVIRONMENT=staging: это включает безопасный staging/production-grade профиль, но не означает, что Demo является Production.
+- Production использует тот же технологический стек приложения, за исключением хостинга и развёртывания: они выполняются на отдельно управляемой платформе. Сведения о провайдере и операции Production находятся за пределами этого репозитория.
 
-Production deployment выполняется намеренно вручную. Push или merge в `main` не запускает автоматический deployment и не должен побочно выполнять миграции БД.
+## 2. Workflow развёртывания Demo
 
-```text
-Pull request
-  -> обязательные CI, security, frontend, backend, integration и RAG checks
-  -> merge в main
-  -> ручной запуск Deploy to FastAPI Cloud из main
-  -> approval production environment (если настроен)
-  -> deploy и smoke checks
-  -> проверка логов и live-приложения
-```
+Workflow запускается вручную из main. Он собирает frontend, проверяет CI для точного выбранного commit, выполняет read-only проверку схемы изолированной Demo БД, развёртывает приложение в Demo FastAPI Cloud и запускает HTTP smoke checks.
 
-Workflow использует выбранный commit из `main`, проверяет успешный CI именно для этого SHA и сериализует production deployments через concurrency group.
+Порядок:
 
-Настройка coding agents и плагина FastAPI Cloud описана в [руководстве Library Skills и инструментов FastAPI для ИИ-агентов](../development/library-skills.ru.md). Плагин может помогать просматривать логи и готовить облачные операции, но не должен обходить ручной production workflow репозитория, CI gate по точному commit SHA, production-проверки или approvals. Не развёртывайте Pharmaviyum production напрямую из сессии агента.
+Pull Request -> обязательные CI и security checks -> merge в main -> ручной запуск Deploy Demo to FastAPI Cloud -> approval Demo environment (если настроен) -> deployment и Demo smoke checks -> проверка логов и live Demo.
 
-## 2. GitHub Actions secrets
+Push или merge сами по себе не запускают deployment. Этот workflow не развёртывает Production и не выполняет Alembic migrations.
 
-Добавьте следующие значения как repository Actions secrets или secrets защищённого GitHub Actions environment `production`:
+## 3. GitHub Actions secrets
 
-- `FASTAPI_CLOUD_TOKEN` — deploy token FastAPI Cloud.
-- `FASTAPI_CLOUD_APP_ID` — ID целевого приложения FastAPI Cloud.
-- `DATABASE_URL` — PostgreSQL URL ограниченной production runtime-role, совпадающий с `DATABASE_URL` приложения FastAPI Cloud. Deploy workflow использует его для read-only catalog exclusion checks и очистки временного smoke-test пользователя.
-- `MIGRATION_DATABASE_URL` — отдельный login URL только для production migration workflow. Он должен указывать на тот же проверенный Neon host/database, использовать другую non-superuser role и наследовать необходимые privileges от `neondb_owner`. Не задавайте его в FastAPI Cloud и не используйте для application traffic.
-- `VITE_CLERK_PUBLISHABLE_KEY` — необязательный build-time public frontend key, если он нужен текущей конфигурации входа.
+Настройте следующие secrets в защищённом GitHub Actions environment demo-pharmaviyum-erp:
 
-Храните `MIGRATION_DATABASE_URL` только как secret защищённого GitHub Environment `production-pharmaviyum-erp`, используемого migration workflow; не размещайте его на уровне repository secrets или FastAPI Cloud. Остальные deploy secrets задавайте в соответствующем scope deploy workflow. Не помещайте значения секретов в репозиторий, workflow inputs, issue comments или чат и не выводите credentials в CI logs.
+- FASTAPI_CLOUD_DEMO_TOKEN — deploy token, предназначенный для приложения Demo.
+- FASTAPI_CLOUD_DEMO_APP_ID — ID приложения Demo в FastAPI Cloud.
+- DEMO_DATABASE_URL — URL изолированной Demo БД; используется для read-only проверки совместимости схемы.
+- VITE_CLERK_PUBLISHABLE_KEY — необязательный публичный frontend build key, только если он нужен текущей конфигурации входа.
 
-**Секреты с username/password для smoke test не нужны.** Workflow создаёт уникальную временную учётную запись pharmacist со случайным паролем на каждый запуск через существующий registration endpoint, проверяет login/profile/catalog и пытается удалить только эту non-superuser запись. Не задавайте статические `PHARMAVIYUM_SMOKE_USERNAME` / `PHARMAVIYUM_SMOKE_PASSWORD`. Не используйте `admin/admin`.
+Не используйте Production credentials и не направляйте Demo secrets на Production-ресурсы. Workflow читает только перечисленные выше Demo-specific GitHub secrets. Во время deployment Demo token и app ID передаются под стандартными именами переменных FASTAPI_CLOUD_TOKEN и FASTAPI_CLOUD_APP_ID, которые ожидает FastAPI Cloud CLI. Для read-only проверки схемы DEMO_DATABASE_URL передаётся в process variable DATABASE_URL. Ни один Production GitHub secret не используется.
 
-## 3. Переменные окружения FastAPI Cloud
+## 4. Конфигурация Demo в FastAPI Cloud
 
-В панели Environment Variables приложения настройте:
+Настройте переменные приложения Demo отдельно от Production:
 
-| Переменная | Требование |
+| Переменная | Требование для Demo |
 |---|---|
-| `ENVIRONMENT` | `production` |
-| `DEBUG` | `false` |
-| `LOG_LEVEL` | `INFO` |
-| `DATABASE_URL` | Production PostgreSQL async URL, обычно `postgresql+asyncpg://...` |
-| `PGVECTOR_DATABASE_URL` | Доступный PostgreSQL/pgvector URL |
-| `REDIS_URL` | Доступный Redis-compatible URL |
-| `SECRET_KEY` | Уникальный случайный секрет, минимум 32 символа |
-| `CORS_ORIGINS` | Точный доверенный HTTPS origin; без wildcard при credentials |
-| `USE_CLOUD_LLM` | `true` для demo AI profile |
-| `CLOUD_LLM_PROVIDER` | `qwencloud` |
-| `QWEN_API_KEY` | Секретный API key QwenCloud |
-| `QWEN_BASE_URL` | `https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1` |
-| `QWEN_MODEL` | `qwen3.8-flash` |
-| `QWEN_FAST_MODEL` | `qwen3.8-flash` |
-| `QWEN_COMPLEX_MODEL` | `qwen3.8-flash` |
-| `QWEN_FREE_QUOTA_ONLY` | `true`, fail-closed guard приложения |
-| `QWEN_TIMEOUT_SECONDS` | `30` |
-| `QWEN_MAX_OUTPUT_TOKENS` | `500` |
+| ENVIRONMENT | staging — поддерживаемый безопасный runtime-профиль Demo |
+| DEBUG | false |
+| LOG_LEVEL | INFO |
+| DATABASE_URL | URL изолированной Demo PostgreSQL в async-формате |
+| PGVECTOR_DATABASE_URL | URL Demo PostgreSQL/pgvector |
+| REDIS_URL | Отдельный endpoint managed Redis для Demo |
+| SECRET_KEY | Уникальный секрет только для Demo, не менее 32 символов |
+| CORS_ORIGINS | Точный HTTPS origin Demo |
+| USE_CLOUD_LLM | true, если включён AI-профиль Demo |
+| CLOUD_LLM_PROVIDER | qwencloud для описанного Demo-профиля |
+| Переменные QwenCloud | Demo API key, endpoint, model, timeout и quota guard согласно руководству QwenCloud Demo |
 
-Значения QwenCloud описывают текущий demo profile, а не безлимитный бесплатный production SLA. В консоли провайдера включите **Free quota only** для выбранной модели и проверьте остаток/срок действия квоты до включения запросов. Одного application flag недостаточно для enforcement биллинга. Генерация QwenCloud и embeddings — отдельные возможности: embedding provider нужно настроить и проверить независимо до включения cloud RAG.
+База Demo, vector store и Redis должны быть provisioned независимо. FastAPI Cloud не создаёт эти сервисы автоматически. Фактические версии hosted-БД и расширения проверяются отдельно; целевые версии совместимости нельзя выдавать за наблюдаемые версии.
 
-FastAPI Cloud `DATABASE_URL` и GitHub Actions `DATABASE_URL` должны использовать одну и ту же ограниченную runtime-role. Production migration workflow использует отдельный credential `MIGRATION_DATABASE_URL` и проверяет, что это другая role с необходимым owner-level membership для миграций. Ограничьте сетевой доступ к PostgreSQL и Redis необходимыми источниками.
+## 5. Ручная процедура deployment
 
-## 4. Ручная процедура deployment
+1. Влейте проверенное изменение в main после успешного прохождения обязательных CI checks.
+2. Откройте workflow Deploy Demo to FastAPI Cloud в GitHub Actions.
+3. Запустите workflow вручную из main, указав утверждённый Demo change/ticket reference.
+4. Пройдите approval для environment demo-pharmaviyum-erp, если он настроен.
+5. Убедитесь, что workflow завершился успешно, и проверьте live Demo.
 
-1. Убедитесь, что изменение влито в `main`.
-2. Проверьте обязательные checks для точного commit SHA из `main`.
-3. Откройте [Deploy to FastAPI Cloud workflow](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/actions/workflows/deploy-fastapi-cloud.yml).
-4. Нажмите **Run workflow**, выберите ветку `main` и укажите утверждённую ссылку на change/ticket в `change_reference`.
-5. Запустите workflow и пройдите approval для environment `production`, если он требуется.
-6. Следите за выполнением. Не объявляйте deployment успешным, пока deploy и все обязательные verification steps не завершились успешно.
+Workflow checkout-ит точный выбранный commit и добавляет его SHA в build metadata; собирает React frontend и подготавливает static assets; ожидает успешного CI именно для этого commit из main; проверяет только Demo deploy token, app ID и database URL; read-only запросами проверяет Alembic heads Demo и наличие обязательной inventory ledger table; отправляет deployment в FastAPI Cloud; ожидает, пока /version подтвердит ожидаемый commit, staging для core/application/auth environments, выключенный debug и CPython 3.15.0; проверяет /health, /ready, frontend SPA routes, обработку неверных credentials и защиту POS.
 
-Workflow выполняет следующие действия:
+Workflow должен завершаться ошибкой, если отсутствует любой обязательный Demo secret или live runtime не соответствует ожидаемому commit и Demo profile.
 
-- checkout выбранного commit;
-- установку Bun (с fallback на package manager) и сборку `frontend/shadcn-admin`;
-- проверку успешного CI для точного commit SHA;
-- проверку change reference и обязательных deployment secrets;
-- внедрение точного `DEPLOY_SHA` в пакет приложения как build metadata и запуск `uv run fastapi cloud deploy . --no-wait`;
-- read-only production catalog exclusion check;
-- проверку `/health` и `/ready`;
-- проверку, что `/version` сообщает точный SHA развёрнутого commit, `production` для API/core, application и authentication settings, debug выключен и runtime — CPython `3.15.0`;
-- проверку, что `/settings/appearance` и `/system-status` возвращают SPA HTML;
-- проверку HTTP 401 для неверных credentials и неавторизованного POS search;
-- создание временной учётной записи pharmacist, проверку auth/profile и непустого поиска Omeprazole в catalog/product endpoints, затем попытку удалить именно эту учётную запись.
+## 6. Миграции БД и безопасность данных
 
-Smoke test с временной учётной записью — это production write, а не read-only проверка. Очистка выполняется при обычном завершении и перехватываемых сигналах `INT` / `TERM`, в том числе при неоднозначном результате регистрации. Принудительное завершение runner или потеря host могут помешать cleanup. Smoke checks не должны создавать продажи, приёмки товара или изменять остатки. Если cleanup завершился ошибкой, workflow сообщает о failure. Перед повтором проверьте run и удаляйте только конкретную временную запись, созданную этим запуском, по утверждённой процедуре.
+Workflow развёртывания Demo не запускает Alembic migrations. Изменения схемы требуют отдельной проверки и утверждения операции над Demo БД, подтверждённого backup/restore path и post-migration validation.
 
-## 5. Миграции БД выполняются отдельно
+Production migrations и операции над Production БД не выполняются этим workflow и не настраиваются через этот публичный репозиторий. Не переносите Production connection strings, migration credentials или environment variables в Demo.
 
-**Текущий deployment workflow не запускает Alembic migrations.** Не описывайте его как migration workflow.
+Успешный deployment не импортирует каталог лекарств и не создаёт аптечные бизнес-данные автоматически. Используйте только документированные процедуры импорта и проверки синтетических данных.
 
-Изменения схемы требуют отдельной явно утверждённой операции:
+## 7. Ограничения runtime и эксплуатации
 
-1. Проверьте migration script, совместимость и последствия rollback.
-2. Убедитесь в наличии свежего backup и проверенного restore path.
-3. Получите production approval на изменение схемы.
-4. Один раз выполните `uv run alembic upgrade head` из доверенного окружения с безопасно переданным URL целевой production БД.
-5. Проверьте версию схемы и readiness приложения до продолжения release.
+- Workflow фиксирует CPython 3.15.0; фактическую версию после deployment необходимо проверить через /version.
+- Native FastAPI Cloud автоматически не устанавливает системные OCR-пакеты из Dockerfile. OCR нужно проверять отдельно или использовать внешний OCR service.
+- Celery workers/Beat и внешние OTLP collectors этим web deployment workflow не запускаются.
+- Успешный CI или deployment не доказывает production readiness всех аптечных процессов, AI provider quota, OCR, workers, Edge/offline mode или целевой capacity.
 
-Не запускайте миграции при старте приложения или параллельно из нескольких replicas. Доступ workflow к БД для catalog checks/smoke cleanup не является разрешением выполнять schema changes.
+## 8. Правила безопасности
 
-## 6. Проверка после deployment
-
-Минимальные проверки:
-
-```bash
-curl --fail https://pharmaviyum-erp-crm.fastapicloud.dev/health
-curl --fail https://pharmaviyum-erp-crm.fastapicloud.dev/ready
-```
-
-Ожидаемые поля readiness:
-
-- `status`: `ready`
-- `checks.database.status`: `healthy`
-- `checks.redis.status`: `healthy`
-
-Endpoint `/ready` проверяет только PostgreSQL и Redis. AI initialization — критическая зависимость startup в production lifespan, но отдельным полем `/ready` не возвращается. Workflow отдельно проверяет `/version` и результат startup приложения.
-
-Также проверьте:
-
-- `/version` сообщает точный SHA релиза, production environment и ожидаемую версию Python;
-- `/settings/appearance` и `/system-status` отдают собранный frontend (HTTP 200);
-- login и `/api/v1/auth/me` работают для разрешённой непривилегированной тестовой учётной записи;
-- POS endpoints отклоняют неавторизованные запросы;
-- Omeprazole возвращает непустые результаты в drug-catalog и product search;
-- исключённые записи каталога не активны;
-- неожиданные продажи, движения товара и изменения остатков отсутствуют.
-
-Зелёный GitHub Actions workflow необходим, но не доказывает готовность всех аптечных процессов, provider quota, OCR, background workers или Edge/offline.
-
-## 7. Ограничения runtime и эксплуатационные заметки
-
-- Native deployment FastAPI Cloud использует Python project configuration; workflow отдельно собирает React frontend.
-- Приложение фиксирует `requires-python = "==3.15.0"` в `pyproject.toml` и `3.15.0` в корневом `.python-version`. CI, Docker, workflows импорта каталога и deployment workflow требуют строго CPython 3.15.0 — эта версия совпадает с подтверждённым runtime FastAPI Cloud. Это единая целевая версия проекта; не меняйте patch-релиз без отдельной проверки совместимости и успешного полного CI/runtime-проверочного цикла. Production нельзя считать обновлённым, пока `/version` не подтвердит ожидаемый build SHA и CPython 3.15.0, а startup, `/health`, `/ready`, authentication и POS protection smoke checks не пройдут. Major version Neon PostgreSQL этим обновлением приложения не меняется.
-- Dockerfile устанавливает Tesseract и OCR language packs; native FastAPI Cloud автоматически эти системные пакеты не устанавливает. Для OCR требуется отдельно проверенный runtime или внешний OCR service.
-- PostgreSQL/pgvector и Redis provisioned отдельно; deployment приложения их не создаёт.
-- Celery worker/Beat не запускаются web deployment workflow. При необходимости развёртывайте и мониторьте worker отдельно.
-- Cloud OpenTelemetry export требует доступного OTLP collector endpoint; локальный Compose Jaeger/collector автоматически в FastAPI Cloud не появляется.
-- Сбои AI provider и исчерпание квоты не должны влиять на POS и core ERP transactions.
-- Первая цель rollout — 1–10 аптек. Ёмкость до 100 аптек — архитектурная цель, а не подтверждённая production capacity до проведения испытаний.
-
-## 8. Диагностика
-
-| Симптом | Первые проверки |
-|---|---|
-| Workflow отклоняет deployment inputs | Проверьте наличие `FASTAPI_CLOUD_TOKEN`, `FASTAPI_CLOUD_APP_ID`, `DATABASE_URL` и change reference в правильном Actions/production scope |
-| Проверка CI для exact commit не проходит | Убедитесь, что CI успешно завершился для того же SHA `main`, который выбран workflow |
-| `/ready` не готов | Проверьте FastAPI Cloud logs, PostgreSQL, Redis и настройки/доступность AI provider |
-| `/settings/appearance` возвращает JSON 404 | Проверьте frontend build/staging и упаковку static files в artifact |
-| Smoke catalog search пустой | Это проблема готовности каталога/данных; проверьте импорт и индексацию отдельно. Не создавайте фиктивные записи и не отмечайте smoke test успешным |
-| Не удалась очистка временного smoke account | Проверьте конкретные run ID/attempt и cleanup logs; удаляйте только сгенерированную запись после подтверждения, что она не superuser |
-| AI calls не работают или квота исчерпана | Проверьте QwenCloud credentials, доступ к модели, Free quota only, срок квоты и embeddings; не переключайтесь молча на платный fallback |
-
-## 9. Безопасность и контроль изменений
-
-- Сохраняйте ручной deployment, защищённый GitHub Actions environment `production`.
-- Не обходите CI, branch protection, approvals и concurrency controls.
-- Не используйте `admin/admin` или статические smoke credentials.
-- Не раскрывайте secrets или patient data в workflow logs, traces, screenshots и issue comments.
-- Не меняйте production data, schema или реальные аптечные hosts в рамках обычного deployment без отдельного утверждённого изменения.
+- Используйте отдельные credentials Demo с минимально необходимыми правами.
+- В Demo разрешены только синтетические данные; не размещайте реальные данные пациентов, рецепты, клиентов или аптечные транзакции.
+- Не публикуйте secrets, connection strings и неотредактированные operational logs.
+- Не обходите branch protection, CI, environment approvals и release gates.
+- Никогда не используйте этот workflow для развёртывания или изменения Production.

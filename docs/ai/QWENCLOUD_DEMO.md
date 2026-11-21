@@ -20,7 +20,7 @@ This is a demo deployment profile, not a claim that free-tier capacity, uptime, 
 
 ## 2. Configuration contract
 
-Configure secrets in FastAPI Cloud, never in source control, issue comments, or logs.
+Configure these secrets in the isolated FastAPI Cloud Demo environment only, never in source control, issue comments, or logs. Production provider credentials are managed separately outside this public repository.
 
 | Variable | Demo value / purpose |
 |---|---|
@@ -110,7 +110,7 @@ Do not send patient-identifiable or other sensitive data to a free-tier endpoint
 Before each demo release or session:
 - inspect the QwenCloud project, region, selected model, remaining free quota, and expiry date;
 - confirm the provider-console **Free quota only** setting is enabled;
-- verify that FastAPI Cloud has the expected Qwen environment variables without exposing secret values;
+- verify that the FastAPI Cloud Demo application has the expected Qwen environment variables without exposing secret values;
 - run a small synthetic smoke test and inspect token-usage telemetry;
 - stop demo AI calls if quota is exhausted or the free-quota entitlement has expired.
 
