@@ -54,7 +54,7 @@ jobs:
           grep -F 'VERIFIED_BACKUP_AND_ROLLBACK_PLAN' scripts/deploy.sh
 
       - name: Build application image
-        run: docker build --tag pharmaviyum-crm:smoke-${GITHUB_SHA} .
+        run: docker build --tag pharmaviyum-erp:smoke-${GITHUB_SHA} .
 
       - name: Start infrastructure services
         run: docker compose -f docker-compose.yml up -d postgres redis
@@ -79,7 +79,7 @@ jobs:
           docker run --rm \
             --network pharmaviyum-network \
             --entrypoint python \
-            pharmaviyum-crm:smoke-${GITHUB_SHA} \
+            pharmaviyum-erp:smoke-${GITHUB_SHA} \
             -c 'import src.pharmaviyum.main; print("FastAPI import OK")'
 
       - name: Validate Celery app configuration in the built image
@@ -87,11 +87,11 @@ jobs:
           docker run --rm --network pharmaviyum-network \
             --env REDIS_URL=redis://redis:6379/0 \
             --entrypoint celery \
-            pharmaviyum-crm:smoke-${GITHUB_SHA} \
+            pharmaviyum-erp:smoke-${GITHUB_SHA} \
             -A src.pharmaviyum.ai.mortarium_rag.ingestion.celery_app report
 
       - name: Cleanup
         if: always()
         run: |
           docker compose -f docker-compose.yml down -v --remove-orphans
-          docker image rm pharmaviyum-crm:smoke-${GITHUB_SHA} || true
+          docker image rm pharmaviyum-erp:smoke-${GITHUB_SHA} || true
