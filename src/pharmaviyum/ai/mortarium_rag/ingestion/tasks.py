@@ -295,7 +295,9 @@ def ingest_document(
         try:
             loop = get_event_loop()
         except Exception:
-            logger.error("Failed to initialize event loop for terminal failure tracking")
+            logger.error(
+                "Failed to initialize event loop for terminal failure tracking"
+            )
             loop = None
 
         if loop is not None:
