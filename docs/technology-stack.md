@@ -113,7 +113,7 @@ The repository includes local observability infrastructure. Production trace del
 | **GitHub Actions** | CI/CD automation service integrated with GitHub. | Runs lint, formatting, type checks, tests, security scans and build validation. Passing CI is a quality signal; it does not itself prove production health. |
 | **uv 0.13.8** | Fast Python package manager and project/environment tool. | Installs Python dependencies, runs commands and keeps the resolved dependency set reproducible using `pyproject.toml` and `uv.lock`. |
 | **Bun 1.4.4** | JavaScript runtime, package manager and frontend toolchain. | Installs frontend dependencies and runs frontend scripts for development, builds and tests. |
-| **Ansible** | Agentless infrastructure automation tool. | Provisions and operates Pharmacy Edge hosts using reviewed playbooks and roles. It is infrastructure automation, not the ERP's application business logic. |
+| **Ansible** | Agentless infrastructure automation tool. | Provisions pharmacy servers and deploys reviewed Production application releases under the Pharmacy Edge profile. It is infrastructure automation, not the ERP's application business logic. |
 | **Mailpit 1.33.1** | Local SMTP capture and email testing tool. | Captures development emails so password recovery and notification flows can be tested without sending real messages. Production SMTP is configured separately. |
 
 ### 8. Testing, quality and security tooling
