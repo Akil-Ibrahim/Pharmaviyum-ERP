@@ -234,19 +234,6 @@ The expected ready response reports PostgreSQL, Redis and AI initialization as h
 
 A green CI run does not prove that Demo provider quota, database content, catalog coverage or every pharmacy workflow is correct. Complete the live Demo smoke checks before declaring a Demo release successful. Production health checks and release evidence belong to the separately managed Production environment.
 
-## 9. Health checks and release verification
-
-Check readiness, not just process liveness:
-
-```bash
-curl --fail https://pharmaviyum-erp-crm.fastapicloud.dev/health
-curl --fail https://pharmaviyum-erp-crm.fastapicloud.dev/ready
-```
-
-The expected ready response reports PostgreSQL, Redis, and AI initialization as healthy. The deployment smoke workflow also verifies the SPA route `/settings/appearance`, authentication negative/positive paths, protected POS search, and non-empty Omeprazole catalog/product search results.
-
-A green CI run does not prove that production secrets, provider quota, database content, or live pharmacy workflows are correct. Complete the live smoke checks before declaring the release successful.
-
 ## 10. Security rules
 
 - Never commit .env files, API keys, tokens, passwords or database connection strings.
