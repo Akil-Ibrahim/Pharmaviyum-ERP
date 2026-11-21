@@ -43,7 +43,8 @@ The intended model is:
 See the [offline capability matrix](../devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) and [Ansible rollout guide](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
 
 ## Current implementation versus target
-- Current hosted application path: FastAPI Cloud, with data/cache services provisioned separately.
+- Current public Demo application path: FastAPI Cloud, with isolated data/cache services provisioned separately.
+- Production uses the same application technology stack on a separately managed hosting platform; Production deployment and operations are outside this public repository.
 - Current backend: FastAPI modular monolith.
 - Current AI orchestration: LangGraph Agent and LangGraph RAG, Agent Harness and MCP registry.
 - Current WebSocket handlers: development scaffolds, not production-safe.
