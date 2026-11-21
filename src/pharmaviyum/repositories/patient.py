@@ -46,6 +46,7 @@ class PatientRepository(BaseRepository[Patient]):
         include_conditions: bool = True,
         include_insurances: bool = True,
         include_consultations: bool = True,
+        include_purchases: bool = True,
     ) -> Optional[Patient]:
         """Get patient by ID with eager-loaded relationships."""
         query = select(Patient).where(Patient.id == id)
@@ -59,10 +60,11 @@ class PatientRepository(BaseRepository[Patient]):
             query = query.options(selectinload(Patient.insurances))
         if include_consultations:
             query = query.options(selectinload(Patient.consultations))
-        query = query.options(
-            selectinload(Patient.purchases).selectinload(PatientPurchase.product),
-            selectinload(Patient.purchases).selectinload(PatientPurchase.batch),
-        )
+        if include_purchases:
+            query = query.options(
+                selectinload(Patient.purchases).selectinload(PatientPurchase.product),
+                selectinload(Patient.purchases).selectinload(PatientPurchase.batch),
+            )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -321,37 +323,14 @@ class PatientRepository(BaseRepository[Patient]):
             include_conditions=True,
             include_insurances=False,
             include_consultations=False,
+            include_purchases=False,
         )
         if not patient:
             return None
-        age = None
-        if patient.date_of_birth:
-            from datetime import date
-
-            today = date.today()
-            age = (
-                today.year
-                - patient.date_of_birth.year
-                - (
-                    (today.month, today.day)
-                    < (patient.date_of_birth.month, patient.date_of_birth.day)
-                )
-            )
         return {
-            "id": patient.id,
-            "full_name": patient.full_name,
-            "age": age,
-            "gender": patient.gender,
-            "allergies": [a.allergen_name for a in patient.allergies],
-            "conditions": [c.condition_name for c in patient.conditions],
-            "blood_type": patient.blood_type,
-            "loyalty_tier": patient.loyalty_tier,
-            "total_purchases": round(
-                sum(purchase.total_amount for purchase in patient.purchases), 2
-            ),
-            "visit_count": patient.visit_count,
-            "last_visit_date": (
-                patient.last_visit_date.isoformat() if patient.last_visit_date else None
-            ),
-            "preferred_language": patient.preferred_language,
+            "patient_id": patient.id,
+            "allergies": [allergy.allergen_name for allergy in patient.allergies],
+            "conditions": [
+                condition.condition_name for condition in patient.conditions
+            ],
         }

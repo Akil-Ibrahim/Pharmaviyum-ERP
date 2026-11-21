@@ -25,18 +25,20 @@ File: `src/pharmaviyum/repositories/patient.py`
 
 **Remaining action:** add two-pharmacy integration tests that prove a tenant-scoped call cannot return another tenant's patients, and map all call sites. If a global administrative use case exists, give it a separately named and explicitly authorized method rather than overloading an optional scope.
 
-### F-02 — Patient response schema returns broad clinical and commercial relationships
+### F-02 — Broad PatientResponse exposed unrelated PHI across ordinary patient endpoints
 
 Files: `src/pharmaviyum/schemas/patient.py`, `src/pharmaviyum/api/v1/endpoints/patients.py`, `src/pharmaviyum/repositories/patient.py`
 
-- `PatientResponse` includes conditions (including treatment notes/current medications/notes), allergies, insurance, consultations, and purchase history.
-- `get_patient` and `get_patient_by_phone` return this broad response model.
-- The repository eagerly loads allergies, conditions, insurances, consultations and purchases for the patient detail path.
-- The same response model is also used for create/update/visit responses.
+- The legacy `PatientResponse` schema contains conditions (including treatment notes/current medications/notes), allergies, insurance, consultations, and purchase history.
+- Before this remediation, standard patient endpoints used a broad Patient response or returned a broad related object.
+- The repository detail query eagerly loads clinical/insurance/consultation relations and purchase lines by default.
+- The dedicated AI profile schema and repository result were inconsistent: the schema required `patient_id` and `phone`, while the repository returned `id` and unrelated demographic/purchase aggregates. This could cause response validation failure.
 
-**Risk:** one patient-read permission currently corresponds to a wide payload containing multiple data classes. This increases minimum necessary/access-control complexity and makes accidental disclosure easier.
+**Risk:** one general patient-read contract exposed several unrelated data classes, violating minimum-necessary design and increasing accidental disclosure and serialization cost.
 
-**Required action:** define purpose-specific response DTOs (e.g. demographic summary, dispensing safety context, insurance workflow) with explicit field allowlists. Do not return consultation notes, insurance identifiers, or purchase history unless the workflow requires them. Add schema contract tests that assert forbidden fields are absent from each endpoint response.
+**Remediation in this PR:** introduce `PatientSummaryResponse` as the standard contract for list/create/update/get/get-by-phone/visit. Standard patient endpoints no longer serialize clinical, insurance, consultation, or purchase relations. Create/update/summary repository reads explicitly disable relationship eager loading. The AI profile is narrowed to a purpose-bound clinical safety context containing only patient_id, allergies, and conditions; its repository query excludes insurance, consultation, and purchase relations. Regression tests assert the response allowlist and AI-profile schema contract.
+
+**Remaining action:** keep the broad `PatientResponse` model out of route contracts; add separately authorized, audited clinical, insurance, consultation, and purchase-history endpoints only when a real workflow requires them. Audit the AI profile endpoint's authorization and PHI access logging before treating it as production-ready.
 
 ### F-03 — Patient lifecycle events carry linkable identifiers
 
@@ -63,19 +65,20 @@ File: `src/pharmaviyum/repositories/patient.py`
 
 **Remaining action:** map all callers of the unscoped helpers; add explicit trusted tenant context and tenant-scoped database predicates where required. Add cross-tenant integration tests at repository and API layers.
 
-### F-05 — Patient and order APIs preserve global superuser scope when pharmacy is omitted
+### F-05 — Patient and order APIs retain global superuser scope; the new pharmacist history route has narrower controls
 
-Files: `src/pharmaviyum/modules/auth/tenant.py`, `src/pharmaviyum/api/v1/endpoints/patients.py`, `src/pharmaviyum/api/v1/orders.py`
+Files: `src/pharmaviyum/modules/auth/tenant.py`, `src/pharmaviyum/api/v1/endpoints/patients.py`, `src/pharmaviyum/api/v1/orders.py`, `src/pharmaviyum/api/v1/patient_purchases.py`
 
 - `resolve_pharmacy_scope` returns the supplied pharmacy ID for superusers and returns `None` when a superuser omits it.
-- Patient list/detail/search/statistics routes pass that result to the service/repository; `None` means no pharmacy predicate in the inspected repository methods.
-- Order read and mutation handlers similarly allow the superuser to remain global when no pharmacy is supplied.
+- Patient list/detail/search/statistics routes and order read/mutation handlers pass that result to service/repository code; `None` means no pharmacy predicate in the inspected query paths.
+- The newer `GET /patient-purchases/{patient_id}/history` route is different: it requires a pharmacy ID and one of three purpose codes, denies superuser principals, checks active `PharmacyMembership`, verifies the patient belongs to that pharmacy, and writes metadata-only allowed/denied audit records.
+- The legacy `GET /patient-purchases/` route remains superuser-only and requires a pharmacy ID, but does not use the new PHI audit record in the inspected implementation.
 
-**Risk:** privileged access is not purpose-bound, time-limited, or read-audited in these inspected handlers. This is a privileged global access design, not evidence of an ordinary-user tenant escape.
+**Risk:** the dedicated purchase-history route has a purpose and membership gate, but general patient endpoints and order handlers still permit global superuser scope without a purpose-bound grant or read audit. This is a privileged global-access design, not evidence of an ordinary-user tenant escape.
 
-**Required action:** implement a separate platform-support authorization decision (grant, reason, expiry, permitted action, patient/tenant scope) and mandatory audit for privileged patient-level access. Do not simply remove superuser support without reviewing operational workflows.
+**Required action:** implement a separate platform-support authorization decision (grant, reason, expiry, permitted action, patient/tenant scope) and mandatory audit for privileged patient-level access across all read surfaces. Extend the new audit contract to standard patient reads and any other PHI-bearing paths. Do not simply remove superuser support without reviewing operational workflows.
 
-### F-06 — Order and purchase lookups validate tenant ownership after fetching rows
+### F-06 — Order and purchase tenant predicates are enforced in SQL
 
 File: `src/pharmaviyum/api/v1/orders.py`
 
@@ -87,7 +90,7 @@ File: `src/pharmaviyum/api/v1/orders.py`
 
 **Risk:** cross-tenant rows could be materialized in the application process before authorization rejection. The receipt lookup also relied on globally unique receipt naming rather than an explicit tenant predicate. This review does not establish a production disclosure or cross-tenant mutation.
 
-**Remediation in progress:** use shared query builders that add `Patient.pharmacy_id == scope` to patient, order, and purchase lookups whenever a tenant scope is resolved. Preserve the existing global-superuser behavior when scope is `None`. SQL compilation regression tests verify the predicates are present; database-backed two-tenant integration coverage remains required.
+**Remediation in PR #387:** shared query builders add `Patient.pharmacy_id == scope` to patient, order, and purchase lookups whenever a tenant scope is resolved. The existing global-superuser behavior when scope is `None` is preserved. PostgreSQL SQL-compilation regression tests and the full CI suite passed. Database-backed two-tenant integration coverage remains required.
 
 ## Positive controls observed
 
@@ -100,7 +103,7 @@ File: `src/pharmaviyum/api/v1/orders.py`
 
 1. Map all call sites for F-01 and F-04, especially unscoped helpers, plus every Patient ORM response serialization path.
 2. Add two-pharmacy integration tests for the already scoped query/mutation methods and add tenant predicates to remaining mutation paths where required.
-3. Split broad PatientResponse into purpose-specific allowlisted DTOs and add response-contract tests.
+3. Complete purpose-specific patient DTO rollout; add separately authorized clinical/insurance/purchase endpoints only where required, and audit AI-profile access.
 4. Minimize generic patient event payloads and audit every subscriber/forwarder.
 5. Implement the dedicated PHI access audit event and privileged-support policy defined in the parent governance audit.
 6. Verify API, dashboard, reports, exports, background jobs, MCP, and Edge paths before closing the inventory.

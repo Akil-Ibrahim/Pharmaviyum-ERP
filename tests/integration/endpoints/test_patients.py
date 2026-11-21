@@ -36,6 +36,13 @@ class TestCreatePatient:
         assert data["last_name"] == sample_patient_data["last_name"]
         assert data["phone"] == sample_patient_data["phone"]
         assert "id" in data
+        assert not {
+            "conditions",
+            "allergies",
+            "insurances",
+            "consultations",
+            "purchases",
+        }.intersection(data)
 
     @pytest.mark.asyncio
     async def test_create_patient_duplicate_phone(
@@ -164,6 +171,36 @@ class TestGetPatient:
 
         assert data["id"] == patient.id
         assert data["full_name"] == patient.full_name
+        assert not {
+            "conditions",
+            "allergies",
+            "insurances",
+            "consultations",
+            "purchases",
+        }.intersection(data)
+
+    @pytest.mark.asyncio
+    async def test_get_patient_by_phone_returns_summary_only(
+        self,
+        authenticated_client: AsyncClient,
+        patient_factory,
+    ):
+        patient = await patient_factory.create(phone="+15551234567")
+
+        response = await authenticated_client.get(
+            f"/api/v1/patients/phone/{patient.phone}"
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == patient.id
+        assert not {
+            "conditions",
+            "allergies",
+            "insurances",
+            "consultations",
+            "purchases",
+        }.intersection(data)
 
     @pytest.mark.asyncio
     async def test_get_patient_not_found(
@@ -202,6 +239,13 @@ class TestUpdatePatient:
 
         assert data["first_name"] == sample_patient_update_data["first_name"]
         assert data["loyalty_tier"] == sample_patient_update_data["loyalty_tier"]
+        assert not {
+            "conditions",
+            "allergies",
+            "insurances",
+            "consultations",
+            "purchases",
+        }.intersection(data)
 
     @pytest.mark.asyncio
     async def test_update_patient_not_found(
@@ -310,3 +354,30 @@ class TestPatientStatistics:
         data = response.json()
 
         assert data["total_purchase_value"] == 46.75
+
+
+class TestRecordPatientVisit:
+    """Tests for the minimal patient visit response contract."""
+
+    @pytest.mark.asyncio
+    async def test_record_visit_returns_demographic_summary_only(
+        self,
+        authenticated_client: AsyncClient,
+        patient_factory,
+    ):
+        patient = await patient_factory.create()
+
+        response = await authenticated_client.post(
+            f"/api/v1/patients/{patient.id}/visit"
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == patient.id
+        assert not {
+            "conditions",
+            "allergies",
+            "insurances",
+            "consultations",
+            "purchases",
+        }.intersection(data)
