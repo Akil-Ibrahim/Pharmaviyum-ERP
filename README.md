@@ -520,6 +520,7 @@ Browse the documentation in your preferred language:
 | Topic | English | Русский |
 |---|---|---|
 | Technology stack | [Technology Stack & Glossary](docs/technology-stack.md) | [Технологический стек и глоссарий](docs/technology-stack.ru.md) |
+| Production / Demo infrastructure | [Infrastructure baseline](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) | [Baseline инфраструктуры](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md) |
 | Repository structure | [Repository Structure Guide](docs/architecture/repository-structure.md) | [Руководство по структуре репозитория](docs/architecture/repository-structure.ru.md) |
 | Offline operations | [Pharmacy Offline Capability Matrix](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | [Матрица офлайн-возможностей](docs/devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) |
 | RAG evaluation | [Ragas pharmaceutical evaluation](docs/ai/ragas-pharmaceutical-evaluation.md) | [Фармацевтическая оценка RAG](docs/ai/ragas-pharmaceutical-evaluation.ru.md) |
