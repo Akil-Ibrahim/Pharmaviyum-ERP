@@ -31,6 +31,12 @@ This map connects each patient-facing route to its authorization boundary, data 
 4. The broad `PatientResponse` should be split into workflow-specific DTOs with explicit field allowlists.
 5. Unit tests that inspect generated SQL are useful query-shape evidence, but they do not prove database-backed isolation, transaction behavior, or API denial semantics.
 
+## Test-fixture limitation confirmed
+
+The integration fixture `authenticated_client` in `tests/integration/conftest.py` always authenticates as `is_superuser=True`. Its `PatientFactory.create()` does not set `pharmacy_id` unless a test explicitly overrides it. Therefore the existing patient endpoint integration tests primarily exercise a global superuser against unowned patient rows; they do not demonstrate ordinary-user tenant isolation. This is stronger than a missing assertion: the fixture setup itself does not model two distinct pharmacy tenants. The fixture is not evidence that Production contains unowned patients.
+
+Before using these tests as tenant-isolation evidence, add distinct ordinary users, two persisted pharmacies, active memberships, tenant-owned patient fixtures, and explicit null-owner fixtures. Assert allowed access within the same pharmacy, denied/not-found behavior across pharmacies, denied access to null-owner records, and no cross-tenant leakage through list counts, search, phone lookup, AI profile or purchases.
+
 ## Evidence maturity rules for this map
 
 - Source and test-file presence alone do not exceed L1 until the relevant tests have passed on the exact commit and their artifacts are recorded.
