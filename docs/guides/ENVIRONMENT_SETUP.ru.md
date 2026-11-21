@@ -162,57 +162,46 @@ Mortarium использует LangGraph для оркестрации pharmacis
 
 Ragas находится в изолированной evaluation dependency group для CI/offline evaluation и не является обязательной runtime-переменной production.
 
-## 6. Конфигурация FastAPI Cloud
+## 6. Конфигурация FastAPI Cloud для Demo
 
-Hosted-приложение работает на FastAPI Cloud. Переменные приложения задаются в панели Environment Variables, deploy credentials — в GitHub Actions Secrets и защищённом окружении `production`.
+FastAPI Cloud используется только для публичной Demo. Production использует тот же технологический стек приложения на отдельно управляемой платформе хостинга; сведения о провайдере, deploy credentials, release workflow и эксплуатационные процедуры находятся за пределами этого публичного репозитория.
 
-### Переменные приложения
+Публичное приложение Demo размещается по адресу https://pharmaviyum-erp.fastapicloud.dev. Переменные приложения задаются в панели FastAPI Cloud Environment Variables, а deploy credentials — в защищённом GitHub Actions environment demo-pharmaviyum-erp.
 
-Минимально настройте и проверьте:
+### Переменные приложения Demo
 
-- `ENVIRONMENT=production`
-- `DEBUG=false`
-- `LOG_LEVEL=INFO`
-- `DATABASE_URL` — PostgreSQL production URL, обычно `postgresql+asyncpg://...`
-- `PGVECTOR_DATABASE_URL` — URL vector store
-- `REDIS_URL` — доступный managed Redis
-- `SECRET_KEY` — уникальный случайный секрет не короче 32 символов
-- `CORS_ORIGINS` — точный deployed origin
-- `USE_CLOUD_LLM=true`
-- `CLOUD_LLM_PROVIDER=qwencloud`
-- переменные QwenCloud из раздела выше, если включён demo AI profile
+- ENVIRONMENT=staging — поддерживаемый безопасный runtime-профиль приложения Demo.
+- DEBUG=false
+- LOG_LEVEL=INFO
+- DATABASE_URL — URL изолированной Demo PostgreSQL, обычно postgresql+asyncpg://...
+- PGVECTOR_DATABASE_URL — URL vector store Demo.
+- REDIS_URL — отдельный managed Redis endpoint для Demo.
+- SECRET_KEY — уникальный случайный секрет только для Demo, не короче 32 символов.
+- CORS_ORIGINS — точный HTTPS origin Demo.
+- USE_CLOUD_LLM=true и CLOUD_LLM_PROVIDER=qwencloud, если включён AI-профиль Demo.
+- QwenCloud API, model, timeout и quota variables согласно руководству QwenCloud Demo.
 
-Managed PostgreSQL с pgvector и Redis provisioned отдельно. Deployment приложения не создаёт эти сервисы.
+Runtime enum приложения поддерживает development, staging и production. Demo использует staging, чтобы не обозначать публичную демонстрационную среду как Production и при этом сохранять безопасную staging-конфигурацию. PostgreSQL/pgvector и Redis provisioned отдельно; FastAPI Cloud автоматически не создаёт эти сервисы.
 
-### GitHub Actions secrets
+### GitHub Actions secrets для Demo
 
-Текущий ручной deploy workflow требует:
+Workflow развёртывания Demo требует:
 
-- `FASTAPI_CLOUD_TOKEN`
-- `FASTAPI_CLOUD_APP_ID`
-- `DATABASE_URL` — URL production runtime-role, совпадающий с `DATABASE_URL` приложения FastAPI Cloud; используется для read-only catalog checks и очистки временного smoke-test пользователя.
-- `VITE_CLERK_PUBLISHABLE_KEY` — только если требуется текущая frontend sign-in конфигурации.
+- FASTAPI_CLOUD_DEMO_TOKEN — deploy token FastAPI Cloud только для Demo.
+- FASTAPI_CLOUD_DEMO_APP_ID — ID приложения Demo в FastAPI Cloud.
+- DEMO_DATABASE_URL — URL изолированной Demo БД для read-only проверки схемы.
+- VITE_CLERK_PUBLISHABLE_KEY — только если он нужен frontend build/sign-in конфигурации.
 
-Отдельный ручной migration workflow дополнительно требует:
+Workflow не должен читать Production credentials или обращаться к Production инфраструктуре. Он не использует FASTAPI_CLOUD_TOKEN, FASTAPI_CLOUD_APP_ID, DATABASE_URL или MIGRATION_DATABASE_URL.
 
-- `MIGRATION_DATABASE_URL` — URL отдельной migration login role для того же проверенного Neon host/database. Это должна быть другая PostgreSQL role, чем в `DATABASE_URL`; она должна быть non-superuser role с наследуемыми owner privileges от `neondb_owner` и использоваться только защищённым migration workflow. Не задавайте этот credential в FastAPI Cloud application.
-- Migration workflow проверяет, что runtime role не является superuser, не может создавать роли/БД, обходить RLS, не имеет `CREATE` на схему `public`, не состоит в `neondb_owner` и не владеет объектами public и не наследует их ownership. При нарушении проверок workflow отказывается запускать миграцию.
+### Контроль релиза Demo
 
-Workflow больше не требует `PHARMAVIYUM_SMOKE_USERNAME` или `PHARMAVIYUM_SMOKE_PASSWORD`. Он создаёт уникальную временную учётную запись pharmacist с одноразовым случайным паролем, проверяет auth/catalog и пытается удалить именно эту запись. Не создавайте статические smoke credentials и не используйте `admin/admin`.
+1. Влейте проверенное изменение в main после обязательных CI checks.
+2. Вручную запустите Deploy Demo to FastAPI Cloud из main с утверждённым Demo change/ticket reference.
+3. Пройдите approval для environment demo-pharmaviyum-erp, если он настроен.
+4. Проверьте точный deployed commit, staging runtime identity, версию CPython, /health, /ready, frontend routes, обработку неверной авторизации и защиту POS.
 
-### Release и миграции
-
-Production deployment выполняется вручную и защищён:
-
-1. Влейте проверенное изменение в `main` после обязательных CI checks.
-2. Вручную запустите `Deploy to FastAPI Cloud` из `main` с утверждённым change/ticket reference.
-3. Пройдите approval для GitHub Actions environment `production`, если он настроен.
-4. Workflow проверяет CI для точного commit, собирает frontend, deploy-ит приложение и выполняет smoke checks.
-
-**Текущий deploy workflow не запускает Alembic migrations.** Миграции — отдельная операция с явным approval. До запуска проверьте миграцию, совместимость/rollback, backup и восстановление; выполняйте её один раз из доверенного окружения. Не запускайте миграции при старте API replicas.
-
-См. [Runbook FastAPI Cloud](../deployment/FASTAPI_CLOUD.ru.md).
-
+Workflow развёртывания Demo не запускает Alembic migrations. Изменение схемы Demo требует отдельной утверждённой операции и проверенного backup/restore path. Deployment и миграции Production выполняются за пределами этого публичного репозитория. См. [руководство по развёртыванию Demo в FastAPI Cloud](../deployment/FASTAPI_CLOUD.ru.md).
 ## 7. Pharmacy Edge / on-premises
 
 Cloud demo и аптечные Edge nodes — разные профили deployment:
