@@ -538,6 +538,7 @@ React frontend можно запускать отдельно командами
 | Аптечные процессы | [Спецификация аптечного процесса](docs/workflows/pharmacy-workflow.ru.md) | [Pharmacy workflow specification](docs/workflows/pharmacy-workflow.en.md) | POS, отпуск, склад, закупки, аудит и offline-ограничения |
 | Архитектура системы | [Архитектурное видение](docs/architecture/pharmaviyum-architecture.ru.md) | [Architecture vision](docs/architecture/pharmaviyum-architecture.en.md) | Компоненты, границы доверия, владение данными, Central/Edge |
 | Технологии | [Технологический стек и глоссарий](docs/technology-stack.ru.md) | [Technology Stack & Glossary](docs/technology-stack.md) | Определения, роли, версии, различия окружений и обновление зависимостей |
+| Инфраструктура Production / Demo | [Единый baseline](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md) | [Infrastructure baseline](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) | PostgreSQL/Redis, изоляция и подтверждение версий |
 | Структура репозитория | [Руководство](docs/architecture/repository-structure.ru.md) | [Repository Structure Guide](docs/architecture/repository-structure.md) | Назначение каталогов, размещение файлов и безопасные перемещения |
 | AI / LLM | [Проектирование Mortarium AI / LLM](docs/ai/AI_LLM_SYSTEM_DESIGN.ru.md) | [AI system design](docs/ai/AI_LLM_SYSTEM_DESIGN.md) | Mortarium, Agent Harness, LangGraph, RAG, MCP, безопасность и оценка |
 | AI-архитектура | [Архитектура AI](docs/ai_architecture.ru.md) | [AI architecture](docs/ai_architecture.md) | Детали текущей реализации |
