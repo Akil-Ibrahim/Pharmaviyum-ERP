@@ -503,3 +503,8 @@ The following principles are foundational:
 10. ERP synchronization failures must become visible operational exceptions.
 11. Human authorization remains required for workflows that require professional or operational judgment.
 12. Business Core remains the source of truth for operational state.
+
+
+## 26. Related business-value and KPI specification
+
+The [Pharmacy Business Value & KPI Specification](./PHARMACY_BUSINESS_VALUE_AND_KPIS.md) defines the business-value model, six primary CV KPIs, supporting operational measures, measurement-contract requirements and evidence rules. The primary engineering measurement source remains [ENGINEERING_BENCHMARK_REQUIREMENTS.md](../devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md). Domain context is informed by the [AI in the Pharmacy article](https://medium.com/@ibrahimengpy/ai-in-the-pharmacy-how-technology-can-support-the-pharmacist-a755ba3a2c9a). These references do not imply that every described capability is implemented or production-validated.
