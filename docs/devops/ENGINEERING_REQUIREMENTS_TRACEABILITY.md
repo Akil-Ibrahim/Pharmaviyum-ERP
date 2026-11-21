@@ -67,6 +67,25 @@ For every level, retain the evidence provenance: exact commit SHA, test/check an
 | OP-02 | Deployment, rollback and release control | [FastAPI Cloud runbook](../deployment/FASTAPI_CLOUD.md), [release runbook](../operations/RELEASE_RUNBOOK.md) | CI workflows and manual hosted deployment path are documented. A green CI run on a docs branch is not production deployment evidence. | L0 — Documented | Verify protected branch rules, required checks, artifact provenance, deployment approval, post-deploy smoke tests and rollback rehearsal on the current release path. |
 | BV-01 | Business KPI evidence and NDA boundary | [Business value and KPI specification](../workflows/PHARMACY_BUSINESS_VALUE_AND_KPIS.md) | KPI framework separates Pharmacist, Pharmacy and Company outcomes; benchmark requires measured evidence. | L0 — Documented | Bind each KPI to an event definition, source, denominator, cohort and measurement window. Do not publish NDA-covered financial metrics or claim impact without reproducible measurements. |
 
+
+## 2.1 Focused PHI source review — 2026-11-21
+
+A read-only review of the current `main` source was performed against the PHI governance and read-surface audits (audit baseline recorded as `c6d35b828c1958f1bcb9077bbd0b6a71ef94613b`). This is source evidence only; no database, production runtime, or patient data was accessed.
+
+Confirmed implementation and evidence limits:
+
+- `GET /api/v1/patients/{patient_id}`, phone lookup and list routes resolve a pharmacy scope for ordinary users. `resolve_pharmacy_scope` permits a superuser to omit `pharmacy_id`, which intentionally results in a global scope. The unit test `tests/unit/modules/auth/test_tenant.py::test_superuser_can_use_global_scope` explicitly preserves that behavior.
+- Patient create/update/delete routes are superuser-only. The create route accepts an optional `pharmacy_id`; when a superuser omits it, the service can create a patient with nullable `Patient.pharmacy_id`. This is a source-observed unowned-record path, not proof that such records exist in Production.
+- `PatientResponse` includes conditions and treatment notes, allergies, insurance policy number, consultations and purchase history. The detail and phone-lookup routes return this broad DTO. Purpose-specific response-field minimization is therefore not demonstrated by these paths.
+- `GET /patient-purchases/` requires a superuser and explicit `pharmacy_id`, joins `Patient`, and filters by `Patient.pharmacy_id`. Its current regression tests compile the SQL using mocks; they do not prove two-tenant isolation against persisted database rows.
+- `AuditLog` is a generic mutation-oriented model. The inspected patient read handlers do not emit a dedicated allowed/denied PHI access event. No append-only database enforcement was established by this source review.
+
+Relevant source/test anchors: `src/pharmaviyum/api/v1/endpoints/patients.py`, `src/pharmaviyum/modules/auth/tenant.py`, `src/pharmaviyum/services/patient.py`, `src/pharmaviyum/models/patients/patient.py`, `src/pharmaviyum/schemas/patient.py`, `src/pharmaviyum/models/audit_log.py`, `src/pharmaviyum/api/v1/patient_purchases.py`, `tests/unit/modules/auth/test_tenant.py`, `tests/unit/test_patient_purchases_scope.py`.
+
+**Evidence assignment:** SE-01 remains **L1** (tenant-aware source controls exist, but global privileged scope and database-backed two-tenant negative proof remain open). SE-02 remains **L0** for the dedicated PHI access-audit/minimization requirement: a generic audit model exists, but the required PHI access contract and enforcement are not demonstrated. Do not promote either row based on this source review alone.
+
+Next exit conditions: require an explicit, governed pharmacy context for patient creation; introduce purpose-specific patient DTOs; define a time-bounded, reason-coded privileged-support policy; add durable allowed/denied PHI access auditing with append-only enforcement; and execute two-tenant integration tests with synthetic fixtures, including null-owner denial and audit-failure behavior.
+
 ## 3. Priority release blockers
 
 The following are not documentation polish; they require implementation and evidence before the affected workflows can be called production-ready:
