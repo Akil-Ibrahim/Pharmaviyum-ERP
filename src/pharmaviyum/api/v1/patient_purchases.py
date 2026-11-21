@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.db.session import get_db
-from src.pharmaviyum.models.patients import PatientPurchase
+from src.pharmaviyum.models.patients import Patient, PatientPurchase
 from src.pharmaviyum.modules.auth.deps import CurrentSuperuser
 
 router = APIRouter(prefix="/patient-purchases", tags=["Patient Purchases"])
@@ -18,9 +18,12 @@ async def list_patient_purchases(
     db: AsyncSession = Depends(get_db),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
+    pharmacy_id: int = Query(..., gt=0),
 ) -> list[dict[str, Any]]:
     result = await db.execute(
         select(PatientPurchase)
+        .join(Patient, Patient.id == PatientPurchase.patient_id)
+        .where(Patient.pharmacy_id == pharmacy_id)
         .options(
             selectinload(PatientPurchase.product), selectinload(PatientPurchase.batch)
         )
