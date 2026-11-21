@@ -92,9 +92,13 @@ async def get_pharmacist_patient_history(
     if current_user.is_superuser:
         db.add(
             PHIAccessAudit(
-                actor_id=current_user.id, pharmacy_id=pharmacy_id,
-                patient_id=patient_id, action="read_patient_history",
-                decision="denied", purpose=purpose, request_id=_request_id(request),
+                actor_id=current_user.id,
+                pharmacy_id=pharmacy_id,
+                patient_id=patient_id,
+                action="read_patient_history",
+                decision="denied",
+                purpose=purpose,
+                request_id=_request_id(request),
             )
         )
         await db.commit()
@@ -179,14 +183,20 @@ async def get_pharmacist_patient_history(
     result = await db.execute(
         purchase_query.order_by(
             PatientPurchase.purchased_at.desc(), PatientPurchase.id.desc()
-        ).offset(skip).limit(limit)
+        )
+        .offset(skip)
+        .limit(limit)
     )
     purchases = result.scalars().all()
     db.add(
         PHIAccessAudit(
-            actor_id=current_user.id, pharmacy_id=pharmacy_id,
-            patient_id=patient_id, action="read_patient_history",
-            decision="allowed", purpose=purpose, request_id=_request_id(request),
+            actor_id=current_user.id,
+            pharmacy_id=pharmacy_id,
+            patient_id=patient_id,
+            action="read_patient_history",
+            decision="allowed",
+            purpose=purpose,
+            request_id=_request_id(request),
         )
     )
     return [
