@@ -356,7 +356,6 @@ class TestPatientStatistics:
         assert data["total_purchase_value"] == 46.75
 
 
-
 class TestRecordPatientVisit:
     """Tests for the minimal patient visit response contract."""
 
