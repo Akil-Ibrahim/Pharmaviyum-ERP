@@ -35,7 +35,12 @@ Use the demo environment to review the current Pharmaviyum system status:
 
 - **System Status:** https://pharmaviyum-erp.fastapicloud.dev/system-status
 
-Demo access credentials are provisioned separately and must never be stored in this public repository. The demo environment must contain synthetic data only; do not store real patient, prescription, customer, or other confidential information in it.
+**Public Demo credentials (test account only):**
+
+- **Demo login:** `admin`
+- **Demo password:** `V9#qL2!mR7@xP4$kT8&nW5zB`
+
+These credentials are for the isolated Demo environment only and must never be used in Production. The Demo environment must contain synthetic data only; do not store real patient, prescription, customer, or other confidential information in it.
 
 ## Contents
 
