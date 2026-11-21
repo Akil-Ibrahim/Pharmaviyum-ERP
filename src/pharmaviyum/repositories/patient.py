@@ -323,6 +323,7 @@ class PatientRepository(BaseRepository[Patient]):
             include_conditions=True,
             include_insurances=False,
             include_consultations=False,
+            include_purchases=False,
         )
         if not patient:
             return None
@@ -340,20 +341,8 @@ class PatientRepository(BaseRepository[Patient]):
                 )
             )
         return {
-            "id": patient.id,
-            "full_name": patient.full_name,
-            "age": age,
-            "gender": patient.gender,
-            "allergies": [a.allergen_name for a in patient.allergies],
-            "conditions": [c.condition_name for c in patient.conditions],
-            "blood_type": patient.blood_type,
-            "loyalty_tier": patient.loyalty_tier,
-            "total_purchases": round(
-                sum(purchase.total_amount for purchase in patient.purchases), 2
-            ),
-            "visit_count": patient.visit_count,
-            "last_visit_date": (
-                patient.last_visit_date.isoformat() if patient.last_visit_date else None
-            ),
-            "preferred_language": patient.preferred_language,
+            "patient_id": patient.id,
+            "allergies": [allergy.allergen_name for allergy in patient.allergies],
+            "conditions": [condition.condition_name for condition in patient.conditions],
+            "risk_summary": "",
         }
