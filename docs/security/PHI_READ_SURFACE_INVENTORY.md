@@ -12,18 +12,18 @@ This review expands the initial PHI governance audit. It identifies additional s
 
 ## Findings
 
-### F-01 — Repository methods accept pharmacy scope but ignore it
+### F-01 — Repository query scope is implemented; database-level isolation proof remains
 
 File: `src/pharmaviyum/repositories/patient.py`
 
-- `get_recent_patients(limit, pharmacy_id)` accepts `pharmacy_id` but the query does not apply it.
-- `get_top_customers(limit, pharmacy_id)` accepts `pharmacy_id` but the query does not apply it.
+- Current `main` applies `Patient.pharmacy_id == pharmacy_id` in both `get_recent_patients` and `get_top_customers` when a scope is supplied.
+- `tests/unit/test_patient_repository_tenant_scope.py` compiles both query statements and asserts the pharmacy predicate.
 - Both methods return Patient ORM objects, not an aggregate-only projection.
-- Their call sites were not fully enumerated in this pass.
+- The current tests prove query construction, not end-to-end isolation against two persisted pharmacies; all call sites still need mapping.
 
-**Risk:** any caller that relies on the parameter contract to enforce tenant isolation can receive cross-pharmacy rows. This is a repository-level isolation defect if these methods are called in tenant-scoped workflows.
+**Status:** the previously reported missing-predicate defect is not present in the inspected `main` revision. Do not track it as an open source defect.
 
-**Required action:** map all call sites; add pharmacy predicates to both queries; add two-pharmacy negative tests proving a tenant-scoped call cannot return another tenant's patients. If a global administrative use case exists, give it a separately named and explicitly authorized method rather than overloading an optional scope.
+**Remaining action:** add two-pharmacy integration tests that prove a tenant-scoped call cannot return another tenant's patients, and map all call sites. If a global administrative use case exists, give it a separately named and explicitly authorized method rather than overloading an optional scope.
 
 ### F-02 — Patient response schema returns broad clinical and commercial relationships
 
@@ -38,30 +38,30 @@ Files: `src/pharmaviyum/schemas/patient.py`, `src/pharmaviyum/api/v1/endpoints/p
 
 **Required action:** define purpose-specific response DTOs (e.g. demographic summary, dispensing safety context, insurance workflow) with explicit field allowlists. Do not return consultation notes, insurance identifiers, or purchase history unless the workflow requires them. Add schema contract tests that assert forbidden fields are absent from each endpoint response.
 
-### F-03 — Patient lifecycle events carry direct identifiers
+### F-03 — Patient lifecycle events carry linkable identifiers
 
 File: `src/pharmaviyum/services/patient.py`
 
-- `create_patient` emits `patient.created` with `patient_id`, `full_name`, `phone`, `country`, and `created_by`.
-- `update_patient` emits `patient.updated` with patient ID and updated field names.
-- The event bus is process-local and best-effort (`src/pharmaviyum/services/event_bus.py`); its current generic emit log records event type and handler count, not the event payload.
-- The full subscriber graph and any external forwarding/logging behavior were not exhaustively traced.
+- PR #385 removes `patient_id`, `full_name`, `phone`, and `country` from the generic `patient.created` payload; only `pharmacy_id` remains.
+- `patient.updated`, `patient.deleted`, and `patient.visit_recorded` still include the stable patient ID in their generic event payloads; these remain open minimization work.
+- A source search found no in-repository `event_bus.on(...)` subscribers. This does not establish the absence of dynamically registered or external consumers.
+- The patient creation log no longer includes the patient ID.
+- The event bus is process-local and best-effort (`src/pharmaviyum/services/event_bus.py`); its generic emit log records event type and handler count, not payload.
 
-**Risk:** direct identifiers enter a generic application event channel. Future subscribers, telemetry exporters, or integrations could propagate them into systems without PHI controls.
+**Risk:** stable patient IDs are linkable personal data. Keeping them in generic lifecycle events would allow future subscribers or telemetry integrations to correlate events with patient records outside a purpose-bound workflow.
 
-**Required action:** replace direct identifiers in generic events with opaque references and minimal metadata; use a dedicated, permissioned clinical event contract for any justified PHI-bearing workflow. Add tests that event payloads contain no name, phone, email, DOB, clinical notes, or prescription data. Audit subscribers before enabling external delivery.
+**Remediation:** remove patient identifiers from generic `patient.created`; keep only tenant-level routing metadata. Remaining lifecycle events require the same review. If a workflow needs a patient reference, define a dedicated permissioned event contract and an explicit lookup authorization path rather than reusing the generic event bus.
 
-### F-04 — Tenant-scoped mutation helpers perform an unscoped initial lookup
+### F-04 — Two patient mutation helpers are scoped; other mutation helpers lack explicit tenant scope
 
 File: `src/pharmaviyum/repositories/patient.py`
 
-- `soft_delete(id, pharmacy_id)` and `record_visit(id, pharmacy_id)` first load the patient by ID without a pharmacy predicate, then compare the loaded row's pharmacy ID when a scope was supplied.
-- These methods currently return false/None for a mismatched tenant before applying the mutation, but the initial database read itself is unscoped.
+- Current `main` applies `Patient.pharmacy_id == pharmacy_id` directly in the initial SELECT statements of `soft_delete` and `record_visit`; SQL regression tests assert those predicates and verify no mutation occurs when the scoped lookup returns no row.
 - Other repository helpers such as `restore`, `update_loyalty`, `add_allergy`, and `add_condition` do not expose a pharmacy scope in their signatures; their caller authorization was not exhaustively mapped.
 
-**Risk:** defense-in-depth and auditability are weaker than a single scoped query. Internal callers may accidentally bypass the intended tenant contract.
+**Status:** the previously reported unscoped initial lookup is not present in the inspected `main` revision.
 
-**Required action:** use scoped SELECT/UPDATE predicates in the database statement; require explicit trusted tenant context for patient mutations; enumerate all call sites and test cross-tenant denial at the repository and API layers.
+**Remaining action:** map all callers of the unscoped helpers; add explicit trusted tenant context and tenant-scoped database predicates where required. Add cross-tenant integration tests at repository and API layers.
 
 ### F-05 — Patient and order APIs preserve global superuser scope when pharmacy is omitted
 
@@ -84,8 +84,8 @@ Files: `src/pharmaviyum/modules/auth/tenant.py`, `src/pharmaviyum/api/v1/endpoin
 
 ## Required next implementation sequence
 
-1. Map all call sites for F-01 and F-04, plus every Patient ORM response serialization path.
-2. Add tenant predicates to repository methods and scoped mutation statements; add negative integration tests with two synthetic pharmacies.
+1. Map all call sites for F-01 and F-04, especially unscoped helpers, plus every Patient ORM response serialization path.
+2. Add two-pharmacy integration tests for the already scoped query/mutation methods and add tenant predicates to remaining mutation paths where required.
 3. Split broad PatientResponse into purpose-specific allowlisted DTOs and add response-contract tests.
 4. Minimize generic patient event payloads and audit every subscriber/forwarder.
 5. Implement the dedicated PHI access audit event and privileged-support policy defined in the parent governance audit.
@@ -96,7 +96,7 @@ Files: `src/pharmaviyum/modules/auth/tenant.py`, `src/pharmaviyum/api/v1/endpoin
 - [ ] Every repository method with a pharmacy parameter demonstrably applies it, or is explicitly documented as global and access-controlled.
 - [ ] Two-tenant tests prove patient query and mutation isolation.
 - [ ] Patient response schemas expose only fields necessary for each workflow.
-- [ ] Generic events and telemetry contain no direct patient identifiers or clinical payloads.
+- [ ] Generic events and telemetry contain no direct patient identifiers or clinical payloads; stable patient IDs are treated as linkable data.
 - [ ] Superuser patient-level access is purpose-bound and audited.
 - [ ] All patient read surfaces have an owner, authorization policy, response classification, and audit behavior.
 

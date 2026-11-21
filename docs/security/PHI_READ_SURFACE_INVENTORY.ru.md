@@ -12,18 +12,18 @@
 
 ## Находки
 
-### F-01 — Repository-методы принимают pharmacy scope, но не применяют его
+### F-01 — Repository query scope реализован; доказательство изоляции на уровне БД ещё требуется
 
 Файл: `src/pharmaviyum/repositories/patient.py`
 
-- `get_recent_patients(limit, pharmacy_id)` принимает `pharmacy_id`, но не добавляет его в запрос.
-- `get_top_customers(limit, pharmacy_id)` принимает `pharmacy_id`, но не добавляет его в запрос.
+- В текущем `main` методы `get_recent_patients` и `get_top_customers` добавляют `Patient.pharmacy_id == pharmacy_id`, если scope передан.
+- `tests/unit/test_patient_repository_tenant_scope.py` компилирует оба запроса и проверяет pharmacy predicate.
 - Оба метода возвращают ORM-объекты Patient, а не агрегированную проекцию.
-- Все call sites в рамках этой проверки не перечислены.
+- Текущие тесты доказывают корректное построение SQL, но не end-to-end изоляцию между двумя сохранёнными pharmacy; все call sites ещё нужно сопоставить.
 
-**Риск:** вызывающий код может полагаться на контракт параметра и считать запрос tenant-scoped, хотя фактически получает строки из разных аптек. Это дефект изоляции на repository-уровне, если методы используются в tenant-scoped workflow.
+**Статус:** ранее описанный дефект отсутствия predicate не воспроизводится в проверенной ревизии `main`. Не следует считать его открытым дефектом исходного кода.
 
-**Необходимые действия:** найти все call sites; добавить pharmacy predicates; написать negative tests на двух аптеках, доказывающие, что tenant-scoped вызов не возвращает пациентов другого tenant. Если существует глобальный административный сценарий, выделить для него отдельно названный и явно авторизованный метод, а не использовать необязательный scope.
+**Оставшиеся действия:** добавить integration tests на двух pharmacy, доказывающие, что tenant-scoped вызов не возвращает пациентов другого tenant, и сопоставить все call sites. Если есть глобальный административный сценарий, выделить для него отдельно названный и явно авторизованный метод вместо необязательного scope.
 
 ### F-02 — Patient response schema возвращает широкий набор клинических и коммерческих связей
 
@@ -38,30 +38,31 @@
 
 **Необходимые действия:** определить purpose-specific DTO (например, краткая демография, контекст безопасности отпуска лекарства, страховой workflow) с явными allowlists полей. Не возвращать consultation notes, insurance identifiers или purchase history без необходимости конкретного workflow. Добавить schema contract tests, проверяющие отсутствие запрещённых полей в каждом endpoint response.
 
-### F-03 — Patient lifecycle events содержат прямые идентификаторы
+### F-03 — Patient lifecycle events содержат связываемые идентификаторы
 
 Файл: `src/pharmaviyum/services/patient.py`
 
-- `create_patient` отправляет в `patient.created` поля `patient_id`, `full_name`, `phone`, `country` и `created_by`.
-- `update_patient` отправляет patient ID и список изменённых полей.
-- Event bus — process-local и best-effort (`src/pharmaviyum/services/event_bus.py`); текущий общий лог emit записывает тип события и количество handlers, а не payload.
-- Полный граф subscribers и возможная внешняя пересылка/логирование не были исчерпывающе прослежены.
+- PR #385 удаляет `patient_id`, `full_name`, `phone` и `country` из generic payload события `patient.created`; остаётся только `pharmacy_id`.
+- `patient.updated`, `patient.deleted` и `patient.visit_recorded` по-прежнему содержат стабильный patient ID в generic event payload; их минимизация остаётся открытой задачей.
+- Поиск по исходному коду не обнаружил in-repository subscribers через `event_bus.on(...)`. Это не доказывает отсутствие динамически зарегистрированных или внешних consumers.
+- Лог создания пациента больше не содержит patient ID.
+- Event bus — process-local и best-effort (`src/pharmaviyum/services/event_bus.py`); общий лог emit записывает тип события и количество handlers, а не payload.
 
-**Риск:** прямые идентификаторы попадают в общий application event channel. Будущие subscribers, telemetry exporters или интеграции могут передать их в системы без PHI controls.
+**Риск:** стабильный patient ID — связываемые персональные данные. Их присутствие в generic lifecycle events позволит будущим subscribers или telemetry integrations сопоставлять события с пациентскими записями вне purpose-bound workflow.
 
-**Необходимые действия:** заменить прямые идентификаторы в общих событиях на opaque references и минимальные метаданные; для обоснованных клинических workflow использовать отдельный permissioned clinical event contract. Добавить тесты, что event payload не содержит имя, телефон, email, DOB, clinical notes или prescription data. Проверить всех subscribers до включения внешней доставки.
+**Исправление:** удалить patient identifiers из generic `patient.created`; оставить только tenant-level routing metadata. Остальные lifecycle events требуют такой же проверки. Если workflow необходим patient reference, нужно определить отдельный permissioned event contract и явную authorization path для lookup, а не повторно использовать generic event bus.
 
-### F-04 — Tenant-scoped mutation helpers сначала выполняют unscoped lookup
+### F-04 — Два patient mutation helpers применяют scope; другим mutation helpers не хватает явного tenant scope
 
 Файл: `src/pharmaviyum/repositories/patient.py`
 
-- `soft_delete(id, pharmacy_id)` и `record_visit(id, pharmacy_id)` сначала загружают пациента по ID без pharmacy predicate, затем сравнивают pharmacy ID, если scope передан.
-- Сейчас методы возвращают false/None при несовпадении tenant до применения мутации, но первоначальное чтение из БД уже было unscoped.
-- Другие helpers, например `restore`, `update_loyalty`, `add_allergy`, `add_condition`, не принимают pharmacy scope в сигнатуре; авторизация их callers полностью не прослежена.
+- Текущий `main` применяет `Patient.pharmacy_id == pharmacy_id` непосредственно в начальных SELECT-запросах методов `soft_delete` и `record_visit`.
+- SQL regression tests проверяют наличие predicates и отсутствие мутации, когда scoped lookup не возвращает строку.
+- Другие helpers, например `restore`, `update_loyalty`, `add_allergy`, `add_condition`, не принимают pharmacy scope в сигнатуре; авторизация их callers ещё не прослежена полностью.
 
-**Риск:** defense-in-depth и auditability слабее, чем при едином scoped query. Внутренний caller может случайно обойти предполагаемый tenant contract.
+**Статус:** ранее описанная проблема unscoped initial lookup не присутствует в проверенной ревизии `main`.
 
-**Необходимые действия:** использовать scoped SELECT/UPDATE predicates непосредственно в SQL; требовать явный trusted tenant context для patient mutations; перечислить call sites и проверить cross-tenant denial на repository и API уровнях.
+**Оставшиеся действия:** сопоставить всех callers helpers без scope; добавить явный trusted tenant context и scoped database predicates там, где это требуется. Добавить cross-tenant integration tests на repository и API уровнях.
 
 ### F-05 — Patient и order APIs сохраняют глобальную область superuser без pharmacy ID
 
@@ -80,12 +81,12 @@
 - Для обычных пользователей `resolve_pharmacy_scope` проверяет active `PharmacyMembership`; при нескольких membership требуется явный pharmacy ID.
 - MCP patient-history tool получает pharmacy ID из trusted MCP context и включает его в patient, prescription-count и order-count queries.
 - AI API проверяет переданный patient ID относительно авторизованной аптеки до вызова harness.
-- Эти контроли не заменяют отдельный PHI access audit и не компенсируют repository methods, игнорирующие переданный pharmacy parameter.
+- Эти контроли не заменяют отдельный PHI access audit и не доказывают end-to-end tenant isolation без integration tests.
 
 ## Следующая последовательность реализации
 
-1. Проследить все call sites F-01 и F-04, а также каждый путь сериализации Patient ORM.
-2. Добавить tenant predicates в repository methods и scoped mutation statements; добавить negative integration tests с двумя synthetic pharmacies.
+1. Проследить все call sites helpers без явного scope из F-01 и F-04, а также каждый путь сериализации Patient ORM.
+2. Добавить two-pharmacy integration tests для уже scoped query/mutation methods и tenant predicates в оставшиеся mutation paths, где они необходимы.
 3. Разделить широкую PatientResponse на purpose-specific DTO с allowlists и contract tests.
 4. Минимизировать generic patient event payload и проверить каждого subscriber/forwarder.
 5. Реализовать отдельный PHI access audit event и privileged-support policy из основного governance audit.
@@ -96,7 +97,7 @@
 - [ ] Каждый repository method с pharmacy parameter действительно применяет его либо явно обозначен как global и защищён отдельной авторизацией.
 - [ ] Тесты двух tenant доказывают изоляцию patient query и mutation.
 - [ ] Patient response schemas возвращают только поля, необходимые конкретному workflow.
-- [ ] Generic events и telemetry не содержат прямых идентификаторов пациентов и клинических payload.
+- [ ] Generic events и telemetry не содержат прямых идентификаторов пациентов и клинических payload; стабильные patient ID рассматриваются как связываемые данные.
 - [ ] Доступ superuser к данным пациента ограничен purpose и аудируется.
 - [ ] Для каждой patient read-поверхности определены владелец, authorization policy, классификация ответа и поведение аудита.
 
