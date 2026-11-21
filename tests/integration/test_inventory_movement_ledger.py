@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.pharmaviyum.models.inventory import Inventory
@@ -353,7 +353,7 @@ async def test_database_triggers_reject_update_delete_and_truncate(test_db):
     )
     for statement, parameters in statements:
         with pytest.raises(DBAPIError):
-            await test_db.execute(__import__("sqlalchemy").text(statement), parameters)
+            await test_db.execute(text(statement), parameters)
         await test_db.rollback()
 
     persisted = await test_db.get(InventoryMovement, movement.id)
