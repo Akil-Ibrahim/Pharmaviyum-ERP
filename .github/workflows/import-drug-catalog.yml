@@ -1,0 +1,103 @@
+name: Validate and Stage International Reference Catalogues
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/import-drug-catalog.yml"
+      - "scripts/import_rxnorm_catalog.py"
+      - "scripts/import_ema_catalog.py"
+      - "scripts/import_health_canada_dpd.py"
+      - "scripts/import_health_canada_mdall.py"
+      - "src/pharmaviyum/models/medical_device.py"
+      - "src/pharmaviyum/api/v1/medical_devices.py"
+      - "alembic/versions/2026_11_16_000004_medical_device_reference_catalog.py"
+      - "src/pharmaviyum/services/catalog_exclusions.py"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run validates source files without database writes; stage saves pending-review reference records to the isolated QA database"
+        required: true
+        type: choice
+        options:
+          - dry-run
+          - stage
+        default: dry-run
+      confirmation:
+        description: "For mode=stage, type STAGE_QA to confirm writing source records to the isolated QA Neon branch"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pharmaviyum-drug-catalog-import
+  cancel-in-progress: false
+
+jobs:
+  import-catalog:
+    name: Validate and import official medicine and device reference sources
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      DATABASE_URL: ${{ secrets.CATALOG_QA_DATABASE_URL }}
+      PGVECTOR_DATABASE_URL: ${{ secrets.CATALOG_QA_DATABASE_URL }}
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - name: Checkout selected ref
+        uses: actions/checkout@v4.4.0
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Validate import mode and database secret
+        env:
+          MODE: ${{ github.event_name == 'push' && 'dry-run' || inputs.mode }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          if [ "$MODE" = "stage" ] && [ -z "$DATABASE_URL" ]; then
+            echo "Missing CATALOG_QA_DATABASE_URL; staging to production is not supported."
+            exit 1
+          fi
+          if [ "$MODE" = "stage" ] && [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$CONFIRMATION" != "STAGE_QA" ]; then
+            echo "QA import blocked: type STAGE_QA in the confirmation field."
+            exit 1
+          fi
+          if [ "$MODE" = "dry-run" ]; then
+            echo "Dry-run selected. No database records will be written."
+          else
+            echo "QA stage mode selected. Records will be added to the isolated QA database as pending_review source records only."
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.15.0"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.8"
+          python-version: "3.15.0"
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Verify isolated QA database migration
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'stage' && inputs.confirmation == 'STAGE_QA'
+        run: uv run alembic current
+
+      - name: Dry-run official medicine and medical-device sources
+        run: |
+          uv run python scripts/import_rxnorm_catalog.py --dry-run
+          uv run python scripts/import_ema_catalog.py --dry-run
+          uv run python scripts/import_health_canada_dpd.py --dry-run
+          uv run python scripts/import_health_canada_mdall.py --dry-run
+
+      - name: Stage source records for review
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'stage' && inputs.confirmation == 'STAGE_QA'
+        run: |
+          uv run python scripts/import_rxnorm_catalog.py
+          uv run python scripts/import_ema_catalog.py
+          uv run python scripts/import_health_canada_dpd.py
+          uv run python scripts/import_health_canada_mdall.py

@@ -1,0 +1,19 @@
+---
+# Ansible-lint configuration
+
+exclude_paths:
+  - .cache
+  - .git
+  - .tox
+  - .venv
+  - vendor
+
+profile: production
+
+skip_list:
+  - name[template]
+  - role-name
+  - yaml[line-length]
+
+warn_list:
+  - experimental

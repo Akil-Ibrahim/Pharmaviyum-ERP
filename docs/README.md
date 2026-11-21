@@ -1,0 +1,71 @@
+# Documentation
+
+[English](README.md) · [Русский](README.ru.md)
+
+This directory is the engineering documentation home for Pharmaviyum ERP/CRM. The English documentation is canonical for engineering and operations; a Russian pharmacy workflow companion is maintained where useful.
+
+## Start here
+
+| Area | English | Русский | What it covers |
+|---|---|---|---|
+| Pharmacy workflows | [Workflow specification](./workflows/pharmacy-workflow.en.md) | [Спецификация аптечного процесса](./workflows/pharmacy-workflow.ru.md) | Pharmacy operations, POS, dispensing, inventory, procurement, audit and offline boundaries |
+| Business value & KPIs | [Business value and KPI specification](./workflows/PHARMACY_BUSINESS_VALUE_AND_KPIS.md) | [Бизнес-ценность и KPI](./workflows/PHARMACY_BUSINESS_VALUE_AND_KPIS.ru.md) | Business outcomes, KPI definitions, measurement contracts, NDA and CV evidence rules |
+| Workflow implementation audit | [Implementation traceability](./workflows/PHARMACY_WORKFLOW_TRACEABILITY.md) | [Трассировка реализации](./workflows/PHARMACY_WORKFLOW_TRACEABILITY.ru.md) | Evidence-based mapping of pharmacy processes to models, APIs, UI routes, tests and implementation status |
+| System architecture | [Architecture vision](./architecture/pharmaviyum-architecture.en.md) · [System context](./architecture/system-context.md) | [Архитектурное видение](./architecture/pharmaviyum-architecture.ru.md) · [Системный контекст](./architecture/system-context.ru.md) | Component boundaries, trust model, data ownership and Central/Edge target |
+| Technology | [Technology Stack & Glossary](./technology-stack.md) | [Стек и глоссарий](./technology-stack.ru.md) | Definitions, architectural roles, version policy, environment boundaries and dependency updates |
+| Repository structure | [Repository Structure Guide](./architecture/repository-structure.md) | [Структура репозитория](./architecture/repository-structure.ru.md) | Directory ownership, file placement and safe moves |
+| AI / LLM system design | [AI system design](./ai/AI_LLM_SYSTEM_DESIGN.md) | [Проектирование AI-системы](./ai/AI_LLM_SYSTEM_DESIGN.ru.md) | Mortarium lifecycle, Agent Harness, LangGraph, RAG, MCP, safety, evaluation and observability |
+| Mortarium glossary | [Architecture & glossary](./ai/MORTARIUM_AI_ARCHITECTURE.md) | [Архитектура и глоссарий](./ai/MORTARIUM_AI_ARCHITECTURE.ru.md) | AI/LLM, PostgreSQL, pgvector, Redis, MCP, Ragas and OpenTelemetry |
+| Pharmacy operations AI | [Mortarium pharmacy operations](./ai/mortarium-pharmacy-operations.md) | [Операционная работа Mortarium](./ai/mortarium-pharmacy-operations.ru.md) | Available read-only tools and safety boundaries |
+| Patient session isolation | [Patient-scoped state](./ai/patient-session-isolation.md) | [Изоляция состояния пациента](./ai/patient-session-isolation.ru.md) | Session, memory and checkpoint isolation requirements |
+| QwenCloud demo | [QwenCloud demo](./ai/QWENCLOUD_DEMO.md) | [Демо QwenCloud](./ai/QWENCLOUD_DEMO.ru.md) | Demo provider configuration and quota safeguards |
+| AI architecture | [AI architecture](./ai_architecture.md) | [Архитектура AI](./ai_architecture.ru.md) | Current implementation details |
+| LangGraph RAG | [RAG graph architecture](./ai/langgraph-rag-architecture.md) | [Архитектура LangGraph RAG](./ai/langgraph-rag-architecture.ru.md) | Graph nodes, state, retrieval, bounded execution and persistence |
+| RAG audit | [RAG architecture audit](./rag_architecture_audit.md) | [Аудит архитектуры RAG](./rag_architecture_audit.ru.md) | Dated findings, gaps and remediation priorities |
+| Pharmaceutical evaluation | [Ragas evaluation](./ai/ragas-pharmaceutical-evaluation.md) | [Оценка RAG](./ai/ragas-pharmaceutical-evaluation.ru.md) | Offline evaluator and pharmacy-specific quality metrics |
+| Hallucination and red-team | [Safety evaluation](./ai/hallucination-detection-and-red-team.md) | [Выявление галлюцинаций и red-team](./ai/hallucination-detection-and-red-team.ru.md) | Groundedness, adversarial testing and safe abstention |
+| Chunking | [Chunking pipeline](./ai/chunking-pipeline.md) | [Pipeline чанкинга](./ai/chunking-pipeline.ru.md) | Current chunking implementation and target architecture |
+| LLM standards | [LLM engineering standards](./llm_engineering_standards.md) | [Стандарт инженерии LLM](./llm_engineering_standards.ru.md) | Context, token budgets, model routing, cache, memory and MCP standards |
+| ADRs | [ADR index](./adr/README.md) · [ADR-0005: tenant-scoped pricing and pharmacy RBAC](./adr/ADR-0005-tenant-scoped-pricing-and-pharmacy-rbac.md) | [Индекс архитектурных решений](./adr/README.ru.md) · [ADR-0005: цены и роли аптек](./adr/ADR-0005-tenant-scoped-pricing-and-pharmacy-rbac.ru.md) | Accepted and proposed architecture decisions | Accepted and proposed architecture decisions |
+| Development | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) · [Library Skills and FastAPI agent tooling](./development/library-skills.md) | [Разработка и тестирование](./guides/DEVELOPMENT_AND_TESTING.ru.md) · [GitHub Codespaces](./guides/CODESPACES_GUIDE.ru.md) · [Library Skills и инструменты FastAPI для ИИ-агентов](./development/library-skills.ru.md) | Contributor workflow, agent skills, FastAPI Cloud plugins and quality gates |
+| Environment | [Environment setup](./guides/ENVIRONMENT_SETUP.md) | [Настройка окружения](./guides/ENVIRONMENT_SETUP.ru.md) | Local services, configuration and prerequisites |
+| Testing | [Testing guide](./guides/TESTING.md) | [Руководство по тестированию](./guides/TESTING.ru.md) | Test layout, markers and CI gates |
+| Operations | [Production operations runbook](./operations/PRODUCTION_OPERATIONS_RUNBOOK.md) · [Production engineering](./operations/PRODUCTION_ENGINEERING.md) | [Эксплуатация Production](./operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md) · [Production engineering](./operations/PRODUCTION_ENGINEERING.ru.md) · [Инциденты](./operations/INCIDENT_RUNBOOK.ru.md) | Health checks, incident triage, backup and recovery |
+| Release | [Release runbook](./operations/RELEASE_RUNBOOK.md) | [Runbook релиза](./operations/RELEASE_RUNBOOK.ru.md) | Controlled release and rollback |
+| Hosted deployment | [FastAPI Cloud](./deployment/FASTAPI_CLOUD.md) | [Развёртывание FastAPI Cloud](./deployment/FASTAPI_CLOUD.ru.md) | Hosting, secrets, runtime constraints and manual deployment |
+| Engineering traceability | [Requirements traceability matrix](./devops/ENGINEERING_REQUIREMENTS_TRACEABILITY.md) | [Матрица трассировки](./devops/ENGINEERING_REQUIREMENTS_TRACEABILITY.ru.md) | Requirement → ADR → implementation → tests → CI/runtime evidence and release blockers |
+| DevOps roadmap | [Engineering stages](./devops/ENGINEERING_ROADMAP.md) | Russian translation not yet available | Stage goals, workstreams and exit criteria |
+| DevOps detail | [DevOps roadmap](./devops/README.md) | Russian translation not yet available | Capacity, observability, reliability, security and recovery |
+| WebSocket | [WebSocket protocol](./websocket-protocol.md) | [Протокол WebSocket](./websocket-protocol.ru.md) | Proposed v1 contract and current scaffold limitations |
+| Observability | [OpenTelemetry](./observability/opentelemetry.md) | [OpenTelemetry на русском](./observability/opentelemetry.ru.md) | Tracing configuration and privacy boundaries |
+| Pharmacy Edge offline | [Offline capability matrix](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | [Матрица офлайн-возможностей](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | Offline workflow policy and controls |
+| Pharmacy Edge | [Outbox dispatcher](./devops/PHARMACY_EDGE_OUTBOX_DISPATCHER.md) · [Ansible rollout](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) · [Ansible guide](./devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) | [Dispatcher Outbox](./devops/PHARMACY_EDGE_OUTBOX_DISPATCHER.ru.md) · [Руководство Ansible](./devops/ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md) · [План внедрения](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) | Outbox delivery, controlled rollout and fleet guardrails |
+| Interview material | [Interview index](./interview/README.md) | Russian translation not yet available | Separate learning and interview preparation material |
+
+## Documentation map
+
+- workflows/: business processes and pharmacy operating model.
+- architecture/: system context, component boundaries and repository architecture.
+- adr/: durable architectural decisions and their lifecycle.
+- ai/: Mortarium operations, LangGraph RAG, evaluation and AI system design.
+- guides/: contributor setup, development and testing.
+- operations/: incident, production operations and release procedures.
+- devops/: engineering roadmap, benchmarks, load tests, observability and Pharmacy Edge operations.
+- deployment/: hosting-specific deployment instructions.
+- observability/: telemetry configuration and privacy controls.
+
+## Documentation ownership rules
+
+- Document the implemented repository, not historical or hypothetical infrastructure. Python dependencies are declared in pyproject.toml and resolved in uv.lock; frontend dependencies are declared in frontend/shadcn-admin/package.json.
+- Keep one canonical procedure for each workflow; link to it rather than copying it into several documents.
+- Architectural decisions belong in adr/. Operational procedures belong in operations/. Development procedures belong in guides/. Roadmaps and benchmark plans belong in devops/.
+- Label every capability as implemented, proposed, planned or not validated. An Accepted ADR does not prove implementation or production readiness.
+- When a command, service, path, API contract or architectural invariant changes, update the canonical document in the same change.
+- Never place credentials, real customer/patient data, provider secrets or unredacted logs in documentation.
+- Use synthetic examples. Any clinical evaluation threshold requires qualified pharmacy/clinical review.
+- Every production runbook must identify its environment, preconditions, owner, verification and rollback/recovery boundary.
+
+## International medicine and medical-device reference catalog
+
+- [International catalog sources and coverage](./catalog/INTERNATIONAL_CATALOG_SOURCES.md)
+- [ADR-0008: International medicine and medical-device reference catalog](./adr/ADR-0008-international-medicine-and-device-reference-catalog.md)

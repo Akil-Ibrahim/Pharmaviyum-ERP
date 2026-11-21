@@ -1,0 +1,13 @@
+{
+  "patient.created": "Bệnh nhân {name} đã được tạo thành công",
+  "patient.updated": "Thông tin bệnh nhân đã được cập nhật",
+  "patient.not_found": "Không tìm thấy bệnh nhân",
+  "prescription.created": "Đơn thuốc đã được tạo thành công",
+  "prescription.expired": "Đơn thuốc đã hết hạn",
+  "order.created": "Đơn hàng #{order_number} đã được tạo",
+  "order.delivered": "Đơn hàng đã được giao thành công",
+  "auth.login_success": "Đăng nhập thành công",
+  "auth.login_failed": "Sai tên đăng nhập hoặc mật khẩu",
+  "error.generic": "Đã xảy ra lỗi. Vui lòng thử lại sau.",
+  "error.not_found": "Không tìm thấy: {resource}"
+}

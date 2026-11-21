@@ -1,0 +1,8 @@
+{
+  "patient.created": "สร้างผู้ป่วย {name} เรียบร้อยแล้ว",
+  "patient.not_found": "ไม่พบผู้ป่วย",
+  "prescription.created": "สร้างใบสั่งยาเรียบร้อยแล้ว",
+  "auth.login_success": "เข้าสู่ระบบสำเร็จ",
+  "auth.login_failed": "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
+  "error.generic": "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง"
+}

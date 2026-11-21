@@ -1,0 +1,552 @@
+{
+  "benchmark": "synthetic-pharmacy-sop-retrieval",
+  "code_revision": "c291d3e0",
+  "corpus_chunk_count": 12,
+  "dataset_sha256": "dff1dd6a43a54b10f5d3a4e1b27262ddd307b85fe3dfa696ff47d51b362ce971",
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "generated_at": "2026-10-15T18:11:49.721419+00:00",
+  "latency_ms": {
+    "corpus_embedding_total_seconds": 0.236,
+    "corpus_pgvector_upsert_seconds": 0.026,
+    "embedding": {
+      "p50": 41.564,
+      "p95": 74.787,
+      "p99": 77.879
+    },
+    "embedding_plus_retrieval": {
+      "mean": 126.877,
+      "p50": 101.93,
+      "p95": 280.961,
+      "p99": 301.775
+    },
+    "pgvector_hybrid_search": {
+      "p50": 51.309,
+      "p95": 244.837,
+      "p99": 265.614
+    }
+  },
+  "not_measured": [
+    "LLM generation",
+    "answer groundedness",
+    "citation precision and recall",
+    "provider token usage and cost",
+    "production-scale throughput"
+  ],
+  "per_query_results": [
+    {
+      "embedding_latency_ms": 28.543,
+      "embedding_plus_retrieval_latency_ms": 253.278,
+      "pgvector_hybrid_search_latency_ms": 224.732,
+      "query": "What should staff verify and document when a delivery arrives?",
+      "relevant_chunk_keys": [
+        "receiving"
+      ],
+      "retrieved_chunk_keys": [
+        "receiving",
+        "supplier",
+        "access",
+        "cleaning",
+        "expiry"
+      ]
+    },
+    {
+      "embedding_latency_ms": 33.764,
+      "embedding_plus_retrieval_latency_ms": 295.053,
+      "pgvector_hybrid_search_latency_ms": 261.286,
+      "query": "Which records are checked before signing for a supplier shipment?",
+      "relevant_chunk_keys": [
+        "receiving"
+      ],
+      "retrieved_chunk_keys": [
+        "receiving",
+        "supplier",
+        "expiry",
+        "returns",
+        "cleaning"
+      ]
+    },
+    {
+      "embedding_latency_ms": 37.137,
+      "embedding_plus_retrieval_latency_ms": 304.521,
+      "pgvector_hybrid_search_latency_ms": 267.382,
+      "query": "Where should damaged or missing delivery items be noted?",
+      "relevant_chunk_keys": [
+        "receiving"
+      ],
+      "retrieved_chunk_keys": [
+        "receiving",
+        "returns",
+        "cleaning",
+        "supplier",
+        "recall"
+      ]
+    },
+    {
+      "embedding_latency_ms": 41.356,
+      "embedding_plus_retrieval_latency_ms": 263.737,
+      "pgvector_hybrid_search_latency_ms": 222.378,
+      "query": "How often should fridge temperatures be recorded, and what if they are out of range?",
+      "relevant_chunk_keys": [
+        "cold_chain"
+      ],
+      "retrieved_chunk_keys": [
+        "cold_chain",
+        "expiry",
+        "returns",
+        "access",
+        "stock_count"
+      ]
+    },
+    {
+      "embedding_latency_ms": 74.465,
+      "embedding_plus_retrieval_latency_ms": 140.448,
+      "pgvector_hybrid_search_latency_ms": 65.98,
+      "query": "What should staff do with refrigerated stock after an out-of-range reading?",
+      "relevant_chunk_keys": [
+        "cold_chain"
+      ],
+      "retrieved_chunk_keys": [
+        "cold_chain",
+        "returns",
+        "expiry",
+        "recall",
+        "access"
+      ]
+    },
+    {
+      "embedding_latency_ms": 26.012,
+      "embedding_plus_retrieval_latency_ms": 37.681,
+      "pgvector_hybrid_search_latency_ms": 11.668,
+      "query": "At what times is the refrigerator temperature log completed?",
+      "relevant_chunk_keys": [
+        "cold_chain"
+      ],
+      "retrieved_chunk_keys": [
+        "cold_chain",
+        "expiry",
+        "cleaning",
+        "access",
+        "stock_count"
+      ]
+    },
+    {
+      "embedding_latency_ms": 26.877,
+      "embedding_plus_retrieval_latency_ms": 115.458,
+      "pgvector_hybrid_search_latency_ms": 88.58,
+      "query": "Can a customer's returned medicine go back on the shelf?",
+      "relevant_chunk_keys": [
+        "returns"
+      ],
+      "retrieved_chunk_keys": [
+        "returns",
+        "recall",
+        "privacy",
+        "receiving",
+        "expiry"
+      ]
+    },
+    {
+      "embedding_latency_ms": 45.335,
+      "embedding_plus_retrieval_latency_ms": 95.945,
+      "pgvector_hybrid_search_latency_ms": 50.608,
+      "query": "Where are medicines placed after a customer brings them back?",
+      "relevant_chunk_keys": [
+        "returns"
+      ],
+      "retrieved_chunk_keys": [
+        "returns",
+        "recall",
+        "receiving",
+        "access",
+        "privacy"
+      ]
+    },
+    {
+      "embedding_latency_ms": 28.326,
+      "embedding_plus_retrieval_latency_ms": 107.915,
+      "pgvector_hybrid_search_latency_ms": 79.587,
+      "query": "What information is entered in the returns log?",
+      "relevant_chunk_keys": [
+        "returns"
+      ],
+      "retrieved_chunk_keys": [
+        "returns",
+        "expiry",
+        "receiving",
+        "recall",
+        "cold_chain"
+      ]
+    },
+    {
+      "embedding_latency_ms": 33.445,
+      "embedding_plus_retrieval_latency_ms": 69.228,
+      "pgvector_hybrid_search_latency_ms": 35.781,
+      "query": "What steps should staff take when a product batch is recalled?",
+      "relevant_chunk_keys": [
+        "recall"
+      ],
+      "retrieved_chunk_keys": [
+        "recall",
+        "returns",
+        "expiry",
+        "cleaning",
+        "access"
+      ]
+    },
+    {
+      "embedding_latency_ms": 45.533,
+      "embedding_plus_retrieval_latency_ms": 151.809,
+      "pgvector_hybrid_search_latency_ms": 106.274,
+      "query": "Where should recalled inventory be moved after dispensing is stopped?",
+      "relevant_chunk_keys": [
+        "recall"
+      ],
+      "retrieved_chunk_keys": [
+        "recall",
+        "returns",
+        "access",
+        "cold_chain",
+        "expiry"
+      ]
+    },
+    {
+      "embedding_latency_ms": 47.828,
+      "embedding_plus_retrieval_latency_ms": 160.374,
+      "pgvector_hybrid_search_latency_ms": 112.544,
+      "query": "Which batch details and quantities are recorded during a recall?",
+      "relevant_chunk_keys": [
+        "recall"
+      ],
+      "retrieved_chunk_keys": [
+        "recall",
+        "receiving",
+        "expiry",
+        "returns",
+        "stock_count"
+      ]
+    },
+    {
+      "embedding_latency_ms": 40.394,
+      "embedding_plus_retrieval_latency_ms": 63.5,
+      "pgvector_hybrid_search_latency_ms": 23.104,
+      "query": "How do staff identify and record expired stock?",
+      "relevant_chunk_keys": [
+        "expiry"
+      ],
+      "retrieved_chunk_keys": [
+        "expiry",
+        "cold_chain",
+        "returns",
+        "recall",
+        "receiving"
+      ]
+    },
+    {
+      "embedding_latency_ms": 75.051,
+      "embedding_plus_retrieval_latency_ms": 85.52,
+      "pgvector_hybrid_search_latency_ms": 10.469,
+      "query": "How frequently are shelves checked for expired products?",
+      "relevant_chunk_keys": [
+        "expiry"
+      ],
+      "retrieved_chunk_keys": [
+        "expiry",
+        "cold_chain",
+        "returns",
+        "receiving",
+        "recall"
+      ]
+    },
+    {
+      "embedding_latency_ms": 62.95,
+      "embedding_plus_retrieval_latency_ms": 73.376,
+      "pgvector_hybrid_search_latency_ms": 10.424,
+      "query": "What details belong in the expiry log?",
+      "relevant_chunk_keys": [
+        "expiry"
+      ],
+      "retrieved_chunk_keys": [
+        "expiry",
+        "cold_chain",
+        "receiving",
+        "returns",
+        "recall"
+      ]
+    },
+    {
+      "embedding_latency_ms": 47.545,
+      "embedding_plus_retrieval_latency_ms": 71.73,
+      "pgvector_hybrid_search_latency_ms": 24.183,
+      "query": "What must be secured and recorded at the end of the day?",
+      "relevant_chunk_keys": [
+        "access"
+      ],
+      "retrieved_chunk_keys": [
+        "access",
+        "cold_chain",
+        "privacy",
+        "expiry",
+        "cleaning"
+      ]
+    },
+    {
+      "embedding_latency_ms": 26.32,
+      "embedding_plus_retrieval_latency_ms": 46.058,
+      "pgvector_hybrid_search_latency_ms": 19.735,
+      "query": "Which checklist is completed when the pharmacy closes?",
+      "relevant_chunk_keys": [
+        "access"
+      ],
+      "retrieved_chunk_keys": [
+        "access",
+        "cleaning",
+        "cold_chain",
+        "returns",
+        "expiry"
+      ]
+    },
+    {
+      "embedding_latency_ms": 37.267,
+      "embedding_plus_retrieval_latency_ms": 59.867,
+      "pgvector_hybrid_search_latency_ms": 22.598,
+      "query": "What security steps are taken before leaving the dispensary?",
+      "relevant_chunk_keys": [
+        "access"
+      ],
+      "retrieved_chunk_keys": [
+        "access",
+        "privacy",
+        "recall",
+        "cleaning",
+        "returns"
+      ]
+    },
+    {
+      "embedding_latency_ms": 35.686,
+      "embedding_plus_retrieval_latency_ms": 183.51,
+      "pgvector_hybrid_search_latency_ms": 147.823,
+      "query": "When is the workbench cleaned and where are spills recorded?",
+      "relevant_chunk_keys": [
+        "cleaning"
+      ],
+      "retrieved_chunk_keys": [
+        "cleaning",
+        "expiry",
+        "recall",
+        "cold_chain",
+        "access"
+      ]
+    },
+    {
+      "embedding_latency_ms": 27.883,
+      "embedding_plus_retrieval_latency_ms": 94.318,
+      "pgvector_hybrid_search_latency_ms": 66.433,
+      "query": "Who is told about damaged cleaning or workbench equipment?",
+      "relevant_chunk_keys": [
+        "cleaning"
+      ],
+      "retrieved_chunk_keys": [
+        "cleaning",
+        "receiving",
+        "stock_count",
+        "recall",
+        "access"
+      ]
+    },
+    {
+      "embedding_latency_ms": 67.431,
+      "embedding_plus_retrieval_latency_ms": 82.22,
+      "pgvector_hybrid_search_latency_ms": 14.787,
+      "query": "When should staff sign the workbench cleaning checklist?",
+      "relevant_chunk_keys": [
+        "cleaning"
+      ],
+      "retrieved_chunk_keys": [
+        "cleaning",
+        "access",
+        "expiry",
+        "recall",
+        "cold_chain"
+      ]
+    },
+    {
+      "embedding_latency_ms": 57.159,
+      "embedding_plus_retrieval_latency_ms": 144.992,
+      "pgvector_hybrid_search_latency_ms": 87.831,
+      "query": "How should invoice quantities be checked against received goods?",
+      "relevant_chunk_keys": [
+        "supplier",
+        "receiving"
+      ],
+      "retrieved_chunk_keys": [
+        "supplier",
+        "receiving",
+        "expiry",
+        "recall",
+        "stock_count"
+      ]
+    },
+    {
+      "embedding_latency_ms": 58.159,
+      "embedding_plus_retrieval_latency_ms": 70.521,
+      "pgvector_hybrid_search_latency_ms": 12.36,
+      "query": "What documents are compared when checking a supplier invoice?",
+      "relevant_chunk_keys": [
+        "supplier"
+      ],
+      "retrieved_chunk_keys": [
+        "supplier",
+        "receiving",
+        "stock_count",
+        "recall",
+        "expiry"
+      ]
+    },
+    {
+      "embedding_latency_ms": 55.066,
+      "embedding_plus_retrieval_latency_ms": 67.197,
+      "pgvector_hybrid_search_latency_ms": 12.129,
+      "query": "Who reviews price differences on an invoice?",
+      "relevant_chunk_keys": [
+        "supplier"
+      ],
+      "retrieved_chunk_keys": [
+        "supplier",
+        "receiving",
+        "stock_count",
+        "recall",
+        "privacy"
+      ]
+    },
+    {
+      "embedding_latency_ms": 39.972,
+      "embedding_plus_retrieval_latency_ms": 64.838,
+      "pgvector_hybrid_search_latency_ms": 24.864,
+      "query": "How are shelf counts compared with inventory records?",
+      "relevant_chunk_keys": [
+        "stock_count"
+      ],
+      "retrieved_chunk_keys": [
+        "stock_count",
+        "receiving",
+        "cold_chain",
+        "expiry",
+        "supplier"
+      ]
+    },
+    {
+      "embedding_latency_ms": 41.772,
+      "embedding_plus_retrieval_latency_ms": 63.977,
+      "pgvector_hybrid_search_latency_ms": 22.203,
+      "query": "What happens when a cycle count does not match the system?",
+      "relevant_chunk_keys": [
+        "stock_count"
+      ],
+      "retrieved_chunk_keys": [
+        "stock_count",
+        "receiving",
+        "supplier",
+        "expiry",
+        "recall"
+      ]
+    },
+    {
+      "embedding_latency_ms": 48.606,
+      "embedding_plus_retrieval_latency_ms": 193.051,
+      "pgvector_hybrid_search_latency_ms": 144.443,
+      "query": "Who reviews unexplained differences found during a shelf count?",
+      "relevant_chunk_keys": [
+        "stock_count"
+      ],
+      "retrieved_chunk_keys": [
+        "stock_count",
+        "receiving",
+        "supplier",
+        "cold_chain",
+        "expiry"
+      ]
+    },
+    {
+      "embedding_latency_ms": 36.622,
+      "embedding_plus_retrieval_latency_ms": 194.159,
+      "pgvector_hybrid_search_latency_ms": 157.535,
+      "query": "How should printed customer records be protected?",
+      "relevant_chunk_keys": [
+        "privacy"
+      ],
+      "retrieved_chunk_keys": [
+        "privacy",
+        "recall",
+        "returns",
+        "receiving",
+        "expiry"
+      ]
+    },
+    {
+      "embedding_latency_ms": 79.035,
+      "embedding_plus_retrieval_latency_ms": 127.184,
+      "pgvector_hybrid_search_latency_ms": 48.147,
+      "query": "Where do staff return customer paperwork after using it?",
+      "relevant_chunk_keys": [
+        "privacy"
+      ],
+      "retrieved_chunk_keys": [
+        "privacy",
+        "returns",
+        "recall",
+        "receiving",
+        "expiry"
+      ]
+    },
+    {
+      "embedding_latency_ms": 72.849,
+      "embedding_plus_retrieval_latency_ms": 124.86,
+      "pgvector_hybrid_search_latency_ms": 52.009,
+      "query": "Who should be notified about a possible exposure of customer records?",
+      "relevant_chunk_keys": [
+        "privacy"
+      ],
+      "retrieved_chunk_keys": [
+        "privacy",
+        "recall",
+        "receiving",
+        "access",
+        "expiry"
+      ]
+    }
+  ],
+  "provider": "fastembed",
+  "provider_initialization_seconds": 0.496,
+  "query_concurrency": 4,
+  "query_count": 30,
+  "retrieval_quality": {
+    "mrr": 1.0,
+    "ndcg_at_k": {
+      "1": 1.0,
+      "3": 1.0,
+      "5": 1.0
+    },
+    "precision_at_k": {
+      "1": 1.0,
+      "3": 0.3444444444444445,
+      "5": 0.20666666666666672
+    },
+    "recall_at_k": {
+      "1": 0.9833333333333333,
+      "3": 1.0,
+      "5": 1.0
+    },
+    "samples_evaluated": 30
+  },
+  "retrieval_queries_per_second": 31.127,
+  "retrieval_workload_seconds": 0.964,
+  "runner_sha256": "ffc07bd599dd292bda851e86c2fdd4429650895e10b593486189ef134bdab6e8",
+  "tenant_isolation": {
+    "cross_tenant_hits": 0,
+    "other_tenant_fixture_count": 2,
+    "primary_tenant_id": 900001
+  },
+  "top_k": 5,
+  "vector_store": "PostgreSQL/pgvector hybrid search",
+  "worktree_dirty": true
+}

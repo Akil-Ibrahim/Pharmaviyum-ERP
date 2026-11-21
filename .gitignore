@@ -1,0 +1,115 @@
+# =============================================================================
+# Node.js
+# =============================================================================
+node_modules/
+dist/
+# FastAPI Cloud deploy needs the generated SPA in the source upload.
+!frontend/
+!frontend/shadcn-admin/
+!frontend/shadcn-admin/dist/
+!frontend/shadcn-admin/dist/**
+.vite/
+pnpm-lock.yaml
+package-lock.json
+
+# =============================================================================
+# Python
+# =============================================================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+build/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+*.db
+*.sqlite
+*.sqlite3
+
+# =============================================================================
+# IDE & Editors
+# =============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# =============================================================================
+# Logs & Temporary Files
+# =============================================================================
+*.log
+logs/
+setup*.log
+setup*.txt
+all_logs.txt
+backend_logs.txt
+frontend_logs.txt
+collect_logs.sh
+*.tmp
+
+# =============================================================================
+# Ansible
+# =============================================================================
+ansible/vault.key
+ansible/.vault
+ansible/ansible.log
+ansible/inventory/secrets/
+
+# =============================================================================
+# Models & Data
+# =============================================================================
+mortarium-ai/models/*.gguf
+mortarium-ai/models/*.bin
+mortarium-ai/data/vector_store/
+models/
+!src/pharmaviyum/models/
+!src/pharmaviyum/models/pharmacy_membership.py
+*.onnx
+
+# =============================================================================
+# Secrets & Credentials
+# =============================================================================
+.env
+.env.*
+!.env.example
+!.env.prod.example
+.env.local
+.env.*.local
+secrets/
+*.key
+*.pem
+.aws/
+.ssh/
+
+# =============================================================================
+# Docker
+# =============================================================================
+.docker/
+docker-compose.override.yml
+
+# =============================================================================
+# Qwen Model Weights
+# =============================================================================
+mortarium-ai/models/*.gguf
+
+# =============================================================================
+# Project Stack & Build Artifacts
+# =============================================================================
+project_stack_list.*
+frontend/shadcn-admin/.pnpm-store
+
+# =============================================================================
+# Backups
+# =============================================================================
+*.backup.*
+backups/

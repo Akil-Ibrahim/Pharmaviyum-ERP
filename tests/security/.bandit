@@ -1,0 +1,34 @@
+# =============================================================================
+# PharmaViyum CRM - Bandit Security Scanner Configuration
+# =============================================================================
+# Bandit is a tool designed to find common security issues in Python code.
+# 
+# Usage:
+#   bandit -c tests/security/.bandit -r src/
+#   bandit -c tests/security/.bandit -r src/ -f html -o security_report.html
+# =============================================================================
+
+[bandit]
+# Skip tests that are not relevant
+skips = B101,B601
+
+# B101: assert_used - We use assertions for type checking
+# B601: paramiko_calls - Not using paramiko
+
+# Exclude test files from scanning
+exclude = /tests,/venv,.venv,node_modules
+
+# Severity levels: LOW, MEDIUM, HIGH
+# Confidence levels: LOW, MEDIUM, HIGH
+severity = MEDIUM
+confidence = MEDIUM
+
+# Output format: screen, json, csv, txt, xml, html, yaml
+output_format = screen
+
+# Verbose output
+verbose = true
+
+# Profile: selects a group of tests
+# Available profiles: all, default, low, medium, high
+profile = default
