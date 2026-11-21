@@ -53,7 +53,13 @@ class PatientService:
         patient = Patient(**payload, full_name=f"{data.first_name} {data.last_name}")
         patient = await self.repository.create(patient)
         reloaded_patient = await self.repository.get_by_id_with_relations(
-            patient.id, pharmacy_id=pharmacy_id
+            patient.id,
+            pharmacy_id=pharmacy_id,
+            include_allergies=False,
+            include_conditions=False,
+            include_insurances=False,
+            include_consultations=False,
+            include_purchases=False,
         )
         if reloaded_patient is None:
             raise RuntimeError("Created patient could not be reloaded")
@@ -132,7 +138,15 @@ class PatientService:
         updated_by: Optional[str] = None,
         pharmacy_id: int | None = None,
     ) -> Optional[Patient]:
-        patient = await self.get_patient(id, use_cache=False, pharmacy_id=pharmacy_id)
+        patient = await self.repository.get_by_id_with_relations(
+            id,
+            pharmacy_id=pharmacy_id,
+            include_allergies=False,
+            include_conditions=False,
+            include_insurances=False,
+            include_consultations=False,
+            include_purchases=False,
+        )
         if not patient:
             return None
         update_data = data.model_dump(exclude_unset=True)
@@ -158,7 +172,13 @@ class PatientService:
             patient.full_name = f"{patient.first_name} {patient.last_name}"
         patient = await self.repository.update(patient)
         patient = await self.repository.get_by_id_with_relations(
-            patient.id, pharmacy_id=pharmacy_id
+            patient.id,
+            pharmacy_id=pharmacy_id,
+            include_allergies=False,
+            include_conditions=False,
+            include_insurances=False,
+            include_consultations=False,
+            include_purchases=False,
         )
         if patient is None:
             return None
