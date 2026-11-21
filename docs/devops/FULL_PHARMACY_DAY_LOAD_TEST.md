@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Simulate a pharmacy operating day for 200–300 customer visits with six staff members, including concurrent cashier and manager activity. This scenario is an accelerated workload model; it does not require a 14-hour wall-clock run.
+Simulate a pharmacy operating day with the canonical baseline of 200 customer visits over 14 public operating hours (08:00–22:00 local pharmacy time), six total staff members and three POS registers. A 300-visit profile is a higher-volume stress scenario. Include concurrent cashier and manager activity. This is an accelerated workload model; it does not require a 14-hour wall-clock run.
 
 ## Important coverage boundary
 
@@ -15,8 +15,8 @@ The existing opt-in k6 write scenario only creates/deletes an inventory record a
 ## Operating-day model
 
 - One synthetic pharmacy.
-- 200 visits as the initial daily workload; 300 visits as the higher profile.
-- Six staff members across the day. The test uses six concurrent virtual users as a deliberately conservative concurrency approximation; it does not claim all staff are continuously active at once.
+- 200 visits as the canonical daily workload over 14 public operating hours (08:00–22:00); 300 visits as a higher-volume stress profile.
+- Six total staff members per pharmacy across the day, including manager and cashier roles. The three register operators are included within those six positions, not additional staff. The test uses six concurrent virtual users as a deliberately conservative concurrency approximation; it does not claim all staff are continuously active at once.
 - Customer-facing journeys include product listing/search, drug-reference search, and supported patient/order lookups when the required fixture IDs are configured.
 - Manager activity includes inventory/low-stock, dashboard, pharmacy and product views.
 - A journey is one simulated visit, not one HTTP request.
