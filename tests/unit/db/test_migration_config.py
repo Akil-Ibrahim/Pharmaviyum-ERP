@@ -26,7 +26,9 @@ def test_migration_test_url_takes_precedence_for_isolated_ci_database():
             {
                 "ENVIRONMENT": "testing",
                 "DATABASE_URL": "postgresql+asyncpg://runtime@db/app",
-                "MIGRATION_TEST_DATABASE_URL": "postgresql+asyncpg://ci@localhost/test_db",
+                "MIGRATION_TEST_DATABASE_URL": (
+                    "postgresql+asyncpg://ci@localhost/test_db"
+                ),
             }
         )
         == "postgresql+asyncpg://ci@localhost/test_db"
