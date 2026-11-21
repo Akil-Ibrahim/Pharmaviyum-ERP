@@ -38,21 +38,19 @@ Files: `src/pharmaviyum/schemas/patient.py`, `src/pharmaviyum/api/v1/endpoints/p
 
 **Required action:** define purpose-specific response DTOs (e.g. demographic summary, dispensing safety context, insurance workflow) with explicit field allowlists. Do not return consultation notes, insurance identifiers, or purchase history unless the workflow requires them. Add schema contract tests that assert forbidden fields are absent from each endpoint response.
 
-### F-03 — Patient lifecycle events carry direct identifiers
+### F-03 — Patient lifecycle events carry linkable identifiers
 
 File: `src/pharmaviyum/services/patient.py`
 
-- Before PR #385, `patient.created` included `patient_id`, `full_name`, `phone`, `country`, and `created_by`.
-- PR #385 removes `full_name`, `phone`, and `country`; it retains `patient_id`, `pharmacy_id`, and `created_by` for correlation/routing.
+- PR #385 removes `patient_id`, `full_name`, `phone`, and `country` from the generic `patient.created` payload; only `pharmacy_id` remains.
 - `patient.updated`, `patient.deleted`, and `patient.visit_recorded` still include the stable patient ID in their generic event payloads; these remain open minimization work.
 - A source search found no in-repository `event_bus.on(...)` subscribers. This does not establish the absence of dynamically registered or external consumers.
-- The patient creation log no longer includes the patient ID after the additional change in this PR branch.
-- The event bus is process-local and best-effort (`src/pharmaviyum/services/event_bus.py`); its generic emit log records event type and handler count, not payload. The patient creation service also previously logged the stable patient ID; PR #385 removes that identifier from the application log.
-- The full subscriber graph and any external forwarding/logging behavior were not exhaustively traced.
+- The patient creation log no longer includes the patient ID.
+- The event bus is process-local and best-effort (`src/pharmaviyum/services/event_bus.py`); its generic emit log records event type and handler count, not payload.
 
-**Risk:** direct identifiers enter a generic application event channel. Future subscribers, telemetry exporters, or integrations could propagate them into systems without PHI controls.
+**Risk:** stable patient IDs are linkable personal data. Keeping them in generic lifecycle events would allow future subscribers or telemetry integrations to correlate events with patient records outside a purpose-bound workflow.
 
-**Required action:** review whether the generic event needs a patient reference at all. A stable internal patient ID is linkable data, not an anonymous or cryptographically opaque identifier. If correlation is required, prefer a short-lived non-reversible event token with a separately authorized lookup path; use a dedicated permissioned clinical event contract for justified PHI-bearing workflows. Add tests that event payloads contain no name, phone, email, DOB, clinical notes, or prescription data. Audit subscribers before enabling external delivery.
+**Remediation:** remove patient identifiers from generic `patient.created`; keep only tenant-level routing metadata. Remaining lifecycle events require the same review. If a workflow needs a patient reference, define a dedicated permissioned event contract and an explicit lookup authorization path rather than reusing the generic event bus.
 
 ### F-04 — Two patient mutation helpers are scoped; other mutation helpers lack explicit tenant scope
 
