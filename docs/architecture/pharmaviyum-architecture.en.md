@@ -457,7 +457,9 @@ The integration layer should define contracts for:
 
 The business logic should remain as consistent as possible between deployment models.
 
-### Cloud
+### Public Demo cloud deployment
+
+FastAPI Cloud is used for the public Demo only. Production uses the same application technology stack on a separately managed hosting platform; Production provider and release details are maintained outside this public repository.
 
 ```text
 GitHub
