@@ -28,7 +28,7 @@
 - **Аптечная предметная область:** POS, отпуск лекарств, справочник препаратов, склад, закупки и аптечные операции.
 - **AI-слой:** Mortarium с RAG на базе LangGraph и интеграцией MCP.
 - **Инфраструктура:** PostgreSQL, pgvector и Redis для хранения данных и состояния; Docker для локальной разработки и автоматизации Pharmacy Edge.
-- **Хостинг:** публичная Demo размещается в FastAPI Cloud. Production использует тот же технологический стек приложения, но размещается на отдельно управляемой платформе; сведения о провайдере и развёртывании вынесены из публичного README.
+- **Развёртывание:** публичная Demo размещается в FastAPI Cloud. Production использует тот же технологический стек приложения и развёртывается на аптечном сервере через Ansible. Реальные host details, inventory и credentials Production остаются закрытыми и не коммитятся. См. [границу развёртывания](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md) и [план Ansible rollout Pharmacy Edge](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md).
 
 ## Доступ к демо-системе
 
