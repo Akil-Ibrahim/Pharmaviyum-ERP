@@ -25,7 +25,9 @@ def get_patient_service(db: AsyncSession = Depends(get_db)) -> PatientService:
     return PatientService(PatientRepository(db))
 
 
-@router.post("/", response_model=PatientSummaryResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=PatientSummaryResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_patient(
     data: PatientCreate,
     db: AsyncSession = Depends(get_db),
