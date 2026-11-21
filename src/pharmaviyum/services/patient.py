@@ -94,6 +94,20 @@ class PatientService:
             await cache_service.set(cache_key, patient, ttl=self.cache_ttl)
         return patient
 
+    async def get_patient_summary(
+        self, id: int, pharmacy_id: int | None = None
+    ) -> Optional[Patient]:
+        """Load only the patient row for minimum-necessary API responses."""
+        return await self.repository.get_by_id_with_relations(
+            id,
+            pharmacy_id=pharmacy_id,
+            include_allergies=False,
+            include_conditions=False,
+            include_insurances=False,
+            include_consultations=False,
+            include_purchases=False,
+        )
+
     async def get_patient_by_phone(
         self, phone: str, pharmacy_id: int | None = None
     ) -> Optional[Patient]:
