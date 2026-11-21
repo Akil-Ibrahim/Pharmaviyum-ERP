@@ -195,12 +195,11 @@ class PatientRepository(BaseRepository[Patient]):
     async def get_recent_patients(
         self, limit: int = 10, pharmacy_id: int | None = None
     ) -> list[Patient]:
-        result = await self.session.execute(
-            select(Patient)
-            .where(Patient.is_active)
-            .order_by(Patient.created_at.desc())
-            .limit(limit)
-        )
+        query = select(Patient).where(Patient.is_active)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        query = query.order_by(Patient.created_at.desc()).limit(limit)
+        result = await self.session.execute(query)
         return list(result.scalars().all())
 
     async def get_top_customers(
@@ -211,24 +210,23 @@ class PatientRepository(BaseRepository[Patient]):
             func.sum(PatientPurchase.quantity * PatientPurchase.unit_price),
             0.0,
         )
-        result = await self.session.execute(
+        query = (
             select(Patient)
             .outerjoin(PatientPurchase, PatientPurchase.patient_id == Patient.id)
             .where(Patient.is_active)
-            .group_by(Patient.id)
-            .order_by(purchase_value.desc())
-            .limit(limit)
         )
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        query = query.group_by(Patient.id).order_by(purchase_value.desc()).limit(limit)
+        result = await self.session.execute(query)
         return list(result.scalars().all())
 
     async def soft_delete(self, id: int, pharmacy_id: int | None = None) -> bool:
-        patient = await self.get_by_id(id)
-        if (
-            pharmacy_id is not None
-            and patient is not None
-            and patient.pharmacy_id != pharmacy_id
-        ):
-            return False
+        query = select(Patient).where(Patient.id == id)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        result = await self.session.execute(query)
+        patient = result.scalar_one_or_none()
         if not patient:
             return False
         patient.is_active = False
@@ -261,13 +259,11 @@ class PatientRepository(BaseRepository[Patient]):
     async def record_visit(
         self, id: int, pharmacy_id: int | None = None
     ) -> Optional[Patient]:
-        patient = await self.get_by_id(id)
-        if (
-            pharmacy_id is not None
-            and patient is not None
-            and patient.pharmacy_id != pharmacy_id
-        ):
-            return None
+        query = select(Patient).where(Patient.id == id)
+        if pharmacy_id is not None:
+            query = query.where(Patient.pharmacy_id == pharmacy_id)
+        result = await self.session.execute(query)
+        patient = result.scalar_one_or_none()
         if not patient:
             return None
         patient.visit_count += 1
