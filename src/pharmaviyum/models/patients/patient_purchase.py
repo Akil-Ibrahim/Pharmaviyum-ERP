@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.pharmaviyum.db.base import Base
@@ -15,6 +15,9 @@ if False:  # pragma: no cover
 
 class PatientPurchase(Base):
     __tablename__ = "patient_purchases"
+    __table_args__ = (
+        Index("ix_patient_purchases_patient_purchased_at_id", "patient_id", "purchased_at", "id"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     patient_id: Mapped[int] = mapped_column(
