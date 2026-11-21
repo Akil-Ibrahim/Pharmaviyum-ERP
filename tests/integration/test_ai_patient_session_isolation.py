@@ -258,9 +258,10 @@ def test_api_session_scope_binds_tenant_user_patient_and_secret(
         101,
     )
 
-    assert len(
-        {base, different_patient, no_patient, different_user, different_pharmacy}
-    ) == 5
+    assert (
+        len({base, different_patient, no_patient, different_user, different_pharmacy})
+        == 5
+    )
     prefix, digest = base.split(":", maxsplit=2)[1:]
     assert prefix == "v3"
     assert len(digest) == 64
