@@ -46,6 +46,7 @@ class PatientRepository(BaseRepository[Patient]):
         include_conditions: bool = True,
         include_insurances: bool = True,
         include_consultations: bool = True,
+        include_purchases: bool = True,
     ) -> Optional[Patient]:
         """Get patient by ID with eager-loaded relationships."""
         query = select(Patient).where(Patient.id == id)
@@ -59,10 +60,11 @@ class PatientRepository(BaseRepository[Patient]):
             query = query.options(selectinload(Patient.insurances))
         if include_consultations:
             query = query.options(selectinload(Patient.consultations))
-        query = query.options(
-            selectinload(Patient.purchases).selectinload(PatientPurchase.product),
-            selectinload(Patient.purchases).selectinload(PatientPurchase.batch),
-        )
+        if include_purchases:
+            query = query.options(
+                selectinload(Patient.purchases).selectinload(PatientPurchase.product),
+                selectinload(Patient.purchases).selectinload(PatientPurchase.batch),
+            )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
