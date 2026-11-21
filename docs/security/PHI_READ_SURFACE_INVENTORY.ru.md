@@ -66,17 +66,18 @@
 
 **Оставшиеся действия:** сопоставить всех callers helpers без scope; добавить явный trusted tenant context и scoped database predicates там, где это требуется. Добавить cross-tenant integration tests на repository и API уровнях.
 
-### F-05 — Patient и order APIs сохраняют глобальную область superuser без pharmacy ID
+### F-05 — Patient и order APIs сохраняют глобальный scope superuser; новый pharmacist history route имеет более узкие контроли
 
-Файлы: `src/pharmaviyum/modules/auth/tenant.py`, `src/pharmaviyum/api/v1/endpoints/patients.py`, `src/pharmaviyum/api/v1/orders.py`
+Файлы: `src/pharmaviyum/modules/auth/tenant.py`, `src/pharmaviyum/api/v1/endpoints/patients.py`, `src/pharmaviyum/api/v1/orders.py`, `src/pharmaviyum/api/v1/patient_purchases.py`
 
 - `resolve_pharmacy_scope` возвращает переданный pharmacy ID для superuser и `None`, если superuser его не указал.
-- Patient list/detail/search/statistics передают результат в service/repository; в проверенных repository methods `None` означает отсутствие pharmacy predicate.
-- Order read и mutation handlers также позволяют superuser оставаться в глобальной области без pharmacy ID.
+- Patient list/detail/search/statistics routes и order read/mutation handlers передают этот результат в service/repository; `None` означает отсутствие pharmacy predicate в проверенных query paths.
+- Новый `GET /patient-purchases/{patient_id}/history` устроен иначе: требует pharmacy ID и один из трёх purpose codes, запрещает superuser principals, проверяет active `PharmacyMembership`, принадлежность пациента аптеке и записывает metadata-only allowed/denied audit records.
+- Legacy `GET /patient-purchases/` остаётся доступен только superuser и требует pharmacy ID, но в проверенной реализации не использует новый PHI audit record.
 
-**Риск:** привилегированный доступ в этих handlers не ограничен purpose, временем или отдельным аудитом чтения. Это дизайн глобального привилегированного доступа, а не доказательство tenant escape обычного пользователя.
+**Риск:** специализированный purchase-history route имеет purpose и membership gate, однако общие patient endpoints и order handlers всё ещё допускают глобальный superuser scope без purpose-bound grant и read audit. Это дизайн глобального привилегированного доступа, а не доказательство tenant escape обычного пользователя.
 
-**Необходимые действия:** внедрить отдельное решение platform-support authorization (grant, reason, expiry, разрешённое действие, patient/tenant scope) и обязательный аудит привилегированного доступа к данным пациента. Не отключать superuser workflow без анализа операционных сценариев.
+**Необходимые действия:** внедрить отдельное решение platform-support authorization (grant, reason, expiry, разрешённое действие, patient/tenant scope) и обязательный аудит привилегированного доступа ко всем PHI read surfaces. Расширить новый audit contract на обычные patient reads и другие PHI-bearing paths. Не отключать superuser workflow без анализа операционных сценариев.
 
 ### F-06 — Order и purchase tenant predicates проверяются непосредственно в SQL
 
