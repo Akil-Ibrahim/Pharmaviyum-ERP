@@ -351,7 +351,7 @@ Open the live Pharmaviyum system status page:
 
 ## Deployment
 
-The public Demo application is hosted on **FastAPI Cloud**. Production uses the same application technology stack but a separately managed hosting platform; its provider and deployment details are restricted and are not documented in this public README. See [`docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md`](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) for the environment boundary and infrastructure policy.
+The public Demo application is hosted on **FastAPI Cloud**. Production uses the same application technology stack and is deployed to the pharmacy server through **Ansible**. Real Production host details, inventory and credentials remain private and are never committed. See the [deployment boundary](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) and [Pharmacy Edge Ansible rollout plan](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
 
 ## Development
 
