@@ -169,7 +169,7 @@ This page records the versions declared by the repository configuration. It is n
 | Alembic | `1.20.1` | `pyproject.toml` |
 | asyncpg / psycopg | `0.32.0` / `3.3.9` | `pyproject.toml` |
 | PostgreSQL | Local PostgreSQL on the pharmacy server for Production; separate isolated PostgreSQL for Demo; disposable PostgreSQL for development/CI | Ansible/Compose pharmacy-server profile, Demo provider metadata, Docker Compose and CI service definitions |
-| Redis server | Managed Redis for hosted Production and isolated managed Redis for Demo; Redis 8.8.4 compatibility target, exact hosted server version provider-reported and must be verified; local development/CI uses Redis 8.8.4 | FastAPI Cloud integration/provider metadata; Docker Compose and CI service definitions |
+| Cache / queue service | Pharmacy-server Production cache/queue service as pinned by the Ansible Pharmacy Edge profile; separate Demo cache service; disposable development/CI Redis | Ansible/Compose pharmacy-server profile, Demo provider metadata and CI service definitions |
 | pgvector container extension | `0.8.7` | `pgvector/pgvector:0.8.7-pg18` image tag |
 | pgvector Python client | `0.4.1` | `pyproject.toml` |
 | LangGraph | `1.2.21` | `pyproject.toml` |
