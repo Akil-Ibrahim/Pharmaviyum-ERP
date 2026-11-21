@@ -34,3 +34,8 @@ For each workflow, document actor/role, preconditions, authorization scope, inpu
 - [Трассировка реализации аптечных процессов — Русский](./PHARMACY_WORKFLOW_TRACEABILITY.ru.md)
 
 The matrix maps each operational process to repository models, APIs, frontend routes, tests and evidence-based implementation status. It is a source-level audit, not a production validation.
+
+## P0 delivery gates
+
+- [P0 Pharmacist Workspace acceptance gates — English](./PHARMACIST_WORKSPACE_P0_ACCEPTANCE.md)
+- [Критерии приёмки P0 Pharmacist Workspace — Русский](./PHARMACIST_WORKSPACE_P0_ACCEPTANCE.ru.md)
