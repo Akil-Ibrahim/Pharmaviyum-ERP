@@ -85,9 +85,24 @@ async def get_pharmacist_patient_history(
 ) -> list[dict[str, Any]]:
     """Return a minimum-field purchase history after explicit tenant authorization.
 
-    A superuser is not implicitly granted global PHI access by this route:
-    an active pharmacy membership is required for every principal.
+    This route is for non-superuser pharmacist principals only. Platform support
+    access must use a separate governed workflow. Only the legacy PatientPurchase
+    ledger is returned; POS Sale history is not represented until P0.2 links it.
     """
+    if current_user.is_superuser:
+        db.add(
+            PHIAccessAudit(
+                actor_id=current_user.id, pharmacy_id=pharmacy_id,
+                patient_id=patient_id, action="read_patient_history",
+                decision="denied", purpose=purpose, request_id=_request_id(request),
+            )
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Platform support access requires a separately governed workflow",
+        )
+
     membership = await db.scalar(
         select(PharmacyMembership.id).where(
             PharmacyMembership.user_id == current_user.id,
