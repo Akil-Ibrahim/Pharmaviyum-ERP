@@ -357,3 +357,8 @@ See [Engineering Roadmap and Delivery Stages](./ENGINEERING_ROADMAP.md) for the 
 - `docs/guides/TESTING.md` — test and CI strategy.
 - `docker-compose.monitoring.yml` — opt-in Prometheus/Grafana monitoring stack.
 - `.github/workflows/ci.yml` — CI quality, security, evaluation and image build gates.
+
+
+## Requirement traceability
+
+Use [Engineering Requirements Traceability](./ENGINEERING_REQUIREMENTS_TRACEABILITY.md) as the cross-domain index linking benchmark requirements to ADRs, implementation surfaces, tests, CI evidence and runtime verification. The matrix records open release blockers and does not claim production readiness. See the [Russian version](./ENGINEERING_REQUIREMENTS_TRACEABILITY.ru.md).
