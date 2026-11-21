@@ -29,7 +29,7 @@ Push или merge сами по себе не запускают deployment. Э�
 - DEMO_DATABASE_URL — URL изолированной Demo БД; используется для read-only проверки совместимости схемы.
 - VITE_CLERK_PUBLISHABLE_KEY — необязательный публичный frontend build key, только если он нужен текущей конфигурации входа.
 
-Не используйте Production credentials и не направляйте Demo secrets на Production-ресурсы. Workflow намеренно не читает FASTAPI_CLOUD_APP_ID, FASTAPI_CLOUD_TOKEN, DATABASE_URL или secrets Production environment.
+Не используйте Production credentials и не направляйте Demo secrets на Production-ресурсы. Workflow читает только перечисленные выше Demo-specific GitHub secrets. Во время deployment Demo token и app ID передаются под стандартными именами переменных FASTAPI_CLOUD_TOKEN и FASTAPI_CLOUD_APP_ID, которые ожидает FastAPI Cloud CLI. Для read-only проверки схемы DEMO_DATABASE_URL передаётся в process variable DATABASE_URL. Ни один Production GitHub secret не используется.
 
 ## 4. Конфигурация Demo в FastAPI Cloud
 
