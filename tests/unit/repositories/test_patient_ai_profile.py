@@ -27,7 +27,6 @@ async def test_ai_profile_returns_only_clinical_safety_context():
         "patient_id": 17,
         "allergies": ["penicillin"],
         "conditions": ["hypertension"],
-        "risk_summary": "",
     }
     assert PatientAIProfile.model_validate(result).patient_id == 17
     repository.get_by_id_with_relations.assert_awaited_once_with(
