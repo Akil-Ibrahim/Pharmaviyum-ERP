@@ -36,7 +36,14 @@ class PatientRepositoryPort(Repository[Patient], Protocol):
     ) -> Patient | None: ...
 
     async def get_by_id_with_relations(
-        self, id: int, pharmacy_id: int | None = None
+        self,
+        id: int,
+        pharmacy_id: int | None = None,
+        include_allergies: bool = True,
+        include_conditions: bool = True,
+        include_insurances: bool = True,
+        include_consultations: bool = True,
+        include_purchases: bool = True,
     ) -> Patient | None: ...
 
     async def search(
