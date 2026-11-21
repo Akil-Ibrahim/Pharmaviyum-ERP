@@ -26,6 +26,7 @@ from src.pharmaviyum.ai.harness.memory import DialogueMemory
 from src.pharmaviyum.ai.mortarium_rag.graph import LangGraphRAG
 from src.pharmaviyum.ai.mortarium_rag.schemas import QueryContext
 from src.pharmaviyum.api.v1.ai import _scoped_session_id
+from src.pharmaviyum.core.config import Environment
 from src.pharmaviyum.core.config import settings as app_settings
 from src.pharmaviyum.main import app
 from src.pharmaviyum.models.pharmacy import Pharmacy
@@ -174,26 +175,126 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
         "general pharmacy answer",
     )
 
+    # Exercise every persisted memory tier, not only the recent-message list.
+    memory_scopes = {
+        patient_a_scope: "patient A",
+        patient_b_scope: "patient B",
+        no_patient_scope: "no-patient",
+    }
+    for scope, label in memory_scopes.items():
+        prefix = memory._session_prefix(scope)
+        await test_redis.set(f"{prefix}:summary", f"summary for {label}")
+        await test_redis.hset(f"{prefix}:episodic", "scope-marker", label)
+        await test_redis.rpush(f"{prefix}:archive", f"archived {label} turn")
+
     patient_a_messages = await memory.load(patient_a_scope)
     patient_b_messages = await memory.load(patient_b_scope)
     no_patient_messages = await memory.load(no_patient_scope)
 
-    assert [message.content for message in patient_a_messages] == [
-        "synthetic patient A prompt",
-        "synthetic patient A answer",
-    ]
-    assert [message.content for message in patient_b_messages] == [
-        "synthetic patient B prompt",
-        "synthetic patient B answer",
-    ]
-    assert [message.content for message in no_patient_messages] == [
-        "general pharmacy prompt",
-        "general pharmacy answer",
-    ]
     patient_a_content = " ".join(str(message.content) for message in patient_a_messages)
     patient_b_content = " ".join(str(message.content) for message in patient_b_messages)
+    no_patient_content = " ".join(
+        str(message.content) for message in no_patient_messages
+    )
+    assert "synthetic patient A prompt" in patient_a_content
+    assert "synthetic patient A answer" in patient_a_content
+    assert "synthetic patient B prompt" in patient_b_content
+    assert "synthetic patient B answer" in patient_b_content
+    assert "general pharmacy prompt" in no_patient_content
+    assert "general pharmacy answer" in no_patient_content
     assert "patient B" not in patient_a_content
     assert "patient A" not in patient_b_content
+
+    # Summary and episodic state are also patient-scoped.
+    assert any("summary for patient A" in str(m.content) for m in patient_a_messages)
+    assert any("summary for patient B" in str(m.content) for m in patient_b_messages)
+    assert any("summary for no-patient" in str(m.content) for m in no_patient_messages)
+    assert await memory.get_episodic_facts(patient_a_scope) == {
+        "scope-marker": "patient A"
+    }
+    assert await memory.get_episodic_facts(patient_b_scope) == {
+        "scope-marker": "patient B"
+    }
+    assert await memory.get_episodic_facts(no_patient_scope) == {
+        "scope-marker": "no-patient"
+    }
+
+    # Explicit clearing must remove every tier for A without affecting B or no-patient.
+    patient_a_prefix = memory._session_prefix(patient_a_scope)
+    patient_b_prefix = memory._session_prefix(patient_b_scope)
+    no_patient_prefix = memory._session_prefix(no_patient_scope)
+    await memory.clear(patient_a_scope)
+    for suffix in ("messages", "summary", "episodic", "archive"):
+        assert await test_redis.exists(f"{patient_a_prefix}:{suffix}") == 0
+        assert await test_redis.exists(f"{patient_b_prefix}:{suffix}") == 1
+        assert await test_redis.exists(f"{no_patient_prefix}:{suffix}") == 1
+
+
+@pytest.mark.integration
+def test_api_session_scope_binds_tenant_user_patient_and_secret(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """API session namespaces must vary across every security boundary."""
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "stable-test-secret")
+    tenant = TenantContext(user_id=42, pharmacy_id=7)
+    user = type("AuthenticatedUser", (), {"id": 42})()
+    base = _scoped_session_id("reused-session", tenant, user, 101)
+
+    different_patient = _scoped_session_id("reused-session", tenant, user, 202)
+    no_patient = _scoped_session_id("reused-session", tenant, user, None)
+    different_user = _scoped_session_id(
+        "reused-session",
+        TenantContext(user_id=43, pharmacy_id=7),
+        type("AuthenticatedUser", (), {"id": 43})(),
+        101,
+    )
+    different_pharmacy = _scoped_session_id(
+        "reused-session",
+        TenantContext(user_id=42, pharmacy_id=8),
+        user,
+        101,
+    )
+
+    assert (
+        len({base, different_patient, no_patient, different_user, different_pharmacy})
+        == 5
+    )
+    prefix, digest = base.split(":", maxsplit=2)[1:]
+    assert prefix == "v3"
+    assert len(digest) == 64
+    assert all(character in "0123456789abcdef" for character in digest)
+    assert "reused-session" not in base
+
+    monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-test-secret")
+    rotated = _scoped_session_id("reused-session", tenant, user, 101)
+    assert rotated != base
+
+
+@pytest.mark.integration
+def test_api_session_scope_fails_closed_without_production_secret(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Production must never derive stable patient scopes from a fallback key."""
+    monkeypatch.setattr(app_settings, "ENVIRONMENT", Environment.PRODUCTION)
+    monkeypatch.setattr(app_settings, "SECRET_KEY", None)
+    tenant = TenantContext(user_id=42, pharmacy_id=7)
+    user = type("AuthenticatedUser", (), {"id": 42})()
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY is required"):
+        _scoped_session_id("reused-session", tenant, user, 101)
+
+
+@pytest.mark.integration
+def test_rag_checkpoint_scope_fails_closed_without_production_secret(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """RAG checkpoint namespaces must fail closed when production HMAC key is absent."""
+    monkeypatch.setattr(app_settings, "ENVIRONMENT", Environment.PRODUCTION)
+    monkeypatch.setattr(app_settings, "SECRET_KEY", None)
+    context = QueryContext(user_id="user-1", pharmacy_id=7, patient_id=101)
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY is required"):
+        LangGraphRAG._thread_id("reused-session", context)
 
 
 @pytest.mark.integration
