@@ -2,7 +2,7 @@
 
 ## Scope
 
-FastAPI Cloud hosts the public Pharmaviyum Demo only. GitHub Actions runs CI; the manually dispatched workflow .github/workflows/deploy-fastapi-cloud.yml deploys only the isolated Demo application. Production uses the same application technology stack on a separately managed hosting platform. Production deployment, migrations and operational automation are maintained outside this public repository.
+FastAPI Cloud hosts the public Pharmaviyum Demo only. GitHub Actions runs CI and the manually dispatched `.github/workflows/deploy-fastapi-cloud.yml` deploys only the isolated Demo application. Production uses the same application technology stack deployed to the pharmacy server through Ansible. Public Ansible playbooks define the automation contract; real Production inventory, per-site secrets, host access and execution approvals remain operator-controlled and are never committed.
 
 This runbook describes the repository's Demo workflow. It does not claim that a deployment has succeeded or that Production readiness has been verified.
 
