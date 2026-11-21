@@ -41,6 +41,7 @@ Three POS stations are physical/logical checkout capacity per pharmacy. This is 
 | Average basket / sale lines | NOT SPECIFIED | Define representative basket-size distribution. |
 | Pharmacist vs other staff roles | NOT SPECIFIED | Confirm role split within six employees per pharmacy. |
 | Shift overlap and active staff sessions | PROVISIONAL | Stage 1 proposes 2-on/2-off, three on-shift pharmacy staff plus a manager (up to 4 staff sessions); confirm roster and overlap with operations before calling it representative. |
+| Manager-office workstation usage / active manager sessions | NOT SPECIFIED | One dedicated computer per pharmacy is provisioned equipment only. Approve manager login hours, active-session overlap, task mix and session utilization before adding a separate manager VU. |
 | Register utilization / concurrent checkout | NOT SPECIFIED | Observe pilot telemetry; retain 3 simultaneous cashiers/pharmacy as a controlled stress case. |
 | API calls per workflow | NOT SPECIFIED | Derive from traced, versioned user journeys, not guessed multipliers. |
 | AI requests per visit / task | NOT SPECIFIED | Measure separately; isolate model latency, quota and cost. |
@@ -51,7 +52,7 @@ Three POS stations are physical/logical checkout capacity per pharmacy. This is 
 
 Run only with synthetic tenants, products, inventory, patients and transactions. Use an isolated disposable staging environment for writes. Default to read-only until the POS scenario has verified cleanup/rollback and durable postcondition checks.
 
-1. **Single-pharmacy functional baseline:** one synthetic pharmacy, six employee identities (role split only when approved), three POS stations configured. Validate the business journey and baseline resource consumption.
+1. **Single-pharmacy functional baseline:** one synthetic pharmacy, six employee identities (role split only when approved), three POS stations and one dedicated manager-office workstation configured (four workstation/computer positions total). Validate the business journey and baseline resource consumption.
 2. **Single-pharmacy register concurrency:** run three independent cashier sessions concurrently against the real transactional POS checkout contract. Assert idempotency, stock conservation, FEFO, expiry exclusion, payment state, receipt identity, inventory movements and tenant scope. Do not count a successful HTTP response alone as a completed sale.
 3. **Multi-pharmacy isolation:** increase tenant count progressively (for example 1 → 10 → 25 → 50 → 100), with synthetic data and explicit per-tenant identities. Verify no cross-tenant reads, writes or shared mutable state.
 4. **Network register upper-bound:** 300 synthetic register sessions (3 × 100 pharmacies) may be used as an explicitly labelled stress profile after smaller stages pass. It is not the expected normal concurrency. Record achieved throughput and saturation; stop on security invariant failure, sustained errors or unsafe data changes.
