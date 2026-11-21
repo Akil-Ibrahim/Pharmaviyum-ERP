@@ -13,8 +13,8 @@ from src.pharmaviyum.repositories.patient import PatientRepository
 from src.pharmaviyum.schemas.patient import (
     PatientAIProfile,
     PatientCreate,
-    PatientListResponse,
-    PatientResponse,
+    PatientSummaryResponse,
+    PatientSummaryResponse,
     PatientUpdate,
 )
 from src.pharmaviyum.services.patient import PatientService
@@ -26,7 +26,7 @@ def get_patient_service(db: AsyncSession = Depends(get_db)) -> PatientService:
     return PatientService(PatientRepository(db))
 
 
-@router.post("/", response_model=PatientListResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=PatientSummaryResponse, status_code=status.HTTP_201_CREATED)
 async def create_patient(
     data: PatientCreate,
     db: AsyncSession = Depends(get_db),
@@ -41,10 +41,10 @@ async def create_patient(
         )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    return PatientListResponse.model_validate(patient)
+    return PatientSummaryResponse.model_validate(patient)
 
 
-@router.get("/", response_model=list[PatientListResponse])
+@router.get("/", response_model=list[PatientSummaryResponse])
 async def list_patients(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
@@ -69,7 +69,7 @@ async def list_patients(
         page_size=page_size,
         pharmacy_id=scope,
     )
-    return [PatientListResponse.model_validate(patient) for patient in patients]
+    return [PatientSummaryResponse.model_validate(patient) for patient in patients]
 
 
 @router.get("/statistics")
@@ -83,7 +83,7 @@ async def get_patient_statistics(
     return await service.get_statistics(pharmacy_id=scope)
 
 
-@router.get("/phone/{phone}", response_model=PatientResponse)
+@router.get("/phone/{phone}", response_model=PatientSummaryResponse)
 async def get_patient_by_phone(
     phone: str,
     db: AsyncSession = Depends(get_db),
@@ -95,10 +95,10 @@ async def get_patient_by_phone(
     patient = await service.get_patient_by_phone(phone, pharmacy_id=scope)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
-    return PatientResponse.model_validate(patient)
+    return PatientSummaryResponse.model_validate(patient)
 
 
-@router.get("/{patient_id}", response_model=PatientResponse)
+@router.get("/{patient_id}", response_model=PatientSummaryResponse)
 async def get_patient(
     patient_id: int,
     db: AsyncSession = Depends(get_db),
@@ -107,10 +107,10 @@ async def get_patient(
     pharmacy_id: int | None = Query(None, gt=0),
 ):
     scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
-    patient = await service.get_patient(patient_id, pharmacy_id=scope)
+    patient = await service.get_patient_summary(patient_id, pharmacy_id=scope)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
-    return PatientResponse.model_validate(patient)
+    return PatientSummaryResponse.model_validate(patient)
 
 
 @router.get("/{patient_id}/ai-profile", response_model=PatientAIProfile)
@@ -128,7 +128,7 @@ async def get_patient_ai_profile(
     return profile
 
 
-@router.put("/{patient_id}", response_model=PatientListResponse)
+@router.put("/{patient_id}", response_model=PatientSummaryResponse)
 async def update_patient(
     patient_id: int,
     data: PatientUpdate,
@@ -146,7 +146,7 @@ async def update_patient(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
-    return PatientListResponse.model_validate(patient)
+    return PatientSummaryResponse.model_validate(patient)
 
 
 @router.delete("/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -166,7 +166,7 @@ async def delete_patient(
     return None
 
 
-@router.post("/{patient_id}/visit", response_model=PatientListResponse)
+@router.post("/{patient_id}/visit", response_model=PatientSummaryResponse)
 async def record_visit(
     patient_id: int,
     db: AsyncSession = Depends(get_db),
@@ -185,4 +185,4 @@ async def record_visit(
     patient = await service.record_visit(id=patient_id, pharmacy_id=scope)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
-    return PatientListResponse.model_validate(patient)
+    return PatientSummaryResponse.model_validate(patient)
