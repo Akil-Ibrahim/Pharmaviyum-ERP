@@ -161,7 +161,7 @@ AI endpoints реализованы в `src/pharmaviyum/api/v1/ai.py`.
 
 Это временные среды development/CI. Hosted Production использует Neon PostgreSQL 18 и отдельный managed Redis endpoint; Demo обязана использовать изолированную PostgreSQL 18 и собственный managed Redis endpoint. Redis 8.8.4 — целевая версия совместимости, но не утверждение о фактической версии сервера провайдера до проверки. В legacy-файле `docker-compose.prod.yml` всё ещё указаны образы PostgreSQL 16/Redis 7; он не является утверждённым путём deployment и запрещён для Production и Demo. Pharmacy Edge — отдельный профиль со своей политикой, не относящийся к hosted data plane Production/Demo. См. [единый baseline Production/Demo](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md).
 
-FastAPI Cloud является целевой платформой размещения приложения. GitHub Actions обеспечивает CI и вручную запускаемый workflow deployment; базы данных, кеш и другие необходимые сервисы должны быть подготовлены и настроены отдельно.
+FastAPI Cloud размещает и развёртывает только публичную Demo. GitHub Actions обеспечивает CI и вручную запускаемый Demo deployment workflow; изолированные БД, кеш и другие необходимые сервисы должны быть подготовлены отдельно. Production использует тот же технологический стек приложения на отдельно управляемой платформе хостинга; его deployment и operations находятся за пределами публичного репозитория.
 
 В репозитории нет отдельного Kubernetes deployment для AI; Mortarium остаётся прикладным AI-слоем.
 
@@ -205,5 +205,5 @@ uv run uvicorn src.pharmaviyum.main:app --reload --port 8000
 1. Изоляция tenant обеспечивается до поиска и генерации.
 2. Вывод LLM не считается источником истины; авторитетными остаются найденные источники и guardrails.
 3. Для цитирования источников используются стабильные идентификаторы чанков.
-4. Production deployment имеет один канонический путь релиза.
+4. В этом репозитории один канонический путь релиза публичной Demo; Production deployment управляется за пределами публичного репозитория.
 5. Документация описывает реализованное поведение, а не запланированную инфраструктуру.
