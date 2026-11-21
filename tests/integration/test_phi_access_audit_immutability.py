@@ -15,8 +15,8 @@ async def test_phi_access_audit_records_are_append_only(test_db, mutation):
     # 2026_11_21_000001_phi_access_audit.py in this isolated test database.
     await test_db.execute(
         text(
-            "CREATE FUNCTION reject_phi_access_audit_mutation() RETURNS trigger "
-            "LANGUAGE plpgsql AS $$ BEGIN "
+            "CREATE OR REPLACE FUNCTION reject_phi_access_audit_mutation() "
+            "RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN "
             "RAISE EXCEPTION 'phi_access_audits is append-only'; END; $$"
         )
     )
