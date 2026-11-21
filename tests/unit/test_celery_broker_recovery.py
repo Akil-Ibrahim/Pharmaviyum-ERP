@@ -1,5 +1,7 @@
 """Regression tests for bounded Celery broker recovery configuration."""
 
+import pytest
+
 from src.pharmaviyum.ai.mortarium_rag.ingestion.celery_app import create_celery_app
 from src.pharmaviyum.core.config import Settings
 
@@ -48,8 +50,6 @@ def test_ingestion_task_raises_after_terminal_retry_exhaustion(monkeypatch) -> N
     """A terminal ingestion error must remain a Celery FAILURE, not SUCCESS."""
     import asyncio
     from unittest.mock import AsyncMock, Mock
-
-    import pytest
 
     from src.pharmaviyum.ai.mortarium_rag.ingestion import tasks as ingestion_tasks
 
