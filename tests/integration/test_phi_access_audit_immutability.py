@@ -22,6 +22,7 @@ async def test_phi_access_audit_records_are_append_only(test_db, mutation):
     test_db.add(audit)
     await test_db.flush()
     audit_id = audit.id
+    await test_db.commit()
 
     statement = (
         update(PHIAccessAudit)
