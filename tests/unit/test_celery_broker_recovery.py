@@ -72,13 +72,9 @@ def test_ingestion_task_raises_after_terminal_retry_exhaustion(monkeypatch) -> N
     monkeypatch.setattr(
         ingestion_tasks, "get_redis", AsyncMock(return_value=redis_client)
     )
-    monkeypatch.setattr(
-        ingestion_tasks, "IngestionProgressTracker", lambda _: tracker
-    )
+    monkeypatch.setattr(ingestion_tasks, "IngestionProgressTracker", lambda _: tracker)
     record_batch_result = Mock()
-    monkeypatch.setattr(
-        ingestion_tasks, "_record_batch_result", record_batch_result
-    )
+    monkeypatch.setattr(ingestion_tasks, "_record_batch_result", record_batch_result)
 
     config = {"pharmacy_id": 731, "batch_job_id": "batch-1"}
     task = ingestion_tasks.ingest_document
