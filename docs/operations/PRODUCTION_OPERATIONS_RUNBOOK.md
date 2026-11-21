@@ -13,7 +13,7 @@
 
 | Component | Responsibility | Verification |
 |---|---|---|
-| Production web application (separately managed hosting) | API and frontend serving | Deployment state, logs, /health, /ready and authenticated smoke tests; platform-specific procedures are maintained outside this repository |
+| Pharmacy server application stack (Ansible-managed) | API and frontend serving for the local pharmacy site | Ansible release result, immutable image digest, container state, logs, /health, /ready and authenticated pharmacy-safe smoke tests |
 | PostgreSQL | Transactional and checkpoint persistence | Provider health, connections, query latency, backup age and restore evidence |
 | Redis-compatible service | Cache and dialogue memory | Connectivity, memory/connection limits, evictions and latency |
 | Celery worker | Async tasks such as ingestion | Worker health, queue depth, task age, retries and failed-task review |
