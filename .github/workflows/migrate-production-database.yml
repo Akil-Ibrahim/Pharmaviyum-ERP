@@ -28,7 +28,9 @@ jobs:
     if: github.ref == 'refs/heads/main'
     env:
       PYTHON_VERSION: "3.15.0"
+      ENVIRONMENT: production
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
       EXPECTED_NEON_HOST: "ep-odd-wind-beh1cx41.c-9.us-east-2.aws.neon.tech"
       EXPECTED_DATABASE: "neondb"
     steps:
@@ -63,7 +65,7 @@ jobs:
               output.write(f"expected_head={heads[0]}" + chr(10))
           PY
 
-      - name: Inspect production database state
+      - name: Inspect production database state and verify role separation
         id: inspect_database
         shell: bash
         env:
@@ -71,25 +73,41 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$DATABASE_URL"
+          test -n "$MIGRATION_DATABASE_URL"
           uv run python - <<'PY'
           import os
           from urllib.parse import urlsplit
           import psycopg
 
-          raw_url = os.environ["DATABASE_URL"]
-          normalized = raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
-          if normalized.startswith("postgres://"):
-              normalized = normalized.replace("postgres://", "postgresql://", 1)
-          parsed = urlsplit(normalized)
+          def normalize(raw_url: str) -> str:
+              value = raw_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+              if value.startswith("postgres://"):
+                  value = value.replace("postgres://", "postgresql://", 1)
+              return value
+
+          runtime_url = normalize(os.environ["DATABASE_URL"])
+          migration_url = normalize(os.environ["MIGRATION_DATABASE_URL"])
+          runtime_parsed = urlsplit(runtime_url)
+          migration_parsed = urlsplit(migration_url)
           expected_host = os.environ["EXPECTED_NEON_HOST"]
           expected_database = os.environ["EXPECTED_DATABASE"]
 
-          if parsed.hostname != expected_host:
-              raise SystemExit("Refusing migration: DATABASE_URL is not the verified direct Neon production endpoint.")
-          if parsed.path.lstrip("/") != expected_database:
-              raise SystemExit("Refusing migration: DATABASE_URL points to an unexpected database.")
+          for label, parsed in (("runtime", runtime_parsed), ("migration", migration_parsed)):
+              if parsed.hostname != expected_host:
+                  raise SystemExit(
+                      f"Refusing migration: {label} URL is not the verified direct Neon production endpoint."
+                  )
+              if parsed.path.lstrip("/") != expected_database:
+                  raise SystemExit(
+                      f"Refusing migration: {label} URL points to an unexpected database."
+                  )
 
-          with psycopg.connect(normalized, connect_timeout=15) as connection:
+          if runtime_parsed.username == migration_parsed.username:
+              raise SystemExit(
+                  "Refusing migration: runtime and migration URLs must use distinct database roles."
+              )
+
+          with psycopg.connect(runtime_url, connect_timeout=15) as connection:
               with connection.cursor() as cursor:
                   cursor.execute(
                       """
@@ -97,20 +115,93 @@ jobs:
                              current_setting('server_version'),
                              (SELECT count(*) FROM information_schema.tables
                               WHERE table_schema = 'public' AND table_type = 'BASE TABLE'),
-                             to_regclass('public.alembic_version')
+                             to_regclass('public.alembic_version'),
+                             role.rolsuper,
+                             role.rolcreatedb,
+                             role.rolcreaterole,
+                             role.rolreplication,
+                             role.rolbypassrls,
+                             has_schema_privilege(current_user, 'public', 'CREATE'),
+                             pg_has_role(current_user, 'neondb_owner', 'MEMBER'),
+                             EXISTS (
+                               SELECT 1
+                               FROM pg_class AS object
+                               WHERE object.relnamespace = 'public'::regnamespace
+                                 AND object.relkind IN ('r', 'p', 'v', 'm', 'S', 'f')
+                                 AND pg_has_role(current_user, object.relowner, 'USAGE')
+                             )
+                      FROM pg_roles AS role
+                      WHERE role.rolname = current_user
                       """
                   )
-                  database, role, version, table_count, alembic_table = cursor.fetchone()
+                  runtime = cursor.fetchone()
 
-          print(f"Verified database={database}, role={role}, PostgreSQL={version}, public_tables={table_count}, alembic_version={alembic_table}")
-          if database != expected_database or role != "neondb_owner":
-              raise SystemExit("Refusing migration: database identity does not match the approved production target.")
+          if runtime is None:
+              raise SystemExit("Refusing migration: runtime database role could not be verified.")
+
+          (
+              database,
+              runtime_role,
+              version,
+              table_count,
+              alembic_table,
+              is_superuser,
+              can_create_database,
+              can_create_roles,
+              can_replicate,
+              bypasses_rls,
+              can_create_in_public,
+              is_owner_role_member,
+              owns_or_inherits_public_objects,
+          ) = runtime
+
+          if database != expected_database:
+              raise SystemExit("Refusing migration: runtime connection reached an unexpected database.")
+          if any((is_superuser, can_create_database, can_create_roles, can_replicate, bypasses_rls)):
+              raise SystemExit(
+                  "Refusing migration: runtime role has privileged PostgreSQL role attributes."
+              )
+          if can_create_in_public or is_owner_role_member or owns_or_inherits_public_objects:
+              raise SystemExit(
+                  "Refusing migration: runtime role has schema CREATE, owner-role membership, "
+                  "or ownership privileges on public objects."
+              )
+
+          with psycopg.connect(migration_url, connect_timeout=15) as connection:
+              with connection.cursor() as cursor:
+                  cursor.execute(
+                      """
+                      SELECT current_database(), current_user, role.rolsuper,
+                             (current_user = 'neondb_owner'
+                              OR pg_has_role(current_user, 'neondb_owner', 'MEMBER'))
+                      FROM pg_roles AS role
+                      WHERE role.rolname = current_user
+                      """
+                  )
+                  migration = cursor.fetchone()
+
+          if migration is None:
+              raise SystemExit("Refusing migration: migration database role could not be verified.")
+          migration_database, migration_role, migration_is_superuser, has_owner_membership = migration
+          if migration_database != expected_database or migration_role == runtime_role:
+              raise SystemExit("Refusing migration: database role separation validation failed.")
+          if migration_is_superuser or not has_owner_membership:
+              raise SystemExit(
+                  "Refusing migration: migration role must be a non-superuser member of "
+                  "the dedicated Neon database owner role."
+              )
+
+          print(
+              f"Verified production database={database}, PostgreSQL={version}, "
+              f"runtime_role_separated=true, public_tables={table_count}, "
+              f"alembic_version={alembic_table}."
+          )
 
           expected_head = os.environ["EXPECTED_ALEMBIC_HEAD"]
           baseline_revision = "2026_11_16_000004"
           revisions = []
           required_tables = ()
-          with psycopg.connect(normalized, connect_timeout=15) as connection:
+          with psycopg.connect(runtime_url, connect_timeout=15) as connection:
               with connection.cursor() as cursor:
                   if alembic_table is not None:
                       cursor.execute("SELECT version_num FROM public.alembic_version")
