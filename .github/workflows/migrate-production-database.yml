@@ -116,22 +116,22 @@ jobs:
                              (SELECT count(*) FROM information_schema.tables
                               WHERE table_schema = 'public' AND table_type = 'BASE TABLE'),
                              to_regclass('public.alembic_version'),
-                             role.rolsuper,
-                             role.rolcreatedb,
-                             role.rolcreaterole,
-                             role.rolreplication,
-                             role.rolbypassrls,
+                             r.rolsuper,
+                             r.rolcreatedb,
+                             r.rolcreaterole,
+                             r.rolreplication,
+                             r.rolbypassrls,
                              has_schema_privilege(current_user, 'public', 'CREATE'),
                              pg_has_role(current_user, 'neondb_owner', 'USAGE'),
                              EXISTS (
                                SELECT 1
-                               FROM pg_class AS object
-                               WHERE object.relnamespace = 'public'::regnamespace
-                                 AND object.relkind IN ('r', 'p', 'v', 'm', 'S', 'f')
-                                 AND pg_has_role(current_user, object.relowner, 'USAGE')
+                               FROM pg_class AS obj
+                               WHERE obj.relnamespace = 'public'::regnamespace
+                                 AND obj.relkind IN ('r', 'p', 'v', 'm', 'S', 'f')
+                                 AND pg_has_role(current_user, obj.relowner, 'USAGE')
                              )
-                      FROM pg_roles AS role
-                      WHERE role.rolname = current_user
+                      FROM pg_roles AS r
+                      WHERE r.rolname = current_user
                       """
                   )
                   runtime = cursor.fetchone()
@@ -171,11 +171,11 @@ jobs:
               with connection.cursor() as cursor:
                   cursor.execute(
                       """
-                      SELECT current_database(), current_user, role.rolsuper,
+                      SELECT current_database(), current_user, r.rolsuper,
                              (current_user = 'neondb_owner'
                               OR pg_has_role(current_user, 'neondb_owner', 'USAGE'))
                       FROM pg_roles AS role
-                      WHERE role.rolname = current_user
+                      WHERE r.rolname = current_user
                       """
                   )
                   migration = cursor.fetchone()
