@@ -90,15 +90,12 @@ class TestPatientServiceCreate:
         mock_repository.create.return_value = expected_patient
         mock_repository.get_by_id_with_relations.return_value = expected_patient
 
-        with patch(
-            "src.pharmaviyum.services.patient.logger.info"
-        ) as mock_patient_log:
+        with patch("src.pharmaviyum.services.patient.logger.info") as mock_patient_log:
             result = await patient_service.create_patient(
                 patient_data, created_by="user-7", pharmacy_id=731
             )
 
         mock_patient_log.assert_called_once_with("Created patient record")
-        assert "1" not in str(mock_patient_log.call_args)
         assert result.id == 1
         assert result.full_name == "Ibrahim Ibrahim"
         mock_repository.create.assert_called_once()
