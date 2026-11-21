@@ -3,7 +3,7 @@ Unit tests for PatientService
 Best practice 2026: Comprehensive service layer testing with mocks
 """
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, call, patch
 
 import pytest
 
@@ -99,6 +99,15 @@ class TestPatientServiceCreate:
         assert result.id == 1
         assert result.full_name == "Ibrahim Ibrahim"
         mock_repository.create.assert_called_once()
+        mock_repository.get_by_id_with_relations.assert_awaited_once_with(
+            1,
+            pharmacy_id=731,
+            include_allergies=False,
+            include_conditions=False,
+            include_insurances=False,
+            include_consultations=False,
+            include_purchases=False,
+        )
         mock_event_bus.emit.assert_called_once()
         event = mock_event_bus.emit.call_args.args[0]
         assert event.event_type == "patient.created"
@@ -182,6 +191,19 @@ class TestPatientServiceUpdate:
         update_data = PatientUpdate(first_name="Новое имя")
         result = await patient_service.update_patient(1, update_data)
         assert result is not None
+        minimal_read = call(
+            1,
+            pharmacy_id=None,
+            include_allergies=False,
+            include_conditions=False,
+            include_insurances=False,
+            include_consultations=False,
+            include_purchases=False,
+        )
+        assert mock_repository.get_by_id_with_relations.await_args_list == [
+            minimal_read,
+            minimal_read,
+        ]
         mock_repository.update.assert_called_once()
         mock_cache_service.delete.assert_called()
         mock_event_bus.emit.assert_called_once()
