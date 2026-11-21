@@ -1,0 +1,34 @@
+"""Select the database URL used by Alembic without reusing production runtime credentials."""
+
+from collections.abc import Mapping
+
+
+def select_migration_database_url(
+    environ: Mapping[str, str],
+    *,
+    config_fallback: str | None = None,
+) -> str:
+    """Select an explicit migration URL and fail closed in hosted environments."""
+    migration_test_url = environ.get("MIGRATION_TEST_DATABASE_URL")
+    if migration_test_url:
+        return migration_test_url
+
+    migration_url = environ.get("MIGRATION_DATABASE_URL")
+    if migration_url:
+        return migration_url
+
+    environment = environ.get("ENVIRONMENT", "").strip().lower()
+    if environment in {"production", "staging"}:
+        raise RuntimeError(
+            "MIGRATION_DATABASE_URL is required in staging and production; "
+            "Alembic must not use the application runtime DATABASE_URL."
+        )
+
+    fallback = (
+        environ.get("DATABASE_URL")
+        or environ.get("PGVECTOR_DATABASE_URL")
+        or config_fallback
+    )
+    if not fallback:
+        raise RuntimeError("No database URL is configured for Alembic.")
+    return fallback
