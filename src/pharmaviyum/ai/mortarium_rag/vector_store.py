@@ -42,8 +42,7 @@ class PgVectorStore:
         """Verify the Alembic-managed pgvector schema without issuing DDL."""
         async with self.session_factory() as session:
             result = await session.execute(
-                text(
-                    """
+                text("""
                     SELECT
                         to_regclass(:qualified_table) IS NOT NULL AS table_exists,
                         to_regtype('vector') IS NOT NULL AS vector_type_exists,
@@ -63,8 +62,7 @@ class PgVectorStore:
                             ),
                             ARRAY[]::text[]
                         ) AS index_names
-                    """
-                ),
+                    """),
                 {
                     "qualified_table": f"public.{self.table_name}",
                     "table_name": self.table_name,
