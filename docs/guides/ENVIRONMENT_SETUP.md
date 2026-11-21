@@ -192,7 +192,7 @@ The manual deploy workflow currently requires:
 
 The separate manual migration workflow additionally requires:
 
-- `MIGRATION_DATABASE_URL` — a dedicated migration login for the same verified Neon host and database. It must be a different PostgreSQL role from `DATABASE_URL`, be a non-superuser member of the database owner role `neondb_owner`, and be used only by the protected migration workflow. Never configure this credential in the FastAPI Cloud application.
+- `MIGRATION_DATABASE_URL` — a dedicated migration login for the same verified Neon host and database. It must be a different PostgreSQL role from `DATABASE_URL`, be a non-superuser role that inherits the required owner privileges from `neondb_owner`, and be used only by the protected migration workflow. Never configure this credential in the FastAPI Cloud application.
 - The migration workflow verifies that the runtime role is not a superuser, cannot create roles/databases, cannot bypass RLS, has no `CREATE` privilege on the `public` schema, is not a member of `neondb_owner`, and does not own or inherit ownership of public objects. It refuses to run if these checks fail.
 
 The workflow no longer requires `PHARMAVIYUM_SMOKE_USERNAME` or `PHARMAVIYUM_SMOKE_PASSWORD`. It creates a unique, temporary, non-privileged pharmacist account with a random per-run password for positive auth/catalog smoke checks, then attempts to delete that exact account. Do not create static smoke credentials and do not use `admin/admin`.
