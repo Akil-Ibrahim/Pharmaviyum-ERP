@@ -13,7 +13,7 @@
 
 | Component | Responsibility | Verification |
 |---|---|---|
-| FastAPI Cloud web app | API and frontend serving | Deployment state, logs, /health, /ready and authenticated smoke tests |
+| Production web application (separately managed hosting) | API and frontend serving | Deployment state, logs, /health, /ready and authenticated smoke tests; platform-specific procedures are maintained outside this repository |
 | PostgreSQL | Transactional and checkpoint persistence | Provider health, connections, query latency, backup age and restore evidence |
 | Redis-compatible service | Cache and dialogue memory | Connectivity, memory/connection limits, evictions and latency |
 | Celery worker | Async tasks such as ingestion | Worker health, queue depth, task age, retries and failed-task review |
@@ -51,7 +51,7 @@ Inspect worker health, queue depth, oldest task age, retry counts and error clas
 Check provider availability, rate limits, latency, timeouts and RAG dependencies. Preserve core deterministic pharmacy workflows. Degrade optional AI through an approved configuration/release change if necessary. Do not present model output as verified clinical advice during degradation.
 
 ## Release and rollback
-Use [Release Runbook](./RELEASE_RUNBOOK.md) and [FastAPI Cloud deployment](../deployment/FASTAPI_CLOUD.md) as canonical deployment procedures.
+Production release and rollback procedures are maintained in the restricted Production operations documentation and are not part of this public repository. The public [FastAPI Cloud Demo runbook](../deployment/FASTAPI_CLOUD.md) applies only to Demo and must not be used for Production.
 
 Before release, verify latest-SHA CI, approval, backup/restore evidence, migration plan, environment variables, smoke tests and rollback target.
 
