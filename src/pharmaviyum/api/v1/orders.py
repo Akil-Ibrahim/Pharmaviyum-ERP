@@ -91,7 +91,7 @@ async def get_order(
 
     result = await db.execute(_order_query(order_id, scope))
     order = result.scalar_one_or_none()
-    if not order or (scope is not None and order.patient.pharmacy_id != scope):
+    if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 
@@ -112,7 +112,7 @@ async def update_order_status(
         .where(Order.id == order_id)
     )
     order = result.scalar_one_or_none()
-    if not order or (scope is not None and order.patient.pharmacy_id != scope):
+    if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
     if order.status != "pending":
