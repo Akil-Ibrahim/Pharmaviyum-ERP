@@ -30,7 +30,7 @@ Workflow использует выбранный commit из `main`, прове�
 - `MIGRATION_DATABASE_URL` — отдельный login URL только для production migration workflow. Он должен указывать на тот же проверенный Neon host/database, использовать другую non-superuser role и наследовать необходимые privileges от `neondb_owner`. Не задавайте его в FastAPI Cloud и не используйте для application traffic.
 - `VITE_CLERK_PUBLISHABLE_KEY` — необязательный build-time public frontend key, если он нужен текущей конфигурации входа.
 
-Не помещайте значения секретов в репозиторий, workflow inputs, issue comments или чат. Не выводите credentials в CI logs.
+Храните `MIGRATION_DATABASE_URL` только как secret защищённого GitHub Environment `production-pharmaviyum-erp`, используемого migration workflow; не размещайте его на уровне repository secrets или FastAPI Cloud. Остальные deploy secrets задавайте в соответствующем scope deploy workflow. Не помещайте значения секретов в репозиторий, workflow inputs, issue comments или чат и не выводите credentials в CI logs.
 
 **Секреты с username/password для smoke test не нужны.** Workflow создаёт уникальную временную учётную запись pharmacist со случайным паролем на каждый запуск через существующий registration endpoint, проверяет login/profile/catalog и пытается удалить только эту non-superuser запись. Не задавайте статические `PHARMAVIYUM_SMOKE_USERNAME` / `PHARMAVIYUM_SMOKE_PASSWORD`. Не используйте `admin/admin`.
 
