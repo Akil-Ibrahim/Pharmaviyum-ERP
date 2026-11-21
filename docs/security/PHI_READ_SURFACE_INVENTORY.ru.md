@@ -38,21 +38,19 @@
 
 **Необходимые действия:** определить purpose-specific DTO (например, краткая демография, контекст безопасности отпуска лекарства, страховой workflow) с явными allowlists полей. Не возвращать consultation notes, insurance identifiers или purchase history без необходимости конкретного workflow. Добавить schema contract tests, проверяющие отсутствие запрещённых полей в каждом endpoint response.
 
-### F-03 — Patient lifecycle events содержат прямые идентификаторы
+### F-03 — Patient lifecycle events содержат связываемые идентификаторы
 
 Файл: `src/pharmaviyum/services/patient.py`
 
-- До PR #385 событие `patient.created` содержало `patient_id`, `full_name`, `phone`, `country` и `created_by`.
-- PR #385 удаляет `full_name`, `phone` и `country`; остаются `patient_id`, `pharmacy_id` и `created_by` для корреляции/маршрутизации.
+- PR #385 удаляет `patient_id`, `full_name`, `phone` и `country` из generic payload события `patient.created`; остаётся только `pharmacy_id`.
 - `patient.updated`, `patient.deleted` и `patient.visit_recorded` по-прежнему содержат стабильный patient ID в generic event payload; их минимизация остаётся открытой задачей.
 - Поиск по исходному коду не обнаружил in-repository subscribers через `event_bus.on(...)`. Это не доказывает отсутствие динамически зарегистрированных или внешних consumers.
-- После дополнительного изменения в ветке PR лог создания пациента больше не содержит patient ID.
-- Event bus — process-local и best-effort (`src/pharmaviyum/services/event_bus.py`); общий лог emit записывает тип события и количество handlers, а не payload. Сервис создания пациента ранее также записывал стабильный patient ID в application log; PR #385 удаляет этот идентификатор из лога.
-- Полный граф subscribers и возможная внешняя пересылка/логирование не были исчерпывающе прослежены.
+- Лог создания пациента больше не содержит patient ID.
+- Event bus — process-local и best-effort (`src/pharmaviyum/services/event_bus.py`); общий лог emit записывает тип события и количество handlers, а не payload.
 
-**Риск:** прямые идентификаторы попадают в общий application event channel. Будущие subscribers, telemetry exporters или интеграции могут передать их в системы без PHI controls.
+**Риск:** стабильный patient ID — связываемые персональные данные. Их присутствие в generic lifecycle events позволит будущим subscribers или telemetry integrations сопоставлять события с пациентскими записями вне purpose-bound workflow.
 
-**Необходимые действия:** определить, действительно ли generic event нуждается в patient reference. Стабильный внутренний patient ID остаётся связываемыми персональными данными, а не анонимным или криптографически opaque идентификатором. Для корреляции предпочтителен краткоживущий необратимый event token с отдельно авторизованным lookup; для клинических workflow использовать отдельный permissioned event contract. Добавить тесты, что event payload не содержит имя, телефон, email, DOB, clinical notes или prescription data. Проверить всех subscribers до включения внешней доставки.
+**Исправление:** удалить patient identifiers из generic `patient.created`; оставить только tenant-level routing metadata. Остальные lifecycle events требуют такой же проверки. Если workflow необходим patient reference, нужно определить отдельный permissioned event contract и явную authorization path для lookup, а не повторно использовать generic event bus.
 
 ### F-04 — Два patient mutation helpers используют scope; другим mutation helpers не хватает явного tenant scope
 
