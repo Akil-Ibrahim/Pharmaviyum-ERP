@@ -75,6 +75,20 @@
 
 **Необходимые действия:** внедрить отдельное решение platform-support authorization (grant, reason, expiry, разрешённое действие, patient/tenant scope) и обязательный аудит привилегированного доступа к данным пациента. Не отключать superuser workflow без анализа операционных сценариев.
 
+### F-06 — Order и purchase lookups проверяют tenant ownership после чтения строк
+
+Файл: `src/pharmaviyum/api/v1/orders.py`
+
+- В create path пациент первоначально загружался только по ID, после чего `patient.pharmacy_id` сравнивался в Python.
+- В order detail и status-update paths выполнялся JOIN с Patient, но фильтр был только по `Order.id`; tenant ownership проверялся уже после загрузки результата Order/Patient.
+- При завершении заказа Patient повторно загружался по ID без pharmacy predicate.
+- Поиск дублирующего receipt фильтровался только по receipt number, без JOIN с tenant-владельцем Patient.
+- Эти post-fetch проверки отклоняли несовпадающий непустой scope до защищённой записи, но не обеспечивали tenant isolation на границе SQL-запроса.
+
+**Риск:** строки другого tenant могли попасть в память приложения до отказа в авторизации. Проверка receipt также полагалась на глобальную уникальность формата receipt, а не на явный tenant predicate. Эта проверка не доказывает production disclosure или cross-tenant mutation.
+
+**Исправление в работе:** общие query builders добавляют `Patient.pharmacy_id == scope` в patient, order и purchase lookups, если tenant scope определён. Существующее глобальное поведение superuser при scope `None` сохраняется. SQL compilation regression tests проверяют наличие predicates; database-backed integration coverage на двух tenant всё ещё необходима.
+
 ## Наблюдавшиеся положительные контроли
 
 - Для обычных пользователей `resolve_pharmacy_scope` проверяет active `PharmacyMembership`; при нескольких membership требуется явный pharmacy ID.
