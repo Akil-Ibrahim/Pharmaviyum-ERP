@@ -25,9 +25,8 @@ The canonical integration branch is `main`. Changes are reviewed through pull re
 - **Application:** FastAPI backend with a React, TypeScript, and Vite frontend.
 - **Pharmacy domain:** POS, dispensing, product reference, inventory, procurement, and pharmacy operations.
 - **AI layer:** Mortarium, with LangGraph-based RAG and MCP integration.
-- **Infrastructure:** Neon PostgreSQL 18 for hosted Production; isolated PostgreSQL 18 is required for Demo; managed Redis with Redis 8.8.4 as the compatibility target; Docker for development and Pharmacy Edge automation.
-- **Delivery:** GitHub Actions CI with a separately controlled FastAPI Cloud deployment workflow.
-- **Hosted data baseline:** Neon PostgreSQL 18; managed Redis with Redis 8.8.4 as the compatibility target (provider-reported server version must be verified).
+- **Infrastructure:** PostgreSQL, pgvector, and Redis for data and state; Docker for local development and Pharmacy Edge automation.
+- **Hosting:** FastAPI Cloud hosts the public Demo. Production uses the same application technology stack on separately managed hosting; its provider and deployment details are maintained outside this public README.
 
 ## Demo System Access
 
@@ -79,31 +78,7 @@ The **[Repository Structure Guide](docs/architecture/repository-structure.md) ·
 
 Review this guide before introducing new directories or changing the location of existing files. Any structural change must update affected imports, CI workflows, Docker and Compose definitions, deployment assets, scripts, and documentation in the same change.
 
-## Production and Demo Infrastructure Baseline
 
-This is the canonical infrastructure version policy for hosted Production and Demo. Do not copy older infrastructure versions or retired provider references from historical notes into new deployments.
-
-| Component | Production baseline | Demo baseline | Evidence / rule |
-|---|---|---|---|
-| Application hosting | FastAPI Cloud | FastAPI Cloud | The hosted app is deployed through the protected, manually approved workflow. |
-| PostgreSQL | Neon PostgreSQL 18, project `pharmaviyum-production`, project ID `odd-fog-77928192`, default branch `production` | Dedicated isolated PostgreSQL 18 database/branch | Production project and major version were verified in Neon on 2026-11-21. Demo database isolation and its live server version must be verified before claiming Demo readiness. |
-| Vector extension | pgvector 0.8.7 target, verify installed extension on the hosted database | pgvector 0.8.7 target, verify installed extension | PostgreSQL server version and pgvector extension version are separate. |
-| Redis | Managed Redis integration; Redis 8.8.4 is the compatibility target where the provider permits pinning | Dedicated managed Redis integration; same Redis 8.8.4 target | The managed server's exact version is provider-controlled and was not independently verified here. Verify `INFO server`/provider metadata; never report a target as an observed version. |
-| Application Redis client | redis-py 8.1.0 | redis-py 8.1.0 | Pinned in `pyproject.toml` and `uv.lock`. |
-| Python runtime | CPython 3.15.0 | CPython 3.15.0 | Pinned in `pyproject.toml`, `.python-version`, and deployment checks. |
-
-### Environment separation and data rules
-
-- Production and Demo must use separate database credentials, database instances/branches, Redis credentials/endpoints, signing secrets, and provider/API credentials. Never point Demo at the Production database or Redis namespace.
-- Demo is synthetic-data-only. Never import real patients, prescriptions, customer data, pharmacy transactions, or confidential business data.
-- Neon Production is the authoritative hosted relational database. Local Compose PostgreSQL is disposable development/CI infrastructure and is not a Production database.
-- Managed Redis is an ephemeral cache/coordination layer, not the authoritative sales, dispensing, inventory, or audit ledger. Persistent business records remain in PostgreSQL.
-- Keep connection strings and credentials only in FastAPI Cloud environment variables and protected GitHub Actions secrets. Documentation may identify provider, project, branch, and version, but must never contain credentials or connection URLs.
-- A version target is not proof of a running service. Confirm the live server version, extension version, connectivity, backup/PITR policy, and readiness for each environment before marking it verified.
-- PostgreSQL major-version changes require a separately approved backup, compatibility, migration, restore-test, maintenance-window, and rollback plan. Never attach an existing data volume to a different PostgreSQL major version.
-- Do not use retired Render infrastructure as an active Production or Demo dependency.
-
-The live verification record must be updated whenever a hosted database/cache is replaced. See [FastAPI Cloud deployment](deployment/FASTAPI_CLOUD.md) and [Production operations runbook](operations/PRODUCTION_OPERATIONS_RUNBOOK.md).
 
 ## Core Pharmacy Workflow
 
@@ -289,7 +264,7 @@ Pharmaviyum is built with the following technology stack, grouped by architectur
 - **Frontend:** React, TypeScript, Vite, Tailwind CSS, shadcn/ui, Radix UI, TanStack Query/Router.
 - **AI / LLM:** Mortarium AI, LangChain, LangGraph, RAG, embeddings, hybrid search, MCP, Agent Harness, Ragas.
 - **Observability:** OpenTelemetry, OTLP, Prometheus, Grafana, Jaeger, OpenTelemetry Collector.
-- **Infrastructure & delivery:** Docker, Docker Compose, FastAPI Cloud, GitHub Actions, Ansible, uv, Bun.
+- **Infrastructure & delivery:** Docker, Docker Compose, GitHub Actions, Ansible, uv, Bun; FastAPI Cloud is used for Demo hosting.
 - **Testing & security:** Pytest, Playwright, Vitest, Ruff, Black, isort, mypy, Bandit, pip-audit, ESLint, Prettier.
 - **Email testing:** Mailpit.
 
@@ -372,11 +347,11 @@ Open the live Pharmaviyum system status page:
 
 - **System status:** https://pharmaviyum-erp.fastapicloud.dev/system-status
 - **Admin login:** `admin`
-- **Password:** Not published in this repository. The production password is managed privately through FastAPI Cloud environment variables. Never commit credentials to Git or share them in documentation.
+- **Demo access:** Use the public Demo test account listed above. Production access and credentials are managed separately and are not part of this repository.
 
 ## Deployment
 
-The hosted application target is **FastAPI Cloud**. Production deployment is intentionally manual: merging to `main` or passing CI does not deploy the application or run production migrations. The release workflow verifies CI for the exact selected commit before deployment. See [`docs/deployment/FASTAPI_CLOUD.md`](docs/deployment/FASTAPI_CLOUD.md) · [Русская версия](docs/deployment/FASTAPI_CLOUD.ru.md) for secrets, environment configuration, release steps, smoke checks, and rollback constraints.
+The public Demo application is hosted on **FastAPI Cloud**. Production uses the same application technology stack but a separately managed hosting platform; its provider and deployment details are restricted and are not documented in this public README. See [`docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md`](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) for the environment boundary and infrastructure policy.
 
 ## Development
 
@@ -474,7 +449,7 @@ Typical services include:
 - Celery background worker
 - Ollama and local observability services where configured
 
-Hosted Production and Demo use the version baseline in [Production and Demo Infrastructure Baseline](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md). Local Compose is disposable and must not be treated as the hosted data plane. Pharmacy Edge is a separately governed deployment profile.
+Hosted Production and Demo follow the environment and version policy in the [infrastructure architecture documentation](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md). Local Compose is disposable and must not be treated as the hosted data plane. Pharmacy Edge is a separately governed deployment profile.
 
 Start the development stack with:
 
