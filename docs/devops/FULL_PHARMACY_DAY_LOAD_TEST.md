@@ -18,9 +18,10 @@ The existing opt-in k6 write scenario only creates/deletes an inventory record a
 - 200 visits as the canonical daily workload over 14 public operating hours (08:00–22:00); 300 visits as a higher-volume stress profile.
 - Six total staff members per pharmacy across the day, including manager and cashier roles. The three register operators are included within those six positions, not additional staff. The manager-office computer is additional equipment, not a seventh employee; only model an additional manager session when the approved shift/workflow model says it is active. The test uses six concurrent virtual users as a deliberately conservative concurrency approximation; it does not claim all staff are continuously active at once.
 - Customer-facing journeys include product listing/search, drug-reference search, and supported patient/order lookups when the required fixture IDs are configured.
-- Manager activity includes inventory/low-stock, dashboard, pharmacy and product views.
+- Manager activity includes inventory/low-stock, dashboard, pharmacy and product views, but is currently sampled inside the shared `pharmacy_day` VU pool; it is not a separately modelled manager-office workstation session.
+- The dedicated manager-office computer is counted in provisioned equipment totals only. Its active hours, manager login concurrency, workstation utilization and workload mix remain unapproved/unknown; do not add a seventh VU or infer concurrency from the extra computer.
 - A journey is one simulated visit, not one HTTP request.
-- Think time and endpoint mix are approximate and must be tuned against anonymized operational observations if available.
+- Think time and endpoint mix are approximate and must be tuned against anonymized operational observations if available. Before adding a separate manager-office VU, obtain the manager's actual usage window, concurrent-session assumptions and representative task mix.
 - All data and credentials must be synthetic.
 
 ## Preconditions
@@ -78,6 +79,8 @@ The runner writes a timestamped JSON stream to `artifacts/load-tests/`. Review k
 
 Report:
 - total simulated visits and completed iterations;
+- provisioned equipment: three POS stations and one manager-office workstation per pharmacy (four total workstation/computer positions);
+- active sessions/VUs by role and workstation type, where instrumented; explicitly mark manager-office session utilization as not modelled until its usage profile is approved;
 - request rate and completed visits per second;
 - p50/p90/p95/p99 request latency;
 - HTTP errors, failed checks and status distribution;
