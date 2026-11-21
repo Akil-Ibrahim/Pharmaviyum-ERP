@@ -12,8 +12,8 @@ env:
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: postgres
   POSTGRES_DB: pharmaviyum_test
-  IMAGE_NAME: pharmaviyum-crm
-  IMAGE_REPOSITORY: ghcr.io/akil-ibrahim/pharmaviyum-crm
+  IMAGE_NAME: pharmaviyum-erp
+  IMAGE_REPOSITORY: ghcr.io/akil-ibrahim/pharmaviyum-erp
 
 permissions:
   contents: read
@@ -55,6 +55,15 @@ jobs:
           else:
               raise AssertionError("Retired distribution pharmaviyum-crm is installed")
           PY
+      - name: Assert canonical OCI image repository
+        env:
+          EXPECTED_IMAGE_REPOSITORY: ghcr.io/akil-ibrahim/pharmaviyum-erp
+        run: |
+          test "${IMAGE_REPOSITORY}" = "${EXPECTED_IMAGE_REPOSITORY}"
+          if grep -R -n -E 'ghcr.io/(ibrahimengpy|akil-ibrahim)/pharmaviyum-crm' .github ansible; then
+            echo "Retired GHCR image reference found in active workflows or deployment configuration."
+            exit 1
+          fi
       - name: Discover Python package-provided agent skills
         run: |
           uvx --from "library-skills==0.0.21" library-skills scan --json > python-library-skills.json
