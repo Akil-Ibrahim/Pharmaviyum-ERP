@@ -6,7 +6,6 @@ import pytest
 
 from src.pharmaviyum.ai.agents.checkpointer import AgentCheckpointer
 
-
 REQUIRED_INDEXES = [
     "checkpoints_thread_id_idx",
     "checkpoint_blobs_thread_id_idx",
