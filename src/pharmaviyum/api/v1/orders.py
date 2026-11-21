@@ -21,6 +21,38 @@ from src.pharmaviyum.services.cache import cache_service
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
 
+def _patient_query(patient_id: int, pharmacy_id: int | None):
+    """Build a patient lookup constrained in SQL when a tenant is resolved."""
+    statement = select(Patient).where(Patient.id == patient_id)
+    if pharmacy_id is not None:
+        statement = statement.where(Patient.pharmacy_id == pharmacy_id)
+    return statement
+
+
+def _order_query(order_id: int, pharmacy_id: int | None):
+    """Build an order lookup constrained through its owning patient tenant."""
+    statement = (
+        select(Order)
+        .join(Patient, Patient.id == Order.patient_id)
+        .where(Order.id == order_id)
+    )
+    if pharmacy_id is not None:
+        statement = statement.where(Patient.pharmacy_id == pharmacy_id)
+    return statement
+
+
+def _purchase_query(receipt_number: str, pharmacy_id: int | None):
+    """Build a purchase lookup constrained through its owning patient tenant."""
+    statement = (
+        select(PatientPurchase)
+        .join(Patient, Patient.id == PatientPurchase.patient_id)
+        .where(PatientPurchase.receipt_number == receipt_number)
+    )
+    if pharmacy_id is not None:
+        statement = statement.where(Patient.pharmacy_id == pharmacy_id)
+    return statement
+
+
 @router.post("/", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
 async def create_order(
     data: OrderCreate,
@@ -30,9 +62,9 @@ async def create_order(
 ):
     scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
 
-    result = await db.execute(select(Patient).where(Patient.id == data.patient_id))
+    result = await db.execute(_patient_query(data.patient_id, scope))
     patient = result.scalar_one_or_none()
-    if not patient or (scope is not None and patient.pharmacy_id != scope):
+    if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     if not patient.is_active:
         raise HTTPException(status_code=409, detail="Patient is inactive")
@@ -57,13 +89,9 @@ async def get_order(
 ):
     scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
 
-    result = await db.execute(
-        select(Order)
-        .join(Patient, Patient.id == Order.patient_id)
-        .where(Order.id == order_id)
-    )
+    result = await db.execute(_order_query(order_id, scope))
     order = result.scalar_one_or_none()
-    if not order or (scope is not None and order.patient.pharmacy_id != scope):
+    if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 
@@ -78,13 +106,9 @@ async def update_order_status(
 ):
     scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
 
-    result = await db.execute(
-        select(Order)
-        .join(Patient, Patient.id == Order.patient_id)
-        .where(Order.id == order_id)
-    )
+    result = await db.execute(_order_query(order_id, scope))
     order = result.scalar_one_or_none()
-    if not order or (scope is not None and order.patient.pharmacy_id != scope):
+    if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
     if order.status != "pending":
@@ -100,11 +124,7 @@ async def update_order_status(
         # single order-level purchase so revenue enters the same canonical
         # PatientPurchase ledger without inventing product/batch data.
         receipt_number = f"ORDER-{order.id}"
-        purchase_result = await db.execute(
-            select(PatientPurchase).where(
-                PatientPurchase.receipt_number == receipt_number
-            )
-        )
+        purchase_result = await db.execute(_purchase_query(receipt_number, scope))
         if purchase_result.scalar_one_or_none() is None:
             db.add(
                 PatientPurchase(
@@ -120,9 +140,7 @@ async def update_order_status(
                     purchased_at=order.created_at,
                 )
             )
-            patient_result = await db.execute(
-                select(Patient).where(Patient.id == order.patient_id)
-            )
+            patient_result = await db.execute(_patient_query(order.patient_id, scope))
             patient: Patient = patient_result.scalar_one()
             patient.visit_count += 1
             patient.last_visit_date = order.created_at
