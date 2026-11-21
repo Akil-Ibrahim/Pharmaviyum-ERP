@@ -207,5 +207,5 @@ uv run uvicorn src.pharmaviyum.main:app --reload --port 8000
 1. Tenant isolation is enforced before retrieval and generation.
 2. LLM output is not trusted as a source of truth; retrieved sources and guardrails remain authoritative.
 3. Source citations use stable chunk identifiers.
-4. Public Demo deployment has one canonical release path in this repository; Production deployment is managed outside this public repository.
+4. Public Demo deployment has one canonical FastAPI Cloud release path. Production application deployment is automated through the public Ansible playbooks, while live host inventory, credentials and execution approvals remain restricted.
 5. Documentation describes implemented behavior, not planned infrastructure.
