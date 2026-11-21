@@ -30,7 +30,7 @@ This section explains not only which technologies are present, but why Pharmaviy
 | **Redis Python client 8.1.0** | Python client library for Redis-compatible servers. | Lets backend services and workers communicate with configured Redis-compatible infrastructure. |
 | **PostgreSQL full-text search** | Database-native lexical search over textual documents. | Complements vector similarity in hybrid RAG retrieval, helping exact medication terms, identifiers and phrases remain searchable. |
 
-**Environment boundary:** PostgreSQL 18 with pgvector 0.8.7 and Redis 8.8.4 are disposable development/CI Compose targets. The production Compose profile remains on PostgreSQL 16 and Redis 7; managed production services are not upgraded by changing local container images. The Pharmacy Edge profile uses its separately managed PostgreSQL/Valkey configuration. See [version policy](#version-policy-and-dependency-management).
+**Environment boundary:** Hosted Production uses Neon PostgreSQL 18; Demo requires a separate PostgreSQL 18 database. Hosted Production and Demo use separate managed Redis endpoints; Redis 8.8.4 is the compatibility target, while the actual provider-managed server version must be verified. Local development/CI Compose is disposable and must not be treated as hosted Production. The legacy `docker-compose.prod.yml` still contains PostgreSQL 16/Redis 7 and is explicitly unsupported for Production/Demo until separately migrated and revalidated. Pharmacy Edge remains a separately governed profile. See [version policy](#version-policy-and-dependency-management) and [the canonical hosted baseline](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md).
 
 ### 3. Background jobs and asynchronous processing
 
