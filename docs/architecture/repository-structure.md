@@ -29,7 +29,7 @@ This document defines the current repository layout and the ownership rules for 
 | `Dockerfile` | Application image build |
 | `scripts/start.sh` | Container startup and migration entrypoint |
 
-FastAPI Cloud is the public Demo hosting/deployment target only. Production uses a separately managed hosting platform and release process outside this public repository. Do not treat the root Compose files as the Demo deployment configuration. Do not merge FastAPI Cloud Demo, Pharmacy Edge, local development, and monitoring settings into one ambiguous Compose file.
+FastAPI Cloud is the public Demo hosting/deployment target only. Production is deployed to the pharmacy server through Ansible using the Pharmacy Edge profile. Keep real Production inventory, host access and per-site secrets outside Git. Do not treat the root Compose files as the Demo deployment configuration. Do not merge FastAPI Cloud Demo, Pharmacy Edge, local development, and monitoring settings into one ambiguous Compose file.
 
 ## Documentation and supporting material
 
