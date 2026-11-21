@@ -24,9 +24,8 @@ def test_migration_test_url_takes_precedence_for_isolated_ci_database():
     assert (
         select_migration_database_url(
             {
-                "ENVIRONMENT": "production",
+                "ENVIRONMENT": "testing",
                 "DATABASE_URL": "postgresql+asyncpg://runtime@db/app",
-                "MIGRATION_DATABASE_URL": "postgresql+asyncpg://migrator@db/app",
                 "MIGRATION_TEST_DATABASE_URL": "postgresql+asyncpg://ci@localhost/test_db",
             }
         )
@@ -75,3 +74,15 @@ def test_alembic_ini_url_remains_a_local_fallback():
         select_migration_database_url({}, config_fallback="postgresql://localhost/dev")
         == "postgresql://localhost/dev"
     )
+
+
+@pytest.mark.unit
+def test_production_rejects_migration_test_url_as_a_substitute_for_migration_role():
+    with pytest.raises(RuntimeError, match="MIGRATION_DATABASE_URL is required"):
+        select_migration_database_url(
+            {
+                "ENVIRONMENT": "production",
+                "DATABASE_URL": "postgresql+asyncpg://runtime@db/app",
+                "MIGRATION_TEST_DATABASE_URL": "postgresql+asyncpg://ci@localhost/test_db",
+            }
+        )
