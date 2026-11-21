@@ -34,10 +34,13 @@ The canonical integration branch is `main`. Changes are reviewed through pull re
 Use the demo environment to review the current Pharmaviyum system status:
 
 - **System Status:** https://pharmaviyum-erp.fastapicloud.dev/system-status
+
+**Public Demo credentials (test account only):**
+
 - **Demo login:** `admin`
 - **Demo password:** `V9#qL2!mR7@xP4$kT8&nW5zB`
 
-These credentials are published for demonstration access only. The demo environment must contain synthetic data only; do not store real patient, prescription, customer, or other confidential information in it.
+These credentials are for the isolated Demo environment only and must never be used in Production. The Demo environment must contain synthetic data only; do not store real patient, prescription, customer, or other confidential information in it.
 
 ## Contents
 
@@ -60,8 +63,7 @@ These credentials are published for demonstration access only. The demo environm
 - [Security & Data Handling](#security--data-handling)
 - [Project Status](#project-status)
 - [Documentation](#documentation)
-- [Demo / NDA Notice](#demo--nda-notice)
-- [License / NDA / Contact](#license--nda--contact)
+- [Project Status & Intellectual Property](#project-status--intellectual-property)
 
 ## Repository Structure
 
@@ -532,23 +534,26 @@ Browse the documentation in your preferred language:
 
 **Русские переводы остальных руководств готовятся.** Их актуальный статус указан в [русском индексе документации](docs/README.ru.md); английский оригинал доступен в [английском индексе](docs/README.md).
 
-## Demo / NDA Notice
+## Project Status & Intellectual Property
 
-This repository is intended for technical evaluation and architectural review.
+**Pharmaviyum — Public Demo Version**
 
-- Demo data is synthetic.
-- No real client data is included.
-- Proprietary production integrations and business logic are not exposed here.
-- Access and redistribution are subject to the applicable NDA and author permission.
+This repository contains a demonstration version of Pharmaviyum, showcasing its software architecture, pharmacy workflows, engineering practices, and AI capabilities.
 
-### Legal Notice
+- Intended for technical evaluation and portfolio demonstration.
+- Uses synthetic demonstration data.
+- May differ from the production implementation.
 
-This project and its contents are protected by applicable confidentiality and NDA obligations. The repository must not be copied, redistributed, or used outside the permitted evaluation scope without explicit written permission from the author.
+**Production Version**
 
-## License / NDA / Contact
+The production implementation is maintained separately and is not included in this repository. Access to the Production version, its proprietary source code, business logic, and confidential materials is restricted under applicable NDAs and confidentiality agreements.
 
-This repository is not currently presented as an open-source project. Usage, copying, redistribution, and access are governed by the applicable NDA and explicit permission from the author.
-
-For technical walkthroughs, architectural discussion, or evaluation access, contact the repository owner through the private project channel.
+**Copyright & Intellectual Property**
 
 © 2026 Pharmaviyum. All rights reserved.
+
+Both Demo and Production versions of Pharmaviyum, including their original source code, architecture, documentation, and related materials, are protected by applicable copyright and intellectual property laws.
+
+Public access to the Demo repository does not grant permission to reproduce, redistribute, modify, or commercially use its contents without explicit authorization. No license is granted unless expressly stated.
+
+**Disclaimer:** The Demo version is provided for technical evaluation and portfolio demonstration purposes and does not represent the complete Production system.
