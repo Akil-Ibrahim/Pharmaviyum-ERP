@@ -32,7 +32,7 @@ Configure the following as repository Actions secrets or secrets on the protecte
 - `MIGRATION_DATABASE_URL`: separate login URL for the production migration workflow only. It must target the same verified Neon host/database, use a different non-superuser role, and inherit the required privileges from `neondb_owner`. Do not configure it in FastAPI Cloud or use it for application traffic.
 - `VITE_CLERK_PUBLISHABLE_KEY`: optional build-time public frontend key when required by the current frontend sign-in configuration.
 
-Never put secret values in the repository, workflow inputs, issue comments, or chat. Never echo credentials into CI logs.
+Store `MIGRATION_DATABASE_URL` only as a secret in the protected GitHub Environment `production-pharmaviyum-erp` used by the migration workflow; do not add it as a repository-level secret or to FastAPI Cloud. Configure the other deploy secrets in the scope used by the deploy workflow. Never put secret values in the repository, workflow inputs, issue comments, or chat, and never echo credentials into CI logs.
 
 **No smoke-test username/password secrets are required.** The workflow creates a unique temporary pharmacist account with a random per-run password using the existing registration endpoint, tests login/profile/catalog access, and attempts to delete only that exact non-superuser account. Do not configure static `PHARMAVIYUM_SMOKE_USERNAME` / `PHARMAVIYUM_SMOKE_PASSWORD` values. Do not use default `admin/admin` credentials.
 
