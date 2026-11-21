@@ -180,6 +180,29 @@ class TestGetPatient:
         }.intersection(data)
 
     @pytest.mark.asyncio
+    async def test_get_patient_by_phone_returns_summary_only(
+        self,
+        authenticated_client: AsyncClient,
+        patient_factory,
+    ):
+        patient = await patient_factory.create(phone="+15551234567")
+
+        response = await authenticated_client.get(
+            f"/api/v1/patients/phone/{patient.phone}"
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == patient.id
+        assert not {
+            "conditions",
+            "allergies",
+            "insurances",
+            "consultations",
+            "purchases",
+        }.intersection(data)
+
+    @pytest.mark.asyncio
     async def test_get_patient_not_found(
         self,
         authenticated_client: AsyncClient,
