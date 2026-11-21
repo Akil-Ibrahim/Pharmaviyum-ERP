@@ -175,8 +175,6 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
         "general pharmacy answer",
     )
 
-    patient_a_messages = await memory.load(patient_a_scope)
-    patient_b_messages = await memory.load(patient_b_scope)
     # Exercise every persisted memory tier, not only the recent-message list.
     memory_scopes = {
         patient_a_scope: "patient A",
