@@ -6,9 +6,9 @@ import pytest
 from sqlalchemy import select
 
 from src.pharmaviyum.core.oauth2 import create_access_token
+from src.pharmaviyum.models.patients import PatientPurchase
 from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.pharmacy_membership import PharmacyMembership
-from src.pharmaviyum.models.patients import PatientPurchase
 from src.pharmaviyum.models.phi_access_audit import PHIAccessAudit
 from src.pharmaviyum.models.user import User
 
