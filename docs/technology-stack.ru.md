@@ -218,7 +218,7 @@ Frontend-зависимости определяются в следующих �
 
 - Production PostgreSQL работает локально на аптечном сервере в рамках утверждённого Ansible/Pharmacy Edge profile; Demo использует отдельную изолированную БД. Disposable development/CI Compose ориентирован на PostgreSQL 18 с pgvector 0.8.7.
 - Приложение использует Python-клиент pgvector и расширение PostgreSQL для векторного поиска, если оно включено; это отдельно версионируемые компоненты.
-- Hosted Production и Demo используют отдельные managed Redis endpoints. Redis 8.8.4 — целевая версия совместимости; точная версия managed-сервера контролируется провайдером и должна быть подтверждена по provider metadata до релиза. Disposable development/CI Compose использует Redis 8.8.4.
+- Production cache/queue services работают согласно утверждённому Ansible profile аптечного сервера; Demo использует изолированные supporting services. Фактические Production runtime versions проверяются непосредственно на аптечном сервере. Disposable development/CI Compose использует Redis 8.8.4.
 - Шаблон Ansible для Pharmacy Edge использует Valkey; этот серверный профиль намеренно отделён от локального Redis.
 - Локальный Compose перехватывает исходящую почту приложения в Mailpit (`http://localhost:8025`, SMTP `localhost:1025`). См. [доставку электронной почты и локальное тестирование](./development/email.md). Для Demo-доставки необходимо явно задать SMTP host, port, sender, TLS mode и credentials в окружении Demo. Production SMTP настраивается в отдельной управляемой среде хостинга.
 - Выбор LLM-провайдера/модели Mortarium задаётся переменными окружения. Текущий профиль развёртывания описан в [архитектуре AI](./ai_architecture.md) и [руководстве по FastAPI Cloud](./deployment/FASTAPI_CLOUD.md).
