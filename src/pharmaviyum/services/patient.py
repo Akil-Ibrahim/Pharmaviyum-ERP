@@ -64,11 +64,7 @@ class PatientService:
         await event_bus.emit(
             Event(
                 event_type="patient.created",
-                data={
-                    "patient_id": reloaded_patient.id,
-                    "pharmacy_id": pharmacy_id,
-                    "created_by": created_by,
-                },
+                data={"pharmacy_id": pharmacy_id},
             )
         )
         # Patient identifiers must not enter general application logs.
