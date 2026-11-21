@@ -327,19 +327,6 @@ class PatientRepository(BaseRepository[Patient]):
         )
         if not patient:
             return None
-        age = None
-        if patient.date_of_birth:
-            from datetime import date
-
-            today = date.today()
-            age = (
-                today.year
-                - patient.date_of_birth.year
-                - (
-                    (today.month, today.day)
-                    < (patient.date_of_birth.month, patient.date_of_birth.day)
-                )
-            )
         return {
             "patient_id": patient.id,
             "allergies": [allergy.allergen_name for allergy in patient.allergies],
