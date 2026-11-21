@@ -78,7 +78,10 @@ async def test_checkpoint_schema_verification_is_read_only():
     await checkpointer._verify_schema()
 
     assert len(cursor.statements) == 2
-    assert all(statement.lstrip().upper().startswith("SELECT") for statement in cursor.statements)
+    assert all(
+        statement.lstrip().upper().startswith("SELECT")
+        for statement in cursor.statements
+    )
 
 
 @pytest.mark.unit
