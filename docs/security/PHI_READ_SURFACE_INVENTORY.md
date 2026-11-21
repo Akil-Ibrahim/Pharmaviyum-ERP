@@ -42,14 +42,15 @@ Files: `src/pharmaviyum/schemas/patient.py`, `src/pharmaviyum/api/v1/endpoints/p
 
 File: `src/pharmaviyum/services/patient.py`
 
-- `create_patient` emits `patient.created` with `patient_id`, `full_name`, `phone`, `country`, and `created_by`.
-- `update_patient` emits `patient.updated` with patient ID and updated field names.
+- Before PR #385, `patient.created` included `patient_id`, `full_name`, `phone`, `country`, and `created_by`.
+- PR #385 removes `full_name`, `phone`, and `country`; it retains `patient_id`, `pharmacy_id`, and `created_by` for correlation/routing.
+- `patient.updated` continues to include patient ID and updated field names.
 - The event bus is process-local and best-effort (`src/pharmaviyum/services/event_bus.py`); its current generic emit log records event type and handler count, not the event payload.
 - The full subscriber graph and any external forwarding/logging behavior were not exhaustively traced.
 
 **Risk:** direct identifiers enter a generic application event channel. Future subscribers, telemetry exporters, or integrations could propagate them into systems without PHI controls.
 
-**Required action:** replace direct identifiers in generic events with opaque references and minimal metadata; use a dedicated, permissioned clinical event contract for any justified PHI-bearing workflow. Add tests that event payloads contain no name, phone, email, DOB, clinical notes, or prescription data. Audit subscribers before enabling external delivery.
+**Required action:** review whether the generic event needs a patient reference at all. A stable internal patient ID is linkable data, not an anonymous or cryptographically opaque identifier. If correlation is required, prefer a short-lived non-reversible event token with a separately authorized lookup path; use a dedicated permissioned clinical event contract for justified PHI-bearing workflows. Add tests that event payloads contain no name, phone, email, DOB, clinical notes, or prescription data. Audit subscribers before enabling external delivery.
 
 ### F-04 — Tenant-scoped mutation helpers perform an unscoped initial lookup
 
@@ -96,7 +97,7 @@ Files: `src/pharmaviyum/modules/auth/tenant.py`, `src/pharmaviyum/api/v1/endpoin
 - [ ] Every repository method with a pharmacy parameter demonstrably applies it, or is explicitly documented as global and access-controlled.
 - [ ] Two-tenant tests prove patient query and mutation isolation.
 - [ ] Patient response schemas expose only fields necessary for each workflow.
-- [ ] Generic events and telemetry contain no direct patient identifiers or clinical payloads.
+- [ ] Generic events and telemetry contain no direct patient identifiers or clinical payloads; stable patient IDs are treated as linkable data.
 - [ ] Superuser patient-level access is purpose-bound and audited.
 - [ ] All patient read surfaces have an owner, authorization policy, response classification, and audit behavior.
 
