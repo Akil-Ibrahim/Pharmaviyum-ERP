@@ -75,6 +75,17 @@ Files: `src/pharmaviyum/models/sync.py`, `src/pharmaviyum/api/v1/sync.py`, `docs
 
 **Security requirement:** general POS synchronization must not become a transport for patient records or clinical context. Keep patient/PHI events out of the POS event contract unless a separate, explicitly authorized clinical synchronization design is approved. Do not log raw Inbox payloads.
 
+### 1.6 Other patient-facing surfaces sampled
+
+A targeted source search found additional surfaces; these were sampled, not exhaustively audited:
+
+- `src/pharmaviyum/api/v1/endpoints/patients.py`: list, detail, phone lookup, statistics and AI-profile handlers call `resolve_pharmacy_scope` and pass the resolved scope into the patient service. For ordinary users, the helper requires an active membership or a single unambiguous membership. For superusers, an omitted `pharmacy_id` intentionally remains global. Therefore the patient API is tenant-aware for ordinary users, but platform-wide superuser reads remain possible and need a separate governed support policy.
+- `src/pharmaviyum/ai/mcp/tools/patient_history.py`: the patient lookup and prescription/order count queries explicitly filter by the trusted MCP context's `pharmacy_id`; tool input alone does not select the tenant. This is a positive control in the inspected path, but it is not a substitute for access auditing.
+- `src/pharmaviyum/api/v1/orders.py`: order reads resolve a pharmacy scope and compare the joined patient's pharmacy. Superusers can remain global when no scope is supplied. Order creation and status mutation are superuser-only and should be included in the privileged-access review.
+- `src/pharmaviyum/api/v1/ai.py`: AI requests require an authorized pharmacy context and validate an optional patient ID against that pharmacy before invoking the harness; session IDs are HMAC-scoped to pharmacy, user and patient. This is a positive authorization/session-isolation control, but the source does not demonstrate a dedicated PHI read audit event.
+
+The repository also contains patient repositories and dashboard aggregates. Their complete call graph, query filters, response fields and role policy remain part of the required exhaustive inventory. Search results alone are not proof that every caller is safe.
+
 ## 2. Required target policy
 
 ### 2.1 Authorization decision
