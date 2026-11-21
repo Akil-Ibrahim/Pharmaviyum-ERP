@@ -59,7 +59,7 @@ Checkout сохраняет товарные строки продажи, сос
 
 ### 3.3 История пациента — защищённая поверхность доступа
 
-Endpoint списка покупок пациентов требует superuser и в проверенной реализации возвращает глобальную выборку. Нельзя открывать эту историю обычному фармацевту без устранения проблем pharmacy/patient scope, authorization и audit. Связанные source-level findings отслеживаются отдельно в PHI governance work.
+Endpoint списка покупок пациентов требует `CurrentSuperuser`, но его запрос напрямую выбирает `PatientPurchase`, не присоединяет `Patient` и не ограничивает выборку по `Patient.pharmacy_id`; параметра выбора конкретного пациента также нет. Поле `Patient.pharmacy_id` допускает `NULL`. Это глобальный административный endpoint, а не API истории пациента с ограничением по аптеке. Проверка superuser ограничивает круг вызывающих, поэтому этот аудит не утверждает, что обычный фармацевт уже имеет доступ. Однако до вывода истории пациента в интерфейс фармацевта необходимо реализовать tenant-scoped authorization, явный выбор пациента, правила обработки legacy/unassigned пациентов и audit. Добавить negative tests, доказывающие, что одна аптека не может получить покупки пациентов другой аптеки.
 
 ### 3.4 Пункт меню не означает готовый workflow
 
@@ -69,7 +69,7 @@ Endpoint списка покупок пациентов требует superuser
 
 1. **P0 — Восстановить рабочие UI-поверхности** POS и Pharmacist Workspace, подключить существующие API-контракты и проверить browser-level journeys.
 2. **P0 — Связать пациента и рецепт с отпуском:** определить patient/prescription association, server-side validation, профессиональную проверку и audit до отпуска.
-3. **P0 — Закрыть доступ к данным пациентов:** устранить patient-purchase и LangGraph session-scope gaps; добавить negative cross-pharmacy и cross-patient tests.
+3. **P0 — Закрыть доступ к данным пациентов:** устранить отсутствие tenant-scoped доступа к patient purchases и завершить staged-проверку LangGraph patient-session isolation; добавить negative cross-pharmacy и cross-patient tests.
 4. **P1 — Реализовать procurement lifecycle:** purchase order, строки поставщика, ссылки на накладную/invoice, частичная приёмка, расхождения и аудируемое проведение серий.
 5. **P1 — Возвраты, refunds, voids и обратные движения остатков** с idempotent compensating movements.
 6. **P1 — Инвентаризация и межфилиальные transfers** с подтверждением отправки/приёмки, расхождениями и tenant-safe concurrency.
