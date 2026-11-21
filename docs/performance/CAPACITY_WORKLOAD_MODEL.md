@@ -10,11 +10,11 @@
 |---|---:|---:|
 | Pharmacies | 1 | 100 |
 | Employees (all roles) | 6 | 600 |
-| Public operating hours | 14 hours/day (08:00–22:00 local time) |
+| Public operating hours | 14 hours/day (08:00–22:00 local pharmacy time) | 14 hours/day (08:00–22:00 local time) |
 | POS cash registers / checkout stations | 3 | 300 |
 | Customer visits per operating day | 200 | 20,000 |
 
-The six employees are total staff, not six pharmacists. The pharmacist/manager/cashier role split, shift overlap and number of simultaneously active staff sessions are not specified by the canonical benchmark. The three cashier/register workflows are included within the six staff positions, not additional employees. Do not invent the role split.
+The six employees are total staff, not six pharmacists. The pharmacist/manager/cashier role split is not specified by the canonical benchmark. The existing Stage 1 scenario proposes a 2-on/2-off roster, up to three on-shift pharmacy staff plus a manager, and opening preparation from 07:30; treat these as provisional workload assumptions until pharmacy operations confirms them. The three register workflows are included within the six staff positions, not additional employees.
 
 Three POS stations are physical/logical checkout capacity per pharmacy. This is not proof that three checkouts are continuously active, nor that 300 network-wide transactions occur at the same instant. A three-cashier-per-pharmacy concurrent checkout test is a deliberate stress scenario to validate register concurrency; 300 concurrent register sessions across the network is an upper-bound synthetic profile, not a forecast.
 
@@ -33,11 +33,11 @@ Three POS stations are physical/logical checkout capacity per pharmacy. This is 
 | Dimension | Current state | Required evidence / decision |
 |---|---|---|
 | Public operating hours | 14 hours/day (08:00–22:00 local pharmacy time) | Operating days and any seasonal exceptions still require business confirmation; model opening/closing work separately. |
-| Arrival distribution and peak periods | NOT SPECIFIED | Obtain anonymized pilot/operational observations; document weekday/seasonality and peak profile. |
+| Arrival distribution and peak periods | NOT SPECIFIED | Arithmetic mean is 200 / 14 ≈ 14.3 visits/hour/pharmacy (≈1,429/hour across 100 pharmacies); this is not an arrival curve. The older 30–40 visits/hour/pharmacy peak is provisional only. Obtain anonymized pilot/operational observations; document weekday/seasonality and peak profile. |
 | Visit-to-sale conversion | NOT SPECIFIED | Measure or approve a synthetic scenario ratio; do not assume every visitor buys. |
 | Average basket / sale lines | NOT SPECIFIED | Define representative basket-size distribution. |
 | Pharmacist vs other staff roles | NOT SPECIFIED | Confirm role split within six employees per pharmacy. |
-| Shift overlap and active staff sessions | NOT SPECIFIED | Confirm schedules and concurrent sessions. |
+| Shift overlap and active staff sessions | PROVISIONAL | Stage 1 proposes 2-on/2-off, three on-shift pharmacy staff plus a manager (up to 4 staff sessions); confirm roster and overlap with operations before calling it representative. |
 | Register utilization / concurrent checkout | NOT SPECIFIED | Observe pilot telemetry; retain 3 simultaneous cashiers/pharmacy as a controlled stress case. |
 | API calls per workflow | NOT SPECIFIED | Derive from traced, versioned user journeys, not guessed multipliers. |
 | AI requests per visit / task | NOT SPECIFIED | Measure separately; isolate model latency, quota and cost. |
@@ -94,11 +94,15 @@ Never describe local/Codespaces results as production capacity. Do not promote t
 
 The repository also contains older single-pharmacy load-test scenarios that mention six staff, 200–300 visits, a 14-hour opening window and provisional peak-hour rates. Six staff and the 14-hour window now align with the canonical benchmark. The 200 visits/day value is the canonical baseline; 300 visits/day remains a higher-volume stress profile, not the baseline. Provisional peak-hour rates are assumptions, not measured traffic.
 
-## 8. Exit criteria
+## 8. Network target and intermediate milestone
+
+The canonical target is 100 pharmacies, 600 rostered employees, 300 POS stations and 20,000 visits per operating day. The existing 50-pharmacy profile is an intermediate Stage B milestone (10,000 visits/day and 150 POS stations), not the final network target. Progress to 100 only after one-pharmacy correctness and 50-pharmacy synchronization/isolation gates pass. Do not assume all 100 branches peak simultaneously without an approved arrival correlation model.
+
+## 9. Exit criteria
 
 Capacity planning is ready for representative execution only when the business owner has approved the unresolved workload dimensions in section 3. A capacity claim requires successful staged execution, workload representativeness review, infrastructure saturation analysis, repeatability and retained artifacts. Passing a synthetic stress test does not itself prove clinical correctness, tenant isolation or production readiness; those remain independent release gates.
 
-## 9. Current k6 harness constraints (source-verified)
+## 10. Current k6 harness constraints (source-verified)
 
 The current `tests/load/k6/stage1_baseline.js` and `scripts/run_stage1_load_test.sh` have these boundaries:
 
