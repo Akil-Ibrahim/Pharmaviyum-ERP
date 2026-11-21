@@ -33,7 +33,7 @@ The supported environment variables are documented in .env.example:
 - SMTP_TIMEOUT_SECONDS
 - EMAILS_FROM
 
-Demo SMTP configuration must be supplied through the isolated FastAPI Cloud Demo environment, not committed to Git. Production SMTP configuration belongs to the separately managed Production hosting environment and is maintained outside this public repository. If email is enabled in either environment, the application requires an SMTP host, TLS and an HTTPS APP_URL. Set sender addresses and provider credentials independently per environment; never reuse Demo credentials in Production.
+Demo SMTP configuration must be supplied through the isolated FastAPI Cloud Demo environment, not committed to Git. Production SMTP is configured on the pharmacy server through its protected Ansible-managed environment; real SMTP credentials remain outside Git. If email is enabled in either environment, the application requires an SMTP host, TLS and an HTTPS APP_URL. Set sender addresses and provider credentials independently per environment; never reuse Demo credentials in Production.
 
 ## Delivery semantics
 
