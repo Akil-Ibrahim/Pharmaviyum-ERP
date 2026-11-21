@@ -95,15 +95,13 @@ def test_phi_access_audit_downgrade_refuses_to_delete_retained_evidence():
     try:
         with engine.begin() as connection:
             connection.execute(
-                text(
-                    """
+                text("""
                     INSERT INTO phi_access_audits
                         (actor_id, pharmacy_id, patient_id, action, decision, purpose, request_id)
                     VALUES
                         (9911, 9912, 9913, 'read_ai_patient_profile',
                          'allowed', 'dispensing_review', :request_id)
-                    """
-                ),
+                    """),
                 {"request_id": request_id},
             )
 
@@ -120,19 +118,15 @@ def test_phi_access_audit_downgrade_refuses_to_delete_retained_evidence():
                 ),
                 {"request_id": request_id},
             )
-            trigger_count = connection.scalar(
-                text(
-                    """
-                    SELECT count(*)
-                    FROM pg_trigger
-                    WHERE tgname IN (
-                        'trg_phi_access_audits_append_only',
-                        'trg_phi_access_audits_no_truncate'
-                    )
-                    AND NOT tgisinternal
-                    """
+            trigger_count = connection.scalar(text("""
+                SELECT count(*)
+                FROM pg_trigger
+                WHERE tgname IN (
+                    'trg_phi_access_audits_append_only',
+                    'trg_phi_access_audits_no_truncate'
                 )
-            )
+                AND NOT tgisinternal
+                """))
 
         assert retained_count == 1
         assert trigger_count == 2
