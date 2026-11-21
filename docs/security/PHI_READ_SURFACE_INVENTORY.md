@@ -75,6 +75,20 @@ Files: `src/pharmaviyum/modules/auth/tenant.py`, `src/pharmaviyum/api/v1/endpoin
 
 **Required action:** implement a separate platform-support authorization decision (grant, reason, expiry, permitted action, patient/tenant scope) and mandatory audit for privileged patient-level access. Do not simply remove superuser support without reviewing operational workflows.
 
+### F-06 — Order and purchase lookups validate tenant ownership after fetching rows
+
+File: `src/pharmaviyum/api/v1/orders.py`
+
+- The order create path originally loaded Patient by ID only, then compared `patient.pharmacy_id` in Python.
+- Order detail and status-update paths joined Patient but filtered only by `Order.id`; tenant ownership was checked after materializing the Order/Patient result.
+- Order completion reloaded Patient by ID without a pharmacy predicate.
+- The duplicate-receipt lookup filtered by receipt number without joining the owning Patient tenant.
+- These post-fetch checks denied mismatched non-null scopes before the guarded write, but did not enforce tenant isolation at the database query boundary.
+
+**Risk:** cross-tenant rows could be materialized in the application process before authorization rejection. The receipt lookup also relied on globally unique receipt naming rather than an explicit tenant predicate. This review does not establish a production disclosure or cross-tenant mutation.
+
+**Remediation in progress:** use shared query builders that add `Patient.pharmacy_id == scope` to patient, order, and purchase lookups whenever a tenant scope is resolved. Preserve the existing global-superuser behavior when scope is `None`. SQL compilation regression tests verify the predicates are present; database-backed two-tenant integration coverage remains required.
+
 ## Positive controls observed
 
 - Ordinary users are resolved through active `PharmacyMembership` in `resolve_pharmacy_scope`; ambiguous multiple memberships require an explicit pharmacy ID.
