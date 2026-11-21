@@ -1,7 +1,0 @@
-# Local Ansible state and secrets
-vault.key
-*.retry
-ansible.log
-.venv/
-.cache/
-__pycache__/
