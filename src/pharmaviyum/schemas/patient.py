@@ -110,54 +110,38 @@ class PatientConsultationResponse(BaseModel):
     updated_at: datetime
 
 
-class PatientResponse(PatientBase):
-    """Patient representation with system-managed aggregate fields."""
+class PatientSummaryResponse(PatientBase):
+    """Minimum-necessary demographic and operational patient representation."""
 
     id: int
     visit_count: int = Field(default=0, ge=0)
     full_name: str = Field(..., max_length=200)
     created_at: datetime
     updated_at: datetime
-    conditions: list[PatientConditionResponse] = []
-    allergies: list[PatientAllergyResponse] = []
-    insurances: list[PatientInsuranceResponse] = []
-    consultations: list[PatientConsultationResponse] = []
-    purchases: list[PatientPurchaseResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class PatientListResponse(BaseModel):
-    id: int
-    first_name: str
-    last_name: str
-    full_name: str
-    phone: str
-    email: Optional[EmailStr] = None
-    city: Optional[str] = None
-    country: str
-    customer_category: str
-    loyalty_tier: str
-    loyalty_points: int = 0
-    visit_count: int = 0
-    is_active: bool = True
-    created_at: datetime
-    updated_at: datetime
+class PatientResponse(PatientSummaryResponse):
+    """Legacy broad patient representation; avoid for new API contracts."""
 
-    model_config = ConfigDict(from_attributes=True)
+    conditions: list[PatientConditionResponse] = Field(default_factory=list)
+    allergies: list[PatientAllergyResponse] = Field(default_factory=list)
+    insurances: list[PatientInsuranceResponse] = Field(default_factory=list)
+    consultations: list[PatientConsultationResponse] = Field(default_factory=list)
+    purchases: list[PatientPurchaseResponse] = Field(default_factory=list)
+
+
+class PatientListResponse(PatientSummaryResponse):
+    """Patient list representation; intentionally excludes clinical relations."""
 
 
 class PatientAIProfile(BaseModel):
+    """Purpose-bound clinical safety context for an authorized AI workflow."""
+
     patient_id: int
-    full_name: str
-    phone: str
-    city: Optional[str] = None
-    country: str = "US"
-    customer_category: str = "General"
-    loyalty_tier: str = "Bronze"
-    allergies: list[str] = []
-    conditions: list[str] = []
-    insurances: list[str] = []
+    allergies: list[str] = Field(default_factory=list)
+    conditions: list[str] = Field(default_factory=list)
     risk_summary: str = ""
 
     model_config = ConfigDict(from_attributes=True)
