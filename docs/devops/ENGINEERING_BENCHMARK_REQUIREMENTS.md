@@ -319,3 +319,10 @@ For each metric include:
 | Follow-up | Owner/action/priority |
 
 The report must end with a prioritized remediation backlog and an explicit statement of what is and is not proven. No production-readiness claim may be based solely on a static code audit or a Codespaces run.
+
+
+## 14. Business KPI traceability
+
+The business outcome model and KPI definitions are maintained in [PHARMACY_BUSINESS_VALUE_AND_KPIS.md](../workflows/PHARMACY_BUSINESS_VALUE_AND_KPIS.md). The canonical pharmacy workflows are specified in [pharmacy-workflow.en.md](../workflows/pharmacy-workflow.en.md), with domain context informed by the [AI in the Pharmacy article](https://medium.com/@ibrahimengpy/ai-in-the-pharmacy-how-technology-can-support-the-pharmacist-a755ba3a2c9a).
+
+This benchmark remains the **primary engineering requirements and measurement source**. It governs technical test methodology, evidence labels, quality gates and benchmark reporting. Business KPIs must be linked to observable events and validated data sources; technical benchmark scores must not be presented as business outcomes. Conversely, the existence of a feature or a passing synthetic test does not prove business impact. Do not publish NDA-covered financial results. Do not claim measured improvements without reproducible evidence under the reporting rules in this document.
