@@ -215,16 +215,24 @@ The initial rollout target is 1–10 pharmacies. The architecture and documentat
 
 ## 8. Database migrations and data safety
 
-The canonical Alembic tree is at the repository root:
+The canonical Alembic tree is at the repository root. The public Demo deployment workflow does not apply migrations.
 
-```text
-alembic/
-alembic.ini
-```
+Demo schema changes require a separately reviewed and approved operation against the isolated Demo database, a verified backup/restore path and post-migration validation. Never use a Production database URL or migration credential for Demo.
 
-The FastAPI Cloud deploy workflow does not apply migrations. Run migrations only as a separately approved release operation, after reviewing the migration and verifying a restorable backup. Use the production database URL supplied through a secure environment, not a committed file or chat message.
+Production database migrations and their automation are maintained outside this public repository. Do not add Production database endpoints, migration secrets or privileged Production operations to public workflows.
 
-A newly provisioned database is empty. A successful app deployment does not import a drug catalog, create inventory, or restore business data. Seed/import catalog data only through a separately reviewed, idempotent import procedure. Do not treat an empty catalog smoke-test failure as a deployment-platform failure.
+A newly provisioned Demo database is empty. A successful app deployment does not import a drug catalog, create inventory or restore business data. Seed/import catalog data only through a separately reviewed, idempotent procedure using synthetic data.
+
+## 9. Health checks and Demo release verification
+
+Check the public Demo readiness, not just process liveness:
+
+curl --fail https://pharmaviyum-erp.fastapicloud.dev/health
+curl --fail https://pharmaviyum-erp.fastapicloud.dev/ready
+
+The expected ready response reports PostgreSQL, Redis and AI initialization as healthy. The Demo deployment workflow also verifies the SPA routes, runtime identity, invalid-credential handling and protected POS access.
+
+A green CI run does not prove that Demo provider quota, database content, catalog coverage or every pharmacy workflow is correct. Complete the live Demo smoke checks before declaring a Demo release successful. Production health checks and release evidence belong to the separately managed Production environment.
 
 ## 9. Health checks and release verification
 
@@ -238,6 +246,19 @@ curl --fail https://pharmaviyum-erp-crm.fastapicloud.dev/ready
 The expected ready response reports PostgreSQL, Redis, and AI initialization as healthy. The deployment smoke workflow also verifies the SPA route `/settings/appearance`, authentication negative/positive paths, protected POS search, and non-empty Omeprazole catalog/product search results.
 
 A green CI run does not prove that production secrets, provider quota, database content, or live pharmacy workflows are correct. Complete the live smoke checks before declaring the release successful.
+
+## 10. Security rules
+
+- Never commit .env files, API keys, tokens, passwords or database connection strings.
+- Use unique credentials per environment and per pharmacy/Edge node.
+- Keep Demo secrets in the protected Demo environment and Demo hosting platform. Production secrets are managed outside this public repository.
+- Do not use default or shared admin credentials.
+- Rotate any credential suspected of exposure.
+- Restrict database and Redis network access to trusted services.
+- Do not put secrets, patient identifiers, prescriptions or raw clinical content in logs, traces, test fixtures or documentation.
+- Keep AI/provider failures isolated from POS and core ERP transactions.
+- Back up before schema changes and test restore procedures regularly.
+- Do not bypass branch protection, CI, environment approvals or release gates.
 
 ## 10. Security rules
 
