@@ -6,7 +6,6 @@ import pytest
 
 from src.pharmaviyum.ai.mortarium_rag.vector_store import PgVectorStore
 
-
 REQUIRED_INDEXES = {
     "idx_document_chunks_embedding",
     "idx_document_chunks_metadata",
