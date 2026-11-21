@@ -45,7 +45,7 @@ File: `src/pharmaviyum/services/patient.py`
 - Before PR #385, `patient.created` included `patient_id`, `full_name`, `phone`, `country`, and `created_by`.
 - PR #385 removes `full_name`, `phone`, and `country`; it retains `patient_id`, `pharmacy_id`, and `created_by` for correlation/routing.
 - `patient.updated` continues to include patient ID and updated field names.
-- The event bus is process-local and best-effort (`src/pharmaviyum/services/event_bus.py`); its current generic emit log records event type and handler count, not the event payload.
+- The event bus is process-local and best-effort (`src/pharmaviyum/services/event_bus.py`); its generic emit log records event type and handler count, not payload. The patient creation service also previously logged the stable patient ID; PR #385 removes that identifier from the application log.
 - The full subscriber graph and any external forwarding/logging behavior were not exhaustively traced.
 
 **Risk:** direct identifiers enter a generic application event channel. Future subscribers, telemetry exporters, or integrations could propagate them into systems without PHI controls.
