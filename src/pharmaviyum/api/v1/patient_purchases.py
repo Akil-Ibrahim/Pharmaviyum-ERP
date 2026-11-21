@@ -117,9 +117,13 @@ async def get_pharmacist_patient_history(
     if membership is None:
         db.add(
             PHIAccessAudit(
-                actor_id=current_user.id, pharmacy_id=pharmacy_id,
-                patient_id=patient_id, action="read_patient_history",
-                decision="denied", purpose=purpose, request_id=_request_id(request),
+                actor_id=current_user.id,
+                pharmacy_id=pharmacy_id,
+                patient_id=patient_id,
+                action="read_patient_history",
+                decision="denied",
+                purpose=purpose,
+                request_id=_request_id(request),
             )
         )
         await db.commit()
