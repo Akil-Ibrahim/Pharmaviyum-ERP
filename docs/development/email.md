@@ -33,7 +33,7 @@ The supported environment variables are documented in .env.example:
 - SMTP_TIMEOUT_SECONDS
 - EMAILS_FROM
 
-Production configuration must be supplied through the FastAPI Cloud environment, not committed to Git. If production email is enabled, the application requires an SMTP host, TLS, and an HTTPS APP_URL. Set the sender address and provider credentials according to the selected SMTP provider. This code change does not enable production email or set production secrets.
+Demo SMTP configuration must be supplied through the isolated FastAPI Cloud Demo environment, not committed to Git. Production SMTP configuration belongs to the separately managed Production hosting environment and is maintained outside this public repository. If email is enabled in either environment, the application requires an SMTP host, TLS and an HTTPS APP_URL. Set sender addresses and provider credentials independently per environment; never reuse Demo credentials in Production.
 
 ## Delivery semantics
 
