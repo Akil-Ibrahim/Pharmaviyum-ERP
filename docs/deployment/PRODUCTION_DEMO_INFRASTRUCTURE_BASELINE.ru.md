@@ -1,26 +1,33 @@
-## Единый baseline инфраструктуры Production и Demo
+## Граница инфраструктуры Production и Demo
 
-Это каноническая политика версий инфраструктуры для hosted Production и Demo. Не переносите устаревшие версии БД, Redis или ссылки на выведенных из эксплуатации провайдеров из исторических заметок в новые deployment-конфигурации.
+Это каноническая политика развёртывания Pharmaviyum. Она разделяет публичную демонстрационную среду и Production-развёртывание на аптечном сервере. Описанная целевая конфигурация не является доказательством завершённого deployment.
 
-| Компонент | Baseline Production | Baseline Demo | Подтверждение / правило |
-|---|---|---|---|
-| Размещение приложения | Отдельно управляемый хостинг; сведения о провайдере ограничены и не относятся к FastAPI Cloud | FastAPI Cloud | Demo развёртывается защищённым workflow с ручным approval. Хостинг Production управляется отдельно. |
-| PostgreSQL | Neon PostgreSQL 18, отдельно управляемый Production-проект и branch `production`; идентификаторы проекта и данные подключения относятся к закрытой информации | Отдельная изолированная БД/branch PostgreSQL 18 | Production-проект и major-версия проверены в Neon 21.11.2026. Изоляцию Demo и фактическую версию её сервера необходимо проверить до заявления о готовности Demo. |
-| Векторное расширение | Целевая версия pgvector 0.8.7; фактическую версию проверить в hosted-БД | Целевая версия pgvector 0.8.7; фактическую версию проверить | Версия PostgreSQL и версия расширения pgvector — разные параметры. |
-| Redis | Managed Redis integration; целевая совместимая версия Redis 8.8.4, если провайдер позволяет зафиксировать её | Отдельная managed Redis integration; та же цель Redis 8.8.4 | Точная версия managed-сервера контролируется провайдером и здесь независимо не подтверждена. Проверять через `INFO server` или metadata провайдера; не выдавать target за фактическую версию. |
-| Redis-клиент приложения | redis-py 8.1.0 | redis-py 8.1.0 | Зафиксирован в `pyproject.toml` и `uv.lock`. |
-| Python runtime | CPython 3.15.0 | CPython 3.15.0 | Зафиксирован в `pyproject.toml`, `.python-version` и deployment checks. |
+| Область | Публичная Demo | Production |
+|---|---|---|
+| Размещение приложения | FastAPI Cloud | Аптечный сервер / Pharmacy Edge; конфигурация и развёртывание через Ansible |
+| Выпуск приложения | Вручную одобряемый GitHub Actions Demo workflow из `main` | Проверенный immutable image/release, развёртываемый утверждённой процедурой Ansible |
+| Runtime приложения | FastAPI API и React frontend | Тот же технологический стек приложения, упакованный для runtime аптечного сервера |
+| Сервисы данных | Отдельная изолированная Demo PostgreSQL и необходимые Demo cache/worker services | Локальные PostgreSQL и cache/worker services на аптечном сервере согласно утверждённому Compose/Ansible profile |
+| Секреты | Только Demo-переменные FastAPI Cloud и secrets защищённого GitHub Environment | Per-site credentials из Ansible Vault или утверждённого secret manager; никогда не хранить в Git |
+| Данные | Только синтетические демонстрационные данные | Операционные данные аптеки под соответствующими мерами безопасности, приватности, резервирования и хранения |
+| AI profile | Demo-профиль QwenCloud, если настроен | Локальный Ollama — документированная цель; требуются проверка оборудования и приёмка модели |
 
-### Разделение окружений и правила данных
+## Правила deployment и изоляции
 
-- Production и Demo обязаны использовать разные database credentials, экземпляры/branches БД, Redis credentials/endpoints, signing secrets и provider/API credentials. Demo никогда не должен подключаться к Production БД или Redis namespace.
-- В Demo разрешены только синтетические данные. Запрещено импортировать реальные данные пациентов, рецепты, клиентов, аптечные транзакции и конфиденциальную бизнес-информацию.
-- Neon Production — авторитетная hosted-реляционная БД. Локальный PostgreSQL в Compose предназначен только для disposable development/CI и не является Production-БД.
-- Managed Redis — эфемерный слой cache/coordination, а не авторитетный ledger продаж, отпуска, остатков или аудита. Постоянные бизнес-записи хранятся в PostgreSQL.
-- Connection strings и credentials Demo хранятся только в FastAPI Cloud environment variables и защищённых secrets workflow развёртывания Demo. Credentials Production должны находиться исключительно в отдельном закрытом контуре управления секретами. Запрещено публиковать credentials и URL подключения.
-- Целевая версия не доказывает, что именно она запущена. Для каждого окружения подтвердите фактическую версию сервера, версию расширения, connectivity, backup/PITR policy и readiness.
-- Смена major-версии PostgreSQL требует отдельного утверждённого плана backup, проверки совместимости, миграции, тестового восстановления, maintenance window и rollback. Нельзя подключать существующий data volume к другой major-версии PostgreSQL.
-- Не используйте выведенную из эксплуатации инфраструктуру Render как действующую зависимость Production или Demo.
+- FastAPI Cloud используется исключительно для публичной Demo. Ни одно Production-приложение, БД, миграция или release workflow не должны быть направлены на FastAPI Cloud.
+- Production-приложение развёртывается на аптечном сервере через Ansible. GitHub Actions может проверять код, собирать и публиковать immutable artifacts и тестировать Ansible, но не должен незаметно подключаться по SSH к действующему аптечному серверу или развёртывать там релиз.
+- Demo и Production обязаны иметь отдельные экземпляры БД, credentials, cache endpoints/namespaces, signing keys, API credentials и runtime-конфигурацию. Demo никогда не подключается к Production аптечному серверу или Production data store.
+- В Demo допускаются только синтетические данные. Запрещено помещать туда реальные сведения о пациентах, рецептах, клиентах, аптечных транзакциях или конфиденциальную бизнес-информацию.
+- Аптечный сервер является локальной операционной границей своей аптеки. POS, inventory и другие разрешённые детерминированные процессы не должны зависеть от FastAPI Cloud или WAN для завершения локальных транзакций.
+- Ansible отвечает за конфигурацию инфраструктуры и оркестрацию релизов; он не реализует аптечную бизнес-логику и не синхронизирует бизнес-транзакции.
+- Production secrets и реальные inventory/host details должны оставаться в защищённых operator-controlled inventory и secret-management системах. Публичные примеры должны содержать placeholders.
+- Нельзя объявлять Production rollout завершённым только потому, что существуют playbooks, inventories или CI checks. Отдельно фиксируются результаты lab/pilot, readiness, backup/restore, rollback и приёмки площадки.
+- Не используйте выведенную из эксплуатации инфраструктуру Render как действующую зависимость.
 
-Запись live-проверки обновляется при каждой замене hosted-БД или cache. См. [руководство по размещению Demo в FastAPI Cloud](FASTAPI_CLOUD.ru.md) и отдельно управляемый [Production operations runbook](../operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md).
+## Политика версий и проверки
 
+Версии приложения и сервисов должны быть зафиксированы в dependency lockfiles, container definitions и Ansible variables соответствующего deployment profile. Версии PostgreSQL, pgvector, Redis/Valkey, Python, Docker Engine и Compose необходимо сверять с фактическим runtime, прежде чем указывать их как развёрнутые. Целевая совместимость не равна наблюдаемой версии сервера.
+
+Смена major-версии PostgreSQL требует утверждённого плана backup, проверки совместимости, миграции, тестового восстановления, maintenance window и rollback. Нельзя подключать существующий data volume к другой major-версии PostgreSQL.
+
+См. [руководство Demo FastAPI Cloud](FASTAPI_CLOUD.ru.md), [план Ansible rollout Pharmacy Edge](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md), [руководство Ansible](../devops/ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md) и [Production operations runbook](../operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md).
