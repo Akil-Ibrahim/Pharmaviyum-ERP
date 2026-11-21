@@ -14,7 +14,7 @@
 
 | Компонент | Ответственность | Проверка |
 |---|---|---|
-| Production web application (отдельно управляемый хостинг) | API и frontend | Deployment state, logs, /health, /ready и authenticated smoke tests; platform-specific procedures находятся за пределами репозитория |
+| Стек приложения на аптечном сервере (Ansible-managed) | API и frontend локальной аптеки | Результат Ansible rollout, immutable image digest, состояние контейнеров, logs, /health, /ready и безопасные аптечные smoke tests |
 | PostgreSQL | Транзакционные данные и checkpoints | Состояние провайдера, connections, latency, возраст backup и доказательства restore |
 | Redis-compatible service | Cache и dialogue memory | Доступность, memory/connection limits, evictions и latency |
 | Celery worker | Асинхронные задачи, например ingestion | Worker health, queue depth, возраст задач, retries и failed tasks |
