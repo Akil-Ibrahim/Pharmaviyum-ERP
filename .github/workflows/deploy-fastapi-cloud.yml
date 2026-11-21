@@ -191,8 +191,9 @@ jobs:
         # Demo smoke tests remain the authoritative rollout gate.
         run: uv run fastapi cloud deploy . --no-wait
         env:
-          FASTAPI_CLOUD_DEMO_TOKEN: ${{ secrets.FASTAPI_CLOUD_DEMO_TOKEN }}
-          FASTAPI_CLOUD_DEMO_APP_ID: ${{ secrets.FASTAPI_CLOUD_DEMO_APP_ID }}
+          # Map Demo-only GitHub secrets to the variable names expected by the CLI.
+          FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_DEMO_TOKEN }}
+          FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_DEMO_APP_ID }}
 
       # The deploy CLI is intentionally asynchronous. Do not let the smoke
       # suite accidentally validate the previous Demo instance.
