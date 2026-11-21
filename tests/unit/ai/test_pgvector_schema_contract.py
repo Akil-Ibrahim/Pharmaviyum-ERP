@@ -59,6 +59,7 @@ async def test_initialize_only_verifies_the_migrated_schema():
     sql = str(session.statement).upper()
     assert sql.lstrip().startswith("SELECT")
     assert "CREATE " not in sql
+    assert "TO_REGCLASS(:TABLE_NAME)" in sql
     assert session.params == {
         "table_name": "document_chunks",
     }
