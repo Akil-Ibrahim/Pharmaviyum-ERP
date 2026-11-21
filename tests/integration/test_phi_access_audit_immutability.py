@@ -5,7 +5,10 @@ from __future__ import annotations
 import os
 
 import pytest
-from sqlalchemy import select, text
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import create_engine, select, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -76,3 +79,60 @@ async def test_phi_access_audit_migration_enforces_append_only(
     assert persisted is not None
     assert persisted.purpose == "dispensing_review"
     assert persisted.request_id == f"phi-audit-immutability-{mutation}"
+
+
+@pytest.mark.integration
+def test_phi_access_audit_downgrade_refuses_to_delete_retained_evidence():
+    """A downgrade with audit rows must fail before dropping any audit objects."""
+    database_url = os.getenv("MIGRATION_TEST_DATABASE_URL")
+    if not database_url:
+        pytest.skip("MIGRATION_TEST_DATABASE_URL is required for migration tests")
+
+    sync_url = make_url(database_url).set(drivername="postgresql+psycopg")
+    engine = create_engine(sync_url)
+    request_id = "phi-audit-downgrade-retention-guard"
+
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO phi_access_audits
+                        (actor_id, pharmacy_id, patient_id, action, decision, purpose, request_id)
+                    VALUES
+                        (9911, 9912, 9913, 'read_ai_patient_profile',
+                         'allowed', 'dispensing_review', :request_id)
+                    """
+                ),
+                {"request_id": request_id},
+            )
+
+        config = Config("alembic.ini")
+        with pytest.raises(RuntimeError, match="Cannot downgrade PHI access audit migration"):
+            command.downgrade(config, "-1")
+
+        with engine.connect() as connection:
+            retained_count = connection.scalar(
+                text(
+                    "SELECT count(*) FROM phi_access_audits WHERE request_id = :request_id"
+                ),
+                {"request_id": request_id},
+            )
+            trigger_count = connection.scalar(
+                text(
+                    """
+                    SELECT count(*)
+                    FROM pg_trigger
+                    WHERE tgname IN (
+                        'trg_phi_access_audits_append_only',
+                        'trg_phi_access_audits_no_truncate'
+                    )
+                    AND NOT tgisinternal
+                    """
+                )
+            )
+
+        assert retained_count == 1
+        assert trigger_count == 2
+    finally:
+        engine.dispose()
