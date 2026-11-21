@@ -18,7 +18,7 @@ Pull request targeting main
     -> Demo deployment status, logs, and smoke checks
 ```
 
-FastAPI Cloud hosts the public Demo only. Demo database, Redis-compatible services, and separate Celery workers must be provisioned and operated according to the Demo deployment runbook. Production uses the same application technology stack on separately managed hosting, outside this public repository.
+FastAPI Cloud hosts the public Demo only. Demo database, cache and worker services must be provisioned and operated according to the Demo deployment runbook. Production uses the same application technology stack on the pharmacy server; Ansible is the infrastructure configuration and application release mechanism. Real Production inventory, per-site credentials and live execution approvals remain outside Git. The Ansible rollout is not considered production-validated until lab/pilot and site acceptance evidence exists.
 
 The current repository also contains an opt-in monitoring Compose stack for controlled deployments. Nginx/edge infrastructure, OpenTelemetry Collector, managed data services and multi-node orchestration are target capabilities, not assumptions about the current base deployment.
 
