@@ -12,7 +12,9 @@ from sqlalchemy.ext.asyncio import create_async_engine
 async def test_alembic_provisions_pgvector_table_and_search_indexes():
     migration_url = os.environ.get("MIGRATION_TEST_DATABASE_URL")
     if not migration_url:
-        pytest.skip("MIGRATION_TEST_DATABASE_URL is required for migration schema checks")
+        pytest.skip(
+            "MIGRATION_TEST_DATABASE_URL is required for migration schema checks"
+        )
 
     engine = create_async_engine(migration_url, pool_pre_ping=True)
     try:
