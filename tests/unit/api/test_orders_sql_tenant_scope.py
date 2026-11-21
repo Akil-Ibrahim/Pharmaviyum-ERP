@@ -48,10 +48,6 @@ def test_order_workflow_queries_apply_pharmacy_predicate(statement, expected_tab
 )
 def test_global_superuser_queries_preserve_explicit_unscoped_semantics(statement):
     """A None scope retains the existing global-superuser query behavior."""
-    compiled = statement.compile(
-        dialect=postgresql.dialect(),
-        compile_kwargs={"literal_binds": True},
-    )
     where_clause = str(
         statement.whereclause.compile(
             dialect=postgresql.dialect(),
