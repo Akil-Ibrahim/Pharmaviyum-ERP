@@ -27,7 +27,7 @@ Set `ENABLE_WRITES=true` only after verifying the target is an isolated staging 
 
 The order is intentionally left as a cancelled record; it is not hard-deleted. Therefore, run write testing against a disposable staging database/snapshot and restore or recreate it after the run. A failed cleanup/cancellation must be treated as a failed test and may require staging-data cleanup. Do not run write scenarios against a shared or production database.
 
-The order API currently does not model product lines, payment capture, receipt lines, batch allocation or inventory decrement. These order transactions are **not a POS checkout or dispensing test**.
+The generic `Order` API still does not model product lines, payment capture, receipt lines, batch allocation or inventory decrement. These order transactions are **not a POS checkout or dispensing test**. A separate transactional POS API now exists at `/api/v1/pos/checkout`; see the implementation traceability matrix and the integration tests in `tests/integration/test_pos_checkout.py`.
 
 ### Mortarium AI
 
@@ -49,15 +49,19 @@ The POS search calls are corrected in this PR to use `/products/search` and `/dr
 
 ## Explicit API coverage gaps
 
-The current backend does not expose a verified end-to-end transactional API contract for all of the following workflows:
+The backend now exposes a transactional POS API for checkout, sale lines, payment state, receipt identity, FEFO lot allocation, inventory movements and an outbox event. Cash checkout decrements stock; non-cash checkout reserves stock pending a signed payment webhook. Integration coverage exists in `tests/integration/test_pos_checkout.py` for checkout, FEFO, idempotency and payment settlement behavior.
 
-- POS checkout/payment/receipt;
-- batch-level FEFO allocation and dispensing;
-- stock transfer lifecycle and receiving;
-- procurement purchase-order creation/receiving;
-- returns, write-offs and stock adjustments with full audit semantics.
+The current k6 workload does **not** invoke that transactional POS API. It therefore remains a read-oriented customer-day simulation and cannot claim to load-test completed sales or three concurrent cashier checkout journeys.
 
-The test deliberately does not invent endpoints or pretend these workflows are covered by reading list endpoints. Add their scenarios when their API contracts, business invariants, fixture strategy and cleanup/rollback procedures exist. The future transaction suite should verify concurrency, idempotency, stock conservation, expiry exclusion, FEFO ordering, tenant isolation and audit records.
+The remaining end-to-end workflow gaps include:
+
+- patient/prescription linkage and pharmacist validation in the checkout/dispensing flow;
+- cross-pharmacy stock transfer dispatch/receipt;
+- procurement purchase-order creation, supplier-document matching and purchase-linked receiving (a standalone lot-receipt endpoint exists, but is not a procurement lifecycle);
+- returns/refunds/voids and controlled write-off workflows;
+- cashier shift opening/closing, cash reconciliation and handover.
+
+Do not invent endpoints or pretend these workflows are covered by list endpoints. Add transaction-aware scenarios only after the API contracts, business invariants, synthetic fixtures and cleanup/rollback procedures are verified. The POS load profile should test concurrency, idempotency, stock conservation, expiry exclusion, FEFO ordering, tenant isolation and audit records.
 
 ## Load profiles
 
@@ -85,7 +89,7 @@ This profile translates the business scenario into testable assumptions without 
 - The **pharmacy manager has a separate computer and application session** and may also serve customers. Count the manager among the six staff, not as an additional employee; the manager's session is separate from the three register sessions unless the manager actually operates a register.
 - **3 cash registers** are operated by the three on-shift pharmacy staff. Register workflows are a subset of those staff sessions; do not add three extra staff accounts just because there are three registers.
 - For 200 visits across 14 public-facing hours, the arithmetic average is about **14.3 visits/hour**. This is not an arrival schedule: model opening preparation from 07:30, uneven demand and peak periods separately. Until measured traffic is available, use **30–40 visits/hour as a provisional peak-hour assumption**, not a measured fact.
-- Customer visits are business events, not automatically HTTP requests or completed sales. The current suite does not implement a verified POS checkout/payment/receipt or dispensing flow, so it cannot yet claim to simulate 200 completed customer sales per day or prove three concurrent cash registers.
+- Customer visits are business events, not automatically HTTP requests or completed sales. A transactional POS backend contract and integration tests now exist, but the current k6 suite does not call that contract and the active POS UI route currently renders `null`. Therefore this suite cannot yet claim to simulate 200 completed customer sales per day or prove three concurrent cashier workflows.
 
 ### Recommended staged execution
 
@@ -140,7 +144,7 @@ The daily visit count is a planning input, not a request rate. Before treating t
 - **Arrival distribution:** opening hours, quiet periods, lunch/evening peaks, shift changes and bursts. Do not spread 200 visits evenly across 24 hours.
 - **Visit-to-sale ratio:** distinguish footfall, completed checkouts, prescription-only interactions, information/search requests and abandoned carts. Do not assume every visitor produces one sale or a fixed number of HTTP requests.
 - **Basket mix:** configurable number of line items, product-search frequency, barcode lookup if supported, stock checks, prescription-related flows where implemented, and receipt/history reads.
-- **Transaction correctness:** if the actual API supports the full workflow, verify checkout/payment/receipt and inventory decrement atomically. Test payment failure, cancellation and return paths only where real API contracts exist.
+- **Transaction correctness:** use the existing `POST /api/v1/pos/checkout` contract for synthetic sale journeys. Validate receipt identity, payment state, FEFO allocation, inventory movement and idempotent retries. Exercise payment failure/settlement through the signed webhook contract. Test cancellation, return and refund paths only after their real API contracts exist.
 - **Stock contention:** send concurrent synthetic checkout attempts for the last available units of the same product/batch. Assert that the resulting stock and sale records are consistent and that FEFO/expiry rules hold.
 - **Operational background work:** include bounded catalog reads, dashboard/reporting reads and any documented import/reconciliation jobs separately before combining them with POS traffic.
 - **Network resilience:** test a brief API/worker interruption and recovery in isolated staging; measure failed requests, retry behavior and recovery time. If the product does not support offline checkout, do not assume it does.

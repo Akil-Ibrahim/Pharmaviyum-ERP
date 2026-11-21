@@ -199,3 +199,13 @@ The batch list endpoint is restricted to `CurrentSuperuser`, but it still return
 - A disposable staging database is used for migration rehearsal; production database state and backups are not assumed from source inspection.
 
 **Status:** dependency inventory is partial and source-level. No snapshot migration, endpoint replacement, data reconciliation, production query, or production migration has been performed. ProductBatch retirement is not approved by this audit.
+
+## Implementation status reconciliation — later source snapshot
+
+This audit records the historical baseline at commit `3d436a1b2280cb1e6d88a6c0664a1acf9b2c6dc9`. Its statement that persisted POS checkout was a critical gap was accurate for that inspected baseline, but it is no longer an accurate description of the later source snapshot `c6d35b828c1958f1bcb9077bbd0b6a71ef94613b`.
+
+The later snapshot includes a mounted `/api/v1/pos` router, transactional checkout, sale/payment/receipt records, FEFO allocation, inventory movement and outbox writes, a signed payment webhook, and integration tests in `tests/integration/test_pos_checkout.py`. The later backend implementation is therefore beyond the original audit's proposed POS step C.
+
+This does **not** mean the complete pharmacy POS workflow is finished: the active React POS feature currently returns `null`; checkout is not linked to patient/prescription validation; returns/refunds and cashier-shift reconciliation were not established by the later source audit; and the standalone lot-receipt endpoint is not a supplier purchase-order receiving lifecycle.
+
+For the current process-by-process evidence map, see [Pharmacy Workflow Implementation Traceability](../workflows/PHARMACY_WORKFLOW_TRACEABILITY.md). This addendum is source-level only; no production runtime or database was inspected.

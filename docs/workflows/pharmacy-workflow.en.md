@@ -503,3 +503,152 @@ The following principles are foundational:
 10. ERP synchronization failures must become visible operational exceptions.
 11. Human authorization remains required for workflows that require professional or operational judgment.
 12. Business Core remains the source of truth for operational state.
+
+
+## 26. Related business-value and KPI specification
+
+The [Pharmacy Business Value & KPI Specification](./PHARMACY_BUSINESS_VALUE_AND_KPIS.md) defines the business-value model, six primary CV KPIs, supporting operational measures, measurement-contract requirements and evidence rules. The primary engineering measurement source remains [ENGINEERING_BENCHMARK_REQUIREMENTS.md](../devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md). Domain context is informed by the [AI in the Pharmacy article](https://medium.com/@ibrahimengpy/ai-in-the-pharmacy-how-technology-can-support-the-pharmacist-a755ba3a2c9a). These references do not imply that every described capability is implemented or production-validated.
+
+
+## 27. Article-derived day-to-day pharmacy workflows
+
+This section makes the practical workflows described in [AI in the Pharmacy: How Technology Can Support the Pharmacist](https://medium.com/@ibrahimengpy/ai-in-the-pharmacy-how-technology-can-support-the-pharmacist-a755ba3a2c9a) explicit. It expands the operational model; it does not assert that every workflow is currently implemented.
+
+### 27.1 Opening preparation and shift readiness
+
+1. The opening pharmacist arrives before the public opening time.
+2. Review the handover from the previous shift: unresolved tasks, patient/order follow-ups, stock or prescription issues, supplier matters and operational exceptions.
+3. Check staff/role readiness and the pharmacy workspace.
+4. Review urgent stock, expiry, prescription and online-order exceptions.
+5. Confirm that required systems, POS/cash operations and integrations are available; record failures for follow-up.
+6. Prepare the pharmacy for customer service and record completion or outstanding exceptions.
+
+### 27.2 Patient consultation and medicine dispensing
+
+1. Identify the patient when the workflow and applicable rules require it.
+2. Retrieve only authorized patient context, including relevant previous dispensing records and interaction history.
+3. Clarify the patient's request and identify the medicine or medical device.
+4. Search and compare medicine information; distinguish brand, active ingredient, strength, dosage form and pack/quantity.
+5. Check prescription or treatment-order requirements where applicable.
+6. Verify relevant dosage, quantity and other prescription details; flag missing, inconsistent or uncertain information for pharmacist review.
+7. Check product availability and eligible batches, expiry and restrictions.
+8. Apply the deterministic dispensing/POS workflow, including FEFO where relevant.
+9. Complete the professional consultation, dispense and record the transaction.
+10. Update the permitted patient/dispensing history and audit trail.
+
+AI may retrieve and organize context, compare records and flag items for verification. The pharmacist remains responsible for clinical assessment and the final professional decision.
+
+### 27.3 Prescription and treatment-order clarification
+
+1. Receive or review a prescription/treatment order.
+2. Locate the relevant patient and prescription records under role-based access.
+3. Check completeness, medicine identity, dosage, quantity and applicable restrictions.
+4. Identify ambiguity, mismatch or missing information.
+5. Refer questions to the responsible pharmacist and, when appropriate, contact the prescriber/doctor for clarification.
+6. Record the clarification, its source, the decision and the resulting action.
+7. Do not allow AI to resolve a clinical ambiguity or authorize dispensing on its own.
+
+### 27.4 Online orders and patient follow-up
+
+1. Receive and review incoming online orders.
+2. Validate order details and identify the requested products.
+3. Check stock, eligible batches and fulfillment constraints.
+4. Prepare the order or flag unavailable items and exceptions.
+5. Contact the patient when clarification, availability information or collection coordination is required.
+6. After the interaction or dispensing, conduct patient feedback/follow-up calls when part of the pharmacy's service process.
+7. Record contact outcome, unresolved questions and next actions in the appropriate system record.
+
+### 27.5 Availability checks across branches and patient redirection
+
+1. Search the current branch's available, eligible stock.
+2. If unavailable, check authorized stock availability at other branches.
+3. Confirm that the displayed quantity is current enough for the intended decision and distinguish on-hand, reserved, quarantined and otherwise unavailable stock.
+4. Contact the responsible/on-duty pharmacist or branch when confirmation is needed.
+5. Inform the patient of the verified availability and, where appropriate, direct them to another pharmacy.
+6. Record the referral/availability outcome where the workflow requires it.
+7. Do not promise availability based only on stale or unconfirmed synchronization data.
+
+### 27.6 Supplier orders, delivery notes and goods receiving
+
+1. Identify missing or low-stock products and prepare a replenishment requirement.
+2. Review supplier/product information and create or update a purchase order through the authorized process.
+3. Receive the supplier delivery and its delivery note.
+4. Compare the delivery note and purchase order with the physically received goods.
+5. Verify product identity, quantity, batch/lot and expiry; record discrepancies, damage or missing items.
+6. Register accepted goods through the receiving workflow and update inventory only for verified quantities.
+7. Place accepted products in their designated storage/shelf locations in time for sale, following storage and stock-rotation rules.
+8. Route discrepancies and supplier issues to an accountable operator and retain the audit evidence.
+
+### 27.7 Shelf replenishment and out-of-stock management
+
+1. Identify products that need shelf replenishment or are unavailable.
+2. Check backroom and branch stock, batch status and expiry.
+3. Replenish shelves from eligible stock using the applicable rotation rules.
+4. If stock is insufficient, record the shortage and assess replenishment or inter-branch sourcing.
+5. Create or escalate the required supplier order or branch transfer.
+6. Track the shortage until resolved and make the current availability state visible to staff.
+
+### 27.8 Stock control, discrepancies and inventory-count preparation
+
+1. Monitor stock balances, low-stock items, expiry dates and restricted/prescription stock.
+2. Investigate unexpected stock movements and discrepancies.
+3. Prepare the inventory count by defining scope, locations, products/batches, responsibilities and count timing.
+4. Perform physical counts and compare them with system quantities.
+5. Investigate variances and record reasons and supporting evidence.
+6. Approve and post controlled adjustments through auditable inventory movements.
+7. Use count results to identify process weaknesses and corrective actions.
+
+### 27.9 Pharmacy documents, reports and deadlines
+
+1. Collect and review operational documents, supplier documents and internal pharmacy information.
+2. Prepare required reports and recurring operational summaries.
+3. Track reporting deadlines and outstanding submissions.
+4. Validate source data and route incomplete or inconsistent information for correction.
+5. Retain document versions, responsible users, timestamps and submission/approval status as required.
+
+AI may locate, summarize and structure authorized documents or prepare report drafts. A responsible employee must validate content and approve formal submissions.
+
+### 27.10 Team coordination and external professional communication
+
+1. Coordinate tasks, workload and exceptions among pharmacists and other pharmacy team members.
+2. Communicate unresolved patient, prescription, stock and supplier issues to the responsible colleague.
+3. Contact doctors/prescribers when professional clarification is required.
+4. Communicate with medical representatives about product-related or informational matters within applicable policy.
+5. Record material decisions, commitments and follow-up actions in the appropriate operational record.
+6. Ensure that open work is assigned rather than left as undocumented verbal knowledge.
+
+### 27.11 Shift reconciliation, closing and handover
+
+Approximately 30 minutes before shift end, the outgoing employee should begin a controlled close-out:
+
+1. Reconcile medicine dispensing records and relevant transactions for the shift.
+2. Review patient-related records and follow-ups that require action, subject to access permissions.
+3. Review online orders, pending collections, unresolved availability requests and patient callbacks.
+4. Review stock, prescription, supplier, cash/POS and system exceptions relevant to the shift.
+5. Complete required reports and meet applicable submission deadlines.
+6. Confirm that the pharmacy workspace and operational state are ready for the next shift.
+7. Prepare a structured handover for the incoming pharmacist: current tasks, unresolved exceptions, patient/order follow-ups, supplier matters, stock issues, deadlines and accountable owners.
+8. Require acknowledgement of the handover and preserve an auditable record of what was transferred and what remains open.
+
+A shift is not operationally complete merely because the user logs out. Outstanding work must have an owner, status and next action.
+
+### 27.12 AI support mapped to these workflows
+
+Mortarium may assist with:
+- retrieving authorized patient and previous-dispensing context;
+- finding and comparing medicine and prescription information;
+- highlighting dosage, quantity or record inconsistencies for pharmacist review;
+- checking stock information and summarizing shortages;
+- organizing supplier, purchase-order and delivery-note information;
+- preparing inventory-count summaries and discrepancy explanations;
+- locating documents and drafting operational reports;
+- summarizing team handovers, open tasks and deadlines;
+- answering natural-language questions across authorized pharmacy data.
+
+For every AI-assisted workflow, enforce role/tenant/patient authorization before retrieval, source attribution, validation and audit. AI output is advisory; the pharmacist or authorized operator validates it and performs/approves consequential actions. Critical inventory, prescription, dispensing, payment and accounting state changes remain deterministic, permission-checked and auditable.
+
+## Implementation traceability
+
+See the [P0 Pharmacist Workspace implementation and acceptance gates](./PHARMACIST_WORKSPACE_P0_ACCEPTANCE.md) for the delivery contract covering POS UI, patient/prescription linkage, tenant-scoped patient history and staged Mortarium isolation validation.
+
+See the [Pharmacy Workflow Implementation Traceability](./PHARMACY_WORKFLOW_TRACEABILITY.md) matrix for the source-based mapping from each pharmacy process to domain models, API contracts, frontend routes, automated tests and current implementation status. The matrix distinguishes backend capabilities from complete user-facing workflows.
