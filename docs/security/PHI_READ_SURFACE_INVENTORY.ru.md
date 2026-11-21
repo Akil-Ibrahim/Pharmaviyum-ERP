@@ -25,18 +25,20 @@
 
 **Оставшиеся действия:** добавить integration tests на двух pharmacy, доказывающие, что tenant-scoped вызов не возвращает пациентов другого tenant, и сопоставить все call sites. Если есть глобальный административный сценарий, выделить для него отдельно названный и явно авторизованный метод вместо необязательного scope.
 
-### F-02 — Patient response schema возвращает широкий набор клинических и коммерческих связей
+### F-02 — Широкая PatientResponse раскрывала лишнюю PHI в обычных patient endpoints
 
 Файлы: `src/pharmaviyum/schemas/patient.py`, `src/pharmaviyum/api/v1/endpoints/patients.py`, `src/pharmaviyum/repositories/patient.py`
 
-- `PatientResponse` включает conditions (в том числе treatment notes/current medications/notes), allergies, insurance, consultations и purchase history.
-- `get_patient` и `get_patient_by_phone` возвращают эту широкую response model.
-- Repository заранее загружает allergies, conditions, insurances, consultations и purchases для patient detail path.
-- Та же response model используется в ответах create/update/visit.
+- Legacy schema `PatientResponse` содержит conditions (включая treatment notes/current medications/notes), allergies, insurance, consultations и purchase history.
+- До исправления create, update, list, get-by-phone, get-by-ID и visit endpoints использовали широкую Patient response model либо близкую list schema.
+- Repository detail query по умолчанию загружает clinical/insurance/consultation relations и purchase lines.
+- Dedicated AI profile schema и результат repository не соответствовали друг другу: schema требовала `patient_id` и `phone`, тогда как repository возвращал `id` и посторонние demographic/purchase aggregates. Это могло приводить к response validation failure.
 
-**Риск:** одно разрешение на чтение пациента открывает широкий payload из нескольких классов данных. Это усложняет принцип minimum necessary и увеличивает вероятность случайного раскрытия информации.
+**Риск:** один общий patient-read contract раскрывал несколько не связанных с конкретным workflow классов данных, нарушая minimum-necessary design и увеличивая вероятность случайной выдачи PHI.
 
-**Необходимые действия:** определить purpose-specific DTO (например, краткая демография, контекст безопасности отпуска лекарства, страховой workflow) с явными allowlists полей. Не возвращать consultation notes, insurance identifiers или purchase history без необходимости конкретного workflow. Добавить schema contract tests, проверяющие отсутствие запрещённых полей в каждом endpoint response.
+**Исправление в PR:** ввести `PatientSummaryResponse` как стандартный контракт для list/create/update/get/get-by-phone/visit. Обычные patient lookup и mutation paths больше не сериализуют clinical, insurance, consultation или purchase relations. Create/update/summary repository reads явно отключают eager loading связей. AI profile сужен до purpose-bound clinical safety context: только patient_id, allergies, conditions и risk_summary; repository query не загружает insurance, consultation и purchase relations. Regression tests проверяют response allowlist и соответствие AI-profile schema.
+
+**Оставшиеся действия:** не использовать широкую `PatientResponse` в route contracts; добавлять отдельные авторизованные и аудируемые clinical, insurance, consultation и purchase-history endpoints только при наличии конкретного workflow. До production readiness проверить authorization и PHI access logging AI profile endpoint.
 
 ### F-03 — Patient lifecycle events содержат связываемые идентификаторы
 
@@ -76,7 +78,7 @@
 
 **Необходимые действия:** внедрить отдельное решение platform-support authorization (grant, reason, expiry, разрешённое действие, patient/tenant scope) и обязательный аудит привилегированного доступа к данным пациента. Не отключать superuser workflow без анализа операционных сценариев.
 
-### F-06 — Order и purchase lookups проверяют tenant ownership после чтения строк
+### F-06 — Order и purchase tenant predicates проверяются непосредственно в SQL
 
 Файл: `src/pharmaviyum/api/v1/orders.py`
 
@@ -88,7 +90,7 @@
 
 **Риск:** строки другого tenant могли попасть в память приложения до отказа в авторизации. Проверка receipt также полагалась на глобальную уникальность формата receipt, а не на явный tenant predicate. Эта проверка не доказывает production disclosure или cross-tenant mutation.
 
-**Исправление в работе:** общие query builders добавляют `Patient.pharmacy_id == scope` в patient, order и purchase lookups, если tenant scope определён. Существующее глобальное поведение superuser при scope `None` сохраняется. SQL compilation regression tests проверяют наличие predicates; database-backed integration coverage на двух tenant всё ещё необходима.
+**Исправление в PR #387:** общие query builders добавляют `Patient.pharmacy_id == scope` в patient, order и purchase lookups, если tenant scope определён. Существующее глобальное поведение superuser при scope `None` сохраняется. PostgreSQL SQL-compilation regression tests и полный CI прошли. Database-backed integration coverage на двух tenant всё ещё необходима.
 
 ## Наблюдавшиеся положительные контроли
 
@@ -101,7 +103,7 @@
 
 1. Проследить все call sites helpers без явного scope из F-01 и F-04, а также каждый путь сериализации Patient ORM.
 2. Добавить two-pharmacy integration tests для уже scoped query/mutation methods и tenant predicates в оставшиеся mutation paths, где они необходимы.
-3. Разделить широкую PatientResponse на purpose-specific DTO с allowlists и contract tests.
+3. Завершить rollout purpose-specific patient DTO; добавлять отдельные clinical/insurance/purchase endpoints только при наличии workflow и проверить аудит AI-profile access.
 4. Минимизировать generic patient event payload и проверить каждого subscriber/forwarder.
 5. Реализовать отдельный PHI access audit event и privileged-support policy из основного governance audit.
 6. Проверить API, dashboard, reports, exports, background jobs, MCP и Edge paths до закрытия инвентаризации.
