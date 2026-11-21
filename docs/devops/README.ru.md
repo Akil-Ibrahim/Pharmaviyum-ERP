@@ -175,3 +175,8 @@ Kubernetes намеренно не входит в обязательные пе
 - [План внедрения Pharmacy Edge](./PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) · [English](./PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) — границы rollout, fleet capacity, release, backup/recovery и критерии приёмки.
 - [FastAPI Cloud runbook](../deployment/FASTAPI_CLOUD.ru.md) — размещение hosted-приложения.
 - [Руководство по тестированию](../guides/TESTING.ru.md) — тесты и CI.
+
+
+## Трассировка инженерных требований
+
+Используйте [матрицу трассировки инженерных требований](./ENGINEERING_REQUIREMENTS_TRACEABILITY.ru.md) как междоменный индекс, связывающий benchmark requirements с ADR, реализацией, тестами, доказательствами CI и runtime-проверками. Матрица фиксирует открытые release blockers и не заявляет Production readiness. См. [английскую версию](./ENGINEERING_REQUIREMENTS_TRACEABILITY.md).

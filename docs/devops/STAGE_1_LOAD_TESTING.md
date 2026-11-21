@@ -86,7 +86,7 @@ This profile translates the business scenario into testable assumptions without 
 - **200 customer visits per operating day** for one pharmacy.
 - **Opening hours: 08:00–22:00** (14 hours); the opening pharmacist starts using the system at **07:30** for preparation and opening checks.
 - **Up to 6 staff per pharmacy, including the manager**, on a 2-on/2-off schedule. Model the working shift as **3 pharmacy staff plus the manager**, pending confirmation of exact shift overlap.
-- The **pharmacy manager has a separate computer and application session** and may also serve customers. Count the manager among the six staff, not as an additional employee; the manager's session is separate from the three register sessions unless the manager actually operates a register.
+- Each pharmacy has **four physical workstation/computer positions**: three POS checkout stations plus one dedicated computer in the manager's office. The manager is included in the six staff, not an additional employee, and has a separate application session when active. The manager's session is separate from the three register sessions unless the manager actually operates a register. The provisioned manager workstation does not prove that the manager is continuously logged in; manager active hours, session overlap and task mix remain unapproved workload inputs. Do not automatically add one VU merely because the workstation exists.
 - **3 cash registers** are operated by the three on-shift pharmacy staff. Register workflows are a subset of those staff sessions; do not add three extra staff accounts just because there are three registers.
 - For 200 visits across 14 public-facing hours, the arithmetic average is about **14.3 visits/hour**. This is not an arrival schedule: model opening preparation from 07:30, uneven demand and peak periods separately. Until measured traffic is available, use **30–40 visits/hour as a provisional peak-hour assumption**, not a measured fact.
 - Customer visits are business events, not automatically HTTP requests or completed sales. A transactional POS backend contract and integration tests now exist, but the current k6 suite does not call that contract and the active POS UI route currently renders `null`. Therefore this suite cannot yet claim to simulate 200 completed customer sales per day or prove three concurrent cashier workflows.
@@ -180,7 +180,7 @@ This profile extends the single-pharmacy assumptions to a network with concurren
 - **200 customer visits per pharmacy per operating day** = **10,000 visits/day network-wide**.
 - **Up to 6 staff per pharmacy, including the manager** = **up to 300 rostered staff** across the network; roster size is not the same as simultaneous active sessions.
 - Under the modeled shift assumption of three staff plus one manager, plan for up to **200 on-shift staff sessions network-wide** if all 50 pharmacies have that shift active at once; validate shift overlap before treating this as a target.
-- **3 registers per pharmacy** = **150 registers**. Register operators are part of the three on-shift staff; do not count them as additional employees.
+- **3 registers per pharmacy** = **150 registers**, plus **1 manager-office computer per pharmacy** = **50 manager workstations**; **200 physical workstation/computer positions** across the 50-branch Stage B network. Register operators are part of the three on-shift staff; do not count them as additional employees. Equipment counts and active sessions must be reported separately.
 - Across 14 public-facing hours (08:00–22:00), 10,000 visits/day averages about **714 visits/hour network-wide**. If every branch reaches a provisional 30–40 visits/hour peak at the same time, the synchronized network peak would be **1,500–2,000 visits/hour**. Replace these planning assumptions with actual arrival distributions when available.
 
 A customer visit is not one HTTP request, and a register is not automatically a continuously active virtual user. Model customer arrivals, cashier operations, staff background work and integration events as separate rates.
@@ -284,7 +284,8 @@ The runner writes a timestamped JSON stream to `artifacts/load-tests/`. Preserve
 
 Record actual measurements for each run:
 
-- request rate, completed iterations and active VUs;
+- request rate, completed iterations and active VUs, split by role/workstation type where instrumented;
+- provisioned equipment counts (POS stations, manager-office computers and total workstations) separately from observed active sessions; manager-office session utilization must be marked NOT MODELED until its approved usage profile is available;
 - p50/p95/p99 latency overall and by endpoint/workload;
 - HTTP failure rate, status-code distribution and failed checks;
 - dashboard and drug-catalog latency;
@@ -336,6 +337,8 @@ Each run report should include:
 - commit SHA and deployment identifier;
 - local/staging environment and sanitized fixture description;
 - profile, VUs, duration, enabled scenarios and think time;
+- pharmacy count, POS station count, manager-office workstation count and total provisioned workstation count;
+- observed active sessions by role/workstation type, with unmeasured manager-office utilization explicitly marked NOT MODELED;
 - requests/second, iterations, p50/p95/p99 and failure rate;
 - per-endpoint error/status distribution;
 - PostgreSQL, Redis and container metrics;

@@ -6,17 +6,20 @@ This document defines the measurement contract for assessing Pharmaviyum ERP/CRM
 
 The benchmark is intended for repeatable runs in GitHub Codespaces/local development and, for infrastructure-dependent scenarios, an isolated staging environment. Use synthetic pharmacy tenants, synthetic products and synthetic patient records only.
 
-The canonical business sizing scenario is:
+The canonical business sizing scenario includes three POS cash registers (checkout stations), one additional dedicated computer in the pharmacy manager's office (four total workstation/computer positions per pharmacy), and a 14-hour public operating day (08:00–22:00 local pharmacy time):
 
 | Dimension | Planning input |
 |---|---:|
 | Pharmacies | 100 |
 | Daily visitors | 200 per pharmacy |
 | Total daily visitors | 20,000 |
-| Employees | 5 per pharmacy / 500 total |
-| POS terminals | 3 per pharmacy / 300 total |
+| Employees | 6 per pharmacy / 600 total |
+| Public operating hours | 14 hours/day (08:00–22:00 local pharmacy time) |
+| POS cash registers (checkout stations) | 3 per pharmacy / 300 total |
+| Dedicated manager-office computer/workstation | 1 per pharmacy / 100 total |
+| Total physical workstation/computer positions (3 POS + manager office) | 4 per pharmacy / 400 total |
 
-Visitors are not equivalent to authenticated users, concurrent sessions, API requests or AI requests. Actual AI request volume and peak concurrency are not yet specified. Do not infer them from visitor counts. Establish them from pilot telemetry and representative workload observations.
+The six employees are total pharmacy staff across all roles, not six pharmacists. The three cashier/register workflows are included within those six staff positions, not additional employees. Each pharmacy also has one dedicated computer in the manager's office, in addition to the three POS checkout stations; this adds equipment, not an employee. The manager-office workstation is a separate work location and must not automatically be counted as an additional concurrent user or session. The 14-hour window is public operating time; opening preparation and closing tasks may occur outside it and must be modelled separately. Visitors are not equivalent to authenticated users, concurrent sessions, API requests or AI requests. Actual AI request volume and peak concurrency are not yet specified. Do not infer them from visitor counts. Establish them from pilot telemetry and representative workload observations.
 
 ## 1. Measurement and evidence rules
 
