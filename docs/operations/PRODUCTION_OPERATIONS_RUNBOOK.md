@@ -55,6 +55,8 @@ Production application releases target the pharmacy server and are orchestrated 
 
 Before release, verify CI and approval for the exact approved Production source commit and immutable image digest in the controlled Production release pipeline. Public Demo CI is not evidence that a Production artifact was built or validated. Also verify backup/restore evidence, the migration plan, environment variables, smoke tests and rollback target.
 
+**Current public Ansible migration-path limitation:** the Alembic environment requires `MIGRATION_DATABASE_URL` in `production`/`staging` and intentionally refuses to fall back to the application `DATABASE_URL`. The current public Ansible migration environment template and inventory do not supply that dedicated variable/credential. Therefore `ansible/playbooks/migrate.yml` is not yet a verified end-to-end Production migration path. Do not bypass this guard or reuse the runtime credential; a reviewed secret-injection and least-privilege migration-role design is required before claiming this path is operational.
+
 Rollback the application revision only when the previous revision is compatible with the current schema. Database rollback is a separate high-risk operation. Prefer backward-compatible expand/contract migrations. Restore from backup only under an approved recovery plan.
 
 ## Backup and restore
