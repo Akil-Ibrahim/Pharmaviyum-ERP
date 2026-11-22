@@ -144,6 +144,6 @@ A source review of `main` at `2616b4209fc037b1e4f1899b876478bf72258641` found pa
 
 These are source/configuration findings, not evidence of an incident or live Production exploitation. Do not enable unrestricted support access or claim complete PHI governance until the grant model, MCP patient/purpose binding, DB role separation, audit-failure behavior and database-backed negative tests are implemented and reviewed.
 
-## 11. Known limitations
+## 12. Known limitations
 
 This is a design baseline, not an implementation. The existing PHI audit currently covers only selected endpoints; it is not yet a complete audit trail. Existing superuser-global behavior remains until each surface is migrated and operational support workflows are validated. No compliance certification is implied.
