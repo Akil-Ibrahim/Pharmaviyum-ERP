@@ -355,6 +355,8 @@ See [Engineering Roadmap and Delivery Stages](./ENGINEERING_ROADMAP.md) for the 
 
 - `docs/devops/STAGE_1_LOAD_TESTING.md` — Stage 1 load-test procedure.
 - `docs/devops/ENGINEERING_BENCHMARK_REQUIREMENTS.md` — canonical engineering, RAG, clinical AI, agent, security, observability and scalability metrics.
+- [Off-site backup architecture](./OFFSITE_BACKUP_ARCHITECTURE.md) · [Russian](./OFFSITE_BACKUP_ARCHITECTURE.ru.md) — Restic upload slice, remaining remote-restore work and disaster-recovery acceptance gates.
+- [Restic off-site upload runbook](../../ansible/OFFSITE_BACKUP.md) — protected inputs, explicit approval and verification boundary for the first upload implementation; not a DR acceptance record.
 - `docs/ai_architecture.md` — AI, RAG, memory, guardrails and MCP architecture.
 - `docs/guides/ENVIRONMENT_SETUP.md` — environment configuration and deployment prerequisites.
 - `docs/deployment/FASTAPI_CLOUD.md` — public Demo hosting and deployment runbook.

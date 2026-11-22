@@ -1,12 +1,12 @@
 # ADR: Архитектура зашифрованных off-site backup для Pharmacy Edge
 
-- **Статус:** Proposed.
+- **Статус:** Proposed; первый Restic upload slice реализован, но операционная приёмка и Production DR не подтверждены.
 - **Область:** лаборатория и пилот на 1 площадке, rollout на 2–3 и 10 площадок; архитектурная цель — до 100 аптек.
 - **Полномочия:** только проектирование. Документ не разрешает создавать provider resources или credentials, передавать backups, удалять retention-копии, выполнять restore или deployment.
 
 ## Контекст
 
-Текущий backup workflow создаёт gzip-сжатый PostgreSQL dump на Pharmacy Edge, проверяет gzip integrity и SHA-256, записывает manifest и удаляет истёкшие локальные артефакты только после проверки новой резервной копии. PR #250 добавляет изолированную restore drill в новую локальную БД. Эти меры не защищают от потери или компрометации всего Edge host/site. Локальный checksum не является независимым trust anchor, если backup и checksum находятся в одной failure domain.
+Локальный backup workflow создаёт gzip-сжатый PostgreSQL dump на Pharmacy Edge, проверяет gzip integrity и SHA-256, записывает manifest и удаляет истёкшие локальные артефакты только после проверки новой резервной копии. Отдельно появился первый implementation slice для off-site transfer: `ansible/playbooks/backup-offsite.yml`, с инструкцией `ansible/OFFSITE_BACKUP.md`. Он загружает уже проверенные dump, checksum и manifest в заранее созданный site-scoped Restic REST repository. Playbook не создаёт repository и не настраивает server-side ACL; сам репозиторий не подтверждает наличие реального Production endpoint или credentials. Локальный restore drill не восстанавливает данные из remote repository. Эти механизмы пока не дают принятой end-to-end disaster-recovery capability.
 
 ## Предлагаемое решение
 
@@ -60,13 +60,13 @@ Restore не считается успешным только потому, чт
 
 ## Контракт реализации Ansible
 
-Будущую реализацию разделите на независимо тестируемые блоки:
+Разделяйте workflow на независимо тестируемые блоки и фиксируйте их текущий статус:
 
-- backup_local — создание/проверка локального DB dump и неизменяемого локального артефакта/manifest.
-- backup_offsite — загрузка только проверенных артефактов с site-scoped append-only credentials и проверкой remote snapshot; при ошибке локальная очистка запрещена.
-- backup_maintenance — controller-only repository checks и retention/prune с явными environment/target guardrails.
-- restore_offsite_drill — разрешённое controller восстановление в изолированную среду с проверкой site identity, repository, snapshot, integrity, schema, бизнес-инвариантов и readiness.
-- backup_monitoring — публикация last-success, age, bytes, snapshot ID, verification state и причины сбоя.
+- `backup_local` — реализован в `ansible/playbooks/backup.yml`: создание и проверка локального DB dump и metadata manifest.
+- `backup_offsite` — первый upload slice реализован в `ansible/playbooks/backup-offsite.yml`: требуется заранее созданный site-scoped Restic REST repository и защищённые credentials площадки; проверяются remote snapshot metadata и SHA-256 выгруженных артефактов. Проверка на реальном repository пока не подтверждена.
+- `backup_maintenance` — не реализован: controller-only repository checks и retention/prune с environment/target guardrails ещё требуют реализации.
+- `restore_offsite_drill` — не реализован: существующий `ansible/playbooks/restore.yml` выполняет локальный isolated-database drill, а не remote restore.
+- `backup_monitoring` — не реализован: last-success, age, bytes, snapshot ID, verification state и failure reason пока не интегрированы в monitoring.
 
 Roles должны быть идемпотентными там, где это применимо, поддерживать содержательный check mode, использовать no_log: true для задач с секретами, предпочитать command.argv shell interpolation и включать Molecule coverage для успеха, retries, сетевого сбоя, неверных credentials, повреждённого артефакта, неверной площадки, ошибки retention и очистки частичного restore.
 
@@ -95,4 +95,4 @@ Roles должны быть идемпотентными там, где это �
 
 ## Текущая граница безопасности
 
-Это только проектное предложение. PR #250 реализует локальную проверку backup и базовую изолированную локальную restore drill; он **не** реализует off-site encryption, remote storage, remote verification, remote restore или production disaster recovery. Здесь не настраиваются и не изменяются provider, credentials, secrets, production hosts или реальные данные аптек.
+Это остаётся предлагаемой архитектурой и не разрешает Production disaster-recovery операции. В репозитории теперь есть первая реализация off-site upload в `ansible/playbooks/backup-offsite.yml` (описана в `ansible/OFFSITE_BACKUP.md`). Она использует Restic encryption, требует заранее созданный site-scoped HTTPS repository и защищённые credentials площадки, проверяет локальные артефакты и site identity, затем сверяет remote snapshot metadata и SHA-256 артефактов, прочитанных обратно из repository. `ansible/tests/test_offsite_backup_guardrails.sh` проверяет только synthetic controller-side preflight/guardrails и не подключается к реальному Restic repository. Не завершены provisioning provider/repository и проверка server-side ACL, key escrow, remote repository integrity и retention management, remote restore в изолированную БД, проверка application/POS business invariants, monitoring, измерение RPO/RTO и приёмка площадки. Репозиторий не содержит настроенных Production endpoint, credentials, secrets или реальных данных аптек; готовность Production DR не подтверждена.

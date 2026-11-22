@@ -11,8 +11,8 @@
 - `ansible/playbooks/deploy.yml` работает с группой `pharmacy_servers`, проверяет параметры release и Edge sync, проверяет Docker/Compose, развёртывает роли контролируемыми волнами и проверяет `/ready`.
 - `ansible/roles/app-backend/` формирует environment file, копирует Compose definition, загружает backend image, запускает PostgreSQL и Valkey, затем backend. Миграции БД выполняются отдельно и требуют явного approval.
 - `ansible/roles/postgresql/` сейчас подготавливает каталог и сообщает состояние контейнера; сам PostgreSQL создаётся через Compose.
-- `ansible/playbooks/backup.yml` создаёт локальный сжатый PostgreSQL dump, проверяет gzip integrity и SHA-256, записывает manifest и удаляет просроченные локальные артефакты только после проверки новой резервной копии. `ansible/playbooks/restore.yml` выполняет неразрушающий restore drill в отдельно названную БД ровно на одном явно подтверждённом Edge-хосте. Планирование запуска делегировано защищённому automation controller.
-- `ansible/playbooks/rollback.yml` возвращает предыдущий backend image и проверяет `/health`; он не восстанавливает backup базы данных.
+- `ansible/playbooks/backup.yml` создаёт локальный сжатый PostgreSQL dump, проверяет gzip integrity и SHA-256, записывает manifest и удаляет просроченные локальные артефакты только после проверки новой резервной копии. `ansible/playbooks/backup-offsite.yml` — первый workflow Restic upload для уже проверенных dump, checksum и manifest; он требует существующий site-scoped repository, защищённые credentials площадки и явное approval. Он не создаёт repository и не обеспечивает remote restore. См. `ansible/OFFSITE_BACKUP.md`. `ansible/playbooks/restore.yml` выполняет неразрушающий локальный restore drill в отдельно названную БД ровно на одном явно подтверждённом Edge-хосте. Планирование запуска делегировано защищённому automation controller.
+- `ansible/playbooks/rollback.yml` возвращает предыдущий backend image и проверяет `/ready`; он не восстанавливает backup базы данных.
 - Compose definition содержит `db`, `redis` (образ Valkey) и `backend`. Сервиса Nginx в нём нет.
 - Роль Nginx существует, но не подключена к текущему deployment playbook. Она также не завершена: ссылается на отсутствующий `templates/nginx.conf.j2` и запрашивает Compose service `nginx`, которого нет в активном Ansible Compose definition. Сейчас это неработающий и неразвёрнутый путь reverse proxy.
 
@@ -207,17 +207,18 @@ Ansible `serial` ограничивает размер batch для play, но �
 
 ## 7. Контроль backup и restore
 
-Текущий backup playbook создаёт локальный gzip-compressed SQL dump, проверяет gzip stream и опубликованный SHA-256, записывает metadata manifest, сериализует backup runs через lock и хранит локальные файлы согласно `backup_retention_days`. Restore playbook проверяет независимо переданный SHA-256 и восстанавливает данные в новую изолированную БД на одном явно подтверждённом хосте; он не перезаписывает live application database и оставляет успешную restore target для проверки оператором. Это полезные локальные проверки, но они пока не являются решением disaster recovery.
+Локальный backup playbook создаёт gzip-compressed SQL dump, проверяет gzip integrity и SHA-256, записывает metadata manifest, сериализует backup runs через lock и применяет локальную retention policy. Отдельный migration playbook также создаёт pre-migration gzip SQL dump и фиксирует SHA-256, но не применяет обычную backup retention policy. Ни один из этих playbook не шифрует локальный dump: права `0600` ограничивают файловый доступ, но не являются шифрованием. Необходимо подтвердить утверждённое host/storage-level encryption и хранение recovery keys, а также определить retention/cleanup для pre-migration артефактов. Локальный restore playbook восстанавливает данные в новую изолированную БД на одном явно подтверждённом хосте; он не перезаписывает live database. Текущие проверки restore охватывают базовое наличие schema и Alembic metadata, но не полное восстановление приложения.
 
-До production fleet использования добавьте:
-- явную проверку целостности backup (например, проверку dump соответствующим PostgreSQL client);
-- шифрование до off-site transfer;
-- удалённое хранилище, независимое от аптечного хоста;
-- retention policy с учётом бизнес- и нормативных требований;
-- мониторинг возраста backup и передачи;
-- проверку off-site backup и восстановление из удалённой копии;
-- проверку восстановленных критических бизнес row counts и application invariants (текущий drill проверяет только базовое наличие схемы и Alembic metadata);
-- документированные RPO/RTO для каждой площадки и Central.
+Отдельный первый off-site workflow реализован в `ansible/playbooks/backup-offsite.yml` и описан в `ansible/OFFSITE_BACKUP.md`. Он загружает проверенные dump, checksum и manifest в заранее подготовленный site-scoped Restic REST repository, использует Restic encryption и проверяет remote snapshot и SHA-256 артефактов, прочитанных обратно. Наличие playbook не доказывает, что реальный repository, credentials или site configuration существуют; guardrail script проверяет только synthetic preflight.
+
+До Production fleet acceptance завершите и проверьте:
+
+- provisioning утверждённого provider/repository, site-scoped append-only server ACLs и recovery-key escrow;
+- remote repository integrity checks, retention/prune controls и мониторинг возраста/передачи backup;
+- remote restore в новую изолированную БД с последующей проверкой application readiness и критических business/POS invariants;
+- явную проверку целостности PostgreSQL dump соответствующим client;
+- retention policy согласно бизнес- и нормативным требованиям;
+- измеренные повторяемые RPO/RTO для каждой площадки и Central.
 
 Планирование backup намеренно не устанавливается playbook на аптечных Edge-хостах. Запускайте его с защищённого automation controller (например, AWX/AAP или одобренного scheduler), который получает Vault/secret-manager credentials во время выполнения. Не распространяйте по fleet повторно используемый Vault password в виде неуправляемого plaintext-файла.
 
@@ -253,7 +254,7 @@ Backup нельзя считать пригодным для восстанов�
 3. Deployment проверяет `/ready`, но site-level POS synthetic transaction, backup integrity, sync backlog/last-sync и UPS checks пока не подключены к Ansible postflight.
 4. Жизненный цикл PostgreSQL в основном управляется Compose; Ansible PostgreSQL role не является полноценной lifecycle/HA role.
 5. Nginx role не подключена к текущему deployment, и текущий Compose не содержит Nginx service.
-6. Backup пока локальный; off-site copy и restore-from-off-site не настроены. Новый isolated restore drill проверяет базовую схему, но не является полной приёмкой восстановления приложения.
+6. Локальный backup и local isolated restore реализованы. Также существуют отдельный Restic off-site upload playbook и synthetic preflight guardrail tests, но конфигурация реального repository/site и evidence операционной загрузки не подтверждены; remote restore и полная DR acceptance остаются незавершёнными. Текущий local restore drill проверяет базовую schema/Alembic metadata, а не полное восстановление приложения.
 7. Rollback меняет только backend image; он не обрабатывает совместимость схемы или восстановление данных.
 8. UPS, VPN, site identity, host security и централизованный fleet monitoring пока не подтверждены как развёрнутые возможности.
 9. Текущий Ansible Compose использует изменяемые PostgreSQL и Valkey image tags (`pgvector/pgvector:pg16`, `valkey/valkey:8-alpine`); до live Production rollout замените их проверенными immutable digests.
@@ -266,7 +267,7 @@ Backup нельзя считать пригодным для восстанов�
 3. Завершите end-to-end tests для durable outbox/inbox и sync processing contract.
 4. Создайте lab Edge Compose/deployment profile с durable local PostgreSQL.
 5. Добавьте lab inventory и Ansible role tests; пока не перенаправляйте production inventory.
-6. Добавьте backup integrity, off-site transfer и restore playbook; продемонстрируйте recovery.
+6. Завершите provisioning и ACL/key management Restic repository, remote restore в изолированную среду, проверку application/POS recovery и измерение RPO/RTO.
 7. Добавьте Central inventory, per-site Edge identity/VPN, readiness и sync monitoring.
 8. Проведите lab и small-pilot failure exercises до расширения rollout.
 9. Только после подтверждения 1–10 площадок включайте dynamic inventory для 100 площадок, staged wave controller, capacity Central observability, backup throughput и recovery capacity.

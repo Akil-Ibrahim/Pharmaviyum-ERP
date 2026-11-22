@@ -12,8 +12,8 @@ The current `main` branch contains:
 - `ansible/playbooks/deploy.yml` targeting `pharmacy_servers`; it validates release and Edge sync settings, checks Docker/Compose, deploys roles in controlled waves and verifies `/ready`.
 - `ansible/roles/app-backend/` which writes an environment file, copies a Compose definition, pulls a backend image, starts PostgreSQL and Valkey, then starts the backend. Database migrations are a separate, explicitly approved release operation.
 - `ansible/roles/postgresql/` which currently prepares a directory and reports container status; PostgreSQL itself is created by Compose.
-- `ansible/playbooks/backup.yml` which creates a local compressed PostgreSQL dump, verifies gzip integrity and SHA-256, writes a manifest, and prunes expired local artifacts only after a new backup has been verified. `ansible/playbooks/restore.yml` performs a non-destructive restore drill into a separately named database on exactly one explicitly confirmed Edge host. Scheduling is delegated to a protected automation controller.
-- `ansible/playbooks/rollback.yml` which rolls back the backend image and checks `/health`; it does not restore a database backup.
+- `ansible/playbooks/backup.yml` creates a local compressed PostgreSQL dump, verifies gzip integrity and SHA-256, writes a manifest, and prunes expired local artifacts only after a new backup has been verified. `ansible/playbooks/backup-offsite.yml` is a first-slice Restic upload workflow for an already verified dump, checksum and manifest; it requires an existing site-scoped repository, protected per-site credentials and explicit approval. It does not provision the repository or provide remote restore. See `ansible/OFFSITE_BACKUP.md`. `ansible/playbooks/restore.yml` performs a non-destructive local restore drill into a separately named database on exactly one explicitly confirmed Edge host. Scheduling is delegated to a protected automation controller.
+- `ansible/playbooks/rollback.yml` which rolls back the backend image and checks `/ready`; it does not restore a database backup.
 - A Compose definition containing `db`, `redis` (Valkey image) and `backend`. It does not define an Nginx service.
 - An Nginx role exists, but it is not included in the current deployment playbook. The role is incomplete: it references `templates/nginx.conf.j2`, which is absent, and requests a Compose service named `nginx`, which the active Ansible Compose definition does not provide. It is not an executable or deployed reverse-proxy path.
 
@@ -182,7 +182,7 @@ A candidate rollout sequence is:
 2. Five pilot pharmacies.
 3. Twenty pharmacies.
 4. Thirty pharmacies.
-5. The remaining forty-four pharmacies.
+5. The remaining forty-five pharmacies.
 
 The lab site is separate from production. The 5 + 20 + 30 + 45 production waves total 100; these are planning examples, not enabled defaults. Adjust wave sizes to the approved inventory and never assume every site is reachable.
 
@@ -215,16 +215,18 @@ Use explicit maintenance windows and an operator approval between waves. A disco
 
 ## 7. Backup and restore controls
 
-The current backup playbook creates a local gzip-compressed SQL dump, verifies the gzip stream and published SHA-256, writes a metadata manifest, serializes backup runs with a lock, and retains local files according to `backup_retention_days`. The restore playbook verifies an independently supplied SHA-256 and restores into a new, isolated database on one explicitly confirmed host; it never overwrites the live application database and leaves a successful restore target for operator inspection. These are useful local verification controls, but they are still not a disaster-recovery solution. Before production fleet use, add:
+The local backup playbook creates a gzip-compressed SQL dump, verifies gzip integrity and SHA-256, writes a metadata manifest, serializes backup runs with a lock, and applies local retention. The separate migration playbook also creates a pre-migration gzip SQL dump and records its SHA-256, but does not apply the regular backup retention policy. Neither playbook encrypts its local dump: `0600` permissions restrict filesystem access but are not encryption. Verify approved host/storage-level encryption and recovery-key handling, and define retention/cleanup for pre-migration artifacts. The local restore playbook restores to a new isolated database on one explicitly confirmed host; it never overwrites the live database, and its current checks cover basic schema presence and Alembic metadata rather than full application recovery.
 
-- explicit backup integrity check (for example, inspect the dump with the matching PostgreSQL client);
-- encryption before off-site transfer;
-- a remote destination independent of the pharmacy host;
-- retention policy by business and regulatory requirements;
-- backup age and transfer monitoring;
-- off-site backup verification and restore from the remote copy;
-- restore verification of critical business row counts and application invariants (the current drill checks basic schema presence and Alembic metadata only);
-- documented RPO/RTO per site and Central.
+A separate first-slice off-site workflow exists in `ansible/playbooks/backup-offsite.yml` and is documented in `ansible/OFFSITE_BACKUP.md`. It uploads the verified dump, checksum and manifest to a pre-provisioned site-scoped Restic REST repository, uses Restic encryption, and verifies the remote snapshot plus streamed artifact hashes. The playbook is not evidence that a real repository, credentials or site configuration exist; the guardrail script tests synthetic preflight behavior only.
+
+Before Production fleet acceptance, complete and verify:
+
+- approved provider/repository provisioning, site-scoped append-only server ACLs and recovery-key escrow;
+- remote repository integrity checks, retention/prune controls and backup age/transfer monitoring;
+- remote restore into a new isolated database, followed by application readiness and critical business/POS invariant checks;
+- an explicit PostgreSQL dump-level integrity check with the matching client;
+- retention policy aligned with business and regulatory requirements;
+- measured, repeatable RPO/RTO per site and Central.
 
 Backup scheduling is intentionally not installed by the playbook on pharmacy Edge hosts. Run it from a protected automation controller (for example AWX/AAP or an approved scheduler) that obtains Vault/secret-manager credentials at runtime. Do not distribute a reusable Vault password as an unmanaged plaintext file across the fleet.
 
@@ -261,7 +263,7 @@ Before a role is eligible for production:
 3. Deployment now checks `/ready`, but site-level POS synthetic transaction, backup integrity, sync backlog/last-sync and UPS checks are not yet wired into Ansible postflight.
 4. PostgreSQL lifecycle is mostly Compose-managed; the Ansible PostgreSQL role is not a full lifecycle/HA role.
 5. Nginx role is not wired into the current deployment, and current Compose has no Nginx service.
-6. Backup is local-only; off-site copy and restore-from-off-site are not established. The new isolated restore drill is a basic schema check, not a full application recovery acceptance test.
+6. Local backup and local isolated restore are implemented. A separate Restic off-site upload playbook and synthetic preflight guardrail tests also exist, but no live repository/site configuration or operational upload evidence is established; remote restore and full DR acceptance remain outstanding. The local restore drill currently checks basic schema/Alembic metadata, not full application recovery.
 7. Rollback changes the backend image only; it does not handle schema compatibility or data recovery.
 8. UPS, VPN, site identity, host security and centralized fleet monitoring are not yet proven as deployed capabilities.
 9. The current Ansible Compose uses mutable PostgreSQL and Valkey image tags (`pgvector/pgvector:pg16`, `valkey/valkey:8-alpine`); replace them with reviewed immutable digests before live Production rollout.
@@ -274,7 +276,7 @@ Before a role is eligible for production:
 3. Complete end-to-end tests for the durable outbox/inbox and sync processing contract.
 4. Build a lab Edge Compose/deployment profile with durable local PostgreSQL.
 5. Add lab inventory and Ansible role tests; do not repoint production inventory yet.
-6. Add backup integrity, off-site transfer and a restore playbook; demonstrate recovery.
+6. Complete approved Restic repository provisioning and ACL/key management, remote restore into an isolated target, application/POS recovery validation and measured RPO/RTO.
 7. Add Central inventory, per-site Edge identity/VPN, readiness and sync monitoring.
 8. Run lab and small-pilot failure exercises before widening rollout.
 9. Only after 1–10 is proven, enable the 100-site dynamic inventory, staged wave controller, central observability capacity, backup throughput and recovery capacity.

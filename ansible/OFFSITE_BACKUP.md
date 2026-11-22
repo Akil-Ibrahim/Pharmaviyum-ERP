@@ -12,6 +12,10 @@
 - The playbook does not initialize repositories, prune snapshots, delete local artifacts, or change retention.
 - Approval and site/repository/credential validation run on the Ansible controller before SSH. The actual upload is serial, fail-closed and limited to the active 1–10-site wave; inventory architecture ceiling remains 100.
 
+## Local artifact protection
+
+The local `playbooks/backup.yml` artifact is a gzip-compressed SQL dump; that playbook does not encrypt it at rest. Its `0700` backup-directory and `0600` file permissions restrict filesystem access but are not encryption. Restic encrypts data in the remote repository, not the local source dump retained before/after upload. Before using this workflow with real pharmacy data, verify the approved host/storage-level encryption, local access controls and recovery-key handling for the retention period. Do not describe the local backup as encrypted based on Restic alone.
+
 ## Required protected per-pharmacy variables
 
 Store these in encrypted `host_vars` or an approved secrets integration; never commit plaintext values:

@@ -220,6 +220,8 @@ Kubernetes намеренно не входит в обязательные пе
 - [Stage 1 Load Testing](./STAGE_1_LOAD_TESTING.md) — процедура нагрузочного тестирования; пока только английская версия.
 - [Руководство Ansible для Pharmacy Edge](./ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md) · [Ansible Pharmacy Edge Guide](./ANSIBLE_PHARMACY_EDGE_GUIDE.md) — подготовка хостов, безопасность и deployment.
 - [План внедрения Pharmacy Edge](./PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) · [English](./PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) — границы rollout, fleet capacity, release, backup/recovery и критерии приёмки.
+- [Архитектура off-site backup](./OFFSITE_BACKUP_ARCHITECTURE.ru.md) · [English](./OFFSITE_BACKUP_ARCHITECTURE.md) — Restic upload, оставшиеся задачи remote restore и критерии приёмки disaster recovery.
+- [Инструкция Restic off-site upload](../../ansible/OFFSITE_BACKUP.md) — защищённые параметры, явное approval и границы проверки первой реализации; не является подтверждением DR acceptance.
 - [FastAPI Cloud runbook](../deployment/FASTAPI_CLOUD.ru.md) — размещение и deployment публичной Demo.
 - [Руководство по тестированию](../guides/TESTING.ru.md) — тесты и CI.
 
