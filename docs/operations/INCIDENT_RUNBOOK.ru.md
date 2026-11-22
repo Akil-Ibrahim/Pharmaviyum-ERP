@@ -7,8 +7,8 @@
 1. Проверьте последний deployment и результат CI.
 2. Проверьте `/health`.
 3. Проверьте `/ready`.
-4. Если `/ready` сообщает о сбое PostgreSQL или Redis, восстановите зависимость до перезапуска application replicas.
-5. Если проблема появилась после релиза, выполните rollback на предыдущий immutable image/revision через поддерживаемый механизм платформы.
+4. Если `/ready` сообщает о сбое PostgreSQL или cache/broker dependency, восстановите зависимость до перезапуска application services. Production использует PostgreSQL и Valkey Compose services на аптечном сервере; у Demo собственные изолированные dependencies.
+5. Если проблема появилась после Production release, используйте утверждённый Ansible rollback playbook с точным подтверждением выбранных hosts, предыдущим immutable image digest и доказательством совместимости со схемой БД. После rollback проверьте `/ready`. Для Demo используйте только Demo FastAPI Cloud release workflow; не применяйте Production Ansible rollback path.
 
 ### API работает медленно
 
