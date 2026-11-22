@@ -159,4 +159,18 @@
 - Он не разрешает unrestricted superuser access или автоматическое переназначение legacy patients.
 - Он не включает patient data в Central POS Inbox events.
 
-**Статус:** архитектурный gap задокументирован; реализация не начата. Рассматривать PHI access governance как release blocker для production workflows, раскрывающих данные на уровне пациента, пока все gates не подтверждены.
+**Исторический статус на source baseline от 2026-11-21:** реализация ещё не была начата. Ниже приведён follow-up от 2026-11-22 с текущей частичной remediation. PHI access governance остаётся release blocker до выполнения всех gates для соответствующих patient-level маршрутов.
+
+## 6. Статус последующей реализации — 2026-11-22
+
+Read-only проверка `main` на `2616b4209fc037b1e4f1899b876478bf72258641` подтверждает частичную реализацию после исторического аудита:
+
+- Стандартные patient list/detail/phone routes теперь используют `PatientSummaryResponse` вместо широкого legacy `PatientResponse`.
+- `GET /api/v1/patients/{patient_id}/ai-profile` требует явные pharmacy и purpose, active membership и принадлежность пациента аптеке; запрещает platform superuser и записывает metadata-only allowed/denied `PHIAccessAudit` decisions.
+- `GET /api/v1/patient-purchases/{patient_id}/history` — отдельный pharmacist-facing route с такими же explicit pharmacy/purpose/membership/ownership controls. Он запрещает superuser и пациентов с null owner, возвращает минимальный projection и записывает allowed/denied audit decisions.
+- Legacy `GET /patient-purchases/` остаётся только для superuser и требует явный pharmacy ID; его query теперь соединяет `Patient` и фильтрует по `Patient.pharmacy_id`. Он всё ещё возвращает более широкий administrative projection и не создаёт новый PHI audit event.
+- Таблица `PHIAccessAudit` защищена DB triggers, запрещающими UPDATE, DELETE и TRUNCATE; integration tests проверяют эти controls и downgrade guard для сохранённых evidence.
+
+Оставшиеся gaps: общие patient/order routes всё ещё допускают global superuser scope; создание пациента по-прежнему может не указывать nullable pharmacy ownership; legacy administrative purchase listing не использует новый read audit; не завершены support-access governance, audit-persistence failure tests, полное покрытие маршрутов и telemetry redaction evidence. Наличие route-specific integration tests — это evidence в исходниках, а не утверждение об успешном exact-commit CI или Production acceptance.
+
+Этот follow-up не устанавливает legal/regulatory compliance и не сертифицирует live Production deployment.
