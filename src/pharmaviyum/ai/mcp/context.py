@@ -41,6 +41,8 @@ class MCPAuthorizationContext:
             raise ValueError(
                 "MCP context selected_patient_id must be a positive integer or None"
             )
+        if self.purpose is not None and self.selected_patient_id is None:
+            raise ValueError("MCP context purpose requires a selected patient")
         if self.purpose is not None and self.purpose not in (
             "dispensing_review", "medication_reconciliation", "patient_request"
         ):
