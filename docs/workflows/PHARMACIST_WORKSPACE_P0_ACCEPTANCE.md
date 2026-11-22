@@ -4,10 +4,10 @@
 
 **Status:** implementation backlog / acceptance contract  
 **Scope:** P0 pharmacist-facing workflow and patient-data safety  
-**Baseline:** `main` at `c6d35b828c1958f1bcb9077bbd0b6a71ef94613b`  
+**Baseline:** `main` at `2616b4209fc037b1e4f1899b876478bf72258641` (2026-11-22)  
 **Application code changed by this specification:** no
 
-This document converts the source audit into testable P0 delivery gates. It does not claim that any item below is implemented.
+This document converts the source audit into testable P0 delivery gates. P0.3 now has a source implementation and route-specific integration tests; the remaining gates below distinguish implemented behavior from unverified acceptance.
 
 ## 1. P0.1 — Restore the POS user interface
 
@@ -68,33 +68,33 @@ This document converts the source audit into testable P0 delivery gates. It does
 
 **Exit criterion:** a complete patient → prescription → pharmacist verification → FEFO lot allocation → payment/receipt → patient history chain is reproducible and tested. AI remains decision support only.
 
-## 3. P0.3 — Build a tenant-scoped patient-history API
+## 3. P0.3 — Tenant-scoped patient-history API (implemented baseline; acceptance follow-through)
 
-### Existing evidence
-- `GET /api/v1/patient-purchases/` requires `CurrentSuperuser`.
-- The current query selects `PatientPurchase` directly; it does not join `Patient`, constrain `Patient.pharmacy_id` or accept a patient selector.
-- `Patient.pharmacy_id` is nullable.
-- The endpoint is a global administrative listing, not a pharmacist patient-history contract.
+### Implemented evidence
+- `GET /api/v1/patient-purchases/{patient_id}/history` is a separate pharmacist-facing route. It requires explicit `pharmacy_id` and a bounded purpose code, rejects platform superusers, requires active `PharmacyMembership`, validates active patient ownership in the selected pharmacy, and fails closed for null/unassigned patients.
+- The response is an explicit minimum-field projection: purchase ID, product name, category, quantity and purchase timestamp.
+- Allowed and denied decisions are written as metadata-only `PHIAccessAudit` records; no clinical payload is copied into the audit event.
+- `tests/integration/test_patient_history_tenant_scope.py` covers allowed access, cross-pharmacy denial, missing membership, null-owner denial and superuser denial.
+- The companion `GET /api/v1/patients/{patient_id}/ai-profile` route applies explicit pharmacy/purpose/membership checks and metadata-only auditing; `tests/integration/test_ai_patient_profile_access.py` covers its allowed/denied cases.
+- The `PHIAccessAudit` Alembic migration adds database triggers rejecting UPDATE, DELETE and TRUNCATE; `tests/integration/test_phi_access_audit_immutability.py` exercises those controls and protects retained evidence during downgrade.
+- Legacy `GET /patient-purchases/` remains superuser-only, requires an explicit pharmacy ID and now joins/filters through `Patient.pharmacy_id`. It still returns a broader administrative projection and does not emit the new PHI access audit event.
 
-### Required implementation
-- Keep the current global administrative endpoint inaccessible to ordinary pharmacist roles unless its purpose and authorization are explicitly redesigned.
-- Add a separate patient-scoped API requiring authenticated pharmacy membership and a patient selector.
-- Resolve patient membership on the server and constrain every returned purchase through the patient's authorized pharmacy scope.
-- Define handling for legacy rows whose patient has null/unassigned pharmacy ownership; fail closed for ordinary pharmacist access until records are reconciled.
-- Return only fields required for the pharmacist workflow; avoid exposing unrelated identifiers and financial details.
-- Add an audit event for access to patient history, including actor, pharmacy, patient reference, purpose/context and timestamp, without copying clinical content into logs.
-- Apply pagination, deterministic ordering, bounded date filters and response limits.
+### Remaining work
+- Add failure-injection tests proving the PHI read fails closed if audit persistence/commit fails.
+- Decide whether the legacy administrative listing should be retained, narrowed or replaced; if retained, define and implement its audit and privileged-access policy.
+- Govern remaining global superuser reads in general patient/order routes with a separate purpose-bound support-access policy; the new pharmacist routes deliberately deny superusers.
+- Preserve exact-commit PostgreSQL integration CI artifacts and validate the patient-history query plan/index on the approved schema.
+- Do not treat this read API as patient-linked dispensing: POS checkout still has no patient/prescription linkage.
 
 ### Acceptance gates
-1. Pharmacist in Pharmacy A can retrieve history only for a patient authorized in Pharmacy A.
-2. Pharmacy A cannot enumerate or retrieve purchases for Pharmacy B patients by changing IDs, filters or pagination.
-3. Unassigned/null-pharmacy patient records are not exposed to ordinary pharmacists.
-4. Non-pharmacist and unauthenticated callers are denied according to RBAC policy.
-5. Superuser administrative access is separately tested and audited.
-6. Query plan uses patient/pharmacy indexes appropriate to the final query shape.
-7. Negative cross-tenant tests run against PostgreSQL, not only mocked repositories.
+1. The route-specific integration tests above must pass on the exact candidate commit.
+2. A pharmacist in Pharmacy A can retrieve only a patient owned by Pharmacy A; cross-pharmacy and null-owner requests fail closed.
+3. Missing membership and platform-superuser requests are denied and durably audited.
+4. The response field allowlist is asserted by tests.
+5. Audit-persistence failure is tested before this is treated as a complete PHI governance control.
+6. Legacy administrative access and remaining global superuser paths have an explicit owner and audit policy.
 
-**Exit criterion:** separate, explicit admin and pharmacist contracts; cross-tenant denial demonstrated by integration tests.
+**Current status:** the pharmacist patient-history API and route-level audit are implemented in source with PostgreSQL integration tests. P0.3 is not fully accepted until exact-commit CI evidence, audit-failure tests and remaining privileged-read policy are complete. This is not Production/site acceptance evidence.
 
 ## 4. P0.4 — Complete staged Mortarium patient-session validation
 
