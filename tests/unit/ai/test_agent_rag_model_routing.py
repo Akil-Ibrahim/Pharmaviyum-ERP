@@ -578,6 +578,7 @@ def test_api_session_scope_fails_closed_without_production_secret(
             SimpleNamespace(pharmacy_id=7),
             SimpleNamespace(id=42),
             101,
+            "dispensing_review",
         )
 
 
