@@ -1,6 +1,6 @@
 # ADR: Off-site encrypted backup architecture for Pharmacy Edge
 
-- Status: Proposed
+- Status: Proposed; the first Restic upload slice is implemented, but no operational or Production DR acceptance is established.
 - Scope: 1-site lab and pilot, 2–3-site and 10-site rollout; design target up to 100 pharmacies.
 - Authorization: design only. This document does not authorize provider provisioning, credential creation, backup transfer, retention deletion, restore, or deployment.
 
