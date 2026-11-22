@@ -74,7 +74,7 @@ See the [Mortarium Pharmaceutical Chunking Pipeline](./chunking-pipeline.md) for
 ## 7. MCP tool boundary
 The registry filters tools by role; execution requires trusted request-scoped authorization context.
 - The model may propose a tool call; the server decides whether it is authorized.
-- Never trust tenant/user/role identifiers supplied inside model-generated arguments.
+- Never trust tenant/user/role identifiers supplied inside model-generated arguments. Patient IDs supplied by the model are selectors only and must be checked against the trusted selected-patient context and purpose.
 - Validate arguments against strict schemas.
 - Use deterministic domain services for writes.
 - Write operations require explicit authorization and a separately verified approval flow; model intent is not approval.
