@@ -26,7 +26,7 @@ This is the canonical deployment boundary for Pharmaviyum. It distinguishes the 
 
 ## Version and verification policy
 
-Application and service versions must be pinned in the dependency lockfiles, container definitions and Ansible variables appropriate to each deployment profile. PostgreSQL, pgvector, Redis/Valkey, Python, Docker Engine and Compose versions must be verified against the actual runtime before they are described as deployed versions. A compatibility target is not an observed server version.
+Application and service versions must be pinned in the dependency lockfiles, container definitions and Ansible variables appropriate to each deployment profile. PostgreSQL, pgvector, Redis/Valkey, Python, Docker Engine and Compose versions must be verified against the actual runtime before they are described as deployed versions. A compatibility target is not an observed server version. **Current Ansible implementation gap:** the pharmacy-server Compose template still uses mutable image tags `pgvector/pgvector:pg16` and `valkey/valkey:8-alpine`; all runtime images must be changed to reviewed immutable digests and the exact versions recorded before live Production rollout.
 
 PostgreSQL major-version changes require an approved backup, compatibility, migration, restore-test, maintenance-window and rollback plan. Never attach an existing data volume to a different PostgreSQL major version.
 

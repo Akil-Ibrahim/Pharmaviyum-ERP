@@ -25,9 +25,9 @@ GitHub Codespace / Ansible Control Node
           | Docker + Compose     |
           | Pharmaviyum          |
           | PostgreSQL + pgvector|
-          | Redis                |
+          | Redis-compatible cache/queue (Valkey in current Compose) |
           | Ollama               |
-          | Qwen3.5 9B           |
+          | Candidate Qwen3.5 9B |
           +----------------------+
 ```
 
@@ -41,17 +41,17 @@ GitHub Codespaces используется как лабораторная/contr
 - Docker Compose: application runtime and service composition.
 - Pharmaviyum: ERP/CRM application and Mortarium AI layer.
 - PostgreSQL + pgvector: application and vector data.
-- Redis: cache/queue and supporting runtime state.
+- Redis-compatible cache/queue: supporting runtime state; the current Pharmacy Edge Compose uses Valkey 8.
 - Ollama: local LLM runtime.
-- Qwen3.5 9B: default local Mortarium model for the current on-premises profile.
+- Qwen3.5 9B: candidate local Mortarium model for a lab target profile; hardware validation and separate Production approval are required. The current Ansible Compose does not deploy Ollama or the model.
 
 - Ansible: подготовка сервера, конфигурация, deployment, обновления и health checks.
 - Docker Compose: runtime приложения и композиция сервисов.
 - Pharmaviyum: ERP/CRM-приложение и AI layer Mortarium.
 - PostgreSQL + pgvector: прикладные и векторные данные.
-- Redis: cache/queue и вспомогательное runtime-состояние.
+- Redis-compatible cache/queue: вспомогательное runtime-состояние; текущий Pharmacy Edge Compose использует Valkey 8.
 - Ollama: локальный runtime LLM.
-- Qwen3.5 9B: текущая модель по умолчанию для локального Mortarium-профиля.
+- Qwen3.5 9B: кандидат для локального лабораторного Mortarium-профиля; требуются проверка оборудования и отдельное Production approval. Текущий Ansible Compose не развёртывает Ollama или саму модель.
 
 ## Minimum laboratory profile / Минимальный лабораторный профиль
 
@@ -69,13 +69,13 @@ The laboratory intentionally starts below the recommended production hardware pr
 | Access | SSH |
 | Runtime | Docker + Docker Compose |
 | Database | PostgreSQL + pgvector |
-| Cache/queue | Redis |
-| Local LLM | Ollama + Qwen3.5 9B |
+| Cache/queue | Redis-compatible service (Valkey 8 in current Compose profile) |
+| Local LLM | Candidate lab target: Ollama + Qwen3.5 9B (separate provisioning required) |
 | Application | Pharmaviyum ERP/CRM + Mortarium |
 
-The laboratory may run Qwen3.5 9B on CPU. CPU execution validates integration only; it does not represent production LLM performance.
+The lab AI stage is a separate target validation step: the current Ansible Compose does not define an Ollama service or provision model weights. If Ollama is provisioned separately for the lab, it may run Qwen3.5 9B on CPU. CPU execution validates integration only; it does not represent Production LLM performance.
 
-В лаборатории Qwen3.5 9B может работать на CPU. CPU-запуск проверяет интеграцию, но не является показателем production-производительности LLM.
+Этап проверки локального AI является отдельным целевым шагом: текущий Ansible Compose не определяет Ollama service и не загружает model weights. Если Ollama отдельно подготовлен в лаборатории, Qwen3.5 9B может работать на CPU. CPU-запуск проверяет интеграцию, но не является показателем Production-производительности LLM.
 
 ## Mandatory validation path / Обязательный путь валидации
 
@@ -164,7 +164,7 @@ Deploy and verify:
 
 - Pharmaviyum API;
 - PostgreSQL + pgvector;
-- Redis;
+- Redis-compatible cache/queue (Valkey 8 in the current Compose profile);
 - database migrations;
 - required configuration;
 - application health endpoint.
@@ -173,7 +173,7 @@ Deploy and verify:
 
 - Pharmaviyum API;
 - PostgreSQL + pgvector;
-- Redis;
+- Redis-compatible cache/queue (Valkey 8 в текущем Compose profile);
 - database migrations;
 - конфигурацию;
 - health endpoint приложения.
@@ -210,21 +210,22 @@ The second run should not introduce unnecessary changes when the desired state h
 
 Повторный запуск не должен вносить ненужные изменения, если desired state уже достигнут.
 
-Ansible documents idempotency as a core property of modules that converge systems toward a desired final state. The project will verify this property in the laboratory rather than assuming it.
+Ansible documents idempotency as a core property of modules that converge systems toward a desired final state. The project will verify this property in the laboratory rather than assuming it. See the [Ansible playbook guide](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html).
 
-Ansible рассматривает idempotency как ключевое свойство модулей, которые приводят систему к требуемому конечному состоянию. В Pharmaviyum это свойство будет проверяться в лаборатории, а не предполагаться автоматически. citeturn0search1
+Ansible рассматривает idempotency как ключевое свойство модулей, которые приводят систему к требуемому конечному состоянию. В Pharmaviyum это свойство будет проверяться в лаборатории, а не предполагаться автоматически. См. [руководство Ansible по playbooks](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html).
 
 ### 8. Check mode / Check mode
 
 Where supported, use:
 
 ```bash
-ansible-playbook playbooks/pharmacy-server.yml --check
+cd ansible
+ansible-playbook -i inventory/lab/hosts.yml playbooks/deploy.yml --limit pharmacy-edge-lab-01 --check
 ```
 
-Check mode is a simulation and does not apply supported changes to remote systems. It is used as an additional validation layer before applying changes.
+Check mode simulates supported changes and is an additional validation layer, not proof that a real deployment will succeed. Run it only against the disposable lab inventory after its host and protected runtime variables have been provisioned. See the [Ansible check mode documentation](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_checkmode.html).
 
-Check mode является симуляцией и не применяет поддерживаемые изменения к удалённой системе. Он используется как дополнительный уровень проверки перед применением изменений. citeturn0search0
+Check mode моделирует поддерживаемые изменения и служит дополнительным уровнем проверки, но не доказывает успешность реального deployment. Запускайте его только для disposable lab inventory после подготовки хоста и защищённых runtime variables. См. [документацию Ansible по check mode](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_checkmode.html).
 
 ### 9. Update and recovery / Обновление и восстановление
 

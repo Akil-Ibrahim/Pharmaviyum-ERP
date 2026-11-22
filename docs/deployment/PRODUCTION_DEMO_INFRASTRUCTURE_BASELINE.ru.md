@@ -26,7 +26,7 @@
 
 ## Политика версий и проверки
 
-Версии приложения и сервисов должны быть зафиксированы в dependency lockfiles, container definitions и Ansible variables соответствующего deployment profile. Версии PostgreSQL, pgvector, Redis/Valkey, Python, Docker Engine и Compose необходимо сверять с фактическим runtime, прежде чем указывать их как развёрнутые. Целевая совместимость не равна наблюдаемой версии сервера.
+Версии приложения и сервисов должны быть зафиксированы в dependency lockfiles, container definitions и Ansible variables соответствующего deployment profile. Версии PostgreSQL, pgvector, Redis/Valkey, Python, Docker Engine и Compose необходимо сверять с фактическим runtime, прежде чем указывать их как развёрнутые. Целевая совместимость не равна наблюдаемой версии сервера. **Текущий пробел Ansible:** Compose template аптечного сервера пока использует изменяемые image tags `pgvector/pgvector:pg16` и `valkey/valkey:8-alpine`; до live Production rollout все runtime images необходимо заменить на проверенные immutable digests и зафиксировать точные версии.
 
 Смена major-версии PostgreSQL требует утверждённого плана backup, проверки совместимости, миграции, тестового восстановления, maintenance window и rollback. Нельзя подключать существующий data volume к другой major-версии PostgreSQL.
 

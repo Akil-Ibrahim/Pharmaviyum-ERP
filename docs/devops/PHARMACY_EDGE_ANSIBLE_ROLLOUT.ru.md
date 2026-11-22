@@ -256,6 +256,8 @@ Backup нельзя считать пригодным для восстанов�
 6. Backup пока локальный; off-site copy и restore-from-off-site не настроены. Новый isolated restore drill проверяет базовую схему, но не является полной приёмкой восстановления приложения.
 7. Rollback меняет только backend image; он не обрабатывает совместимость схемы или восстановление данных.
 8. UPS, VPN, site identity, host security и централизованный fleet monitoring пока не подтверждены как развёрнутые возможности.
+9. Текущий Ansible Compose использует изменяемые PostgreSQL и Valkey image tags (`pgvector/pgvector:pg16`, `valkey/valkey:8-alpine`); до live Production rollout замените их проверенными immutable digests.
+10. Текущий Ansible Compose не развёртывает Ollama и model weights. Локальный Mortarium inference остаётся целевым lab/Production profile и требует отдельной provisioning role, проверки оборудования и явного site approval.
 
 ## 11. Порядок реализации
 
