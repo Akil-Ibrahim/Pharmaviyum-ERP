@@ -220,7 +220,7 @@ Cloud demo и аптечные Edge nodes — разные профили deploy
 
 Изменения схемы Demo требуют отдельной проверки и утверждения операции над изолированной Demo БД, подтверждённого backup/restore path и post-migration validation. Никогда не используйте Production database URL или migration credentials для Demo.
 
-Миграции Production и их автоматизация управляются за пределами этого публичного репозитория. Не добавляйте Production database endpoints, migration secrets или привилегированные Production operations в публичные workflows.
+Миграции Production — отдельная утверждаемая операция релиза. Репозиторий содержит повторно используемые Ansible migration playbooks, но выполнение на действующей площадке требует защищённых site inventory и credentials, а также разрешения оператора. Не добавляйте Production database endpoints, migration secrets или привилегированные live operations в публичные GitHub workflows.
 
 Новая Demo БД пуста. Успешный deployment не импортирует лекарственный каталог, не создаёт остатки и не восстанавливает бизнес-данные. Импортируйте каталог только отдельной проверенной идемпотентной процедурой и только с синтетическими данными.
 
@@ -233,7 +233,7 @@ curl --fail https://pharmaviyum-erp.fastapicloud.dev/ready
 
 Ожидаемый ready response должен показывать healthy для PostgreSQL, Redis и AI initialization. Workflow развёртывания Demo также проверяет SPA routes, runtime identity, обработку неверной авторизации и защиту POS.
 
-Зелёный CI не доказывает корректность Demo provider quota, содержимого БД, полноты каталога или всех аптечных процессов. Перед объявлением релиза Demo успешным выполните live smoke checks. Health checks и release evidence Production относятся к отдельно управляемому Production environment.
+Зелёный CI не доказывает корректность Demo provider quota, содержимого БД, полноты каталога или всех аптечных процессов. Перед объявлением релиза Demo успешным выполните live smoke checks. Health checks и site-specific release evidence Production собираются на аптечном сервере по процедурам под контролем оператора. См. [Production operations runbook](../operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md) и [руководство Ansible rollout](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md).
 
 ## 10. Правила безопасности
 

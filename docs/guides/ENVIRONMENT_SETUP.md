@@ -219,7 +219,7 @@ The canonical Alembic tree is at the repository root. The public Demo deployment
 
 Demo schema changes require a separately reviewed and approved operation against the isolated Demo database, a verified backup/restore path and post-migration validation. Never use a Production database URL or migration credential for Demo.
 
-Production database migrations and their automation are maintained outside this public repository. Do not add Production database endpoints, migration secrets or privileged Production operations to public workflows.
+Production database migrations are a separately approved release operation. The repository contains reusable Ansible migration playbooks, but live execution must use protected site inventory and credentials with operator approval. Do not add Production database endpoints, migration secrets or privileged live operations to public GitHub workflows.
 
 A newly provisioned Demo database is empty. A successful app deployment does not import a drug catalog, create inventory or restore business data. Seed/import catalog data only through a separately reviewed, idempotent procedure using synthetic data.
 
@@ -232,7 +232,7 @@ curl --fail https://pharmaviyum-erp.fastapicloud.dev/ready
 
 The expected ready response reports PostgreSQL, Redis and AI initialization as healthy. The Demo deployment workflow also verifies the SPA routes, runtime identity, invalid-credential handling and protected POS access.
 
-A green CI run does not prove that Demo provider quota, database content, catalog coverage or every pharmacy workflow is correct. Complete the live Demo smoke checks before declaring a Demo release successful. Production health checks and release evidence belong to the separately managed Production environment.
+A green CI run does not prove that Demo provider quota, database content, catalog coverage or every pharmacy workflow is correct. Complete the live Demo smoke checks before declaring a Demo release successful. Production health checks and site-specific release evidence are collected on the pharmacy server under operator-controlled procedures. Use the [Production operations runbook](../operations/PRODUCTION_OPERATIONS_RUNBOOK.md) and [Ansible rollout guide](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
 
 ## 10. Security rules
 
