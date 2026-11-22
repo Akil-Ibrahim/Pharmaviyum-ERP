@@ -63,6 +63,8 @@ Production application releases направляются на аптечный �
 
 До релиза проверьте CI и approval для точного утверждённого Production source commit и immutable image digest в контролируемом Production release pipeline. Public Demo CI не доказывает, что Production artifact был собран или проверен. Дополнительно проверьте backup/restore evidence, migration plan, environment variables, smoke tests и rollback target.
 
+**Текущее ограничение публичного Ansible migration path:** Alembic environment требует `MIGRATION_DATABASE_URL` в `production`/`staging` и намеренно не использует `DATABASE_URL` приложения как fallback. Текущий public Ansible migration environment template и inventory не передают эту отдельную переменную/credential. Поэтому `ansible/playbooks/migrate.yml` пока не является подтверждённым end-to-end Production migration path. Не обходите эту защиту и не переиспользуйте runtime credential; до заявления о готовности требуется reviewed secret-injection и least-privilege migration-role design.
+
 Откатывайте revision приложения только если предыдущая revision совместима с текущей схемой. Откат БД — отдельная операция высокого риска. Предпочитайте backward-compatible expand/contract migrations. Восстановление из backup выполняйте только по утверждённому recovery plan.
 
 ## Backup и restore
