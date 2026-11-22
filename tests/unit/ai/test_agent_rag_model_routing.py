@@ -588,3 +588,23 @@ def test_query_request_rejects_whitespace_session_id() -> None:
 
     with pytest.raises(ValidationError, match="session_id"):
         QueryRequest(query="Check this medication", session_id="   ", pharmacy_id=7)
+
+
+@pytest.mark.unit
+def test_prompt_cache_identity_preserves_patient_access_purpose():
+    from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+
+    context = AgentHarness._cache_context(
+        {
+            "session_id": "opaque-purpose-scoped-session",
+            "patient_id": 101,
+            "purpose": "dispensing_review",
+            "untrusted_extra": "must-not-enter-cache-key",
+        }
+    )
+
+    assert context == {
+        "session_id": "opaque-purpose-scoped-session",
+        "patient_id": 101,
+        "purpose": "dispensing_review",
+    }
