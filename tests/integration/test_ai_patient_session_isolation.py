@@ -90,12 +90,18 @@ async def test_sync_and_stream_routes_bind_reused_session_to_patient_scope(
     harness = RecordingHarness()
     app.dependency_overrides[get_agent_harness] = lambda: harness
     try:
-        for patient_id in (patient_a.id, patient_b.id, None):
+        request_scopes = [
+            (patient_a.id, "dispensing_review"),
+            (patient_a.id, "medication_reconciliation"),
+            (patient_b.id, "dispensing_review"),
+            (None, None),
+        ]
+        for patient_id, purpose in request_scopes:
             payload = {
                 "query": "Synthetic isolation test; no clinical facts.",
                 "session_id": "same-browser-session",
                 "patient_id": patient_id,
-                "purpose": "dispensing_review" if patient_id is not None else None,
+                "purpose": purpose,
                 "pharmacy_id": pharmacy.id,
                 "language": "en",
             }
@@ -115,28 +121,24 @@ async def test_sync_and_stream_routes_bind_reused_session_to_patient_scope(
     assert [call["mode"] for call in harness.calls] == [
         "sync",
         "stream",
-        "sync",
-        "stream",
-        "sync",
-        "stream",
-    ]
-    scopes = {
-        patient_id: (
+    ] * len(request_scopes)
+    scopes = [
+        (
             harness.calls[position * 2]["session_id"],
             harness.calls[position * 2 + 1]["session_id"],
         )
-        for position, patient_id in enumerate((patient_a.id, patient_b.id, None))
-    }
-    for sync_scope, stream_scope in scopes.values():
+        for position in range(len(request_scopes))
+    ]
+    for sync_scope, stream_scope in scopes:
         assert sync_scope == stream_scope
 
-    assert len({scope[0] for scope in scopes.values()}) == 3
+    assert len({sync_scope for sync_scope, _ in scopes}) == len(request_scopes)
+    expected_contexts = [scope for scope in request_scopes for _ in range(2)]
     assert all(
         call["context"]["patient_id"] == expected_patient_id
-        for call, expected_patient_id in zip(
-            harness.calls,
-            (patient_a.id, patient_a.id, patient_b.id, patient_b.id, None, None),
-            strict=True,
+        and call["context"]["purpose"] == expected_purpose
+        for call, (expected_patient_id, expected_purpose) in zip(
+            harness.calls, expected_contexts, strict=True
         )
     )
 
