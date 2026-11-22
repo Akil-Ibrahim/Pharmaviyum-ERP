@@ -90,7 +90,7 @@ PR #287 merged the patient-scoped session and checkpoint namespace implementatio
 
 This is not evidence of production activation or a completed staging release gate. The required end-to-end test remains: reuse one client session across Patient A → Patient B → no patient in synchronous and streaming modes, including PostgreSQL checkpoint persistence and Redis memory. Until that test is evidenced and the release is explicitly deployed, do not claim patient-context isolation is operationally proven in production.
 
-Required invariant: pharmacy + authenticated user + patient (including explicit none) + client session.
+Required invariant: pharmacy + authenticated user + patient (including explicit none) + controlled purpose for patient-bound requests + client session. Purpose is included in the API HMAC session namespace (`mortarium-session:v4`) so a purpose change cannot reuse the previous purpose's Redis memory or downstream session/checkpoint state.
 
 Namespace changes require a compatibility, retention and rollback plan. See [ADR-0003](../adr/ADR-0003-patient-scoped-ai-state.md) and [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287).
 
