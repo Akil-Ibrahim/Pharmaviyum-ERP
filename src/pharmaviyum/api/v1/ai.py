@@ -18,6 +18,7 @@ from src.pharmaviyum.ai.harness import AgentResponse
 from src.pharmaviyum.ai.mcp import tool_registry
 from src.pharmaviyum.ai.mcp.context import (
     MCPAuthorizationContext,
+    PatientAccessPurpose,
     reset_mcp_context,
     set_mcp_context,
 )
@@ -101,7 +102,12 @@ async def _validate_patient_scope(
         )
 
 
-def _set_mcp_context(tenant, current_user: CurrentUser, patient_id: int | None, purpose):
+def _set_mcp_context(
+    tenant,
+    current_user: CurrentUser,
+    patient_id: int | None,
+    purpose: PatientAccessPurpose | None,
+):
     return set_mcp_context(
         MCPAuthorizationContext(
             user_id=tenant.user_id,
@@ -213,6 +219,7 @@ async def query_agent(
         "user_id": tenant.user_id,
         "pharmacy_id": tenant.pharmacy_id,
         "patient_id": request.patient_id,
+        "purpose": request.purpose,
         "country": request.country,
         "language": request.language,
         "halal_filter": request.halal_filter,
