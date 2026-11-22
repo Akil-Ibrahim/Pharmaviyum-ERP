@@ -53,9 +53,12 @@ Medication entity and negation metrics require structured gold labels or
 independently extracted predictions. They must not infer ground truth from the
 same model output being evaluated.
 
-Patient-context isolation is a deterministic authorization regression check.
-It must also be tested at the retriever/database boundary with cross-pharmacy
-and cross-patient decoy records. Do not use real patient data in the golden set.
+Patient-context isolation is a deterministic authorization regression check,
+not an authorization control. It must also be tested at the retriever/database
+boundary with cross-pharmacy and cross-patient decoy records. The current MCP
+`get_patient_history` tool is not bound to the selected patient/purpose and is
+not covered by this metric; add dedicated tool-context and PHI-audit tests.
+Do not use real patient data in the golden set.
 
 ## Dataset requirements
 
