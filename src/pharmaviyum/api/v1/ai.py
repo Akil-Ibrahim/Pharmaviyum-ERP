@@ -10,7 +10,7 @@ from typing import Any, Literal, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import select
 
 from src.pharmaviyum.ai.dependencies import get_agent_harness
@@ -67,6 +67,14 @@ class QueryRequest(BaseModel):
         default=False, description="Enable strict halal compliance check"
     )
     force_fresh: bool = Field(default=False, description="Bypass prompt cache")
+
+    @model_validator(mode="after")
+    def validate_patient_purpose(self) -> QueryRequest:
+        if (self.patient_id is None) != (self.purpose is None):
+            raise ValueError(
+                "A selected patient and a controlled purpose must be supplied together"
+            )
+        return self
 
     @field_validator("session_id")
     @classmethod
@@ -341,6 +349,7 @@ async def query_agent_stream(
         "user_id": tenant.user_id,
         "pharmacy_id": tenant.pharmacy_id,
         "patient_id": request.patient_id,
+        "purpose": request.purpose,
         "country": request.country,
         "language": request.language,
         "halal_filter": request.halal_filter,
