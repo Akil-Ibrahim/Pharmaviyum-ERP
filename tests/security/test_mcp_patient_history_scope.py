@@ -258,3 +258,49 @@ async def test_registry_preserves_selected_patient_and_purpose_context(monkeypat
 
     assert result.selected_patient_id == 101
     assert result.purpose == "dispensing_review"
+
+
+@pytest.mark.unit
+def test_ai_query_requires_selected_patient_and_purpose_as_a_pair():
+    from pydantic import ValidationError
+
+    from src.pharmaviyum.api.v1.ai import QueryRequest
+
+    with pytest.raises(ValidationError, match="controlled purpose"):
+        QueryRequest(query="Review this patient", patient_id=101, pharmacy_id=42)
+
+    with pytest.raises(ValidationError, match="controlled purpose"):
+        QueryRequest(
+            query="General pharmacy question",
+            purpose="dispensing_review",
+            pharmacy_id=42,
+        )
+
+    request = QueryRequest(
+        query="Review this patient",
+        patient_id=101,
+        purpose="dispensing_review",
+        pharmacy_id=42,
+    )
+    assert request.patient_id == 101
+    assert request.purpose == "dispensing_review"
+
+
+@pytest.mark.unit
+def test_mcp_context_rejects_invalid_patient_scope_and_purpose():
+    with pytest.raises(ValueError, match="selected_patient_id"):
+        MCPAuthorizationContext(
+            user_id=7,
+            pharmacy_id=42,
+            user_role="pharmacist",
+            selected_patient_id=0,
+        )
+
+    with pytest.raises(ValueError, match="recognized patient-access purpose"):
+        MCPAuthorizationContext(
+            user_id=7,
+            pharmacy_id=42,
+            user_role="pharmacist",
+            selected_patient_id=101,
+            purpose="free_text_reason",
+        )
