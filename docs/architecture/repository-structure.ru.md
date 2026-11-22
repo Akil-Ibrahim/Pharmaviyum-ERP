@@ -21,7 +21,7 @@
 | `ansible/` | Автоматизация инфраструктуры Pharmacy Edge, inventory-файлы, роли и playbook |
 | `docker/` | Ресурсы Docker: образы и конфигурация контейнеров |
 | `deploy/` | Ресурсы развёртывания, не относящиеся непосредственно к пакету приложения |
-| `nginx/` | Конфигурация reverse proxy Nginx для корневой Compose-топологии |
+| `nginx/` | Отдельный файл конфигурации Nginx; сейчас не подключён к root Compose или Production deployment через Ansible |
 | `docker-compose.yml` | Локальная/основная топология Docker Compose |
 | `docker-compose.codespaces.yml` | Переопределения для GitHub Codespaces |
 | `docker-compose.monitoring.yml` | Стек мониторинга |
