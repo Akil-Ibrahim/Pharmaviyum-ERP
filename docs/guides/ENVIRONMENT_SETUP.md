@@ -200,7 +200,7 @@ The workflow must not read Production credentials or target Production infrastru
 3. Complete approval for the demo-pharmaviyum-erp environment if configured.
 4. Verify the exact deployed commit, staging runtime identity, CPython version, /health, /ready, frontend routes, invalid-auth handling and protected POS access.
 
-The Demo deployment workflow does not run Alembic migrations. Demo schema changes require a separate approved operation and verified backup/restore path. Production deployment and migrations are operated outside this public repository. See the [FastAPI Cloud Demo deployment runbook](../deployment/FASTAPI_CLOUD.md).
+The Demo deployment workflow does not run Alembic migrations. Demo schema changes require a separate approved operation and verified backup/restore path. Production application releases use the reviewed Ansible playbooks in this repository; database migrations remain a separately approved operation executed through the controlled Production procedure. Live credentials, site-specific inventory and execution approvals remain outside the public repository. See the [FastAPI Cloud Demo deployment runbook](../deployment/FASTAPI_CLOUD.md) and [Pharmacy Edge Ansible rollout](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
 ## 7. Edge / on-premises pharmacy installations
 
 The cloud demo and pharmacy Edge nodes are different deployment profiles:

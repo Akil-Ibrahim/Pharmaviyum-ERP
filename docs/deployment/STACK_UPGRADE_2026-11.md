@@ -52,4 +52,4 @@ For Production, verify the pharmacy-server cache/broker service version, TLS/aut
 6. Apply Alembic migrations only through the separately approved migration procedure.
 7. Deploy the public Demo through the protected Demo-only FastAPI Cloud workflow and verify the exact build SHA, staging runtime, startup, health, readiness, authentication, and POS protection smoke checks. Production deployment uses the reviewed Ansible playbooks in this public repository; live inventory, host access, per-site credentials and site-specific execution approvals remain operator-controlled and are not committed.
 
-A repository change or successful CI run does not by itself prove that a hosted service has been upgraded or is production-ready.
+A repository change or successful CI run does not by itself prove that a deployed environment has been upgraded or is production-ready.

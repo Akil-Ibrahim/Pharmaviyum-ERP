@@ -366,7 +366,7 @@ AI-слой находится в `src/pharmaviyum/ai` и предоставля
 
 ## Развёртывание
 
-Публичная Demo размещается в **FastAPI Cloud**. Production использует тот же технологический стек приложения, но отдельную платформу хостинга; сведения о провайдере и развёртывании относятся к закрытой документации и не публикуются в этом README. Границы окружений и инфраструктурная политика описаны в [архитектурной документации](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md).
+Публичная Demo размещается в **FastAPI Cloud**. Production использует тот же технологический стек приложения и развёртывается на аптечном сервере через **Ansible**. Реальные Production host details, inventory и credentials остаются закрытыми и никогда не коммитятся. См. [границу развёртывания](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md) и [план Ansible rollout Pharmacy Edge](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md).
 
 ## Разработка
 

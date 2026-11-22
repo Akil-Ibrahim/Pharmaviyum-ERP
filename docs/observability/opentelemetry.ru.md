@@ -23,7 +23,7 @@ Pharmaviyum использует OpenTelemetry SDK для распределён
 | `OTEL_INCLUDE_FASTAPI_REQUEST_SPANS` | `false` | Opt-in автоматических FastAPI request spans только для development/test |
 | `OTEL_INCLUDE_SENSITIVE_CLIENT_SPANS` | `false` | Opt-in автоматических SQLAlchemy и HTTPX spans только для development/test |
 
-Укажите один endpoint в приложении FastAPI Cloud, например:
+Для публичной Demo укажите OTLP endpoint в приложении FastAPI Cloud, например. Для Production настройте endpoint и доступ к collector на аптечном сервере через защищённую Ansible-managed environment:
 
 ```dotenv
 OTEL_ENABLED=true

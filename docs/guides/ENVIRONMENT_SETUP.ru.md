@@ -201,7 +201,7 @@ Workflow не должен читать Production credentials или обращ
 3. Пройдите approval для environment demo-pharmaviyum-erp, если он настроен.
 4. Проверьте точный deployed commit, staging runtime identity, версию CPython, /health, /ready, frontend routes, обработку неверной авторизации и защиту POS.
 
-Workflow развёртывания Demo не запускает Alembic migrations. Изменение схемы Demo требует отдельной утверждённой операции и проверенного backup/restore path. Deployment и миграции Production выполняются за пределами этого публичного репозитория. См. [руководство по развёртыванию Demo в FastAPI Cloud](../deployment/FASTAPI_CLOUD.ru.md).
+Workflow развёртывания Demo не запускает Alembic migrations. Изменение схемы Demo требует отдельной утверждённой операции и проверенного backup/restore path. Релизы Production-приложения выполняются через проверенные Ansible playbooks этого репозитория; миграции БД остаются отдельной утверждённой операцией и выполняются по контролируемой Production-процедуре. Реальные credentials, site-specific inventory и approvals остаются за пределами публичного репозитория. См. [руководство Demo для FastAPI Cloud](../deployment/FASTAPI_CLOUD.ru.md) и [план Ansible rollout Pharmacy Edge](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md).
 ## 7. Pharmacy Edge / on-premises
 
 Cloud demo и аптечные Edge nodes — разные профили deployment:
