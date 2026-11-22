@@ -91,6 +91,8 @@ Registry фильтрует инструменты по ролям; выполн
 
 Документированные на данный момент инструменты аптечных операций доступны только для чтения. Не делайте вывод о наличии возможности записи лишь из факта существования MCP.
 
+**Текущее ограничение PHI boundary:** `MCPAuthorizationContext` сейчас содержит user, pharmacy и role, но не выбранного пациента и purpose. `get_patient_history` принимает patient ID от модели и проверяет только, что активный пациент принадлежит доверенной аптеке; он не доказывает, что это пациент, выбранный для текущей AI-сессии, и не записывает `PHIAccessAudit`. Инструмент возвращает широкий demographic/clinical summary. Пока context не связан с выбранным patient и purpose, с allowed/denied PHI audit и mismatch tests, нельзя заявлять MCP patient-context isolation. Этот gap отличается от HMAC-изоляции Redis memory и LangGraph checkpoints.
+
 ## 8. Изоляция контекста пациента
 
 PR #287 объединил реализацию session namespace и checkpoint namespace с областью пациента в `main` (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`). Проверки RAG Safety Regression, Unit Tests и Integration Tests прошли на merge commit.
