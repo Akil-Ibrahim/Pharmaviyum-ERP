@@ -74,9 +74,7 @@ async def test_vector_store_verifies_tables_in_the_active_search_path():
     try:
         async with admin_engine.begin() as connection:
             await connection.execute(text(f'CREATE SCHEMA "{schema_name}"'))
-            await connection.execute(
-                text(
-                    f"""
+            await connection.execute(text(f"""
                     CREATE TABLE "{schema_name}".evaluation_chunks (
                         id UUID PRIMARY KEY,
                         document_id UUID NOT NULL,
@@ -89,52 +87,30 @@ async def test_vector_store_verifies_tables_in_the_active_search_path():
                         created_at TIMESTAMP DEFAULT NOW(),
                         CONSTRAINT unique_chunk UNIQUE (document_id, chunk_index)
                     )
-                    """
-                )
-            )
-            await connection.execute(
-                text(
-                    f"""
+                    """))
+            await connection.execute(text(f"""
                     CREATE INDEX idx_evaluation_chunks_embedding
                     ON "{schema_name}".evaluation_chunks
                     USING hnsw (embedding vector_cosine_ops)
-                    """
-                )
-            )
-            await connection.execute(
-                text(
-                    f"""
+                    """))
+            await connection.execute(text(f"""
                     CREATE INDEX idx_evaluation_chunks_metadata
                     ON "{schema_name}".evaluation_chunks USING gin (metadata)
-                    """
-                )
-            )
-            await connection.execute(
-                text(
-                    f"""
+                    """))
+            await connection.execute(text(f"""
                     CREATE INDEX idx_evaluation_chunks_pharmacy_id
                     ON "{schema_name}".evaluation_chunks ((metadata ->> 'pharmacy_id'))
-                    """
-                )
-            )
-            await connection.execute(
-                text(
-                    f"""
+                    """))
+            await connection.execute(text(f"""
                     CREATE INDEX idx_evaluation_chunks_content_fts
                     ON "{schema_name}".evaluation_chunks
                     USING gin (to_tsvector('english', content))
-                    """
-                )
-            )
-            await connection.execute(
-                text(
-                    f"""
+                    """))
+            await connection.execute(text(f"""
                     CREATE INDEX idx_evaluation_chunks_content_fts_simple
                     ON "{schema_name}".evaluation_chunks
                     USING gin (to_tsvector('simple', content))
-                    """
-                )
-            )
+                    """))
 
         scoped_engine = create_async_engine(
             migration_url,
