@@ -505,6 +505,7 @@ def test_api_session_scope_separates_patients_and_explicit_no_patient_scope(
     no_patient = _scoped_session_id("conversation-123", tenant, user, None)
 
     assert patient_a != patient_b
+    assert patient_a != different_purpose
     assert patient_a != no_patient
     assert patient_b != no_patient
     assert patient_a.startswith("mortarium-session:v4:")
@@ -554,7 +555,7 @@ def test_api_session_scope_changes_when_secret_rotates(
     tenant = SimpleNamespace(pharmacy_id=7)
     user = SimpleNamespace(id=42)
     monkeypatch.setattr(app_settings, "SECRET_KEY", "first-session-secret")
-    first = _scoped_session_id("conversation-123", tenant, user, 101)
+    first = _scoped_session_id("conversation-123", tenant, user, 101, "dispensing_review")
     monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-session-secret")
     second = _scoped_session_id("conversation-123", tenant, user, 101)
     assert first != second
