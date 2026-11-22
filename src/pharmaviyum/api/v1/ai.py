@@ -320,6 +320,11 @@ async def query_agent_stream(
 ):
     """Streaming AI query bound to the authenticated pharmacy tenant."""
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
+    if (request.patient_id is None) != (request.purpose is None):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="A selected patient and a controlled purpose must be supplied together",
+        )
     await _validate_patient_scope(request.patient_id, tenant.pharmacy_id, session)
     raw_session_id = request.session_id or str(uuid.uuid4())
     session_id = _scoped_session_id(
@@ -336,7 +341,7 @@ async def query_agent_stream(
     }
 
     async def event_generator():
-        token = _set_mcp_context(tenant, current_user)
+        token = _set_mcp_context(tenant, current_user, request.patient_id, request.purpose)
         try:
             async for event in harness.astream(
                 session_id=session_id,
