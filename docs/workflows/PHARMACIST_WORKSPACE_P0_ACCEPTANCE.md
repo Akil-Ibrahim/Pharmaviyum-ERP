@@ -113,6 +113,7 @@ Run in an isolated staging environment with synthetic patients and dedicated Pos
 6. Verify two application instances derive identical scopes with the same configured secret.
 7. Verify missing/rotated secret behavior fails closed and follows documented rotation policy.
 8. Verify logs, traces and evaluation artifacts contain no raw patient identifiers or clinical payloads.
+9. Verify MCP authorization context carries the selected patient and purpose; `get_patient_history` rejects a model-supplied patient ID that differs from the selected patient and writes allowed/denied `PHIAccessAudit` decisions. This control is not implemented in the current MCP context/tool path.
 
 **Exit criterion:** reproducible staged evidence attached to the release record. Merge and unit tests alone do not satisfy this gate.
 
