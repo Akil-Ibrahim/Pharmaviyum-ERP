@@ -312,6 +312,7 @@ def test_agent_checkpoint_thread_id_is_opaque_and_tenant_scoped(
     assert first != other_user
     assert first != other_pharmacy
     assert patient_a != patient_b
+    assert patient_a != different_purpose
     assert patient_a != no_patient
     assert patient_a != first
     assert first.startswith("agent:v2:")
@@ -496,14 +497,17 @@ def test_api_session_scope_separates_patients_and_explicit_no_patient_scope(
     monkeypatch.setattr(app_settings, "SECRET_KEY", "api-session-test-secret")
     tenant = SimpleNamespace(pharmacy_id=7)
     user = SimpleNamespace(id=42)
-    patient_a = _scoped_session_id("conversation-123", tenant, user, 101)
-    patient_b = _scoped_session_id("conversation-123", tenant, user, 202)
+    patient_a = _scoped_session_id("conversation-123", tenant, user, 101, "dispensing_review")
+    patient_b = _scoped_session_id("conversation-123", tenant, user, 202, "dispensing_review")
+    different_purpose = _scoped_session_id(
+        "conversation-123", tenant, user, 101, "medication_reconciliation"
+    )
     no_patient = _scoped_session_id("conversation-123", tenant, user, None)
 
     assert patient_a != patient_b
     assert patient_a != no_patient
     assert patient_b != no_patient
-    assert patient_a.startswith("mortarium-session:v3:")
+    assert patient_a.startswith("mortarium-session:v4:")
     assert "conversation-123" not in patient_a
     assert "101" not in patient_a
     assert "202" not in patient_b
