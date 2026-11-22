@@ -95,6 +95,20 @@
 
 **Исправление в PR #387:** общие query builders добавляют `Patient.pharmacy_id == scope` в patient, order и purchase lookups, если tenant scope определён. Существующее глобальное поведение superuser при scope `None` сохраняется. PostgreSQL SQL-compilation regression tests и полный CI прошли. Database-backed integration coverage на двух tenant всё ещё необходима.
 
+### F-07 — MCP patient-history tool ограничен аптекой, но не patient-context/purpose-bound и не записывает PHI audit
+
+Файлы: `src/pharmaviyum/ai/mcp/context.py`, `src/pharmaviyum/api/v1/ai.py`, `src/pharmaviyum/ai/mcp/schemas.py`, `src/pharmaviyum/ai/mcp/tools/patient_history.py`
+
+- `MCPAuthorizationContext` содержит только `user_id`, `pharmacy_id` и `user_role`. AI API передаёт эти поля; выбранный `patient_id`, используемый для HMAC session namespace, не включён в MCP authorization context.
+- `PatientHistoryRequest` принимает `patient_id`, переданный моделью, и не содержит purpose-of-use.
+- Запрос инструмента проверяет `Patient.id`, доверенный `pharmacy_id` и active status. Это блокирует cross-pharmacy lookup, но не доказывает, что запрошенный пациент совпадает с пациентом, выбранным для текущей AI-сессии.
+- Инструмент возвращает full name, age, gender, blood type, allergies, conditions, active-prescription count, recent-order count, loyalty tier и preferred language.
+- Инструмент не записывает `PHIAccessAudit`. Текущий log содержит только counts и latency, не записывая patient ID или clinical payload.
+
+**Риск:** AI session, привязанная к Patient A, потенциально может запросить Patient B в той же аптеке, потому что trusted MCP context не содержит/не проверяет выбранного пациента и purpose. Это authorization gap в исходном коде, а не доказательство раскрытия данных в Production.
+
+**Требуемые действия:** связать MCP context с выбранным patient и purpose; требовать совпадение patient ID инструмента с этим context либо отдельный authorization для смены пациента; записывать allowed/denied `PHIAccessAudit`; сузить output schema; добавить mismatch, missing-purpose, denied-access и audit-failure integration tests.
+
 ### F-08 — Runtime database credential является PostgreSQL bootstrap superuser; audit triggers не обеспечивают полную неизменяемость
 
 Файлы: `ansible/roles/app-backend/files/docker-compose-backend.yml`, `ansible/group_vars/all.yml`, `ansible/roles/postgresql/tasks/main.yml`, `alembic/versions/2026_11_21_000001_phi_access_audit.py`
