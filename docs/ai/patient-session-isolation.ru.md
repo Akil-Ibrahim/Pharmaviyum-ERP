@@ -6,7 +6,7 @@
 
 Состояние диалога Mortarium изолируется по кортежу:
 
-`pharmacy_id + authenticated user_id + patient_id + client session_id`
+`pharmacy_id + authenticated user_id + patient_id + purpose + client session_id`
 
 Отсутствие пациента является отдельной областью `patient:none`. Это не wildcard и такая сессия никогда не должна разделять состояние с диалогом, привязанным к конкретному пациенту.
 
