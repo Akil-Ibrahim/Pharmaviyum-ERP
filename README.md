@@ -341,12 +341,11 @@ The repository is organized by responsibility, with clear boundaries between app
 
 For directory ownership, root-level configuration rules, and safe file-movement procedures, use the canonical [Repository Structure Guide](docs/architecture/repository-structure.md) · [Русская версия](docs/architecture/repository-structure.ru.md).
 
-## Production System Status
+## Demo System Status
 
-Open the live Pharmaviyum system status page:
+Open the public Demo system status page:
 
-- **System status:** https://pharmaviyum-erp.fastapicloud.dev/system-status
-- **Admin login:** `admin`
+- **Demo system status:** https://pharmaviyum-erp.fastapicloud.dev/system-status
 - **Demo access:** Use the public Demo test account listed above. Production access and credentials are managed separately and are not part of this repository.
 
 ## Deployment
