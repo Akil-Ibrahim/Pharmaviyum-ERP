@@ -67,7 +67,7 @@ Production application releases направляются на аптечный �
 
 ## Backup и restore
 
-- Проверьте provider-specific PostgreSQL backup/PITR configuration.
+- Проверьте утверждённый график резервного копирования локальной PostgreSQL, retention, off-site копию (если настроена) и документированную процедуру restore. См. Off-site Backup Architecture; не предполагайте наличие cloud-provider PITR service.
 - Определите retention Redis и checkpoints отдельно.
 - Храните ключи шифрования backup вне Git.
 - Фиксируйте возраст backup и срок хранения.

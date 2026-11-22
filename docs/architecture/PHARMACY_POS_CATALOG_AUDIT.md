@@ -92,7 +92,7 @@ The Alembic environment prefers FastAPI Cloud's `DATABASE_URL` and strips the un
 This audit did not connect to the production database, inspect its `alembic_version` value, or execute migrations. Before any schema change:
 1. Verify `alembic heads` and `alembic history` in a reproducible local/staging environment.
 2. Compare the deployed database's current revision with the repository graph.
-3. Test upgrade and rollback behavior against a disposable Neon branch or isolated database.
+3. Test upgrade and rollback behavior against a disposable local PostgreSQL instance or an isolated non-production database matching the target schema.
 4. Take/verify a restorable backup before any production rollout.
 5. Never run destructive cleanup or rewrite applied migration history as part of the POS feature.
 

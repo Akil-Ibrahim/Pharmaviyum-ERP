@@ -2,7 +2,7 @@
 
 ## Scope
 
-This record describes the repository's current application and hosted data-service baseline. It is not evidence that a deployment or database migration has completed. Production deployment remains a separately approved operation.
+This record describes the repository's application dependency baseline and the historical environment changes captured in November 2026. It is not evidence that a deployment or database migration has completed. Production deployment remains a separately approved operation.
 
 ## Historical hosted data-service baseline — superseded
 
@@ -38,18 +38,18 @@ SELECT extversion FROM pg_extension WHERE extname = 'vector';
 
 ## Redis and Celery
 
-Hosted Production and Demo must not share Redis credentials or namespaces. Redis is used for cache/coordination and background-task infrastructure; it is not the source of truth for sales, dispensing, stock, or audit records. POS request handling and permitted local/offline sales must not depend on Redis, Celery, or AI-provider availability. The durable PostgreSQL outbox remains the source of truth for synchronization work.
+Production and Demo must not share database credentials, cache credentials, namespaces or data. Redis is used for cache/coordination and background-task infrastructure; it is not the source of truth for sales, dispensing, stock, or audit records. POS request handling and permitted local/offline sales must not depend on Redis, Celery, or AI-provider availability. The durable PostgreSQL outbox remains the source of truth for synchronization work.
 
-Confirm the managed Redis server version, TLS/authentication requirements, memory/connection limits, persistence/eviction policy, and provider recovery guarantees before release. Do not run destructive flush or key-cleanup operations as routine maintenance.
+For Production, verify the pharmacy-server cache/broker service version, TLS/authentication requirements, memory/connection limits, persistence/eviction policy and local recovery procedure. For Demo, verify the separately provisioned Demo service and its provider limits. Do not infer Production service behavior from Demo provider metadata. Do not run destructive flush or key-cleanup operations as routine maintenance.
 
 ## Release and verification gates
 
 1. Review the exact commit and successful CI checks.
-2. Confirm Production and Demo use distinct database and Redis endpoints and credentials.
+2. Confirm Production and Demo use distinct database and supporting-service endpoints, credentials and namespaces.
 3. Verify PostgreSQL server and pgvector extension versions independently in each environment.
-4. Verify the provider-reported Redis server version and connectivity for each environment.
+4. Verify the actual cache/broker server version and connectivity in each environment using its own runtime or service inspection method.
 5. Confirm backup/PITR and restore evidence for PostgreSQL.
 6. Apply Alembic migrations only through the separately approved migration procedure.
-7. Deploy the public Demo through the protected Demo-only FastAPI Cloud workflow and verify the exact build SHA, staging runtime, startup, health, readiness, authentication, and POS protection smoke checks. Production deployment is managed outside this public repository.
+7. Deploy the public Demo through the protected Demo-only FastAPI Cloud workflow and verify the exact build SHA, staging runtime, startup, health, readiness, authentication, and POS protection smoke checks. Production deployment uses the reviewed Ansible playbooks in this public repository; live inventory, host access, per-site credentials and site-specific execution approvals remain operator-controlled and are not committed.
 
 A repository change or successful CI run does not by itself prove that a hosted service has been upgraded or is production-ready.

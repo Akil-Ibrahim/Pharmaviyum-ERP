@@ -15,7 +15,7 @@ Use these sources in this order:
 
 The application reads environment variables through Pydantic Settings. Names are case-sensitive. Use the exact uppercase names shown in the templates and runbooks.
 
-Do not create deprecated `.env.development` or `.env.production` files. Use `.env` for local development and configure hosted values directly in FastAPI Cloud / GitHub Actions secrets.
+Do not create deprecated `.env.development` or `.env.production` files. Use `.env` for local development. Configure Demo application variables in the isolated FastAPI Cloud Demo environment and Demo deployment credentials in the protected Demo GitHub Environment. Production configuration is rendered/applied through the reviewed Ansible Pharmacy Edge profile using protected per-site secret sources; never put live Production values in FastAPI Cloud or public GitHub secrets.
 
 ## 2. Local development
 
@@ -77,7 +77,7 @@ The following are the principal runtime settings. Provider-specific and optional
 | Variable | Purpose | Guidance |
 |---|---|---|
 | `ENVIRONMENT` | Runtime environment | `development`, `staging`, or `production` |
-| `DEBUG` | Debug behavior | Keep `false` in hosted production |
+| `DEBUG` | Debug behavior | Keep `false` in Demo, staging and Production |
 | `LOG_LEVEL` | Application log level | Usually `INFO` in production |
 | `DATABASE_URL` | Main PostgreSQL connection | Async SQLAlchemy URL; use `postgresql+asyncpg://...` |
 | `PGVECTOR_DATABASE_URL` | Vector-store PostgreSQL connection | Async PostgreSQL URL; may use the same database when schema/permissions are suitable |
@@ -136,7 +136,7 @@ The application flag is a fail-closed configuration check. It does not query or 
 
 QwenCloud is the generation provider in this demo profile. Embeddings are configured separately; the Qwen API key does not imply that embeddings are available. Verify the configured embedding provider, credentials, vector dimensions, and ingestion/retrieval tests before enabling cloud RAG.
 
-See [QwenCloud demo operations](../ai/QWENCLOUD_DEMO.md) for implemented versus planned safeguards and the release checklist.
+See [QwenCloud demo operations](../ai/QWENCLOUD_DEMO.md) for implemented versus planned safeguards and the Demo release checklist.
 
 ### Other provider variables
 

@@ -3,9 +3,9 @@
 **Principle:** Advance by evidence and exit criteria, not by calendar labels or infrastructure ambition.
 
 ## Current delivery baseline
-The repository is a FastAPI modular monolith with a React/TypeScript frontend, PostgreSQL-backed state, Redis-compatible cache/memory, Celery task infrastructure and Mortarium LangGraph AI/RAG. FastAPI Cloud is the hosted application path with a manually controlled release workflow.
+The repository is a FastAPI modular monolith with a React/TypeScript frontend, PostgreSQL-backed state, Redis-compatible cache/memory, Celery task infrastructure and Mortarium LangGraph AI/RAG. FastAPI Cloud hosts and releases the public Demo only through a manually controlled workflow. Production uses the same application technology stack deployed to the pharmacy server through the reviewed Ansible playbooks; real host inventory, per-site credentials and live approvals remain operator-controlled.
 
-Pharmacy Edge / Central is a staged target. The 100-pharmacy figure is a design target, not evidence of current production capacity. See [ADR-0002](../adr/ADR-0002-offline-first-central-edge.md).
+The current Production deployment target is the pharmacy server under the Pharmacy Edge profile. Central + Edge fleet synchronization is a staged target architecture, not a claim that a Central service or 100-site fleet is already deployed. The 100-pharmacy figure is a design target, not evidence of current production capacity. See [ADR-0002](../adr/ADR-0002-offline-first-central-edge.md).
 
 ## Stage 0 — Engineering foundation
 **Goal:** Reproducible development and safe delivery.

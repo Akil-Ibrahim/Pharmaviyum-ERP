@@ -2,7 +2,7 @@
 
 [English](README.md) · [Русский](README.ru.md)
 
-This directory is the engineering documentation home for Pharmaviyum ERP/CRM. The English documentation is canonical for engineering and operations; a Russian pharmacy workflow companion is maintained where useful.
+This directory is the engineering documentation home for Pharmaviyum ERP/CRM. The English documentation is canonical for engineering and operations; a Russian pharmacy workflow companion is maintained where useful. The repository-wide rules for documentation ownership, evidence labels, environment boundaries and link validation are defined in [Documentation Governance](./DOCUMENTATION_GOVERNANCE.md).
 
 ## Start here
 

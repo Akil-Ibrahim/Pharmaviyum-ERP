@@ -57,7 +57,7 @@ therefore validates authenticated application/database/cache behavior on
 synthetic data, but it is **not a Docker-based capacity result** and must not be
 used to claim production capacity. This profile did not include writes, AI/RAG,
 provider costs, sustained soak, or PostgreSQL/Redis/container CPU and memory
-time series. This is a historical local run and does not validate the current hosted Production/Demo baseline (Neon PostgreSQL 18 and isolated Demo PostgreSQL 18; managed Redis endpoints).
+time series. This is a historical local run and does not validate the current deployment baseline. At test time (2026-10-15), it used a disposable local PostgreSQL 17.11 / pgvector 0.8.0 / Redis 8.0.2 stack. Current Production uses the pharmacy-server Pharmacy Edge profile; Demo uses isolated FastAPI Cloud data services. Neither environment is validated by this historical run.
 
 Use the guarded profiles in [STAGE_1_LOAD_TESTING.md](./STAGE_1_LOAD_TESTING.md)
 after rebuilding the Codespace with Docker-in-Docker to obtain Docker-specific

@@ -18,7 +18,7 @@ The platform brings connected workflows for patients, prescriptions, product ref
 
 Its pilot-first approach is intended to support gradual adoption alongside existing pharmacy systems, rather than requiring an immediate replacement.
 
-The canonical integration branch is `main`. Changes are reviewed through pull requests and validated by GitHub Actions before merge. Production deployment is a separate, manually approved release process.
+The canonical integration branch is `main`. Changes are reviewed through pull requests and validated by GitHub Actions before merge. Public Demo releases are manually dispatched to FastAPI Cloud. Production releases use the reviewed Ansible playbooks to deploy the same application technology stack to the pharmacy server; live host inventory, per-site credentials and execution approvals remain under operator control.
 
 ## At a Glance
 
@@ -26,7 +26,7 @@ The canonical integration branch is `main`. Changes are reviewed through pull re
 - **Pharmacy domain:** POS, dispensing, product reference, inventory, procurement, and pharmacy operations.
 - **AI layer:** Mortarium, with LangGraph-based RAG and MCP integration.
 - **Infrastructure:** PostgreSQL, pgvector, and Redis for data and state; Docker for local development and Pharmacy Edge automation.
-- **Hosting:** FastAPI Cloud hosts the public Demo. Production uses the same application technology stack on separately managed hosting; its provider and deployment details are maintained outside this public README.
+- **Deployment:** FastAPI Cloud hosts the public Demo only. Production uses the same application technology stack deployed to the pharmacy server through Ansible. Public playbooks and general operating procedures are documented here; real host inventory, per-site credentials, SSH access and live execution approvals remain restricted.
 
 ## Demo System Access
 
@@ -39,7 +39,7 @@ Use the demo environment to review the current Pharmaviyum system status:
 - **Demo login:** `admin`
 - **Demo password:** `V9#qL2!mR7@xP4$kT8&nW5zB`
 
-These credentials are for the isolated Demo environment only and must never be used in Production. The Demo environment must contain synthetic data only; do not store real patient, prescription, customer, or other confidential information in it.
+These published credentials are a shared, low-privilege Demo test account for the isolated public Demo only. They are not Production credentials and must never be reused in Production or any other environment. The Demo environment must contain synthetic data only; do not store real patient, prescription, customer, or other confidential information in it.
 
 ## Contents
 
@@ -489,7 +489,7 @@ The development approach is **pilot-first**: where appropriate, Pharmaviyum can 
 
 ## Documentation
 
-Browse the documentation in your preferred language:
+Browse the documentation in your preferred language. Repository-wide documentation rules, evidence labels and the Demo/Production boundary are defined in [Documentation Governance](docs/DOCUMENTATION_GOVERNANCE.md):
 
 - **English:** [Engineering documentation index](docs/README.md)
 - **Русский:** [Индекс инженерной документации](docs/README.ru.md)

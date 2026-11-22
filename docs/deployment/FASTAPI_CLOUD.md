@@ -1,6 +1,6 @@
 # Pharmaviyum Demo deployment to FastAPI Cloud
 
-This runbook documents the public Demo deployment only. The workflow at .github/workflows/deploy-fastapi-cloud.yml must never target Production. Production hosting, deployment credentials, release automation, database migrations and operational procedures are maintained outside this public repository.
+This runbook documents the public Demo deployment only. The workflow at .github/workflows/deploy-fastapi-cloud.yml must never target Production. Production application releases use the public Ansible playbooks in this repository to deploy the same application technology stack to the pharmacy server. General rollout, backup, health-check and rollback procedures are documented in the Pharmacy Edge guide and Production runbooks. Real Production inventory, host addresses, SSH access, per-site credentials, live migration approvals and site-specific execution approvals remain outside this public repository and under operator control.
 
 ## 1. Environment boundary
 

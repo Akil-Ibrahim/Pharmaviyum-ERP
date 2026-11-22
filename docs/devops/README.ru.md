@@ -169,7 +169,7 @@ Kubernetes намеренно не входит в обязательные пе
 ## Связанные документы
 
 - [Инженерные benchmarks и требования к качеству](./ENGINEERING_BENCHMARK_REQUIREMENTS.ru.md) — канонический контракт метрик.
-- [Инженерная дорожная карта](./ENGINEERING_ROADMAP.ru.md) · [English](./ENGINEERING_ROADMAP.md) — этапы, владельцы, доказательства и критерии выхода; русский перевод ещё не опубликован.
+- [Инженерная дорожная карта](./ENGINEERING_ROADMAP.ru.md) · [English](./ENGINEERING_ROADMAP.md) — этапы, владельцы, доказательства и критерии выхода.
 - [Stage 1 Load Testing](./STAGE_1_LOAD_TESTING.md) — процедура нагрузочного тестирования; пока только английская версия.
 - [Руководство Ansible для Pharmacy Edge](./ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md) · [Ansible Pharmacy Edge Guide](./ANSIBLE_PHARMACY_EDGE_GUIDE.md) — подготовка хостов, безопасность и deployment.
 - [План внедрения Pharmacy Edge](./PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) · [English](./PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) — границы rollout, fleet capacity, release, backup/recovery и критерии приёмки.

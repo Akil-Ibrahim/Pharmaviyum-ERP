@@ -1,6 +1,6 @@
 # Развёртывание Demo Pharmaviyum в FastAPI Cloud
 
-Это руководство описывает только развёртывание публичной Demo. Workflow .github/workflows/deploy-fastapi-cloud.yml не должен обращаться к Production. Хостинг Production, credentials развёртывания, release automation, миграции БД и эксплуатационные процедуры управляются за пределами этого публичного репозитория.
+Это руководство описывает только развёртывание публичной Demo. Workflow .github/workflows/deploy-fastapi-cloud.yml не должен обращаться к Production. Релизы Production-приложения выполняются через публичные Ansible playbooks этого репозитория на аптечном сервере с тем же технологическим стеком приложения. Общие процедуры rollout, backup, health checks и rollback описаны в руководстве Pharmacy Edge и Production runbooks. Реальные Production inventory, адреса хостов, SSH access, per-site credentials, approvals миграций и разрешения на выполнение операций на конкретных площадках остаются закрытыми и под контролем оператора.
 
 ## 1. Граница окружений
 

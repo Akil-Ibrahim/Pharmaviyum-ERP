@@ -100,7 +100,7 @@ GitHub Codespace
       +--> configured LLM provider / Ollama
 ```
 
-Codespaces — среда разработки. Hosted deployment приложения выполняется отдельно через вручную запускаемый GitHub Actions workflow FastAPI Cloud.
+Codespaces — среда разработки. Вручную запускаемый GitHub Actions workflow FastAPI Cloud развёртывает только публичную Demo. Релизы Production-приложения выполняются на аптечном сервере через проверенные Ansible playbooks; реальные Production inventory, credentials, host access и approvals остаются под контролем оператора.
 
 ## 8. Устранение неполадок
 

@@ -15,7 +15,7 @@ Production работает на аптечном сервере и provision/re
 
 Приложение читает переменные через Pydantic Settings. Имена переменных чувствительны к регистру: используйте точные имена в верхнем регистре из шаблонов и runbook.
 
-Не создавайте устаревшие файлы `.env.development` или `.env.production`. Для локальной разработки используйте `.env`, а hosted-переменные задавайте непосредственно в FastAPI Cloud и GitHub Actions Secrets.
+Не создавайте устаревшие файлы `.env.development` или `.env.production`. Для локальной разработки используйте `.env`. Переменные Demo задавайте в изолированном окружении FastAPI Cloud, а credentials Demo deployment — в защищённом GitHub Environment для Demo. Production configuration применяется через проверенный Ansible Pharmacy Edge profile с использованием защищённых per-site secret sources; не помещайте реальные Production values в FastAPI Cloud или публичные GitHub secrets.
 
 ## 2. Локальная разработка
 
@@ -68,7 +68,7 @@ uv run --locked mypy --explicit-package-bases src/pharmaviyum/
 | Переменная | Назначение | Рекомендации |
 |---|---|---|
 | `ENVIRONMENT` | Окружение | `development`, `staging` или `production` |
-| `DEBUG` | Режим отладки | В hosted production — `false` |
+| `DEBUG` | Режим отладки | В Demo, staging и Production — `false` |
 | `LOG_LEVEL` | Уровень логирования | Обычно `INFO` в production |
 | `DATABASE_URL` | Основное подключение PostgreSQL | Async SQLAlchemy URL, обычно `postgresql+asyncpg://...` |
 | `PGVECTOR_DATABASE_URL` | PostgreSQL для vector store | Может указывать на ту же БД при подходящих schema/permissions |

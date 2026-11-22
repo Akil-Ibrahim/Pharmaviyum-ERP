@@ -40,4 +40,4 @@ The public Demo deployment workflow performs read-only schema compatibility chec
 
 ## Production boundary
 
-This public runbook and its workflows do not deploy, migrate or administer Production. Production hosting and its release procedures are managed separately under the applicable confidentiality controls.
+This runbook and its GitHub Actions workflow apply only to the public Demo; they do not deploy, migrate or administer Production. Production application releases are performed through the reviewed Ansible playbooks in this repository. Real Production inventory, host access, per-site credentials, migration approvals and site-specific execution approvals remain restricted under the applicable confidentiality controls. See the [Pharmacy Edge Ansible rollout plan](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) and [Ansible guide](../devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md).

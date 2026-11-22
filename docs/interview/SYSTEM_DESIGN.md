@@ -737,7 +737,7 @@ This is an important senior-level distinction: **degrade selectively instead of 
 
 # 22. Deployment architecture
 
-The development architecture uses Docker Compose for PostgreSQL/pgvector, Redis, Ollama, FastAPI, and Celery ingestion. The documented hosted release path uses GitHub Actions for CI and FastAPI Cloud for application deployment. fileciteturn56file0L2-L2
+The development architecture uses Docker Compose for PostgreSQL/pgvector, Redis, Ollama, FastAPI, and Celery ingestion. GitHub Actions validates changes; the manually triggered FastAPI Cloud workflow deploys the public Demo only. Production uses the same application technology stack deployed to the pharmacy server through the reviewed Ansible playbooks. See the [Production/Demo infrastructure baseline](../deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) and [Pharmacy Edge rollout plan](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
 
 A production evolution can introduce additional infrastructure only when justified by measurable requirements.
 
