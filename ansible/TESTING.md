@@ -2,14 +2,14 @@
 
 ## Supported toolchain
 
-Use the repository-pinned controller toolchain rather than installing floating latest versions:
+The Ansible controller currently uses CPython 3.14.10. Install the versions declared by the repository:
 
 ```bash
 python -m pip install -r requirements.txt
 ansible-galaxy collection install -r requirements.yml
 ```
 
-The CI controller currently uses Python 3.14.10. Tool versions are pinned in `requirements.txt`; update them through a reviewed dependency change.
+The Python package versions for Ansible, ansible-core, ansible-lint, yamllint and Molecule are pinned in `requirements.txt`. **The Galaxy collections in `requirements.yml` currently have no version constraints**, and the CI workflows upgrade pip before installation. Therefore the complete controller toolchain is not yet fully reproducible: collection or bootstrap-tool versions may change between runs. Treat collection pinning and pip bootstrap pinning as outstanding release-engineering work; do not describe the entire Ansible toolchain as fully pinned until those inputs are locked and reviewed. Update pins through a reviewed dependency change.
 
 ## Run the test suite
 
