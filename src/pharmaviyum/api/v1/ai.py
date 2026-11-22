@@ -134,6 +134,7 @@ def _scoped_session_id(
     tenant,
     current_user: CurrentUser,
     patient_id: int | None,
+    purpose: PatientAccessPurpose | None = None,
 ) -> str:
     """Return an opaque conversation namespace bound to the authenticated scope."""
     if (
@@ -146,13 +147,22 @@ def _scoped_session_id(
         patient_id is not None and (not isinstance(patient_id, int) or patient_id <= 0)
     ):
         raise ValueError("AI patient_id must be a positive integer or None")
+    if (patient_id is None) != (purpose is None):
+        raise ValueError("AI selected patient and purpose must be supplied together")
+    if purpose is not None and purpose not in (
+        "dispensing_review",
+        "medication_reconciliation",
+        "patient_request",
+    ):
+        raise ValueError("AI purpose must be a recognized patient-access purpose")
 
     scope = json.dumps(
         [
-            "mortarium-session:v3",
+            "mortarium-session:v4",
             tenant.pharmacy_id,
             current_user.id,
             patient_id,
+            purpose,
             session_id,
         ],
         separators=(",", ":"),
@@ -168,7 +178,7 @@ def _scoped_session_id(
     digest = hmac.new(
         secret.encode("utf-8"), scope.encode("utf-8"), hashlib.sha256
     ).hexdigest()
-    return f"mortarium-session:v3:{digest}"
+    return f"mortarium-session:v4:{digest}"
 
 
 @router.get("/context")
@@ -222,7 +232,7 @@ async def query_agent(
     await _validate_patient_scope(request.patient_id, tenant.pharmacy_id, session)
     raw_session_id = request.session_id or str(uuid.uuid4())
     session_id = _scoped_session_id(
-        raw_session_id, tenant, current_user, request.patient_id
+        raw_session_id, tenant, current_user, request.patient_id, request.purpose
     )
     context = {
         "user_id": tenant.user_id,
