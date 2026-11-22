@@ -6,7 +6,7 @@
 
 Mortarium conversation state is isolated by the tuple:
 
-\`pharmacy_id + authenticated user_id + patient_id + client session_id\`
+\`pharmacy_id + authenticated user_id + patient_id + purpose + client session_id\`
 
 A missing patient is an explicit \`patient:none\` scope. It is not a wildcard and must never share state with a patient-specific conversation.
 
