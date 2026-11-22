@@ -62,6 +62,7 @@ Rollback the application revision only when the previous revision is compatible 
 - Verify local retention and the documented isolated restore drill. Off-site upload is a separate explicitly approved invocation to a pre-provisioned, site-scoped Restic repository; it does not provision the repository/ACLs or prove restore from the remote copy. See the Off-site Backup Architecture; do not assume a cloud-provider PITR service exists.
 - Define Redis and checkpoint retention separately.
 - The local `backup.yml` artifact is gzip-compressed SQL, not encrypted by that playbook. File modes `0700`/`0600` restrict access but are not encryption; verify approved host/storage-level encryption and recovery-key handling for local backup retention.
+- `ansible/playbooks/migrate.yml` also creates a pre-migration gzip SQL dump with restrictive permissions and a SHA-256 record, but it does not encrypt the dump or apply the regular backup retention policy. Include these artifacts in the approved storage-encryption and retention/cleanup controls.
 - Protect Restic/repository encryption keys outside Git; Restic encryption protects the remote repository, not the plaintext source dump retained on the pharmacy server.
 - Record backup age and retention.
 - Perform restore drills on isolated infrastructure and verify application invariants.
