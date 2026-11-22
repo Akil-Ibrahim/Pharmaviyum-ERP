@@ -13,6 +13,8 @@ A missing patient is an explicit \`patient:none\` scope. It is not a wildcard an
 ## Enforcement points
 
 1. **API boundary** — both synchronous \`/api/v1/ai/query\` and streaming \`/api/v1/ai/query/stream\` derive the same versioned internal session scope after tenant authorization, patient membership validation and controlled-purpose validation. Patient-bound sessions use a purpose-bound HMAC namespace (\`mortarium-session:v4\`), so changing purpose does not reuse the prior purpose's memory/checkpoints.
+The purpose-bound v4 namespace intentionally does not migrate or reuse v3 session keys/checkpoint thread IDs. It also does not delete old v3 Redis entries or checkpoint rows; legacy state remains subject to the approved retention/cleanup policy.
+
 2. **Redis dialogue memory** — memory keys are HMAC-derived from the API-scoped session identifier. Summary, short-term messages, archive and episodic facts therefore inherit the patient boundary.
 3. **Agent checkpoint** — \`PharmacistAgent._thread_id()\` includes authenticated pharmacy, user, patient and session scope in its HMAC input.
 4. **RAG checkpoint** — \`LangGraphRAG._thread_id()\` includes pharmacy, user, patient and session scope in its HMAC input. The persisted checkpoint thread ID is an opaque \`rag:v2:<sha256>\` digest.
