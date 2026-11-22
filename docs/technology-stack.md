@@ -160,7 +160,7 @@ This page records the versions declared by the repository configuration. It is n
 | Area | Version declared in repository | Source of truth |
 |---|---|---|
 | Python | Application runtime pinned exactly to `==3.15.0` in `pyproject.toml` and `.python-version`; CI, Docker and the deployment gate require CPython 3.15.0. The temporary 3.15.0 pin matches the last known FastAPI Cloud `/version` result (2026-11-15); a new rollout still requires live confirmation of the expected build SHA, CPython 3.15.0, health and readiness. Ansible controller CI separately uses Python 3.14.10 for ansible-core 2.21. | `pyproject.toml`, `.python-version`, `.github/workflows/ci.yml`, `.github/workflows/deploy-fastapi-cloud.yml`, `.github/workflows/ansible-quality.yml`, `Dockerfile` |
-| FastAPI | `0.164.0` | `pyproject.toml` (lockfile regeneration pending) |
+| FastAPI | `0.164.0` | `pyproject.toml` and `uv.lock` (declared and resolved versions match) |
 | Uvicorn | `0.54.0` | `pyproject.toml` |
 | Pydantic | `2.14.3` | `pyproject.toml` |
 | Pydantic Settings | `2.16.2` | `pyproject.toml` |
