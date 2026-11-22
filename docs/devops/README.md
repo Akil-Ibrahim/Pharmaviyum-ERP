@@ -249,6 +249,8 @@ The target is production reliability, not technology count.
 
 ## Target architecture
 
+The diagram below is a **target scaling architecture**, not the currently deployed Production topology. The current Production model is an Ansible-managed pharmacy server. Moving to multiple API nodes, shared edge infrastructure and centralized observability requires separate capacity evidence and an approved deployment design.
+
 ```text
                          Internet
                             |
