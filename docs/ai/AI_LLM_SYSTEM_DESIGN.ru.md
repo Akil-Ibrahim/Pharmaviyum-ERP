@@ -99,7 +99,7 @@ PR #287 объединил реализацию session namespace и checkpoint 
 
 Это не доказывает активацию в production или завершение staging release gate. Обязательный end-to-end тест остаётся открытым: повторно использовать одну client session для пациента A → пациента B → отсутствия пациента в синхронном и потоковом режимах, включая PostgreSQL checkpoint persistence и Redis memory. Пока результат такого теста не подтверждён и релиз явно не развернут, нельзя утверждать, что изоляция контекста пациента доказана в production.
 
-Обязательный инвариант: аптека + аутентифицированный пользователь + пациент (включая явное отсутствие пациента) + client session.
+Обязательный инвариант: аптека + аутентифицированный пользователь + пациент (включая явное отсутствие пациента) + controlled purpose для patient-bound запросов + client session. Purpose входит в API HMAC session namespace (`mortarium-session:v4`), поэтому смена purpose не переиспользует Redis memory и downstream session/checkpoint state предыдущей цели.
 
 Изменения namespace требуют плана совместимости, хранения и rollback. См. [ADR-0003](../adr/ADR-0003-patient-scoped-ai-state.md) и [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287).
 
