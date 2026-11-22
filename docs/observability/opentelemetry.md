@@ -38,7 +38,7 @@ Tracing is disabled by default to avoid adding instrumentation overhead when no 
 | `OTEL_INCLUDE_FASTAPI_REQUEST_SPANS` | `false` | Development/test-only opt-in for FastAPI request auto-spans |
 | `OTEL_INCLUDE_SENSITIVE_CLIENT_SPANS` | `false` | Development/test-only opt-in for SQLAlchemy and HTTPX auto-spans |
 
-For the public Demo, configure the OTLP endpoint on the FastAPI Cloud Demo application. For Production, configure telemetry endpoints and collector access on the pharmacy server through the approved Ansible-managed environment. Never send patient-identifying payloads or secrets to telemetry.
+**Current repository state:** the public Ansible `app.env.j2` template does not set `OTEL_ENABLED` or an OTLP endpoint. The application therefore keeps tracing disabled unless an operator supplies the protected telemetry configuration. The repository does not prove that a Production collector is provisioned, reachable or receiving traces. For the public Demo, configure the OTLP endpoint on the FastAPI Cloud Demo application. For Production, configure telemetry endpoints and collector access on the pharmacy server through the approved Ansible-managed environment. Never send patient-identifying payloads or secrets to telemetry.
 
 ```dotenv
 OTEL_ENABLED=true
