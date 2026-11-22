@@ -22,6 +22,7 @@
 
 - Повторное использование одного client session ID для пациента A и пациента B НЕ ДОЛЖНО приводить к повторному использованию памяти, Agent checkpoints, RAG checkpoints или кешированных ответов.
 - Пациент A и запрос без пациента ДОЛЖНЫ использовать разные namespace состояния.
+- Один и тот же пациент и client session при разных controlled purposes ДОЛЖНЫ использовать разные namespace состояния.
 - AI API принимает выбранного пациента только после проверки active ownership в аутентифицированной аптеке и требует вместе с ним контролируемую purpose. Trusted MCP context переносит оба значения через registry dispatch. `get_patient_history` требует точного совпадения patient ID из аргумента модели с выбранным пациентом, повторно проверяет active pharmacy ownership и записывает metadata-only allowed/denied `PHIAccessAudit` до возврата данных. Unit tests покрывают mismatch, отсутствие purpose, отказ по роли, propagation context и ошибку commit аудита. Ответ пока шире целевого minimum-necessary набора; database-backed MCP audit tests, DB-role hardening и staged end-to-end validation остаются открытыми. HMAC session/checkpoint namespaces не заменяют tool-level authorization.
 - Прямое создание Agent/RAG checkpoint также проверяет формат ID пациента и включает его в HMAC scope checkpoint.
 - Необработанные идентификаторы пациента, пользователя, tenant и сессии НЕ ДОЛЖНЫ присутствовать в RAG checkpoint thread ID.
