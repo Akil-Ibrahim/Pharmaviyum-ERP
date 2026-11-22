@@ -50,9 +50,10 @@ class QueryRequest(BaseModel):
     patient_id: int | None = Field(
         default=None, strict=True, gt=0, description="Patient ID for history lookup"
     )
-    purpose: Literal[
-        "dispensing_review", "medication_reconciliation", "patient_request"
-    ] | None = Field(
+    purpose: (
+        Literal["dispensing_review", "medication_reconciliation", "patient_request"]
+        | None
+    ) = Field(
         default=None, description="Controlled purpose for selected-patient PHI access"
     )
     pharmacy_id: int = Field(
@@ -357,7 +358,9 @@ async def query_agent_stream(
     }
 
     async def event_generator():
-        token = _set_mcp_context(tenant, current_user, request.patient_id, request.purpose)
+        token = _set_mcp_context(
+            tenant, current_user, request.patient_id, request.purpose
+        )
         try:
             async for event in harness.astream(
                 session_id=session_id,
