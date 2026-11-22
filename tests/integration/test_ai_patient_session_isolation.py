@@ -15,8 +15,6 @@ import pytest
 from httpx import AsyncClient
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.graph import END, START, MessagesState, StateGraph
-from psycopg.conninfo import make_conninfo
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.ai.agents.checkpointer import AgentCheckpointer
