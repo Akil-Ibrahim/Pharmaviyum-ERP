@@ -83,6 +83,8 @@ The registry filters tools by role; execution requires trusted request-scoped au
 
 The currently documented pharmacist operations tools are read-only. Do not infer write capability from MCP's existence.
 
+**Current PHI boundary limitation:** `MCPAuthorizationContext` currently carries user, pharmacy and role, but not the selected patient or purpose. `get_patient_history` accepts a model-supplied patient ID and checks only that the active patient belongs to the trusted pharmacy; it does not prove that this is the patient selected for the current AI session, and it does not write `PHIAccessAudit`. The tool returns a broad demographic/clinical summary. Until the context is bound to the selected patient and purpose, with allowed/denied PHI audit and mismatch tests, do not claim MCP patient-context isolation. This gap is separate from the HMAC isolation of Redis memory and LangGraph checkpoints.
+
 ## 8. Patient-context isolation
 PR #287 merged the patient-scoped session and checkpoint namespace implementation into `main` (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`). Its RAG Safety Regression, Unit Tests and Integration Tests checks passed on the merge commit.
 
