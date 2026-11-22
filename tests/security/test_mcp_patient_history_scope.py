@@ -97,6 +97,7 @@ def _context(*, patient_id=101, purpose="dispensing_review", role="pharmacist"):
     )
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_patient_history_allows_only_the_selected_patient(monkeypatch):
     from src.pharmaviyum.shared.core import database
@@ -125,6 +126,7 @@ async def test_patient_history_allows_only_the_selected_patient(monkeypatch):
     assert audit.request_id == "mcp-test-request-101"
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_patient_history_denies_model_selected_patient_mismatch(monkeypatch):
     from src.pharmaviyum.shared.core import database
@@ -146,6 +148,7 @@ async def test_patient_history_denies_model_selected_patient_mismatch(monkeypatc
     assert (audit.patient_id, audit.decision) == (101, "denied")
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_patient_history_denies_missing_purpose_and_audits_sentinel(monkeypatch):
     from src.pharmaviyum.shared.core import database
@@ -166,6 +169,7 @@ async def test_patient_history_denies_missing_purpose_and_audits_sentinel(monkey
     assert (audit.decision, audit.purpose) == ("denied", "unspecified")
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_patient_history_denies_non_pharmacist_even_with_matching_scope(
     monkeypatch,
@@ -187,6 +191,7 @@ async def test_patient_history_denies_non_pharmacist_even_with_matching_scope(
     assert fake_session.added[0].decision == "denied"
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_patient_history_fails_closed_when_allowed_audit_cannot_commit(
     monkeypatch,
@@ -216,6 +221,7 @@ class _RegistryOutput(BaseModel):
     purpose: str | None
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_registry_preserves_selected_patient_and_purpose_context(monkeypatch):
     from src.pharmaviyum.ai.mcp.registry import MCPToolRegistry
