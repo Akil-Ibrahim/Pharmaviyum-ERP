@@ -80,7 +80,8 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
         ):
             await record_decision("denied")
             raise PermissionError(
-                "Patient history access requires the selected patient and an explicit purpose"
+                "Patient history access requires the selected patient "
+                "and an explicit purpose"
             )
 
         query = (
@@ -96,7 +97,7 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
         patient = result.scalar_one_or_none()
         if not patient:
             await record_decision("denied")
-            raise ValueError("Patient not found or not accessible")
+            raise PermissionError("Patient not found or not accessible")
 
         allergies = (
             [
