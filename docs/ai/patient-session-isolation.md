@@ -40,6 +40,7 @@ The test suite verifies:
 - same client session + different patient yields different API session scopes;
 - patient-specific and no-patient scopes differ;
 - malformed patient/session identifiers are rejected;
+- MCP tools must reject a patient ID that differs from the selected patient context, require a purpose code and durably audit allowed/denied PHI reads (not yet implemented in the current MCP context/tool path);
 - Agent checkpoint IDs differ by patient and reject malformed patient context;
 - RAG checkpoint IDs differ by patient, tenant and secret; hide raw identifiers; and fail closed when a production secret is absent.
 
