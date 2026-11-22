@@ -22,7 +22,7 @@ A missing patient is an explicit \`patient:none\` scope. It is not a wildcard an
 
 - Reusing one client session ID for patient A and patient B MUST NOT reuse memory, Agent checkpoints, RAG checkpoints or cached responses.
 - Patient A and a request without a patient MUST use distinct state namespaces.
-- A patient ID is accepted only after the API confirms that the active patient belongs to the authenticated pharmacy tenant.
+- The AI API accepts a request patient ID only after confirming that the active patient belongs to the authenticated pharmacy tenant. **This does not currently constrain the MCP tool's own patient ID argument:** `MCPAuthorizationContext` contains no selected patient or purpose, so `get_patient_history` can query another active patient within the same pharmacy. It also does not write `PHIAccessAudit`. Treat MCP patient binding and audit as a separate open release gate; HMAC session/checkpoint namespaces alone do not enforce it.
 - Direct Agent/RAG checkpoint construction also validates patient ID shape and includes it in the checkpoint HMAC scope.
 - Raw patient, user, tenant and session identifiers MUST NOT appear in the RAG checkpoint thread ID.
 - The application \`SECRET_KEY\` must remain stable across instances and deployments. Rotation changes HMAC-derived checkpoint and memory namespaces and requires a planned migration/expiry strategy.
