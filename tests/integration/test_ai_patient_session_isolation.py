@@ -149,7 +149,7 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
     test_redis,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """Real Redis must not return one patient's dialogue to another patient."""
+    """Real Redis must isolate patient dialogue across patient and purpose scopes."""
     monkeypatch.setattr(app_settings, "SECRET_KEY", "patient-isolation-redis-secret")
     memory = DialogueMemory(redis_client=test_redis)
     tenant = TenantContext(user_id=42, pharmacy_id=7)
