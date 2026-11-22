@@ -160,7 +160,7 @@ Frontend-зависимости определяются в следующих �
 | Область | Версия, объявленная в репозитории | Источник истины |
 |---|---|---|
 | Python | Runtime приложения строго зафиксирован как `==3.15.0` в `pyproject.toml` и `.python-version`; CI, Docker и deployment gate требуют CPython 3.15.0. Временная фиксация 3.15.0 совпадает с последним известным результатом FastAPI Cloud `/version` от 2026-11-15; новый rollout всё равно требует live-подтверждения ожидаемого build SHA, CPython 3.15.0, health и readiness. Ansible controller CI отдельно использует Python 3.14.10 для ansible-core 2.21. | `pyproject.toml`, `.python-version`, `.github/workflows/ci.yml`, `.github/workflows/deploy-fastapi-cloud.yml`, `.github/workflows/ansible-quality.yml`, `Dockerfile` |
-| FastAPI | `0.164.0` | `pyproject.toml` (обновление lock-файла ожидает генерации) |
+| FastAPI | `0.164.0` | `pyproject.toml` и `uv.lock` (задекларированная и разрешённая версии совпадают) |
 | Uvicorn | `0.54.0` | `pyproject.toml` |
 | Pydantic | `2.14.3` | `pyproject.toml` |
 | Pydantic Settings | `2.16.2` | `pyproject.toml` |
