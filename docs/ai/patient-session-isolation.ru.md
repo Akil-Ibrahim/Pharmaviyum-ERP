@@ -1,6 +1,6 @@
 # Изоляция состояния диалогов Mortarium по пациентам
 
-**Статус:** реализовано в ветке pull request; не активно в production до проверки, слияния и развертывания.
+**Статус:** PR #287 влит в `main` (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`). Staged end-to-end validation и Production activation не подтверждены; этот документ не является доказательством deployment.
 
 ## Область действия
 
