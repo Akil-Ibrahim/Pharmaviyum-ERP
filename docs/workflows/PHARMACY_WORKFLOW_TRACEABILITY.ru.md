@@ -3,7 +3,7 @@
 [English](./PHARMACY_WORKFLOW_TRACEABILITY.md) · [Русский](./PHARMACY_WORKFLOW_TRACEABILITY.ru.md)
 
 **Тип аудита:** трассировка реализации по исходному коду  
-**Проверенная базовая версия:** `main`, commit `c6d35b828c1958f1bcb9077bbd0b6a71ef94613b`  
+**Проверенная базовая версия:** `main`, commit `2616b4209fc037b1e4f1899b876478bf72258641` (2026-11-22)  
 **Ветка документации:** `docs/pharmacy-business-value-kpis`  
 **Доступ к runtime / production:** не выполнялся
 
@@ -25,7 +25,7 @@
 | № | Аптечный процесс | Домен / API — подтверждения | Frontend — подтверждения | Тесты — подтверждения | Статус по исходному коду |
 |---:|---|---|---|---|---|
 | 1 | Подготовка к открытию и готовность смены | Не обнаружены сущность открытия смены, API открытия кассы, состояние opening checklist или транзакция готовности персонала. | Рабочий экран открытия смены не обнаружен. | Тест открытия смены не обнаружен. | **Не реализовано / не подтверждено.** |
-| 2 | Консультация пациента и отпуск препарата | Модели Product и аптечного Inventory; POS search, просмотр серий, checkout, FEFO allocation, payment state, receipt, inventory movement и outbox event. Checkout не принимает patient/prescription reference, поэтому это ещё не клинический отпуск, связанный с пациентом. | Активный POS route импортирует `Pos`, но `frontend/shadcn-admin/src/features/pos/index.tsx` сейчас возвращает `null`. Маршрут пациентов также возвращает `null`. | `tests/integration/test_pos_checkout.py` проверяет checkout, FEFO, списание остатков, idempotency и payment webhook. | **Частично.** Транзакционный POS backend реализован и покрыт интеграционными тестами; консультация, связь с пациентом/рецептом и рабочий POS UI не подтверждены. |
+| 2 | Консультация пациента и отпуск препарата | POS search, просмотр серий, checkout, FEFO, payment, receipt, inventory movement и outbox реализованы. Отдельные patient AI-profile и pharmacist purchase-history read APIs требуют purpose/pharmacy membership, проверяют ownership пациента и создают metadata-only PHI audit. Сам checkout по-прежнему не связан с patient или prescription. | Активный POS route импортирует `Pos`, но `frontend/shadcn-admin/src/features/pos/index.tsx` сейчас возвращает `null`. Маршрут пациентов также возвращает `null`. | `test_pos_checkout.py`, `test_ai_patient_profile_access.py` и `test_patient_history_tenant_scope.py` проверяют отдельные backend capabilities, но не интегрированный dispensing workflow. | **Частично.** Есть транзакционный POS и scoped patient-read APIs; patient-linked checkout, prescription linkage и рабочий POS UI не подтверждены. |
 | 3 | Проверка рецепта и уточнение назначения | Модель `Prescription` и привилегированные list/create endpoints по `/api/v1/prescriptions`. Отдельный placeholder router возвращает пустой список / 404 и не является рабочей реализацией процесса. Checkout не принимает и не проверяет рецепт. | `prescriptions.tsx` возвращает `null`. | Интеграционный тест связи рецепта с отпуском не обнаружен. | **Частично.** Есть базовый CRUD для привилегированных пользователей; проверка назначения, клиническая валидация, review фармацевтом и связь с отпуском не подтверждены. |
 | 4 | Онлайн-заказы и обратная связь с пациентом | Модель `Order` и endpoints `/orders/`, `/orders/{id}`, `/orders/{id}/status`. В модели нет товарных строк; завершение создаёт одну агрегированную запись `PatientPurchase`, а не item-level fulfillment. | `orders.tsx` возвращает `null`. | `tests/api/test_orders.py` проверяет API заказов и изоляцию между tenant. | **Частично.** Есть общие записи заказов пациента; приём онлайн-заказов, комплектация позиций, выдача, уведомления и follow-up не подтверждены. |
 | 5 | Проверка наличия в других филиалах и перенаправление пациента | Inventory и POS lookup ограничены авторизованной аптекой. Агрегированный поиск наличия по филиалам и полный lifecycle отправки/приёмки transfer не обнаружены. | `transfers.tsx` возвращает `null`. | Тест сквозного межфилиального transfer не обнаружен. | **Не реализовано / не подтверждено** для межфилиального процесса. Поиск остатков в одной аптеке существует. |
@@ -57,9 +57,13 @@ Checkout сохраняет товарные строки продажи, сос
 
 Отдельный endpoint приёмки серии не реализует lifecycle purchase order. Он не подтверждает поставщика, не сопоставляет purchase order, invoice и delivery note, не поддерживает подтверждённую частичную приёмку, согласование расхождений или возврат поставщику.
 
-### 3.3 История пациента — защищённая поверхность доступа
+### 3.3 История пациента теперь выделена в отдельную purpose-bound read-поверхность
 
-Endpoint списка покупок пациентов требует `CurrentSuperuser`, но его запрос напрямую выбирает `PatientPurchase`, не присоединяет `Patient` и не ограничивает выборку по `Patient.pharmacy_id`; параметра выбора конкретного пациента также нет. Поле `Patient.pharmacy_id` допускает `NULL`. Это глобальный административный endpoint, а не API истории пациента с ограничением по аптеке. Проверка superuser ограничивает круг вызывающих, поэтому этот аудит не утверждает, что обычный фармацевт уже имеет доступ. Однако до вывода истории пациента в интерфейс фармацевта необходимо реализовать tenant-scoped authorization, явный выбор пациента, правила обработки legacy/unassigned пациентов и audit. Добавить negative tests, доказывающие, что одна аптека не может получить покупки пациентов другой аптеки.
+Legacy `GET /patient-purchases/` остаётся доступен только `CurrentSuperuser` и требует явный `pharmacy_id`. Его query теперь соединяет `Patient` и фильтрует по `Patient.pharmacy_id`, но по-прежнему возвращает более широкий административный purchase projection и не создаёт новый PHI access audit event.
+
+Отдельный pharmacist-facing `GET /api/v1/patient-purchases/{patient_id}/history` требует явные pharmacy и purpose, active `PharmacyMembership` и принадлежность активного пациента аптеке. Он запрещает superuser и пациентов с null/unassigned pharmacy ownership, возвращает только purchase ID/product name/category/quantity/timestamp и записывает metadata-only allowed/denied `PHIAccessAudit`. `tests/integration/test_patient_history_tenant_scope.py` покрывает allowed access, cross-pharmacy denial, missing membership, null-owner denial и superuser denial.
+
+`GET /api/v1/patients/{patient_id}/ai-profile` имеет аналогичный explicit pharmacy/purpose/membership gate и metadata-only audit; тесты находятся в `tests/integration/test_ai_patient_profile_access.py`. Это защищённые read workflows, а не клинический dispensing: checkout всё ещё не связан с patient/prescription, а POS React feature возвращает null.
 
 ### 3.4 Пункт меню не означает готовый workflow
 
