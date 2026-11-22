@@ -310,3 +310,11 @@ def test_mcp_context_rejects_invalid_patient_scope_and_purpose():
             selected_patient_id=101,
             purpose="free_text_reason",
         )
+
+    with pytest.raises(ValueError, match="requires a selected patient"):
+        MCPAuthorizationContext(
+            user_id=7,
+            pharmacy_id=42,
+            user_role="pharmacist",
+            purpose="dispensing_review",
+        )
