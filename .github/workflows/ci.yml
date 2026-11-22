@@ -248,6 +248,9 @@ jobs:
         run: |
           createdb -h localhost -U postgres pharmaviyum_migration_test
           uv run alembic upgrade head
+          DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test \
+          PGVECTOR_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test \
+            uv run alembic upgrade head
       - name: Integration tests
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pharmaviyum_test
