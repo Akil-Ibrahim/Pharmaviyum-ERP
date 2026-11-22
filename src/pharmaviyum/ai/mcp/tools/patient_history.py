@@ -59,6 +59,7 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
     from src.pharmaviyum.shared.core.database import async_session_factory
 
     async with async_session_factory() as session:
+
         async def record_decision(decision: str) -> None:
             session.add(
                 PHIAccessAudit(
