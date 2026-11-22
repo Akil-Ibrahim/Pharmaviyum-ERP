@@ -25,10 +25,10 @@
 
 ## Остальные разделы документации
 
-| Раздел | Что содержит | Статус русской версии |
-|---|---|---|
+| Раздел | Русская версия | Английский оригинал | Содержание |
+|---|---|---|---|
 | Системный контекст | [Системный контекст](./architecture/system-context.ru.md) | [System context](./architecture/system-context.md) | Границы компонентов, владение данными и Central/Edge |
-| ADR | [Индекс архитектурных решений](./adr/README.ru.md) · [ADR-0001](./adr/ADR-0001-websocket-gateway.ru.md) · [ADR-0002](./adr/ADR-0002-offline-first-central-edge.ru.md) · [ADR-0003](./adr/ADR-0003-patient-scoped-ai-state.ru.md) · [ADR-0005: цены и роли аптек](./adr/ADR-0005-tenant-scoped-pricing-and-pharmacy-rbac.ru.md) | [ADR index](./adr/README.md) | Архитектурные решения и история изменений | Решения, статусы и жизненный цикл архитектурных изменений |
+| ADR | [Индекс архитектурных решений](./adr/README.ru.md) · [ADR-0001](./adr/ADR-0001-websocket-gateway.ru.md) · [ADR-0002](./adr/ADR-0002-offline-first-central-edge.ru.md) · [ADR-0003](./adr/ADR-0003-patient-scoped-ai-state.ru.md) · [ADR-0005: цены и роли аптек](./adr/ADR-0005-tenant-scoped-pricing-and-pharmacy-rbac.ru.md) | [ADR index](./adr/README.md) | Архитектурные решения, история, статусы и жизненный цикл |
 | AI / LLM | [Демо QwenCloud](./ai/QWENCLOUD_DEMO.ru.md) · [Архитектура Mortarium и глоссарий](./ai/MORTARIUM_AI_ARCHITECTURE.ru.md) · [Проектирование AI-системы](./ai/AI_LLM_SYSTEM_DESIGN.ru.md) · [Архитектура AI](./ai_architecture.ru.md) · [Аудит архитектуры RAG](./rag_architecture_audit.ru.md) · [Стандарт инженерии LLM](./llm_engineering_standards.ru.md) · [Архитектура LangGraph RAG](./ai/langgraph-rag-architecture.ru.md) · [Операционная работа Mortarium](./ai/mortarium-pharmacy-operations.ru.md) · [Изоляция состояния пациента](./ai/patient-session-isolation.ru.md) | [English originals](./README.md) | Mortarium, Agent Harness, LangGraph, RAG, MCP, безопасность и наблюдаемость |
 | Разработка | [Руководство по разработке и тестированию](./guides/DEVELOPMENT_AND_TESTING.ru.md) · [Настройка окружения](./guides/ENVIRONMENT_SETUP.ru.md) · [GitHub Codespaces](./guides/CODESPACES_GUIDE.ru.md) · [Library Skills и инструменты FastAPI для ИИ-агентов](./development/library-skills.ru.md) | [Development and testing handbook](./guides/DEVELOPMENT_AND_TESTING.md) · [Library Skills and FastAPI agent tooling](./development/library-skills.md) | Локальная среда, навыки ИИ-агентов, плагины FastAPI Cloud, Codespaces и quality gates |
 | Тестирование | [Руководство по тестированию](./guides/TESTING.ru.md) | [Testing guide](./guides/TESTING.md) | Структура тестов, маркеры pytest, CI и критерии качества |
