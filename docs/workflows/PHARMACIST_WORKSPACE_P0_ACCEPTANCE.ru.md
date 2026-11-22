@@ -113,6 +113,7 @@
 6. Проверить, что два application instances создают одинаковые scopes при одинаковом secret.
 7. Проверить, что отсутствие/ротация secret обрабатываются fail-closed и согласно политике ротации.
 8. Проверить отсутствие raw patient identifiers и clinical payloads в logs, traces и evaluation artifacts.
+9. Проверить, что MCP authorization context содержит выбранного пациента и purpose; `get_patient_history` отклоняет patient ID от модели, если он отличается от выбранного пациента, и записывает allowed/denied `PHIAccessAudit` decisions. В текущем MCP context/tool path этот контроль ещё не реализован.
 
 **Критерий завершения:** воспроизводимые staged evidence приложены к release record. Merge и unit tests сами по себе этот gate не закрывают.
 
