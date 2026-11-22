@@ -39,7 +39,7 @@ Use the demo environment to review the current Pharmaviyum system status:
 - **Demo login:** `admin`
 - **Demo password:** `V9#qL2!mR7@xP4$kT8&nW5zB`
 
-These published credentials are a shared, low-privilege Demo test account for the isolated public Demo only. They are not Production credentials and must never be reused in Production or any other environment. The Demo environment must contain synthetic data only; do not store real patient, prescription, customer, or other confidential information in it.
+These published credentials are a shared test account for the isolated public Demo only. They are not Production credentials and must never be reused in Production or any other environment. The account's permissions apply only to synthetic Demo data and must not expose any Production resource. The Demo environment must contain synthetic data only; do not store real patient, prescription, customer, or other confidential information in it.
 
 ## Contents
 

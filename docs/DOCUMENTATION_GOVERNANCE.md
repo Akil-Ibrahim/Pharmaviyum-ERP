@@ -89,7 +89,7 @@ The three cashier workflows are included within the six employee positions. The 
 - External links must point to the canonical upstream/vendor or primary project source where possible.
 - Commands must be safe for the stated environment. Label destructive, migration, restore, secret rotation and live deployment commands explicitly and require the appropriate approval.
 - Examples must use placeholders or synthetic values. Never place real passwords, tokens, private endpoints, customer/patient data or unredacted logs in documentation.
-- Public Demo credentials, if intentionally published, must be clearly marked as Demo-only, low-privilege test access and must never be reused in Production.
+- Public Demo credentials may be published only when explicitly approved by the repository owner. They must be clearly marked as Demo-only, isolated from Production, backed only by synthetic data and never reused in Production. Do not describe their privilege level unless it has been verified.
 
 ## 8. Required documentation review checklist
 
