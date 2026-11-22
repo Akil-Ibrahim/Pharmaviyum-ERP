@@ -144,6 +144,13 @@ A source review of `main` at `2616b4209fc037b1e4f1899b876478bf72258641` found pa
 
 These are source/configuration findings, not evidence of an incident or live Production exploitation. Do not enable unrestricted support access or claim complete PHI governance until the grant model, MCP patient/purpose binding, DB role separation, audit-failure behavior and database-backed negative tests are implemented and reviewed.
 
-## 12. Known limitations
+
+## 12. Follow-up source status — 2026-11-22
+
+The section above is a historical source snapshot at commit `2616b4209fc037b1e4f1899b876478bf72258641`; it must not be read as a description of every later source change. The current MCP implementation now carries a trusted selected patient, controlled purpose and server-generated request ID in `MCPAuthorizationContext`. The AI API requires patient and purpose together, registry dispatch preserves the context, and `get_patient_history` requires an exact patient match, pharmacist role and active pharmacy ownership before returning data. The tool records metadata-only allowed/denied `PHIAccessAudit` decisions and fails closed when the audit commit fails. These source changes do **not** implement the privileged-support grant model proposed in this document.
+
+Still outstanding: minimum-necessary MCP response projection, database-backed MCP audit tests, PostgreSQL bootstrap/runtime/migration role separation, comprehensive privileged-support grants across all PHI surfaces, audit store hardening against the runtime superuser, and staged validation. No Production deployment or support-access authorization is implied.
+
+## 13. Known limitations
 
 This is a design baseline, not an implementation. The existing PHI audit currently covers only selected endpoints; it is not yet a complete audit trail. Existing superuser-global behavior remains until each surface is migrated and operational support workflows are validated. No compliance certification is implied.
