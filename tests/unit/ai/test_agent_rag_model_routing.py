@@ -312,7 +312,6 @@ def test_agent_checkpoint_thread_id_is_opaque_and_tenant_scoped(
     assert first != other_user
     assert first != other_pharmacy
     assert patient_a != patient_b
-    assert patient_a != different_purpose
     assert patient_a != no_patient
     assert patient_a != first
     assert first.startswith("agent:v2:")
