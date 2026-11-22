@@ -61,7 +61,8 @@ Rollback the application revision only when the previous revision is compatible 
 - `ansible/playbooks/backup.yml` creates and verifies a local PostgreSQL dump when invoked; it does not install or schedule itself. Verify that an approved protected automation controller or scheduler actually invokes it and supplies secrets securely. `backup_enabled: true` is not evidence that a schedule exists.
 - Verify local retention and the documented isolated restore drill. Off-site upload is a separate explicitly approved invocation to a pre-provisioned, site-scoped Restic repository; it does not provision the repository/ACLs or prove restore from the remote copy. See the Off-site Backup Architecture; do not assume a cloud-provider PITR service exists.
 - Define Redis and checkpoint retention separately.
-- Protect backup encryption keys outside Git.
+- The local `backup.yml` artifact is gzip-compressed SQL, not encrypted by that playbook. File modes `0700`/`0600` restrict access but are not encryption; verify approved host/storage-level encryption and recovery-key handling for local backup retention.
+- Protect Restic/repository encryption keys outside Git; Restic encryption protects the remote repository, not the plaintext source dump retained on the pharmacy server.
 - Record backup age and retention.
 - Perform restore drills on isolated infrastructure and verify application invariants.
 - A successful backup job is not proof that a restore works.
