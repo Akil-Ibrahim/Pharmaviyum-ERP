@@ -38,13 +38,19 @@ class MCPAuthorizationContext:
         if self.selected_patient_id is not None and (
             type(self.selected_patient_id) is not int or self.selected_patient_id <= 0
         ):
-            raise ValueError("MCP context selected_patient_id must be a positive integer or None")
+            raise ValueError(
+                "MCP context selected_patient_id must be a positive integer or None"
+            )
         if self.purpose is not None and self.purpose not in (
             "dispensing_review", "medication_reconciliation", "patient_request"
         ):
-            raise ValueError("MCP context requires a recognized patient-access purpose")
+            raise ValueError(
+                "MCP context requires a recognized patient-access purpose"
+            )
         if self.request_id is not None and (
-            not self.request_id.strip() or len(self.request_id) > 128
+            not isinstance(self.request_id, str)
+            or not self.request_id.strip()
+            or len(self.request_id) > 128
         ):
             raise ValueError("MCP context request_id must contain 1-128 characters")
         if not isinstance(self.user_role, str) or self.user_role not in (
