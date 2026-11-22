@@ -15,7 +15,7 @@ The current `main` branch contains:
 - `ansible/playbooks/backup.yml` which creates a local compressed PostgreSQL dump, verifies gzip integrity and SHA-256, writes a manifest, and prunes expired local artifacts only after a new backup has been verified. `ansible/playbooks/restore.yml` performs a non-destructive restore drill into a separately named database on exactly one explicitly confirmed Edge host. Scheduling is delegated to a protected automation controller.
 - `ansible/playbooks/rollback.yml` which rolls back the backend image and checks `/health`; it does not restore a database backup.
 - A Compose definition containing `db`, `redis` (Valkey image) and `backend`. It does not define an Nginx service.
-- An Nginx role exists, but it is not included in the current deployment playbook.
+- An Nginx role exists, but it is not included in the current deployment playbook. The role is incomplete: it references `templates/nginx.conf.j2`, which is absent, and requests a Compose service named `nginx`, which the active Ansible Compose definition does not provide. It is not an executable or deployed reverse-proxy path.
 
 These are repository facts, not a claim that the playbooks have been executed successfully on a real pharmacy server.
 
