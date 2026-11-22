@@ -12,7 +12,6 @@ from typing import Literal
 
 from .registry import UserRole
 
-
 PatientAccessPurpose = Literal[
     "dispensing_review", "medication_reconciliation", "patient_request"
 ]
@@ -44,11 +43,11 @@ class MCPAuthorizationContext:
         if self.purpose is not None and self.selected_patient_id is None:
             raise ValueError("MCP context purpose requires a selected patient")
         if self.purpose is not None and self.purpose not in (
-            "dispensing_review", "medication_reconciliation", "patient_request"
+            "dispensing_review",
+            "medication_reconciliation",
+            "patient_request",
         ):
-            raise ValueError(
-                "MCP context requires a recognized patient-access purpose"
-            )
+            raise ValueError("MCP context requires a recognized patient-access purpose")
         if self.request_id is not None and (
             not isinstance(self.request_id, str)
             or not self.request_id.strip()
