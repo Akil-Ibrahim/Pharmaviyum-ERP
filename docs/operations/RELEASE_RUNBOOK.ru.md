@@ -38,11 +38,6 @@ FastAPI Cloud размещает только публичную Demo Pharmaviyu
 - PostgreSQL/pgvector и Redis-compatible infrastructure provisioned отдельно от web application.
 - Перед каждым релизом Demo сверяйте имена environment variables с активными application settings.
 
-## Граница Production
-
-Публичный runbook и его workflows не развёртывают, не мигрируют и не администрируют Production. Хостинг Production и release procedures управляются отдельно с соблюдением применимых ограничений конфиденциальности.
-
-
 ## Граница Production deployment
 
 Этот runbook и его GitHub Actions workflow относятся только к публичной Demo; они не развёртывают, не мигрируют и не администрируют Production. Релизы Production-приложения выполняются через проверенные Ansible playbooks этого репозитория. Реальные Production inventory, host access, per-site credentials, approvals миграций и разрешения на выполнение операций на конкретных площадках остаются закрытыми и под контролем оператора. См. [план Ansible rollout Pharmacy Edge](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) и [руководство Ansible](../devops/ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md).

@@ -122,6 +122,49 @@ Kubernetes намеренно не входит в обязательные пе
 
 Цель — надёжность production, а не количество технологий.
 
+## Целевая архитектура
+
+Следующая схема — целевая архитектура масштабирования, а не описание уже развёрнутой Production-топологии. Текущая Production-модель — аптечный сервер под управлением Ansible; переход к нескольким API-узлам, общей edge-инфраструктуре и централизованной observability требует отдельных измерений и подтверждённого deployment design.
+
+```text
+                         Internet
+                            |
+                     CDN / WAF / LB
+                            |
+                    Nginx / edge layer
+                            |
+                 +----------+----------+
+                 |                     |
+              API #1                 API #2
+                 |                     |
+                 +----------+----------+
+                            |
+                    OpenTelemetry
+                            |
+                       Collector
+                    /       |       \
+               Metrics   Traces     Logs
+                  |         |          |
+             Prometheus   Tempo       Loki
+                    \       |       /
+                       Grafana
+                            |
+          +-----------------+-----------------+
+          |                 |                 |
+      PostgreSQL          Redis            Celery
+      + pgvector          / HA             workers
+          |                 |                 |
+          +-----------------+-----------------+
+                            |
+                     Agent Harness
+                            |
+                 RAG / MCP / LLM routing
+                            |
+                    Model infrastructure
+```
+
+Точная топология определяется результатами capacity measurements, локальными ограничениями площадок и утверждённым deployment design.
+
 ## Production checklist
 
 ### Надёжность
@@ -165,6 +208,10 @@ Kubernetes намеренно не входит в обязательные пе
 - [ ] Продемонстрированы DB restore и redeployment приложения.
 - [ ] Проверены сбои зависимостей.
 - [ ] Поддерживается incident runbook.
+
+## Этапы инженерной поставки
+
+См. [Инженерную дорожную карту и этапы поставки](./ENGINEERING_ROADMAP.ru.md) с владельцами этапов, требованиями к доказательствам и критериями выхода. Roadmap разделяет корректность аптечных процессов, измерение capacity, observability, recovery, качество Mortarium, пилот Edge и контролируемое расширение fleet.
 
 ## Связанные документы
 
