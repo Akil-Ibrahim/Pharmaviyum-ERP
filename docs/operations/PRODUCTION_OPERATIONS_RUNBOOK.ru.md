@@ -70,7 +70,8 @@ Production application releases направляются на аптечный �
 - `ansible/playbooks/backup.yml` создаёт и проверяет локальный PostgreSQL dump при запуске, но не устанавливает и не планирует собственный запуск. Убедитесь, что утверждённый защищённый automation controller или scheduler действительно запускает playbook и безопасно передаёт secrets. Значение `backup_enabled: true` не доказывает наличие расписания.
 - Проверьте local retention и документированный изолированный restore drill. Off-site upload — отдельный запуск с явным approval в заранее provisioned site-scoped Restic repository; он не создаёт repository/ACL и не доказывает возможность restore из удалённой копии. См. Off-site Backup Architecture; не предполагайте наличие cloud-provider PITR service.
 - Определите retention Redis и checkpoints отдельно.
-- Храните ключи шифрования backup вне Git.
+- Локальный артефакт `backup.yml` — gzip-сжатый SQL, этот playbook не шифрует его. Права `0700`/`0600` ограничивают доступ, но не являются шифрованием; отдельно подтвердите утверждённое шифрование диска/storage на аптечном сервере и порядок восстановления ключей для локальных backup.
+- Храните ключи шифрования Restic/repository вне Git. Шифрование Restic защищает remote repository, но не исходный plaintext dump, который остаётся на аптечном сервере.
 - Фиксируйте возраст backup и срок хранения.
 - Проводите restore drills в изолированной инфраструктуре и проверяйте инварианты приложения.
 - Успешное выполнение backup job не доказывает возможность восстановления.
