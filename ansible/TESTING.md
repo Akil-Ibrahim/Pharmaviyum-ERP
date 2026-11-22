@@ -2,14 +2,14 @@
 
 ## Supported toolchain
 
-Use the repository-pinned controller toolchain rather than installing floating latest versions:
+The Ansible controller currently uses CPython 3.14.10. Install the versions declared by the repository:
 
 ```bash
 python -m pip install -r requirements.txt
 ansible-galaxy collection install -r requirements.yml
 ```
 
-The CI controller currently uses Python 3.14.10. Tool versions are pinned in `requirements.txt`; update them through a reviewed dependency change.
+The Python package versions for Ansible, ansible-core, ansible-lint, yamllint and Molecule are pinned in `requirements.txt`. **The Galaxy collections in `requirements.yml` currently have no version constraints**, and the CI workflows upgrade pip before installation. Therefore the complete Ansible controller toolchain is not yet fully reproducible: collection or bootstrap-tool versions may change between runs. Treat collection pinning and pip bootstrap pinning as outstanding release-engineering work; do not describe the entire Ansible toolchain as fully pinned until those inputs are locked and reviewed. Update pins through a reviewed dependency change.
 
 ## Run the test suite
 
@@ -19,7 +19,7 @@ Run from the `ansible/` directory:
 ./scripts/test.sh
 ```
 
-**Important current limitation:** this helper is not a reliable pass/fail gate yet. In the current implementation, YAML lint and Molecule failures are suppressed with `|| true`, and the script does not run the fleet/recovery guardrail scripts or playbook syntax checks. Do not use its final exit code as proof that the full suite passed. Run the checks below individually and rely on the required GitHub Actions jobs for the merge gate. A separate test-harness change should remove the swallowed failures before this helper is treated as authoritative.
+The validation helper is fail-closed (`set -Eeuo pipefail`) and stops at the first failed stage. It runs YAML lint, production-profile Ansible lint, fleet/recovery/off-site-backup guardrail scripts, syntax checks for every top-level playbook against the isolated Lab inventory, and the default Molecule scenario. A zero exit status means each of these stages completed successfully in that local environment; it does not prove that a real pharmacy host, remote backup repository, or Production deployment is operational. CI remains the required merge gate.
 
 ## Molecule
 
