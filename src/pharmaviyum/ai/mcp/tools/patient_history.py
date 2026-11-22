@@ -18,6 +18,7 @@ from sqlalchemy.orm import selectinload
 
 from src.pharmaviyum.core.logging import logger
 from src.pharmaviyum.models.patients import Patient
+from src.pharmaviyum.models.phi_access_audit import PHIAccessAudit
 
 from ..context import require_mcp_context
 from ..registry import registry
@@ -48,6 +49,7 @@ def calculate_age(dob: date | None) -> int | None:
     latency_estimate_ms=80,
     requires_db=True,
     tags=["patient", "clinical", "safety", "context"],
+    required_roles=["pharmacist"],
 )
 async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
     """Load patient history only inside the authenticated pharmacy tenant."""
@@ -57,6 +59,30 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
     from src.pharmaviyum.shared.core.database import async_session_factory
 
     async with async_session_factory() as session:
+        async def record_decision(decision: str) -> None:
+            session.add(
+                PHIAccessAudit(
+                    actor_id=auth_context.user_id,
+                    pharmacy_id=auth_context.pharmacy_id,
+                    patient_id=input.patient_id,
+                    action="mcp_read_patient_history",
+                    decision=decision,
+                    purpose=auth_context.purpose or "unspecified",
+                    request_id=auth_context.request_id,
+                )
+            )
+            await session.commit()
+
+        if (
+            auth_context.user_role != "pharmacist"
+            or auth_context.selected_patient_id != input.patient_id
+            or auth_context.purpose is None
+        ):
+            await record_decision("denied")
+            raise PermissionError(
+                "Patient history access requires the selected patient and an explicit purpose"
+            )
+
         query = (
             select(Patient)
             .options(selectinload(Patient.allergies), selectinload(Patient.conditions))
@@ -69,6 +95,7 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
         result = await session.execute(query)
         patient = result.scalar_one_or_none()
         if not patient:
+            await record_decision("denied")
             raise ValueError("Patient not found or not accessible")
 
         allergies = (
@@ -124,7 +151,7 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
             },
         )
 
-        return PatientHistory(
+        patient_history = PatientHistory(
             patient_id=patient.id,
             full_name=patient.full_name,
             age=calculate_age(patient.date_of_birth),
@@ -137,6 +164,8 @@ async def get_patient_history(input: PatientHistoryRequest) -> PatientHistory:
             loyalty_tier=patient.loyalty_tier,
             preferred_language=patient.preferred_language,
         )
+        await record_decision("allowed")
+        return patient_history
 
 
 async def _count_active_prescriptions(
