@@ -74,6 +74,7 @@ class AgentHarness:
                 "session_id",
                 "memory_fingerprint",
                 "patient_id",
+                "purpose",
                 "prescription_id",
                 "country",
                 "language",
