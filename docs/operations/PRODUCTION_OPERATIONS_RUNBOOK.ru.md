@@ -15,13 +15,13 @@
 | Компонент | Ответственность | Проверка |
 |---|---|---|
 | Стек приложения на аптечном сервере (Ansible-managed) | API и frontend локальной аптеки | Результат Ansible rollout, immutable image digest, состояние контейнеров, logs, /health, /ready и безопасные аптечные smoke tests |
-| PostgreSQL | Транзакционные данные и checkpoints | Состояние провайдера, connections, latency, возраст backup и доказательства restore |
-| Redis-compatible service | Cache и dialogue memory | Доступность, memory/connection limits, evictions и latency |
-| Celery worker | Асинхронные задачи, например ingestion | Worker health, queue depth, возраст задач, retries и failed tasks |
+| PostgreSQL | Транзакционные данные и checkpoints | Локальный Compose-managed container `db` на аптечном сервере: состояние контейнера/readiness, connections, latency, возраст backup и доказательства restore. Ansible role `postgresql` не является полноценной ролью lifecycle/HA базы данных |
+| Redis-compatible service | Cache и dialogue memory | Compose service `redis` (по умолчанию образ Valkey 8): доступность, memory/connection limits, evictions и latency |
+| Celery worker | Асинхронные задачи, например ingestion | Compose service `celery-worker`: состояние контейнера/process, queue depth, возраст задач, retries и failed tasks; проверяйте отдельно от API readiness |
 | LLM / embedding provider | Необязательные AI inference и embeddings | Статус провайдера, timeout/error rate, quota и latency |
 | Telemetry backend | Traces, metrics и logs | Доставка collector, dashboards и alerts |
 
-Не предполагайте, что web deployment запускает Celery worker или создаёт PostgreSQL/Redis.
+Текущая Ansible role `app-backend` запускает `db`, `redis`, `backend`, `celery-worker` и `celery-beat` из Compose definition аптечного сервера. Проверяйте каждый service отдельно: `/ready` подтверждает зависимости API, но не здоровье Celery worker.
 
 ## Последовательность health checks
 
@@ -43,7 +43,7 @@
 
 ### PostgreSQL недоступен
 
-Проверьте статус провайдера, network policy, connection limits и ошибки приложения. Избегайте циклов перезапуска и неограниченных retries. Не сбрасывайте, не пересоздавайте и не восстанавливайте БД без утверждённого incident owner и проверенной точки восстановления. При сомнениях в совместимости схемы остановите promotion.
+Проверьте локальный PostgreSQL container `db` на аптечном сервере через Docker Compose, его readiness, connection limits и ошибки приложения. Избегайте циклов перезапуска и неограниченных retries. Не сбрасывайте, не пересоздавайте и не восстанавливайте БД без утверждённого incident owner и проверенной точки восстановления. При сомнениях в совместимости схемы остановите promotion.
 
 ### Redis недоступен
 
@@ -61,15 +61,20 @@
 
 Production application releases направляются на аптечный сервер и оркестрируются Ansible playbooks из этого репозитория. Production inventory, per-site credentials, реальные host details и approvals остаются под контролем оператора и не должны попадать в Git. Используйте [план Ansible rollout Pharmacy Edge](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) и [руководство Ansible](../devops/ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md). Публичный [runbook FastAPI Cloud Demo](../deployment/FASTAPI_CLOUD.ru.md) относится только к Demo и не должен использоваться для Production.
 
-До релиза проверьте CI для последнего SHA, approval, backup/restore evidence, migration plan, environment variables, smoke tests и rollback target.
+До релиза проверьте CI и approval для точного утверждённого Production source commit и immutable image digest в контролируемом Production release pipeline. Public Demo CI не доказывает, что Production artifact был собран или проверен. Дополнительно проверьте backup/restore evidence, migration plan, environment variables, smoke tests и rollback target.
+
+**Текущее ограничение публичного Ansible migration path:** Alembic environment требует `MIGRATION_DATABASE_URL` в `production`/`staging` и намеренно не использует `DATABASE_URL` приложения как fallback. Текущий public Ansible migration environment template и inventory не передают эту отдельную переменную/credential. Поэтому `ansible/playbooks/migrate.yml` пока не является подтверждённым end-to-end Production migration path. Не обходите эту защиту и не переиспользуйте runtime credential; до заявления о готовности требуется reviewed secret-injection и least-privilege migration-role design.
 
 Откатывайте revision приложения только если предыдущая revision совместима с текущей схемой. Откат БД — отдельная операция высокого риска. Предпочитайте backward-compatible expand/contract migrations. Восстановление из backup выполняйте только по утверждённому recovery plan.
 
 ## Backup и restore
 
-- Проверьте утверждённый график резервного копирования локальной PostgreSQL, retention, off-site копию (если настроена) и документированную процедуру restore. См. Off-site Backup Architecture; не предполагайте наличие cloud-provider PITR service.
+- `ansible/playbooks/backup.yml` создаёт и проверяет локальный PostgreSQL dump при запуске, но не устанавливает и не планирует собственный запуск. Убедитесь, что утверждённый защищённый automation controller или scheduler действительно запускает playbook и безопасно передаёт secrets. Значение `backup_enabled: true` не доказывает наличие расписания.
+- Проверьте local retention и документированный изолированный restore drill. Off-site upload — отдельный запуск с явным approval в заранее provisioned site-scoped Restic repository; он не создаёт repository/ACL и не доказывает возможность restore из удалённой копии. См. Off-site Backup Architecture; не предполагайте наличие cloud-provider PITR service.
 - Определите retention Redis и checkpoints отдельно.
-- Храните ключи шифрования backup вне Git.
+- Локальный артефакт `backup.yml` — gzip-сжатый SQL, этот playbook не шифрует его. Права `0700`/`0600` ограничивают доступ, но не являются шифрованием; отдельно подтвердите утверждённое шифрование диска/storage на аптечном сервере и порядок восстановления ключей для локальных backup.
+- `ansible/playbooks/migrate.yml` также создаёт pre-migration gzip SQL dump с ограниченными правами и SHA-256, но не шифрует его и не применяет обычную backup retention policy. Включите эти артефакты в утверждённые меры шифрования хранилища и retention/cleanup.
+- Храните ключи шифрования Restic/repository вне Git. Шифрование Restic защищает remote repository, но не исходный plaintext dump, который остаётся на аптечном сервере.
 - Фиксируйте возраст backup и срок хранения.
 - Проводите restore drills в изолированной инфраструктуре и проверяйте инварианты приложения.
 - Успешное выполнение backup job не доказывает возможность восстановления.

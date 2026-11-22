@@ -6,8 +6,8 @@
 1. Check the latest deployment and CI result.
 2. Check `/health`.
 3. Check `/ready`.
-4. If `/ready` reports PostgreSQL or Redis failure, restore the dependency before restarting application replicas.
-5. If the failure started after a release, roll back to the previous immutable image.
+4. If `/ready` reports PostgreSQL or the cache/broker dependency as failed, restore the dependency before restarting application services. Production uses the pharmacy-server PostgreSQL and Valkey Compose services; Demo has its own isolated dependencies.
+5. If the failure started after a Production release, use the approved Ansible rollback playbook with the exact selected-host confirmations, previous immutable image digest and database-schema compatibility evidence. Verify `/ready` after rollback. For Demo, use the Demo-only FastAPI Cloud release workflow; do not use the Production Ansible rollback path.
 
 ### API is slow
 1. Check request latency metrics.

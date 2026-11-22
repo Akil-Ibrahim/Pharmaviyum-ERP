@@ -14,13 +14,13 @@
 | Component | Responsibility | Verification |
 |---|---|---|
 | Pharmacy server application stack (Ansible-managed) | API and frontend serving for the local pharmacy site | Ansible release result, immutable image digest, container state, logs, /health, /ready and authenticated pharmacy-safe smoke tests |
-| PostgreSQL | Transactional and checkpoint persistence | Pharmacy-server PostgreSQL service health, connections, query latency, backup age and restore evidence |
-| Redis-compatible service | Cache and dialogue memory | Connectivity, memory/connection limits, evictions and latency |
-| Celery worker | Async tasks such as ingestion | Worker health, queue depth, task age, retries and failed-task review |
+| PostgreSQL | Transactional and checkpoint persistence | Compose-managed local `db` container on the pharmacy server: container/readiness state, connections, query latency, backup age and restore evidence. The Ansible `postgresql` role is not a full database lifecycle/HA role |
+| Redis-compatible service | Cache and dialogue memory | Compose service `redis` (default image Valkey 8): connectivity, memory/connection limits, evictions and latency |
+| Celery worker | Async tasks such as ingestion | Compose service `celery-worker`: container/process health, queue depth, task age, retries and failed-task review; verify independently of API readiness |
 | LLM / embedding provider | Optional AI inference and embeddings | Provider status, timeout/error rate, quota and latency |
 | Telemetry backend | Traces, metrics and logs | Collector delivery, dashboards and alert delivery |
 
-Do not assume a web deployment starts a Celery worker or provisions PostgreSQL/Redis.
+The current Ansible `app-backend` role starts `db`, `redis`, `backend`, `celery-worker` and `celery-beat` from the pharmacy-server Compose definition. Verify each service independently: `/ready` confirms API dependencies, not Celery worker health.
 
 ## Health-check sequence
 1. Inspect deployment state and identify the deployed commit.
@@ -53,14 +53,19 @@ Check provider availability, rate limits, latency, timeouts and RAG dependencies
 ## Release and rollback
 Production application releases target the pharmacy server and are orchestrated through the Ansible playbooks in this repository. The production inventory, per-site credentials, real host details and execution approvals remain operator-controlled and must not be committed. Use the [Pharmacy Edge Ansible rollout plan](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) and [Ansible guide](../devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md). The public [FastAPI Cloud Demo runbook](../deployment/FASTAPI_CLOUD.md) applies only to Demo and must never be used for Production.
 
-Before release, verify latest-SHA CI, approval, backup/restore evidence, migration plan, environment variables, smoke tests and rollback target.
+Before release, verify CI and approval for the exact approved Production source commit and immutable image digest in the controlled Production release pipeline. Public Demo CI is not evidence that a Production artifact was built or validated. Also verify backup/restore evidence, the migration plan, environment variables, smoke tests and rollback target.
+
+**Current public Ansible migration-path limitation:** the Alembic environment requires `MIGRATION_DATABASE_URL` in `production`/`staging` and intentionally refuses to fall back to the application `DATABASE_URL`. The current public Ansible migration environment template and inventory do not supply that dedicated variable/credential. Therefore `ansible/playbooks/migrate.yml` is not yet a verified end-to-end Production migration path. Do not bypass this guard or reuse the runtime credential; a reviewed secret-injection and least-privilege migration-role design is required before claiming this path is operational.
 
 Rollback the application revision only when the previous revision is compatible with the current schema. Database rollback is a separate high-risk operation. Prefer backward-compatible expand/contract migrations. Restore from backup only under an approved recovery plan.
 
 ## Backup and restore
-- Verify the approved local PostgreSQL backup schedule, retention, off-site copy where configured, and documented restore procedure. See the Off-site Backup Architecture; do not assume a cloud-provider PITR service exists.
+- `ansible/playbooks/backup.yml` creates and verifies a local PostgreSQL dump when invoked; it does not install or schedule itself. Verify that an approved protected automation controller or scheduler actually invokes it and supplies secrets securely. `backup_enabled: true` is not evidence that a schedule exists.
+- Verify local retention and the documented isolated restore drill. Off-site upload is a separate explicitly approved invocation to a pre-provisioned, site-scoped Restic repository; it does not provision the repository/ACLs or prove restore from the remote copy. See the Off-site Backup Architecture; do not assume a cloud-provider PITR service exists.
 - Define Redis and checkpoint retention separately.
-- Protect backup encryption keys outside Git.
+- The local `backup.yml` artifact is gzip-compressed SQL, not encrypted by that playbook. File modes `0700`/`0600` restrict access but are not encryption; verify approved host/storage-level encryption and recovery-key handling for local backup retention.
+- `ansible/playbooks/migrate.yml` also creates a pre-migration gzip SQL dump with restrictive permissions and a SHA-256 record, but it does not encrypt the dump or apply the regular backup retention policy. Include these artifacts in the approved storage-encryption and retention/cleanup controls.
+- Protect Restic/repository encryption keys outside Git; Restic encryption protects the remote repository, not the plaintext source dump retained on the pharmacy server.
 - Record backup age and retention.
 - Perform restore drills on isolated infrastructure and verify application invariants.
 - A successful backup job is not proof that a restore works.
