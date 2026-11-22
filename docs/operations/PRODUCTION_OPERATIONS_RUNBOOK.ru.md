@@ -71,6 +71,7 @@ Production application releases направляются на аптечный �
 - Проверьте local retention и документированный изолированный restore drill. Off-site upload — отдельный запуск с явным approval в заранее provisioned site-scoped Restic repository; он не создаёт repository/ACL и не доказывает возможность restore из удалённой копии. См. Off-site Backup Architecture; не предполагайте наличие cloud-provider PITR service.
 - Определите retention Redis и checkpoints отдельно.
 - Локальный артефакт `backup.yml` — gzip-сжатый SQL, этот playbook не шифрует его. Права `0700`/`0600` ограничивают доступ, но не являются шифрованием; отдельно подтвердите утверждённое шифрование диска/storage на аптечном сервере и порядок восстановления ключей для локальных backup.
+- `ansible/playbooks/migrate.yml` также создаёт pre-migration gzip SQL dump с ограниченными правами и SHA-256, но не шифрует его и не применяет обычную backup retention policy. Включите эти артефакты в утверждённые меры шифрования хранилища и retention/cleanup.
 - Храните ключи шифрования Restic/repository вне Git. Шифрование Restic защищает remote repository, но не исходный plaintext dump, который остаётся на аптечном сервере.
 - Фиксируйте возраст backup и срок хранения.
 - Проводите restore drills в изолированной инфраструктуре и проверяйте инварианты приложения.
