@@ -608,3 +608,28 @@ def test_prompt_cache_identity_preserves_patient_access_purpose():
         "patient_id": 101,
         "purpose": "dispensing_review",
     }
+
+
+@pytest.mark.parametrize(
+    ("patient_id", "purpose"),
+    [
+        (101, None),
+        (None, "dispensing_review"),
+        (101, "free_text_reason"),
+    ],
+)
+def test_api_session_scope_rejects_missing_or_unrecognized_purpose(
+    patient_id, purpose
+):
+    from types import SimpleNamespace
+
+    from src.pharmaviyum.api.v1.ai import _scoped_session_id
+
+    with pytest.raises(ValueError, match="purpose"):
+        _scoped_session_id(
+            "conversation-123",
+            SimpleNamespace(pharmacy_id=7),
+            SimpleNamespace(id=42),
+            patient_id,
+            purpose,
+        )
