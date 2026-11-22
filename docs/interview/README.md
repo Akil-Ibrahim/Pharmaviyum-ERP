@@ -20,7 +20,7 @@ Pharmaviyum CRM is a modular pharmacy CRM platform built around:
 - **LangGraph / LangChain / Ollama** for AI orchestration and LLM integration
 - **MCP JSON-RPC** for tool/resource integration
 - **OpenTelemetry** for application observability
-- **Docker / Docker Compose / Nginx** for local and deployment infrastructure
+- **Docker / Docker Compose** for local development and **Ansible** for pharmacy-server Production deployment. The repository also contains a standalone Nginx configuration asset, but it is not wired into the active root Compose or Ansible deployment path.
 
 The project is intentionally structured as an engineering system rather than as a standalone LLM demo.
 
