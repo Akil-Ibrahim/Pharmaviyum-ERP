@@ -506,7 +506,7 @@ Browse the documentation in your preferred language. Repository-wide documentati
 | System architecture | [Architecture vision](docs/architecture/pharmaviyum-architecture.en.md) | [Архитектурное видение](docs/architecture/pharmaviyum-architecture.ru.md) |
 | Architecture decisions | [ADR index](docs/adr/README.md) | [Индекс архитектурных решений](docs/adr/README.ru.md) |
 
-**Русские переводы остальных руководств готовятся.** Их актуальный статус указан в [русском индексе документации](docs/README.ru.md); английский оригинал доступен в [английском индексе](docs/README.md).
+Russian translations are maintained for selected documents rather than every file. The [Russian documentation index](docs/README.ru.md) lists the available translations; where an EN/RU pair exists, both versions are kept aligned.
 
 ## Project Status & Intellectual Property
 

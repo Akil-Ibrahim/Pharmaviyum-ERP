@@ -24,7 +24,7 @@ This policy does not override application configuration, source code, approved d
 
 FastAPI Cloud is Demo-only. It must never host or deploy the Production application, Production database, migrations or Production release workflow.
 
-The public repository contains reusable Ansible roles/playbooks and general deployment procedures. It must not contain real Production host addresses, live inventory, SSH credentials, per-site secrets, private customer/patient data or approvals for executing changes against live pharmacies.
+The public repository contains the Demo implementation, reusable Ansible roles/playbooks and general deployment procedures. The private Production implementation/source code, confidential business logic and Production release artifacts remain restricted under NDA and are not published here. Public Ansible playbooks describe the deployment automation contract; their presence does not mean the private Production application source or artifacts are included in this repository. The repository must not contain real Production host addresses, live inventory, SSH credentials, per-site secrets, private customer/patient data or approvals for executing changes against live pharmacies.
 
 The existence of Ansible playbooks does not prove that a pharmacy server has been deployed or accepted. Do not claim Production rollout, fleet readiness, backup recovery or operational acceptance without current evidence for the exact site and release.
 
