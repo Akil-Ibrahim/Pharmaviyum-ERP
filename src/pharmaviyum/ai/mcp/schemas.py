@@ -71,7 +71,7 @@ class PatientHistoryRequest(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    patient_id: int
+    patient_id: int = Field(..., strict=True, gt=0)
     include_allergies: bool = True
     include_conditions: bool = True
     include_prescriptions: bool = True
