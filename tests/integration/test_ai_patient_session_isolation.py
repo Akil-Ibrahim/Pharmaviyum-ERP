@@ -264,7 +264,16 @@ def test_api_session_scope_binds_tenant_user_patient_and_secret(
     )
 
     assert (
-        len({base, different_patient, different_purpose, no_patient, different_user, different_pharmacy})
+        len(
+            {
+                base,
+                different_patient,
+                different_purpose,
+                no_patient,
+                different_user,
+                different_pharmacy,
+            }
+        )
         == 6
     )
     assert different_purpose != base
@@ -275,7 +284,9 @@ def test_api_session_scope_binds_tenant_user_patient_and_secret(
     assert "reused-session" not in base
 
     monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-test-secret")
-    rotated = _scoped_session_id("reused-session", tenant, user, 101, "dispensing_review")
+    rotated = _scoped_session_id(
+        "reused-session", tenant, user, 101, "dispensing_review"
+    )
     assert rotated != base
 
 
