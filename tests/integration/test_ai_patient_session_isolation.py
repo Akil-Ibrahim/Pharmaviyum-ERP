@@ -95,6 +95,7 @@ async def test_sync_and_stream_routes_bind_reused_session_to_patient_scope(
                 "query": "Synthetic isolation test; no clinical facts.",
                 "session_id": "same-browser-session",
                 "patient_id": patient_id,
+                "purpose": "dispensing_review" if patient_id is not None else None,
                 "pharmacy_id": pharmacy.id,
                 "language": "en",
             }
@@ -324,6 +325,7 @@ async def test_ai_api_rejects_patient_from_another_pharmacy_before_harness(
                 "query": "Synthetic isolation test.",
                 "session_id": "same-browser-session",
                 "patient_id": foreign_patient.id,
+                "purpose": "dispensing_review",
                 "pharmacy_id": pharmacy_a.id,
             },
         )
