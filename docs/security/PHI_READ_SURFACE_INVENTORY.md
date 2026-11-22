@@ -28,7 +28,7 @@ File: `src/pharmaviyum/repositories/patient.py`
 
 **Remaining action:** add two-pharmacy integration tests that prove a tenant-scoped call cannot return another tenant's patients, and map all call sites. If a global administrative use case exists, give it a separately named and explicitly authorized method rather than overloading an optional scope.
 
-### F-02 — Broad PatientResponse exposed unrelated PHI across ordinary patient endpoints
+### F-02 — Historical finding: broad PatientResponse was exposed; standard patient routes now use PatientSummaryResponse
 
 Files: `src/pharmaviyum/schemas/patient.py`, `src/pharmaviyum/api/v1/endpoints/patients.py`, `src/pharmaviyum/repositories/patient.py`
 
