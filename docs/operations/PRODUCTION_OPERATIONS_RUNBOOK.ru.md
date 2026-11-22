@@ -15,7 +15,7 @@
 | Компонент | Ответственность | Проверка |
 |---|---|---|
 | Стек приложения на аптечном сервере (Ansible-managed) | API и frontend локальной аптеки | Результат Ansible rollout, immutable image digest, состояние контейнеров, logs, /health, /ready и безопасные аптечные smoke tests |
-| PostgreSQL | Транзакционные данные и checkpoints | Состояние провайдера, connections, latency, возраст backup и доказательства restore |
+| PostgreSQL | Транзакционные данные и checkpoints | Локальный PostgreSQL container `db` на аптечном сервере: состояние контейнера/readiness, connections, latency, возраст backup и доказательства restore |
 | Redis-compatible service | Cache и dialogue memory | Доступность, memory/connection limits, evictions и latency |
 | Celery worker | Асинхронные задачи, например ingestion | Worker health, queue depth, возраст задач, retries и failed tasks |
 | LLM / embedding provider | Необязательные AI inference и embeddings | Статус провайдера, timeout/error rate, quota и latency |
@@ -43,7 +43,7 @@
 
 ### PostgreSQL недоступен
 
-Проверьте статус провайдера, network policy, connection limits и ошибки приложения. Избегайте циклов перезапуска и неограниченных retries. Не сбрасывайте, не пересоздавайте и не восстанавливайте БД без утверждённого incident owner и проверенной точки восстановления. При сомнениях в совместимости схемы остановите promotion.
+Проверьте локальный PostgreSQL container `db` на аптечном сервере через Docker Compose, его readiness, connection limits и ошибки приложения. Избегайте циклов перезапуска и неограниченных retries. Не сбрасывайте, не пересоздавайте и не восстанавливайте БД без утверждённого incident owner и проверенной точки восстановления. При сомнениях в совместимости схемы остановите promotion.
 
 ### Redis недоступен
 
@@ -67,7 +67,8 @@ Production application releases направляются на аптечный �
 
 ## Backup и restore
 
-- Проверьте утверждённый график резервного копирования локальной PostgreSQL, retention, off-site копию (если настроена) и документированную процедуру restore. См. Off-site Backup Architecture; не предполагайте наличие cloud-provider PITR service.
+- `ansible/playbooks/backup.yml` создаёт и проверяет локальный PostgreSQL dump при запуске, но не устанавливает и не планирует собственный запуск. Убедитесь, что утверждённый защищённый automation controller или scheduler действительно запускает playbook и безопасно передаёт secrets. Значение `backup_enabled: true` не доказывает наличие расписания.
+- Проверьте local retention и документированный изолированный restore drill. Off-site upload — отдельный запуск с явным approval в заранее provisioned site-scoped Restic repository; он не создаёт repository/ACL и не доказывает возможность restore из удалённой копии. См. Off-site Backup Architecture; не предполагайте наличие cloud-provider PITR service.
 - Определите retention Redis и checkpoints отдельно.
 - Храните ключи шифрования backup вне Git.
 - Фиксируйте возраст backup и срок хранения.
