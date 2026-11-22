@@ -2,7 +2,7 @@
 
 **Review date:** 2026-11-22  
 **Source baseline:** `main` at `2616b4209fc037b1e4f1899b876478bf72258641`; historical findings are retained where explicitly labelled.  
-**Scope:** patient API routes and patient-purchase read API. Source review only; tests were inspected but not executed by this document. No runtime or patient data was accessed.
+**Scope:** patient API routes, patient-purchase read API and MCP patient-history tool. Source review only; tests were inspected but not executed by this document. No runtime or patient data was accessed.
 
 ## Purpose
 
