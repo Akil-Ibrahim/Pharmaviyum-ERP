@@ -40,6 +40,7 @@ ID RAG checkpoint теперь используют версионированн
 - одна client session + разные пациенты дают разные API session scopes;
 - области с конкретным пациентом и без пациента различаются;
 - некорректные идентификаторы пациента/сессии отклоняются;
+- MCP tools должны отклонять patient ID, отличный от выбранного patient context, требовать purpose code и надёжно аудировать allowed/denied PHI reads (в текущем MCP context/tool path это ещё не реализовано);
 - Agent checkpoint ID различаются по пациентам и отклоняют некорректный контекст пациента;
 - RAG checkpoint ID различаются по пациенту, tenant и secret; скрывают исходные идентификаторы; fail closed при отсутствии production secret.
 
