@@ -14,7 +14,7 @@
 - `ansible/playbooks/backup.yml` создаёт локальный сжатый PostgreSQL dump, проверяет gzip integrity и SHA-256, записывает manifest и удаляет просроченные локальные артефакты только после проверки новой резервной копии. `ansible/playbooks/restore.yml` выполняет неразрушающий restore drill в отдельно названную БД ровно на одном явно подтверждённом Edge-хосте. Планирование запуска делегировано защищённому automation controller.
 - `ansible/playbooks/rollback.yml` возвращает предыдущий backend image и проверяет `/health`; он не восстанавливает backup базы данных.
 - Compose definition содержит `db`, `redis` (образ Valkey) и `backend`. Сервиса Nginx в нём нет.
-- Роль Nginx существует, но не подключена к текущему deployment playbook.
+- Роль Nginx существует, но не подключена к текущему deployment playbook. Она также не завершена: ссылается на отсутствующий `templates/nginx.conf.j2` и запрашивает Compose service `nginx`, которого нет в активном Ansible Compose definition. Сейчас это неработающий и неразвёрнутый путь reverse proxy.
 
 Это факты о содержимом репозитория, а не утверждение, что playbooks успешно выполнялись на реальном аптечном сервере.
 

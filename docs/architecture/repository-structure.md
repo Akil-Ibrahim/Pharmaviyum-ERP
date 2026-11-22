@@ -21,7 +21,7 @@ This document defines the current repository layout and the ownership rules for 
 | `ansible/` | Pharmacy Edge infrastructure automation, inventories, roles, and playbooks |
 | `docker/` | Docker-specific assets such as images and container configuration |
 | `deploy/` | Deployment-related assets that are not part of the application package |
-| `nginx/` | Nginx reverse-proxy configuration for the root Compose topology |
+| `nginx/` | Standalone Nginx configuration asset; not currently wired into the root Compose or Ansible Production deployment |
 | `docker-compose.yml` | Local/default Compose topology |
 | `docker-compose.codespaces.yml` | Codespaces-specific overrides |
 | `docker-compose.monitoring.yml` | Monitoring stack |
