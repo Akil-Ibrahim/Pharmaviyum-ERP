@@ -1,6 +1,6 @@
 # ADR: Архитектура зашифрованных off-site backup для Pharmacy Edge
 
-- **Статус:** Proposed.
+- **Статус:** Proposed; первый Restic upload slice реализован, но операционная приёмка и Production DR не подтверждены.
 - **Область:** лаборатория и пилот на 1 площадке, rollout на 2–3 и 10 площадок; архитектурная цель — до 100 аптек.
 - **Полномочия:** только проектирование. Документ не разрешает создавать provider resources или credentials, передавать backups, удалять retention-копии, выполнять restore или deployment.
 
