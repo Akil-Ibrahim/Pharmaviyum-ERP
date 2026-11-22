@@ -109,7 +109,7 @@ def test_phi_access_audit_downgrade_refuses_to_delete_retained_evidence():
         with pytest.raises(
             RuntimeError, match="Cannot downgrade PHI access audit migration"
         ):
-            command.downgrade(config, "-1")
+            command.downgrade(config, "2026_11_21_000001")
 
         with engine.connect() as connection:
             retained_count = connection.scalar(
