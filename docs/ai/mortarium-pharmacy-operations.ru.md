@@ -44,7 +44,7 @@ Mortarium поддерживает два разных сценария:
 - LLM видит только инструменты, доступные аутентифицированной роли.
 - Не предоставляются неограниченные инструменты SQL, shell, файловой системы или произвольного исполнения кода.
 - Количество запасов, допустимость срока годности, FEFO, цены, состояние оплаты, требования к рецепту и авторизация определяются правилами ERP.
-- Информация о конкретном пациенте подчиняется авторизации в области пациента.
+- Информация о конкретном пациенте подчиняется авторизации в области пациента. MCP `get_patient_history` теперь связан с trusted selected patient и одной controlled purpose, требует роль pharmacist, повторно проверяет pharmacy ownership и записывает metadata-only allowed/denied `PHIAccessAudit` до возврата данных. Ответ всё ещё шире minimum-necessary target; database-backed audit tests и staged verification остаются открытыми. HMAC session isolation не заменяет tool-level authorization.
 - Память диалога и thread checkpoint LangGraph в коде привязаны к pharmacy, authenticated user, patient (включая явную область без пациента) и client session через версионированные HMAC namespaces. Реализация объединена через PR #287 и имеет regression coverage. Staged end-to-end validation с PostgreSQL checkpoints и Redis memory остаётся release gate; merge/CI не доказывают production activation. См. [изоляцию состояния диалога по пациенту](patient-session-isolation.md) и [аудит архитектуры Mortarium](../rag_architecture_audit.md).
 - Результаты инструментов и извлечённые документы являются недоверенными данными, а не инструкциями.
 - Данные пациентов не добавляются в evaluation fixtures или prompts внешних judge-моделей.
