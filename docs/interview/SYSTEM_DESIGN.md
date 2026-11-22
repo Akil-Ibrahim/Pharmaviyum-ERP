@@ -103,7 +103,7 @@ The important design constraint is that the LLM is **not** the system of record 
                          application boundary
 ```
 
-The implemented AI architecture confirms that FastAPI establishes authentication and tenant context before the AI API, while the AI layer connects the Agent Harness, RAG graph, MCP tools, PostgreSQL/pgvector, Redis, and configured LLM provider. fileciteturn56file0L2-L2
+The implemented AI architecture confirms that FastAPI establishes authentication and tenant context before the AI API, while the AI layer connects the Agent Harness, RAG graph, MCP tools, PostgreSQL/pgvector, Redis, and configured LLM provider. See the [AI architecture](../ai_architecture.md).
 
 ---
 
@@ -188,7 +188,7 @@ Tool authorization
 LLM orchestration
 ```
 
-The AI architecture explicitly documents tenant-safe retrieval and authenticated pharmacy/user checkpoint scope. fileciteturn56file0L2-L2
+The AI architecture explicitly documents tenant-safe retrieval and authenticated pharmacy/user checkpoint scope. See the [patient-session isolation contract](../ai/patient-session-isolation.md).
 
 ### What must NOT happen
 
@@ -319,7 +319,7 @@ transform_query
     → guardrails
 ```
 
-This is explicitly documented in the repository's AI architecture. fileciteturn56file0L2-L2
+This is explicitly documented in the repository's [AI architecture](../ai_architecture.md).
 
 ### Retrieval quality questions
 
@@ -362,7 +362,7 @@ Guardrails
 Response + citations
 ```
 
-The implemented AI documentation specifies stable source identifiers, citation materialization, tenant-safe retrieval, and low-cardinality retrieval metrics. fileciteturn56file0L2-L2
+The implemented AI documentation specifies stable source identifiers, citation materialization, tenant-safe retrieval, and low-cardinality retrieval metrics. See the [RAG architecture audit](../rag_architecture_audit.md).
 
 ### Why grading?
 
@@ -389,7 +389,7 @@ Its documented responsibilities include:
 - guardrails;
 - caching;
 - tool access;
-- observability. fileciteturn56file0L2-L2
+- observability, documented in the [OpenTelemetry guidance](../observability/opentelemetry.md).
 
 The design principle is:
 
@@ -415,7 +415,7 @@ Everything
 
 # 12. MCP and tool execution
 
-MCP is an internal application component exposing JSON-RPC tools/resources. The repository documents authorization integration with application roles and pharmacy membership. fileciteturn56file0L2-L2
+MCP is an internal application component exposing JSON-RPC tools/resources. The repository documents authorization integration with application roles and pharmacy membership. See the [AI architecture](../ai_architecture.md).
 
 A safe tool flow is:
 
@@ -493,7 +493,7 @@ Persist
 Update job status
 ```
 
-The repository documents ingestion under the RAG ingestion package and its integration with the Celery worker in the development Docker Compose stack. fileciteturn56file0L2-L2
+The repository documents ingestion under the RAG ingestion package and its integration with the Celery worker in the development Docker Compose stack. See the [Mortarium chunking and ingestion pipeline](../ai/chunking-pipeline.md).
 
 ### Why a queue?
 
@@ -618,7 +618,7 @@ For AI systems add:
 - queue latency;
 - ingestion duration.
 
-The repository intentionally keeps retrieval metrics low-cardinality and does not put tenant, user, or session identifiers into Prometheus labels. fileciteturn56file0L2-L2
+The repository intentionally keeps retrieval metrics low-cardinality and does not put tenant, user, or session identifiers into Prometheus labels. See the [OpenTelemetry guidance](../observability/opentelemetry.md).
 
 ### Why low cardinality matters
 
