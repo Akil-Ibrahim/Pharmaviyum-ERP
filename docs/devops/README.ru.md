@@ -4,7 +4,7 @@
 
 ## Назначение
 
-Этот раздел описывает инженерный roadmap и операционную модель развития Pharmaviyum ERP/CRM. Плановый сценарий — 100 аптек, 200 посетителей в день на аптеку (20 000 всего), пять сотрудников на аптеку (500 всего) и три POS-терминала на аптеку (300 всего). Объём AI-запросов и пиковая конкурентность не определены и должны измеряться отдельно. Число посетителей нельзя трактовать как число AI-запросов или одновременных сессий.
+Этот раздел описывает инженерный roadmap и операционную модель развития Pharmaviyum ERP/CRM. Плановый сценарий — 100 аптек, 200 посетителей в день на аптеку (20 000 всего), шесть сотрудников на аптеку (600 всего) и три POS-терминала на аптеку (300 всего). Объём AI-запросов и пиковая конкурентность не определены и должны измеряться отдельно. Число посетителей нельзя трактовать как число AI-запросов или одновременных сессий.
 
 Документация развивает существующую модель deployment, а не предлагает инфраструктуру ради самой инфраструктуры.
 
@@ -18,11 +18,11 @@
 4. Ручной запуск Demo-only deployment workflow для FastAPI Cloud.
 5. Проверка статуса deployment, логов и smoke tests.
 
-FastAPI Cloud размещает только публичную Demo. Demo БД, Redis-совместимые сервисы и отдельные Celery workers должны быть подготовлены и эксплуатироваться согласно Demo deployment runbook. Production использует тот же технологический стек приложения на отдельно управляемом хостинге за пределами публичного репозитория.
+FastAPI Cloud размещает только публичную Demo. Demo БД, cache и worker services должны быть подготовлены и эксплуатироваться согласно Demo deployment runbook. Production использует тот же технологический стек приложения на аптечном сервере; Ansible отвечает за конфигурацию инфраструктуры и выпуск приложения. Реальные Production inventory, per-site credentials и approvals остаются вне Git. Ansible rollout нельзя считать подтверждённым для Production до получения lab/pilot и site acceptance evidence.
 
 В репозитории также есть opt-in Compose stack мониторинга для контролируемых развёртываний. Nginx/edge, OpenTelemetry Collector, managed data services и multi-node orchestration — целевые возможности, а не утверждение, что они входят в текущую базовую конфигурацию.
 
-GitHub Actions — CI quality gate. Отдельный FastAPI Cloud workflow — текущий путь deployment публичной Demo и не должен обращаться к Production. Docker image build jobs могут поддерживать container workflows, но не являются целевой платформой hosted deployment.
+GitHub Actions — CI quality gate, а вручную запускаемый FastAPI Cloud workflow предназначен исключительно для публичной Demo. Public CI может проверять Ansible и собирать Demo images. Production images создаются из закрытого Production source в контролируемом Production release pipeline; проверенные Ansible playbooks развёртывают утверждённый immutable Production artifact на аптечных серверах после approval оператора. Public CI не должен подключаться к действующим аптечным host.
 
 ## Принципы production
 
@@ -80,7 +80,7 @@ PostgreSQL одновременно является транзакционно�
 
 PostgreSQL: connection pooling/PgBouncer при подтверждённой нагрузке на соединения; автоматические backups; point-in-time recovery; проверка restore; replication/managed PostgreSQL при необходимости; pg_stat_statements и slow-query monitoring; review индексов/autovacuum; мониторинг pgvector indexes и query plans.
 
-Redis: определите, какие данные являются cache, queue state или durable application state; настройте persistence и HA по требованиям; контролируйте память/eviction, здоровье Celery broker и queue depth; используйте managed Redis, когда требования превышают возможности single-node deployment.
+Redis: определите, какие данные являются cache, queue state или durable application state; настройте persistence и HA по требованиям; контролируйте память/eviction, здоровье Celery broker и queue depth; для Production используйте локальный cache/broker service аптечного сервера согласно утверждённому профилю. Managed Redis допустим только если он явно предусмотрен и утверждён для конкретной площадки; не выводите его наличие из Demo-конфигурации.
 
 **Критерий выхода:** протестированный backup/restore и документированные режимы отказа PostgreSQL и Redis.
 
@@ -102,7 +102,7 @@ AI — отдельный capacity domain; он не должен насыщат
 
 ### Этап 7 — CI/CD и release engineering
 
-Сохраняйте GitHub Actions в роли CI gate, а FastAPI Cloud — в роли hosting/deployment Demo. Хостинг и развёртывание Production управляются за пределами публичного репозитория. Ansible остаётся отдельной возможностью on-premises deployment.
+Сохраняйте GitHub Actions в роли CI gate, а FastAPI Cloud — в роли hosting/deployment только публичной Demo. Production application releases выполняются на аптечных серверах через проверенные Ansible playbooks. Реальные Production inventory, per-site credentials, SSH access и approvals остаются под контролем оператора и не коммитятся.
 
 Требуются immutable image с commit SHA/digest, CI gates до публикации image, проверка миграций БД, deployment health checks, процедура rollback, release metadata/audit trail, разделение окружений, контролируемое production approval и smoke tests. Не обходите обязательные checks через continue-on-error.
 
@@ -121,6 +121,49 @@ Production readiness не завершена, пока восстановлен�
 Kubernetes намеренно не входит в обязательные первые восемь этапов. Вводите его только при подтверждённой потребности в возможностях, которые Docker Compose + Ansible не обеспечивают эффективно: multi-node scheduling, частые независимые deployment, автоматическое горизонтальное масштабирование или существенно больший парк сервисов.
 
 Цель — надёжность production, а не количество технологий.
+
+## Целевая архитектура
+
+Следующая схема — целевая архитектура масштабирования, а не описание уже развёрнутой Production-топологии. Текущая Production-модель — аптечный сервер под управлением Ansible; переход к нескольким API-узлам, общей edge-инфраструктуре и централизованной observability требует отдельных измерений и подтверждённого deployment design.
+
+```text
+                         Internet
+                            |
+                     CDN / WAF / LB
+                            |
+                    Nginx / edge layer
+                            |
+                 +----------+----------+
+                 |                     |
+              API #1                 API #2
+                 |                     |
+                 +----------+----------+
+                            |
+                    OpenTelemetry
+                            |
+                       Collector
+                    /       |       \
+               Metrics   Traces     Logs
+                  |         |          |
+             Prometheus   Tempo       Loki
+                    \       |       /
+                       Grafana
+                            |
+          +-----------------+-----------------+
+          |                 |                 |
+      PostgreSQL          Redis            Celery
+      + pgvector          / HA             workers
+          |                 |                 |
+          +-----------------+-----------------+
+                            |
+                     Agent Harness
+                            |
+                 RAG / MCP / LLM routing
+                            |
+                    Model infrastructure
+```
+
+Точная топология определяется результатами capacity measurements, локальными ограничениями площадок и утверждённым deployment design.
 
 ## Production checklist
 
@@ -166,10 +209,14 @@ Kubernetes намеренно не входит в обязательные пе
 - [ ] Проверены сбои зависимостей.
 - [ ] Поддерживается incident runbook.
 
+## Этапы инженерной поставки
+
+См. [Инженерную дорожную карту и этапы поставки](./ENGINEERING_ROADMAP.ru.md) с владельцами этапов, требованиями к доказательствам и критериями выхода. Roadmap разделяет корректность аптечных процессов, измерение capacity, observability, recovery, качество Mortarium, пилот Edge и контролируемое расширение fleet.
+
 ## Связанные документы
 
 - [Инженерные benchmarks и требования к качеству](./ENGINEERING_BENCHMARK_REQUIREMENTS.ru.md) — канонический контракт метрик.
-- [Инженерная дорожная карта](./ENGINEERING_ROADMAP.ru.md) · [English](./ENGINEERING_ROADMAP.md) — этапы, владельцы, доказательства и критерии выхода; русский перевод ещё не опубликован.
+- [Инженерная дорожная карта](./ENGINEERING_ROADMAP.ru.md) · [English](./ENGINEERING_ROADMAP.md) — этапы, владельцы, доказательства и критерии выхода.
 - [Stage 1 Load Testing](./STAGE_1_LOAD_TESTING.md) — процедура нагрузочного тестирования; пока только английская версия.
 - [Руководство Ansible для Pharmacy Edge](./ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md) · [Ansible Pharmacy Edge Guide](./ANSIBLE_PHARMACY_EDGE_GUIDE.md) — подготовка хостов, безопасность и deployment.
 - [План внедрения Pharmacy Edge](./PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) · [English](./PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) — границы rollout, fleet capacity, release, backup/recovery и критерии приёмки.

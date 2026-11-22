@@ -2,7 +2,7 @@
 
 ## Scope
 
-FastAPI Cloud hosts the public Pharmaviyum Demo only. GitHub Actions runs CI; the manually dispatched workflow .github/workflows/deploy-fastapi-cloud.yml deploys only the isolated Demo application. Production uses the same application technology stack on a separately managed hosting platform. Production deployment, migrations and operational automation are maintained outside this public repository.
+FastAPI Cloud hosts the public Pharmaviyum Demo only. GitHub Actions runs CI and the manually dispatched `.github/workflows/deploy-fastapi-cloud.yml` deploys only the isolated Demo application. Production uses the same application technology stack deployed to the pharmacy server through Ansible. Its implementation/source and release artifacts are private under NDA and are produced by the controlled Production release pipeline. Public Ansible playbooks define the deployment automation contract; real Production inventory, per-site secrets, host access and execution approvals remain operator-controlled and are never committed.
 
 This runbook describes the repository's Demo workflow. It does not claim that a deployment has succeeded or that Production readiness has been verified.
 
@@ -40,4 +40,4 @@ The public Demo deployment workflow performs read-only schema compatibility chec
 
 ## Production boundary
 
-This public runbook and its workflows do not deploy, migrate or administer Production. Production hosting and its release procedures are managed separately under the applicable confidentiality controls.
+This runbook and its GitHub Actions workflow apply only to the public Demo; they do not deploy, migrate or administer Production. Production application releases are performed through the reviewed Ansible playbooks in this repository. Real Production inventory, host access, per-site credentials, migration approvals and site-specific execution approvals remain restricted under the applicable confidentiality controls. See the [Pharmacy Edge Ansible rollout plan](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) and [Ansible guide](../devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md).

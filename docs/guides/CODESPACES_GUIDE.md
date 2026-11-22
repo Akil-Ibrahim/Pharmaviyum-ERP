@@ -126,7 +126,7 @@ GitHub Codespace
       +--> configured LLM provider / Ollama
 ```
 
-Codespaces is a development environment. Hosted application deployment is handled separately through the manually triggered FastAPI Cloud GitHub Actions workflow.
+Codespaces is a development environment. The manually triggered FastAPI Cloud GitHub Actions workflow deploys the public Demo only. Production application releases target the pharmacy server through the reviewed Ansible playbooks; real Production inventory, credentials, host access and approvals remain operator-controlled.
 
 ## 8. Troubleshooting
 

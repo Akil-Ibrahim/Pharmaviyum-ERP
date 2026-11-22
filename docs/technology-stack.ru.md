@@ -8,7 +8,7 @@
 
 | Технология | Определение | Для чего используется в Pharmaviyum |
 |---|---|---|
-| **Python 3.15** | Высокоуровневый язык программирования общего назначения. | Реализует backend, аптечные доменные правила, интеграции, фоновые задачи и сервисы Mortarium AI. Версия runtime приложения зафиксирована строго как CPython `==3.15.0` в `pyproject.toml` и `.python-version`; CI и Docker используют тот же patch-релиз. Перед признанием rollout Demo успешным runtime FastAPI Cloud должен независимо подтвердить целевую версию `3.15.0` и ожидаемый build SHA. Проверка Production runtime регулируется отдельной документацией по его хостингу. |
+| **Python 3.15** | Высокоуровневый язык программирования общего назначения. | Реализует backend, аптечные доменные правила, интеграции, фоновые задачи и сервисы Mortarium AI. Версия runtime приложения зафиксирована строго как CPython `==3.15.0` в `pyproject.toml` и `.python-version`; CI и Docker используют тот же patch-релиз. Перед признанием rollout Demo успешным runtime FastAPI Cloud должен независимо подтвердить целевую версию `3.15.0` и ожидаемый build SHA. Production runtime проверяется на аптечном сервере после Ansible release; результаты фиксируются как evidence приёмки площадки. |
 | **FastAPI 0.164.0** | Python-фреймворк для создания API на основе type hints и ASGI. | Предоставляет ERP/CRM- и AI-endpoints, проверяет запросы, применяет авторизацию через зависимости и публикует контракт OpenAPI. |
 | **Uvicorn 0.54.0** | ASGI web-сервер. | Запускает FastAPI и обрабатывает асинхронные HTTP-соединения. FastAPI — фреймворк приложения, Uvicorn — серверный процесс. |
 | **Pydantic 2.14.3** | Библиотека валидации и сериализации данных. | Определяет и проверяет схемы запросов/ответов и структурированные настройки, включая поля лекарственных препаратов. |
@@ -30,7 +30,7 @@
 | **Redis Python client 8.1.0** | Python-библиотека клиента для Redis-совместимых серверов. | Позволяет backend-сервисам и worker-процессам взаимодействовать с настроенной Redis-совместимой инфраструктурой. |
 | **Полнотекстовый поиск PostgreSQL** | Встроенный в БД лексический поиск по текстовым документам. | Дополняет векторное сходство в гибридном RAG-поиске и помогает находить точные названия препаратов, идентификаторы и фразы. |
 
-**Разделение сред:** Hosted Production использует Neon PostgreSQL 18; Demo обязана использовать отдельную PostgreSQL 18. Hosted Production и Demo используют разные managed Redis endpoints; Redis 8.8.4 — целевая версия совместимости, фактическую версию managed-сервера необходимо подтвердить у провайдера. Локальный development/CI Compose является disposable-средой и не должен считаться hosted Production. В legacy-файле `docker-compose.prod.yml` всё ещё указаны PostgreSQL 16/Redis 7; он официально не поддерживается для Production/Demo до отдельной миграции и повторной проверки. Pharmacy Edge остаётся отдельным профилем со своей политикой. См. [политику версий](#политика-версий-и-управление-зависимостями) и [единый hosted baseline](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md).
+**Разделение сред:** FastAPI Cloud используется только для публичной Demo с отдельными data services и синтетическими данными. Production развёртывается через Ansible на аптечном сервере; PostgreSQL и supporting services запускаются согласно утверждённому Pharmacy Edge profile. Версии сервисов Production подтверждаются по фактическому runtime аптечного сервера, а не по metadata Demo-провайдера. Локальный development/CI Compose является disposable-средой и не должен считаться Production deployment. Legacy-файл `docker-compose.prod.yml` с PostgreSQL 16/Redis 7 не является утверждённым путём для Production или Demo. См. [политику версий](#политика-версий-и-управление-зависимостями) и [границу deployment](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md).
 
 ### 3. Фоновые задачи и асинхронная обработка
 
@@ -107,13 +107,13 @@
 |---|---|---|
 | **Docker** | Платформа упаковки приложений и зависимостей в контейнеры. | Создаёт воспроизводимые runtime-образы API и вспомогательных процессов. |
 | **Docker Compose** | Инструмент описания и запуска многоконтейнерных приложений. | Запускает временные локальные зависимости разработки/тестирования: PostgreSQL, Redis, workers и локальные сервисы наблюдаемости. |
-| **FastAPI Cloud** | Управляемая платформа хостинга и развёртывания FastAPI-приложения. | Размещает публичный backend Demo. Production использует тот же технологический стек приложения на отдельно управляемой платформе; сведения о провайдере и release ограничены. |
+| **FastAPI Cloud** | Управляемая платформа хостинга и развёртывания FastAPI-приложения. | Размещает только публичный backend Demo; не является Production deployment target. |
 | **GitHub** | Платформа контроля версий и совместной разработки. | Хранит репозиторий, ветки, pull request, code review и историю релизов. |
 | **GitHub Actions** | Сервис CI/CD-автоматизации, интегрированный с GitHub. | Выполняет lint, форматирование, type checks, тесты, security scans и проверки сборки. Успешный CI — сигнал качества, но не доказательство работоспособности Production. |
 | **uv 0.13.8** | Быстрый менеджер пакетов Python и инструмент управления проектом/окружением. | Устанавливает Python-зависимости, запускает команды и обеспечивает воспроизводимость разрешённых версий через `pyproject.toml` и `uv.lock`. |
 | **Bun 1.4.4** | JavaScript runtime, пакетный менеджер и frontend toolchain. | Устанавливает frontend-зависимости и запускает frontend-скрипты разработки, сборки и тестирования. |
-| **Ansible** | Инструмент автоматизации инфраструктуры без установки агента на управляемые узлы. | Подготавливает и обслуживает узлы Pharmacy Edge через проверенные playbook и роли. Это автоматизация инфраструктуры, а не бизнес-логика ERP. |
-| **Mailpit 1.33.1** | Локальный инструмент перехвата SMTP и тестирования электронной почты. | Перехватывает письма разработки, чтобы тестировать восстановление пароля и уведомления без отправки реальных писем. Production SMTP настраивается отдельно. |
+| **Ansible** | Инструмент автоматизации инфраструктуры без установки агента на управляемые узлы. | Подготавливает аптечные серверы и развёртывает проверенные Production releases в профиле Pharmacy Edge. Это автоматизация инфраструктуры, а не бизнес-логика ERP. |
+| **Mailpit 1.33.1** | Локальный инструмент перехвата SMTP и тестирования электронной почты. | Перехватывает письма разработки, чтобы тестировать восстановление пароля и уведомления без отправки реальных писем. Production SMTP настраивается на аптечном сервере через защищённое Ansible-managed окружение. |
 
 ### 8. Инструменты тестирования, качества и безопасности
 
@@ -167,8 +167,8 @@ Frontend-зависимости определяются в следующих �
 | SQLAlchemy | `2.1.8` | `pyproject.toml` |
 | Alembic | `1.20.1` | `pyproject.toml` |
 | asyncpg / psycopg | `0.32.0` / `3.3.9` | `pyproject.toml` |
-| PostgreSQL | Neon PostgreSQL 18 для hosted Production; для Demo требуется отдельный PostgreSQL 18; disposable PostgreSQL 18 для development/CI | Metadata проекта Neon; metadata провайдера Demo; Docker Compose и CI service definitions |
-| Redis server | Managed Redis для hosted Production и отдельный managed Redis для Demo; целевая совместимость Redis 8.8.4, точная версия hosted-сервера определяется провайдером и должна быть проверена; локальный development/CI использует Redis 8.8.4 | Metadata integration FastAPI Cloud/провайдера; Docker Compose и CI service definitions |
+| PostgreSQL | Локальная PostgreSQL на аптечном сервере для Production; отдельная PostgreSQL для Demo; disposable PostgreSQL для development/CI | Ansible/Compose профиль аптечного сервера, Demo provider metadata, Docker Compose и CI service definitions |
+| Redis-compatible service | Локальный Redis/Valkey по утверждённому профилю аптечного сервера; отдельный cache service для Demo; локальный development/CI service | Ansible/Compose profile и фактическая runtime metadata каждого окружения |
 | pgvector container extension | `0.8.7` | Тег образа `pgvector/pgvector:0.8.7-pg18` |
 | pgvector Python client | `0.4.1` | `pyproject.toml` |
 | LangGraph | `1.2.21` | `pyproject.toml` |
@@ -216,12 +216,12 @@ Frontend-зависимости определяются в следующих �
 
 ## Примечания по runtime-инфраструктуре
 
-- Hosted Production использует подтверждённый проект Neon PostgreSQL 18; Demo должна использовать отдельную PostgreSQL 18. Disposable development/CI Compose также ориентирован на PostgreSQL 18 с pgvector 0.8.7.
+- Production PostgreSQL работает локально на аптечном сервере в рамках утверждённого Ansible/Pharmacy Edge profile; Demo использует отдельную изолированную БД. Disposable development/CI Compose ориентирован на PostgreSQL 18 с pgvector 0.8.7.
 - Приложение использует Python-клиент pgvector и расширение PostgreSQL для векторного поиска, если оно включено; это отдельно версионируемые компоненты.
-- Hosted Production и Demo используют отдельные managed Redis endpoints. Redis 8.8.4 — целевая версия совместимости; точная версия managed-сервера контролируется провайдером и должна быть подтверждена по provider metadata до релиза. Disposable development/CI Compose использует Redis 8.8.4.
-- Шаблон Ansible для Pharmacy Edge использует Valkey; этот серверный профиль намеренно отделён от локального Redis.
-- Локальный Compose перехватывает исходящую почту приложения в Mailpit (`http://localhost:8025`, SMTP `localhost:1025`). См. [доставку электронной почты и локальное тестирование](./development/email.md). Для Demo-доставки необходимо явно задать SMTP host, port, sender, TLS mode и credentials в окружении Demo. Production SMTP настраивается в отдельной управляемой среде хостинга.
-- Выбор LLM-провайдера/модели Mortarium задаётся переменными окружения. Текущий профиль развёртывания описан в [архитектуре AI](./ai_architecture.md) и [руководстве по FastAPI Cloud](./deployment/FASTAPI_CLOUD.md).
+- Production cache/queue services работают согласно утверждённому Ansible profile аптечного сервера; Demo использует изолированные supporting services. Фактические Production runtime versions проверяются непосредственно на аптечном сервере. Disposable development/CI Compose использует Redis 8.8.4.
+- Шаблон Ansible для Pharmacy Edge использует Valkey 8 (`valkey/valkey:8-alpine`) и PostgreSQL 16 (`pgvector/pgvector:pg16`) через изменяемые tags. Это не immutable image digests; закрепите и проверьте digests до live Production rollout. Этот серверный профиль намеренно отделён от локального Redis 8.8.4 для разработки.
+- Локальный Compose перехватывает исходящую почту приложения в Mailpit (`http://localhost:8025`, SMTP `localhost:1025`). См. [доставку электронной почты и локальное тестирование](./development/email.md). Для Demo-доставки необходимо явно задать SMTP host, port, sender, TLS mode и credentials в окружении Demo. Production SMTP настраивается на аптечном сервере через защищённое Ansible-managed окружение.
+- Выбор LLM-провайдера/модели Mortarium задаётся переменными окружения. Профили окружений описаны в [архитектуре AI](./ai_architecture.md), [руководстве Demo для FastAPI Cloud](./deployment/FASTAPI_CLOUD.ru.md) и [плане Ansible rollout Pharmacy Edge](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md).
 
 ## Правило ведения документации
 

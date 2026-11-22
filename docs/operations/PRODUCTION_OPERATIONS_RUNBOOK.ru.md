@@ -1,6 +1,6 @@
 # Runbook эксплуатации Production
 
-<text>**Статус:** эксплуатационная базовая процедура. Перед выполнением production-действий проверьте специфичные для провайдера controls и владельцев сервисов.</text>
+<text>**Статус:** эксплуатационная базовая процедура для Production на аптечном сервере под управлением Ansible. Перед действиями проверьте host, inventory, источник secrets и владельцев сервисов.</text>
 
 ## Принципы эксплуатации
 
@@ -14,7 +14,7 @@
 
 | Компонент | Ответственность | Проверка |
 |---|---|---|
-| Production web application (отдельно управляемый хостинг) | API и frontend | Deployment state, logs, /health, /ready и authenticated smoke tests; platform-specific procedures находятся за пределами репозитория |
+| Стек приложения на аптечном сервере (Ansible-managed) | API и frontend локальной аптеки | Результат Ansible rollout, immutable image digest, состояние контейнеров, logs, /health, /ready и безопасные аптечные smoke tests |
 | PostgreSQL | Транзакционные данные и checkpoints | Состояние провайдера, connections, latency, возраст backup и доказательства restore |
 | Redis-compatible service | Cache и dialogue memory | Доступность, memory/connection limits, evictions и latency |
 | Celery worker | Асинхронные задачи, например ingestion | Worker health, queue depth, возраст задач, retries и failed tasks |
@@ -39,7 +39,7 @@
 
 ### API недоступен
 
-Проверьте deployment state, startup logs и последние изменения. Отличайте сбой процесса от недоступности зависимостей. Если новая revision нездорова, остановите promotion. Используйте поддерживаемый платформой hosting recovery path для возврата к последней рабочей revision. Не начинайте с downgrade БД или разрушительной очистки.
+Проверьте результат Ansible rollout, целевой host, состояние контейнеров, startup logs и последние изменения. Отличайте сбой процесса от недоступности зависимостей. Если новая revision нездорова, остановите rollout. Используйте утверждённую Ansible rollback procedure и предыдущий проверенный immutable image digest. Не начинайте с downgrade БД или разрушительной очистки.
 
 ### PostgreSQL недоступен
 
@@ -59,7 +59,7 @@
 
 ## Release и rollback
 
-Процедуры Production release и rollback находятся в закрытой документации Production operations и не входят в этот публичный репозиторий. Публичный [runbook FastAPI Cloud Demo](../deployment/FASTAPI_CLOUD.ru.md) относится только к Demo и не должен использоваться для Production.
+Production application releases направляются на аптечный сервер и оркестрируются Ansible playbooks из этого репозитория. Production inventory, per-site credentials, реальные host details и approvals остаются под контролем оператора и не должны попадать в Git. Используйте [план Ansible rollout Pharmacy Edge](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) и [руководство Ansible](../devops/ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md). Публичный [runbook FastAPI Cloud Demo](../deployment/FASTAPI_CLOUD.ru.md) относится только к Demo и не должен использоваться для Production.
 
 До релиза проверьте CI для последнего SHA, approval, backup/restore evidence, migration plan, environment variables, smoke tests и rollback target.
 
@@ -67,7 +67,7 @@
 
 ## Backup и restore
 
-- Проверьте provider-specific PostgreSQL backup/PITR configuration.
+- Проверьте утверждённый график резервного копирования локальной PostgreSQL, retention, off-site копию (если настроена) и документированную процедуру restore. См. Off-site Backup Architecture; не предполагайте наличие cloud-provider PITR service.
 - Определите retention Redis и checkpoints отдельно.
 - Храните ключи шифрования backup вне Git.
 - Фиксируйте возраст backup и срок хранения.

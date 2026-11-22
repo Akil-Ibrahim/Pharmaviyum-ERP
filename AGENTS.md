@@ -9,9 +9,13 @@
 - API client generation script: `scripts/generate-api-client.sh`. It expects a local backend at `http://localhost:8000` and writes generated code under `frontend/shadcn-admin/src/client/`.
 
 ## Non-negotiable safety rules
+
+The canonical environment and documentation rules are maintained in [Documentation Governance](docs/DOCUMENTATION_GOVERNANCE.md) and the [Production/Demo infrastructure baseline](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md).
 - Never commit directly to `main`; work on a descriptive feature/fix branch and open a PR.
-- Never deploy, trigger production actions, change Render/FastAPI Cloud settings, or run destructive database operations unless the user explicitly requests that exact action.
-- Treat production data, credentials, patient data, prescriptions, and tenant-specific data as sensitive. Never print secrets or place credentials in source files, logs, tests, prompts, or commits.
+- This repository contains the public Demo implementation. The private Production implementation/source and confidential business logic remain under NDA and are not part of this repository.
+- FastAPI Cloud is used for the public Demo only. Production application releases target the pharmacy server through reviewed Ansible playbooks and approved private Production artifacts; never direct a Demo workflow or FastAPI Cloud deployment at Production.
+- Never deploy, trigger Production actions, change FastAPI Cloud Demo settings, or run destructive database operations unless the user explicitly requests that exact action. Live Production inventory, credentials and execution approvals remain operator-controlled.
+- Treat Production data, credentials, patient data, prescriptions and tenant-specific data as sensitive. Never print or commit real secrets, tokens, Production credentials or private data. Public Demo test credentials are an exception only when explicitly approved by the repository owner, clearly labelled Demo-only and isolated from Production; never reuse them in any other environment.
 - Do not run write-load tests against production or public endpoints. Prefer local/test databases and explicit test fixtures.
 - Before changing migrations, auth, permissions, tenant isolation, dispensing, inventory, batch/expiry, or stock movements, inspect adjacent code and tests and explain data-integrity implications.
 - Do not bypass failing CI checks, weaken tests, or change quality gates just to make a workflow pass.

@@ -161,9 +161,9 @@ The default development Docker Compose stack currently provides:
 - Celery ingestion worker;
 - local observability services where configured.
 
-These are disposable development/CI targets only. Hosted Production uses Neon PostgreSQL 18 and a separately managed Redis endpoint; Demo must use isolated PostgreSQL 18 and its own managed Redis endpoint. Redis 8.8.4 is the compatibility target, not a claim about a provider-managed server version until verified. The legacy `docker-compose.prod.yml` file still contains PostgreSQL 16/Redis 7 images and is not an approved deployment path; do not use it for Production or Demo. Pharmacy Edge is a separately governed profile and is not the hosted Production/Demo data plane. See [the canonical Production/Demo baseline](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md).
+These are disposable development/CI targets only. The public Demo is hosted on FastAPI Cloud and uses its own isolated PostgreSQL and required supporting services. Production is deployed to the pharmacy server through Ansible; the pharmacy server runs the approved application stack and local operational data services under the Pharmacy Edge profile. Do not describe hosted Neon or a separately managed cloud Redis endpoint as the Production data plane. The legacy `docker-compose.prod.yml` file still contains PostgreSQL 16/Redis 7 images and is not an approved deployment path; do not use it for either Demo or Production. See [the canonical Production/Demo deployment boundary](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) and [Ansible Pharmacy Edge rollout](devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
 
-FastAPI Cloud hosts and deploys the public Demo only. GitHub Actions provides CI and a manually triggered Demo deployment workflow; isolated database, cache and other required services must be provisioned separately. Production uses the same application technology stack on a separately managed hosting platform, with its deployment and operations maintained outside this public repository.
+FastAPI Cloud hosts and deploys the public Demo only. GitHub Actions provides CI and a manually triggered Demo deployment workflow; isolated database, cache and other required services must be provisioned separately. Production uses the same application technology stack deployed to the pharmacy server through Ansible. The public playbooks define the automation contract; live inventory, per-site credentials and approvals remain operator-controlled.
 
 The repository does not use a separate Kubernetes AI deployment; Mortarium remains an application-level AI layer.
 
@@ -176,7 +176,7 @@ Mortarium uses different LLM profiles depending on the deployment target:
 | FastAPI Cloud demo | QwenCloud API | `qwen3.8-flash` | Demo-only provider profile; free quota and provider-console Free quota only controls apply. |
 | Ansible / on-premises production target | Local Ollama runtime | `Qwen3.5 9B Q4_K_M` | Target profile; hardware validation and production rollout are not yet complete. |
 
-These are intentionally separate deployment profiles. The QwenCloud demo key, quota assumptions and cloud API configuration must not be copied into production Ansible inventories. The on-premises production target runs local inference through Ollama and is capacity-bound by the selected host's CPU/GPU, RAM, disk and concurrency limits. The primary production AI runtime is intended for Central; Edge-local inference is optional and must be explicitly approved per hardware profile. POS and other deterministic pharmacy transactions must never depend on Mortarium availability.
+These are intentionally separate deployment profiles. The QwenCloud demo key, quota assumptions and cloud API configuration must not be copied into production Ansible inventories. The on-premises production target runs local inference through Ollama and is capacity-bound by the selected host's CPU/GPU, RAM, disk and concurrency limits. The long-term Central/Edge target architecture may place a shared AI runtime at Central; this is not the current Production deployment topology and does not imply that a Central service is already deployed. The current Production application target is the pharmacy server. Edge-local inference is optional and must be explicitly approved and hardware-validated for each profile. POS and other deterministic pharmacy transactions must never depend on Mortarium availability.
 
 See [QwenCloud demo operations](./ai/QWENCLOUD_DEMO.md) for the demo profile and [Pharmacy Edge Ansible rollout](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) for the on-premises production target. Neither profile description is evidence of a completed live deployment.
 
@@ -207,5 +207,5 @@ uv run uvicorn src.pharmaviyum.main:app --reload --port 8000
 1. Tenant isolation is enforced before retrieval and generation.
 2. LLM output is not trusted as a source of truth; retrieved sources and guardrails remain authoritative.
 3. Source citations use stable chunk identifiers.
-4. Public Demo deployment has one canonical release path in this repository; Production deployment is managed outside this public repository.
+4. Public Demo deployment has one canonical FastAPI Cloud release path. Production application deployment is automated through the public Ansible playbooks, while live host inventory, credentials and execution approvals remain restricted.
 5. Documentation describes implemented behavior, not planned infrastructure.

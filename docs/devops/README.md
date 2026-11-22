@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the production engineering roadmap for Pharmaviyum ERP/CRM. The target planning scenario is 100 pharmacies, 200 daily visitors per pharmacy (20,000 total), five employees per pharmacy (500 total), and three POS terminals per pharmacy (300 total). AI request volume and peak concurrency are not yet specified and must be measured; visitor counts must not be treated as AI requests or concurrent sessions.
+This document defines the production engineering roadmap for Pharmaviyum ERP/CRM. The target planning scenario is 100 pharmacies, 200 daily visitors per pharmacy (20,000 total), six employees per pharmacy (600 total), and three POS terminals per pharmacy (300 total). AI request volume and peak concurrency are not yet specified and must be measured; visitor counts must not be treated as AI requests or concurrent sessions.
 
 The project deliberately evolves the existing deployment model instead of introducing infrastructure for its own sake.
 
@@ -16,13 +16,15 @@ Pull request targeting main
     -> merge after required checks pass
     -> manually triggered FastAPI Cloud Demo deployment workflow
     -> Demo deployment status, logs, and smoke checks
+
+Separate Production release path: reviewed Ansible playbooks -> operator-approved pharmacy-server rollout -> site-specific health, backup/restore and rollback acceptance.
 ```
 
-FastAPI Cloud hosts the public Demo only. Demo database, Redis-compatible services, and separate Celery workers must be provisioned and operated according to the Demo deployment runbook. Production uses the same application technology stack on separately managed hosting, outside this public repository.
+FastAPI Cloud hosts the public Demo only. Demo database, cache and worker services must be provisioned and operated according to the Demo deployment runbook. Production uses the same application technology stack on the pharmacy server; Ansible is the infrastructure configuration and application release mechanism. Real Production inventory, per-site credentials and live execution approvals remain outside Git. The Ansible rollout is not considered production-validated until lab/pilot and site acceptance evidence exists.
 
 The current repository also contains an opt-in monitoring Compose stack for controlled deployments. Nginx/edge infrastructure, OpenTelemetry Collector, managed data services and multi-node orchestration are target capabilities, not assumptions about the current base deployment.
 
-GitHub Actions is the CI quality gate. The dedicated FastAPI Cloud workflow is the current public Demo deployment path; it must not target Production. Docker image build jobs may support container-based workflows, but they are not the hosted deployment target.
+GitHub Actions is the CI quality gate and the manually triggered FastAPI Cloud workflow is the public Demo deployment path only. Public CI may validate Ansible and build Demo images. Production images are produced from the private Production source by the controlled Production release pipeline; reviewed Ansible playbooks deploy the approved immutable Production artifact to pharmacy servers after operator approval. Public CI must not connect to live pharmacy hosts.
 
 ## Target production principles
 
@@ -144,7 +146,7 @@ Redis:
 - Persistence and HA according to workload requirements.
 - Monitor memory pressure and eviction policy.
 - Monitor Celery broker health and queue depth.
-- Prefer managed Redis when operational requirements exceed a single-node deployment.
+- Select the cache/broker service according to the approved environment profile. Production uses pharmacy-server-local supporting services unless an explicitly approved site profile specifies otherwise; do not assume a hosted managed Redis endpoint.
 
 **Exit criteria:** tested backup/restore procedure and documented failure modes for PostgreSQL and Redis.
 
@@ -201,7 +203,7 @@ Never place credentials in repository files, Docker images or build logs.
 
 ### Stage 7 — CI/CD & Release Engineering
 
-Keep GitHub Actions as the CI gate and FastAPI Cloud as the Demo hosting/deployment target. Production hosting and deployment are managed outside this public repository. Ansible remains a separate on-premises deployment capability.
+Keep GitHub Actions as the CI gate and FastAPI Cloud as the Demo hosting/deployment target. Production application deployment is performed on pharmacy servers through the reviewed Ansible playbooks in this repository. Real host inventory, SSH access, per-site credentials and live execution approvals remain operator-controlled and outside Git.
 
 Required capabilities:
 

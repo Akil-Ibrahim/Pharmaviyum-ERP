@@ -120,7 +120,7 @@ uv run fastapi run
 
 Для публичных релизов Demo используйте защищённый workflow Deploy Demo to FastAPI Cloud. Он требует отдельные secrets FASTAPI_CLOUD_DEMO_TOKEN, FASTAPI_CLOUD_DEMO_APP_ID и DEMO_DATABASE_URL, успешный CI для точного commit SHA, read-only проверку схемы Demo и smoke tests после deployment.
 
-Не используйте этот публичный репозиторий, его workflow или плагин FastAPI Cloud для развёртывания и администрирования Production. Хостинг Production, credentials, deployment automation, миграции БД и эксплуатация управляются отдельно с соблюдением применимых ограничений конфиденциальности.
+Не используйте FastAPI Cloud workflow или plugin для deployment и администрирования Production. Релизы Production-приложения направляются на аптечные серверы через проверенные Ansible playbooks этого репозитория. Реальные Production inventory, credentials, SSH access, approvals миграций и live operations остаются под ограниченным контролем оператора; их нельзя коммитить или раскрывать coding agents.
 
 Workflow отправляет Demo deployment командой FastAPI Cloud CLI. Это шаг проверенного workflow, а не инструкция развёртывать приложение из произвольной локальной сессии. Успешная отправка команды не доказывает успешный rollout: проверьте точный build SHA в /version, staging runtime profile, версию CPython, /health, /ready, авторизацию и защиту POS.
 

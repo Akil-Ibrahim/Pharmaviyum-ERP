@@ -1,6 +1,6 @@
 # Production Operations Runbook
 
-**Status:** Operational baseline. Verify provider-specific controls and service ownership before executing production actions.
+**Status:** Operational baseline for the Ansible-managed pharmacy-server Production deployment. Verify host, inventory, secret source and service ownership before executing production actions.
 
 ## Operating principles
 - Production is separate from local Compose, CI and test services.
@@ -13,8 +13,8 @@
 
 | Component | Responsibility | Verification |
 |---|---|---|
-| Production web application (separately managed hosting) | API and frontend serving | Deployment state, logs, /health, /ready and authenticated smoke tests; platform-specific procedures are maintained outside this repository |
-| PostgreSQL | Transactional and checkpoint persistence | Provider health, connections, query latency, backup age and restore evidence |
+| Pharmacy server application stack (Ansible-managed) | API and frontend serving for the local pharmacy site | Ansible release result, immutable image digest, container state, logs, /health, /ready and authenticated pharmacy-safe smoke tests |
+| PostgreSQL | Transactional and checkpoint persistence | Pharmacy-server PostgreSQL service health, connections, query latency, backup age and restore evidence |
 | Redis-compatible service | Cache and dialogue memory | Connectivity, memory/connection limits, evictions and latency |
 | Celery worker | Async tasks such as ingestion | Worker health, queue depth, task age, retries and failed-task review |
 | LLM / embedding provider | Optional AI inference and embeddings | Provider status, timeout/error rate, quota and latency |
@@ -36,10 +36,10 @@ Record timestamp, deployed SHA and redacted response. Never publish tokens or co
 ## Incident triage
 
 ### API unavailable
-Check deployment state, startup logs and recent changes. Distinguish process failure from dependency readiness failure. Stop promotion if the new revision is unhealthy. Use the hosting platform's supported recovery path to restore the last known-good application revision. Do not run a database downgrade or destructive cleanup as the first response.
+Check the Ansible rollout result, target host, container state, startup logs and recent changes. Distinguish process failure from dependency readiness failure. Stop the rollout if the new revision is unhealthy. Use the approved Ansible rollback procedure and the previous verified immutable image digest. Do not run a database downgrade or destructive cleanup as the first response.
 
 ### PostgreSQL unavailable
-Check provider status, network policy, connection limits and application errors. Avoid restart loops and unbounded retries. Do not reset, recreate or restore the database without an approved incident owner and verified recovery point. Stop promotion if schema compatibility is uncertain.
+Check the local database service, pharmacy-server network policy, connection limits and application errors. Avoid restart loops and unbounded retries. Do not reset, recreate or restore the database without an approved incident owner and verified recovery point. Stop promotion if schema compatibility is uncertain.
 
 ### Redis unavailable
 Determine whether cache, dialogue memory, queues or multiple responsibilities are affected. Preserve persistent business records; Redis is not the sales or inventory ledger. Never flush Redis globally as a first response. Identify key ownership and retention before targeted deletion.
@@ -51,14 +51,14 @@ Inspect worker health, queue depth, oldest task age, retry counts and error clas
 Check provider availability, rate limits, latency, timeouts and RAG dependencies. Preserve core deterministic pharmacy workflows. Degrade optional AI through an approved configuration/release change if necessary. Do not present model output as verified clinical advice during degradation.
 
 ## Release and rollback
-Production release and rollback procedures are maintained in the restricted Production operations documentation and are not part of this public repository. The public [FastAPI Cloud Demo runbook](../deployment/FASTAPI_CLOUD.md) applies only to Demo and must not be used for Production.
+Production application releases target the pharmacy server and are orchestrated through the Ansible playbooks in this repository. The production inventory, per-site credentials, real host details and execution approvals remain operator-controlled and must not be committed. Use the [Pharmacy Edge Ansible rollout plan](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) and [Ansible guide](../devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md). The public [FastAPI Cloud Demo runbook](../deployment/FASTAPI_CLOUD.md) applies only to Demo and must never be used for Production.
 
 Before release, verify latest-SHA CI, approval, backup/restore evidence, migration plan, environment variables, smoke tests and rollback target.
 
 Rollback the application revision only when the previous revision is compatible with the current schema. Database rollback is a separate high-risk operation. Prefer backward-compatible expand/contract migrations. Restore from backup only under an approved recovery plan.
 
 ## Backup and restore
-- Verify provider-specific PostgreSQL backup/PITR configuration.
+- Verify the approved local PostgreSQL backup schedule, retention, off-site copy where configured, and documented restore procedure. See the Off-site Backup Architecture; do not assume a cloud-provider PITR service exists.
 - Define Redis and checkpoint retention separately.
 - Protect backup encryption keys outside Git.
 - Record backup age and retention.

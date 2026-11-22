@@ -1,8 +1,8 @@
 # Environment setup — Pharmaviyum ERP/CRM
 
-This guide describes the current configuration contract for local development, the QwenCloud demo profile, and the hosted FastAPI Cloud application. Keep secrets in local ignored files or the relevant secret manager; never commit real credentials.
+This guide describes the configuration contract for local development, the FastAPI Cloud Demo, and Ansible-managed Production on a pharmacy server. Keep secrets in local ignored files or the relevant secret manager; never commit real credentials.
 
-Hosted Production and Demo data services must follow the [Production and Demo Infrastructure Baseline](../deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md). Production is verified on Neon PostgreSQL 18. Demo requires a separate PostgreSQL 18 database and separate managed Redis endpoint; do not share Production credentials, data, or Redis namespaces. The hosted Redis server version is provider-managed: Redis 8.8.4 is the compatibility target, not a verified runtime claim until provider metadata confirms it.
+Production runs on the pharmacy server and is provisioned/released through Ansible; its PostgreSQL and supporting services are local to the approved Pharmacy Edge deployment profile. Demo runs on FastAPI Cloud with isolated Demo data services. Never share database credentials, application secrets, cache namespaces or data between environments. See the [Production/Demo deployment boundary](../deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) and [Pharmacy Edge Ansible rollout](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
 
 ## 1. Configuration sources and precedence
 
@@ -15,7 +15,7 @@ Use these sources in this order:
 
 The application reads environment variables through Pydantic Settings. Names are case-sensitive. Use the exact uppercase names shown in the templates and runbooks.
 
-Do not create deprecated `.env.development` or `.env.production` files. Use `.env` for local development and configure hosted values directly in FastAPI Cloud / GitHub Actions secrets.
+Do not create deprecated `.env.development` or `.env.production` files. Use `.env` for local development. Configure Demo application variables in the isolated FastAPI Cloud Demo environment and Demo deployment credentials in the protected Demo GitHub Environment. Production configuration is rendered/applied through the reviewed Ansible Pharmacy Edge profile using protected per-site secret sources; never put live Production values in FastAPI Cloud or public GitHub secrets.
 
 ## 2. Local development
 
@@ -77,7 +77,7 @@ The following are the principal runtime settings. Provider-specific and optional
 | Variable | Purpose | Guidance |
 |---|---|---|
 | `ENVIRONMENT` | Runtime environment | `development`, `staging`, or `production` |
-| `DEBUG` | Debug behavior | Keep `false` in hosted production |
+| `DEBUG` | Debug behavior | Keep `false` in Demo, staging and Production |
 | `LOG_LEVEL` | Application log level | Usually `INFO` in production |
 | `DATABASE_URL` | Main PostgreSQL connection | Async SQLAlchemy URL; use `postgresql+asyncpg://...` |
 | `PGVECTOR_DATABASE_URL` | Vector-store PostgreSQL connection | Async PostgreSQL URL; may use the same database when schema/permissions are suitable |
@@ -136,7 +136,7 @@ The application flag is a fail-closed configuration check. It does not query or 
 
 QwenCloud is the generation provider in this demo profile. Embeddings are configured separately; the Qwen API key does not imply that embeddings are available. Verify the configured embedding provider, credentials, vector dimensions, and ingestion/retrieval tests before enabling cloud RAG.
 
-See [QwenCloud demo operations](../ai/QWENCLOUD_DEMO.md) for implemented versus planned safeguards and the release checklist.
+See [QwenCloud demo operations](../ai/QWENCLOUD_DEMO.md) for implemented versus planned safeguards and the Demo release checklist.
 
 ### Other provider variables
 
@@ -163,7 +163,7 @@ Ragas evaluation dependencies are isolated in the CI evaluation job; they are no
 
 ## 6. FastAPI Cloud Demo configuration
 
-FastAPI Cloud is used for the public Demo only. Production uses the same application technology stack on a separately managed hosting platform; its provider, deployment credentials, release workflow and operational procedures are maintained outside this public repository.
+FastAPI Cloud is used for the public Demo only. Production uses the same application technology stack deployed to the pharmacy server through Ansible. The public playbooks define the deployment automation contract; real host inventory, per-site credentials, SSH access and approvals remain operator-controlled and are never committed.
 
 The public Demo application is hosted at https://pharmaviyum-erp.fastapicloud.dev. Configure its application variables in the FastAPI Cloud Environment Variables panel and its deploy credentials in the protected GitHub Actions environment demo-pharmaviyum-erp.
 
@@ -200,7 +200,7 @@ The workflow must not read Production credentials or target Production infrastru
 3. Complete approval for the demo-pharmaviyum-erp environment if configured.
 4. Verify the exact deployed commit, staging runtime identity, CPython version, /health, /ready, frontend routes, invalid-auth handling and protected POS access.
 
-The Demo deployment workflow does not run Alembic migrations. Demo schema changes require a separate approved operation and verified backup/restore path. Production deployment and migrations are operated outside this public repository. See the [FastAPI Cloud Demo deployment runbook](../deployment/FASTAPI_CLOUD.md).
+The Demo deployment workflow does not run Alembic migrations. Demo schema changes require a separate approved operation and verified backup/restore path. Production application releases use the reviewed Ansible playbooks in this repository; database migrations remain a separately approved operation executed through the controlled Production procedure. Live credentials, site-specific inventory and execution approvals remain outside the public repository. See the [FastAPI Cloud Demo deployment runbook](../deployment/FASTAPI_CLOUD.md) and [Pharmacy Edge Ansible rollout](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
 ## 7. Edge / on-premises pharmacy installations
 
 The cloud demo and pharmacy Edge nodes are different deployment profiles:
@@ -219,7 +219,7 @@ The canonical Alembic tree is at the repository root. The public Demo deployment
 
 Demo schema changes require a separately reviewed and approved operation against the isolated Demo database, a verified backup/restore path and post-migration validation. Never use a Production database URL or migration credential for Demo.
 
-Production database migrations and their automation are maintained outside this public repository. Do not add Production database endpoints, migration secrets or privileged Production operations to public workflows.
+Production database migrations are a separately approved release operation. The repository contains reusable Ansible migration playbooks, but live execution must use protected site inventory and credentials with operator approval. Do not add Production database endpoints, migration secrets or privileged live operations to public GitHub workflows.
 
 A newly provisioned Demo database is empty. A successful app deployment does not import a drug catalog, create inventory or restore business data. Seed/import catalog data only through a separately reviewed, idempotent procedure using synthetic data.
 
@@ -232,7 +232,7 @@ curl --fail https://pharmaviyum-erp.fastapicloud.dev/ready
 
 The expected ready response reports PostgreSQL, Redis and AI initialization as healthy. The Demo deployment workflow also verifies the SPA routes, runtime identity, invalid-credential handling and protected POS access.
 
-A green CI run does not prove that Demo provider quota, database content, catalog coverage or every pharmacy workflow is correct. Complete the live Demo smoke checks before declaring a Demo release successful. Production health checks and release evidence belong to the separately managed Production environment.
+A green CI run does not prove that Demo provider quota, database content, catalog coverage or every pharmacy workflow is correct. Complete the live Demo smoke checks before declaring a Demo release successful. Production health checks and site-specific release evidence are collected on the pharmacy server under operator-controlled procedures. Use the [Production operations runbook](../operations/PRODUCTION_OPERATIONS_RUNBOOK.md) and [Ansible rollout guide](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
 
 ## 10. Security rules
 

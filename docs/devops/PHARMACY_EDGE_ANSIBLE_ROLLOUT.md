@@ -201,7 +201,7 @@ Use explicit maintenance windows and an operator approval between waves. A disco
 
 ## 6. Release and migration rules
 
-- Build once in CI and deploy the same immutable image digest to lab, pilot and production.
+- Build the Production release artifact once in the controlled Production pipeline from the private Production source, then deploy the same immutable image digest to lab, pilot and Production. The public Demo CI pipeline is not the Production artifact pipeline.
 - Supply `PHARMAVIYUM_BACKEND_IMAGE_DIGEST` as `sha256:<64-hex>`; Ansible pulls and writes the digest reference rather than resolving a mutable tag. Rollback requires the previous verified image digest as well as its release label.
 - Do not use `latest` or mutable release tags as deployment identity.
 - Run `ansible/playbooks/migrate.yml` as a separate, explicitly approved operation before `deploy.yml`; it requires `migration_approved=true` and a non-empty change reference.
@@ -264,6 +264,8 @@ Before a role is eligible for production:
 6. Backup is local-only; off-site copy and restore-from-off-site are not established. The new isolated restore drill is a basic schema check, not a full application recovery acceptance test.
 7. Rollback changes the backend image only; it does not handle schema compatibility or data recovery.
 8. UPS, VPN, site identity, host security and centralized fleet monitoring are not yet proven as deployed capabilities.
+9. The current Ansible Compose uses mutable PostgreSQL and Valkey image tags (`pgvector/pgvector:pg16`, `valkey/valkey:8-alpine`); replace them with reviewed immutable digests before live Production rollout.
+10. The current Ansible Compose does not provision Ollama or model weights. Local Mortarium inference remains a target lab/Production profile and requires a separate provisioning role, hardware validation and explicit site approval.
 
 ## 11. Implementation order
 

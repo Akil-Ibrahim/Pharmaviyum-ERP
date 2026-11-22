@@ -1,8 +1,8 @@
 # Настройка окружения — Pharmaviyum ERP/CRM
 
-Руководство описывает текущую конфигурацию локальной разработки, демонстрационного профиля QwenCloud и приложения на FastAPI Cloud. Секреты храните только в локальных игнорируемых файлах или менеджере секретов. Не добавляйте реальные credentials в Git.
+Руководство описывает конфигурацию локальной разработки, Demo на FastAPI Cloud и Production на аптечном сервере под управлением Ansible. Секреты храните только в локальных игнорируемых файлах или менеджере секретов. Не добавляйте реальные credentials в Git.
 
-Hosted Production и Demo должны соответствовать [единому baseline инфраструктуры](../deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md). Для Production подтверждена Neon PostgreSQL 18. Для Demo требуется отдельная PostgreSQL 18 и отдельный managed Redis endpoint; нельзя совместно использовать Production credentials, данные или Redis namespaces. Версия hosted Redis контролируется провайдером: Redis 8.8.4 — целевая совместимость, но не подтверждённая версия runtime до проверки provider metadata.
+Production работает на аптечном сервере и provision/release выполняется через Ansible; PostgreSQL и supporting services находятся локально в рамках утверждённого Pharmacy Edge deployment profile. Demo размещается в FastAPI Cloud с изолированными Demo data services. Запрещено совместно использовать credentials БД, application secrets, cache namespaces и данные между окружениями. См. [границу развёртывания Production/Demo](../deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md) и [Ansible rollout Pharmacy Edge](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md).
 
 ## 1. Источники конфигурации и приоритет
 
@@ -15,7 +15,7 @@ Hosted Production и Demo должны соответствовать [един�
 
 Приложение читает переменные через Pydantic Settings. Имена переменных чувствительны к регистру: используйте точные имена в верхнем регистре из шаблонов и runbook.
 
-Не создавайте устаревшие файлы `.env.development` или `.env.production`. Для локальной разработки используйте `.env`, а hosted-переменные задавайте непосредственно в FastAPI Cloud и GitHub Actions Secrets.
+Не создавайте устаревшие файлы `.env.development` или `.env.production`. Для локальной разработки используйте `.env`. Переменные Demo задавайте в изолированном окружении FastAPI Cloud, а credentials Demo deployment — в защищённом GitHub Environment для Demo. Production configuration применяется через проверенный Ansible Pharmacy Edge profile с использованием защищённых per-site secret sources; не помещайте реальные Production values в FastAPI Cloud или публичные GitHub secrets.
 
 ## 2. Локальная разработка
 
@@ -68,7 +68,7 @@ uv run --locked mypy --explicit-package-bases src/pharmaviyum/
 | Переменная | Назначение | Рекомендации |
 |---|---|---|
 | `ENVIRONMENT` | Окружение | `development`, `staging` или `production` |
-| `DEBUG` | Режим отладки | В hosted production — `false` |
+| `DEBUG` | Режим отладки | В Demo, staging и Production — `false` |
 | `LOG_LEVEL` | Уровень логирования | Обычно `INFO` в production |
 | `DATABASE_URL` | Основное подключение PostgreSQL | Async SQLAlchemy URL, обычно `postgresql+asyncpg://...` |
 | `PGVECTOR_DATABASE_URL` | PostgreSQL для vector store | Может указывать на ту же БД при подходящих schema/permissions |
@@ -164,7 +164,7 @@ Ragas находится в изолированной evaluation dependency gro
 
 ## 6. Конфигурация FastAPI Cloud для Demo
 
-FastAPI Cloud используется только для публичной Demo. Production использует тот же технологический стек приложения на отдельно управляемой платформе хостинга; сведения о провайдере, deploy credentials, release workflow и эксплуатационные процедуры находятся за пределами этого публичного репозитория.
+FastAPI Cloud используется только для публичной Demo. Production использует тот же технологический стек приложения и развёртывается на аптечном сервере через Ansible. Публичные playbooks определяют автоматизацию; реальные host inventory, per-site credentials, SSH access и approvals остаются под контролем оператора и никогда не коммитятся.
 
 Публичное приложение Demo размещается по адресу https://pharmaviyum-erp.fastapicloud.dev. Переменные приложения задаются в панели FastAPI Cloud Environment Variables, а deploy credentials — в защищённом GitHub Actions environment demo-pharmaviyum-erp.
 
@@ -201,7 +201,7 @@ Workflow не должен читать Production credentials или обращ
 3. Пройдите approval для environment demo-pharmaviyum-erp, если он настроен.
 4. Проверьте точный deployed commit, staging runtime identity, версию CPython, /health, /ready, frontend routes, обработку неверной авторизации и защиту POS.
 
-Workflow развёртывания Demo не запускает Alembic migrations. Изменение схемы Demo требует отдельной утверждённой операции и проверенного backup/restore path. Deployment и миграции Production выполняются за пределами этого публичного репозитория. См. [руководство по развёртыванию Demo в FastAPI Cloud](../deployment/FASTAPI_CLOUD.ru.md).
+Workflow развёртывания Demo не запускает Alembic migrations. Изменение схемы Demo требует отдельной утверждённой операции и проверенного backup/restore path. Релизы Production-приложения выполняются через проверенные Ansible playbooks этого репозитория; миграции БД остаются отдельной утверждённой операцией и выполняются по контролируемой Production-процедуре. Реальные credentials, site-specific inventory и approvals остаются за пределами публичного репозитория. См. [руководство Demo для FastAPI Cloud](../deployment/FASTAPI_CLOUD.ru.md) и [план Ansible rollout Pharmacy Edge](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md).
 ## 7. Pharmacy Edge / on-premises
 
 Cloud demo и аптечные Edge nodes — разные профили deployment:
@@ -220,7 +220,7 @@ Cloud demo и аптечные Edge nodes — разные профили deploy
 
 Изменения схемы Demo требуют отдельной проверки и утверждения операции над изолированной Demo БД, подтверждённого backup/restore path и post-migration validation. Никогда не используйте Production database URL или migration credentials для Demo.
 
-Миграции Production и их автоматизация управляются за пределами этого публичного репозитория. Не добавляйте Production database endpoints, migration secrets или привилегированные Production operations в публичные workflows.
+Миграции Production — отдельная утверждаемая операция релиза. Репозиторий содержит повторно используемые Ansible migration playbooks, но выполнение на действующей площадке требует защищённых site inventory и credentials, а также разрешения оператора. Не добавляйте Production database endpoints, migration secrets или привилегированные live operations в публичные GitHub workflows.
 
 Новая Demo БД пуста. Успешный deployment не импортирует лекарственный каталог, не создаёт остатки и не восстанавливает бизнес-данные. Импортируйте каталог только отдельной проверенной идемпотентной процедурой и только с синтетическими данными.
 
@@ -233,7 +233,7 @@ curl --fail https://pharmaviyum-erp.fastapicloud.dev/ready
 
 Ожидаемый ready response должен показывать healthy для PostgreSQL, Redis и AI initialization. Workflow развёртывания Demo также проверяет SPA routes, runtime identity, обработку неверной авторизации и защиту POS.
 
-Зелёный CI не доказывает корректность Demo provider quota, содержимого БД, полноты каталога или всех аптечных процессов. Перед объявлением релиза Demo успешным выполните live smoke checks. Health checks и release evidence Production относятся к отдельно управляемому Production environment.
+Зелёный CI не доказывает корректность Demo provider quota, содержимого БД, полноты каталога или всех аптечных процессов. Перед объявлением релиза Demo успешным выполните live smoke checks. Health checks и site-specific release evidence Production собираются на аптечном сервере по процедурам под контролем оператора. См. [Production operations runbook](../operations/PRODUCTION_OPERATIONS_RUNBOOK.ru.md) и [руководство Ansible rollout](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md).
 
 ## 10. Правила безопасности
 

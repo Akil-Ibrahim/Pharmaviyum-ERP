@@ -8,7 +8,7 @@ This section explains not only which technologies are present, but why Pharmaviy
 
 | Technology | Definition | Why Pharmaviyum uses it |
 |---|---|---|
-| **Python 3.15** | High-level, general-purpose programming language. | Implements the backend, pharmacy domain rules, integrations, background jobs and Mortarium AI services. The application runtime is pinned exactly to CPython `==3.15.0` in `pyproject.toml` and `.python-version`; CI and Docker use the same patch. The Demo FastAPI Cloud runtime must independently report the exact target `3.15.0` and expected build SHA before a Demo rollout is considered successful. Production runtime verification is governed by its separate hosting documentation. |
+| **Python 3.15** | High-level, general-purpose programming language. | Implements the backend, pharmacy domain rules, integrations, background jobs and Mortarium AI services. The application runtime is pinned exactly to CPython `==3.15.0` in `pyproject.toml` and `.python-version`; CI and Docker use the same patch. The Demo FastAPI Cloud runtime must independently report the exact target `3.15.0` and expected build SHA before a Demo rollout is considered successful. Production runtime verification is performed on the pharmacy server after the Ansible release and is recorded as site acceptance evidence. |
 | **FastAPI 0.164.0** | Python framework for building APIs using type hints and ASGI. | Exposes the ERP/CRM and AI endpoints, validates requests, applies dependency-based authorization and publishes the OpenAPI contract. |
 | **Uvicorn 0.54.0** | ASGI web server. | Runs the FastAPI application and handles asynchronous HTTP connections. FastAPI is the application framework; Uvicorn is the server process. |
 | **Pydantic 2.14.3** | Data validation and serialization library. | Defines and validates request/response schemas and structured configuration data, including medication-related fields. |
@@ -30,7 +30,7 @@ This section explains not only which technologies are present, but why Pharmaviy
 | **Redis Python client 8.1.0** | Python client library for Redis-compatible servers. | Lets backend services and workers communicate with configured Redis-compatible infrastructure. |
 | **PostgreSQL full-text search** | Database-native lexical search over textual documents. | Complements vector similarity in hybrid RAG retrieval, helping exact medication terms, identifiers and phrases remain searchable. |
 
-**Environment boundary:** Hosted Production uses Neon PostgreSQL 18; Demo requires a separate PostgreSQL 18 database. Hosted Production and Demo use separate managed Redis endpoints; Redis 8.8.4 is the compatibility target, while the actual provider-managed server version must be verified. Local development/CI Compose is disposable and must not be treated as hosted Production. The legacy `docker-compose.prod.yml` still contains PostgreSQL 16/Redis 7 and is explicitly unsupported for Production/Demo until separately migrated and revalidated. Pharmacy Edge remains a separately governed profile. See [version policy](#version-policy-and-dependency-management) and [the canonical hosted baseline](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md).
+**Environment boundary:** FastAPI Cloud is the public Demo host only; Demo uses isolated data services and synthetic data. Production is deployed to the pharmacy server through Ansible, using the approved Pharmacy Edge Compose/service profile and local operational data services. Local development/CI Compose is disposable and must not be treated as a Production deployment. The legacy `docker-compose.prod.yml` still contains PostgreSQL 16/Redis 7 and is not an approved deployment path for either environment. Verify actual runtime versions from the deployed image and host; do not copy Demo provider assumptions into the pharmacy-server profile. See [version policy](#version-policy-and-dependency-management) and [the canonical deployment boundary](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md).
 
 ### 3. Background jobs and asynchronous processing
 
@@ -107,13 +107,13 @@ The repository includes local observability infrastructure. Production trace del
 |---|---|---|
 | **Docker** | Platform for packaging applications and dependencies into containers. | Produces repeatable runtime images for the API and supporting processes. |
 | **Docker Compose** | Tool for defining and running multi-container applications. | Starts disposable local development/test dependencies such as PostgreSQL, Redis, workers and local observability services. |
-| **FastAPI Cloud** | Managed hosting/deployment platform for the FastAPI application. | Hosts the public Demo backend. Production uses the same application technology stack on separately managed hosting; its provider and release details are restricted. |
+| **FastAPI Cloud** | Managed hosting/deployment platform for the FastAPI application. | Hosts the public Demo backend only. It is not a Production deployment target. |
 | **GitHub** | Source-control and collaboration platform. | Hosts the repository, branches, pull requests, code review and release history. |
 | **GitHub Actions** | CI/CD automation service integrated with GitHub. | Runs lint, formatting, type checks, tests, security scans and build validation. Passing CI is a quality signal; it does not itself prove production health. |
 | **uv 0.13.8** | Fast Python package manager and project/environment tool. | Installs Python dependencies, runs commands and keeps the resolved dependency set reproducible using `pyproject.toml` and `uv.lock`. |
 | **Bun 1.4.4** | JavaScript runtime, package manager and frontend toolchain. | Installs frontend dependencies and runs frontend scripts for development, builds and tests. |
-| **Ansible** | Agentless infrastructure automation tool. | Provisions and operates Pharmacy Edge hosts using reviewed playbooks and roles. It is infrastructure automation, not the ERP's application business logic. |
-| **Mailpit 1.33.1** | Local SMTP capture and email testing tool. | Captures development emails so password recovery and notification flows can be tested without sending real messages. Production SMTP is configured separately. |
+| **Ansible** | Agentless infrastructure automation tool. | Provisions pharmacy servers and deploys reviewed Production application releases under the Pharmacy Edge profile. It is infrastructure automation, not the ERP's application business logic. |
+| **Mailpit 1.33.1** | Local SMTP capture and email testing tool. | Captures development emails so password recovery and notification flows can be tested without sending real messages. Production SMTP is configured on the pharmacy server through its protected Ansible-managed environment. |
 
 ### 8. Testing, quality and security tooling
 
@@ -167,8 +167,8 @@ This page records the versions declared by the repository configuration. It is n
 | SQLAlchemy | `2.1.8` | `pyproject.toml` |
 | Alembic | `1.20.1` | `pyproject.toml` |
 | asyncpg / psycopg | `0.32.0` / `3.3.9` | `pyproject.toml` |
-| PostgreSQL | Neon PostgreSQL 18 for hosted Production; isolated PostgreSQL 18 required for Demo; disposable PostgreSQL 18 for development/CI | Neon project metadata; Demo provider metadata; Docker Compose and CI service definitions |
-| Redis server | Managed Redis for hosted Production and isolated managed Redis for Demo; Redis 8.8.4 compatibility target, exact hosted server version provider-reported and must be verified; local development/CI uses Redis 8.8.4 | FastAPI Cloud integration/provider metadata; Docker Compose and CI service definitions |
+| PostgreSQL | Local PostgreSQL on the pharmacy server for Production; separate isolated PostgreSQL for Demo; disposable PostgreSQL for development/CI | Ansible/Compose pharmacy-server profile, Demo provider metadata, Docker Compose and CI service definitions |
+| Cache / queue service | Pharmacy-server Production cache/queue service as pinned by the Ansible Pharmacy Edge profile; separate Demo cache service; disposable development/CI Redis | Ansible/Compose pharmacy-server profile, Demo provider metadata and CI service definitions |
 | pgvector container extension | `0.8.7` | `pgvector/pgvector:0.8.7-pg18` image tag |
 | pgvector Python client | `0.4.1` | `pyproject.toml` |
 | LangGraph | `1.2.21` | `pyproject.toml` |
@@ -216,12 +216,12 @@ Monitoring images: Prometheus `3.16.0`, Grafana `13.3.1`, OpenTelemetry Collecto
 
 ## Runtime infrastructure notes
 
-- Hosted Production uses the verified Neon PostgreSQL 18 project; Demo must use a separate PostgreSQL 18 database. Disposable development/CI Compose also targets PostgreSQL 18 with pgvector 0.8.7.
+- Production PostgreSQL runs locally on the pharmacy server under the approved Ansible/Pharmacy Edge profile; Demo uses a separate isolated database. Disposable development/CI Compose targets PostgreSQL 18 with pgvector 0.8.7.
 - The application uses the pgvector Python client and PostgreSQL extension for vector search where enabled; these are separately versioned components.
-- Hosted Production and Demo use separate managed Redis endpoints. Redis 8.8.4 is the compatibility target; the exact managed server version is provider-controlled and must be verified from provider metadata before release. Disposable development/CI Compose targets Redis 8.8.4.
-- The pharmacy-edge Ansible template uses Valkey; that server profile is intentionally kept separate from the local Redis service.
-- Local Compose captures outgoing application emails in Mailpit (`http://localhost:8025`, SMTP `localhost:1025`). See [email delivery and local testing](./development/email.md) for setup. Demo delivery requires explicit SMTP host, port, sender, TLS mode, and credentials in the Demo hosting environment; Production SMTP is configured in its separately managed hosting environment.
-- Mortarium's LLM provider/model selection is environment-configured. See [AI architecture](./ai_architecture.md) and [FastAPI Cloud deployment](./deployment/FASTAPI_CLOUD.md) for the current deployment profile.
+- Production cache/queue services run according to the approved pharmacy-server Ansible profile; Demo uses isolated supporting services. Verify actual Production runtime versions on the pharmacy server. Disposable development/CI Compose targets Redis 8.8.4.
+- The pharmacy-edge Ansible template uses Valkey 8 (`valkey/valkey:8-alpine`) and PostgreSQL 16 (`pgvector/pgvector:pg16`) by mutable tags. These are not immutable image digests; pin and verify digests before live Production rollout. This server profile is intentionally kept separate from the local Redis 8.8.4 development service.
+- Local Compose captures outgoing application emails in Mailpit (`http://localhost:8025`, SMTP `localhost:1025`). See [email delivery and local testing](./development/email.md) for setup. Demo delivery requires explicit SMTP host, port, sender, TLS mode, and credentials in the Demo hosting environment; Production SMTP is configured on the pharmacy server through its protected Ansible-managed environment.
+- Mortarium's LLM provider/model selection is environment-configured. See [AI architecture](./ai_architecture.md), the [FastAPI Cloud Demo runbook](./deployment/FASTAPI_CLOUD.md) and the [Pharmacy Edge Ansible rollout](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) for the environment-specific deployment profiles.
 
 ## Documentation rule
 

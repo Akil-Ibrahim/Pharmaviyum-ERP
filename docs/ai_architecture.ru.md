@@ -159,9 +159,9 @@ AI endpoints реализованы в `src/pharmaviyum/api/v1/ai.py`.
 - Celery worker для ingestion;
 - локальные сервисы наблюдаемости, если они настроены.
 
-Это временные среды development/CI. Hosted Production использует Neon PostgreSQL 18 и отдельный managed Redis endpoint; Demo обязана использовать изолированную PostgreSQL 18 и собственный managed Redis endpoint. Redis 8.8.4 — целевая версия совместимости, но не утверждение о фактической версии сервера провайдера до проверки. В legacy-файле `docker-compose.prod.yml` всё ещё указаны образы PostgreSQL 16/Redis 7; он не является утверждённым путём deployment и запрещён для Production и Demo. Pharmacy Edge — отдельный профиль со своей политикой, не относящийся к hosted data plane Production/Demo. См. [единый baseline Production/Demo](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md).
+Это временные среды development/CI. Публичная Demo размещается в FastAPI Cloud и использует собственную изолированную PostgreSQL и необходимые supporting services. Production развёртывается на аптечном сервере через Ansible; сервер аптеки запускает утверждённый стек приложения и локальные сервисы данных в профиле Pharmacy Edge. Не описывайте hosted Neon или отдельно управляемый cloud Redis endpoint как Production data plane. В legacy-файле `docker-compose.prod.yml` всё ещё указаны образы PostgreSQL 16/Redis 7; он не является утверждённым путём deployment и не должен использоваться ни для Demo, ни для Production. См. [границу развёртывания Production/Demo](deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.ru.md) и [Ansible rollout Pharmacy Edge](devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md).
 
-FastAPI Cloud размещает и развёртывает только публичную Demo. GitHub Actions обеспечивает CI и вручную запускаемый Demo deployment workflow; изолированные БД, кеш и другие необходимые сервисы должны быть подготовлены отдельно. Production использует тот же технологический стек приложения на отдельно управляемой платформе хостинга; его deployment и operations находятся за пределами публичного репозитория.
+FastAPI Cloud размещает и развёртывает только публичную Demo. GitHub Actions обеспечивает CI и вручную запускаемый Demo deployment workflow; изолированные БД, кеш и другие необходимые сервисы должны быть подготовлены отдельно. Production использует тот же технологический стек приложения и развёртывается на аптечном сервере через Ansible. Публичные playbooks определяют автоматизацию; live inventory, per-site credentials и approvals остаются под контролем оператора.
 
 В репозитории нет отдельного Kubernetes deployment для AI; Mortarium остаётся прикладным AI-слоем.
 
@@ -174,7 +174,7 @@ Mortarium использует разные LLM-профили в зависим
 | Демо FastAPI Cloud | QwenCloud API | `qwen3.8-flash` | Только demo-профиль; действуют ограничения бесплатной квоты и настройки Free quota в консоли провайдера. |
 | Ansible / локальная production-среда | Локальный runtime Ollama | `Qwen3.5 9B Q4_K_M` | Целевой профиль; проверка оборудования и production rollout ещё не завершены. |
 
-Это намеренно раздельные профили. Demo-ключ QwenCloud, предположения о квотах и cloud API-конфигурацию нельзя копировать в production Ansible inventories. Целевая локальная production-среда выполняет inference через Ollama; её возможности ограничены CPU/GPU, RAM, диском и concurrency выбранного узла. Основной production AI runtime планируется для Central; локальный inference на Edge необязателен и должен быть явно утверждён для конкретного аппаратного профиля. POS и другие детерминированные аптечные транзакции никогда не должны зависеть от доступности Mortarium.
+Это намеренно раздельные профили. Demo-ключ QwenCloud, предположения о квотах и cloud API-конфигурацию нельзя копировать в production Ansible inventories. Целевая локальная production-среда выполняет inference через Ollama; её возможности ограничены CPU/GPU, RAM, диском и concurrency выбранного узла. В долгосрочной целевой архитектуре Central/Edge общий AI runtime может размещаться на Central. Это не описание текущей топологии Production и не означает, что сервис Central уже развёрнут. Текущая цель Production deployment приложения — аптечный сервер. Локальный inference на Edge необязателен и должен быть отдельно утверждён и проверен на конкретном аппаратном профиле. POS и другие детерминированные аптечные транзакции никогда не должны зависеть от доступности Mortarium.
 
 См. [эксплуатацию демо QwenCloud](./ai/QWENCLOUD_DEMO.md) и [развёртывание Pharmacy Edge через Ansible](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md). Описание профиля не является доказательством завершённого live deployment.
 
@@ -205,5 +205,5 @@ uv run uvicorn src.pharmaviyum.main:app --reload --port 8000
 1. Изоляция tenant обеспечивается до поиска и генерации.
 2. Вывод LLM не считается источником истины; авторитетными остаются найденные источники и guardrails.
 3. Для цитирования источников используются стабильные идентификаторы чанков.
-4. В этом репозитории один канонический путь релиза публичной Demo; Production deployment управляется за пределами публичного репозитория.
+4. В этом репозитории описаны два отдельных пути поставки: канонический workflow релиза публичной Demo в FastAPI Cloud и Ansible playbooks для Production на аптечном сервере. Реальные Production inventory, host access, credentials и approvals выполнения остаются закрытыми и под контролем оператора.
 5. Документация описывает реализованное поведение, а не запланированную инфраструктуру.

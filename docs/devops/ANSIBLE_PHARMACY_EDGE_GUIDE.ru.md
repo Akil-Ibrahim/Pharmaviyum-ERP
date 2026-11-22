@@ -145,7 +145,7 @@ Deployment приложения не должен автоматически з�
 
 - Используйте SSH key authentication, проверку host keys, минимальные привилегии и защищённые credentials controller.
 - Не храните secrets в Git, logs, process arguments или открытых inventory.
-- Фиксируйте production container images по immutable digest.
+- Фиксируйте все production container images по immutable digest. **Текущий пробел реализации:** Ansible Compose пока использует изменяемые tags `pgvector/pgvector:pg16` и `valkey/valkey:8-alpine`; только backend image передаётся через digest variable. До любого live Production rollout замените PostgreSQL и Valkey tags на проверенные immutable digests и зафиксируйте выбранные версии. Не утверждайте, что все images закреплены по digest, пока это не выполнено.
 - Открывайте только необходимые сервисы; порты базы данных не должны быть доступны из публичной сети.
 - **Текущий пробел реализации:** `ansible/roles/app-backend/files/docker-compose-backend.yml` публикует backend как `HOST_PORT:8000` без явной привязки к IP интерфейса хоста. Поэтому host firewall/network policy обязаны ограничивать доступ. До реального rollout привяжите порт к нужному private interface либо разместите его за утверждённым reverse proxy и проверьте доступность как из POS-сети, так и из недоверенных сетей. Не считайте само Compose mapping приватным.
 - **Граница роли PostgreSQL:** текущие задачи `ansible/roles/postgresql` выполняют подготовительные проверки и проверку состояния; фактический lifecycle БД управляется через Compose. Не описывайте эту роль как PostgreSQL HA, полноценное lifecycle management или автоматическое hardening БД, пока такие возможности не реализованы и не протестированы.

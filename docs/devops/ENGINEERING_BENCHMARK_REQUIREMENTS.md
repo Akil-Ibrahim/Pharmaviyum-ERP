@@ -65,7 +65,7 @@ Report both successful-request latency and overall error rate. Do not hide faile
 
 ## 3. PostgreSQL, pgvector and Redis
 
-### PostgreSQL / SQLAlchemy / Neon
+### PostgreSQL / SQLAlchemy / pgvector / Pharmacy Edge
 
 - query latency p50/p95/p99 by query class;
 - slow-query count/rate and query-plan regressions;
@@ -296,7 +296,7 @@ Release policy:
 ### Codespaces cannot prove by itself
 
 - production capacity for 100 pharmacies;
-- FastAPI Cloud or managed Neon/Redis production performance;
+- Production pharmacy-server capacity or service-provider performance without a representative, isolated staging profile;
 - real external LLM provider latency, quotas or cost unless explicitly configured and cost-controlled;
 - production availability, alert delivery, recovery objectives or regional data residency;
 - clinical correctness without expert-reviewed data and adjudication.

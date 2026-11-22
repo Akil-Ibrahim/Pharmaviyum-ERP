@@ -77,7 +77,7 @@ Product содержит legacy aggregate stock и цену Float. Сохран�
 Аудит не подключался к production database, не проверял alembic_version и не выполнял миграции. До изменения схемы:
 1. Проверьте alembic heads и alembic history в воспроизводимом local/staging.
 2. Сравните revision развёрнутой БД с графом репозитория.
-3. Проверьте upgrade и rollback на disposable Neon branch или изолированной БД.
+3. Проверьте upgrade и rollback на disposable local PostgreSQL instance или изолированной non-production БД с целевой схемой.
 4. Создайте и проверьте восстанавливаемую резервную копию до production rollout.
 5. Не выполняйте destructive cleanup и не переписывайте историю применённых миграций в рамках POS-функции.
 

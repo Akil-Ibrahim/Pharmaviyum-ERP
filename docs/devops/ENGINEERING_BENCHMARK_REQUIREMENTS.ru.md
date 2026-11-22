@@ -46,7 +46,7 @@
 
 ## 3. PostgreSQL, pgvector и Redis
 
-### PostgreSQL / SQLAlchemy / Neon
+### PostgreSQL / SQLAlchemy / pgvector / Pharmacy Edge
 
 Измеряйте задержки запросов p50/p95/p99 по классам, число медленных запросов и регрессии query plans, размер пула и занятые соединения, время ожидания и pool timeout, успешность транзакций, deadlocks и lock wait, CPU/память/I/O/насыщение соединений, задержку pgvector retrieval, просмотренные и возвращённые строки, поведение индексов и планов.
 
@@ -143,7 +143,7 @@
 
 Codespaces может проверять структуру, конфигурацию, зависимости, доступные тесты, детерминированные RAG/agent/MCP evaluations с fixtures/mocks, синтетические security/tenant тесты, локальную instrumentation и ограниченные benchmarks с фиксацией ресурсов. При доступных Compose-сервисах возможны локальные API/DB/cache тесты.
 
-Codespaces сам по себе не доказывает capacity для 100 аптек, производительность FastAPI Cloud или managed Neon/Redis в production, реальные задержки/квоты/стоимость внешнего LLM без настроенного и контролируемого провайдера, production availability, доставку alerts, recovery objectives, региональное хранение или клиническую корректность без экспертной проверки.
+Codespaces сам по себе не доказывает capacity для 100 аптек, производительность Production аптечного сервера или supporting services без репрезентативного изолированного staging-профиля, реальные задержки/квоты/стоимость внешнего LLM без настроенного и контролируемого провайдера, production availability, доставку alerts, recovery objectives, региональное хранение или клиническую корректность без экспертной проверки.
 
 Инфраструктуру и capacity проверяйте в изолированном staging с production-подобными лимитами и синтетическими данными. Не используйте реальные production-данные пациентов.
 
@@ -152,3 +152,10 @@ Codespaces сам по себе не доказывает capacity для 100 а
 Для каждой метрики указывайте: название/определение; статус MEASURED/HISTORICAL/ESTIMATED/NOT TESTED/UNAVAILABLE/NOT APPLICABLE; значение и единицу либо причину недоступности; утверждённую цель или «не определена»; окружение Codespaces/local Compose/staging/production; commit SHA; длительность, конкурентность, rate и сценарий; версию и размер датасета; команду, тест и артефакт; ограничения mocks/зависимостей/выборки; follow-up с ответственным, действием и приоритетом.
 
 Отчёт завершается приоритизированным backlog и явным указанием, что доказано, а что нет. Production-readiness нельзя подтверждать только статическим аудитом кода или запуском в Codespaces.
+
+
+## 14. Трассировка бизнес-KPI
+
+Модель бизнес-результатов и определения KPI находятся в [PHARMACY_BUSINESS_VALUE_AND_KPIS.ru.md](../workflows/PHARMACY_BUSINESS_VALUE_AND_KPIS.ru.md). Канонические аптечные процессы описаны в [pharmacy-workflow.ru.md](../workflows/pharmacy-workflow.ru.md); дополнительный доменный контекст приведён в статье [AI in the Pharmacy](https://medium.com/@ibrahimengpy/ai-in-the-pharmacy-how-technology-can-support-the-pharmacist-a755ba3a2c9a).
+
+Этот benchmark остаётся **основным источником инженерных требований и методологии измерений**. Он определяет техническую методику тестирования, evidence labels, quality gates и формат benchmark-отчётности. Бизнес-KPI должны быть связаны с наблюдаемыми событиями и проверенными источниками данных; технические benchmark scores нельзя представлять как бизнес-результаты. Наличие функции или успешный synthetic test также не доказывают бизнес-эффект. Не публикуйте финансовые результаты, защищённые NDA. Не заявляйте измеренные улучшения без воспроизводимых доказательств по правилам отчётности этого документа.

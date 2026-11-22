@@ -18,7 +18,7 @@ The platform brings connected workflows for patients, prescriptions, product ref
 
 Its pilot-first approach is intended to support gradual adoption alongside existing pharmacy systems, rather than requiring an immediate replacement.
 
-The canonical integration branch is `main`. Changes are reviewed through pull requests and validated by GitHub Actions before merge. Production deployment is a separate, manually approved release process.
+The canonical integration branch is `main`. Changes are reviewed through pull requests and validated by GitHub Actions before merge. Public Demo releases are manually dispatched to FastAPI Cloud. Production releases use the reviewed Ansible playbooks to deploy the same application technology stack to the pharmacy server; live host inventory, per-site credentials and execution approvals remain under operator control.
 
 ## At a Glance
 
@@ -26,7 +26,7 @@ The canonical integration branch is `main`. Changes are reviewed through pull re
 - **Pharmacy domain:** POS, dispensing, product reference, inventory, procurement, and pharmacy operations.
 - **AI layer:** Mortarium, with LangGraph-based RAG and MCP integration.
 - **Infrastructure:** PostgreSQL, pgvector, and Redis for data and state; Docker for local development and Pharmacy Edge automation.
-- **Hosting:** FastAPI Cloud hosts the public Demo. Production uses the same application technology stack on separately managed hosting; its provider and deployment details are maintained outside this public README.
+- **Deployment:** FastAPI Cloud hosts the public Demo only. Production uses the same application technology stack deployed to the pharmacy server through Ansible. Public playbooks and general operating procedures are documented here; real host inventory, per-site credentials, SSH access and live execution approvals remain restricted.
 
 ## Demo System Access
 
@@ -39,7 +39,7 @@ Use the demo environment to review the current Pharmaviyum system status:
 - **Demo login:** `admin`
 - **Demo password:** `V9#qL2!mR7@xP4$kT8&nW5zB`
 
-These credentials are for the isolated Demo environment only and must never be used in Production. The Demo environment must contain synthetic data only; do not store real patient, prescription, customer, or other confidential information in it.
+These published credentials are a shared test account for the isolated public Demo only. They are not Production credentials and must never be reused in Production or any other environment. The account's permissions apply only to synthetic Demo data and must not expose any Production resource. The Demo environment must contain synthetic data only; do not store real patient, prescription, customer, or other confidential information in it.
 
 ## Contents
 
@@ -351,7 +351,7 @@ Open the live Pharmaviyum system status page:
 
 ## Deployment
 
-The public Demo application is hosted on **FastAPI Cloud**. Production uses the same application technology stack but a separately managed hosting platform; its provider and deployment details are restricted and are not documented in this public README. See [`docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md`](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) for the environment boundary and infrastructure policy.
+The public Demo application is hosted on **FastAPI Cloud**. Production uses the same application technology stack and is deployed to the pharmacy server through **Ansible**. Real Production host details, inventory and credentials remain private and are never committed. See the [deployment boundary](docs/deployment/PRODUCTION_DEMO_INFRASTRUCTURE_BASELINE.md) and [Pharmacy Edge Ansible rollout plan](docs/devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md).
 
 ## Development
 
@@ -489,7 +489,7 @@ The development approach is **pilot-first**: where appropriate, Pharmaviyum can 
 
 ## Documentation
 
-Browse the documentation in your preferred language:
+Browse the documentation in your preferred language. Repository-wide documentation rules, evidence labels and the Demo/Production boundary are defined in [Documentation Governance](docs/DOCUMENTATION_GOVERNANCE.md):
 
 - **English:** [Engineering documentation index](docs/README.md)
 - **Русский:** [Индекс инженерной документации](docs/README.ru.md)
@@ -506,7 +506,7 @@ Browse the documentation in your preferred language:
 | System architecture | [Architecture vision](docs/architecture/pharmaviyum-architecture.en.md) | [Архитектурное видение](docs/architecture/pharmaviyum-architecture.ru.md) |
 | Architecture decisions | [ADR index](docs/adr/README.md) | [Индекс архитектурных решений](docs/adr/README.ru.md) |
 
-**Русские переводы остальных руководств готовятся.** Их актуальный статус указан в [русском индексе документации](docs/README.ru.md); английский оригинал доступен в [английском индексе](docs/README.md).
+Russian translations are maintained for selected documents rather than every file. The [Russian documentation index](docs/README.ru.md) lists the available translations; where an EN/RU pair exists, both versions are kept aligned.
 
 ## Project Status & Intellectual Property
 

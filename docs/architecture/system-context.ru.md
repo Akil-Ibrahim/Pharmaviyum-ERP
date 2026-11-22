@@ -52,7 +52,7 @@ Central + Edge — целевая архитектура, описанная в 
 ## Текущая реализация и целевое состояние
 
 - Текущий hosted application path публичной Demo: FastAPI Cloud; изолированные data/cache services provisioned отдельно.
-- Production использует тот же технологический стек приложения на отдельно управляемой платформе хостинга; Production deployment и operations находятся за пределами публичного репозитория.
+- Production использует тот же технологический стек приложения, развёртываемый на аптечном сервере через Ansible; реальные host inventory, per-site secrets и approvals остаются под контролем оператора.
 - Текущий backend: FastAPI modular monolith.
 - Текущая AI orchestration: LangGraph Agent и LangGraph RAG, Agent Harness и MCP registry.
 - Текущие WebSocket handlers: development scaffolds, не готовые для production.

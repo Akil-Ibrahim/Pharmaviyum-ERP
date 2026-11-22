@@ -4,9 +4,9 @@
 
 ## Текущая базовая модель поставки
 
-Репозиторий представляет собой модульный FastAPI monolith с frontend на React/TypeScript, состоянием на PostgreSQL, Redis-совместимым cache/memory, инфраструктурой Celery tasks и Mortarium LangGraph AI/RAG. FastAPI Cloud — hosted application path с вручную контролируемым release workflow.
+Репозиторий представляет собой модульный FastAPI monolith с frontend на React/TypeScript, состоянием на PostgreSQL, Redis-совместимым cache/memory, инфраструктурой Celery tasks и Mortarium LangGraph AI/RAG. FastAPI Cloud размещает и развёртывает только публичную Demo через вручную запускаемый workflow. Production использует тот же технологический стек приложения и развёртывается на аптечном сервере через проверенные Ansible playbooks; реальные host inventory, per-site credentials и approvals остаются под контролем оператора.
 
-Pharmacy Edge / Central — поэтапная целевая архитектура. Значение 100 аптек — проектная цель, а не доказательство текущей production capacity. См. [ADR-0002](../adr/ADR-0002-offline-first-central-edge.ru.md).
+Текущая цель Production deployment — аптечный сервер в рамках профиля Pharmacy Edge. Central + Edge fleet synchronization — поэтапная целевая архитектура; это не утверждение, что Central service или сеть из 100 аптек уже развёрнуты. Значение 100 аптек — проектная цель, а не доказательство текущей production capacity. См. [ADR-0002](../adr/ADR-0002-offline-first-central-edge.ru.md).
 
 ## Этап 0 — Инженерная основа
 

@@ -459,7 +459,7 @@ The business logic should remain as consistent as possible between deployment mo
 
 ### Public Demo cloud deployment
 
-FastAPI Cloud is used for the public Demo only. Production uses the same application technology stack on a separately managed hosting platform; Production provider and release details are maintained outside this public repository.
+FastAPI Cloud is used for the public Demo only. Production uses the same application technology stack deployed to the pharmacy server through Ansible. Real Production host inventory, per-site secrets and execution approvals remain operator-controlled and are not committed to this public repository.
 
 ```text
 GitHub

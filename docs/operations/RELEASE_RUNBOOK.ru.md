@@ -2,7 +2,7 @@
 
 ## Область действия
 
-FastAPI Cloud размещает только публичную Demo Pharmaviyum. GitHub Actions выполняет CI; workflow .github/workflows/deploy-fastapi-cloud.yml запускается вручную и развёртывает только изолированное приложение Demo. Production использует тот же технологический стек приложения на отдельно управляемой платформе хостинга. Deployment Production, миграции и эксплуатационная автоматизация находятся за пределами этого публичного репозитория.
+FastAPI Cloud размещает только публичную Demo Pharmaviyum. GitHub Actions выполняет CI; workflow `.github/workflows/deploy-fastapi-cloud.yml` запускается вручную и развёртывает только изолированное приложение Demo. Production использует тот же технологический стек приложения и развёртывается на аптечном сервере через Ansible. Исходный код Production-реализации и release artifacts закрыты по NDA и создаются контролируемым Production release pipeline. Публичные Ansible playbooks определяют deployment automation; реальные Production inventory, per-site secrets и approvals остаются вне Git.
 
 Этот runbook описывает workflow Demo и не утверждает, что deployment уже завершился успешно или что Production readiness подтверждена.
 
@@ -38,6 +38,6 @@ FastAPI Cloud размещает только публичную Demo Pharmaviyu
 - PostgreSQL/pgvector и Redis-compatible infrastructure provisioned отдельно от web application.
 - Перед каждым релизом Demo сверяйте имена environment variables с активными application settings.
 
-## Граница Production
+## Граница Production deployment
 
-Публичный runbook и его workflows не развёртывают, не мигрируют и не администрируют Production. Хостинг Production и release procedures управляются отдельно с соблюдением применимых ограничений конфиденциальности.
+Этот runbook и его GitHub Actions workflow относятся только к публичной Demo; они не развёртывают, не мигрируют и не администрируют Production. Релизы Production-приложения выполняются через проверенные Ansible playbooks этого репозитория. Реальные Production inventory, host access, per-site credentials, approvals миграций и разрешения на выполнение операций на конкретных площадках остаются закрытыми и под контролем оператора. См. [план Ansible rollout Pharmacy Edge](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) и [руководство Ansible](../devops/ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md).
