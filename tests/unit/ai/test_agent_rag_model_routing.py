@@ -557,7 +557,7 @@ def test_api_session_scope_changes_when_secret_rotates(
     monkeypatch.setattr(app_settings, "SECRET_KEY", "first-session-secret")
     first = _scoped_session_id("conversation-123", tenant, user, 101, "dispensing_review")
     monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-session-secret")
-    second = _scoped_session_id("conversation-123", tenant, user, 101)
+    second = _scoped_session_id("conversation-123", tenant, user, 101, "dispensing_review")
     assert first != second
 
 
