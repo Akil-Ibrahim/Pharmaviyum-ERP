@@ -159,4 +159,18 @@ Do not store clinical payloads, full request/response bodies, prescriptions, not
 - It does not authorize unrestricted superuser access or automatic reassignment of legacy patients.
 - It does not enable patient data in Central POS Inbox events.
 
-**Status:** architecture gap documented; implementation not started. Treat PHI access governance as a release blocker for production workflows that expose patient-level data until the gates above are verified.
+**Historical status at the 2026-11-21 source baseline:** implementation had not started. See the 2026-11-22 follow-up below for current partial remediation. PHI access governance remains a release blocker until all relevant patient-level routes satisfy the gates above.
+
+## 6. Follow-up implementation status — 2026-11-22
+
+A read-only review of `main` at `2616b4209fc037b1e4f1899b876478bf72258641` confirms partial implementation after this historical audit:
+
+- Standard patient list/detail/phone routes now use `PatientSummaryResponse` rather than the broad legacy `PatientResponse`.
+- `GET /api/v1/patients/{patient_id}/ai-profile` requires explicit pharmacy and purpose, active membership and patient ownership; it denies platform superusers and records metadata-only allowed/denied `PHIAccessAudit` decisions.
+- `GET /api/v1/patient-purchases/{patient_id}/history` is a separate pharmacist-facing route with the same explicit pharmacy/purpose/membership/ownership controls. It denies superusers and null-owner patients, returns a minimum-field projection and records allowed/denied audit decisions.
+- The legacy `GET /patient-purchases/` route remains superuser-only and requires an explicit pharmacy ID; its query now joins `Patient` and filters by `Patient.pharmacy_id`. It still returns a broader administrative projection and does not emit the new PHI audit event.
+- The `PHIAccessAudit` table has database triggers rejecting UPDATE, DELETE and TRUNCATE; integration tests cover these protections and the retained-evidence downgrade guard.
+
+Remaining gaps: general patient/order routes still permit global superuser scope; patient creation can still omit nullable pharmacy ownership; the legacy administrative purchase listing lacks the new read audit; support-access governance, audit-persistence failure tests, complete route coverage and telemetry redaction evidence remain incomplete. The MCP `get_patient_history` tool has trusted user/pharmacy/role context but no selected-patient or purpose binding; it can query another active patient in the same pharmacy and does not write `PHIAccessAudit`. In addition, Ansible Compose reuses the PostgreSQL bootstrap `POSTGRES_USER` credential for application runtime connections; the repository does not provision a separate non-superuser runtime role, so trigger-only append-only enforcement is not proven against the application credential. The route-specific integration tests are source evidence, not a claim of current exact-commit CI success or Production acceptance.
+
+This follow-up does not establish legal/regulatory compliance or certify a live Production deployment.

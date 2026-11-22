@@ -133,6 +133,17 @@ The returned context should be immutable and contain the verified actor, tenant,
 - [ ] Operational break-glass workflow has explicit controls and retrospective review.
 - [ ] No production activation occurs without separate authorization.
 
-## 11. Known limitations
+## 11. Current implementation gap — 2026-11-22
+
+A source review of `main` at `2616b4209fc037b1e4f1899b876478bf72258641` found partial route-level PHI audit, but the controls in this proposal are not implemented end to end:
+
+- Only the AI-profile and pharmacist patient-history HTTP routes currently require explicit purpose and pharmacy membership and write `PHIAccessAudit` decisions. The legacy admin purchase listing and general patient/order routes are not fully purpose-bound/audited.
+- MCP `get_patient_history` has trusted user/pharmacy/role context but no selected-patient or purpose binding. It accepts a model-supplied patient ID, can query another active patient within the same pharmacy, returns a broad clinical/demographic summary and does not write `PHIAccessAudit`.
+- The Ansible Compose profile initializes PostgreSQL with `POSTGRES_USER` and reuses that credential in application `DATABASE_URL` connections for backend and workers. No separate non-superuser runtime role or privilege grants are provisioned by the current Ansible PostgreSQL role. Database triggers alone therefore do not prove append-only audit storage against the application credential.
+- The Production Alembic guard requires `MIGRATION_DATABASE_URL`, but the current Ansible migration environment does not inject it; a separate least-privilege migration role/secret path remains outstanding.
+
+These are source/configuration findings, not evidence of an incident or live Production exploitation. Do not enable unrestricted support access or claim complete PHI governance until the grant model, MCP patient/purpose binding, DB role separation, audit-failure behavior and database-backed negative tests are implemented and reviewed.
+
+## 12. Known limitations
 
 This is a design baseline, not an implementation. The existing PHI audit currently covers only selected endpoints; it is not yet a complete audit trail. Existing superuser-global behavior remains until each surface is migrated and operational support workflows are validated. No compliance certification is implied.

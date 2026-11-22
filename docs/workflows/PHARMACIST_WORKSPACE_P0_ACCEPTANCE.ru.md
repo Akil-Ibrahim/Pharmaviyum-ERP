@@ -68,33 +68,33 @@
 
 **Критерий завершения:** воспроизводимая и протестированная цепочка patient → prescription → pharmacist verification → FEFO allocation → payment/receipt → patient history. AI остаётся decision support.
 
-## 3. P0.3 — Создать API истории пациента с tenant scope
+## 3. P0.3 — Создать tenant-scoped API истории пациента (базовая реализация есть; приёмка продолжается)
 
-### Подтверждённое состояние
-- `GET /api/v1/patient-purchases/` требует `CurrentSuperuser`.
-- Текущий запрос напрямую выбирает `PatientPurchase`, не присоединяет `Patient`, не ограничивает выборку по `Patient.pharmacy_id` и не принимает идентификатор конкретного пациента.
-- Поле `Patient.pharmacy_id` допускает `NULL`.
-- Это глобальный административный список, а не API истории пациента для фармацевта.
+### Подтверждённая реализация
+- `GET /api/v1/patient-purchases/{patient_id}/history` — отдельный pharmacist-facing route. Он требует явные `pharmacy_id` и ограниченный purpose code, запрещает platform superuser, требует active `PharmacyMembership`, проверяет принадлежность активного пациента выбранной аптеке и отказывает для null/unassigned patients.
+- Ответ содержит только минимальный allowlist: purchase ID, product name, category, quantity и purchase timestamp.
+- Allowed и denied decisions записываются как metadata-only `PHIAccessAudit`; clinical payload в audit event не копируется.
+- `tests/integration/test_patient_history_tenant_scope.py` покрывает allowed access, cross-pharmacy denial, missing membership, null-owner denial и superuser denial.
+- Сопутствующий `GET /api/v1/patients/{patient_id}/ai-profile` использует явные pharmacy/purpose/membership checks и metadata-only audit; его сценарии покрывает `tests/integration/test_ai_patient_profile_access.py`.
+- Alembic migration для `PHIAccessAudit` добавляет DB triggers, запрещающие UPDATE, DELETE и TRUNCATE; `tests/integration/test_phi_access_audit_immutability.py` проверяет эти ограничения и сохранность evidence при downgrade.
+- Legacy `GET /patient-purchases/` остаётся только для superuser, требует явный pharmacy ID и теперь соединяет/фильтрует по `Patient.pharmacy_id`. Он всё ещё возвращает более широкий административный projection и не записывает новый PHI access audit event.
 
-### Требования к реализации
-- Не открывать текущий глобальный административный endpoint обычным ролям фармацевта без явного пересмотра его назначения и авторизации.
-- Создать отдельный patient-scoped API, требующий аутентифицированное членство в аптеке и selector пациента.
-- Определять принадлежность пациента на сервере и ограничивать каждую запись истории авторизованной аптекой.
-- Определить обработку legacy-записей с null/unassigned pharmacy ownership; до сверки таких записей обычный фармацевт не должен получать к ним доступ.
-- Возвращать только поля, необходимые рабочему процессу фармацевта; не раскрывать лишние идентификаторы и финансовые данные.
-- Создавать audit event при доступе к истории: actor, pharmacy, patient reference, purpose/context и timestamp. Не копировать клиническое содержимое в логи.
-- Реализовать pagination, детерминированную сортировку, ограниченные date filters и response limits.
+### Что ещё требуется
+- Добавить failure-injection tests: PHI read должен fail closed, если audit persistence/commit завершается ошибкой.
+- Решить, сохранять, сужать или заменять legacy administrative listing; если сохранять — определить и реализовать audit и privileged-access policy.
+- Управлять оставшимися global superuser reads в общих patient/order routes через отдельную purpose-bound support-access policy; новые pharmacist routes намеренно запрещают superuser.
+- Сохранить exact-commit PostgreSQL integration CI artifacts и проверить query plan/index истории пациента на утверждённой схеме.
+- Не считать этот read API patient-linked dispensing: POS checkout всё ещё не связан с patient/prescription.
 
 ### Критерии приёмки
-1. Фармацевт аптеки A получает историю только пациента, доступного в аптеке A.
-2. Аптека A не может перечислить или получить покупки пациентов аптеки B, меняя ID, фильтры или pagination.
-3. Пациенты с null/unassigned pharmacy не доступны обычным фармацевтам.
-4. Неаутентифицированные пользователи и роли без разрешения отклоняются согласно RBAC policy.
-5. Административный superuser-доступ проверяется и аудируется отдельно.
-6. План запроса использует подходящие индексы patient/pharmacy для окончательной формы запроса.
-7. Negative cross-tenant tests выполняются на PostgreSQL, а не только на mock repositories.
+1. Route-specific integration tests выше должны пройти на точном candidate commit.
+2. Фармацевт аптеки A получает только историю пациента, принадлежащего аптеке A; cross-pharmacy и null-owner requests завершаются fail closed.
+3. Отсутствующее membership и platform-superuser requests отклоняются и надёжно аудируются.
+4. Allowlist полей ответа проверяется тестами.
+5. До заявления о полном PHI governance нужно проверить поведение при сбое audit persistence.
+6. Для legacy administrative access и остальных global superuser paths определены ответственный владелец и audit policy.
 
-**Критерий завершения:** отдельные и явные admin и pharmacist contracts; cross-tenant denial подтверждён интеграционными тестами.
+**Текущий статус:** pharmacist patient-history API и route-level audit реализованы в исходниках и имеют PostgreSQL integration tests. P0.3 не считается полностью принятым до exact-commit CI evidence, audit-failure tests и завершения политики оставшегося privileged read. Это не является Production/site acceptance evidence.
 
 ## 4. P0.4 — Завершить staged-проверку Mortarium patient-session isolation
 
@@ -113,6 +113,7 @@
 6. Проверить, что два application instances создают одинаковые scopes при одинаковом secret.
 7. Проверить, что отсутствие/ротация secret обрабатываются fail-closed и согласно политике ротации.
 8. Проверить отсутствие raw patient identifiers и clinical payloads в logs, traces и evaluation artifacts.
+9. Проверить, что MCP authorization context содержит выбранного пациента и purpose; `get_patient_history` отклоняет patient ID от модели, если он отличается от выбранного пациента, и записывает allowed/denied `PHIAccessAudit` decisions. В текущем MCP context/tool path этот контроль ещё не реализован.
 
 **Критерий завершения:** воспроизводимые staged evidence приложены к release record. Merge и unit tests сами по себе этот gate не закрывают.
 

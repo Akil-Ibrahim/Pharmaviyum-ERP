@@ -70,7 +70,7 @@ until the authoritative workflow is implemented.
 - No unrestricted SQL, shell, filesystem or arbitrary code tools are exposed.
 - Inventory quantities, expiry eligibility, FEFO, prices, payment state,
   prescription requirements and authorization are determined by ERP rules.
-- Patient-specific information remains subject to patient-scope authorization.
+- Patient-specific information remains subject to patient-scope authorization. Current MCP `get_patient_history` enforces pharmacy ownership but is not bound to the selected patient or a purpose code and does not emit `PHIAccessAudit`; see [AI system design](AI_LLM_SYSTEM_DESIGN.md) and [patient-scoped conversation state](patient-session-isolation.md). Do not treat HMAC session isolation as a substitute for this tool-level authorization.
 - Conversation memory and LangGraph checkpoint threads are bound in code to the authenticated pharmacy, user, patient (including explicit no-patient scope) and client session through versioned HMAC namespaces. This implementation was merged by PR #287 and has regression coverage. Staged end-to-end validation across PostgreSQL checkpoints and Redis memory remains a release gate; do not treat merge/CI as proof of production activation. See [patient-scoped conversation state](patient-session-isolation.md) and the [Mortarium architecture audit](../rag_architecture_audit.md).
 - Tool output and retrieved documents are untrusted data, not instructions.
 - No patient data is added to evaluation fixtures or external judge prompts.

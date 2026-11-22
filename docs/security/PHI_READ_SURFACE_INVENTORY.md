@@ -1,12 +1,15 @@
 # PHI Read-Surface Inventory — Follow-up Source Review
 
-**Review date:** 2026-11-21  
-**Baseline:** `main` (reviewed against the current default branch; source files and blob SHAs are recorded in the PR discussion)  
+**Review date:** 2026-11-22  
+**Source baseline:** `main` at `2616b4209fc037b1e4f1899b876478bf72258641`  
+**Baseline:** `main` at `2616b4209fc037b1e4f1899b876478bf72258641`  
 **Scope:** targeted read-only review of patient API, patient service/repository, response schemas, MCP patient-history tool, order API, and in-process event bus. No database, runtime, production data, or secrets were accessed.
 
 ## Executive summary
 
 This review expands the initial PHI governance audit. It identifies additional source-level risks that should be addressed before claiming complete tenant isolation or PHI access governance.
+
+**Additional critical findings:** the MCP patient-history tool is not bound to the selected patient/purpose, and the Ansible Compose profile reuses the PostgreSQL bootstrap user as the runtime application credential. These gaps limit the security value of the route-level PHI audit controls.
 
 **No exploit or production disclosure is established by this review.** Some findings are latent repository-layer hazards whose call sites have not yet been exhaustively mapped. Treat them as verification targets, not confirmed externally reachable vulnerabilities.
 
@@ -25,7 +28,7 @@ File: `src/pharmaviyum/repositories/patient.py`
 
 **Remaining action:** add two-pharmacy integration tests that prove a tenant-scoped call cannot return another tenant's patients, and map all call sites. If a global administrative use case exists, give it a separately named and explicitly authorized method rather than overloading an optional scope.
 
-### F-02 — Broad PatientResponse exposed unrelated PHI across ordinary patient endpoints
+### F-02 — Historical finding: broad PatientResponse was exposed; standard patient routes now use PatientSummaryResponse
 
 Files: `src/pharmaviyum/schemas/patient.py`, `src/pharmaviyum/api/v1/endpoints/patients.py`, `src/pharmaviyum/repositories/patient.py`
 
@@ -91,6 +94,34 @@ File: `src/pharmaviyum/api/v1/orders.py`
 **Risk:** cross-tenant rows could be materialized in the application process before authorization rejection. The receipt lookup also relied on globally unique receipt naming rather than an explicit tenant predicate. This review does not establish a production disclosure or cross-tenant mutation.
 
 **Remediation in PR #387:** shared query builders add `Patient.pharmacy_id == scope` to patient, order, and purchase lookups whenever a tenant scope is resolved. The existing global-superuser behavior when scope is `None` is preserved. PostgreSQL SQL-compilation regression tests and the full CI suite passed. Database-backed two-tenant integration coverage remains required.
+
+### F-07 — MCP patient-history tool is pharmacy-scoped but not patient-context/purpose-bound or PHI-audited
+
+Files: `src/pharmaviyum/ai/mcp/context.py`, `src/pharmaviyum/api/v1/ai.py`, `src/pharmaviyum/ai/mcp/schemas.py`, `src/pharmaviyum/ai/mcp/tools/patient_history.py`
+
+- `MCPAuthorizationContext` carries only `user_id`, `pharmacy_id` and `user_role`. The AI API injects those fields; the selected request `patient_id` used for the HMAC session namespace is not included in MCP authorization context.
+- `PatientHistoryRequest` accepts a model-supplied `patient_id` and has no purpose-of-use field.
+- The tool query enforces `Patient.id`, trusted `pharmacy_id` and active status. This prevents a cross-pharmacy lookup, but it does not prove that the requested patient matches the patient selected for the current AI session.
+- The tool returns full name, age, gender, blood type, allergies, conditions, active-prescription count, recent-order count, loyalty tier and preferred language.
+- The tool does not write `PHIAccessAudit`. Its current log records only counts and latency, which avoids logging the patient ID or clinical payload.
+
+**Risk:** an AI session bound to Patient A can potentially request Patient B within the same pharmacy because the trusted MCP context does not carry/verify the selected patient and purpose. This is a source-level authorization gap, not evidence of a Production disclosure.
+
+**Required action:** bind MCP context to the selected patient and purpose; require the tool patient ID to match that context or require a separately authorized patient-selection transition; record allowed/denied `PHIAccessAudit` decisions; minimize the output schema; add mismatch, missing-purpose, denied-access and audit-failure integration tests.
+
+### F-08 — Runtime database credential is the PostgreSQL bootstrap superuser; audit triggers are not a complete immutability boundary
+
+Files: `ansible/roles/app-backend/files/docker-compose-backend.yml`, `ansible/group_vars/all.yml`, `ansible/roles/postgresql/tasks/main.yml`, `alembic/versions/2026_11_21_000001_phi_access_audit.py`
+
+- The pharmacy-server Compose profile initializes PostgreSQL with `POSTGRES_USER` (default `app_user`) and passes the same username/password to `DATABASE_URL` for backend, Celery worker and Celery beat.
+- On initial data-volume creation, the standard PostgreSQL container entrypoint creates `POSTGRES_USER` as the bootstrap superuser. The repository does not show a later role split, a `NOSUPERUSER` runtime role, or grants that prevent the application credential from changing audit schema objects.
+- The Ansible `postgresql` role currently creates/checks the data directory and reports container status; it does not provision separate runtime, owner, migration and audit roles or verify database privileges.
+- The PHI audit migration adds triggers rejecting UPDATE/DELETE/TRUNCATE, but a database superuser or table owner can disable/drop triggers or alter the table. The runtime application credential must not have those privileges.
+- The production Alembic guard requires `MIGRATION_DATABASE_URL`, but the public Ansible migration environment does not inject it; a separate migration credential and least-privilege path are not yet wired.
+
+**Risk:** the append-only trigger is useful defense in depth, but the current repository configuration does not prove that the application cannot bypass it. This is a configuration/code-path risk, not evidence that a live Production role has been abused.
+
+**Required action:** provision a bootstrap-only superuser, a narrowly scoped runtime role, a controlled migration role and (if needed) a dedicated audit writer/owner. Ensure the runtime role is not superuser and cannot ALTER/DROP/TRUNCATE audit storage or disable triggers. Add PostgreSQL tests for `pg_roles.rolsuper`, `has_table_privilege`, trigger protection and attempted schema/trigger tampering. Keep migration credentials out of the application runtime environment.
 
 ## Positive controls observed
 
