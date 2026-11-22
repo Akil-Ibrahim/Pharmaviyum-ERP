@@ -154,8 +154,8 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
     user = type("AuthenticatedUser", (), {"id": 42})()
     client_session = "same-browser-session"
 
-    patient_a_scope = _scoped_session_id(client_session, tenant, user, 101)
-    patient_b_scope = _scoped_session_id(client_session, tenant, user, 202)
+    patient_a_scope = _scoped_session_id(client_session, tenant, user, 101, "dispensing_review")
+    patient_b_scope = _scoped_session_id(client_session, tenant, user, 202, "dispensing_review")
     no_patient_scope = _scoped_session_id(client_session, tenant, user, None)
 
     await memory.save(
@@ -237,35 +237,45 @@ def test_api_session_scope_binds_tenant_user_patient_and_secret(
     monkeypatch.setattr(app_settings, "SECRET_KEY", "stable-test-secret")
     tenant = TenantContext(user_id=42, pharmacy_id=7)
     user = type("AuthenticatedUser", (), {"id": 42})()
-    base = _scoped_session_id("reused-session", tenant, user, 101)
+    base = _scoped_session_id(
+        "reused-session", tenant, user, 101, "dispensing_review"
+    )
 
-    different_patient = _scoped_session_id("reused-session", tenant, user, 202)
+    different_patient = _scoped_session_id(
+        "reused-session", tenant, user, 202, "dispensing_review"
+    )
+    different_purpose = _scoped_session_id(
+        "reused-session", tenant, user, 101, "medication_reconciliation"
+    )
     no_patient = _scoped_session_id("reused-session", tenant, user, None)
     different_user = _scoped_session_id(
         "reused-session",
         TenantContext(user_id=43, pharmacy_id=7),
         type("AuthenticatedUser", (), {"id": 43})(),
         101,
+        "dispensing_review",
     )
     different_pharmacy = _scoped_session_id(
         "reused-session",
         TenantContext(user_id=42, pharmacy_id=8),
         user,
         101,
+        "dispensing_review",
     )
 
     assert (
-        len({base, different_patient, no_patient, different_user, different_pharmacy})
-        == 5
+        len({base, different_patient, different_purpose, no_patient, different_user, different_pharmacy})
+        == 6
     )
+    assert different_purpose != base
     prefix, digest = base.split(":", maxsplit=2)[1:]
-    assert prefix == "v3"
+    assert prefix == "v4"
     assert len(digest) == 64
     assert all(character in "0123456789abcdef" for character in digest)
     assert "reused-session" not in base
 
     monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-test-secret")
-    rotated = _scoped_session_id("reused-session", tenant, user, 101)
+    rotated = _scoped_session_id("reused-session", tenant, user, 101, "dispensing_review")
     assert rotated != base
 
 
@@ -280,7 +290,7 @@ def test_api_session_scope_fails_closed_without_production_secret(
     user = type("AuthenticatedUser", (), {"id": 42})()
 
     with pytest.raises(RuntimeError, match="SECRET_KEY is required"):
-        _scoped_session_id("reused-session", tenant, user, 101)
+        _scoped_session_id("reused-session", tenant, user, 101, "dispensing_review")
 
 
 @pytest.mark.integration
