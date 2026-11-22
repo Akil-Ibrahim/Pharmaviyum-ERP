@@ -27,7 +27,7 @@
 
 **Оставшиеся действия:** добавить integration tests на двух pharmacy, доказывающие, что tenant-scoped вызов не возвращает пациентов другого tenant, и сопоставить все call sites. Если есть глобальный административный сценарий, выделить для него отдельно названный и явно авторизованный метод вместо необязательного scope.
 
-### F-02 — Широкая PatientResponse раскрывала лишнюю PHI в обычных patient endpoints
+### F-02 — Исторический finding: широкая PatientResponse раскрывала лишнюю PHI; стандартные patient routes теперь используют PatientSummaryResponse
 
 Файлы: `src/pharmaviyum/schemas/patient.py`, `src/pharmaviyum/api/v1/endpoints/patients.py`, `src/pharmaviyum/repositories/patient.py`
 
