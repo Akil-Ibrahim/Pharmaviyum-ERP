@@ -6,7 +6,7 @@
 
 ## Context
 
-The current backup workflow creates a gzip-compressed PostgreSQL dump on Pharmacy Edge, verifies gzip integrity and SHA-256, writes a manifest, and prunes expired local artifacts only after a new backup is verified. PR #250 adds an isolated restore drill into a new local database. These controls do not protect against loss or compromise of the whole Edge host/site. A local checksum is not an independent trust anchor when the backup and checksum share the same failure domain.
+The local backup workflow creates a gzip-compressed PostgreSQL dump on Pharmacy Edge, verifies gzip integrity and SHA-256, writes a manifest, and prunes expired local artifacts only after a new backup is verified. A separate first implementation slice now exists in `ansible/playbooks/backup-offsite.yml` with operator instructions in `ansible/OFFSITE_BACKUP.md`: it uploads an already verified dump, checksum and manifest to a pre-existing site-scoped Restic REST repository. The playbook does not provision that repository or its server-side ACLs, and no live Production endpoint or credentials are established by the repository. The local restore drill remains separate and does not restore from the remote repository. These controls do not yet protect a site with an accepted end-to-end disaster-recovery capability.
 
 ## Proposed decision
 
@@ -60,12 +60,12 @@ Publish RPO/RTO only after repeatable timed drills. Backup frequency alone does 
 
 ## Ansible implementation contract
 
-Keep the future implementation split into independently testable units:
-- `backup_local`: create/verify local DB dump and immutable local artifact/manifest.
-- `backup_offsite`: upload only verified artifacts, use site-scoped append-only credentials, verify remote snapshot; no local pruning on failure.
-- `backup_maintenance`: controller-only repository checks and retention/prune with explicit environment/target guardrails.
-- `restore_offsite_drill`: controller-authorized restore to isolated target; verify site identity, repository, snapshot, integrity, schema, business invariants, and readiness.
-- `backup_monitoring`: expose last-success, age, bytes, snapshot ID, verification state, and failure reason.
+Keep the workflow split into independently testable units and track their implementation state:
+- `backup_local`: implemented in `ansible/playbooks/backup.yml`; creates and verifies the local DB dump and metadata manifest.
+- `backup_offsite`: initial upload slice implemented in `ansible/playbooks/backup-offsite.yml`; requires a pre-provisioned site-scoped Restic REST repository and protected per-site credentials, and verifies the remote snapshot metadata plus streamed artifact hashes. It has not been operationally validated against a live repository.
+- `backup_maintenance`: not implemented; controller-only repository checks and retention/prune still require explicit environment/target guardrails.
+- `restore_offsite_drill`: not implemented; the existing `ansible/playbooks/restore.yml` is a local isolated-database drill, not a remote restore.
+- `backup_monitoring`: not implemented; last-success, age, bytes, snapshot ID, verification state and failure reason are not yet integrated into monitoring.
 
 Roles must be idempotent where applicable, support meaningful check mode, use `no_log: true` for secret-bearing tasks, prefer `command.argv` to shell interpolation, and include Molecule coverage for success, retries, network outage, bad credentials, corrupt artifact, wrong site, retention failure, and partial restore cleanup.
 
@@ -94,4 +94,4 @@ The 100-site ceiling is an architecture target, not evidence of current 100-site
 
 ## Current safety boundary
 
-This is a design proposal only. PR #250 implements local backup verification and a basic isolated local restore drill; it does not implement off-site encryption, remote storage, remote verification, remote restore, or production disaster recovery. No provider, credentials, secrets, production hosts, or live pharmacy data are configured or changed here.
+This remains a proposed architecture and does not authorize Production disaster-recovery operations. The repository now contains an initial off-site upload implementation in `ansible/playbooks/backup-offsite.yml` (documented in `ansible/OFFSITE_BACKUP.md`). It uses Restic encryption, requires an existing site-scoped HTTPS repository and protected per-site credentials, validates local artifacts and site identity, then verifies the remote snapshot metadata and streams the uploaded artifacts back for SHA-256 comparison. `ansible/tests/test_offsite_backup_guardrails.sh` tests synthetic controller-side preflight/guardrail behavior only; it does not connect to a live Restic repository. Still outstanding are provider/repository provisioning and server-side ACL validation, recovery-key escrow, remote repository integrity checks and retention management, remote restore into an isolated database, application/POS business-invariant validation, monitoring, measured RPO/RTO and site acceptance. No Production endpoint, credentials, secrets or live pharmacy data are configured by this repository, and no Production DR readiness is established.
