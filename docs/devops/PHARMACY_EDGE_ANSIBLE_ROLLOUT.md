@@ -182,7 +182,7 @@ A candidate rollout sequence is:
 2. Five pilot pharmacies.
 3. Twenty pharmacies.
 4. Thirty pharmacies.
-5. The remaining forty-four pharmacies.
+5. The remaining forty-five pharmacies.
 
 The lab site is separate from production. The 5 + 20 + 30 + 45 production waves total 100; these are planning examples, not enabled defaults. Adjust wave sizes to the approved inventory and never assume every site is reachable.
 
