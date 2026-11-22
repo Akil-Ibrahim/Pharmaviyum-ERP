@@ -15,13 +15,13 @@
 | Компонент | Ответственность | Проверка |
 |---|---|---|
 | Стек приложения на аптечном сервере (Ansible-managed) | API и frontend локальной аптеки | Результат Ansible rollout, immutable image digest, состояние контейнеров, logs, /health, /ready и безопасные аптечные smoke tests |
-| PostgreSQL | Транзакционные данные и checkpoints | Локальный PostgreSQL container `db` на аптечном сервере: состояние контейнера/readiness, connections, latency, возраст backup и доказательства restore |
-| Redis-compatible service | Cache и dialogue memory | Доступность, memory/connection limits, evictions и latency |
-| Celery worker | Асинхронные задачи, например ingestion | Worker health, queue depth, возраст задач, retries и failed tasks |
+| PostgreSQL | Транзакционные данные и checkpoints | Локальный Compose-managed container `db` на аптечном сервере: состояние контейнера/readiness, connections, latency, возраст backup и доказательства restore. Ansible role `postgresql` не является полноценной ролью lifecycle/HA базы данных |
+| Redis-compatible service | Cache и dialogue memory | Compose service `redis` (по умолчанию образ Valkey 8): доступность, memory/connection limits, evictions и latency |
+| Celery worker | Асинхронные задачи, например ingestion | Compose service `celery-worker`: состояние контейнера/process, queue depth, возраст задач, retries и failed tasks; проверяйте отдельно от API readiness |
 | LLM / embedding provider | Необязательные AI inference и embeddings | Статус провайдера, timeout/error rate, quota и latency |
 | Telemetry backend | Traces, metrics и logs | Доставка collector, dashboards и alerts |
 
-Не предполагайте, что web deployment запускает Celery worker или создаёт PostgreSQL/Redis.
+Текущая Ansible role `app-backend` запускает `db`, `redis`, `backend`, `celery-worker` и `celery-beat` из Compose definition аптечного сервера. Проверяйте каждый service отдельно: `/ready` подтверждает зависимости API, но не здоровье Celery worker.
 
 ## Последовательность health checks
 
@@ -61,7 +61,7 @@
 
 Production application releases направляются на аптечный сервер и оркестрируются Ansible playbooks из этого репозитория. Production inventory, per-site credentials, реальные host details и approvals остаются под контролем оператора и не должны попадать в Git. Используйте [план Ansible rollout Pharmacy Edge](../devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) и [руководство Ansible](../devops/ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md). Публичный [runbook FastAPI Cloud Demo](../deployment/FASTAPI_CLOUD.ru.md) относится только к Demo и не должен использоваться для Production.
 
-До релиза проверьте CI для последнего SHA, approval, backup/restore evidence, migration plan, environment variables, smoke tests и rollback target.
+До релиза проверьте CI и approval для точного утверждённого Production source commit и immutable image digest в контролируемом Production release pipeline. Public Demo CI не доказывает, что Production artifact был собран или проверен. Дополнительно проверьте backup/restore evidence, migration plan, environment variables, smoke tests и rollback target.
 
 Откатывайте revision приложения только если предыдущая revision совместима с текущей схемой. Откат БД — отдельная операция высокого риска. Предпочитайте backward-compatible expand/contract migrations. Восстановление из backup выполняйте только по утверждённому recovery plan.
 
