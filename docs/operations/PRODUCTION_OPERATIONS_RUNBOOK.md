@@ -14,7 +14,7 @@
 | Component | Responsibility | Verification |
 |---|---|---|
 | Pharmacy server application stack (Ansible-managed) | API and frontend serving for the local pharmacy site | Ansible release result, immutable image digest, container state, logs, /health, /ready and authenticated pharmacy-safe smoke tests |
-| PostgreSQL | Transactional and checkpoint persistence | Pharmacy-server PostgreSQL service health, connections, query latency, backup age and restore evidence |
+| PostgreSQL | Transactional and checkpoint persistence | Local PostgreSQL container (`db`) on the pharmacy server: container/readiness state, connections, query latency, backup age and restore evidence |
 | Redis-compatible service | Cache and dialogue memory | Connectivity, memory/connection limits, evictions and latency |
 | Celery worker | Async tasks such as ingestion | Worker health, queue depth, task age, retries and failed-task review |
 | LLM / embedding provider | Optional AI inference and embeddings | Provider status, timeout/error rate, quota and latency |
@@ -58,7 +58,8 @@ Before release, verify latest-SHA CI, approval, backup/restore evidence, migrati
 Rollback the application revision only when the previous revision is compatible with the current schema. Database rollback is a separate high-risk operation. Prefer backward-compatible expand/contract migrations. Restore from backup only under an approved recovery plan.
 
 ## Backup and restore
-- Verify the approved local PostgreSQL backup schedule, retention, off-site copy where configured, and documented restore procedure. See the Off-site Backup Architecture; do not assume a cloud-provider PITR service exists.
+- `ansible/playbooks/backup.yml` creates and verifies a local PostgreSQL dump when invoked; it does not install or schedule itself. Verify that an approved protected automation controller or scheduler actually invokes it and supplies secrets securely. `backup_enabled: true` is not evidence that a schedule exists.
+- Verify local retention and the documented isolated restore drill. Off-site upload is a separate explicitly approved invocation to a pre-provisioned, site-scoped Restic repository; it does not provision the repository/ACLs or prove restore from the remote copy. See the Off-site Backup Architecture; do not assume a cloud-provider PITR service exists.
 - Define Redis and checkpoint retention separately.
 - Protect backup encryption keys outside Git.
 - Record backup age and retention.
