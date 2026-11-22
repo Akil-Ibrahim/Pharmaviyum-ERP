@@ -6,7 +6,7 @@ import hashlib
 import hmac
 import json
 import uuid
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -47,7 +47,12 @@ class QueryRequest(BaseModel):
         description="Conversation session ID (max 64 characters)",
     )
     patient_id: int | None = Field(
-        default=None, strict=True, description="Patient ID for history lookup"
+        default=None, strict=True, gt=0, description="Patient ID for history lookup"
+    )
+    purpose: Literal[
+        "dispensing_review", "medication_reconciliation", "patient_request"
+    ] | None = Field(
+        default=None, description="Controlled purpose for selected-patient PHI access"
     )
     pharmacy_id: int = Field(
         ..., strict=True, gt=0, description="Authorized pharmacy tenant"
@@ -96,12 +101,15 @@ async def _validate_patient_scope(
         )
 
 
-def _set_mcp_context(tenant, current_user: CurrentUser):
+def _set_mcp_context(tenant, current_user: CurrentUser, patient_id: int | None, purpose):
     return set_mcp_context(
         MCPAuthorizationContext(
             user_id=tenant.user_id,
             pharmacy_id=tenant.pharmacy_id,
             user_role=cast(UserRole, current_user.role),
+            selected_patient_id=patient_id,
+            purpose=purpose,
+            request_id=uuid.uuid4().hex,
         )
     )
 
@@ -191,6 +199,11 @@ async def query_agent(
 ):
     """Synchronous AI query bound to the authenticated pharmacy tenant."""
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
+    if (request.patient_id is None) != (request.purpose is None):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="A selected patient and a controlled purpose must be supplied together",
+        )
     await _validate_patient_scope(request.patient_id, tenant.pharmacy_id, session)
     raw_session_id = request.session_id or str(uuid.uuid4())
     session_id = _scoped_session_id(
@@ -206,7 +219,7 @@ async def query_agent(
         "force_fresh": request.force_fresh,
     }
 
-    token = _set_mcp_context(tenant, current_user)
+    token = _set_mcp_context(tenant, current_user, request.patient_id, request.purpose)
     try:
         try:
             result = await harness.run(
