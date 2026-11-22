@@ -348,18 +348,14 @@ async def test_patient_scoped_langgraph_checkpoints_are_durable_and_separate(
     monkeypatch.setattr(
         core_settings, "SECRET_KEY", "patient-isolation-checkpoint-secret"
     )
-    schema = f"ai_isolation_{uuid4().hex}"
-    await test_db.execute(text(f'CREATE SCHEMA "{schema}"'))
-    await test_db.commit()
-
+    # CI applies the Alembic-managed checkpoint schema to the integration
+    # database before running this test. Use unique thread IDs in public rather
+    # than a temporary schema: runtime verification intentionally checks the
+    # canonical public schema and must remain read-only.
     base_url = ai_settings.pgvector.database_url.get_secret_value().replace(
         "postgresql+asyncpg://", "postgresql://", 1
     )
-    isolated_dsn = make_conninfo(
-        base_url,
-        options=f"-c search_path={schema}",
-    )
-    checkpointer = AgentCheckpointer(database_url=isolated_dsn, max_size=2)
+    checkpointer = AgentCheckpointer(database_url=base_url, max_size=2)
     try:
         saver = await checkpointer.initialize()
 
@@ -379,7 +375,7 @@ async def test_patient_scoped_langgraph_checkpoints_are_durable_and_separate(
             "no_patient": QueryContext(user_id="user-1", pharmacy_id=7),
         }
         thread_ids = {
-            label: LangGraphRAG._thread_id("same-browser-session", context)
+            label: LangGraphRAG._thread_id(f"checkpoint-isolation-{uuid4()}", context)
             for label, context in contexts.items()
         }
         assert len(set(thread_ids.values())) == 3
@@ -402,5 +398,3 @@ async def test_patient_scoped_langgraph_checkpoints_are_durable_and_separate(
                 assert f"synthetic:{other_label}" not in contents
     finally:
         await checkpointer.close()
-        await test_db.execute(text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
-        await test_db.commit()
