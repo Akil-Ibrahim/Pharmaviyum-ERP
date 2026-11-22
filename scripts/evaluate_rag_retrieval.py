@@ -407,6 +407,79 @@ async def run_benchmark(
     key_by_id = {chunk.id: item.key for chunk, item in zip(chunks, CORPUS)}
 
     try:
+        # This benchmark owns a disposable schema and may use a different
+        # embedding dimension from the production 1024-dimensional RAG table.
+        # Provision its isolated table explicitly; application runtime remains
+        # read-only and production schema changes remain Alembic-managed.
+        async with engine.begin() as connection:
+            vector_type = await connection.scalar(text("SELECT to_regtype('vector')"))
+            if vector_type is None:
+                raise RuntimeError(
+                    "pgvector is not installed; apply the Alembic pgvector migration first."
+                )
+            await connection.execute(
+                text(
+                    f"""
+                    CREATE TABLE "{schema}"."{table_name}" (
+                        id UUID PRIMARY KEY,
+                        document_id UUID NOT NULL,
+                        content TEXT NOT NULL,
+                        chunk_index INTEGER NOT NULL,
+                        chunk_type VARCHAR(50) NOT NULL,
+                        metadata JSONB NOT NULL DEFAULT '{{}}'::jsonb,
+                        token_count INTEGER NOT NULL,
+                        embedding vector({embedding_dimensions}),
+                        created_at TIMESTAMP DEFAULT NOW(),
+                        CONSTRAINT unique_chunk UNIQUE (document_id, chunk_index)
+                    )
+                    """
+                )
+            )
+            await connection.execute(
+                text(
+                    f"""
+                    CREATE INDEX idx_{table_name}_embedding
+                    ON "{schema}"."{table_name}"
+                    USING hnsw (embedding vector_cosine_ops)
+                    WITH (m = 16, ef_construction = 200)
+                    """
+                )
+            )
+            await connection.execute(
+                text(
+                    f"""
+                    CREATE INDEX idx_{table_name}_metadata
+                    ON "{schema}"."{table_name}" USING gin (metadata)
+                    """
+                )
+            )
+            await connection.execute(
+                text(
+                    f"""
+                    CREATE INDEX idx_{table_name}_pharmacy_id
+                    ON "{schema}"."{table_name}" ((metadata ->> 'pharmacy_id'))
+                    """
+                )
+            )
+            await connection.execute(
+                text(
+                    f"""
+                    CREATE INDEX idx_{table_name}_content_fts
+                    ON "{schema}"."{table_name}"
+                    USING gin (to_tsvector('english', content))
+                    """
+                )
+            )
+            await connection.execute(
+                text(
+                    f"""
+                    CREATE INDEX idx_{table_name}_content_fts_simple
+                    ON "{schema}"."{table_name}"
+                    USING gin (to_tsvector('simple', content))
+                    """
+                )
+            )
+
         await vector_store.initialize()
         corpus_start = time.perf_counter()
         corpus_vectors = await embeddings.embed_batch(

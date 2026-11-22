@@ -32,7 +32,7 @@ class AgentCheckpointer:
         self._saver: AsyncPostgresSaver | None = None
 
     async def initialize(self) -> AsyncPostgresSaver:
-        """Open the pool, initialize checkpoint tables, and return the saver."""
+        """Open the pool and verify Alembic-managed checkpoint tables."""
         if self._saver is not None:
             return self._saver
 
@@ -46,16 +46,96 @@ class AgentCheckpointer:
                 "prepare_threshold": 0,
             },
         )
-        await self._pool.open(wait=True)
-
-        self._saver = AsyncPostgresSaver(conn=cast(Any, self._pool))
-        await self._saver.setup()
+        try:
+            await self._pool.open(wait=True)
+            self._saver = AsyncPostgresSaver(conn=cast(Any, self._pool))
+            await self._verify_schema()
+        except Exception:
+            await self.close()
+            raise
 
         logger.info(
             "PostgreSQL LangGraph checkpointer initialized",
             extra={"table": self.table_name},
         )
         return self._saver
+
+    async def _verify_schema(self) -> None:
+        """Fail closed unless the pinned LangGraph checkpoint schema is migrated."""
+        if self._pool is None or self._saver is None:
+            raise RuntimeError("LangGraph checkpoint pool is not initialized")
+
+        async with self._pool.connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute("""
+                    SELECT
+                        to_regclass('public.checkpoint_migrations') IS NOT NULL,
+                        to_regclass('public.checkpoints') IS NOT NULL,
+                        to_regclass('public.checkpoint_blobs') IS NOT NULL,
+                        to_regclass('public.checkpoint_writes') IS NOT NULL,
+                        EXISTS (
+                            SELECT 1
+                            FROM pg_attribute
+                            WHERE attrelid = to_regclass('public.checkpoint_writes')
+                              AND attname = 'task_path'
+                              AND NOT attisdropped
+                        ),
+                        EXISTS (
+                            SELECT 1
+                            FROM pg_attribute
+                            WHERE attrelid = to_regclass('public.checkpoint_blobs')
+                              AND attname = 'blob'
+                              AND NOT attisdropped
+                              AND NOT attnotnull
+                        ),
+                        COALESCE(
+                            (
+                                SELECT array_agg(indexname)
+                                FROM pg_indexes
+                                WHERE schemaname = 'public'
+                                  AND indexname IN (
+                                      'checkpoints_thread_id_idx',
+                                      'checkpoint_blobs_thread_id_idx',
+                                      'checkpoint_writes_thread_id_idx'
+                                  )
+                            ),
+                            ARRAY[]::text[]
+                        )
+                    """)
+                schema = await cursor.fetchone()
+
+                if schema is None or not all(schema[:6]):
+                    raise RuntimeError(
+                        "LangGraph checkpoint schema is incomplete; "
+                        "apply the Alembic database migrations."
+                    )
+
+                await cursor.execute("SELECT max(v) FROM public.checkpoint_migrations")
+                version_row = await cursor.fetchone()
+
+        expected_version = len(self._saver.MIGRATIONS) - 1
+        actual_version = version_row[0] if version_row is not None else None
+        if actual_version != expected_version:
+            raise RuntimeError(
+                "LangGraph checkpoint schema version mismatch: "
+                f"expected={expected_version}, actual={actual_version}. "
+                "Apply the Alembic database migrations using the pinned "
+                "langgraph-checkpoint-postgres version."
+            )
+
+        required_indexes = {
+            "checkpoints_thread_id_idx",
+            "checkpoint_blobs_thread_id_idx",
+            "checkpoint_writes_thread_id_idx",
+        }
+        existing_indexes = set(schema[6] or ())
+        missing_indexes = sorted(required_indexes - existing_indexes)
+        if missing_indexes:
+            raise RuntimeError(
+                "LangGraph checkpoint schema is missing indexes: "
+                + ", ".join(missing_indexes)
+                + ". Apply the Alembic database migrations."
+            )
 
     async def close(self) -> None:
         """Close the application-lifetime PostgreSQL pool."""
