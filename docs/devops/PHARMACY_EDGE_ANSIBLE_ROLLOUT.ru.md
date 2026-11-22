@@ -193,7 +193,7 @@ Ansible `serial` ограничивает размер batch для play, но �
 
 ## 6. Правила release и миграций
 
-- Собирайте artifact один раз в CI и развёртывайте один и тот же immutable image digest в lab, pilot и production.
+- Собирайте Production release artifact один раз в контролируемом Production pipeline из закрытого Production source, затем развёртывайте один и тот же immutable image digest в lab, pilot и Production. Public Demo CI pipeline не является Production artifact pipeline.
 - Передавайте `PHARMAVIYUM_BACKEND_IMAGE_DIGEST` в формате `sha256:<64-hex>`; Ansible загружает и записывает ссылку на digest, а не разрешает mutable tag. Для rollback нужны предыдущий проверенный image digest и release label.
 - Не используйте `latest` или изменяемые release tags как идентификатор deployment.
 - Запускайте `ansible/playbooks/migrate.yml` как отдельную, явно одобренную операцию перед `deploy.yml`; требуется `migration_approved=true` и непустой change reference.

@@ -201,7 +201,7 @@ Use explicit maintenance windows and an operator approval between waves. A disco
 
 ## 6. Release and migration rules
 
-- Build once in CI and deploy the same immutable image digest to lab, pilot and production.
+- Build the Production release artifact once in the controlled Production pipeline from the private Production source, then deploy the same immutable image digest to lab, pilot and Production. The public Demo CI pipeline is not the Production artifact pipeline.
 - Supply `PHARMAVIYUM_BACKEND_IMAGE_DIGEST` as `sha256:<64-hex>`; Ansible pulls and writes the digest reference rather than resolving a mutable tag. Rollback requires the previous verified image digest as well as its release label.
 - Do not use `latest` or mutable release tags as deployment identity.
 - Run `ansible/playbooks/migrate.yml` as a separate, explicitly approved operation before `deploy.yml`; it requires `migration_approved=true` and a non-empty change reference.

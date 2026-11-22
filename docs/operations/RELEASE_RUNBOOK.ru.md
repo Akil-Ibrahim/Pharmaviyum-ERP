@@ -2,7 +2,7 @@
 
 ## Область действия
 
-FastAPI Cloud размещает только публичную Demo Pharmaviyum. GitHub Actions выполняет CI; workflow `.github/workflows/deploy-fastapi-cloud.yml` запускается вручную и развёртывает только изолированное приложение Demo. Production использует тот же технологический стек приложения и развёртывается на аптечном сервере через Ansible. Публичные Ansible playbooks определяют автоматизацию; реальные Production inventory, per-site secrets и approvals остаются вне Git.
+FastAPI Cloud размещает только публичную Demo Pharmaviyum. GitHub Actions выполняет CI; workflow `.github/workflows/deploy-fastapi-cloud.yml` запускается вручную и развёртывает только изолированное приложение Demo. Production использует тот же технологический стек приложения и развёртывается на аптечном сервере через Ansible. Исходный код Production-реализации и release artifacts закрыты по NDA и создаются контролируемым Production release pipeline. Публичные Ansible playbooks определяют deployment automation; реальные Production inventory, per-site secrets и approvals остаются вне Git.
 
 Этот runbook описывает workflow Demo и не утверждает, что deployment уже завершился успешно или что Production readiness подтверждена.
 

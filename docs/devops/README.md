@@ -24,7 +24,7 @@ FastAPI Cloud hosts the public Demo only. Demo database, cache and worker servic
 
 The current repository also contains an opt-in monitoring Compose stack for controlled deployments. Nginx/edge infrastructure, OpenTelemetry Collector, managed data services and multi-node orchestration are target capabilities, not assumptions about the current base deployment.
 
-GitHub Actions is the CI quality gate and the manually triggered FastAPI Cloud workflow is the public Demo deployment path only. Production artifacts are deployed to pharmacy servers through the reviewed Ansible process; CI may validate Ansible and build immutable images, but must not automatically connect to live pharmacy hosts without a separately approved deployment operation.
+GitHub Actions is the CI quality gate and the manually triggered FastAPI Cloud workflow is the public Demo deployment path only. Public CI may validate Ansible and build Demo images. Production images are produced from the private Production source by the controlled Production release pipeline; reviewed Ansible playbooks deploy the approved immutable Production artifact to pharmacy servers after operator approval. Public CI must not connect to live pharmacy hosts.
 
 ## Target production principles
 
