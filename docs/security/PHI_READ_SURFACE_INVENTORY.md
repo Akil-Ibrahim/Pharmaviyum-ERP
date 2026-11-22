@@ -1,6 +1,7 @@
 # PHI Read-Surface Inventory — Follow-up Source Review
 
-**Review date:** 2026-11-21  
+**Review date:** 2026-11-22  
+**Source baseline:** `main` at `2616b4209fc037b1e4f1899b876478bf72258641`  
 **Baseline:** `main` (reviewed against the current default branch; source files and blob SHAs are recorded in the PR discussion)  
 **Scope:** targeted read-only review of patient API, patient service/repository, response schemas, MCP patient-history tool, order API, and in-process event bus. No database, runtime, production data, or secrets were accessed.
 
@@ -91,6 +92,20 @@ File: `src/pharmaviyum/api/v1/orders.py`
 **Risk:** cross-tenant rows could be materialized in the application process before authorization rejection. The receipt lookup also relied on globally unique receipt naming rather than an explicit tenant predicate. This review does not establish a production disclosure or cross-tenant mutation.
 
 **Remediation in PR #387:** shared query builders add `Patient.pharmacy_id == scope` to patient, order, and purchase lookups whenever a tenant scope is resolved. The existing global-superuser behavior when scope is `None` is preserved. PostgreSQL SQL-compilation regression tests and the full CI suite passed. Database-backed two-tenant integration coverage remains required.
+
+### F-07 — MCP patient-history tool is pharmacy-scoped but not patient-context/purpose-bound or PHI-audited
+
+Files: `src/pharmaviyum/ai/mcp/context.py`, `src/pharmaviyum/api/v1/ai.py`, `src/pharmaviyum/ai/mcp/schemas.py`, `src/pharmaviyum/ai/mcp/tools/patient_history.py`
+
+- `MCPAuthorizationContext` carries only `user_id`, `pharmacy_id` and `user_role`. The AI API injects those fields; the selected request `patient_id` used for the HMAC session namespace is not included in MCP authorization context.
+- `PatientHistoryRequest` accepts a model-supplied `patient_id` and has no purpose-of-use field.
+- The tool query enforces `Patient.id`, trusted `pharmacy_id` and active status. This prevents a cross-pharmacy lookup, but it does not prove that the requested patient matches the patient selected for the current AI session.
+- The tool returns full name, age, gender, blood type, allergies, conditions, active-prescription count, recent-order count, loyalty tier and preferred language.
+- The tool does not write `PHIAccessAudit`. Its current log records only counts and latency, which avoids logging the patient ID or clinical payload.
+
+**Risk:** an AI session bound to Patient A can potentially request Patient B within the same pharmacy because the trusted MCP context does not carry/verify the selected patient and purpose. This is a source-level authorization gap, not evidence of a Production disclosure.
+
+**Required action:** bind MCP context to the selected patient and purpose; require the tool patient ID to match that context or require a separately authorized patient-selection transition; record allowed/denied `PHIAccessAudit` decisions; minimize the output schema; add mismatch, missing-purpose, denied-access and audit-failure integration tests.
 
 ## Positive controls observed
 
