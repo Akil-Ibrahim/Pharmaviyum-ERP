@@ -579,6 +579,12 @@ It is important to distinguish three mechanisms:
 
 In a backend service, I use annotations to express contracts between layers, static analysis in CI, runtime validation at system boundaries, and tests to verify behaviour. For example, FastAPI uses annotations and models to describe API contracts, while Pydantic validates data according to the declared schema and configuration. I do not treat annotations as a security boundary or a guarantee that incoming data is valid: external input must be explicitly validated at runtime and separately authorized.
 
+### Version-aware annotation semantics (Python 3.14+)
+
+**RU:** Аннотации не являются runtime-валидацией, однако способ их вычисления зависит от версии Python. В Python 3.13 и более ранних версиях стандартное поведение вычисляло аннотации при определении объекта; `from __future__ import annotations` сохранял их как строки. Начиная с Python 3.14, стандартное поведение — отложенное вычисление аннотаций (PEP 649/749). Это меняет момент возможного разрешения имён и поведение кода, который читает `__annotations__`. Для совместимого кода, который интроспектирует аннотации, следует использовать документированный API `annotationlib` и явно учитывать минимальную поддерживаемую версию Python. Ни один из этих режимов не заставляет интерпретатор проверять фактические аргументы функции.
+
+**EN:** Annotation evaluation is version-dependent even though annotations are not runtime validation. Python 3.13 and earlier use eager evaluation by default; `from __future__ import annotations` stores them as strings. Starting with Python 3.14, deferred evaluation is the default (PEP 649/749). This changes when names may be resolved and affects code that reads `__annotations__`. Cross-version introspection should use the documented `annotationlib` API where available and account for the project's minimum Python version. None of these modes makes the interpreter validate actual function arguments.
+
 ### Follow-up questions и эталонные ответы
 
 #### FU-1
@@ -758,6 +764,12 @@ An iterable and an iterator are not the same thing. An iterable provides an iter
 **Context managers** implement `__enter__` and `__exit__`. `__enter__` returns the value bound to the variable after `as`. `__exit__` is called when the block finishes normally and when an exception occurs; in the latter case it receives exception information. If `__exit__` returns a truthy value, the exception is suppressed; otherwise, it propagates. Resource cleanup must be reliable even when the block fails. Asynchronous context management uses `__aenter__` and `__aexit__`.
 
 At Senior level, it is not enough to list dunder methods. I explain which protocol a type needs, which invariants it must preserve, and how to avoid surprising behaviour. I implement only protocols that reflect the object's actual contract and test edge cases such as empty values, exhausted iterators, unsupported operations, and exceptions during resource cleanup.
+
+### Additional language semantics: expressions and structural pattern matching
+
+**RU:** Корректная работа с выражениями требует понимать precedence и associativity операторов, порядок вычисления операндов, short-circuit поведение `and` и `or`, chained comparisons и conditional expressions. `and` и `or` возвращают один из операндов, а не обязательно `bool`. Вызовы функций и другие выражения с побочными эффектами нельзя переставлять, не проверив порядок вычисления. Assignment expression `:=` связывает результат выражения с именем, но не отменяет правила области видимости. Structural pattern matching через `match`/`case` поддерживает sequence, mapping, class, OR и guarded patterns; guard выполняется после успешного сопоставления шаблона. Pattern matching выбирает ветвь управления потоком, но не является полной проверкой схемы, доверия к данным или прав доступа.
+
+**EN:** Reliable expression reasoning requires understanding operator precedence and associativity, operand evaluation order, short-circuit behaviour of `and` and `or`, chained comparisons, and conditional expressions. `and` and `or` return one of their operands, not necessarily a `bool`. Expressions with side effects must not be reordered without considering evaluation order. The assignment expression `:=` binds an expression result to a name but does not remove scope rules. Structural pattern matching with `match`/`case` supports sequence, mapping, class, OR, and guarded patterns; a guard runs after its pattern succeeds. Pattern matching selects control flow; it is not a complete schema validator, trust boundary, or authorization check.
 
 ### Follow-up questions и эталонные ответы
 
@@ -1240,6 +1252,12 @@ For backend streaming, consider **backpressure**: a producer should not generate
 A generator saves memory when data is genuinely processed incrementally. It does not automatically make the entire pipeline memory-bounded: intermediate list accumulation, driver buffers, response serialization, or another layer may still consume substantial memory. Similarly, streaming does not replace pagination, limits, access control, or resource-consumption safeguards.
 
 At Senior level, I evaluate the complete stream lifecycle: who owns the resource, who closes it, what happens on exceptions or cancellation, whether the stream can be reused, where buffering occurs, and how production rate is controlled.
+
+### Comprehensions: evaluation, scope, and trade-offs
+
+**RU:** List, set и dict comprehensions вычисляются eagerly и создают соответствующую коллекцию; generator expression вычисляет значения лениво по мере потребления. В Python 3 переменная цикла comprehension не «утекает» во внешнюю область видимости, но comprehension может ссылаться на внешние имена и выполнять выражения с побочными эффектами. Вложенные comprehensions выполняют вложенные циклы в порядке, заданном синтаксисом. Исключения и побочные эффекты возникают в момент вычисления соответствующего элемента, поэтому eager и lazy формы могут отличаться не только памятью, но и временем наблюдаемого поведения. Выбирайте comprehension ради ясного преобразования/фильтрации; не помещайте туда сложную бизнес-логику или скрытые побочные эффекты.
+
+**EN:** List, set, and dictionary comprehensions are eager and construct their respective collections; a generator expression evaluates values lazily as they are consumed. In Python 3, a comprehension's iteration variable does not leak into the surrounding scope, although the comprehension can read outer names and execute expressions with side effects. Nested comprehensions run nested loops in the order expressed by the syntax. Exceptions and side effects occur when the corresponding element is evaluated, so eager and lazy forms can differ in observable timing as well as memory use. Use comprehensions for clear transformations and filtering; avoid hiding complex business logic or side effects inside them.
 
 ### Follow-up questions и эталонные ответы
 
@@ -2219,6 +2237,12 @@ The GIL is a runtime implementation detail, primarily associated with convention
 
 Validate the design with profiling and representative load tests. Measure throughput, p95/p99 latency, CPU and memory usage, queue depth, context switching, lock contention, and errors. Account for graceful shutdown, cancellation, timeouts, backpressure, and bounded concurrency. Do not select threads or processes by slogan; select them from measured workload behavior.
 
+### Subinterpreters and modern CPython concurrency (Python 3.14+)
+
+**RU:** Начиная с Python 3.14, стандартная библиотека предоставляет `concurrent.interpreters` и `concurrent.futures.InterpreterPoolExecutor`. Subinterpreters — отдельные изолированные interpreter instances с ограниченным совместным использованием объектов; это не то же самое, что free-threaded build, где несколько потоков могут выполнять Python-код параллельно в одном interpreter без традиционного GIL. Изоляция уменьшает часть рисков shared mutable state, но требует явной передачи данных и понимания ограничений cross-interpreter objects. Совместимость сторонних C-extension модулей нельзя предполагать: её нужно проверять. Выбор между threads, processes, interpreters и free-threaded runtime должен опираться на workload, поддержку зависимостей, memory overhead и измерения, а не на обещание автоматического ускорения.
+
+**EN:** Starting with Python 3.14, the standard library provides `concurrent.interpreters` and `concurrent.futures.InterpreterPoolExecutor`. Subinterpreters are separate, isolated interpreter instances with constrained object sharing; they are not the same as a free-threaded build, where multiple threads can execute Python code in parallel within one interpreter without the traditional GIL. Isolation reduces some shared-mutable-state risks but requires deliberate data transfer and awareness of cross-interpreter object constraints. Third-party C-extension compatibility must be verified rather than assumed. Choose among threads, processes, interpreters, and a free-threaded runtime based on workload, dependency support, memory overhead, and measurements—not an assumption of automatic speedup.
+
 ### Дополнительные вопросы и эталонные ответы
 
 **FU-1 — Почему добавление потоков обычно не ускоряет CPU-bound pure-Python код в традиционной сборке CPython?**  
@@ -2703,6 +2727,12 @@ For a production backend, I separate static contracts between components, runtim
 
 I avoid making generic APIs unnecessarily complex. The type system should make invalid states harder to express, preserve useful information, and remain understandable. Complex overloads, casts, and Any should have a clear justification and narrow scope. I run the selected checker in CI, pin its configuration, check public interfaces, and add runtime tests for malformed inputs that static analysis cannot prevent.
 
+### Deferred annotation evaluation and introspection (Python 3.14+)
+
+**RU:** В Python 3.14 стандартное поведение для аннотаций функций, классов и модулей стало deferred: они вычисляются по запросу, а не обязательно в момент определения. `annotationlib` предоставляет `get_annotations()` и форматы `VALUE`, `FORWARDREF` и `STRING` для разных сценариев интроспекции. `VALUE` пытается получить реальные значения и может завершиться ошибкой, если имя не разрешается; `FORWARDREF` позволяет представить неразрешённые ссылки; `STRING` возвращает строковое представление. Если библиотека читает `__annotations__` напрямую или зависит от прежнего момента вычисления, её поведение следует проверить на поддерживаемых версиях Python. При наличии `from __future__ import annotations` в Python 3.14 сохраняется строковый режим. Отложенное вычисление не превращает аннотации в runtime type enforcement.
+
+**EN:** In Python 3.14, annotations on functions, classes, and modules are deferred by default: they are evaluated on demand rather than necessarily when the object is defined. `annotationlib` provides `get_annotations()` and the `VALUE`, `FORWARDREF`, and `STRING` formats for different introspection needs. `VALUE` attempts to produce runtime values and may fail when a name cannot be resolved; `FORWARDREF` represents unresolved references; `STRING` returns string representations. Libraries that read `__annotations__` directly or depend on the former evaluation timing should be tested across supported Python versions. In Python 3.14, `from __future__ import annotations` retains stringified behavior. Deferred evaluation does not turn annotations into runtime type enforcement.
+
 ### Follow-up questions and эталонные ответы
 
 #### FU-1. Чем отличаются TypeVar bound и constraints?
@@ -2826,6 +2856,20 @@ Python's standard library provides mature building blocks for common backend tas
 **subprocess.** subprocess launches external processes and controls stdin/stdout/stderr, return codes, timeouts, and environment. For a simple invocation, subprocess.run with an explicit timeout and result checking (for example check=True when a non-zero exit is an error) is usually appropriate. Avoid shell=True with user-controlled data because it creates command-injection risk. Passing an argument list avoids shell parsing, but commands and arguments still require allowlisting and validation. Bound execution time and output, restrict process permissions, and control environment variables. Long-lived or high-volume process execution requires an explicit lifecycle and concurrency model.
 
 In production, I choose a module based on the task's contract rather than code brevity. I check the supported Python version, edge-case semantics, error handling, thread safety, and resource limits. The standard library can help process external data, but validation, authorization, and domain invariants remain separate responsibilities. Important decisions should be captured in tests, documentation, and observability.
+
+### Additional standard-library selection matrix
+
+| Requirement | Prefer | Engineering note |
+|---|---|---|
+| Decimal arithmetic with explicit decimal semantics (for example, monetary calculations) | `decimal.Decimal` | Define precision, rounding, and quantization rules; do not assume binary float is exact decimal arithmetic. |
+| Rational arithmetic | `fractions.Fraction` | Exact numerator/denominator arithmetic can cause numerator and denominator growth; assess cost and domain fit. |
+| Security-sensitive tokens and secrets | `secrets` | Use cryptographically strong randomness; `random` is for simulation and non-security use. |
+| Request/task-local context across async execution | `contextvars` | Prefer over manually threading request context through every call; understand propagation boundaries when using threads/processes. |
+| Binary data views without an unconditional copy | `memoryview` and the buffer protocol | A view may share and expose mutable backing storage; lifetime and mutation ownership still matter. |
+
+**RU:** Это не исчерпывающий каталог. `Decimal` подходит для десятичной арифметики с явно заданными правилами точности и округления; `Fraction` — для рациональной арифметики, но дроби могут увеличиваться. Для токенов и секретов используйте `secrets`, а не `random`. `contextvars` помогает переносить request/task-local context через async-вызовы. `memoryview` и buffer protocol позволяют работать с бинарными данными без обязательного копирования, но требуют внимания к владению, изменяемости backing buffer и времени жизни view.
+
+**EN:** This is a selection guide, not an exhaustive catalogue. Use `Decimal` for decimal arithmetic with explicit precision and rounding rules; use `Fraction` for rational arithmetic while accounting for potentially growing numerators and denominators. Use `secrets` rather than `random` for tokens and security-sensitive values. `contextvars` helps propagate request/task-local context across asynchronous calls. `memoryview` and the buffer protocol enable binary access without an unconditional copy, but require care around backing-buffer ownership, mutability, and view lifetime.
 
 ### Follow-up questions and эталонные ответы
 
