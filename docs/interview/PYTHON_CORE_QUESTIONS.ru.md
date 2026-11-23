@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 12 из 30 основных вопросов подготовлено  
+**Охват:** 13 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -1707,4 +1707,129 @@ EN: First inspect the actual dependency graph and identify the cycle instead of 
 - Packaging Python Projects: https://packaging.python.org/en/latest/tutorials/packaging-projects/
 - Python Packaging User Guide — pyproject.toml: https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
 - FastAPI — Bigger Applications: https://fastapi.tiangolo.com/tutorial/bigger-applications/
+- FastAPI — Lifespan Events: https://fastapi.tiangolo.com/advanced/events/
+
+
+## PY-CORE-013 — Управление памятью и сборка мусора в Python
+
+**Вопрос (EN):** Explain object lifetime and memory reclamation in Python. Discuss reference counting, cyclic garbage collection, reference cycles, weak references, finalization, common memory-retention causes, and how to investigate memory growth in a long-running backend.
+
+**Перевод (RU):** Объясните время жизни объектов и освобождение памяти в Python. Расскажите о reference counting, cyclic garbage collection, reference cycles, weak references, финализации, распространённых причинах удержания памяти и диагностике её роста в долгоживущем backend.
+
+### Что проверяет интервьюер
+- Понимание времени жизни Python-объектов и потребления памяти процессом.
+- Различение деталей CPython и гарантий языка.
+- Понимание reference cycles, cyclic GC, weak references и финализации.
+- Умение находить retention paths и отличать рост Python heap от RSS/native allocations.
+- Безопасный для production подход к профилированию и устранению причин.
+
+### Эталонный ответ (RU)
+
+Объекты Python существуют, пока на них сохраняются достижимые сильные ссылки, но стратегия управления памятью зависит от реализации интерпретатора. В CPython для многих объектов основным механизмом является reference counting: счётчик сильных ссылок изменяется при создании и удалении ссылок. Когда он достигает нуля, объект обычно может быть освобождён. Это особенность CPython, а не гарантия языка Python для всех реализаций. Код не должен полагаться на точный момент уничтожения объекта.
+
+Reference counting не освобождает изолированные циклы ссылок: два объекта могут ссылаться друг на друга, хотя из остальной программы они недостижимы. В CPython cyclic garbage collector обнаруживает определённые циклы среди отслеживаемых объектов-контейнеров и может освободить такие структуры. Не каждый объект обязательно отслеживается сборщиком. Generational collection использует возраст объектов как эвристику; внутренние детали поколений меняются между версиями CPython и не являются стабильным API приложения.
+
+Сам по себе reference cycle не означает утечку. Если цикл достижим из global registry, cache, активной задачи или другого долгоживущего объекта, он остаётся живым. Важнее искать retention path — цепочку сильных ссылок от корня приложения к объекту, который больше не нужен. Типичные причины неконтролируемого удержания: неограниченные caches и collections, глобальные registries, накопление результатов задач, callbacks и closures, подписки без отписки, долгоживущие ссылки на request/session objects, сохранённые tracebacks и exception objects.
+
+Weak reference позволяет ссылаться на объект, не продлевая его жизнь сильной ссылкой. Это полезно для некоторых вспомогательных mappings и caches, где связь не должна удерживать объект. Однако weak references поддерживаются не всеми типами; это зависит от конкретного типа. Слабая ссылка может перестать разрешаться, как только исчезнут сильные ссылки на объект, поэтому она не подходит, если cache обязан гарантированно удерживать значение. Модуль weakref предоставляет, в частности, WeakKeyDictionary и WeakValueDictionary.
+
+Финализация требует осторожности. Нельзя строить корректность программы на точном времени вызова __del__. Финализаторы усложняют анализ циклов, а исключения из __del__ не распространяются вызывающему коду обычным образом. Для детерминированного управления ресурсами предпочтительны context managers и try/finally. weakref.finalize может помочь в отдельных сценариях cleanup, но не заменяет явное закрытие файлов, соединений и других внешних ресурсов. Освобождение внешнего ресурса и освобождение Python memory — разные задачи.
+
+Рост RSS процесса сам по себе не доказывает утечку Python-объектов. Python allocator и системный allocator могут удерживать освобождённые арены для повторного использования, поэтому память не обязана немедленно возвращаться операционной системе. RSS также включает native allocations библиотек, stacks, memory mappings и другие компоненты. Следует разделять рост живых Python allocations, native memory growth и поведение allocator.
+
+Диагностику начинают с воспроизводимого workload и baseline. Измеряют память во времени и сопоставляют её с количеством запросов, размером очередей, количеством задач и cardinality cache. tracemalloc позволяет сравнивать snapshots и находить места выделения Python-памяти; gc предоставляет средства наблюдения за циклическим сборщиком. Для native allocations могут потребоваться системные метрики или специализированные профилировщики. Сравнивать snapshots нужно после одинаковых фаз нагрузки, изучая retainers и проверяя, не объясняется ли рост ожидаемым cache warming или буферизацией. gc.collect() может быть диагностическим экспериментом, но не освобождает объекты, удерживаемые сильными ссылками, и не заменяет устранение причины.
+
+В долгоживущем FastAPI backend следует ограничивать caches и очереди, завершать фоновые tasks, освобождать subscriptions, закрывать ресурсы через lifespan/context managers, не хранить request-scoped данные в глобальном состоянии и контролировать batch/stream buffers. Выводы должны подтверждаться профилем и нагрузочным тестом, а не одним графиком RSS.
+
+### Профессиональный ответ (EN)
+
+Python objects remain alive while reachable through strong references, but memory-management strategy depends on the interpreter. In CPython, reference counting is a primary mechanism for many objects: the strong-reference count changes as references are created and removed. When it reaches zero, an object can usually be deallocated. This is a CPython characteristic, not a language-wide guarantee. Code should not depend on the exact time an object is destroyed.
+
+Reference counting cannot reclaim isolated reference cycles. Two objects may reference each other even though nothing else can reach them. CPython's cyclic garbage collector can detect certain cycles among tracked container objects and reclaim unreachable structures. Not every object is necessarily tracked. Generational collection uses object age as a heuristic; internal generation details can change between CPython releases and are not a stable application API.
+
+A reference cycle is not automatically a leak. If it remains reachable from a global registry, cache, active task, or another long-lived object, it is still live. The key concept is a retention path: a chain of strong references from an application root to an object that is no longer needed. Common causes include unbounded caches and collections, global registries, accumulated task results, callbacks and closures, subscriptions that are never removed, long-lived references to request/session objects, and retained tracebacks or exception objects.
+
+A weak reference does not keep its target alive. It is useful for auxiliary mappings or caches when the association should not extend the target's lifetime. However, not every type supports weak references. A weak reference may stop resolving once strong references disappear, so it is unsuitable when a cache must guarantee retention. The weakref module includes WeakKeyDictionary and WeakValueDictionary.
+
+Finalization requires care. Program correctness should not depend on the exact time __del__ runs. Finalizers complicate cycle analysis, and exceptions raised by __del__ are not propagated to the caller normally. Prefer context managers and try/finally for deterministic resource management. weakref.finalize can help in limited cleanup scenarios, but it does not replace explicitly closing files, connections, and other external resources. Releasing an external resource and reclaiming Python memory are separate concerns.
+
+Increasing process RSS does not by itself prove a Python-object leak. Python and system allocators may retain freed arenas for reuse, so memory does not necessarily return to the OS immediately. RSS also includes native allocations, stacks, memory mappings, and other process components. Distinguish growth in live Python allocations from native-memory growth and allocator behavior.
+
+Start with a reproducible workload and baseline. Track memory over time and correlate it with request volume, queue sizes, task counts, and cache cardinality. tracemalloc compares snapshots and identifies Python allocation sites; gc provides visibility into cyclic collection. Native allocations may require system metrics or specialized profilers. Compare snapshots after equivalent workload phases, inspect retainers, and determine whether growth is expected cache warming or buffering. gc.collect() can be a diagnostic experiment, but it cannot reclaim objects retained by strong references and is not a substitute for fixing the cause.
+
+In a long-running FastAPI backend, bound caches and queues, complete background tasks, remove subscriptions, close resources through lifespan/context managers, avoid storing request-scoped data globally, and control batch and stream buffers. Validate conclusions with profiling and load tests rather than a single RSS graph.
+
+### Дополнительные вопросы и эталонные ответы
+
+**FU-1 — Why is reference counting insufficient to reclaim every unreachable object? / Почему reference counting недостаточно для освобождения всех недостижимых объектов?**
+
+RU: Изолированный цикл объектов сохраняет ненулевые reference counts, потому что объекты продолжают ссылаться друг на друга, хотя весь цикл недостижим извне. Поэтому CPython дополняет reference counting циклическим сборщиком для определённых отслеживаемых объектов.
+
+EN: An isolated object cycle retains non-zero reference counts because its objects reference one another even though the cycle is unreachable externally. CPython therefore supplements reference counting with a cyclic collector for certain tracked objects.
+
+**FU-2 — What is the difference between a reference cycle and a memory leak? / Чем reference cycle отличается от memory leak?**
+
+RU: Reference cycle — структура взаимных ссылок, но не обязательно утечка. Если цикл остаётся достижимым из долгоживущего корня, он удерживается. Утечка возможна и без циклов, например при бесконечном добавлении объектов в global list. Нужно искать ненужные retention paths и неверное время жизни объектов.
+
+EN: A reference cycle is a graph of mutual references, not necessarily a leak. If it remains reachable from a long-lived root, it is retained. A leak can also occur without cycles, such as continually appending objects to a global list. Look for unnecessary retention paths and unintended object lifetimes.
+
+**FU-3 — When would you use weakref instead of a normal reference? / Когда использовать weakref вместо обычной ссылки?**
+
+RU: Когда связь не должна продлевать жизнь объекта, например в некоторых auxiliary mappings или caches. Нужно проверить поддержку weak references конкретным типом и учитывать, что объект может исчезнуть после потери сильных ссылок. Если cache обязан удерживать значение, weak reference семантически не подходит.
+
+EN: Use it when an association should not extend an object's lifetime, such as in certain auxiliary mappings or caches. Verify that the target type supports weak references and account for the target disappearing when strong references are gone. If a cache must retain its value, a weak reference has the wrong semantics.
+
+**FU-4 — Why can RSS remain high after Python objects have been collected? / Почему RSS может оставаться высоким после сборки Python-объектов?**
+
+RU: Allocator может удерживать освобождённые арены для повторного использования, а RSS включает native allocations и другие области памяти процесса. Поэтому RSS не равен объёму живых Python objects. Сопоставляйте RSS с tracemalloc snapshots и при необходимости исследуйте native memory.
+
+EN: The allocator may retain freed arenas for reuse, and RSS includes native allocations and other process memory. RSS is therefore not equivalent to the size of live Python objects. Correlate it with tracemalloc snapshots and investigate native memory when needed.
+
+**FU-5 — How would you investigate steadily increasing memory in a FastAPI worker? / Как исследовать постоянный рост памяти в FastAPI worker?**
+
+RU: Зафиксировать воспроизводимый workload и baseline, измерять RSS и Python allocations на одинаковых этапах нагрузки, сравнивать tracemalloc snapshots и искать allocation sites и retention paths. Проверить caches, очереди, фоновые tasks, subscriptions и request-scoped objects. Если Python allocations стабильны, исследовать native extensions и allocator. После исправления повторить нагрузочный тест и подтвердить ограниченный рост. Не использовать gc.collect() как постоянную замену устранению удерживающих ссылок.
+
+EN: Establish a reproducible workload and baseline, measure RSS and Python allocations at equivalent workload stages, compare tracemalloc snapshots, and inspect allocation sites and retention paths. Check caches, queues, background tasks, subscriptions, and request-scoped objects. If Python allocations are stable, investigate native extensions and allocator behavior. Rerun the load test after remediation and verify bounded growth. Do not use gc.collect() as a permanent substitute for removing retaining references.
+
+### Сценарий применения в Pharmaviyum (гипотетический)
+
+**Статус: Hypothetical interview scenario — не утверждение о текущей реализации.**
+
+Представим долгоживущий API worker, потребление памяти которого увеличивается при повторных поисках по каталогу лекарств. Возможные причины: неограниченный result cache, сохранение request objects в диагностическом registry, накопление результатов фоновых tasks или native allocations одной из зависимостей. Исследование сравнивает tracemalloc snapshots, коррелирует их с нагрузкой, проверяет размеры cache и очередей и отдельно измеряет RSS процесса. Возможные меры — ограничение cache, явная очистка tasks/subscriptions и bounded buffering. Это гипотезы для расследования, а не подтверждённые дефекты или реализованные исправления Pharmaviyum.
+
+### Критерии оценки Senior
+
+Сильный ответ Senior должен:
+1. Различать гарантии языка Python и детали реализации CPython.
+2. Объяснять, почему reference counting не освобождает изолированные циклы и какова роль cyclic GC.
+3. Понимать, что циклы не обязательно являются утечками, и рассуждать о strong-reference retention paths.
+4. Использовать weak references только там, где их семантика времени жизни подходит.
+5. Не полагаться на время вызова __del__ для детерминированного cleanup ресурсов.
+6. Различать live Python allocations, native allocations, allocator retention и RSS.
+7. Предлагать воспроизводимое профилирование, сравнение snapshots, корреляцию с workload и проверку после исправления.
+
+**Сигналы уровня**
+- Mid-level: понимает ссылки, базовую GC и распространённые причины удержания объектов.
+- Strong Senior: диагностирует retention paths и отделяет рост Python heap от RSS процесса.
+- Staff-level signal: определяет memory budgets, bounded-cache policies, практики профилирования и эксплуатационные safeguards для сервисов.
+
+### Типичные ошибки
+- Утверждать, что reference counting — гарантия языка для всех реализаций Python.
+- Считать каждый reference cycle утечкой.
+- Предполагать, что gc.collect() освобождает объекты, удерживаемые strong references.
+- Рассматривать weak references как универсальное решение утечек.
+- Полагаться на __del__ для детерминированного закрытия внешних ресурсов.
+- Приравнивать RSS к размеру живой Python heap.
+- Ожидать немедленного возврата памяти ОС после сборки мусора.
+- Игнорировать native allocations extension modules.
+- Перезапускать workers, не установив источник удержания.
+- Профилировать один snapshot без воспроизводимого workload.
+
+### Источники
+- Python Data Model: https://docs.python.org/3/reference/datamodel.html
+- gc — Garbage Collector interface: https://docs.python.org/3/library/gc.html
+- weakref — Weak references: https://docs.python.org/3/library/weakref.html
+- tracemalloc — Trace memory allocations: https://docs.python.org/3/library/tracemalloc.html
+- Python C API — Reference Counting: https://docs.python.org/3/c-api/refcounting.html
+- Python FAQ — Memory management: https://docs.python.org/3/faq/design.html#how-does-python-manage-memory
 - FastAPI — Lifespan Events: https://fastapi.tiangolo.com/advanced/events/
