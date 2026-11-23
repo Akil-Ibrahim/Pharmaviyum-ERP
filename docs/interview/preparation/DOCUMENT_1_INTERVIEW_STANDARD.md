@@ -1,8 +1,8 @@
 # Senior Software Engineer — Python Backend & AI Engineering
 ## Interview Preparation Standard
 **Document:** 1 — Master Standard  
-**Version:** 1.3 — Recovered Edition  
-**Date:** 23 November 2026  
+**Version:** 1.4 — Recovered Edition  
+**Date:** 24 November 2026  
 **Status:** Reconstructed from confirmed decisions and available project context; not a verbatim recovery of the prior writing block.
 
 ---
@@ -261,6 +261,8 @@ Track practical work separately from the 1,500 questions:
 
 Each exercise should specify objective, constraints, expected deliverable, evaluation rubric, and review notes.
 
+**Learning interaction rule:** Do not append mandatory quiz questions, oral-exam prompts, homework, or “test your understanding” tasks to every Main Question or Follow-up answer. The default deliverable is the complete learning material and interview-ready answer. Knowledge checks, mock-interview questions, and practice exercises are conducted only when the learner explicitly requests them or when they are part of a separately agreed assessment session. Never make the learner answer a question merely to unlock the next curriculum section.
+
 ## 18. Coverage matrix and traceability
 
 Maintain a matrix linking each question and exercise to:
@@ -307,6 +309,8 @@ The preparation program is complete when:
 Document 1 is the master standard. Other curriculum documents must conform to its terminology, question format, levels, priorities, evidence rules, and assessment model.
 
 Changes must include a version, date, rationale, affected sections, and impact on dependent documents. The 1,500-question total and ten-domain structure are controlled constraints; changes require explicit review rather than silent drift.
+
+**Version 1.4 change note (24 November 2026):** Clarified that quizzes, oral-exam prompts, and homework are not appended by default to each learning answer. Knowledge checks are conducted only when explicitly requested or separately agreed. Affected section: 17 — Practice and assessment system.
 
 ---
 
