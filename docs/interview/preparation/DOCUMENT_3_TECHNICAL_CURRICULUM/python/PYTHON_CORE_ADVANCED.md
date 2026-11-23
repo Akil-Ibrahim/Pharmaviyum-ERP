@@ -1778,6 +1778,157 @@ During code review, I also inspect custom equality and hashing behavior, especia
 
 ---
 
+
+### FU-011 — Why identity is not value equality
+
+**Parent Main Question:** PY-003 — Explain Python's object model: identity, type, and value.
+
+**Question (EN):** Why can relying on object identity or the is operator for value comparisons produce incorrect or implementation-dependent results?
+
+**Перевод (RU):** Почему использование идентичности объекта или оператора is для сравнения значений может приводить к ошибкам или зависеть от реализации?
+
+**What the interviewer evaluates**
+
+- Understanding of identity versus equality.
+- Knowledge of object lifetime and the semantics of `is` and `==`.
+- Awareness of CPython optimizations such as interning and constant folding without treating them as language guarantees.
+- Ability to identify brittle tests and production defects caused by accidental object reuse.
+- Correct reasoning about sentinels, caching, and stable identifiers.
+
+**Short Answer**
+
+The `is` operator checks whether two references designate the same object; it does not check whether their values are equal. Two separately created objects may have equal values but different identities. Conversely, an implementation may reuse or intern certain immutable objects, causing two expressions to refer to the same object in some circumstances. Such reuse is not a valid basis for value comparison and may vary with implementation, execution context, or version.
+
+Use `==` for value equality and reserve `is` for identity-sensitive cases, especially singleton sentinels such as `None`.
+
+**Detailed Answer**
+
+**1. Identity and equality answer different questions**
+
+The expression `a is b` asks whether both references point to the same object. The expression `a == b` asks whether the objects compare equal according to their equality semantics, typically involving `__eq__`.
+
+~~~python
+left = [1, 2]
+right = [1, 2]
+
+print(left == right)  # True: equal contents
+print(left is right)  # False: distinct list objects
+~~~
+
+If application logic uses `is` where value equality is intended, it can reject values that are semantically equivalent.
+
+**2. Object reuse can make incorrect code appear to work**
+
+CPython may reuse certain immutable objects through implementation optimizations such as interning or constant reuse. The exact behavior depends on the implementation and context; it is not a language-level promise that equal values will share identity.
+
+~~~python
+a = 256
+b = 256
+print(a is b)  # May be True in a particular implementation/context.
+
+x = int("1000")
+y = int("1000")
+print(x == y)  # True
+print(x is y)  # Identity is not a value-comparison contract.
+~~~
+
+The first result must not be used to justify identity comparisons for integers. Code that appears correct in a small interactive test may behave differently when values are constructed dynamically, compiled in another context, or executed by another Python implementation.
+
+**3. Strings and interning**
+
+Some strings may be interned, allowing identical immutable string objects to be shared. Interning is an optimization and should not be relied upon for general string comparison.
+
+~~~python
+first = "status"
+second = "".join(["sta", "tus"])
+
+print(first == second)  # True
+print(first is second)  # Do not rely on this result.
+~~~
+
+Even if identity happens to be shared in one environment, the application contract concerns string content, so `==` is the correct operator.
+
+**4. Why the distinction matters in production**
+
+An identity comparison can create defects that are difficult to reproduce:
+
+- Tests pass because constants or objects happen to be reused.
+- A production path constructs values dynamically and produces distinct objects.
+- A different Python implementation or version changes an optimization.
+- Serialization, deserialization, IPC, or database loading reconstructs an equivalent but distinct object.
+- Caching or object pooling changes allocation and reuse patterns.
+
+Identity is process-local and lifetime-scoped. It should not be used as a durable key for business entities or distributed messages.
+
+**5. Correct use of identity**
+
+Identity checks are appropriate when the contract explicitly concerns a unique object, for example:
+
+~~~python
+if result is None:
+    handle_absence()
+
+MISSING = object()
+
+if value is MISSING:
+    use_default()
+~~~
+
+Here the comparison is not asking whether two values are equivalent; it is checking whether the exact sentinel object was supplied.
+
+**Best Practices**
+
+- Use `==` for numeric, string, collection, and domain-value comparisons.
+- Use `is None` for the `None` singleton.
+- Use identity checks for explicit sentinel objects and deliberate aliasing checks.
+- Never depend on integer or string interning for correctness.
+- Do not infer identity guarantees from a single REPL experiment.
+- Test behavior using dynamically constructed values and supported Python implementations where portability matters.
+- Use stable domain identifiers for persistence and distributed communication.
+
+**Trade-offs & Edge Cases**
+
+- Identity checks are generally simple and direct, but only answer whether references designate the same object.
+- Equality can express domain semantics, but custom `__eq__` implementations may be expensive, unusual, or return non-boolean results.
+- Interning and constant reuse can reduce memory use or comparison work, but are implementation optimizations, not application contracts.
+- A singleton sentinel is intentionally identity-based; an ordinary string or integer value is not.
+- Object identity may be useful when tracking aliasing within one process and object lifetime, but not across process restarts or serialization boundaries.
+
+**Common Mistakes**
+
+- Using `is` to compare integers or strings.
+- Assuming equal immutable values must have the same identity.
+- Assuming an observed CPython optimization is guaranteed by the Python language.
+- Treating `id()` as a persistent unique identifier.
+- Using object identity to compare values loaded from separate database queries or deserialized messages.
+- Replacing `==` with `is` as a supposed micro-optimization without a valid identity requirement.
+
+**Senior-Level Perspective**
+
+A senior engineer separates semantic correctness from runtime optimization. Whether two values are equivalent is a domain or data-model question; whether two references designate one object is a runtime identity question. Conflating them makes code fragile because it turns an incidental allocation decision into an application-level requirement.
+
+In code review, I would search for identity comparisons involving literals, numbers, strings, enums, and domain objects, then verify the intended contract. I would retain identity comparisons for sentinels and deliberate alias checks. If performance is a concern, I would benchmark the actual workload rather than rely on object interning or assumed pointer comparisons.
+
+**Interview-Ready Answer (EN)**
+
+“Using `is` for value comparison is incorrect because it checks object identity, not equality. Two independently created objects can represent equal values while having different identities. For example, two lists with the same elements compare equal with `==`, but they are not the same object.
+
+The opposite situation can also occur: CPython may reuse or intern some immutable objects, so two expressions can sometimes refer to the same object. However, these are implementation optimizations, not guarantees that application code should depend on. Their behavior can vary by Python implementation, version, and execution context.
+
+I use `==` for value comparisons and reserve `is` for identity-sensitive cases such as checking `None`, private sentinels, or intentional aliasing. I also avoid using object identity as a persistent or distributed identifier.”
+
+**Interview-Ready Answer (RU)**
+
+«Использовать `is` для сравнения значений неправильно, потому что этот оператор проверяет идентичность объектов, а не их равенство. Два независимо созданных объекта могут представлять одинаковые значения, но иметь разную идентичность. Например, два списка с одинаковыми элементами равны при сравнении через `==`, но не являются одним и тем же объектом.
+
+Возможна и обратная ситуация: CPython может повторно использовать или интернировать некоторые неизменяемые объекты, поэтому в определённых случаях два выражения могут ссылаться на один объект. Однако это оптимизации реализации, а не гарантии, на которых должно основываться прикладное программное обеспечение. Такое поведение может различаться между реализациями Python, версиями и контекстами выполнения.
+
+Для сравнения значений я использую `==`, а `is` оставляю для случаев, когда важна идентичность: например, при проверке `None`, специальных sentinel-объектов или намеренного совместного использования одной ссылки. Также я не использую идентичность объекта в качестве постоянного или распределённого идентификатора.»
+
+**Status:** Authored; independent technical and editorial review pending.
+
+---
+
 ## PY-003 answer review checklist
 
 - [x] Main question includes English and Russian wording.
