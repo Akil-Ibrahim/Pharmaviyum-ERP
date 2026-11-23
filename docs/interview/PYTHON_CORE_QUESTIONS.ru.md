@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 14 из 30 основных вопросов подготовлено  
+**Охват:** 15 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -1932,3 +1932,112 @@ A sound benchmark uses representative data, controlled conditions, repeated runs
 - Python FAQ — Performance: https://docs.python.org/3/faq/programming.html#how-can-i-make-my-program-run-faster
 - Python asyncio — Developing with asyncio: https://docs.python.org/3/library/asyncio-dev.html
 - FastAPI — Async: https://fastapi.tiangolo.com/async/
+
+
+## PY-CORE-015 — Встроенные структуры данных и сложность операций в Python
+
+### Что проверяет интервьюер
+- Знание характеристик основных типов коллекций Python.
+- Умение выбирать структуру с учётом access patterns, порядка, изменяемости и требований к памяти.
+- Понимание hash tables, коллизий, изменения ёмкости и различий average-case и worst-case complexity.
+- Понимание различий между гарантиями языка и деталями реализации.
+- Умение анализировать компромиссы структур данных в backend workloads.
+
+### Эталонный ответ (RU)
+Выбор структуры данных должен определяться частыми операциями, требованиями к порядку, уникальности, изменяемости и объёму памяти. Нельзя выбирать коллекцию только по привычке или по одной оценке Big-O.
+
+**List** — изменяемая последовательность с индексированным доступом O(1). Добавление в конец обычно амортизированно O(1), но вставка или удаление в начале и середине требует сдвига элементов и обычно стоит O(n). Поиск по значению — O(n). В CPython список реализован как динамический массив ссылок на объекты; это деталь реализации, а не гарантия языка.
+
+**Tuple** — неизменяемая последовательность. Доступ по индексу — O(1), поиск — O(n). Неизменяемость контейнера не означает, что вложенные объекты неизменяемы. Tuple hashable только если все его элементы hashable.
+
+**Dict** — отображение на основе hash table. Поиск, вставка и удаление в среднем обычно O(1), но в худшем случае могут деградировать до O(n). Равные ключи обязаны иметь одинаковый hash, а hash ключа должен оставаться стабильным, пока ключ находится в словаре. Порядок вставки dict гарантирован языком начиная с Python 3.7; это не означает сортировку ключей.
+
+**Set** хранит уникальные hashable элементы и удобен для membership, дедупликации и операций над множествами. Проверка membership в среднем O(1), worst case — O(n). Set не предназначен для индексированного доступа и не гарантирует порядок элементов.
+
+**Deque** из collections оптимизирован для добавления и удаления с обоих концов: эти операции имеют приблизительно O(1) стоимость. Индексный доступ эффективен у концов, но замедляется ближе к середине; для произвольной индексации обычно лучше list. Bounded deque с maxlen может автоматически вытеснять элементы с противоположного конца — это полезно для rolling windows, но должно быть ожидаемым поведением.
+
+Амортизированное O(1) для append не означает, что каждая операция всегда занимает одинаковое время: resize может потребовать O(n). Среднее O(1) для dict/set не является worst-case гарантией. Big-O также не отражает полностью memory overhead, аллокации, CPU caches и стоимость вычисления hash и equality.
+
+В backend list подходит для упорядоченной коллекции с частым обходом; dict — для поиска по стабильному ключу; set — для membership и дедупликации; deque — для очереди или скользящего окна. Неограниченный рост in-memory коллекции создаёт риск памяти. Для больших или персистентных наборов данных следует рассмотреть базу данных или специализированное хранилище, а не копию в каждом worker.
+
+Senior-инженер должен объяснить ожидаемые и худшие случаи, контракт ключей, стоимость памяти и границы процессов. Практический выбор нужно проверять на репрезентативном workload.
+
+### Профессиональный ответ (EN)
+I choose a collection based on the operations the application performs most often, together with requirements for ordering, uniqueness, mutability, and memory usage. Big-O is important, but it is not the only decision criterion.
+
+A **list** is a mutable sequence with O(1) indexed access. Appending is amortized O(1), while inserting or deleting near the beginning or middle usually costs O(n) because elements must be shifted. Searching by value is O(n). In CPython, a list is a resizable array of object references; this is an implementation detail, not a language-wide guarantee.
+
+A **tuple** is an immutable sequence with O(1) indexed access and O(n) search. Container immutability does not make nested objects immutable. A tuple is hashable only if all its elements are hashable.
+
+A **dict** is a hash-table-based mapping. Lookup, insertion, and deletion are average-case O(1), but worst-case behavior can degrade to O(n). Equal keys must have equal hashes, and a key's hash must remain stable while it is stored in the mapping. Dictionary insertion order is a language guarantee starting with Python 3.7; it does not mean keys are sorted.
+
+A **set** stores unique hashable elements and is useful for membership checks, deduplication, and set algebra. Membership is average-case O(1), with O(n) worst-case behavior. A set does not provide indexed access or a guaranteed iteration order.
+
+A **deque** from collections is designed for efficient appends and pops at both ends, with approximately O(1) performance for those operations. Indexed access is efficient near the ends and slower toward the middle, so a list is generally preferable for arbitrary indexing. A bounded deque may discard items from the opposite end when new items are appended; that behavior is useful for rolling windows but must be intentional.
+
+Amortized O(1) append does not mean every append has identical cost: a resize can take O(n). Average-case O(1) for dict and set is not a worst-case guarantee. Big-O also does not fully capture memory overhead, allocations, CPU cache behavior, or the cost of hashing and equality comparisons.
+
+For backend design, I map structures to access patterns: lists for ordered iteration, dictionaries for key-based lookup, sets for membership and deduplication, and deques for queues or rolling windows. Unbounded in-memory collections can create memory and consistency problems, especially when each worker maintains its own copy. Large or persistent datasets may belong in a database or dedicated storage instead.
+
+A Senior engineer should explain expected and worst-case behavior, key-contract constraints, memory costs, and process boundaries, then validate the choice against a representative workload.
+
+### Дополнительные вопросы и эталонные ответы
+
+**FU-1 — Почему list append имеет амортизированную сложность O(1) и когда отдельная операция может стоить O(n)?**  
+**Ответ (RU):** Динамический массив резервирует дополнительную ёмкость, поэтому большинство append не требует перемещения элементов. Когда место заканчивается, массив расширяется и ссылки могут копироваться в новое хранилище; отдельная операция стоит O(n). Амортизированный анализ распределяет стоимость редких расширений по последовательности append, поэтому средняя стоимость остаётся O(1).  
+**Answer (EN):** A dynamic array keeps spare capacity, so most appends do not move existing elements. When capacity is exhausted, it may allocate a larger buffer and copy references, making that operation O(n). Amortized analysis spreads these occasional costs across a sequence of appends, yielding O(1) amortized cost per append.
+
+**FU-2 — Что происходит при коллизиях hash у ключей словаря?**  
+**Ответ (RU):** Коллизия означает, что разные ключи имеют одинаковый hash, но не обязательно равны. Dict разрешает коллизию и использует equality comparison для определения нужного ключа. Много коллизий может ухудшить производительность вплоть до O(n). Пользовательские ключи должны иметь корректные и стабильные __hash__ и __eq__; hash не должен зависеть от изменяемого состояния ключа.  
+**Answer (EN):** A collision means distinct keys produce the same hash; it does not mean they are equal. The dictionary resolves collisions and uses equality comparisons to identify the requested key. Excessive collisions can degrade operations, potentially to O(n). Custom keys need correct, stable __hash__ and __eq__ behavior, and their hash must not depend on mutable state while stored.
+
+**FU-3 — Когда следует выбрать deque вместо list?**  
+**Ответ (RU):** Deque подходит, когда часто добавляют и удаляют элементы с обоих концов: например FIFO queue или bounded rolling window. Операции list.pop(0) и insert(0, item) требуют сдвига элементов и стоят O(n). Для произвольного индексного доступа и последовательного обхода обычно лучше list.  
+**Answer (EN):** I choose deque when the workload frequently appends and removes items at both ends, such as a FIFO queue or bounded rolling window. list.pop(0) and insertion at index zero require shifting elements and cost O(n). A list is generally preferable when arbitrary indexed access and sequential iteration dominate.
+
+**FU-4 — Гарантирует ли Python порядок итерации dict и set?**  
+**Ответ (RU):** Порядок вставки dict гарантирован языком начиная с Python 3.7. Обновление существующего ключа не перемещает его, а удаление и повторная вставка помещает его в новую позицию. Set не предоставляет аналогичной гарантии. Порядок вставки dict — не сортировка; для отсортированного результата нужна явная сортировка.  
+**Answer (EN):** Dictionary insertion order is a language guarantee starting with Python 3.7. Updating an existing key does not move it, while deleting and reinserting it places it at a new position. Sets do not provide the same ordering guarantee. Dictionary insertion order is not sorting; explicit sorting is required when sorted output is needed.
+
+**FU-5 — Какие риски, связанные с коллекциями, важны в multi-worker backend?**  
+**Ответ (RU):** In-memory коллекции принадлежат процессу и не являются общим хранилищем между workers. У каждого worker может быть собственная копия, что создаёт расхождение состояния, дублирование памяти и сложности инвалидации. Локальный dict или set не является механизмом межпроцессной синхронизации или distributed locking. Для общего состояния нужны внешние системы, транзакции и определённая модель согласованности; рост коллекций также нужно ограничивать.  
+**Answer (EN):** In-memory collections belong to a process; they are not shared storage across workers. Each worker may hold a separate copy, causing divergent state, duplicated memory, and difficult invalidation. A local dict or set is not a cross-process coordination or distributed-locking mechanism. Shared state requires an external system, transactions, and an explicit consistency model; collection growth must also be bounded.
+
+### Сценарий применения в Pharmaviyum (гипотетический)
+Гипотетическое интервью-задание может предложить представить batch результатов поиска лекарств, удалить повторяющиеся идентификаторы и поддерживать ограниченное окно недавних запросов. List может сохранять порядок результатов, set — отслеживать уже встреченные identifiers, dict — сопоставлять стабильные идентификаторы объектам результатов, а bounded deque — хранить недавние события. Нужно обсудить ограничения памяти, состояние внутри отдельного worker и необходимость общего или персистентного хранения. Это сценарий интервью, а не утверждение о текущей реализации Pharmaviyum.
+
+### Критерии оценки Senior
+Сильный ответ уровня Senior должен:
+1. Выбирать коллекции на основе access patterns и требований корректности.
+2. Точно объяснять average, worst-case и amortized complexity.
+3. Понимать hash collisions и контракт __eq__ / __hash__.
+4. Различать порядок вставки dict, сортировку и порядок итерации set.
+5. Объяснять, почему deque подходит для операций с обоих концов, но не для произвольной индексации.
+6. Учитывать memory overhead, ограничение роста и process-local state.
+7. Не рассматривать in-memory collections как распределённую координацию или persistence.
+8. Подтверждать заявления о производительности на репрезентативных workloads.
+
+**Сигналы уровня**
+- Mid-level: знает основные типы коллекций и стоимость базовых операций.
+- Strong Senior: выбирает структуры с учётом access patterns, коллизий, ограничений памяти и границ процессов.
+- Staff-level signal: определяет data-structure и memory policies для высоконагруженных сервисов и понимает, когда состояние должно храниться во внешней инфраструктуре.
+
+### Типичные ошибки
+- Утверждать, что list append всегда имеет worst-case O(1).
+- Считать average-case O(1) для dict/set гарантией worst-case.
+- Предполагать, что разные ключи не могут иметь одинаковый hash.
+- Изменять состояние, влияющее на hash объекта, пока он используется как ключ dict или элемент set.
+- Считать tuple всегда hashable.
+- Предполагать, что порядок итерации set стабилен или имеет смысл.
+- Использовать list.pop(0) для высоконагруженной очереди.
+- Выбирать deque, когда преобладает произвольный индексный доступ.
+- Рассматривать коллекции отдельного процесса как общее состояние всех workers.
+- Допускать неограниченный рост caches, queues или registries.
+
+### Источники
+- Python Tutorial — Data Structures: https://docs.python.org/3/tutorial/datastructures.html
+- Python Built-in Types — Sequence Types: https://docs.python.org/3/library/stdtypes.html#sequence-types-list-tuple-range
+- Python Built-in Types — Mapping Types: https://docs.python.org/3/library/stdtypes.html#mapping-types-dict
+- Python Built-in Types — Set Types: https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset
+- Python collections.deque: https://docs.python.org/3/library/collections.html#collections.deque
+- Python Data Model — __hash__: https://docs.python.org/3/reference/datamodel.html#object.__hash__
