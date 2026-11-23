@@ -156,8 +156,12 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
     user = type("AuthenticatedUser", (), {"id": 42})()
     client_session = "same-browser-session"
 
-    patient_a_scope = _scoped_session_id(client_session, tenant, user, 101, "dispensing_review")
-    patient_b_scope = _scoped_session_id(client_session, tenant, user, 202, "dispensing_review")
+    patient_a_scope = _scoped_session_id(
+        client_session, tenant, user, 101, "dispensing_review"
+    )
+    patient_b_scope = _scoped_session_id(
+        client_session, tenant, user, 202, "dispensing_review"
+    )
     patient_a_reconciliation_scope = _scoped_session_id(
         client_session, tenant, user, 101, "medication_reconciliation"
     )
@@ -199,7 +203,9 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
 
     patient_a_messages = await memory.load(patient_a_scope)
     patient_b_messages = await memory.load(patient_b_scope)
-    patient_a_reconciliation_messages = await memory.load(patient_a_reconciliation_scope)
+    patient_a_reconciliation_messages = await memory.load(
+        patient_a_reconciliation_scope
+    )
     no_patient_messages = await memory.load(no_patient_scope)
 
     patient_a_content = " ".join(str(message.content) for message in patient_a_messages)
@@ -218,7 +224,10 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
     assert "general pharmacy answer" in no_patient_content
     assert "patient B" not in patient_a_content
     assert "patient A" not in patient_b_content
-    assert "synthetic patient A medication reconciliation prompt" in patient_a_reconciliation_content
+    assert (
+        "synthetic patient A medication reconciliation prompt"
+        in patient_a_reconciliation_content
+    )
     assert "medication reconciliation" not in patient_a_content
 
     # Summary and episodic state are also patient-scoped.
@@ -250,7 +259,9 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
     for suffix in ("messages", "summary", "episodic", "archive"):
         assert await test_redis.exists(f"{patient_a_prefix}:{suffix}") == 0
         assert await test_redis.exists(f"{patient_b_prefix}:{suffix}") == 1
-        assert await test_redis.exists(f"{patient_a_reconciliation_prefix}:{suffix}") == 1
+        assert (
+            await test_redis.exists(f"{patient_a_reconciliation_prefix}:{suffix}") == 1
+        )
         assert await test_redis.exists(f"{no_patient_prefix}:{suffix}") == 1
 
 
@@ -262,9 +273,7 @@ def test_api_session_scope_binds_tenant_user_patient_and_secret(
     monkeypatch.setattr(app_settings, "SECRET_KEY", "stable-test-secret")
     tenant = TenantContext(user_id=42, pharmacy_id=7)
     user = type("AuthenticatedUser", (), {"id": 42})()
-    base = _scoped_session_id(
-        "reused-session", tenant, user, 101, "dispensing_review"
-    )
+    base = _scoped_session_id("reused-session", tenant, user, 101, "dispensing_review")
 
     different_patient = _scoped_session_id(
         "reused-session", tenant, user, 202, "dispensing_review"

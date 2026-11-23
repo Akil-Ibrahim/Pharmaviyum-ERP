@@ -496,8 +496,12 @@ def test_api_session_scope_separates_patients_and_explicit_no_patient_scope(
     monkeypatch.setattr(app_settings, "SECRET_KEY", "api-session-test-secret")
     tenant = SimpleNamespace(pharmacy_id=7)
     user = SimpleNamespace(id=42)
-    patient_a = _scoped_session_id("conversation-123", tenant, user, 101, "dispensing_review")
-    patient_b = _scoped_session_id("conversation-123", tenant, user, 202, "dispensing_review")
+    patient_a = _scoped_session_id(
+        "conversation-123", tenant, user, 101, "dispensing_review"
+    )
+    patient_b = _scoped_session_id(
+        "conversation-123", tenant, user, 202, "dispensing_review"
+    )
     different_purpose = _scoped_session_id(
         "conversation-123", tenant, user, 101, "medication_reconciliation"
     )
@@ -554,9 +558,13 @@ def test_api_session_scope_changes_when_secret_rotates(
     tenant = SimpleNamespace(pharmacy_id=7)
     user = SimpleNamespace(id=42)
     monkeypatch.setattr(app_settings, "SECRET_KEY", "first-session-secret")
-    first = _scoped_session_id("conversation-123", tenant, user, 101, "dispensing_review")
+    first = _scoped_session_id(
+        "conversation-123", tenant, user, 101, "dispensing_review"
+    )
     monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-session-secret")
-    second = _scoped_session_id("conversation-123", tenant, user, 101, "dispensing_review")
+    second = _scoped_session_id(
+        "conversation-123", tenant, user, 101, "dispensing_review"
+    )
     assert first != second
 
 
@@ -618,9 +626,7 @@ def test_prompt_cache_identity_preserves_patient_access_purpose():
         (101, "free_text_reason"),
     ],
 )
-def test_api_session_scope_rejects_missing_or_unrecognized_purpose(
-    patient_id, purpose
-):
+def test_api_session_scope_rejects_missing_or_unrecognized_purpose(patient_id, purpose):
     from types import SimpleNamespace
 
     from src.pharmaviyum.api.v1.ai import _scoped_session_id
