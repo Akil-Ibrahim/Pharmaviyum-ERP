@@ -135,3 +135,58 @@ Follow-up IDs are assigned sequentially from FU-001 to FU-180, four per Main Que
 | FU-007 | Edge cases and trade-offs | How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call? | Как рекурсия, исключения, генераторы и асинхронные функции влияют на жизненный цикл выполнения по сравнению с обычным вызовом функции? |
 | FU-008 | Senior judgment | When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile? | В каких случаях знание механики вызовов CPython может существенно повлиять на решение об оптимизации и как проверить, что такая оптимизация действительно оправданна? |
 
+
+### PY-003 — Explain Python's object model: identity, type, and value.
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-009 | Mechanism | How are an object's identity, type, and value represented conceptually, and which of them can change during an object's lifetime? | Как концептуально представлены идентичность, тип и значение объекта и какие из этих характеристик могут изменяться в течение его жизненного цикла? |
+| FU-010 | Application | How would you use identity checks, equality checks, and type checks appropriately when reviewing application code? | Как правильно применять проверки идентичности, равенства и типа при ревью прикладного кода? |
+| FU-011 | Edge cases and trade-offs | Why can relying on object identity or the `is` operator for value comparisons produce incorrect or implementation-dependent results? | Почему использование идентичности объекта или оператора `is` для сравнения значений может приводить к ошибкам или зависеть от реализации? |
+| FU-012 | Senior judgment | How should API and domain-model design avoid exposing accidental assumptions about object identity, mutability, or concrete implementation types? | Как при проектировании API и доменных моделей избежать зависимости от случайных предположений об идентичности объектов, изменяемости и конкретных типах реализации? |
+
+### PY-004 — How do attribute lookup and special methods work in Python?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-013 | Mechanism | How does Python resolve an instance attribute, and where do the instance dictionary, class attributes, and descriptors participate? | Как Python разрешает обращение к атрибуту экземпляра и какую роль играют словарь экземпляра, атрибуты класса и дескрипторы? |
+| FU-014 | Application | How would you investigate an attribute that appears to exist on a class but is unexpectedly missing or different on an instance? | Как исследовать ситуацию, когда атрибут присутствует у класса, но неожиданно отсутствует или имеет другое значение у экземпляра? |
+| FU-015 | Edge cases and trade-offs | Why can special-method lookup behave differently from ordinary attribute lookup, and what consequences does this have for proxy objects and dynamic interception? | Почему поиск специальных методов может отличаться от обычного поиска атрибутов и как это влияет на прокси-объекты и динамическое перехватывание вызовов? |
+| FU-016 | Senior judgment | When designing a framework or reusable library, how would you decide whether to use descriptors, properties, inheritance, or explicit methods for controlling attribute behavior? | Как при проектировании фреймворка или переиспользуемой библиотеки выбрать между дескрипторами, свойствами, наследованием и явными методами для управления поведением атрибутов? |
+
+### PY-005 — What is the difference between `__new__` and `__init__`?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-017 | Mechanism | What is the object-construction sequence involving `__new__` and `__init__`, and what happens if `__new__` returns an object of a different type? | Какова последовательность создания объекта с участием `__new__` и `__init__` и что происходит, если `__new__` возвращает объект другого типа? |
+| FU-018 | Application | In what practical situations might overriding `__new__` be justified, for example with immutable types or controlled instance creation? | В каких практических ситуациях оправдано переопределение `__new__`, например для неизменяемых типов или контролируемого создания экземпляров? |
+| FU-019 | Edge cases and trade-offs | What initialization pitfalls can arise with inheritance, immutable built-in subclasses, and repeated or partially completed construction? | Какие проблемы инициализации могут возникать при наследовании, создании подклассов неизменяемых встроенных типов и повторном или частично завершённом создании объектов? |
+| FU-020 | Senior judgment | Why should custom construction logic be kept minimal, and what simpler alternatives should be considered before introducing a custom `__new__`? | Почему пользовательскую логику создания объектов следует делать минимальной и какие более простые альтернативы нужно рассмотреть до введения собственного `__new__`? |
+
+### PY-006 — How do Python lists, tuples, sets, and dictionaries differ internally and semantically?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-021 | Mechanism | What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython? | В чём ключевые семантические и типичные реализационные различия между списками, кортежами, множествами и словарями в CPython? |
+| FU-022 | Application | How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service? | Как выбрать встроенную коллекцию для упорядоченной последовательности, проверки принадлежности, удаления дубликатов и поиска по ключу в реальном сервисе? |
+| FU-023 | Edge cases and trade-offs | What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity? | Что необходимо учитывать при использовании порядка вставки, поверхностного копирования, вложенных изменяемых значений и средней временной сложности операций? |
+| FU-024 | Senior judgment | How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy? | Как характер нагрузки, объём данных, частота изменений и давление на память влияют на выбор коллекции и стратегию бенчмаркинга? |
+
+### PY-007 — How do dictionaries work, and what are the implications of hash-table behavior?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-025 | Mechanism | How do hashing, index selection, collision resolution, and equality checks cooperate during dictionary lookup? | Как хеширование, выбор позиции, разрешение коллизий и проверки равенства взаимодействуют при поиске в словаре? |
+| FU-026 | Application | How would you investigate unexpectedly slow dictionary operations or high memory consumption in a workload dominated by mappings? | Как исследовать неожиданно медленные операции со словарями или высокий расход памяти в нагрузке, где преобладают отображения? |
+| FU-027 | Edge cases and trade-offs | What happens when many keys collide, when a key's hash-relevant state changes, or when custom equality is expensive? | Что происходит при большом количестве коллизий, изменении состояния ключа, влияющего на хеш, или высокой стоимости пользовательского сравнения? |
+| FU-028 | Senior judgment | How should engineers use complexity guarantees, implementation details, and adversarial-input considerations when choosing dictionaries for critical paths? | Как инженерам учитывать оценки сложности, детали реализации и возможность специально подобранных входных данных при использовании словарей в критических участках? |
+
+### PY-008 — How do list and dictionary comprehensions behave, including their scope and performance characteristics?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-029 | Mechanism | How are comprehension variables scoped, and how do nested comprehensions evaluate their iterables and filters? | Как определяется область видимости переменных comprehensions и как вычисляются итерируемые выражения и фильтры во вложенных comprehensions? |
+| FU-030 | Application | How would you choose between a comprehension, an explicit loop, and a generator expression when transforming a large dataset? | Как выбрать между comprehension, обычным циклом и generator expression при обработке большого набора данных? |
+| FU-031 | Edge cases and trade-offs | What readability, evaluation-order, exception, and memory pitfalls can arise in complex or nested comprehensions? | Какие проблемы читаемости, порядка вычисления, обработки исключений и расхода памяти могут возникать в сложных или вложенных comprehensions? |
+| FU-032 | Senior judgment | What criteria would you use in code review to decide whether a comprehension is clear and efficient enough or should be replaced with a named transformation or streaming pipeline? | По каким критериям при code review определить, что comprehension достаточно понятен и эффективен или его следует заменить именованным преобразованием либо потоковой обработкой? |
+
