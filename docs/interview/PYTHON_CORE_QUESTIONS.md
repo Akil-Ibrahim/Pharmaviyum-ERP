@@ -771,6 +771,8 @@ At Senior level, it is not enough to list dunder methods. I explain which protoc
 
 **EN:** Reliable expression reasoning requires understanding operator precedence and associativity, operand evaluation order, short-circuit behaviour of `and` and `or`, chained comparisons, and conditional expressions. `and` and `or` return one of their operands, not necessarily a `bool`. Expressions with side effects must not be reordered without considering evaluation order. The assignment expression `:=` binds an expression result to a name but does not remove scope rules. Structural pattern matching with `match`/`case` supports sequence, mapping, class, OR, and guarded patterns; a guard runs after its pattern succeeds. Pattern matching selects control flow; it is not a complete schema validator, trust boundary, or authorization check.
 
+**References:** Python Expressions — https://docs.python.org/3.14/reference/expressions.html ; Compound Statements — https://docs.python.org/3.14/reference/compound_stmts.html
+
 ### Follow-up questions and model answers
 
 #### FU-1
@@ -1258,6 +1260,8 @@ At Senior level, I evaluate the complete stream lifecycle: who owns the resource
 **RU:** List, set и dict comprehensions вычисляются eagerly и создают соответствующую коллекцию; generator expression вычисляет значения лениво по мере потребления. В Python 3 переменная цикла comprehension не «утекает» во внешнюю область видимости, но comprehension может ссылаться на внешние имена и выполнять выражения с побочными эффектами. Вложенные comprehensions выполняют вложенные циклы в порядке, заданном синтаксисом. Исключения и побочные эффекты возникают в момент вычисления соответствующего элемента, поэтому eager и lazy формы могут отличаться не только памятью, но и временем наблюдаемого поведения. Выбирайте comprehension ради ясного преобразования/фильтрации; не помещайте туда сложную бизнес-логику или скрытые побочные эффекты.
 
 **EN:** List, set, and dictionary comprehensions are eager and construct their respective collections; a generator expression evaluates values lazily as they are consumed. In Python 3, a comprehension's iteration variable does not leak into the surrounding scope, although the comprehension can read outer names and execute expressions with side effects. Nested comprehensions run nested loops in the order expressed by the syntax. Exceptions and side effects occur when the corresponding element is evaluated, so eager and lazy forms can differ in observable timing as well as memory use. Use comprehensions for clear transformations and filtering; avoid hiding complex business logic or side effects inside them.
+
+**References:** Python Expressions — https://docs.python.org/3.14/reference/expressions.html ; Python Data Structures — https://docs.python.org/3.14/tutorial/datastructures.html#list-comprehensions
 
 ### Follow-up questions and model answers
 
@@ -2247,6 +2251,8 @@ Validate the design with profiling and representative load tests. Measure throug
 
 **EN:** Starting with Python 3.14, the standard library provides `concurrent.interpreters` and `concurrent.futures.InterpreterPoolExecutor`. Subinterpreters are separate, isolated interpreter instances with constrained object sharing; they are not the same as a free-threaded build, where multiple threads can execute Python code in parallel within one interpreter without the traditional GIL. Isolation reduces some shared-mutable-state risks but requires deliberate data transfer and awareness of cross-interpreter object constraints. Third-party C-extension compatibility must be verified rather than assumed. Choose among threads, processes, interpreters, and a free-threaded runtime based on workload, dependency support, memory overhead, and measurements—not an assumption of automatic speedup.
 
+**References:** What's New in Python 3.14 — https://docs.python.org/3.14/whatsnew/3.14.html ; concurrent.interpreters — https://docs.python.org/3.14/library/concurrent.interpreters.html ; concurrent.futures — https://docs.python.org/3.14/library/concurrent.futures.html
+
 ### Follow-up questions and model answers
 
 **FU-1 — Why does adding more threads usually not speed up CPU-bound pure-Python code in a traditional CPython build?**  
@@ -2737,6 +2743,8 @@ I avoid making generic APIs unnecessarily complex. The type system should make i
 
 **EN:** In Python 3.14, annotations on functions, classes, and modules are deferred by default: they are evaluated on demand rather than necessarily when the object is defined. `annotationlib` provides `get_annotations()` and the `VALUE`, `FORWARDREF`, and `STRING` formats for different introspection needs. `VALUE` attempts to produce runtime values and may fail when a name cannot be resolved; `FORWARDREF` represents unresolved references; `STRING` returns string representations. Libraries that read `__annotations__` directly or depend on the former evaluation timing should be tested across supported Python versions. In Python 3.14, `from __future__ import annotations` retains stringified behavior. Deferred evaluation does not turn annotations into runtime type enforcement.
 
+**References:** annotationlib — https://docs.python.org/3.14/library/annotationlib.html ; What's New in Python 3.14 — https://docs.python.org/3.14/whatsnew/3.14.html
+
 ### Follow-up questions and model answers
 
 #### FU-1. What is the difference between TypeVar bounds and constraints?
@@ -2874,6 +2882,8 @@ In production, I choose a module based on the task's contract rather than code b
 **RU:** Это не исчерпывающий каталог. `Decimal` подходит для десятичной арифметики с явно заданными правилами точности и округления; `Fraction` — для рациональной арифметики, но дроби могут увеличиваться. Для токенов и секретов используйте `secrets`, а не `random`. `contextvars` помогает переносить request/task-local context через async-вызовы. `memoryview` и buffer protocol позволяют работать с бинарными данными без обязательного копирования, но требуют внимания к владению, изменяемости backing buffer и времени жизни view.
 
 **EN:** This is a selection guide, not an exhaustive catalogue. Use `Decimal` for decimal arithmetic with explicit precision and rounding rules; use `Fraction` for rational arithmetic while accounting for potentially growing numerators and denominators. Use `secrets` rather than `random` for tokens and security-sensitive values. `contextvars` helps propagate request/task-local context across asynchronous calls. `memoryview` and the buffer protocol enable binary access without an unconditional copy, but require care around backing-buffer ownership, mutability, and view lifetime.
+
+**References:** decimal — https://docs.python.org/3.14/library/decimal.html ; fractions — https://docs.python.org/3.14/library/fractions.html ; secrets — https://docs.python.org/3.14/library/secrets.html ; contextvars — https://docs.python.org/3.14/library/contextvars.html ; memoryview — https://docs.python.org/3.14/library/stdtypes.html#memory-views
 
 ### Follow-up questions and model answers
 
