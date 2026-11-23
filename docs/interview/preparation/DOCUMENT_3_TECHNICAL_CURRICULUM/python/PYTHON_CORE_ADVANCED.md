@@ -190,3 +190,76 @@ Follow-up IDs are assigned sequentially from FU-001 to FU-180, four per Main Que
 | FU-031 | Edge cases and trade-offs | What readability, evaluation-order, exception, and memory pitfalls can arise in complex or nested comprehensions? | Какие проблемы читаемости, порядка вычисления, обработки исключений и расхода памяти могут возникать в сложных или вложенных comprehensions? |
 | FU-032 | Senior judgment | What criteria would you use in code review to decide whether a comprehension is clear and efficient enough or should be replaced with a named transformation or streaming pipeline? | По каким критериям при code review определить, что comprehension достаточно понятен и эффективен или его следует заменить именованным преобразованием либо потоковой обработкой? |
 
+
+### PY-009 — What does mutability mean in Python, and how does aliasing create bugs?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-033 | Mechanism | What is the relationship between names, object references, and mutable object state in Python, and why does assignment not copy an object? | Как связаны имена, ссылки на объекты и состояние изменяемых объектов в Python и почему присваивание не копирует объект? |
+| FU-034 | Application | How would you diagnose and prevent an unintended mutation when the same list or dictionary is shared across several layers of an application? | Как диагностировать и предотвратить непреднамеренное изменение одного списка или словаря, совместно используемого несколькими слоями приложения? |
+| FU-035 | Edge cases and trade-offs | What are the differences and limitations of shallow copying, deep copying, and custom copy behavior for nested or cyclic object graphs? | В чём различия и ограничения поверхностного копирования, глубокого копирования и пользовательской логики копирования для вложенных или циклических графов объектов? |
+| FU-036 | Senior judgment | At API and domain boundaries, when would you prefer immutable data, defensive copying, ownership conventions, or controlled mutation? | На границах API и доменных слоёв когда предпочтительнее неизменяемые данные, защитное копирование, соглашения о владении данными или контролируемая мутация? |
+
+### PY-010 — What are the equality and hashing contracts, and why must they remain consistent?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-037 | Mechanism | What invariants must hold between `__eq__` and `__hash__`, and what does Python do when a class overrides equality without defining a hash? | Какие инварианты должны соблюдаться между `__eq__` и `__hash__` и что делает Python, если класс переопределяет равенство, но не определяет хеширование? |
+| FU-038 | Application | How would you implement equality and hashing for a value object whose identity is defined by a selected set of domain fields? | Как реализовать равенство и хеширование value object, идентичность которого определяется выбранным набором доменных полей? |
+| FU-039 | Edge cases and trade-offs | What problems can arise from inheritance, asymmetric equality, mutable comparison fields, or unusual values such as NaN? | Какие проблемы могут возникать из-за наследования, несимметричного равенства, изменяемых полей сравнения или необычных значений, например NaN? |
+| FU-040 | Senior judgment | How would you decide whether a domain type should be hashable, and how would you keep its equality semantics stable across application versions? | Как определить, должен ли доменный тип поддерживать хеширование, и как сохранить стабильность семантики равенства между версиями приложения? |
+
+### PY-011 — Why are mutable objects generally unsuitable as dictionary keys or set members?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-041 | Mechanism | What can happen to dictionary or set lookup when the hash-relevant state of a stored key changes after insertion? | Что может произойти с поиском в словаре или множестве, если после вставки изменится состояние ключа, влияющее на его хеш? |
+| FU-042 | Application | How would you model a mutable business entity that must be referenced reliably from a dictionary or set? | Как смоделировать изменяемую бизнес-сущность, на которую необходимо надёжно ссылаться из словаря или множества? |
+| FU-043 | Edge cases and trade-offs | Why is a tuple not necessarily hashable, and what risks arise when a custom mutable object retains identity-based hashing? | Почему кортеж не обязательно является хешируемым и какие риски возникают, если пользовательский изменяемый объект сохраняет хеширование по идентичности? |
+| FU-044 | Senior judgment | What design alternatives—immutable keys, stable identifiers, snapshots, or explicit indexes—would you consider for long-lived caches and registries? | Какие варианты проектирования — неизменяемые ключи, стабильные идентификаторы, снимки состояния или явные индексы — следует рассмотреть для долгоживущих кешей и реестров? |
+
+### PY-012 — Explain Python's LEGB name-resolution rule and scope behavior.
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-045 | Mechanism | How does Python determine whether a name is local, enclosing, global, or built-in, and when are local variables classified? | Как Python определяет, является ли имя локальным, именем охватывающей области, глобальным или встроенным, и когда классифицируются локальные переменные? |
+| FU-046 | Application | How would you refactor code that relies heavily on `global` or `nonlocal` state to make dependencies and state changes easier to reason about? | Как переработать код, который активно использует состояние `global` или `nonlocal`, чтобы зависимости и изменения состояния было проще анализировать? |
+| FU-047 | Edge cases and trade-offs | How do class bodies, comprehensions, exception targets, and assignment expressions interact with Python's scope rules? | Как тела классов, comprehensions, цели обработки исключений и выражения присваивания взаимодействуют с правилами областей видимости Python? |
+| FU-048 | Senior judgment | What scope-related design rules would you establish for a large codebase to reduce hidden coupling and make tests deterministic? | Какие правила проектирования областей видимости вы установили бы в большой кодовой базе, чтобы уменьшить скрытую связанность и обеспечить детерминированность тестов? |
+
+### PY-013 — What are closures, and how does Python capture variables in nested functions?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-049 | Mechanism | What is a closure in Python, and how are free variables retained and accessed after the enclosing function has returned? | Что такое замыкание в Python и как свободные переменные сохраняются и используются после завершения охватывающей функции? |
+| FU-050 | Application | How can a closure be used to encapsulate configuration or state without introducing a module-level global variable? | Как использовать замыкание для инкапсуляции конфигурации или состояния без введения глобальной переменной уровня модуля? |
+| FU-051 | Edge cases and trade-offs | Why can closures created in loops exhibit late-binding behavior, and how can this affect callbacks or deferred asynchronous work? | Почему замыкания, созданные в циклах, могут демонстрировать позднее связывание переменных и как это влияет на callbacks или отложенные асинхронные операции? |
+| FU-052 | Senior judgment | When is a closure a suitable abstraction, and when would a callable object, explicit dependency, or small class make lifecycle and state ownership clearer? | Когда замыкание является подходящей абстракцией, а когда объект с методом вызова, явная зависимость или небольшой класс лучше проясняют жизненный цикл и владение состоянием? |
+
+### PY-014 — What are the differences between positional, keyword-only, variadic, and default arguments?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-053 | Mechanism | How does Python bind positional-only, positional-or-keyword, keyword-only, `*args`, and `**kwargs` parameters to call arguments? | Как Python связывает позиционные-only, позиционные или именованные, только именованные, `*args` и `**kwargs` параметры с аргументами вызова? |
+| FU-054 | Application | How would you design a stable public function signature that supports extension without making callers depend on fragile positional argument ordering? | Как спроектировать стабильную публичную сигнатуру функции, допускающую расширение без зависимости вызывающего кода от хрупкого порядка позиционных аргументов? |
+| FU-055 | Edge cases and trade-offs | Why are default argument expressions evaluated once, and what bugs can mutable defaults or ambiguous argument forwarding introduce? | Почему выражения значений аргументов по умолчанию вычисляются один раз и какие ошибки могут вызвать изменяемые значения по умолчанию или неоднозначная передача аргументов? |
+| FU-056 | Senior judgment | How should signature design balance backward compatibility, discoverability, strictness, and extensibility in a library or service API? | Как при проектировании сигнатуры сбалансировать обратную совместимость, понятность интерфейса, строгость и расширяемость API библиотеки или сервиса? |
+
+### PY-015 — How do decorators work, and what happens when Python applies one?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-057 | Mechanism | What does the decorator syntax translate to, and in what order are stacked decorators evaluated and applied? | Во что преобразуется синтаксис декораторов и в каком порядке вычисляются и применяются несколько декораторов? |
+| FU-058 | Application | How would you use a decorator to add cross-cutting behavior such as timing, authorization checks, or structured logging without duplicating code? | Как с помощью декоратора добавить сквозное поведение, например измерение времени, проверку авторизации или структурированное логирование, не дублируя код? |
+| FU-059 | Edge cases and trade-offs | What can go wrong when decorating methods, class methods, static methods, generators, or asynchronous functions? | Какие проблемы могут возникнуть при декорировании методов экземпляра, методов класса, статических методов, генераторов или асинхронных функций? |
+| FU-060 | Senior judgment | What risks do decorators introduce for control flow, observability, dependency injection, and debugging, and how would you constrain their use in a large codebase? | Какие риски декораторы создают для потока управления, наблюдаемости, внедрения зависимостей и отладки и как ограничить их использование в большой кодовой базе? |
+
+### PY-016 — How do you design decorators that preserve metadata and support arguments?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-061 | Mechanism | What metadata does `functools.wraps` preserve, and how does the wrapped function's `__wrapped__` reference support introspection? | Какие метаданные сохраняет `functools.wraps` и как ссылка `__wrapped__` обёрнутой функции помогает интроспекции? |
+| FU-062 | Application | How would you structure a decorator factory that accepts configuration while preserving the decorated callable's intended interface? | Как организовать фабрику декораторов, принимающую конфигурацию и сохраняющую предполагаемый интерфейс декорируемого вызываемого объекта? |
+| FU-063 | Edge cases and trade-offs | How should a decorator handle coroutine functions, generator functions, exceptions, and cancellation without changing their execution semantics? | Как декоратору обрабатывать coroutine functions, generator functions, исключения и отмену задач, не изменяя семантику их выполнения? |
+| FU-064 | Senior judgment | How would you test and document a reusable decorator so that its signature, metadata, typing, composition order, and runtime behavior remain reliable? | Как тестировать и документировать переиспользуемый декоратор, чтобы его сигнатура, метаданные, типизация, порядок композиции и поведение во время выполнения оставались надёжными? |
+
