@@ -19,7 +19,7 @@ Run from the `ansible/` directory:
 ./scripts/test.sh
 ```
 
-**Important current limitation:** this helper is not a reliable pass/fail gate yet. In the current implementation, YAML lint and Molecule failures are suppressed with `|| true`, and the script does not run the fleet/recovery guardrail scripts or playbook syntax checks. Do not use its final exit code as proof that the full suite passed. Run the checks below individually and rely on the required GitHub Actions jobs for the merge gate. A separate test-harness change should remove the swallowed failures before this helper is treated as authoritative.
+The validation helper is fail-closed (`set -Eeuo pipefail`) and stops at the first failed stage. It runs YAML lint, production-profile Ansible lint, fleet/recovery/off-site-backup guardrail scripts, syntax checks for every top-level playbook against the isolated Lab inventory, and the default Molecule scenario. A zero exit status means each of these stages completed successfully in that local environment; it does not prove that a real pharmacy host, remote backup repository, or Production deployment is operational. CI remains the required merge gate.
 
 ## Molecule
 
