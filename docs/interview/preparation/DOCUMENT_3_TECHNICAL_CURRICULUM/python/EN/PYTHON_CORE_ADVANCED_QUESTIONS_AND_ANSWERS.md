@@ -66,9 +66,11 @@ The GIL also does not make shared application state automatically thread-safe, s
 
 **References**
 
-- [Python documentation: Global Interpreter Lock FAQ](https://docs.python.org/3/faq/library.html#what-is-the-global-interpreter-lock)
-- [Python documentation: Support for free threading](https://docs.python.org/3/howto/free-threading-python.html)
-- [What's New in Python 3.14: Free-threaded Python is officially supported](https://docs.python.org/3/whatsnew/3.14.html#free-threaded-python-is-officially-supported)
+- [Python 3.15.2 documentation: Global Interpreter Lock FAQ](https://docs.python.org/3.15/faq/library.html#can-t-we-get-rid-of-the-global-interpreter-lock)
+- [Python 3.15.2 documentation: Support for free threading](https://docs.python.org/3.15/howto/free-threading-python.html)
+- [Python 3.15.2 documentation: C API extension support for free threading](https://docs.python.org/3.15/howto/free-threading-extensions.html)
+- [What's New in Python 3.15: Stable ABI for free-threaded builds (`abi3t`)](https://docs.python.org/3.15/whatsnew/3.15.html#pep-803-stable-abi-for-free-threaded-builds)
+- [Python 3.15.2 C API: Thread states and the GIL](https://docs.python.org/3.15/c-api/threads.html)
 - [PEP 703 — Making the Global Interpreter Lock Optional in CPython](https://peps.python.org/pep-0703/)
 
 ---
@@ -174,16 +176,17 @@ Free-threaded CPython provides an optional build that can execute Python threads
 
 PEP 703 describes the changes needed to make the GIL optional in CPython. Free-threaded builds use additional synchronization and memory-management techniques so that multiple threads can safely access interpreter-managed objects without relying on one global lock.
 
-The feature does not mean that existing multithreaded applications automatically become faster or race-free. Code that relied on the GIL for accidental serialization may expose data races. C extensions must explicitly support free-threaded execution; an incompatible extension can cause the GIL to be enabled at runtime. The free-threaded build may also have different single-thread performance and memory characteristics.
+The feature does not mean that existing multithreaded applications automatically become faster or race-free. Code that relied on the GIL for accidental serialization may expose data races. C extensions must explicitly support free-threaded execution; an incompatible extension can cause the GIL to be enabled at runtime. The free-threaded build may also have different single-thread performance and memory characteristics. In the documented pyperformance results, its single-threaded overhead varies by platform (approximately 1% to 8%); memory use is typically higher. Built-in containers such as dict, list, and set use internal locks for some concurrent operations, but application code should still use explicit synchronization for shared invariants rather than rely on those implementation details.
 
 A practical adoption process includes:
 
-1. Confirm the exact interpreter build and whether the GIL is actually disabled at runtime.
-2. Audit dependencies, especially C extensions, wheels, and native libraries.
-3. Test shared mutable state, compound operations, caches, registries, and extension boundaries.
-4. Run correctness and stress tests under realistic concurrency.
-5. Benchmark representative production workloads, including single-thread and multi-thread cases.
-6. Roll out gradually with observability and a rollback path.
+1. Confirm the build configuration with `sysconfig.get_config_var("Py_GIL_DISABLED")` and check the runtime state with `sys._is_gil_enabled()`; `python -VV` also identifies a free-threading build.
+2. Check whether `PYTHON_GIL` or `-X gil` enables the GIL, and whether importing an unsupported C extension automatically re-enables it.
+3. Audit dependencies, especially C extensions, wheels, and native libraries. For C extensions, verify explicit free-threading support; Python 3.15 also introduces the `abi3t` Stable ABI, although adopting it can require C API and module-initialization changes.
+4. Test shared mutable state, compound operations, caches, registries, and extension boundaries.
+5. Run correctness and stress tests under realistic concurrency.
+6. Benchmark representative production workloads, including single-thread and multi-thread cases.
+7. Roll out gradually with observability and a rollback path.
 
 **Senior-Level Judgment**
 
@@ -193,7 +196,7 @@ Treat free-threading as a deployment and compatibility decision, not a switch th
 
 “Free-threaded CPython is an optional build that allows Python threads to execute in parallel without the traditional GIL. It was introduced experimentally in Python 3.13 and became officially supported, while remaining optional, in Python 3.14. The interpreter needs additional synchronization and memory-management mechanisms, and C extensions must explicitly support the free-threaded model; otherwise, an extension may cause the GIL to be enabled.
 
-Before adopting it, I would verify the interpreter configuration and dependency compatibility, audit shared mutable state for races, run concurrency stress tests, and benchmark representative workloads. I would not assume it improves every workload, because single-thread performance, memory use, contention, and extension support can change the result.”
+Before adopting it, I would verify the build and runtime state: `sysconfig.get_config_var("Py_GIL_DISABLED")` indicates whether the build supports free-threading, while `sys._is_gil_enabled()` tells me whether the GIL is currently enabled. I would also check `PYTHON_GIL` / `-X gil`, audit C-extension compatibility, and account for the possibility that an unsupported extension re-enables the GIL. Python 3.15 adds the `abi3t` Stable ABI for compatible extensions, but migration may require C API and module-initialization changes. Finally, I would audit shared state, stress-test concurrency, and benchmark representative workloads rather than assume a universal speedup.”
 
 ---
 ---
