@@ -1618,6 +1618,166 @@ This distinction is useful when reasoning about aliasing, API ownership contract
 
 ---
 
+
+### FU-010 — Applying identity, equality, and type checks in code review
+
+**Parent Main Question:** PY-003 — Explain Python's object model: identity, type, and value.
+
+**Question (EN):** How would you use identity checks, equality checks, and type checks appropriately when reviewing application code?
+
+**Перевод (RU):** Как правильно применять проверки идентичности, равенства и типа при ревью прикладного кода?
+
+**What the interviewer evaluates**
+
+- Correct distinction between object identity and value equality.
+- Appropriate use of `is`, `==`, `type()`, and `isinstance()`.
+- Understanding of Python's data model and custom equality behavior.
+- Ability to review contracts, polymorphism, and edge cases rather than merely syntax.
+- Awareness of maintainability and correctness implications.
+
+**Short Answer**
+
+I first identify what the code intends to compare. I use `is` for identity checks, especially for singleton sentinels such as `None`; `==` for value equality; and `isinstance()` when the contract requires an object to belong to a class hierarchy or supported abstract type. I use exact `type(x) is T` checks only when the API explicitly requires that exact concrete type. I also review custom equality, hash consistency, and whether type branching should be replaced by polymorphism or a protocol.
+
+**Detailed Answer**
+
+A code review should begin with the semantic question being asked, not with a preferred operator.
+
+1. **Identity checks — `is`**
+
+   Use `is` when correctness depends on two references designating the same object. The canonical example is checking the `None` singleton:
+
+   ```python
+   if result is None:
+       handle_missing_result()
+   ```
+
+   Identity checks are also appropriate for private sentinel objects created to represent a state that must not be confused with an ordinary value:
+
+   ```python
+   MISSING = object()
+
+   def get_value(value=MISSING):
+       if value is MISSING:
+           return use_default()
+       return value
+   ```
+
+   This avoids conflating an omitted argument with an explicitly supplied value such as `None`.
+
+2. **Equality checks — `==`**
+
+   Use `==` when the requirement concerns equivalent values rather than the same object:
+
+   ```python
+   if response.status == "ready":
+       process_response()
+   ```
+
+   Equality is governed by the object's comparison behavior, commonly through `__eq__`. It may be customized by domain classes, ORM entities, numerical libraries, or other types. Reviewers should consider whether equality is meaningful, side-effect free, sufficiently efficient, and returns a scalar boolean as expected by the surrounding control flow. Some libraries, notably array-oriented libraries, may return element-wise comparison results rather than a single bool.
+
+3. **Type checks — `isinstance()`**
+
+   Use `isinstance(value, ExpectedType)` when the contract is based on a type or its accepted subclasses:
+
+   ```python
+   if isinstance(payload, Mapping):
+       process_mapping(payload)
+   ```
+
+   This can preserve substitutability and accept multiple implementations of an abstract interface. Abstract base classes may provide a common runtime classification. Runtime-checkable protocols can also support structural checks, but those checks have limitations and should not be mistaken for complete static type validation.
+
+4. **Exact concrete type checks — `type()`**
+
+   An exact check such as `type(value) is int` deliberately rejects subclasses. This may be appropriate when an API must exclude special subclass behavior or enforce a narrowly defined serialization or validation contract. It should be intentional and documented, not an accidental substitute for `isinstance()`.
+
+5. **Prefer behavior-oriented design where possible**
+
+   If code checks several concrete types to decide which method to call, consider whether a shared interface, protocol, polymorphic method, or explicit adapter would express the contract more clearly. Type checks are not inherently wrong; they are often useful at validation and integration boundaries. The review question is whether they make the contract safer or unnecessarily couple the code to implementation details.
+
+**Practical Code Review Example**
+
+~~~python
+def process(value):
+    if value is None:
+        return "missing"
+
+    if isinstance(value, str):
+        return value.strip()
+
+    if type(value) is int:
+        return str(value)
+
+    raise TypeError("Unsupported value")
+~~~
+
+Review observations:
+
+- `value is None` is correct because None is a singleton.
+- `isinstance(value, str)` accepts string subclasses, which is often appropriate.
+- `type(value) is int` rejects bool and custom int subclasses. This may be intentional, because bool is a subclass of int, but the contract should make that choice explicit.
+- If the function should accept any object that can be converted to text, a behavior-based contract may be more appropriate than these branches.
+- If it is validating a strict wire-format schema, explicit type restrictions may be justified.
+
+**Equality and Hashing Review**
+
+When objects are used as dictionary keys or set members, review the relationship between equality and hashing. If two objects compare equal, their hash values must be equal. A class that customizes `__eq__` without providing a compatible hash implementation may become unhashable or violate the expected hash contract if it defines an unsafe custom hash.
+
+Mutable objects whose hash depends on mutable state are especially dangerous as dictionary keys or set elements: changing the relevant state after insertion can make lookup behavior unreliable. Prefer immutable key state.
+
+**Best Practices**
+
+- Choose the operator based on the semantic contract: identity, value equality, or type compatibility.
+- Use `is None` rather than `== None`.
+- Use `==` for value comparisons; never rely on `is` for string or numeric value comparison.
+- Prefer `isinstance()` when subclasses are valid.
+- Reserve exact type checks for documented, deliberate constraints.
+- Inspect custom `__eq__` and `__hash__` implementations when objects participate in sets or dictionary keys.
+- Keep validation at system boundaries explicit; use polymorphism or protocols for internal extensibility when appropriate.
+- Add tests for subclass behavior, sentinel values, and equality edge cases.
+
+**Trade-offs & Edge Cases**
+
+- `is` is a direct identity test, but it does not express value equivalence.
+- `==` expresses value semantics, but custom equality may be expensive, non-scalar, or surprising.
+- `isinstance()` supports subclassing, but can accept subclasses whose behavior differs from the base class's assumptions.
+- Exact type checks provide strictness, but can reject valid substitutable implementations.
+- Protocol-based design reduces coupling, while runtime protocol checks generally verify only a limited structural surface; static type checking can provide broader development-time analysis.
+- Type dispatch can be clear at parsing and validation boundaries, while repeated type branching deep inside business logic can signal a missing abstraction.
+
+**Common Mistakes**
+
+- Writing `value == None` instead of `value is None`.
+- Using `is` to compare strings, integers, or other ordinary values.
+- Replacing every `isinstance()` with an exact `type()` check.
+- Assuming `isinstance(value, int)` excludes booleans; in Python, `bool` is a subclass of `int`.
+- Assuming all `==` operations return a plain boolean.
+- Ignoring custom equality and hash behavior in domain objects.
+- Using mutable state in hash calculations for objects stored in dictionaries or sets.
+- Treating a runtime protocol check as a complete validation of an object's behavior.
+
+**Senior-Level Perspective**
+
+A senior reviewer evaluates whether comparison semantics match the domain contract and remain correct under extension. For example, a payment amount may require value equality with explicit currency and precision semantics; a missing-field sentinel requires identity; a plugin boundary may need an interface-oriented type check or adapter.
+
+The reviewer also considers compatibility: accepting subclasses can support extension but may broaden behavior; exact checks can protect strict boundaries but make future implementations harder. Equality and hashing affect caches, deduplication, ORM identity maps, and collection membership. The right choice should be documented where it is not obvious and covered by tests at the relevant boundary.
+
+**Interview-Ready Answer (EN)**
+
+“I choose the check based on what the code needs to establish. I use `is` when object identity matters, most commonly for `None` or a private sentinel. I use `==` when comparing values according to the object's equality semantics. For type compatibility, I generally use `isinstance()` because it supports subclasses and abstract base classes. I use an exact `type()` comparison only when rejecting subclasses is an explicit part of the contract.
+
+During code review, I also inspect custom equality and hashing behavior, especially for objects used as dictionary keys or set members. I check whether type branching is appropriate at a validation boundary or whether an interface, protocol, or polymorphic design would reduce coupling. The goal is to make the comparison express the intended contract, preserve substitutability where appropriate, and avoid implementation-dependent assumptions.”
+
+**Interview-Ready Answer (RU)**
+
+«Я выбираю способ проверки в зависимости от того, что именно должен установить код. Оператор `is` использую, когда важна идентичность объекта, прежде всего при проверке на `None` или специальный sentinel-объект. Оператор `==` применяю для сравнения значений в соответствии с семантикой равенства, определённой для конкретного типа. Для проверки совместимости типов обычно использую `isinstance()`, поскольку он учитывает наследование и абстрактные базовые классы. Точное сравнение через `type()` применяю только тогда, когда запрет на использование подклассов является осознанной частью контракта.
+
+При code review я также проверяю пользовательскую реализацию равенства и хеширования, особенно если объекты используются как ключи словарей или элементы множеств. Оцениваю, оправданы ли проверки типов на границе валидации или интерфейс, протокол либо полиморфизм позволили бы уменьшить связанность. Цель — чтобы проверка точно выражала контракт, сохраняла возможность подстановки реализаций там, где это необходимо, и не опиралась на случайные особенности реализации Python.»
+
+**Status:** Authored; independent technical and editorial review pending.
+
+---
+
 ## PY-003 answer review checklist
 
 - [x] Main question includes English and Russian wording.
