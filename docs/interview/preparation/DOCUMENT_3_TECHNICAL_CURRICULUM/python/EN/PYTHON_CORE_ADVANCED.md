@@ -3,7 +3,7 @@
 **Language:** English  
 **Python baseline:** 3.15.2 — label version-specific behavior and distinguish Python language guarantees from CPython implementation details.  
 **Domain allocation:** 45 Main Questions + 180 Follow-ups = 225  
-**Current coverage:** PY-001–PY-004 and FU-001–FU-016  
+**Current coverage:** PY-001–PY-005 and FU-001–FU-020  
 **Answer file:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Russian version:** [RU Question Map](../RU/PYTHON_CORE_ADVANCED.md)
 
@@ -40,7 +40,7 @@ Follow-ups:
 ## Coverage status
 
 - PY-001–PY-004 and FU-001–FU-016: authored in English; independent technical and editorial review pending.
-- Remaining Main Questions PY-004–PY-045 and FU-017–FU-184: not yet migrated into the language-separated structure.
+- Remaining Main Questions PY-006–PY-045 and FU-021–FU-180: not yet migrated into the language-separated structure.
 
 **Allocation rule:** Every Main Question receives exactly four Follow-ups covering mechanism, practical application, edge cases/trade-offs, and senior-level judgment or production implications.
 
@@ -76,4 +76,19 @@ Follow-ups:
 - **FU-014 — Application:** How would you choose between identity checks, equality checks, and type checks in a code review?
 - **FU-015 — Edge cases and trade-offs:** Why can using is to compare strings, numbers, or other values produce unreliable results?
 - **FU-016 — Senior judgment:** How should API design avoid accidental dependencies on object identity, mutability, or concrete implementation types?
+
+## PY-005 — Attribute Lookup, Descriptors & Special Methods
+
+**Main Question:** How does Python resolve attribute access, and how do descriptors and special methods affect that process?
+
+**Evaluation focus:** Attribute lookup precedence, descriptor protocol, attribute access hooks, method binding, and implicit special-method lookup.  
+**Level:** L3 — Advanced/Senior  
+**Priority:** P0 — Core
+
+Follow-ups:
+
+- **FU-017 — Mechanism:** In what order does Python search for an attribute on an instance, and how can an instance attribute interact with a class attribute?
+- **FU-018 — Mechanism and application:** What is the difference between a data descriptor and a non-data descriptor, and why does the distinction matter?
+- **FU-019 — Edge cases:** What is the difference between `__getattribute__` and `__getattr__`, and what risks arise when overriding them?
+- **FU-020 — Senior judgment:** Why can assigning a special method to an instance fail to change the behavior of an implicit operation such as `len(obj)`?
 
