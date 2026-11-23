@@ -9,6 +9,10 @@ This section prepares for Python-focused interviews at Senior Software Engineer 
 3. Use the [Russian answers](./RU/PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md) to understand and review the same material.
 4. Practise saying the Interview-Ready Answer in English. The goal is to explain the idea naturally, not memorize a script.
 
+## Python version baseline
+
+Use **Python 3.15.2** as the primary reference version for current CPython behavior, standard-library details, and version-specific interview discussion. Clearly distinguish language-level guarantees from CPython implementation details. When a feature differs across releases, state the relevant version and briefly compare older versions that remain common in production environments.
+
 ## How each topic is organized
 
 - **Main Question** introduces the central concept.
