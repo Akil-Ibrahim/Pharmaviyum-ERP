@@ -1877,11 +1877,11 @@ EN: Establish a reproducible workload and baseline, measure RSS and Python alloc
 - Понимание алгоритмической сложности, константных факторов и компромиссов по памяти.
 - Способность различать CPU-bound, I/O-bound и memory-bound нагрузки.
 - Корректное применение profiling и benchmarking инструментов.
-- Понимание overhead интерпретатора, рисков кеширования и production observability.
+- Понимание overhead интерпретатора, стоимости аллокаций и ограничений профилирования.
 - Умение подтвердить, что оптимизация улучшает репрезентативный workload без нарушения корректности.
 
 ### Эталонный ответ (RU)
-Оптимизацию производительности нужно начинать не с переписывания кода, а с измерения и поиска узкого места. Сначала следует описать целевой workload и SLO: например, latency percentiles, throughput, загрузку CPU, потребление памяти и error rate. Затем воспроизвести характерную нагрузку и зафиксировать baseline.
+Локальную оптимизацию Python-кода нужно начинать с определения конкретной операции, репрезентативных входных данных и ожидаемой семантики. Затем следует зафиксировать baseline и выяснить, ограничивает ли выполнение алгоритмическая сложность, количество вызовов, аллокации или накладные расходы интерпретатора. Не следует оптимизировать код только на основании субъективного ощущения медленной работы.
 
 Big-O описывает асимптотический рост времени или памяти при увеличении входных данных, но не предсказывает абсолютное время выполнения. На практике важны константные множители, распределение данных, аллокации, локальность памяти, I/O и накладные расходы интерпретатора. Алгоритм с худшей асимптотикой может оказаться быстрее на небольших входах, поэтому решение необходимо подтверждать измерениями.
 
@@ -1889,12 +1889,12 @@ Big-O описывает асимптотический рост времени 
 
 Необходимо различать CPU-bound и I/O-bound работу. CPU-bound задачи тратят основное время на вычисления; I/O-bound задачи ожидают сеть, диск, базу данных или другие внешние системы. Асинхронность может повысить конкурентность I/O-bound сервиса, но сама по себе не ускоряет CPU-bound вычисления. Для CPU-bound нагрузки следует исследовать алгоритм, векторизацию, нативные библиотеки, multiprocessing или отдельные worker-процессы — учитывая стоимость сериализации и передачи данных.
 
-Кеширование может уменьшить повторные вычисления или обращения к зависимостям, но добавляет требования к инвалидации, ограничению размера, согласованности, конкурентному доступу и изоляции данных. В многопользовательском backend нельзя допускать, чтобы ключ кеша игнорировал tenant или контекст авторизации. Кешировать следует только после определения корректной семантики и стратегии invalidation.
 
-Корректный benchmark должен использовать репрезентативные входные данные, контролируемую среду, прогрев при необходимости, несколько повторов и статистически осмысленное сравнение. Нужно учитывать шум, cold-start, эффекты интерпретатора, конкурирующую нагрузку и различия между локальным тестом и production. После изменения следует повторить тот же workload, сравнить baseline и результат, проверить корректность и наблюдать за production-метриками. Оптимизация успешна только тогда, когда улучшение измеримо и не ухудшает другие SLO или надёжность.
+
+Локальный benchmark должен использовать одинаковые входные данные, контролируемые условия, прогрев при необходимости и несколько повторов. Следует учитывать шум измерений и отделять подготовку данных от измеряемого участка. После изменения нужно повторить тот же эксперимент, сравнить результат с baseline и проверить функциональную эквивалентность. Микробенчмарк отвечает на вопрос о конкретной операции, но не доказывает улучшение производительности всего сервиса.
 
 ### Профессиональный ответ (EN)
-I start performance work by defining the representative workload, the user-visible objective, and a measurable baseline. I then profile the system to locate the dominant cost before changing the implementation. Optimizing code that is not on the critical path usually adds complexity without meaningful impact.
+I start local Python optimization by defining the operation, representative inputs, and expected semantics. I establish a baseline and determine whether execution is constrained by algorithmic complexity, call volume, allocations, or interpreter overhead. I do not optimize code based only on a subjective impression that it is slow.
 
 Big-O describes asymptotic growth in time or space as input size increases; it does not predict absolute runtime. Constant factors, input distribution, allocation behavior, memory locality, I/O, and interpreter overhead also matter. I use complexity analysis to identify scalability risks and measurements to decide what matters for the actual workload.
 
@@ -1902,9 +1902,9 @@ For small, isolated timing experiments I use `timeit`. For deterministic profili
 
 I distinguish CPU-bound work from I/O-bound work. AsyncIO can improve concurrency when tasks spend substantial time awaiting non-blocking I/O, but it does not make CPU-heavy Python code execute faster. CPU-bound work may require algorithmic improvements, optimized native libraries, vectorization, process-based workers, or a dedicated compute service. Those choices must account for serialization, scheduling, and operational costs.
 
-Caching is a trade-off, not a default optimization. It introduces invalidation, bounded capacity, consistency, concurrency, and authorization-isolation concerns. Cache keys must include every dimension that affects the result, including tenant or user scope where applicable. I only introduce caching when the access pattern and invalidation contract are understood.
 
-A sound benchmark uses representative data, controlled conditions, repeated runs, and an explicit comparison against a baseline. I separate microbenchmarks from end-to-end load tests and evaluate latency percentiles, throughput, CPU, memory, and error rates together. After an optimization, I rerun the same workload, verify functional behavior, and observe the change under production-like conditions. The goal is a demonstrated improvement without regressions in correctness, reliability, or other service objectives.
+
+A local benchmark uses the same inputs, controlled conditions, warm-up where appropriate, and repeated runs. I account for measurement noise and separate setup from the measured operation. After a change, I repeat the same experiment, compare it with the baseline, and verify functional equivalence. A microbenchmark answers a question about one operation; it does not prove that the whole service became faster.
 
 ### Дополнительные вопросы и эталонные ответы
 
@@ -1953,11 +1953,8 @@ A sound benchmark uses representative data, controlled conditions, repeated runs
 - Использовать микробенчмарк как доказательство production-улучшения.
 - Предполагать, что AsyncIO ускоряет CPU-bound код.
 - Игнорировать стоимость базы данных, сети, сериализации или native code.
-- Внедрять кеш без ограничения capacity или ясного invalidation contract.
-- Не включать tenant или authorization scope в cache keys.
 - Сравнивать benchmarks в существенно разных условиях.
-- Показывать только среднюю latency и игнорировать tail latency.
-- Улучшать latency, незаметно увеличивая memory, errors или эксплуатационную сложность.
+- Доверять одному шумному микробенчмарку или игнорировать overhead профилировщика.
 
 ### Источники
 - Python `timeit`: https://docs.python.org/3.14/library/timeit.html
