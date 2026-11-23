@@ -1,7 +1,7 @@
 # Python Core — Question Bank
 
 **Status:** In progress  
-**Coverage:** 11 of 30 primary questions drafted  
+**Coverage:** 12 of 30 primary questions drafted  
 **Review rule:** Draft answers must be technically reviewed before being marked validated.
 
 ---
@@ -1587,3 +1587,128 @@ A strong Senior answer should demonstrate that the candidate:
 - `contextlib`: https://docs.python.org/3/library/contextlib.html
 - `contextlib.ExitStack`: https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack
 - Async context managers: https://docs.python.org/3/reference/datamodel.html#asynchronous-context-managers
+
+
+## PY-CORE-012 — Python modules, packages, and the import system
+
+**Question (EN):** Explain how Python resolves and loads imports. Discuss modules, regular and namespace packages, sys.path, sys.modules, import caching, relative imports, circular dependencies, and import-time side effects. How would you organize a maintainable FastAPI codebase?
+
+**Перевод (RU):** Объясните, как Python разрешает и загружает импорты. Расскажите о модулях, обычных и namespace packages, sys.path, sys.modules, кешировании импортов, относительных импортах, циклических зависимостях и побочных эффектах во время импорта. Как организовать поддерживаемую кодовую базу FastAPI?
+
+### What the interviewer is evaluating
+
+- Understanding of Python import machinery and module identity.
+- Ability to distinguish module search paths, finders/loaders, and the module cache.
+- Recognition of circular-import and import-time side-effect risks.
+- Knowledge of package boundaries, dependency direction, and application startup.
+- Practical packaging and testability decisions.
+
+### Model answer (RU)
+
+Модуль Python — единица кода, обычно представленная файлом .py, которая при импорте становится объектом модуля. Package организует модули в иерархию. Обычный package традиционно содержит __init__.py; namespace package может объединять части одного логического package из нескольких каталогов и не требует __init__.py в соответствующих namespace-каталогах. Поэтому неверно утверждать, что каждый package обязан содержать __init__.py.
+
+Оператор import запускает import machinery: finders находят модуль, а loaders создают и исполняют его. sys.path — список путей поиска верхнеуровневых модулей. На него влияют способ запуска Python, окружение и конфигурация интерпретатора. Текущая рабочая директория может участвовать в поиске, но production deployment не должен зависеть от случайного состояния sys.path или ручного изменения sys.path внутри приложения.
+
+После загрузки модуль кешируется в sys.modules по имени. Повторный импорт обычно возвращает тот же объект модуля, а не выполняет тело заново. Важная деталь: модуль помещается в sys.modules до завершения исполнения его тела. Это поддерживает рекурсивные импорты, но при circular import другая сторона может увидеть частично инициализированный модуль. Удаление записей из sys.modules или принудительный reload не являются обычным способом обновления production-кода и могут привести к нескольким объектам модулей с неожиданной identity.
+
+При импорте исполняются инструкции верхнего уровня. Import-time side effects — открытие соединений, чтение секретов, запуск фоновых задач, создание глобальных клиентов или выполнение миграций — делают импорт непредсказуемым и усложняют тестирование, reload и multiprocessing. На уровне модуля лучше оставлять определения и лёгкую декларативную конфигурацию. Инициализацию ресурсов следует выполнять в явной startup/lifespan фазе приложения, а освобождение — в соответствующей shutdown фазе.
+
+Абсолютные импорты явно указывают путь от корня доступного import namespace и обычно удобны для навигации в крупных проектах. Относительные импорты разрешаются относительно текущего package; они полезны внутри связанного package, но могут усложнить перемещение модулей и прямой запуск отдельных файлов. Выбор должен быть последовательным. Запуск через python -m package.module обычно лучше сохраняет package context, чем прямой запуск файла.
+
+Circular import возникает, когда модуль A импортирует B, а B прямо или косвенно импортирует A. Один модуль может быть ещё не полностью инициализирован, поэтому нужное имя может отсутствовать в момент обращения. Локальный импорт внутри функции иногда откладывает зависимость, но часто лишь маскирует архитектурную проблему. Предпочтительно устранить цикл через выделение общего контракта в третий модуль, dependency inversion, передачу зависимостей извне или пересмотр границ пакетов.
+
+Для поддерживаемого FastAPI backend следует разделять API/router слой, application/use-case слой, domain слой и infrastructure adapters. Зависимости должны направляться к стабильным абстракциям, а не создавать взаимные импорты между router, service и repository. Создание приложения, регистрация routers и lifespan orchestration должны быть явными. pyproject.toml описывает metadata и настройки packaging/tooling; воспроизводимая установка должна опираться на объявленные зависимости и выбранный build backend, а не на неявную структуру локальной машины. Тесты должны импортировать приложение без подключения к production-сервисам и нежелательных внешних действий.
+
+### Professional answer (EN)
+
+A Python module is a unit of code, commonly represented by a .py file, which becomes a module object when imported. A package organizes modules hierarchically. A regular package traditionally contains __init__.py; a namespace package can combine portions of one logical package from multiple directories and does not require __init__.py in those namespace directories. Therefore, it is incorrect to claim that every package must contain __init__.py.
+
+An import statement invokes Python's import machinery; it is not merely a file read. Finders locate a module and loaders create and execute it. sys.path is the search path used for top-level module discovery and is influenced by invocation mode, interpreter environment, and configuration. The current working directory may participate, but production applications should not rely on accidental path state or mutate sys.path as an architectural mechanism.
+
+After loading, a module is cached in sys.modules under its import name. Subsequent imports normally return the cached module object rather than executing the module body again. The module is inserted into sys.modules before its body finishes executing, which supports recursive imports but also means a circular dependency can observe a partially initialized module. Deleting cache entries or forcing reload is not a normal production code-update strategy and can create multiple module objects with surprising identity behavior.
+
+Importing executes module-level statements. Import-time side effects—opening connections, reading secrets, starting background tasks, creating global clients, or running migrations—make imports unpredictable and complicate tests, reloads, and multiprocessing. Module scope should generally contain definitions and lightweight declarative configuration. Resource initialization belongs in an explicit application startup/lifespan phase, with cleanup in the corresponding shutdown phase.
+
+Absolute imports make paths explicit from the available import namespace and are often easier to navigate in large codebases. Relative imports are resolved from the current package and can be convenient within a cohesive package, but may complicate module relocation and direct file execution. Consistency matters. Running a module with python -m package.module often preserves package context more reliably than executing the file directly.
+
+A circular import occurs when module A imports B and B directly or indirectly imports A. One side may observe the other before initialization has completed, so a requested name may not yet exist. A local import can defer a dependency, but is usually a workaround rather than an architectural fix. Prefer extracting shared contracts into a third module, applying dependency inversion, injecting dependencies, or revisiting package boundaries.
+
+A maintainable FastAPI backend should separate API/router, application/use-case, domain, and infrastructure-adapter responsibilities. Dependencies should point toward stable abstractions rather than forming mutual imports between routers, services, and repositories. Application creation, router registration, and lifespan orchestration should be explicit. pyproject.toml declares project metadata and packaging/tool configuration; reproducible installation should use declared dependencies and a chosen build backend rather than relying on a developer's local path layout. Tests should import the application without connecting to production services or triggering unintended external actions.
+
+### Follow-up questions and model answers
+
+**FU-1 — What is the difference between sys.path and sys.modules?**
+
+RU: sys.path — список мест, где import machinery ищет верхнеуровневые модули. sys.modules — cache уже обнаруженных или загружаемых модулей, индексируемый по имени. Изменение sys.path влияет на поиск ещё не закешированных импортов; наличие имени в sys.modules обычно позволяет вернуть существующий объект без нового поиска и исполнения.
+
+EN: sys.path is the list of locations used to search for top-level modules. sys.modules is the cache of modules that have been imported or are currently being initialized, keyed by module name. Changing sys.path affects discovery of modules not already satisfied by the cache; an entry in sys.modules normally lets Python reuse the existing module object.
+
+**FU-2 — Why can circular imports fail even though Python caches modules?**
+
+RU: Python помещает объект модуля в sys.modules до полного исполнения его тела. Если второй модуль импортирует первый в этот момент, он может получить частично инициализированный объект, в котором нужное имя ещё не определено. Кеш предотвращает бесконечную повторную загрузку, но не делает циклическую зависимость безопасной.
+
+EN: Python inserts a module object into sys.modules before its body has finished executing. If the second module imports the first at that point, it may receive a partially initialized object whose required name has not yet been defined. Caching prevents unbounded re-import, but it does not make a cyclic dependency safe.
+
+**FU-3 — What is the difference between a regular package and a namespace package?**
+
+RU: Обычный package обычно определяется каталогом с __init__.py. Namespace package может состоять из нескольких portions, расположенных в разных каталогах поиска, и не требует __init__.py в namespace-каталогах. Namespace packages полезны для распределения частей единого пространства имён между независимыми пакетами, но требуют осознанной структуры и понимания поиска модулей.
+
+EN: A regular package is commonly identified by a directory containing __init__.py. A namespace package can consist of multiple portions located in different search locations and does not require __init__.py in those namespace directories. Namespace packages support distributing one logical namespace across independently installed packages, but require deliberate layout and import-path understanding.
+
+**FU-4 — Why are import-time side effects harmful in a web application?**
+
+RU: Они связывают импорт кода с доступностью внешних сервисов и состоянием окружения. Это затрудняет unit tests, CLI usage, migrations, worker startup, application reload и multiprocessing. Создание соединений и запуск задач лучше выполнять в явной lifecycle фазе, где видны ownership, порядок и cleanup.
+
+EN: They couple code import to external-service availability and environment state. This complicates unit tests, CLI use, migrations, worker startup, reloads, and multiprocessing. Connections and background tasks should be created in an explicit lifecycle phase where ownership, ordering, and cleanup are visible.
+
+**FU-5 — How would you diagnose and fix a circular dependency between FastAPI routers, services, and repositories?**
+
+RU: Сначала построить фактический dependency graph и найти цикл, а не добавлять случайные local imports. Затем определить направление зависимостей: router вызывает application service; service зависит от repository port/interface; infrastructure реализует этот интерфейс. Общие схемы и контракты можно вынести в модуль, который не импортирует верхние слои. Конкретные реализации передаются через dependency injection или composition root. После реорганизации проверить importability, тесты и запуск приложения без подключения к production.
+
+EN: First inspect the actual dependency graph and identify the cycle instead of adding arbitrary local imports. Establish a clear direction: routers call application services; services depend on repository ports or interfaces; infrastructure implements those interfaces. Shared contracts can live in a module that does not import higher layers. Concrete implementations are wired through dependency injection or a composition root. Then verify importability, tests, and application startup without production connections.
+
+### Pharmaviyum application scenario (hypothetical)
+
+**Status: Hypothetical interview scenario — not a claim about the current implementation.**
+
+Imagine a FastAPI application where a router imports a service, the service imports a repository implementation, and that repository imports a schema from the router layer. This creates an undesirable dependency cycle. A cleaner design places API schemas and routing in the presentation layer, use cases in the application layer, domain contracts in the domain layer, and database implementations in infrastructure. The application composition root wires concrete adapters. Database pools and external clients are initialized through lifespan rather than as import-time globals. This is an architectural example, not a verified description of the current Pharmaviyum codebase.
+
+### Senior-level evaluation rubric
+
+A strong Senior answer should demonstrate that the candidate:
+
+1. Explains import discovery, module execution, and the roles of sys.path and sys.modules.
+2. Understands partially initialized modules and why caching does not eliminate circular-import hazards.
+3. Distinguishes regular and namespace packages accurately.
+4. Identifies import-time side effects and moves resource initialization into explicit lifecycle management.
+5. Chooses absolute or relative imports consistently and understands package execution context.
+6. Designs dependency direction and package boundaries that prevent cycles.
+7. Understands reproducible packaging and testable application startup.
+
+**Evaluation signals**
+- Mid-level: understands imports, packages, and basic module search.
+- Strong Senior: diagnoses circular imports and designs clean package boundaries.
+- Staff-level signal: defines repository-wide dependency direction, packaging conventions, and lifecycle rules that support multiple entry points and reliable tests.
+
+### Common pitfalls
+
+- Claiming every package must contain __init__.py.
+- Confusing sys.path with sys.modules.
+- Assuming imports always execute a module body again.
+- Treating a circular import as merely a missing-path problem.
+- Using local imports to hide an unresolved architectural cycle.
+- Creating database connections, clients, or background tasks at import time.
+- Depending on the current working directory or manual sys.path mutation in production.
+- Making routers, services, and repositories import one another.
+- Assuming successful local imports prove a package is correctly built and installable.
+
+### References
+
+- Python tutorial — Modules: https://docs.python.org/3/tutorial/modules.html
+- Python reference — The import system: https://docs.python.org/3/reference/import.html
+- sys.path and sys.modules: https://docs.python.org/3/library/sys.html
+- PEP 420 — Implicit Namespace Packages: https://peps.python.org/pep-0420/
+- Packaging Python Projects: https://packaging.python.org/en/latest/tutorials/packaging-projects/
+- Python Packaging User Guide — pyproject.toml: https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
+- FastAPI — Bigger Applications: https://fastapi.tiangolo.com/tutorial/bigger-applications/
+- FastAPI — Lifespan Events: https://fastapi.tiangolo.com/advanced/events/
