@@ -645,6 +645,14 @@ At module level, execution creates bindings and runs top-level statements. A fun
 
 I distinguish Python language semantics from CPython implementation details. Bytecode format, opcode names, frame internals, and specialization strategies can change between versions. I use tools such as dis and inspect when they help answer a measured question, but I do not make application correctness depend on interpreter internals.”
 
+**Interview-Ready Answer (RU)**
+
+«Выполнение программы на Python состоит из нескольких этапов. Исходный код разбирается в структурированное представление, обычно AST, а затем компилируется в code objects. В CPython эти объекты содержат байткод и метаданные. Механизм исполнения интерпретатора выполняет байткод в контексте runtime-объектов и пространств имён, а runtime-службы обеспечивают вызовы функций, импорт, обработку исключений и управление памятью.
+
+При выполнении модуля исполняются инструкции верхнего уровня и создаются привязки имён. Определение функции создаёт объект функции, который ссылается на скомпилированный код и контекст выполнения; тело функции выполняется при её вызове. Некоторые операции обращаются к native extensions или средствам операционной системы.
+
+Я различаю семантику языка Python и детали реализации CPython. Формат байткода, названия opcode, внутреннее устройство frames и стратегии специализации могут меняться между версиями. Я использую такие инструменты, как dis и inspect, когда они помогают проверить конкретную гипотезу, но не строю корректность приложения на внутренних деталях интерпретатора.»
+
 ---
 
 ### FU-001 — Execution stages in CPython
@@ -697,6 +705,10 @@ For a startup incident, identify whether failure occurs during parsing, import r
 **Interview-Ready Answer (EN)**
 
 “CPython reads and decodes the source, parses it into an AST, and compiles it into code objects containing bytecode and metadata. The interpreter executes those objects in runtime contexts containing namespaces and objects. Module-level statements run when the module executes, while a function body runs when the function is called. Bytecode caching is an optimization, and the exact bytecode and evaluation internals are version-specific.”
+
+**Interview-Ready Answer (RU)**
+
+«CPython читает и декодирует исходный код, разбирает его в AST, а затем компилирует в code objects, содержащие байткод и метаданные. Интерпретатор выполняет эти объекты в runtime-контекстах, включающих пространства имён и объекты. Инструкции уровня модуля выполняются при запуске модуля, тогда как тело функции выполняется при вызове этой функции. Кеширование байткода является оптимизацией, а конкретный байткод и внутренние механизмы исполнения зависят от версии интерпретатора.»
 
 ---
 
@@ -752,6 +764,10 @@ Standardize one entry point across local development, tests, containers, and dep
 
 “I compare the execution context first. Direct execution normally sets __name__ to __main__, while import uses the module's import name. I inspect __name__, __package__, __file__, sys.path, the working directory, and the exact command. I then check relative imports, import-time side effects, and whether the same file has been loaded under two names. For package applications, I prefer a consistent package-aware entry point, such as python -m package.module, or an installed application entry point.”
 
+**Interview-Ready Answer (RU)**
+
+«Сначала я проверяю контекст выполнения. При прямом запуске файла значение __name__ обычно равно __main__, тогда как при импорте используется импортное имя модуля. Я проверяю __name__, __package__, __file__, sys.path, текущую рабочую директорию и точную команду запуска. Затем анализирую относительные импорты, побочные эффекты при импорте и вероятность загрузки одного файла под двумя разными именами. Для приложений с пакетной структурой я предпочитаю единый запуск с сохранением контекста пакета, например python -m package.module, либо установленную точку входа приложения.»
+
 ---
 
 ### FU-003 — Language guarantees versus implementation details
@@ -797,6 +813,10 @@ Classify assumptions as language contract, documented library contract, implemen
 **Interview-Ready Answer (EN)**
 
 “Python specifies language behavior, but it does not standardize every mechanism an interpreter uses. In CPython, bytecode opcodes, frame internals, evaluation-loop optimizations, memory layout, and reference-counting details are implementation-specific and can change. The dis module describes the bytecode of the interpreter currently running; it is not a portable contract. I build correctness on documented language and library behavior. If I rely on a CPython-specific feature, I isolate it, document the version dependency, and test it during upgrades.”
+
+**Interview-Ready Answer (RU)**
+
+«Python определяет семантику языка, но не стандартизирует каждый механизм, с помощью которого интерпретатор обеспечивает это поведение. В CPython байткодовые opcode, внутреннее устройство frames, оптимизации цикла интерпретации, организация памяти и детали подсчёта ссылок относятся к реализации и могут меняться. Модуль dis показывает байткод текущего интерпретатора, но это не переносимый контракт. Корректность приложения я основываю на документированном поведении языка и библиотек. Если я использую особенность CPython, то изолирую её, документирую зависимость от версии и проверяю её при обновлениях.»
 
 ---
 
@@ -857,6 +877,12 @@ A senior engineer owns the investigation end to end: problem framing, diagnostic
 “I choose the diagnostic layer based on the symptom and evidence. I establish scope, timeline, impact, and a baseline using service metrics, logs, and traces. I inspect application behavior when the issue points to business logic, state, or dependency usage. I move into Python and CPython diagnostics when profiling, stack traces, allocation data, or interpreter-specific behavior indicate a runtime problem. I inspect the OS and container layer when there are signs of CPU throttling, memory limits, OOM kills, file-descriptor exhaustion, network problems, or process-level failures.
 
 I avoid starting with internals without a hypothesis. I correlate evidence across layers, test the smallest plausible explanation, validate the remediation under representative load, and add monitoring or regression tests to reduce recurrence.”
+
+**Interview-Ready Answer (RU)**
+
+«Я выбираю уровень диагностики исходя из симптома и имеющихся доказательств. Сначала определяю масштаб, временную последовательность и влияние проблемы, используя метрики сервиса, логи и трассировки. Поведение приложения я исследую, если проблема связана с бизнес-логикой, состоянием или использованием зависимостей. К диагностике Python и CPython перехожу, когда профилирование, stack traces, данные об аллокациях или особенности интерпретатора указывают на проблему runtime. Уровень ОС и контейнера проверяю при признаках ограничения CPU, лимитов памяти, OOM kill, исчерпания файловых дескрипторов, сетевых проблем или сбоев процессов.
+
+Я не начинаю с изучения внутренних механизмов без гипотезы. Сопоставляю данные разных уровней, проверяю наиболее вероятное объяснение минимальным экспериментом, затем валидирую исправление под репрезентативной нагрузкой и добавляю мониторинг или регрессионные тесты.»
 
 ---
 
@@ -998,6 +1024,14 @@ Conceptually, an execution frame represents the active call. In CPython, the exa
 
 For performance, I profile representative workloads before optimizing call boundaries, because the dominant cost may be inside the function or in I/O rather than the call mechanism itself.”
 
+**Interview-Ready Answer (RU)**
+
+«При вызове функции Python сначала вычисляет вызываемый объект и выражения аргументов, затем применяет протокол вызова и связывает позиционные и именованные аргументы с параметрами функции. Тело функции выполняется с использованием её скомпилированного code object и runtime-контекста, предоставляющего локальное состояние, глобальные и встроенные пространства имён, а также переменные замыкания, если они есть.
+
+Концептуально активный вызов представлен execution frame. В CPython конкретное представление frame и путь вызова являются деталями реализации и менялись между версиями. Во время выполнения функция может вернуть значение или передать исключение вызывающему коду. Если это генераторная или асинхронная функция, вызов создаёт объект генератора или coroutine, а не выполняет тело немедленно до завершения.
+
+При анализе производительности я сначала профилирую репрезентативную нагрузку, прежде чем оптимизировать границы вызовов: основная стоимость может находиться внутри функции или быть связана с I/O, а не с самим механизмом вызова.»
+
 **Follow-up Questions & Answers**
 
 ---
@@ -1062,6 +1096,10 @@ When debugging memory retention, inspect whether closures, tracebacks, or stored
 
 “CPython needs the function's code object, bound arguments, local execution state, and access to the function's globals, built-ins, and closure cells. It also maintains control-flow and exception state so the function can continue, return, or propagate an exception. Conceptually this is an execution frame, but CPython's internal frame representation and allocation strategy have changed over time. A full Python-visible frame is not necessarily materialized in the same way for every call.”
 
+**Interview-Ready Answer (RU)**
+
+«Для выполнения функции CPython необходимы её code object, связанные аргументы, локальное состояние выполнения и доступ к глобальному пространству имён функции, built-ins и ячейкам замыкания. Также поддерживается состояние управления потоком и обработки исключений, чтобы функция могла продолжить выполнение, вернуть результат или передать исключение. Концептуально это execution frame, однако внутреннее представление frame и стратегия его выделения в CPython со временем менялись. Полноценный Python-visible frame не обязательно материализуется одинаковым способом при каждом вызове.»
+
 ---
 
 ### FU-006 — Profiling function-call overhead
@@ -1123,6 +1161,10 @@ The optimization decision should be based on service-level impact, not an attrac
 **Interview-Ready Answer (EN)**
 
 “I start by defining the target metric and capturing a representative workload. I use a profiler to inspect call counts, self time, and cumulative time, and I correlate that data with request traces. A high call count alone does not prove that calls are expensive; the time may be in a database, network request, serialization routine, or native extension. Once I have a specific hypothesis, I make a targeted change and compare the same workload before and after, checking latency percentiles, CPU, memory, and correctness. I avoid sacrificing maintainability for an optimization that has no measurable service-level benefit.”
+
+**Interview-Ready Answer (RU)**
+
+«Сначала я определяю целевую метрику и собираю репрезентативную нагрузку. Затем использую профилировщик, чтобы изучить количество вызовов, self time и cumulative time, и сопоставляю эти данные с трассировками запросов. Большое количество вызовов само по себе не доказывает, что они дороги: время может уходить на запросы к БД, сетевые вызовы, сериализацию или native extension. После формулирования конкретной гипотезы я вношу целевое изменение и сравниваю результаты на той же нагрузке до и после него, проверяя перцентили latency, CPU, память и корректность. Я не жертвую сопровождаемостью ради оптимизации, которая не даёт измеримого эффекта на уровне сервиса.»
 
 ---
 
@@ -1204,6 +1246,10 @@ Choose the execution model according to workload and lifecycle requirements. Use
 
 “An ordinary function runs when called and completes by returning or raising. Recursion creates nested calls with separate logical execution state. Exceptions unwind control flow until a handler is found. A generator call returns a generator object whose body advances on iteration and retains state between yields. An async function call returns a coroutine object; it runs when awaited or scheduled, and the event loop drives it across suspension points. These differences matter for resource cleanup, cancellation, stack depth, and scheduling.”
 
+**Interview-Ready Answer (RU)**
+
+«Обычная функция выполняется при вызове и завершается возвратом значения либо возбуждением исключения. Рекурсия создаёт вложенные вызовы с отдельным логическим состоянием выполнения. Исключения разматывают поток управления до тех пор, пока не будет найден подходящий обработчик. Вызов генераторной функции возвращает объект генератора: его тело выполняется по мере итерации, а состояние сохраняется между yield. Вызов async-функции возвращает coroutine object; выполнение начинается при await или планировании задачи, а event loop управляет её продвижением через точки приостановки. Эти различия важны для освобождения ресурсов, отмены задач, глубины стека и планирования.»
+
 ---
 
 ### FU-008 — When call mechanics matter for optimization
@@ -1270,6 +1316,10 @@ The decision should connect a measured low-level cost to a meaningful service-le
 **Interview-Ready Answer (EN)**
 
 “I would only optimize call mechanics after profiling shows that Python call dispatch or repeated wrapper layers are a material cost in a representative CPU-bound workload. I would inspect self time and call paths, estimate the maximum possible end-to-end gain, and test a focused alternative such as reducing redundant calls or batching work. Then I would compare correctness, latency percentiles, throughput, CPU, memory, and maintainability on the supported Python versions. CPython call optimizations change over time, so I would avoid relying on private internals unless the dependency is isolated and justified by measured results.”
+
+**Interview-Ready Answer (RU)**
+
+«Я оптимизирую механику вызовов только после того, как профилирование показывает, что диспетчеризация Python-вызовов или повторяющиеся слои обёрток существенно влияют на репрезентативную CPU-bound нагрузку. Я анализирую self time и call paths, оцениваю максимально возможный сквозной выигрыш и проверяю целевой вариант, например устранение лишних вызовов или пакетную обработку. Затем сравниваю корректность, перцентили latency, throughput, CPU, память и сопровождаемость на поддерживаемых версиях Python. Оптимизации вызовов в CPython меняются со временем, поэтому я не полагаюсь на приватные внутренние механизмы, если такая зависимость не изолирована и не оправдана измеренными результатами.»
 
 ---
 
