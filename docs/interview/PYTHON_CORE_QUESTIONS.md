@@ -1,7 +1,7 @@
 # Python Core — Question Bank
 
 **Status:** In progress  
-**Coverage:** 25 of 30 primary questions drafted  
+**Coverage:** 26 of 30 primary questions drafted  
 **Review rule:** Draft answers must be technically reviewed before being marked validated.
 
 ---
@@ -3316,3 +3316,162 @@ At Senior level, the goal is not maximum log volume. It is observability with cl
 - OpenTelemetry context propagation: https://opentelemetry.io/docs/concepts/context-propagation/
 - W3C Trace Context: https://www.w3.org/TR/trace-context/
 - OpenTelemetry semantic conventions: https://opentelemetry.io/docs/specs/semconv/
+
+
+---
+
+## PY-CORE-026 — Python Security, Secure Coding and Common Vulnerabilities
+
+### Question (EN)
+
+**How do you design and review a secure Python backend? Explain how you prevent injection, SSRF, path traversal, insecure deserialization, broken access control, and secret exposure.**
+
+### Перевод (RU)
+
+**Как проектировать и проверять безопасность Python backend? Объясните, как предотвращать injection, SSRF, path traversal, небезопасную десериализацию, ошибки контроля доступа и утечки секретов.**
+
+### What the interviewer evaluates
+
+- Threat modeling, trust boundaries, attack surface, and secure-by-default design.
+- Safe database queries and subprocess execution.
+- Defense against SSRF, path traversal, unsafe file handling, and insecure deserialization.
+- Authentication versus authorization, object-level access control, and least privilege.
+- Secret management, password hashing, cryptographic hygiene, and key rotation.
+- Input validation, output encoding, dependency security, and security testing.
+- Risk-based prioritization, incident response, and residual-risk reasoning.
+
+### Model answer (RU)
+
+Безопасность backend начинается с определения **активов, угроз, границ доверия и последствий компрометации**, а не с выбора отдельной библиотеки. Я строю threat model: какие данные и операции критичны, кто контролирует входные данные, какие компоненты доступны из сети и где проходят границы между пользователем, API, БД, очередями и внешними сервисами. Затем применяю defense in depth: least privilege, secure defaults, явные контракты, изоляцию, мониторинг и тестирование.
+
+**Injection.** Для SQL использую parameterized queries или ORM expressions, где значения передаются отдельно от SQL syntax. Не конкатенирую пользовательские значения в SQL. Имена колонок, сортировка и другие SQL identifiers обычно не параметризуются как обычные значения, поэтому выбираю их из строгого allowlist. Для shell-команд предпочитаю subprocess с массивом аргументов и shell=False; не формирую команду из пользовательской строки. Parameterization не отменяет необходимость ограниченных DB permissions и лимитов ресурсов.
+
+**Input validation и output encoding.** На границе системы проверяю форму, тип, длину, диапазон, формат и бизнес-инварианты. Pydantic помогает валидировать структуру входных данных, но сам по себе не обеспечивает authorization, безопасный SQL или output encoding. Для HTML применяю контекстно-зависимое escaping и безопасные шаблоны; для JSON — корректную сериализацию. Blacklist validation недостаточна. Normalization и canonicalization должны соответствовать конкретному формату и выполняться до security-sensitive проверок, чтобы избежать разных интерпретаций одних данных.
+
+**Path traversal и файловые операции.** Не строю filesystem path напрямую из пользовательского имени. Использую allowlist идентификаторов, ограничиваю доступ выделенной директорией и проверяю resolved canonical path. Простая проверка строкового префикса небезопасна: /safe/root-evil начинается с /safe/root, но не является дочерним каталогом. Учитываю symlinks, race conditions и TOCTOU между проверкой и открытием. Для строгой защиты применяю directory file descriptors и операции относительно доверенного directory handle, где это поддерживает платформа. Ограничиваю размер и permissions файлов и не доверяю расширению или MIME type, заявленному клиентом.
+
+**SSRF.** Если backend загружает URL, предоставленный пользователем, злоумышленник может обратиться к loopback, private network, cloud metadata endpoint или внутреннему сервису. По возможности не принимаю произвольные URLs, а использую resource IDs или allowlisted hosts. Иначе проверяю scheme, hostname и порты; разрешаю DNS и проверяю все полученные IP-адреса; блокирую loopback, private, link-local, multicast и reserved ranges; контролирую redirects и повторно валидирую каждый redirect target. Проверки только hostname недостаточно из-за DNS rebinding и изменения адреса после проверки. Network egress policy должна запрещать доступ к чувствительным внутренним сегментам. Учитываю proxy configuration и IPv4/IPv6.
+
+**Insecure deserialization.** Не использую pickle для данных из недоверенных источников: unpickling может выполнять произвольный код. Предпочитаю ограниченные форматы данных, например JSON, и валидирую результат по явной схеме. JSON тоже требует ограничений на размер, глубину, типы и business invariants; он не защищает автоматически от DoS или logic flaws. Для подписанных payload проверяю подпись/MAC до доверия содержимому и корректно управляю key rotation. Подпись не делает небезопасный формат безопасным, если ключ или источник скомпрометирован.
+
+**Authentication и authorization.** Authentication отвечает «кто пользователь?», authorization — «какие действия и над какими объектами ему разрешены?». Проверки доступа выполняются на сервере для каждого чувствительного действия и объекта, а не только через скрытие UI controls. Проверяю tenant/owner scope в запросах, предотвращаю IDOR/BOLA, применяю least privilege и deny-by-default. JWT проверяю по ожидаемому algorithm, issuer, audience, expiration, not-before и доверенному ключу; не принимаю algorithm или key material из недоверенного token header. Проектирую revocation/session lifecycle, refresh-token rotation и безопасное хранение credentials. Роли не заменяют object-level authorization.
+
+**Passwords и cryptography.** Пароли храню только с помощью специализированного password-hashing algorithm с уникальной солью и настроенной стоимостью, например Argon2id или подходящего поддерживаемого варианта scrypt/bcrypt. Не использую plain SHA-256/MD5 как password hash. Параметры cost выбираются по актуальным рекомендациям и измерениям на целевой инфраструктуре. Секреты и ключи хранятся вне репозитория и application image, выдаются через secret manager или защищённую runtime configuration, имеют ограниченный доступ и регулярно ротируются. Шифрование требует управления ключами, nonce/IV, алгоритмами и lifecycle; собственную криптографию не проектирую. Для сравнения MAC/signature использую constant-time comparison, где применимо.
+
+**Secrets и конфигурация.** Не коммичу .env, private keys, tokens или production credentials. Не помещаю секреты в Docker image, build logs, exception messages, telemetry или клиентские bundles. При утечке отзываю и ротирую секрет, оцениваю scope доступа и проверяю audit logs; удаления из последнего commit недостаточно, если секрет остался в истории или артефактах. Разделяю credentials по средам и сервисам, использую отдельные DB roles и минимальные permissions.
+
+**Dependency и supply-chain security.** Фиксирую и регулярно обновляю зависимости, проверяю advisories, версии и происхождение пакетов. Использую lock/constraints policy выбранного инструментария, hash verification там, где поддерживается, vulnerability scanning и SBOM при необходимости. Учитываю typosquatting, dependency confusion, compromised maintainers и вредоносные release artifacts. Scanner — сигнал для triage, а не доказательство безопасности. Build isolation не является security sandbox.
+
+**Security testing и operations.** Добавляю негативные тесты для boundary conditions, object-level authorization, injection payloads, traversal, redirect/SSRF handling и malformed inputs. Использую static analysis, dependency scanning, secret scanning, fuzz/property-based tests и risk-based penetration testing. В production нужны безопасные error responses, rate limits, audit trails критичных действий, ограниченные permissions, security monitoring и проверенный incident response. Логи не должны раскрывать токены, пароли или медицинские/персональные данные. При инциденте сохраняю evidence, ограничиваю доступ, ротирую credentials и следую процедуре восстановления.
+
+Senior-инженер должен объяснять не только конкретную защиту, но и **какую угрозу она устраняет, на каких предположениях основана и какие остаточные риски остаются**.
+
+### Professional answer (EN)
+
+Backend security starts with identifying **assets, threats, trust boundaries, and the impact of compromise**, not with selecting a library. I build a threat model: which data and operations are critical, who controls inputs, which components are network-reachable, and where trust boundaries exist between users, APIs, databases, queues, and external services. I then apply defense in depth: least privilege, secure defaults, explicit contracts, isolation, monitoring, and testing.
+
+**Injection.** For SQL, I use parameterized queries or ORM expressions that keep values separate from SQL syntax. I never concatenate user-controlled values into SQL. Identifiers such as column names and sort directions generally cannot be bound as ordinary values, so I select them from a strict allowlist. For shell execution, I prefer subprocess with an argument array and shell=False; I do not construct shell commands from user input. Parameterization does not remove the need for restricted database privileges and resource limits.
+
+**Input validation and output encoding.** Validate shape, type, length, range, format, and business invariants at system boundaries. Pydantic can validate input structure, but it does not provide authorization, safe SQL, or output encoding by itself. For HTML, use context-aware escaping and safe templating; for JSON, use correct serialization. A blacklist is not sufficient. Normalization and canonicalization must match the relevant format and occur before security-sensitive checks to avoid inconsistent interpretations.
+
+**Path traversal and file handling.** Do not build filesystem paths directly from user-supplied names. Use allowlisted identifiers, constrain access to a dedicated directory, and validate the resolved canonical path. A simple string-prefix check is unsafe: /safe/root-evil starts with /safe/root but is not a child directory. Account for symlinks, race conditions, and TOCTOU between validation and opening. For stronger guarantees, use directory file descriptors and operations relative to a trusted directory handle where supported. Enforce restrictive permissions and size limits; do not trust a client-provided extension or MIME type.
+
+**SSRF.** If a backend fetches user-supplied URLs, an attacker may target loopback, private networks, cloud metadata endpoints, or internal services. Avoid arbitrary URLs when resource IDs or allowlisted hosts meet the use case. Otherwise validate scheme, hostname, and allowed ports; resolve DNS and inspect every resulting IP address; block loopback, private, link-local, multicast, and reserved ranges; control redirects and revalidate every redirect target. Hostname-only checks are insufficient because of DNS rebinding and address changes after validation. Network egress policy should also deny access to sensitive internal segments. Consider proxy configuration and IPv4/IPv6.
+
+**Insecure deserialization.** Never use pickle with untrusted data: unpickling can execute arbitrary code. Prefer constrained data formats such as JSON and validate the result against an explicit schema. JSON still requires limits on size, nesting depth, types, and business invariants; it is not automatically immune to denial-of-service or logic flaws. For signed payloads, verify the signature or MAC before trusting the contents and manage key rotation correctly. A signature does not make an unsafe format safe if the key or producer is compromised.
+
+**Authentication and authorization.** Authentication answers “who is the user?”; authorization answers “which actions may this user perform on which objects?” Enforce access checks server-side for every sensitive action and object, not merely by hiding UI controls. Scope data queries by tenant and ownership, prevent IDOR/BOLA, apply least privilege, and default to deny. Validate JWTs against the expected algorithm, issuer, audience, expiration, not-before claim, and trusted key; do not accept an algorithm or key material from an untrusted token header. Design revocation and session lifecycle, refresh-token rotation, and credential storage deliberately. Roles alone do not replace object-level authorization.
+
+**Passwords and cryptography.** Store passwords only using a dedicated password-hashing algorithm with a unique salt and calibrated work factor, such as Argon2id or an appropriately supported scrypt/bcrypt configuration. Do not use plain SHA-256 or MD5 as a password hash. Choose parameters using current guidance and measurements on target infrastructure. Keep secrets and keys outside source control and application images; deliver them through a secret manager or protected runtime configuration, restrict access, and rotate them. Encryption requires key, nonce/IV, algorithm, and lifecycle management; do not invent cryptography. Use constant-time comparison for MACs or signatures where applicable.
+
+**Secrets and configuration.** Never commit .env files, private keys, tokens, or production credentials. Do not place secrets in Docker images, build logs, exception messages, telemetry, or client bundles. If a secret leaks, revoke and rotate it, assess access scope, and inspect audit logs; deleting it from the latest commit is insufficient if it remains in history or artifacts. Separate credentials by environment and service, use distinct database roles, and grant minimum permissions.
+
+**Dependency and supply-chain security.** Pin and regularly update dependencies, review advisories, versions, and package provenance. Apply the lock/constraints policy supported by the chosen toolchain, hash verification where available, vulnerability scanning, and an SBOM when appropriate. Consider typosquatting, dependency confusion, compromised maintainers, and malicious release artifacts. A scanner finding is a triage signal, not proof that an application is vulnerable or safe. Build isolation is not a security sandbox.
+
+**Security testing and operations.** Add negative tests for boundary conditions, object-level authorization, injection payloads, traversal, redirect/SSRF handling, and malformed inputs. Use static analysis, dependency and secret scanning, fuzz/property-based tests, and risk-based penetration testing. Production needs safe error responses, rate limits, audit trails for critical actions, restricted permissions, security monitoring, and a rehearsed incident response process. Logs must not expose tokens, passwords, or medical/personal data. During an incident, preserve evidence, contain access, rotate credentials, and follow recovery procedures.
+
+A Senior engineer should explain not only the control, but **which threat it mitigates, what assumptions it relies on, and what residual risks remain**.
+
+### Follow-up questions and model answers
+
+#### FU-1 — Why are parameterized queries necessary, and when do allowlists still matter?
+
+**RU:** Почему необходимы параметризованные запросы и в каких случаях всё равно нужны allowlists?
+
+**Answer (RU):** Параметризованный запрос отделяет SQL syntax от данных, поэтому пользовательское значение интерпретируется как значение, а не как часть команды. Но bind parameters обычно не заменяют имена таблиц/колонок, направления сортировки или SQL keywords. Такие динамические identifiers нужно выбирать из строгого allowlist, а не вставлять произвольный ввод. Дополнительно применяю DB least privilege, ограничения ресурсов и тесты на injection.
+
+**Answer (EN):** Parameterized queries separate SQL syntax from data, so user input is treated as a value rather than executable SQL. However, bind parameters generally do not substitute table or column identifiers, sort directions, or SQL keywords. Select such dynamic identifiers from a strict allowlist instead of interpolating arbitrary input. Also apply database least privilege, resource limits, and injection-focused tests.
+
+#### FU-2 — How do you defend a URL-fetching feature against SSRF?
+
+**RU:** Как защитить функцию загрузки по URL от SSRF?
+
+**Answer (RU):** Предпочитаю allowlisted destinations или идентификаторы ресурсов вместо произвольных URLs. Если URL необходим, разрешаю только ожидаемые schemes/ports, валидирую hostname и DNS results, блокирую private, loopback, link-local и reserved IP ranges, контролирую redirects и повторяю проверку для каждого target. Учитываю DNS rebinding, IPv4/IPv6, proxy и egress firewall. Одной проверки hostname до HTTP-запроса недостаточно; проверка и фактическое соединение должны быть согласованы, а доступ к внутренним сетям ограничен на сетевом уровне.
+
+**Answer (EN):** Prefer allowlisted destinations or resource identifiers over arbitrary URLs. If URLs are required, allow only expected schemes and ports, validate the hostname and DNS results, block private, loopback, link-local, and reserved IP ranges, control redirects, and revalidate every target. Account for DNS rebinding, IPv4/IPv6, proxies, and egress firewalls. A hostname check before the HTTP request is not sufficient; validation must be consistent with the actual connection, and network-level controls must restrict internal access.
+
+#### FU-3 — Why is a string-prefix check insufficient for preventing path traversal?
+
+**RU:** Почему проверки строкового префикса недостаточно для защиты от path traversal?
+
+**Answer (RU):** Строковый префикс не доказывает принадлежность пути каталогу: /srv/app-data-evil имеет префикс /srv/app-data, но не является его дочерним путём. Нужно разрешить путь относительно доверенного base directory и проверить component-aware containment после canonicalization. Symlinks и TOCTOU могут изменить объект между проверкой и открытием. Для строгой модели применяю операции относительно directory file descriptor и минимальные filesystem permissions, где это поддерживается.
+
+**Answer (EN):** A string prefix does not prove directory containment: /srv/app-data-evil starts with /srv/app-data but is not a descendant. Resolve the path against a trusted base directory and check component-aware containment after canonicalization. Symlinks and TOCTOU can still change the target between checking and opening. For a stronger model, use operations relative to a directory file descriptor and restrictive filesystem permissions where supported.
+
+#### FU-4 — Why should untrusted pickle data never be deserialized, and is JSON automatically safe?
+
+**RU:** Почему нельзя десериализовать недоверенные pickle-данные и является ли JSON автоматически безопасным?
+
+**Answer (RU):** Pickle reconstruction может вызывать callable и выполнять произвольный код, поэтому unpickling недоверенного payload создаёт риск code execution. JSON не имеет той же модели произвольного восстановления объектов, но не становится автоматически безопасным: нужны schema validation, ограничения размера и глубины, контроль типов, business invariants и защита от resource exhaustion. Формат сериализации не заменяет проверку доверия к источнику и авторизацию.
+
+**Answer (EN):** Pickle reconstruction can invoke callables and execute arbitrary code, so unpickling an untrusted payload creates a code-execution risk. JSON does not have the same arbitrary object-reconstruction model, but it is not automatically safe: apply schema validation, size and depth limits, type checks, business invariants, and resource-exhaustion controls. A serialization format does not replace source trust and authorization checks.
+
+#### FU-5 — How do authentication and authorization differ, and how do you prevent IDOR/BOLA?
+
+**RU:** Чем authentication отличается от authorization и как предотвращать IDOR/BOLA?
+
+**Answer (RU):** Authentication подтверждает личность субъекта; authorization проверяет, разрешено ли этому субъекту конкретное действие над конкретным объектом в данном контексте. Для защиты от IDOR/BOLA сервер проверяет ownership/tenant scope при каждом доступе к объекту, а не полагается на непредсказуемость ID или UI. Запросы к данным должны включать проверенный scope, доступ по умолчанию запрещён, а привилегии минимальны. Тестирую попытки доступа к чужим объектам с разными ролями и tenant contexts.
+
+**Answer (EN):** Authentication establishes a subject's identity; authorization determines whether that subject may perform a specific action on a specific object in context. To prevent IDOR/BOLA, the server checks ownership and tenant scope on every object access instead of relying on unpredictable IDs or UI restrictions. Data queries must include the verified scope, access defaults to deny, and privileges are minimized. Test cross-user and cross-tenant object access under different roles.
+
+### Pharmaviyum connection
+
+**Hypothetical interview scenario — not a claim about the current implementation:** a pharmacy backend may process medicine catalog searches, stock operations, sales, prescription-related workflows, and AI/RAG requests. A security review should verify that each tenant/user can access only authorized records; SQL uses parameterized statements; uploaded/imported files are constrained and validated; outbound URL fetching cannot reach internal services; and logs, prompts, traces, and error responses do not expose patient or prescription data. Any statement that a specific control is implemented or test-verified requires repository and deployment evidence.
+
+### Senior-level evaluation
+
+| Level | Expected evidence |
+|---|---|
+| Mid-level | Recognizes common injection risks, uses parameterized queries, validates input, and avoids committing secrets. |
+| Senior | Threat-models trust boundaries; addresses SSRF, traversal, deserialization, object-level authorization, secret lifecycle, dependency risks, and secure operations; explains residual risk and test strategy. |
+| Staff-level signal | Establishes security architecture, risk acceptance, secure SDLC controls, incident response, identity boundaries, and organization-wide security standards. |
+
+### Common pitfalls
+
+- Treating input validation as a substitute for parameterized SQL or authorization.
+- Concatenating user-controlled data into SQL or shell commands.
+- Assuming ORM use makes every query safe.
+- Checking only URL hostnames and ignoring DNS resolution, redirects, and egress controls.
+- Using string-prefix checks for filesystem containment.
+- Ignoring symlinks and TOCTOU in file operations.
+- Unpickling untrusted data or assuming JSON removes all parsing/DoS risks.
+- Confusing authentication with authorization or checking permissions only in the UI.
+- Trusting JWT headers, accepting unintended algorithms, or omitting issuer/audience/expiry validation.
+- Storing passwords with fast general-purpose hashes.
+- Committing secrets or assuming deleting a secret from the latest commit revokes it.
+- Treating dependency scanners, SBOMs, or build isolation as complete security guarantees.
+- Logging sensitive payloads, credentials, tokens, or patient data.
+- Failing to plan secret rotation, incident containment, and auditability.
+
+### References
+
+- OWASP Top 10: https://owasp.org/Top10/
+- OWASP Cheat Sheet Series: https://cheatsheetseries.owasp.org/
+- OWASP SQL Injection Prevention: https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html
+- OWASP SSRF Prevention: https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html
+- OWASP Path Traversal: https://owasp.org/www-community/attacks/Path_Traversal
+- Python subprocess documentation: https://docs.python.org/3/library/subprocess.html
+- Python pickle security warning: https://docs.python.org/3/library/pickle.html
+- Python pathlib documentation: https://docs.python.org/3/library/pathlib.html
+- NIST Digital Identity Guidelines: https://pages.nist.gov/800-63-4/
+- OWASP Password Storage: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
