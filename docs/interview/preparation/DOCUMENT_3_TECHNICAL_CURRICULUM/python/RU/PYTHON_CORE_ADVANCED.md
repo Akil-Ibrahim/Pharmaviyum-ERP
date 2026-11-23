@@ -1,6 +1,7 @@
 # Python Core & Advanced Python — Карта вопросов (RU)
 
 **Язык:** Русский  
+**Базовая версия Python:** 3.15.2 — отмечать поведение, зависящее от версии, и отделять гарантии языка Python от деталей реализации CPython.  
 **Распределение раздела:** 45 основных вопросов + 180 дополнительных вопросов = 225  
 **Текущее покрытие:** PY-001–PY-004 и FU-001–FU-016  
 **Файл ответов:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
