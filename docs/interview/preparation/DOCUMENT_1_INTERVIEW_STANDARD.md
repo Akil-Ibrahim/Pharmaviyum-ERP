@@ -53,44 +53,36 @@ The program has ten domains. Cross-cutting capabilities are embedded into these 
 9. **Project Deep Dive — Pharmaviyum** — architecture narrative, domain model, engineering decisions, implementation evidence, trade-offs, debugging stories, AI/RAG design, deployment, security, testing, and lessons learned.
 10. **Behavioral, Leadership & Communication** — ownership, collaboration, conflict, prioritization, mentoring, technical influence, ambiguity, incident communication, and explaining decisions to different audiences.
 
-## 5. Standard structure for every Main Question
+## 5. Main Question format
 
-Each Main Question must contain the following elements, adapted to the topic:
+Every Main Question should help the learner answer three things: what happens, why it happens, and why it matters in real engineering work.
 
-1. **Question (English)** — realistic interviewer wording.
-2. **Russian translation** — accurate translation preserving technical meaning.
-3. **What the interviewer evaluates** — competency and signal being tested.
-4. **Short answer** — concise response suitable for an initial interview exchange.
-5. **Detailed answer** — technically complete explanation with correct terminology.
-6. **Internal mechanics** — how the relevant runtime, framework, protocol, database, or system behaves.
-7. **Practical example** — realistic engineering scenario; use code where it materially improves understanding.
-8. **Best practices** — current, context-sensitive engineering practices.
-9. **Trade-offs and alternatives** — when the approach is appropriate and when it is not.
-10. **Common mistakes and misconceptions** — including misleading simplifications.
-11. **Senior-level perspective** — production implications, edge cases, risk, and decision criteria.
-12. **Interview-ready answer (English)** — a coherent answer the candidate can deliver aloud.
-13. **Follow-up questions with answers** — each probe has its own substantive answer.
+Use this compact structure:
 
-Not every question needs a large code sample. Code must clarify the concept, not replace explanation. Examples should be realistic and maintainable.
+1. **Question:** original English wording and accurate Russian translation.
+2. **What is being evaluated:** the skill or understanding the interviewer is checking.
+3. **Explanation:** a clear answer, from the basic idea to the relevant technical detail.
+4. **How it works:** internal mechanics, only as deep as the topic requires.
+5. **Example:** a realistic scenario; include code only when it makes the idea clearer.
+6. **Engineering judgment:** best practices, trade-offs, limitations, and common mistakes where relevant.
+7. **Interview-ready answer:** a concise, natural answer in English and Russian.
 
-## 6. Follow-up question standard
+Do not create a separate section for every possible aspect if several can be explained together. Do not repeat the same point in the short answer, detailed answer, mechanics, best practices, and senior perspective. Use additional sections only when they make a difficult topic easier to understand.
 
-Follow-ups must progressively deepen the parent competency. Useful dimensions include:
+The explanation must remain technically complete. Simplify the presentation, not the engineering content.
 
-- mechanism and internal behavior;
-- edge cases and boundary conditions;
-- complexity and performance;
-- concurrency and race conditions;
-- security and privacy;
-- failure modes and recovery;
-- scaling and capacity;
-- alternatives and trade-offs;
-- testing and observability;
-- production incident scenarios;
-- architecture evolution;
-- communication and decision justification.
+## 6. Follow-up question format
 
-Every follow-up includes a direct answer, reasoning, and—where relevant—an example, trade-off, or senior-level implication. The answer must stand on its own and must not merely say “as above.”
+Each Main Question has exactly four Follow-ups. They should explore different angles rather than repeat the main answer:
+
+- **Mechanism:** how the relevant behavior works.
+- **Application:** how it appears in practical development or debugging.
+- **Edge cases and trade-offs:** limitations, alternatives, and failure modes.
+- **Senior judgment:** production impact and how to make or defend an engineering decision.
+
+Each Follow-up needs the English question, Russian translation, a clear substantive explanation, a relevant example when useful, and interview-ready answers in both languages.
+
+Keep each answer focused. Do not force every Follow-up into an identical list of headings. Combine related points and omit sections that add no value. A Follow-up must be understandable on its own and must not rely on phrases such as “as explained above.”
 
 ## 7. Difficulty and priority
 
