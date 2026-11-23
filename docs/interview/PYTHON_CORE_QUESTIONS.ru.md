@@ -462,12 +462,12 @@ At Senior level, I check whether equality reflects the type's domain semantics, 
 
 #### FU-3
 
-**EN:** What is aliasing, and why can it create bugs with mutable objects?  
-**RU:** Что такое aliasing и почему он может приводить к ошибкам при работе с изменяемыми объектами?
+**EN:** Can two unequal objects have the same hash, and how do dictionaries handle that situation?  
+**RU:** Могут ли два неравных объекта иметь одинаковый хеш и как словари обрабатывают такую ситуацию?
 
-**Ответ (RU):** Aliasing возникает, когда несколько имён ссылаются на один объект. Мутация через любое из этих имён изменяет общий объект, поэтому другая часть программы может неожиданно увидеть изменение. Решения включают явное владение, копирование на границе владения или использование неизменяемых значений там, где это оправдано.
+**Answer (RU):** Да. Хеш-коллизия возникает, когда разные объекты имеют одинаковый hash. Словарь использует хеш для выбора области поиска, но затем применяет проверку равенства, чтобы определить нужный ключ. Поэтому совпадение хешей не означает равенства объектов, а корректная реализация __eq__ остаётся необходимой.
 
-**Answer (EN):** Aliasing occurs when multiple names refer to the same object. A mutation through any of those names changes the shared object, so another part of the program may observe an unexpected change. Mitigations include explicit ownership, copying at ownership boundaries, or using immutable values where appropriate.
+**Answer (EN):** Yes. A hash collision occurs when distinct objects produce the same hash. A dictionary uses the hash to locate a candidate position, then applies equality checks to identify the matching key. Equal hashes therefore do not imply equal objects, and a correct __eq__ implementation remains essential.
 
 #### FU-4
 
