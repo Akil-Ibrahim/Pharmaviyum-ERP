@@ -1,7 +1,7 @@
 # Python Core — Question Bank
 
 **Status:** In progress  
-**Coverage:** 29 of 30 primary questions drafted  
+**Coverage:** 30 of 30 primary questions drafted  
 **Review rule:** Draft answers must be technically reviewed before being marked validated.
 
 ---
@@ -3910,3 +3910,149 @@ A strong Senior answer should demonstrate that the candidate can:
 - Google SRE Book — Monitoring Distributed Systems: https://sre.google/sre-book/monitoring-distributed-systems/
 - Locust documentation: https://docs.locust.io/
 - Python asyncio — Developing with asyncio: https://docs.python.org/3/library/asyncio-dev.html
+
+
+## PY-CORE-030 — Python execution model, runtime semantics and CPython internals
+
+### Question (EN)
+
+**Walk me through how Python source code is executed. What are code objects, frames and bytecode, and which parts of this model are Python language semantics versus CPython implementation details?**
+
+### Перевод (RU)
+
+**Объясните путь выполнения исходного кода Python. Что такое code objects, frames и bytecode, и какие части этой модели относятся к семантике языка Python, а какие являются деталями реализации CPython?**
+
+### What the interviewer evaluates
+
+- Understanding the distinction between the Python language, its execution model and a particular interpreter implementation.
+- Ability to describe the source-to-execution pipeline without claiming that every implementation uses the same bytecode or virtual machine.
+- Understanding code objects, function objects, execution frames, namespaces and instruction execution.
+- Awareness of compilation, module execution, imports and runtime name resolution.
+- Ability to reason about tracebacks, stack frames, debugging and profiling.
+- Awareness that CPython bytecode and adaptive interpreter details are version-specific implementation details.
+- Ability to discuss runtime trade-offs without relying on folklore or unstable internals.
+
+### Model answer (RU)
+
+Сначала важно разделить три понятия: **язык Python**, его **модель выполнения** и конкретную реализацию интерпретатора, например **CPython**. Язык определяет наблюдаемую семантику программы. CPython — наиболее распространённая реализация, но её внутреннее устройство не следует автоматически считать обязательной частью языка: альтернативные реализации могут выполнять ту же программу другим способом.
+
+В CPython исходный текст обычно проходит этапы разбора и компиляции. Текст преобразуется в синтаксическое представление, проверяется и компилируется в **code object**. Code object содержит инструкции байткода и метаданные, необходимые для выполнения: информацию о константах, именах, локальных переменных, аргументах и других свойствах блока кода. Сам code object не является обычной функцией и не хранит конкретные значения замыканий или привязку функции к глобальному namespace.
+
+**Function object** связывает code object с контекстом вызова функции: в частности, с глобальным namespace, defaults, keyword defaults и closure cells, если они есть. Поэтому один code object в принципе может быть связан с разными function objects и разными окружениями.
+
+При выполнении CPython создаёт **frame** для активного блока кода. Frame хранит состояние конкретного выполнения: ссылки на code object и namespaces, локальное состояние, стек вычислений и позицию выполнения. Вызов функции создаёт новый контекст выполнения; вложенные вызовы формируют цепочку активных frames. Эта структура лежит в основе traceback и помогает отладчикам и профилировщикам показывать путь выполнения. Детали внутреннего представления frames менялись между версиями CPython, поэтому нельзя проектировать приложение на предположении о неизменности их внутренней структуры.
+
+**Bytecode** — низкоуровневое представление инструкций, которое исполняет виртуальная машина CPython. Интерпретатор последовательно обрабатывает инструкции, выполняя операции, переходы, вызовы и работу с объектами. Байткод не является машинным кодом процессора и не представляет собой стабильный формат для хранения или передачи между произвольными версиями Python. Набор инструкций и их поведение могут меняться между релизами.
+
+Современный CPython использует оптимизации интерпретатора, в том числе специализацию инструкций и адаптацию горячих участков к наблюдаемым типам и операциям. Это детали реализации, которые могут улучшать производительность конкретных сценариев, но не меняют контракт языка. Нельзя полагаться на конкретную последовательность байткода или на то, что определённая оптимизация обязательно произойдёт.
+
+При выполнении модуля его верхнеуровневый код исполняется в namespace модуля. Импорт связывает модуль с механизмом импорта и кэшированием в `sys.modules`; повторный импорт обычно использует уже загруженный объект модуля, хотя детали повторного выполнения зависят от механизма загрузки и явных действий приложения. Поиск имён во время выполнения зависит от области видимости и правил разрешения имён, а не от простого текстового поиска по файлу.
+
+Практическая ценность этих знаний — диагностика. Traceback отражает цепочку активных контекстов выполнения и указывает места, связанные с исключением. Debugger может исследовать frame и локальное состояние; profiler может связывать затраты с функциями и call paths. Однако introspection и tracing могут иметь overhead, а доступ к внутренним деталям интерпретатора должен быть оправдан конкретной диагностической задачей.
+
+На Senior-уровне важно чётко обозначать границы переносимости: семантика Python — контракт для программы; байткод, layout объектов, frame internals, reference counting и конкретные оптимизации — детали выбранной реализации и версии. Если приложение зависит от таких деталей, зависимость должна быть локализована, протестирована на целевых версиях и иметь обоснование. Для обычной прикладной разработки предпочтительны публичные API языка и стандартной библиотеки.
+
+### Model answer (EN)
+
+I first distinguish three things: the **Python language**, its **execution model**, and a particular interpreter implementation such as **CPython**. The language defines the observable semantics of a program. CPython is the most widely used implementation, but its internals are not automatically language guarantees; another implementation may execute the same program differently.
+
+In CPython, source code normally goes through parsing and compilation. The source is transformed into a syntactic representation, validated, and compiled into a **code object**. A code object contains bytecode instructions and metadata needed to execute a block, including information about constants, names, local variables, arguments, and other code properties. A code object is not itself an ordinary function: it does not contain a particular closure's values or a function's binding to a global namespace.
+
+A **function object** associates a code object with its execution context, including its global namespace, defaults, keyword defaults, and closure cells where applicable. Consequently, the same code object can in principle be associated with different function objects and environments.
+
+When CPython executes a block of code, it creates a **frame** for that active execution. A frame represents the state of a particular execution: references to the code object and namespaces, local execution state, an evaluation stack, and the current instruction position. A function call creates a new execution context; nested calls form a chain of active frames. This model underpins tracebacks and allows debuggers and profilers to expose execution paths. CPython's internal frame representation has changed across releases, so application code should not assume a permanently stable internal layout.
+
+**Bytecode** is a lower-level instruction representation executed by the CPython virtual machine. The interpreter processes instructions to perform operations, control flow, calls, and object interactions. Bytecode is not processor machine code and is not a stable interchange or persistence format across arbitrary Python versions. The instruction set and its behaviour can change between releases.
+
+Modern CPython includes interpreter optimisations such as instruction specialisation and adaptation of frequently executed operations to observed types and patterns. These are implementation details that can improve particular workloads without changing the language contract. I would not depend on a specific bytecode sequence or assume that a particular optimisation must occur.
+
+When a module is executed, its top-level code runs in the module namespace. Importing interacts with the import machinery and the `sys.modules` cache; a subsequent import normally reuses the loaded module object, while re-execution depends on the loader mechanism and explicit application actions. Runtime name resolution follows Python's scope rules rather than a simple textual search through a file.
+
+These concepts are useful for diagnostics. A traceback represents the chain of execution contexts associated with an exception and identifies relevant source locations. A debugger can inspect frames and local state; a profiler can attribute costs to functions and call paths. Introspection and tracing can add overhead, however, and access to interpreter internals should be justified by a concrete diagnostic need.
+
+At Senior level, I make portability boundaries explicit: Python semantics are the program's language contract; bytecode, object layouts, frame internals, reference counting, and specific optimisations belong to a particular implementation and version. If an application depends on such details, the dependency should be isolated, justified, and tested against supported interpreter versions. Ordinary application code should prefer public language and standard-library APIs.
+
+### Follow-up questions and model answers
+
+#### FU-1
+
+**EN:** What is the difference between a code object and a function object?  
+**RU:** Чем code object отличается от function object?
+
+**Answer (RU):** Code object описывает скомпилированный блок кода: инструкции и метаданные, например имена, константы и сведения о локальных переменных. Function object связывает этот code object с конкретным окружением выполнения — globals, defaults и closure cells. Поэтому code object сам по себе не равен вызываемой функции и не содержит все значения, необходимые для конкретного вызова.
+
+**Answer (EN):** A code object describes a compiled block: its instructions and metadata such as names, constants, and local-variable information. A function object associates that code object with a particular execution environment, including globals, defaults, and closure cells. A code object is therefore not itself the callable function and does not contain every value needed for a particular call.
+
+#### FU-2
+
+**EN:** Is Python bytecode a stable format that can safely be stored and reused across Python versions?  
+**RU:** Является ли байткод Python стабильным форматом, который можно безопасно сохранять и повторно использовать между версиями Python?
+
+**Answer (RU):** Нет. Байткод CPython — деталь реализации, и набор инструкций, их аргументы и семантика могут меняться между версиями. Файлы `.pyc` предназначены для механизма кэширования импорта в совместимом окружении, а не как универсальный долговременный формат обмена. Для переносимости следует распространять исходный код или стандартные артефакты упаковки, а не строить контракт на внутреннем байткоде.
+
+**Answer (EN):** No. CPython bytecode is an implementation detail; its instructions, arguments, and semantics can change between releases. `.pyc` files support import caching in compatible environments, not a universal long-term interchange format. For portability, distribute source code or standard packaging artifacts rather than making internal bytecode part of an application contract.
+
+#### FU-3
+
+**EN:** How are frames useful when debugging an exception, and what should you avoid assuming about them?  
+**RU:** Чем frames полезны при отладке исключения и какие предположения о них опасны?
+
+**Answer (RU):** Frame представляет состояние активного блока выполнения: code object, namespaces и позицию исполнения. Цепочка frames помогает traceback показать путь вызовов, а debugger — исследовать локальный контекст. Но внутреннее представление frame в CPython менялось; не следует зависеть от приватного layout, удерживать frames без необходимости или считать introspection бесплатной. Для диагностики лучше использовать публичные интерфейсы traceback, inspect и debugger tooling.
+
+**Answer (EN):** A frame represents the state of an active execution block, including its code object, namespaces, and execution position. The frame chain lets a traceback show the call path and allows a debugger to inspect local context. CPython's internal frame representation has changed, however. Avoid depending on private layouts, retaining frames unnecessarily, or assuming introspection is free. Prefer public traceback, inspect, and debugger interfaces for diagnostics.
+
+#### FU-4
+
+**EN:** Does CPython's adaptive interpreter change the semantics of Python code?  
+**RU:** Меняет ли адаптивный интерпретатор CPython семантику программы Python?
+
+**Answer (RU):** Нет, оптимизации интерпретатора должны сохранять наблюдаемую семантику программы. Специализация может менять способ исполнения конкретных инструкций ради производительности, но не должна менять результат согласно контракту языка. Конкретные механизмы, пороги и представление специализированных инструкций являются деталями реализации и могут меняться. Корректность программы не должна зависеть от того, активировалась ли определённая оптимизация.
+
+**Answer (EN):** No. Interpreter optimisations must preserve the observable semantics of the program. Specialisation may change how particular instructions are executed for performance, but it must not change the result under the language contract. The mechanisms, thresholds, and representation of specialised instructions are implementation details and may change. Program correctness must not depend on whether a particular optimisation is activated.
+
+#### FU-5
+
+**EN:** How would you investigate a production issue using Python runtime introspection without making the issue worse?  
+**RU:** Как расследовать production-проблему с помощью introspection Python, не усугубив её?
+
+**Answer (RU):** Сначала определю симптом и выберу минимально инвазивный инструмент: структурированные логи и correlation IDs, метрики, sampling traces, профилирование или traceback capture. Проверю overhead, объём собираемых данных и влияние на latency, память и event loop. Не буду массово сериализовать locals или сохранять frames: там могут находиться секреты, персональные данные и большие графы объектов, а удержание frame может продлить жизнь объектов. Сбор данных ограничу по времени, доступу и объёму, отредактирую чувствительные поля и проверю гипотезу на воспроизводимом сценарии.
+
+**Answer (EN):** I would start from the symptom and choose the least invasive tool: structured logs and correlation IDs, metrics, sampled traces, profiling, or traceback capture. I would assess overhead, data volume, and effects on latency, memory, and the event loop. I would not indiscriminately serialize locals or retain frames: they may contain secrets, personal data, and large object graphs, and retaining a frame can extend object lifetimes. I would bound collection by time, access, and volume, redact sensitive fields, and validate the hypothesis with a reproducible scenario.
+
+### Pharmaviyum connection
+
+**Status: hypothetical interview scenario — not a claim about the current implementation.**
+
+Imagine investigating an intermittent latency spike in a FastAPI request path. An engineer could correlate request logs and traces, then use a sampled profiler or targeted traceback capture to determine whether time is spent in Python application code, a blocking call, or a dependency. Runtime introspection must be bounded and must not expose patient/customer data or secrets. The repository and deployed runtime should be inspected before making claims about the interpreter version, profiling setup, or observed bottleneck.
+
+### Senior-level evaluation
+
+| Level | Expected evidence |
+|---|---|
+| Weak | Treats CPython internals as universal Python guarantees; confuses bytecode with machine code; cannot distinguish code and function objects. |
+| Competent | Describes compilation, bytecode execution, frames, and the purpose of tracebacks; recognises that bytecode varies by version. |
+| Strong Senior | Separates language semantics from implementation details; explains code/function/frame relationships accurately; understands diagnostic value and overhead; avoids depending on unstable internals and protects sensitive runtime state. |
+
+### Common pitfalls
+
+- Saying that every Python implementation executes CPython bytecode.
+- Treating bytecode as processor machine code or a stable public ABI.
+- Confusing a code object with a function object.
+- Claiming that a code object contains a function's globals and closure values.
+- Treating CPython frame internals or object layouts as stable across releases.
+- Assuming interpreter specialisation changes language-level semantics.
+- Depending on a particular disassembly output for application correctness.
+- Treating tracebacks or frame inspection as cost-free.
+- Capturing locals indiscriminately and leaking credentials, tokens, or customer/patient data.
+- Retaining frames and unintentionally extending the lifetime of large object graphs.
+- Assuming implementation-specific optimisations are guaranteed on every workload.
+
+### References
+
+- Python Language Reference — Execution model: https://docs.python.org/3/reference/executionmodel.html
+- Python Data Model — Code objects: https://docs.python.org/3/reference/datamodel.html#code-objects
+- Python `dis` module: https://docs.python.org/3/library/dis.html
+- Python `inspect` module: https://docs.python.org/3/library/inspect.html
+- Python `traceback` module: https://docs.python.org/3/library/traceback.html
+- CPython Developer Guide: https://devguide.python.org/
+- CPython Internals documentation: https://github.com/python/cpython
