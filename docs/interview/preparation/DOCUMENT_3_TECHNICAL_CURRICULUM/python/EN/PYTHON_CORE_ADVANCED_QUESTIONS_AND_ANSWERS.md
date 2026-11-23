@@ -2,6 +2,7 @@
 
 **Language:** English  
 **Domain:** Python Core & Advanced Python  
+**Python baseline:** 3.15.2. Version-specific behavior is labelled; language guarantees are distinguished from CPython implementation details.  
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
