@@ -3017,3 +3017,152 @@ For production, I define supported Python versions and platforms, declare projec
 - pip user guide: https://pip.pypa.io/en/stable/user_guide/
 - pip dependency resolution: https://pip.pypa.io/en/stable/topics/dependency-resolution/
 - pip-audit: https://github.com/pypa/pip-audit
+
+
+---
+
+## PY-CORE-024 — Основы тестирования Python, pytest и архитектура тестов
+
+### Question (EN)
+
+**How would you design a reliable Python test strategy, and how do pytest fixtures, parametrization, test doubles, and different testing levels fit into it?**
+
+### Перевод (RU)
+
+**Как спроектировать надёжную стратегию тестирования Python-приложения и какую роль в ней играют уровни тестирования, fixtures, параметризация и тестовые двойники pytest?**
+
+### Что оценивает интервьюер
+
+- Умение выбирать уровень тестирования исходя из контракта и проверяемого риска.
+- Понимание collection, fixtures, scopes, parametrization и teardown в pytest.
+- Корректное применение mocks и других test doubles без привязки тестов к деталям реализации.
+- Изоляция, детерминированность, async testing и управление внешними ресурсами.
+- Понимание ограничений coverage, property-based testing, mutation testing и contract testing.
+- Способность проектировать поддерживаемую архитектуру тестов, а не просто увеличивать их количество.
+
+### Эталонный ответ (RU)
+
+Надёжная стратегия тестирования начинается не с выбора инструмента, а с определения **контрактов, рисков и границ системы**. Я выбираю самый узкий уровень, который способен достоверно проверить требуемое поведение, и дополняю его интеграционными и сквозными тестами там, где важны реальные взаимодействия компонентов.
+
+**Уровни тестирования.** Unit-тест проверяет небольшую единицу поведения изолированно — например, доменное правило или функцию нормализации. Integration-тест проверяет взаимодействие нескольких реальных компонентов: repository с PostgreSQL, endpoint с dependency injection или обработчик с брокером сообщений. Functional/API-тест проверяет поведение через публичный интерфейс с точки зрения сценария. E2E-тест проходит через максимально близкий к реальному пользовательский путь и обычно дороже, медленнее и чувствительнее к инфраструктуре. Термины functional и integration в командах могут пересекаться, поэтому важнее явно определить границы каждого набора.
+
+**pytest.** pytest обнаруживает тесты, собирает их до выполнения, применяет marks и parametrization, разрешает зависимости fixtures и запускает тестовые функции. Обычные assert сопровождаются полезным introspection. Файл conftest.py позволяет организовать общие fixtures на уровне каталогов без прямого импорта. Плагины расширяют runner, но их следует добавлять осознанно, учитывая совместимость и сложность.
+
+**Fixtures и lifecycle.** Fixture — управляемая pytest зависимость для подготовки состояния или ресурса. Зависимости fixtures выражаются через аргументы функций; pytest строит граф setup и выполняет teardown в обратном порядке. Scope бывает function (по умолчанию), class, module, package и session. Более широкий scope уменьшает стоимость setup, но увеличивает риск общего изменяемого состояния и межтестовой зависимости. Для ресурса с cleanup удобно использовать yield fixture или context manager. Setup должен быть минимальным, teardown — гарантированным, а fixture не должна скрывать существенные действия теста. Autouse следует применять ограниченно: неявные зависимости усложняют понимание теста.
+
+**Parametrization.** pytest.mark.parametrize запускает один тестовый контракт на нескольких наборах входных данных. Это полезно для boundary values, вариантов ошибок, локалей, форматов и комбинаций параметров. Идентификаторы параметров должны помогать диагностике. Не следует превращать параметризацию в огромный непрозрачный Cartesian product; разделяйте независимые измерения и используйте targeted pairwise или property-based подход там, где пространство комбинаций велико.
+
+**Test doubles.** Stub возвращает заранее заданный ответ; fake имеет упрощённую рабочую реализацию (например, in-memory repository); spy записывает вызовы; mock задаёт ожидания и проверяет взаимодействия. В Python применяются unittest.mock, Mock, MagicMock, AsyncMock и pytest monkeypatch. Я предпочитаю fake или реальный компонент, когда это остаётся быстро и надёжно, а mock использую на внешней границе — например, для проверки контракта стороннего API. Чрезмерное mocking внутренних методов связывает тест с текущей реализацией и делает рефакторинг болезненным. Патчить нужно имя там, где код его lookup-ит, а не обязательно исходное место определения объекта.
+
+**Isolation и determinism.** Каждый тест должен контролировать данные, время, случайность, environment variables, filesystem и сеть, от которых зависит результат. Избегайте зависимости от порядка запуска, общего изменяемого состояния, реального времени, нестабильных внешних API и случайно разделяемых database records. Используйте уникальные тестовые данные, транзакционные или disposable database стратегии, временные каталоги, контролируемые часы и фиксированные seeds там, где это уместно. Не маскируйте race conditions простыми sleep. Параллельный запуск допустим только при доказанной изоляции ресурсов.
+
+**Async и API testing.** Async-код нужно тестировать в event loop с инструментами, совместимыми с используемым async framework; для pytest обычно используют pytest-asyncio или соответствующий plugin и явно определяют режим владения loop. Проверяйте результат, исключения, timeout, cancellation и cleanup tasks. Для FastAPI отдельно проверяйте dependency overrides и HTTP-контракты через тестовый client. Integration tests должны при необходимости использовать реальный PostgreSQL совместимой версии: mocking всех зависимостей не проверит SQL, транзакции, constraints или сериализацию.
+
+**Property-based, coverage и mutation testing.** Property-based testing с Hypothesis генерирует множество входов и проверяет инварианты, а не только заранее перечисленные примеры; shrinking помогает получить минимальный failing case. Coverage показывает, какой код был выполнен, но высокий line coverage не доказывает, что assertions проверяют правильное поведение. Branch coverage даёт дополнительный сигнал, но также не измеряет качество спецификации. Mutation testing вносит контролируемые изменения в код и проверяет, обнаруживает ли их тестовый набор; выжившие мутации могут указывать на слабые assertions или непроверенные ветви. Mutation testing дорог, поэтому его применяют выборочно к критичным модулям.
+
+**Contract tests и test pyramid.** Contract tests фиксируют ожидания между потребителем и поставщиком API или event schema, включая совместимость и ошибки. Они дополняют, но не заменяют интеграционные тесты. Практическая пирамида обычно содержит много быстрых unit-тестов, меньше интеграционных и ограниченное число E2E-тестов. Это не жёсткий закон: распределение определяется архитектурой и рисками. Я оцениваю suite по скорости обратной связи, диагностируемости, стабильности, покрытию критических контрактов и стоимости поддержки, а не только по количеству тестов.
+
+На Senior-позиции я ожидаю, что тесты проверяют наблюдаемое поведение, корректно изолируют побочные эффекты, воспроизводятся локально и в CI, а flaky tests расследуются как дефект тестовой системы, а не бесконечно ретраятся.
+
+### Эталонный ответ (EN)
+
+A reliable test strategy starts with **system contracts, risks, and boundaries**, not with a tool choice. I select the narrowest test level that can credibly verify the behaviour and add integration and end-to-end coverage where real component interactions matter.
+
+**Testing levels.** A unit test verifies a small unit of behaviour in isolation, such as a domain rule. An integration test verifies collaboration between components, for example a repository against PostgreSQL or an endpoint with its dependency graph. A functional or API test verifies a user- or consumer-visible capability through an application interface. An end-to-end test exercises a realistic user journey across much of the system; it is typically slower, more expensive, and more infrastructure-sensitive. Teams sometimes use “functional” and “integration” differently, so the suite should document its boundaries rather than rely on labels alone.
+
+**pytest execution model.** pytest discovers and collects tests before execution, applies marks and parametrization, resolves fixture dependencies, and invokes test functions. Plain assert statements provide useful assertion introspection. conftest.py provides directory-level fixtures and hooks without importing them into every test module. Plugins extend the runner, but each adds compatibility and maintenance considerations.
+
+**Fixtures and lifecycle.** A fixture is a managed dependency used to prepare state or resources. Fixture dependencies are declared as function arguments; pytest resolves the dependency graph and tears fixtures down in reverse setup order. Scopes include function (the default), class, module, package, and session. Broader scopes reduce setup cost but increase the risk of shared mutable state and order-dependent tests. Use yield fixtures or context managers for resources requiring cleanup. Keep setup small, teardown reliable, and important test actions visible. Use autouse sparingly because implicit dependencies make tests harder to understand.
+
+**Parametrization.** pytest.mark.parametrize runs the same contract against multiple input sets. It is useful for boundary values, error cases, locales, formats, and option combinations. Give cases readable IDs. Avoid an opaque Cartesian explosion; separate independent dimensions and consider targeted pairwise or property-based testing when the input space is large.
+
+**Test doubles.** A stub returns predefined data; a fake is a simplified working implementation such as an in-memory repository; a spy records interactions; a mock defines expectations and verifies calls. Python provides unittest.mock, Mock, MagicMock, AsyncMock, and pytest monkeypatch. I prefer a fake or real component when it remains fast and reliable, and use mocks at external boundaries—for example, to verify a third-party API contract. Excessive mocking of internal methods couples tests to implementation details and makes refactoring difficult. Patch the name where the system under test looks it up, which is not necessarily the object's original definition site.
+
+**Isolation and determinism.** Tests should control data, time, randomness, environment variables, filesystem state, and network dependencies. Avoid order dependence, shared mutable state, wall-clock assumptions, unstable external APIs, and colliding database records. Use unique test data, transactional or disposable database strategies, temporary directories, controlled clocks, and fixed random seeds where appropriate. Do not hide races with arbitrary sleeps. Parallel execution is safe only when resource isolation is established.
+
+**Async and API testing.** Test async code under an event loop using tooling compatible with the chosen async framework. With pytest, this commonly means pytest-asyncio or another framework-specific plugin, with explicit loop ownership and configuration. Verify results, exceptions, timeouts, cancellation, and task cleanup. For FastAPI, test dependency overrides and HTTP contracts through a test client. Integration tests should use a real PostgreSQL instance when SQL semantics, transactions, constraints, or serialization are part of the contract; mocking every dependency cannot verify those behaviours.
+
+**Property-based testing, coverage, and mutation testing.** Hypothesis generates many inputs and checks invariants rather than relying only on hand-picked examples; shrinking helps reduce a failing input to a simpler counterexample. Coverage reports which code executed, but high line coverage does not prove that assertions verify correct behaviour. Branch coverage adds information but still cannot measure specification quality. Mutation testing makes controlled changes to code and checks whether tests detect them; surviving mutants can reveal weak assertions or untested decisions. Because mutation testing is expensive, apply it selectively to critical modules.
+
+**Contract tests and the test pyramid.** Contract tests capture expectations between API or event-schema consumers and providers, including compatibility and error behaviour. They complement rather than replace integration tests. A practical pyramid often has many fast unit tests, fewer integration tests, and a limited number of E2E tests. It is a heuristic, not a law; architecture and risk determine the right balance. I evaluate a suite by feedback time, diagnosability, stability, critical-contract coverage, and maintenance cost—not just test count.
+
+At Senior level, I expect tests to assert observable behaviour, isolate side effects correctly, run reproducibly in local development and CI, and treat flaky tests as defects in the test system rather than problems to conceal with repeated retries.
+
+### Follow-up questions and эталонные ответы
+
+#### FU-1 — How do pytest fixture scopes affect isolation and reliability?
+
+**RU:** Как scope pytest fixtures влияет на изоляцию и надёжность тестов?
+
+**Ответ (RU):** Function scope создаёт отдельный экземпляр для каждого теста и обычно является наиболее безопасным вариантом для изменяемого состояния. Class, module, package и session scopes позволяют переиспользовать дорогие ресурсы, но разделяют состояние между большим числом тестов. Это повышает риск утечек состояния, зависимости от порядка и проблем параллельного запуска. Я расширяю scope только после измерения стоимости setup, делаю shared state неизменяемым либо явно сбрасываемым и обеспечиваю надёжный teardown. Параметризованная fixture может вызываться несколько раз в пределах scope для разных параметров.
+
+**Answer (EN):** Function scope creates a fresh fixture instance per test and is usually the safest choice for mutable state. Class, module, package, and session scopes reuse expensive resources but share them across more tests, increasing the risk of state leakage, order dependence, and parallel-execution conflicts. I broaden scope only after measuring setup cost, keep shared state immutable or explicitly resettable, and provide reliable teardown. A parametrized fixture may be invoked more than once within its scope for different parameters.
+
+#### FU-2 — When should you use a mock, a fake, or a real dependency?
+
+**RU:** Когда следует использовать mock, fake или реальную зависимость?
+
+**Ответ (RU):** Реальную зависимость использую, если она достаточно быстрая, детерминированная и доступна в тестовом окружении; это особенно важно для проверки SQL и интеграционных контрактов. Fake подходит, когда нужна упрощённая, но рабочая модель зависимости. Mock полезен на границе с внешним или дорогим сервисом, чтобы проверить конкретное взаимодействие, ошибки и timeout. Mock внутреннего метода часто проверяет структуру реализации, а не поведение. Для patch важно подменять символ в namespace, где тестируемый код его использует.
+
+**Answer (EN):** I use a real dependency when it is sufficiently fast, deterministic, and available in the test environment—especially when SQL semantics or integration contracts matter. A fake provides a simplified but working implementation. A mock is useful at an external or expensive boundary when verifying a specific interaction, error, or timeout. Mocking an internal method often verifies implementation structure rather than behaviour. A patch should replace the symbol in the namespace where the code under test looks it up.
+
+#### FU-3 — Why is high code coverage not proof of a high-quality test suite?
+
+**RU:** Почему высокий code coverage не доказывает высокое качество тестового набора?
+
+**Ответ (RU):** Coverage показывает выполнение строк или ветвей, но не гарантирует, что assertions проверяют существенные результаты. Тест может выполнить код и ничего значимого не проверить либо проверять только happy path. Качество оценивается по контрактам, граничным условиям, негативным сценариям, изоляции и способности обнаруживать регрессии. Mutation testing даёт дополнительный сигнал: если очевидные мутации выживают, assertions могут быть недостаточными. Но mutation score также не является абсолютной метрикой качества.
+
+**Answer (EN):** Coverage shows which lines or branches executed; it does not guarantee that assertions checked meaningful outcomes. A test may execute code without verifying anything important or may cover only the happy path. Quality depends on the contracts, boundaries, negative cases, isolation, and regression-detection ability being tested. Mutation testing adds a useful signal: if obvious mutations survive, assertions may be weak. However, mutation score is not an absolute quality metric either.
+
+#### FU-4 — How would you test asynchronous code and cancellation safely?
+
+**RU:** Как безопасно тестировать асинхронный код и cancellation?
+
+**Ответ (RU):** Тест запускается в управляемом event loop, совместимом с framework и pytest plugin. Я проверяю успешный результат, исключения, timeout, отмену задачи, освобождение ресурсов и отсутствие фоновых задач после завершения теста. Для конкурентных сценариев использую явные synchronization primitives или контролируемые события, а не произвольные sleep. Внешние async-клиенты подменяю AsyncMock только там, где тест проверяет взаимодействие; integration test при необходимости использует реальный тестовый сервис. Настройки loop scope и fixture scope должны быть согласованы.
+
+**Answer (EN):** Run the test in a controlled event loop compatible with the framework and pytest plugin. Verify successful results, exceptions, timeouts, task cancellation, resource cleanup, and the absence of leaked background tasks after the test. For concurrency scenarios, use explicit synchronization primitives or controlled events rather than arbitrary sleeps. Replace external async clients with AsyncMock only when the test is about the interaction; an integration test should use a real test service when required. Event-loop and fixture scopes must be configured consistently.
+
+#### FU-5 — How would you build a test strategy for a FastAPI service backed by PostgreSQL?
+
+**RU:** Как построить стратегию тестирования FastAPI-сервиса с PostgreSQL?
+
+**Ответ (RU):** Доменную логику проверяю быстрыми unit-тестами без HTTP и БД. Для API проверяю status codes, response schemas, validation, authentication/authorization и dependency overrides через test client. Repository и transaction behaviour проверяю интеграционными тестами на реальном PostgreSQL с изолированной схемой или disposable database, включая constraints, migrations, rollback и конкурентные сценарии, если они входят в контракт. E2E-тесты оставляю для нескольких критичных пользовательских потоков. Тестовые данные должны быть уникальными, очистка — надёжной, secrets — тестовыми, а CI должен запускать существенные проверки на поддерживаемых версиях Python и PostgreSQL. Для async endpoints учитываю event-loop и client lifecycle.
+
+**Answer (EN):** I test domain logic with fast unit tests that do not require HTTP or a database. API tests cover status codes, response schemas, validation, authentication/authorization, and dependency overrides through a test client. Repository and transaction behaviour is verified with integration tests against real PostgreSQL using an isolated schema or disposable database, including constraints, migrations, rollback, and concurrency cases when they are part of the contract. I reserve E2E tests for a small number of critical user journeys. Test data must be unique, cleanup reliable, secrets non-production, and CI should run essential checks against supported Python and PostgreSQL versions. For async endpoints, I account for event-loop and client lifecycle.
+
+### Связь с Pharmaviyum
+
+**Гипотетический сценарий для интервью — не утверждение о текущей реализации:** API аптечного workflow может требовать тестов для валидации поиска лекарств, обновления остатков, границ аутентификации и persistence. Unit-тесты могут проверять доменные правила; API-тесты — HTTP-контракты и authorization; PostgreSQL integration tests — транзакции и constraints; небольшой набор E2E — критичный пользовательский workflow. Если задействован AI/RAG-компонент, детерминированные retrieval/evaluation tests следует отделять от недетерминированных live-model checks и проверять измеримые контракты: наличие citations, сохранение medication entities и patient-context isolation. Перед утверждением, что такие тесты уже существуют, необходимо проверить фактический репозиторий и конфигурацию тестов.
+
+### Критерии оценки Senior
+
+| Уровень | Ожидаемые признаки |
+|---|---|
+| Mid-level | Пишет unit-тесты, использует pytest assertions и базовые fixtures, понимает mocks и parametrization. |
+| Senior | Проектирует сбалансированную архитектуру тестирования; контролирует lifecycle fixtures и изоляцию; осознанно выбирает реальные зависимости или test doubles; тестирует async, persistence, API-контракты и failure paths; понимает ограничения coverage. |
+| Staff-level signal | Определяет стандарты надёжности тестов, CI feedback strategy, ownership контрактов, governance flaky tests, risk-based mutation/property testing и практики совместимости между сервисами. |
+
+### Типичные ошибки
+
+- Считать line coverage показателем корректности.
+- Использовать fixtures с широким scope и изменяемым состоянием без сброса и cleanup.
+- Подменять каждую зависимость mock-ом и никогда не проверять реальное поведение БД или framework.
+- Патчить место определения символа вместо места его lookup.
+- Проверять вызовы private methods вместо наблюдаемого поведения.
+- Зависеть от порядка тестов, общих записей, wall-clock timing или произвольных sleep.
+- Игнорировать cancellation и leaked tasks в async-тестах.
+- Создавать множество хрупких E2E-тестов, оставляя доменные контракты непроверенными.
+- Бесконечно перезапускать flaky tests вместо поиска источника недетерминированности.
+- Считать Hypothesis, coverage или mutation score самостоятельным доказательством качества.
+
+### Источники
+
+- pytest fixtures: https://docs.pytest.org/en/stable/how-to/fixtures.html
+- pytest parametrization: https://docs.pytest.org/en/stable/how-to/parametrize.html
+- pytest monkeypatch: https://docs.pytest.org/en/stable/how-to/monkeypatch.html
+- pytest fixture reference: https://docs.pytest.org/en/stable/reference/fixtures.html
+- Python unittest.mock: https://docs.python.org/3/library/unittest.mock.html
+- Hypothesis documentation: https://hypothesis.readthedocs.io/
+- pytest-asyncio documentation: https://pytest-asyncio.readthedocs.io/
+- Coverage.py: https://coverage.readthedocs.io/
+- mutmut documentation: https://mutmut.readthedocs.io/
