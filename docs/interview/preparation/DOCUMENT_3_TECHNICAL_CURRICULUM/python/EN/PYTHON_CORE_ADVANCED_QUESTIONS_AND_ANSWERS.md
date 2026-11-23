@@ -5,7 +5,7 @@
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
-This is the English-language authoring version for international technical interviews. It contains the complete authored answer for PY-001 and FU-001–FU-004, including explanations, examples, trade-offs, and Interview-Ready Answers. The Russian version is maintained separately and linked from the Python curriculum index.
+English study material for PY-001–PY-002 and FU-001–FU-008. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
 
 **Review status:** Authored; independent technical and editorial review pending. Do not treat this material as finally approved until both reviews are complete.
 
