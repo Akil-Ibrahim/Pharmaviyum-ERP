@@ -28,3 +28,19 @@
 - Remaining Main Questions PY-002–PY-045 and FU-005–FU-180: not yet migrated into the language-separated structure.
 
 **Allocation rule:** Every Main Question receives exactly four Follow-ups covering mechanism, practical application, edge cases/trade-offs, and senior-level judgment or production implications.
+
+
+## PY-002 — Function Calls & Execution State
+
+**Main Question:** What happens during a function call in CPython?
+
+**Evaluation focus:** Call semantics, argument binding, function/code objects, execution state, frames, closures, return and exception paths.  
+**Level:** L3 — Advanced/Senior  
+**Priority:** P0 — Core
+
+| Follow-up ID | Focus | Follow-up question |
+|---|---|---|
+| FU-005 | Mechanism | What execution state does CPython need to establish or maintain when entering and executing a Python function? |
+| FU-006 | Application | How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service? |
+| FU-007 | Edge cases and lifecycle | How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call? |
+| FU-008 | Senior judgment | When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile? |
