@@ -218,12 +218,24 @@ These boundaries are editorial guidance for the final pass; they do not imply th
 
 - Added explicit ownership notes to Q1 and Q4 to separate the object model from detailed comparison/hash semantics.
 - Added explicit ownership notes to Q13, Q14, and Q29 to distinguish object lifecycle/GC, local Python profiling, and end-to-end service performance engineering.
-- These notes clarify intended scope but do not prove that every repeated explanation has been removed. Q1/Q4 follow-up overlap and Q13/Q29 memory-diagnostics overlap remain candidates for the next content-level pass; Q14/Q29 also need a final duplicate-paragraph review.
+- The content-level pass has now removed the identified follow-up duplication: Q1 FU-1/FU-3 no longer repeat the Q4 identity/equality checks; Q4 FU-3 now tests hash collisions rather than repeating Q1 aliasing; Q14 FU-4/FU-5 test profiler interpretation and profiler overhead rather than caching or service-level benchmark design.
+- Q13 remains responsible for Python object lifetime, reference cycles, weak references, retention paths, and the interpretation limits of RSS/tracemalloc. Q29 FU-2 now focuses on distributed tracing, CPU profiling, and PostgreSQL query-plan analysis; its service-level memory/capacity discussion is distinct from Q13's object-lifecycle mechanics.
+- Q14's model answers, Pharmaviyum scenario, Senior rubric, and pitfalls have been narrowed to local Python algorithmic reasoning, profiling, allocations, and microbenchmark methodology. Caching, tenant-aware cache design, tail latency, service capacity, and end-to-end load testing remain in Q29.
+- The Q14 Python standard-library references are pinned to the Python 3.14 documentation baseline.
+- These edits preserve the structure: 30 primary questions and 148 follow-ups in each language. They reduce the specific overlaps identified in this pass; they do not establish that every section in the 30-question bank has completed full technical validation.
+
+### Content-level review findings (current pass)
+
+- **Q1/Q4:** Replaced Q1 follow-ups that repeated identity-versus-equality and string/integer identity guidance with questions on mutation while identity/type remain stable and on assignment versus copying. Replaced Q4's repeated aliasing follow-up with hash-collision semantics. Q1 retains foundational object-model coverage; Q4 retains comparison and hash-contract depth.
+- **Q13/Q29:** Kept object reachability, cycles, weak references, retention paths, and RSS-versus-Python-heap interpretation in Q13. Reframed Q29 FU-2 around tracing, CPU profiling, and PostgreSQL query-plan analysis rather than repeating Python memory profiling.
+- **Q14/Q29:** Narrowed Q14 to local code-level optimization. Its follow-ups now cover total versus cumulative profiler time and profiling overhead versus benchmarking. The Pharmaviyum scenario now concerns a local Python normalization/DTO transformation function. Removed cache design and end-to-end service performance material from Q14; Q29 retains service-level performance, caching, load, tail latency, and capacity.
+- **Bilingual structure:** Both files retain 30 primary questions and 148 follow-ups (3 for Q1 and 5 for Q2–Q30). The changed follow-up topics and their Russian/English answers were checked in both documents.
+- **Technical basis:** The profiler terminology is aligned with the Python 3.14 profile/cProfile and pstats documentation. Profiling output is diagnostic data, not a substitute for an unprofiled benchmark.
 
 ### Remaining review work
 
 - Verify the technical claims and follow-up answers across all 30 questions against the Python language reference and standard-library documentation.
 - Compare EN/RU meaning question by question, especially version-specific details, examples, and Senior evaluation criteria.
-- Review Q1/Q4, Q13/Q29, and Q14/Q29 for actual content overlap, not only editorial boundaries.
-- Check references for version pinning, validity, and whether each source supports the associated claim.
+- Re-check any residual overlap across the complete bank, including cross-cutting topics outside Q1/Q4, Q13/Q29, and Q14/Q29.
+- Check references for validity and whether each source supports the associated claim; version-pin references wherever the claim is version-sensitive.
 - Do not mark Python Core as technically approved until the full pass is complete.
