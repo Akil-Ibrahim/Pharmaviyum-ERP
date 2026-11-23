@@ -336,3 +336,76 @@ Follow-up IDs are assigned sequentially from FU-001 to FU-180, four per Main Que
 | FU-095 | Edge cases and trade-offs | What inheritance, multiple-inheritance, weak-reference, subclassing, and dynamic-attribute constraints can arise with `__slots__`? | Какие ограничения, связанные с наследованием, множественным наследованием, weak references, созданием подклассов и динамическими атрибутами, возникают при использовании `__slots__`? |
 | FU-096 | Senior judgment | What measurements and compatibility checks should precede introducing `__slots__` into a public model or widely used library type? | Какие измерения и проверки совместимости должны предшествовать добавлению `__slots__` в публичную модель или широко используемый тип библиотеки? |
 
+
+### PY-025 — How does Python's exception hierarchy and exception propagation work?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-097 | Mechanism | How does exception propagation unwind the call stack, and how do exception matching and the built-in hierarchy determine which handler is selected? | Как распространение исключения разворачивает стек вызовов и как сопоставление типов и встроенная иерархия определяют выбранный обработчик? |
+| FU-098 | Application | How would you define exception boundaries in a layered backend so that low-level failures are handled without hiding useful diagnostic context? | Как определить границы обработки исключений в многослойном backend, чтобы обрабатывать низкоуровневые сбои, не скрывая полезный диагностический контекст? |
+| FU-099 | Edge cases and trade-offs | What are the risks of catching broad exceptions, catching exceptions too early, or allowing exceptions to cross asynchronous and thread boundaries? | Каковы риски перехвата слишком общих исключений, слишком ранней обработки или передачи исключений через границы асинхронных задач и потоков? |
+| FU-100 | Senior judgment | How would you establish an exception taxonomy that distinguishes expected domain outcomes, validation failures, transient infrastructure errors, and programming defects? | Как выстроить таксономию исключений, различающую ожидаемые доменные результаты, ошибки валидации, временные инфраструктурные сбои и дефекты программирования? |
+
+### PY-026 — How should exceptions be chained, handled, and translated across application layers?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-101 | Mechanism | What is the difference between implicit exception context and explicit exception causes, and how do `raise`, `raise ... from`, and `from None` affect traceback presentation? | В чём разница между неявным контекстом исключения и явно указанной причиной и как `raise`, `raise ... from` и `from None` влияют на отображение traceback? |
+| FU-102 | Application | How would you translate a database-driver exception into an application-level error while preserving the original cause for diagnosis? | Как преобразовать исключение драйвера базы данных в ошибку уровня приложения, сохранив исходную причину для диагностики? |
+| FU-103 | Edge cases and trade-offs | How can exception translation accidentally leak sensitive data, destroy retry semantics, or cause duplicate logging across layers? | Как преобразование исключений может случайно раскрыть чувствительные данные, нарушить семантику повторных попыток или привести к дублированию логирования между слоями? |
+| FU-104 | Senior judgment | What error information should be exposed to API clients, recorded internally, correlated across services, and retained for incident investigation? | Какую информацию об ошибках следует показывать API-клиентам, записывать внутри системы, связывать между сервисами и сохранять для расследования инцидентов? |
+
+### PY-027 — How do context managers work, and how do you implement reliable resource cleanup?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-105 | Mechanism | How do `__enter__` and `__exit__` control a `with` statement, and how can `__exit__` influence exception propagation? | Как `__enter__` и `__exit__` управляют оператором `with` и как `__exit__` может влиять на распространение исключения? |
+| FU-106 | Application | How would you implement or compose context managers for a transaction, temporary resource, or lock that must be released reliably? | Как реализовать или объединить контекстные менеджеры для транзакции, временного ресурса или блокировки, которые необходимо надёжно освобождать? |
+| FU-107 | Edge cases and trade-offs | What cleanup hazards arise when acquisition partially fails, cleanup itself raises, or several context managers are nested? | Какие риски очистки ресурсов возникают, если получение ресурса завершается частично, сама очистка вызывает исключение или вложено несколько контекстных менеджеров? |
+| FU-108 | Senior judgment | How would you define resource ownership and cleanup guarantees across synchronous and asynchronous code, including cancellation and shutdown? | Как определить владение ресурсами и гарантии их освобождения в синхронном и асинхронном коде, включая отмену задач и завершение приложения? |
+
+### PY-028 — What do Python type hints provide, and what do they not enforce at runtime?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-109 | Mechanism | How are annotations represented and exposed at runtime, and how does a static type checker use information that the interpreter generally does not enforce? | Как аннотации представлены и доступны во время выполнения и как статический анализатор использует информацию, которую интерпретатор обычно не обеспечивает? |
+| FU-110 | Application | How would you introduce type checking incrementally into a mature Python codebase with dynamic boundaries and legacy modules? | Как постепенно внедрить проверку типов в зрелую кодовую базу Python с динамическими границами и legacy-модулями? |
+| FU-111 | Edge cases and trade-offs | What limitations arise from `Any`, type narrowing, runtime-generated values, forward references, and differences between checker implementations? | Какие ограничения связаны с `Any`, сужением типов, динамически создаваемыми значениями, forward references и различиями между реализациями анализаторов типов? |
+| FU-112 | Senior judgment | Where should static typing end and runtime validation begin in an application that accepts untrusted API, database, or external-service data? | Где должна заканчиваться статическая типизация и начинаться runtime-валидация в приложении, принимающем недоверенные данные API, БД или внешних сервисов? |
+
+### PY-029 — What is the difference between nominal and structural typing, including Protocols?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-113 | Mechanism | How does a `Protocol` describe structural compatibility, and what is the difference between ordinary protocols and runtime-checkable protocols? | Как `Protocol` описывает структурную совместимость и чем обычные протоколы отличаются от протоколов, поддерживающих runtime-проверку? |
+| FU-114 | Application | How would you define a protocol for a dependency that can be implemented by production infrastructure and lightweight test doubles? | Как определить протокол для зависимости, который могут реализовать production-инфраструктура и облегчённые тестовые объекты? |
+| FU-115 | Edge cases and trade-offs | What can static protocols verify about attributes and method signatures, and what behavioral or runtime properties remain outside their guarantees? | Что статические протоколы могут проверить в атрибутах и сигнатурах методов и какие поведенческие или runtime-свойства остаются вне их гарантий? |
+| FU-116 | Senior judgment | How would you decide between a protocol, an abstract base class, and a concrete dependency when designing extension points for a large system? | Как выбрать между протоколом, абстрактным базовым классом и конкретной зависимостью при проектировании точек расширения большой системы? |
+
+### PY-030 — When should you use dataclasses, and what design trade-offs do they introduce?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-117 | Mechanism | Which methods and behaviors can dataclasses generate, and how do options such as `frozen`, `slots`, `eq`, and `kw_only` affect the generated class? | Какие методы и виды поведения могут генерировать dataclasses и как параметры `frozen`, `slots`, `eq` и `kw_only` влияют на создаваемый класс? |
+| FU-118 | Application | How would you model a validated immutable value object with dataclasses while keeping parsing and domain invariants explicit? | Как смоделировать проверяемый неизменяемый value object с помощью dataclasses, сохранив явную логику разбора данных и доменных инвариантов? |
+| FU-119 | Edge cases and trade-offs | What pitfalls involve mutable defaults, inheritance field ordering, equality semantics, frozen instances, and serialization? | Какие подводные камни связаны с изменяемыми значениями по умолчанию, порядком полей при наследовании, семантикой равенства, frozen-экземплярами и сериализацией? |
+| FU-120 | Senior judgment | When would a dataclass be preferable to a Pydantic model, a hand-written class, or a named tuple, and what validation boundary drives that choice? | Когда dataclass предпочтительнее модели Pydantic, класса с ручной реализацией или named tuple и какая граница валидации определяет этот выбор? |
+
+### PY-031 — How does CPython manage object memory and object lifetime?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-121 | Mechanism | How does reference counting contribute to object lifetime in CPython, and what roles do allocation arenas, pools, and blocks play at a high level? | Как подсчёт ссылок влияет на жизненный цикл объектов в CPython и какую роль на высоком уровне играют arenas, pools и blocks аллокатора? |
+| FU-122 | Application | How would you investigate memory growth in a long-running worker to distinguish live application objects from allocator-retained memory? | Как исследовать рост памяти в долгоживущем worker, чтобы отличить живые объекты приложения от памяти, удерживаемой аллокатором? |
+| FU-123 | Edge cases and trade-offs | Why does releasing references not guarantee an immediate reduction in process RSS, and how can extension modules complicate memory ownership? | Почему освобождение ссылок не гарантирует немедленного уменьшения RSS процесса и как модули расширения могут усложнять владение памятью? |
+| FU-124 | Senior judgment | How would you choose measurements and tools to investigate object retention, allocation hotspots, native allocations, and container-level memory pressure? | Как выбрать метрики и инструменты для исследования удержания объектов, горячих точек выделения памяти, нативных аллокаций и давления на память на уровне контейнера? |
+
+### PY-032 — How does cyclic garbage collection work, and what does it not collect?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-125 | Mechanism | Why is reference counting insufficient for unreachable reference cycles, and how does cyclic garbage collection identify candidate cycles? | Почему подсчёта ссылок недостаточно для недостижимых циклов ссылок и как циклический сборщик мусора обнаруживает потенциальные циклы? |
+| FU-126 | Application | How would you use the `gc` module and object-reference inspection to investigate a suspected cycle in a Python service? | Как использовать модуль `gc` и анализ ссылок на объекты для исследования предполагаемого цикла в Python-сервисе? |
+| FU-127 | Edge cases and trade-offs | How can finalizers, weak references, uncollectable objects, and extension-type references complicate garbage-collection behavior? | Как финализаторы, слабые ссылки, не подлежащие сборке объекты и ссылки в типах расширений могут усложнять работу сборщика мусора? |
+| FU-128 | Senior judgment | When is changing garbage-collector thresholds or disabling cyclic GC justified, and what measurements and regression safeguards are required? | Когда оправдано изменение порогов сборщика мусора или отключение циклического GC и какие измерения и меры защиты от регрессий необходимы? |
+
