@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 22 из 30 основных вопросов подготовлено  
+**Охват:** 23 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -2890,3 +2890,130 @@ In production, I choose a module based on the task's contract rather than code b
 - pathlib: https://docs.python.org/3/library/pathlib.html
 - logging: https://docs.python.org/3/library/logging.html
 - subprocess: https://docs.python.org/3/library/subprocess.html
+
+
+## PY-CORE-023 — Упаковка Python-проектов, управление зависимостями и виртуальные окружения
+
+### Вопрос на собеседовании
+Как упаковать и распространять Python-приложение или библиотеку, управлять зависимостями и обеспечивать воспроизводимые сборки на машинах разработчиков и в CI/CD? Объясните virtual environments, pip, pyproject.toml, build backends, wheels и source distributions, editable installs, dependency constraints и lockfiles, а также риски software supply chain.
+
+### Что проверяет интервьюер
+- Понимание различий между environment isolation, dependency resolution, packaging и deployment.
+- Знание современного Python packaging workflow вокруг pyproject.toml, PEP 517/518/621 и PEP 660.
+- Умение выбирать версии и фиксировать транзитивные зависимости для воспроизводимых установок.
+- Понимание различий wheel и source distribution.
+- Способность организовать production/dev/test dependency groups и CI build pipeline.
+- Осознание supply-chain risks и безопасной конфигурации package indexes.
+
+### Эталонный ответ
+Управление зависимостями, упаковка и изоляция окружения — связанные, но разные задачи. Virtual environment изолирует установленный набор пакетов для конкретного проекта. Dependency resolver выбирает совместимые версии зависимостей. Packaging описывает проект как устанавливаемый distribution artifact. Deployment определяет, как этот artifact и его runtime dependencies попадают в целевую среду. Нельзя считать, что создание venv само по себе фиксирует версии или обеспечивает воспроизводимую сборку.
+
+**Virtual environments.** venv создаёт изолированное окружение с отдельным site-packages и связанным с ним interpreter entrypoint. Окружение обычно не следует переносить между машинами или коммитить в репозиторий: оно содержит machine- и path-specific данные. Вместо этого в репозитории фиксируют инструкции и metadata зависимостей, а окружение создают заново. Нужно явно выбирать Python version и учитывать platform-specific dependencies. Активировать окружение удобно для интерактивной работы, но в CI надёжнее вызывать нужный interpreter или tool по явному пути.
+
+**pip и dependency resolution.** pip устанавливает distributions и разрешает зависимости согласно version specifiers, environment markers и доступным package indexes. Ограничение вида >= задаёт допустимый диапазон, но не фиксирует точный набор транзитивных зависимостей. Верхние границы и точные pins имеют trade-offs: слишком широкие диапазоны могут приводить к неожиданным обновлениям, а строгие pins требуют регулярного обновления и проверки безопасности. Constraints files ограничивают версии при разрешении, но сами по себе не являются полным lockfile и не обязательно перечисляют весь граф зависимостей.
+
+**pyproject.toml.** Это современный стандартный файл конфигурации Python-проекта. Секция [build-system] объявляет build requirements и backend, [project] может содержать metadata, dependencies, optional-dependencies, scripts и другие сведения согласно PEP 621. Инструменты могут добавлять собственные секции для тестирования, linting или управления окружениями. pyproject.toml не является автоматически lockfile: он описывает декларативные требования и конфигурацию, а точный resolved graph обычно фиксируется отдельным lock artifact, если выбранный workflow его поддерживает.
+
+**Build backends и стандарты.** PEP 517 определяет интерфейс между build frontend и backend. PEP 518 описывает build-system requirements, необходимые для запуска backend. Backend, например setuptools, hatchling или flit, строит distributions. PEP 621 стандартизирует project metadata в pyproject.toml. Это разделение позволяет frontend-инструменту вызывать разные backend без привязки к внутренним деталям конкретного инструмента. Build isolation помогает не зависеть случайно от пакетов, установленных в глобальном окружении разработчика, но build dependencies также должны быть контролируемыми и воспроизводимыми.
+
+**Wheel и source distribution.** Wheel (.whl) — готовый distribution artifact, который обычно устанавливается без повторной сборки исходников. Wheel может быть pure Python или platform-specific; его tags отражают совместимость по Python implementation/version, ABI и platform. Source distribution (sdist) содержит исходные файлы и metadata, из которых build backend может построить wheel. Установка из sdist требует build toolchain и build dependencies и может вести себя по-разному на разных системах. Для production deployment часто предпочтительно сначала собрать и протестировать wheel в CI, затем продвигать тот же artifact между окружениями.
+
+**Editable installs.** Editable installation, стандартизованная PEP 660 для современных build backends, позволяет использовать исходный код из рабочей директории без обычного копирования package в site-packages. Это удобно для разработки, но не доказывает, что построенный wheel содержит все необходимые файлы и metadata. Поэтому CI должен отдельно собирать wheel и тестировать установку именно собранного artifact в чистом окружении.
+
+**Dependency groups, extras и lockfiles.** Runtime dependencies — то, что требуется приложению при запуске. Optional dependencies/extras — дополнительные возможности package, которые потребитель устанавливает по явному запросу. Development/test/lint dependencies нужны для разработки и CI, но не должны автоматически попадать в runtime image, если они там не нужны. Стандартные project optional-dependencies описывают extras; управление development groups и lockfiles зависит от выбранного инструмента и его версии. Не существует единственного универсального lockfile формата, обязательного для всех Python tools. Команда должна выбрать инструмент и документировать его workflow.
+
+Lockfile обычно фиксирует разрешённые версии транзитивных зависимостей, а в зависимости от формата — hashes, markers и сведения об источнике. Для воспроизводимости важны также Python version, OS/architecture, package index configuration и build dependencies. Некоторые lockfiles учитывают платформу или содержат несколько допустимых вариантов; одинаковый lockfile не гарантирует побитово идентичную сборку на разных системах, если toolchain и build inputs различаются. Нужно различать reproducible dependency resolution, repeatable installation и bit-for-bit reproducible artifact builds.
+
+**Version policy.** Semantic Versioning полезен как ожидание совместимости, но не является доказательством качества release. Совместимость зависит от реальных контрактов package. Я задаю диапазоны для библиотечных зависимостей осознанно, обновляю lockfile контролируемыми изменениями, тестирую обновления и планирую регулярные patch/minor обновления. Для приложения можно использовать более строгую фиксацию resolved graph, чтобы деплой не менялся неожиданно. Не следует бесконтрольно смешивать package indexes: при использовании private index нужно явно определить доверенный источник и политику приоритета, чтобы избежать dependency confusion.
+
+**Supply-chain security.** Установка package означает доверие к distribution и часто к его build/install behavior. Риски включают typosquatting, dependency confusion, compromised maintainer accounts, malicious releases, уязвимые версии и подмену артефактов. Практики защиты: доверенные package indexes, ограничение публикации и доступа, проверка package names и sources, hash checking там, где поддерживается, vulnerability scanning (например, pip-audit), обновления по review, SBOM и provenance/attestation для зрелого pipeline. Hash подтверждает соответствие конкретным bytes, но сам по себе не доказывает, что package безопасен или что источник заслуживает доверия. Build isolation также не является sandbox для недоверенного build code.
+
+В production я строю pipeline так: определить поддерживаемую версию Python и платформы; описать package metadata и build backend; зафиксировать выбранный dependency workflow; создать чистое окружение; установить зависимости в контролируемом режиме; выполнить type checks, tests и security checks; собрать wheel; установить wheel в чистое окружение; выполнить smoke/integration tests; опубликовать artifact с traceable version и продвигать тот же artifact через deployment stages. Не следует выполнять новую независимую сборку на каждом окружении, если требование — продвигать один и тот же проверенный artifact.
+
+### Professional answer (EN)
+Dependency management, packaging, and environment isolation are related but distinct concerns. A virtual environment isolates installed packages for a project. A dependency resolver selects compatible versions. Packaging describes an installable distribution artifact. Deployment determines how that artifact and its runtime dependencies reach the target environment. Creating a venv does not by itself pin versions or make a build reproducible.
+
+**Virtual environments.** venv creates an isolated environment with its own site-packages and interpreter entry point. Environments should generally not be moved between machines or committed to source control because they contain path- and machine-specific state. Store dependency metadata and setup instructions instead, then recreate the environment. Select the Python version explicitly and account for platform-specific dependencies. Activation is convenient for interactive work; in CI, invoking the intended interpreter or tool by an explicit path is often more deterministic.
+
+**pip and dependency resolution.** pip installs distributions and resolves requirements using version specifiers, environment markers, and available package indexes. A range such as >= defines an allowed set but does not pin the complete transitive dependency graph. Upper bounds and exact pins have trade-offs: broad ranges can introduce unexpected upgrades, while strict pins require regular maintenance and security review. A constraints file influences version selection but is not, by itself, a complete lockfile and need not enumerate the entire dependency graph.
+
+**pyproject.toml.** This is the modern standard configuration file for Python projects. The [build-system] table declares build requirements and the backend; [project] can declare metadata, dependencies, optional-dependencies, scripts, and related fields under PEP 621. Tools may add their own sections for testing, linting, or environment management. pyproject.toml is not automatically a lockfile: it describes declared requirements and configuration, while an exact resolved graph is usually captured in a separate lock artifact when the chosen workflow supports one.
+
+**Build backends and standards.** PEP 517 defines the interface between a build frontend and a backend. PEP 518 specifies the build-system requirements needed to start the backend. A backend such as setuptools, hatchling, or flit builds distribution artifacts. PEP 621 standardizes project metadata in pyproject.toml. This separation lets frontends invoke different backends without depending on each backend's internal implementation. Build isolation reduces accidental reliance on globally installed developer packages, but build dependencies must also be controlled and reproducible.
+
+**Wheels and source distributions.** A wheel (.whl) is a built distribution that can generally be installed without rebuilding the source. A wheel may be pure Python or platform-specific; its tags express compatibility across Python implementation/version, ABI, and platform. A source distribution (sdist) contains source files and metadata from which a backend can build a wheel. Installing from an sdist requires build tooling and build dependencies and may vary across systems. For production, it is often preferable to build and test a wheel in CI, then promote that same artifact through environments.
+
+**Editable installs.** Editable installation, standardized by PEP 660 for modern build backends, exposes source code from the working tree during development rather than performing a conventional copy into site-packages. This is convenient but does not prove that a built wheel contains all required files and metadata. CI should separately build a wheel and test installing that artifact into a clean environment.
+
+**Dependency groups, extras, and lockfiles.** Runtime dependencies are required by the application at runtime. Optional dependencies or extras expose additional package features that consumers install explicitly. Development, test, and lint dependencies support engineering workflows and should not automatically enter a runtime image when they are not needed there. Project optional-dependencies describe extras; development groups and lockfile behavior depend on the selected tool and its version. There is no single universal lockfile format mandated for every Python toolchain. A team should choose and document its workflow.
+
+A lockfile commonly records resolved transitive versions and, depending on the format, hashes, markers, and source information. Reproducibility also depends on Python version, OS/architecture, package-index configuration, and build dependencies. Some lockfiles are platform-aware or include multiple permitted variants; the same lockfile does not guarantee a bit-for-bit identical build across systems if toolchains and build inputs differ. Distinguish reproducible dependency resolution, repeatable installation, and bit-for-bit reproducible artifact builds.
+
+**Version policy.** Semantic Versioning is a useful compatibility expectation, not proof that a release is safe or compatible. Compatibility depends on the package's actual contracts. I choose dependency ranges deliberately, update lockfiles through reviewed changes, test upgrades, and schedule regular patch/minor updates. An application may use stricter resolved-version locking to avoid unexpected deployment changes. Avoid mixing package indexes without a clear trust and priority policy; private-index configuration must account for dependency-confusion risk.
+
+**Supply-chain security.** Installing a package means trusting its distribution and often its build/install behavior. Risks include typosquatting, dependency confusion, compromised maintainer accounts, malicious releases, vulnerable versions, and artifact substitution. Controls include trusted package indexes, restricted publishing and access, validation of package names and sources, hash checking where supported, vulnerability scanning (for example pip-audit), reviewed upgrades, SBOMs, and provenance/attestations in a mature pipeline. A hash confirms that bytes match a reference; it does not prove that a package is benign or that its publisher is trustworthy. Build isolation is not a sandbox for untrusted build code.
+
+For production, I define supported Python versions and platforms, declare project metadata and a build backend, choose and document a dependency workflow, create a clean environment, install dependencies under controlled conditions, run type checks, tests, and security checks, build a wheel, install that wheel into a clean environment, run smoke/integration tests, and publish a traceable artifact. The same tested artifact should be promoted through deployment stages rather than independently rebuilt in each environment when artifact promotion is the requirement.
+
+### Follow-up questions and эталонные ответы
+
+#### FU-1. Чем отличаются pyproject.toml, constraints file и lockfile?
+**Ответ:** pyproject.toml описывает metadata проекта, build configuration и заявленные зависимости. Constraints file ограничивает версии, которые resolver может выбрать, но не обязательно описывает полный граф. Lockfile фиксирует конкретное разрешённое дерево зависимостей и дополнительные сведения, зависящие от формата. Это разные роли; наличие pyproject.toml не означает, что зависимости полностью locked.
+
+**Answer (EN):** pyproject.toml describes project metadata, build configuration, and declared requirements. A constraints file limits versions the resolver may select but does not necessarily describe the complete graph. A lockfile records a resolved dependency graph and format-specific details. These serve different purposes; having pyproject.toml does not mean dependencies are fully locked.
+
+#### FU-2. Почему CI должен тестировать собранный wheel, а не полагаться только на editable install?
+**Ответ:** Editable install использует исходную рабочую директорию и может скрыть ошибки packaging: отсутствующие package data, неверную конфигурацию включения файлов или metadata. Wheel — тот artifact, который обычно устанавливает потребитель. Поэтому CI должен собрать wheel, установить его в чистое окружение и протестировать импорт и поведение уже установленного distribution.
+
+**Answer (EN):** An editable install uses the source working tree and can hide packaging defects such as missing package data, incorrect file inclusion, or metadata problems. The wheel is the artifact consumers generally install. CI should build the wheel, install it into a clean environment, and test imports and behavior from the installed distribution.
+
+#### FU-3. Гарантирует ли lockfile побитово воспроизводимую сборку?
+**Ответ:** Не обязательно. Lockfile помогает зафиксировать dependency resolution, но результат может зависеть от Python version, OS/architecture, environment markers, build backend, build dependencies, compiler и системных библиотек. Нужно различать повторяемую установку зависимостей и побитово идентичный artifact. Для последнего фиксируют и проверяют весь build environment и inputs.
+
+**Answer (EN):** Not necessarily. A lockfile helps pin dependency resolution, but results may also depend on Python version, OS/architecture, environment markers, build backend, build dependencies, compiler, and system libraries. Repeatable dependency installation is different from a bit-for-bit identical artifact. The latter requires controlling and verifying the complete build environment and inputs.
+
+#### FU-4. Как разделить runtime и development dependencies?
+**Ответ:** Runtime dependencies должны содержать только то, что нужно приложению при запуске. Test, lint, type-checking и build tools относятся к development/CI workflow и не должны попадать в production image без необходимости. Extras предназначены для опциональных функций package, которые потребитель выбирает явно. Конкретный механизм групп зависит от выбранного packaging tool, поэтому policy нужно документировать и проверять состав итогового artifact/image.
+
+**Answer (EN):** Runtime dependencies should include only what the application needs to execute. Test, lint, type-checking, and build tools belong to development/CI workflows and should not enter the production image unnecessarily. Extras expose optional package features selected explicitly by consumers. The exact grouping mechanism depends on the chosen packaging tool, so document the policy and verify the final artifact/image contents.
+
+#### FU-5. Что такое dependency confusion и как снизить риск?
+**Ответ:** Dependency confusion возникает, когда package manager получает одноимённый package из неожиданного или менее доверенного index вместо intended private package. Снижение риска требует явной конфигурации trusted indexes и приоритетов, уникальных имён внутренних packages, ограничений на публикацию, проверки источника и review dependency changes. Нельзя считать простое наличие private index достаточной защитой.
+
+**Answer (EN):** Dependency confusion occurs when a package manager resolves a package name from an unexpected or less-trusted index instead of the intended private package. Mitigations include explicit trusted-index and priority configuration, unique internal package names, restricted publishing, source verification, and review of dependency changes. Merely configuring a private index is not sufficient protection.
+
+### Связь с Pharmaviyum — гипотетический сценарий для интервью
+Предположим, команде нужно собрать Python backend artifact для развёртывания на аптечном сервере и одновременно поддерживать отдельную demo-среду. Дисциплинированный workflow может разделять runtime и development dependencies, фиксировать поддерживаемую Python version, разрешать зависимости в CI, собирать wheel или application artifact, тестировать его в чистом окружении и продвигать один и тот же проверенный artifact между deployment stages. Конкретный packaging tool и формат artifact необходимо выбирать в соответствии с репозиторием и схемой deployment. Это гипотетический инженерный сценарий, а не утверждение, что именно такой pipeline уже реализован в Pharmaviyum.
+
+### Критерии оценки Senior
+| Уровень | Ожидаемые признаки |
+|---|---|
+| Mid-level | Объясняет venv, pip requirements, pyproject.toml и базовое назначение wheels. |
+| Senior | Различает declarations, constraints и lockfiles; объясняет build isolation, PEP 517/518/621/660, тестирование wheel, разделение runtime/dev и dependency security. |
+| Staff-level signal | Определяет воспроизводимую стратегию продвижения artifacts, trusted-index policy, governance обновления зависимостей, build provenance и контроль совместимости платформ для нескольких сервисов. |
+
+### Типичные ошибки
+- Коммитить или копировать virtual environment вместо стратегии управления зависимостями.
+- Считать version range фиксацией полного транзитивного dependency graph.
+- Считать pyproject.toml универсальным lockfile.
+- Путать constraints files с lockfiles.
+- Считать build isolation гарантией полной воспроизводимости или безопасности сборки.
+- Тестировать только editable installs и никогда не устанавливать собранный wheel.
+- Предполагать, что каждый wheel platform-independent.
+- Смешивать runtime, development и optional dependencies без ясной политики.
+- Считать Semantic Versioning гарантией совместимости.
+- Доверять package names или hashes без проверки источника и provenance.
+- Считать, что одного lockfile достаточно для bit-for-bit reproducible builds.
+- Продвигать независимо пересобранные artifacts вместо того, который прошёл CI.
+
+### Источники
+- Python Packaging User Guide: https://packaging.python.org/
+- pyproject.toml specification: https://packaging.python.org/en/latest/specifications/pyproject-toml/
+- PEP 517 — Build system interface: https://peps.python.org/pep-0517/
+- PEP 518 — Build system requirements: https://peps.python.org/pep-0518/
+- PEP 621 — Project metadata: https://peps.python.org/pep-0621/
+- PEP 660 — Editable installs: https://peps.python.org/pep-0660/
+- Python venv documentation: https://docs.python.org/3/library/venv.html
+- pip user guide: https://pip.pypa.io/en/stable/user_guide/
+- pip dependency resolution: https://pip.pypa.io/en/stable/topics/dependency-resolution/
+- pip-audit: https://github.com/pypa/pip-audit
