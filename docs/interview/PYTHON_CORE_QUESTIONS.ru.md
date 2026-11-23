@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 13 из 30 основных вопросов подготовлено  
+**Охват:** 14 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -1833,3 +1833,102 @@ EN: Establish a reproducible workload and baseline, measure RSS and Python alloc
 - Python C API — Reference Counting: https://docs.python.org/3/c-api/refcounting.html
 - Python FAQ — Memory management: https://docs.python.org/3/faq/design.html#how-does-python-manage-memory
 - FastAPI — Lifespan Events: https://fastapi.tiangolo.com/advanced/events/
+
+
+## PY-CORE-014 — Оптимизация производительности и профилирование Python
+
+### Что проверяет интервьюер
+- Умение оптимизировать измеренные узкие места, а не предположения.
+- Понимание алгоритмической сложности, константных факторов и компромиссов по памяти.
+- Способность различать CPU-bound, I/O-bound и memory-bound нагрузки.
+- Корректное применение profiling и benchmarking инструментов.
+- Понимание overhead интерпретатора, рисков кеширования и production observability.
+- Умение подтвердить, что оптимизация улучшает репрезентативный workload без нарушения корректности.
+
+### Эталонный ответ (RU)
+Оптимизацию производительности нужно начинать не с переписывания кода, а с измерения и поиска узкого места. Сначала следует описать целевой workload и SLO: например, latency percentiles, throughput, загрузку CPU, потребление памяти и error rate. Затем воспроизвести характерную нагрузку и зафиксировать baseline.
+
+Big-O описывает асимптотический рост времени или памяти при увеличении входных данных, но не предсказывает абсолютное время выполнения. На практике важны константные множители, распределение данных, аллокации, локальность памяти, I/O и накладные расходы интерпретатора. Алгоритм с худшей асимптотикой может оказаться быстрее на небольших входах, поэтому решение необходимо подтверждать измерениями.
+
+Для микробенчмарков небольших фрагментов подходит `timeit`; для анализа распределения времени по вызовам Python-функций — `cProfile` и анализ результата через `pstats`. Для анализа Python allocations можно использовать `tracemalloc`; для CPU и native-level проблем могут потребоваться системные профилировщики и метрики процесса. Один profiler не показывает всю картину: например, `cProfile` не является полноценным инструментом измерения ожидания внешнего I/O или native allocations.
+
+Необходимо различать CPU-bound и I/O-bound работу. CPU-bound задачи тратят основное время на вычисления; I/O-bound задачи ожидают сеть, диск, базу данных или другие внешние системы. Асинхронность может повысить конкурентность I/O-bound сервиса, но сама по себе не ускоряет CPU-bound вычисления. Для CPU-bound нагрузки следует исследовать алгоритм, векторизацию, нативные библиотеки, multiprocessing или отдельные worker-процессы — учитывая стоимость сериализации и передачи данных.
+
+Кеширование может уменьшить повторные вычисления или обращения к зависимостям, но добавляет требования к инвалидации, ограничению размера, согласованности, конкурентному доступу и изоляции данных. В многопользовательском backend нельзя допускать, чтобы ключ кеша игнорировал tenant или контекст авторизации. Кешировать следует только после определения корректной семантики и стратегии invalidation.
+
+Корректный benchmark должен использовать репрезентативные входные данные, контролируемую среду, прогрев при необходимости, несколько повторов и статистически осмысленное сравнение. Нужно учитывать шум, cold-start, эффекты интерпретатора, конкурирующую нагрузку и различия между локальным тестом и production. После изменения следует повторить тот же workload, сравнить baseline и результат, проверить корректность и наблюдать за production-метриками. Оптимизация успешна только тогда, когда улучшение измеримо и не ухудшает другие SLO или надёжность.
+
+### Профессиональный ответ (EN)
+I start performance work by defining the representative workload, the user-visible objective, and a measurable baseline. I then profile the system to locate the dominant cost before changing the implementation. Optimizing code that is not on the critical path usually adds complexity without meaningful impact.
+
+Big-O describes asymptotic growth in time or space as input size increases; it does not predict absolute runtime. Constant factors, input distribution, allocation behavior, memory locality, I/O, and interpreter overhead also matter. I use complexity analysis to identify scalability risks and measurements to decide what matters for the actual workload.
+
+For small, isolated timing experiments I use `timeit`. For deterministic profiling of Python call activity I use `cProfile` and inspect results with `pstats`. I use `tracemalloc` to compare Python allocation snapshots. Process-level CPU, RSS, native allocations, database timings, and network waits may require additional system and application instrumentation; no single profiler explains every resource bottleneck.
+
+I distinguish CPU-bound work from I/O-bound work. AsyncIO can improve concurrency when tasks spend substantial time awaiting non-blocking I/O, but it does not make CPU-heavy Python code execute faster. CPU-bound work may require algorithmic improvements, optimized native libraries, vectorization, process-based workers, or a dedicated compute service. Those choices must account for serialization, scheduling, and operational costs.
+
+Caching is a trade-off, not a default optimization. It introduces invalidation, bounded capacity, consistency, concurrency, and authorization-isolation concerns. Cache keys must include every dimension that affects the result, including tenant or user scope where applicable. I only introduce caching when the access pattern and invalidation contract are understood.
+
+A sound benchmark uses representative data, controlled conditions, repeated runs, and an explicit comparison against a baseline. I separate microbenchmarks from end-to-end load tests and evaluate latency percentiles, throughput, CPU, memory, and error rates together. After an optimization, I rerun the same workload, verify functional behavior, and observe the change under production-like conditions. The goal is a demonstrated improvement without regressions in correctness, reliability, or other service objectives.
+
+### Дополнительные вопросы и эталонные ответы
+
+**FU-1 — В чём разница между Big-O complexity и измеренным runtime?**  
+**Ответ (RU):** Big-O описывает асимптотический порядок роста ресурсов при увеличении размера входа и обычно опускает константы и менее значимые члены. Измеренное время зависит также от реализации, размера входа, оборудования, кешей CPU, аллокаций, I/O и текущей нагрузки. Поэтому Big-O помогает оценить масштабируемость, а benchmark подтверждает поведение конкретной реализации на конкретном workload.  
+**Answer (EN):** Big-O describes asymptotic growth and abstracts away constants and lower-order terms. Measured runtime also depends on implementation details, input distribution, hardware, CPU caches, allocations, I/O, and system load. Complexity analysis informs scalability; representative benchmarks validate a particular implementation and workload.
+
+**FU-2 — Когда использовать `timeit`, а когда `cProfile`?**  
+**Ответ (RU):** `timeit` подходит для изолированного сравнения небольших выражений или функций с минимизацией части измерительного overhead. `cProfile` нужен, чтобы понять, какие вызовы и функции в более крупном Python workload потребляют время и как распределяются вызовы. Нельзя использовать микробенчмарк как доказательство end-to-end улучшения сервиса.  
+**Answer (EN):** I use `timeit` to compare small, isolated operations and `cProfile` to identify where a larger Python workload spends time across function calls. A microbenchmark does not establish an end-to-end service improvement; that requires a representative integration or load test.
+
+**FU-3 — Улучшает ли AsyncIO производительность CPU-bound задач?**  
+**Ответ (RU):** Нет, не автоматически. AsyncIO позволяет эффективно переключаться между задачами во время ожидания неблокирующего I/O. Длительное CPU-bound вычисление блокирует event loop, если его не вынести из него. Нужно рассмотреть оптимизацию алгоритма, native/vectorized implementation, process pool или отдельный compute worker, измерив overhead передачи данных.  
+**Answer (EN):** No, not by itself. AsyncIO improves concurrency while tasks await non-blocking I/O. A long CPU-bound operation blocks the event loop unless it is moved elsewhere. Consider algorithmic improvements, native or vectorized code, a process pool, or dedicated compute workers, while measuring data-transfer and scheduling overhead.
+
+**FU-4 — Какие риски создаёт кеширование в multi-tenant backend?**  
+**Ответ (RU):** Основные риски — устаревшие данные, неограниченный рост памяти, stampede при одновременном истечении ключей, гонки, сложная инвалидация и утечка данных между tenants. Ключ должен учитывать все параметры результата и границу авторизации. Нужны TTL или явная invalidation policy, capacity limits, защита от stampede и тесты изоляции.  
+**Answer (EN):** Risks include stale data, unbounded memory growth, cache stampedes, races, difficult invalidation, and cross-tenant data exposure. Keys must include all result-defining dimensions and authorization scope. A production cache needs an explicit invalidation policy, capacity limits, stampede protection where appropriate, and isolation tests.
+
+**FU-5 — Как доказать, что оптимизация безопасна и эффективна?**  
+**Ответ (RU):** Зафиксировать baseline и критерии успеха; использовать одинаковый репрезентативный workload и контролируемые условия; сравнить latency percentiles, throughput, CPU, memory и error rate; выполнить функциональные и regression tests; проверить поведение под concurrency и на production-like нагрузке. После rollout отслеживать метрики и иметь возможность отката. Улучшение одного показателя не должно скрывать регрессию другого.  
+**Answer (EN):** Establish a baseline and success criteria, then run the same representative workload under controlled conditions. Compare latency percentiles, throughput, CPU, memory, and error rate; run functional and regression tests; and validate concurrency behavior under production-like load. Monitor after rollout and retain a rollback path. An improvement in one metric must not conceal a regression elsewhere.
+
+### Сценарий применения в Pharmaviyum (гипотетический)
+Гипотетическое интервью-задание может предложить исследовать медленный endpoint поиска лекарств. Сначала нужно определить репрезентативный набор запросов и измерить end-to-end latency, время базы данных, CPU и память. Затем профилировать приложение и изучить query plans до изменения кода. Следует оценить индексы, форму SQL-запроса, сериализацию payload и повторные обращения. При рассмотрении кеша нужно определить tenant-aware keys, поведение инвалидации и ограничение capacity. Это гипотетический сценарий интервью, а не утверждение о текущей реализации или измеренной производительности Pharmaviyum.
+
+### Критерии оценки Senior
+Сильный ответ уровня Senior должен:
+1. Начинать с определения workload, измеримых целей и baseline.
+2. Объяснять Big-O с учётом константных факторов и реальных условий.
+3. Выбирать profiling tools в зависимости от предполагаемого ресурса и масштаба.
+4. Различать CPU-bound, I/O-bound и memory-bound поведение.
+5. Понимать, что AsyncIO повышает конкурентность I/O, но не скорость CPU-вычислений.
+6. Рассматривать кеширование как компромисс между корректностью, изоляцией и эксплуатацией.
+7. Использовать повторяемые benchmarks и проверять улучшения на регрессии.
+8. Связывать локальное профилирование с production observability и планом rollback.
+
+**Сигналы уровня**
+- Mid-level: знает распространённые классы сложности и базовые инструменты измерения.
+- Strong Senior: профилирует репрезентативные workloads, находит доминирующее узкое место и проверяет компромиссы по метрикам сервиса.
+- Staff-level signal: определяет performance budgets, повторяемые benchmark-практики, capacity models и стандарты оптимизации между сервисами.
+
+### Типичные ошибки
+- Оптимизировать по интуиции без profiling.
+- Рассматривать Big-O как прогноз абсолютного runtime.
+- Использовать микробенчмарк как доказательство production-улучшения.
+- Предполагать, что AsyncIO ускоряет CPU-bound код.
+- Игнорировать стоимость базы данных, сети, сериализации или native code.
+- Внедрять кеш без ограничения capacity или ясного invalidation contract.
+- Не включать tenant или authorization scope в cache keys.
+- Сравнивать benchmarks в существенно разных условиях.
+- Показывать только среднюю latency и игнорировать tail latency.
+- Улучшать latency, незаметно увеличивая memory, errors или эксплуатационную сложность.
+
+### Источники
+- Python `timeit`: https://docs.python.org/3/library/timeit.html
+- Python `cProfile` and `profile`: https://docs.python.org/3/library/profile.html
+- Python `pstats`: https://docs.python.org/3/library/pstats.html
+- Python `tracemalloc`: https://docs.python.org/3/library/tracemalloc.html
+- Python FAQ — Performance: https://docs.python.org/3/faq/programming.html#how-can-i-make-my-program-run-faster
+- Python asyncio — Developing with asyncio: https://docs.python.org/3/library/asyncio-dev.html
+- FastAPI — Async: https://fastapi.tiangolo.com/async/
