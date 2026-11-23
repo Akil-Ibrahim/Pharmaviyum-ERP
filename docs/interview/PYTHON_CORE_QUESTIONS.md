@@ -1,7 +1,7 @@
 # Python Core — Question Bank
 
 **Status:** In progress  
-**Coverage:** 2 of 30 primary questions drafted  
+**Coverage:** 3 of 30 primary questions drafted  
 **Review rule:** Draft answers must be technically reviewed before being marked validated.
 
 ---
@@ -239,3 +239,138 @@ Do not claim that a specific Pharmaviyum model is immutable or mutable without c
 - Python data model: https://docs.python.org/3/reference/datamodel.html
 - Built-in types: https://docs.python.org/3/library/stdtypes.html
 - copy module: https://docs.python.org/3/library/copy.html
+
+---
+
+## PY-CORE-003 — Python's argument passing semantics
+
+### Question (EN)
+
+**How does Python pass arguments to functions? Explain object references, mutation, rebinding, and the risks of mutable default arguments.**
+
+### Перевод (RU)
+
+**Как Python передаёт аргументы в функции? Объясните ссылки на объекты, мутацию, переназначение и риски изменяемых аргументов по умолчанию.**
+
+### What the interviewer evaluates
+
+- Understanding that Python uses object references / call by sharing, not traditional call-by-reference.
+- Distinguishing mutation of an argument object from rebinding a parameter name.
+- Knowing how `*args` and `**kwargs` collect arguments.
+- Understanding that default argument expressions are evaluated once, when the function is defined.
+- Designing predictable function contracts and avoiding hidden shared state.
+
+### Model answer (RU)
+
+Python часто описывают как использующий **call by sharing** (также встречается формулировка *call by object sharing*). При вызове функции параметр становится локальным именем, связанным с тем же объектом, который передал вызывающий код. Python не копирует автоматически весь объект и не предоставляет обычную семантику C++-подобной передачи переменной по ссылке.
+
+Из этого следуют два разных поведения:
+
+- Если функция **изменяет объект на месте**, например вызывает `append()` у переданного списка, вызывающий код увидит изменение, потому что оба имени ссылаются на один объект.
+- Если функция **переназначает параметр**, например присваивает ему новый список или целое число, меняется только локальная привязка параметра. Привязка имени в вызывающем коде не меняется.
+
+Поэтому утверждение «изменяемые аргументы передаются по ссылке, а неизменяемые — по значению» некорректно. Механизм передачи один и тот же; различается возможность изменить сам объект. Неизменяемый объект нельзя изменить на месте, но локальное имя параметра всё равно можно переназначить.
+
+Параметры `*args` собирают дополнительные позиционные аргументы в кортеж, а `**kwargs` — дополнительные именованные аргументы в словарь. Это новые контейнеры для собранных аргументов, но значения внутри них по-прежнему являются ссылками на соответствующие объекты. Параметры можно ограничивать позиционным или именованным способом, например с помощью `/` и `*` в сигнатуре функции.
+
+Отдельная важная ловушка — **изменяемые значения по умолчанию**. Выражения значений по умолчанию вычисляются один раз в момент определения функции, а не при каждом вызове. Если значением по умолчанию является список или словарь и функция изменяет его, состояние сохраняется между вызовами. Это может приводить к неожиданному совместному состоянию.
+
+Обычный безопасный подход — использовать `None` как sentinel и создавать новый контейнер внутри функции. Если `None` является допустимым значением предметной области, следует использовать отдельный sentinel-объект. Важно помнить, что `None` и другие значения по умолчанию также могут быть частью публичного контракта функции.
+
+На Senior-уровне я объясняю это через **binding, object identity, mutation и API contract**. Я документирую, изменяет ли функция входные объекты, избегаю скрытого разделяемого состояния и выбираю сигнатуры, которые делают допустимые способы вызова явными.
+
+### Model answer (EN)
+
+Python is commonly described as using **call by sharing**, also known as *call by object sharing*. When a function is called, each parameter name in the function's local scope is bound to the object supplied by the caller. Python does not automatically copy the entire object, nor does it use traditional variable-level call-by-reference semantics.
+
+This leads to two distinct cases:
+
+- If a function **mutates an object in place**, such as calling `append()` on a passed list, the caller can observe the change because both names refer to the same object.
+- If a function **rebinds its parameter**, for example by assigning a new list or integer to it, only the local parameter binding changes. The caller's variable remains bound to its original object.
+
+Therefore, it is inaccurate to say that mutable arguments are passed by reference while immutable arguments are passed by value. The argument-passing mechanism is the same; what differs is whether the object itself can be mutated. An immutable object cannot be changed in place, but the local parameter name can still be rebound.
+
+Extra positional arguments collected by `*args` are placed in a tuple, while extra keyword arguments collected by `**kwargs` are placed in a dictionary. These are new collection containers, but their values are still references to the corresponding objects. Function signatures can also constrain positional and keyword usage with markers such as `/` and `*`.
+
+A common pitfall is a **mutable default argument**. Default expressions are evaluated once, when the function is defined, rather than on every call. If a list or dictionary is used as a default and mutated by the function, that state is retained across calls and can cause surprising behaviour.
+
+A common safe pattern is to use `None` as a sentinel and create a fresh container inside the function. If `None` is itself a valid domain value, use a dedicated sentinel object instead. Default values are also part of the function's public API contract and should be chosen deliberately.
+
+At Senior level, I explain this in terms of **name binding, object identity, mutation, and API contracts**. I make it explicit whether a function mutates caller-owned objects, avoid hidden shared state, and design signatures that communicate valid calling conventions.
+
+### Follow-up questions and model answers
+
+#### FU-1
+
+**EN:** What happens if a function appends to a list argument and then reassigns the parameter to a new list?  
+**RU:** Что произойдёт, если функция добавит элемент в переданный список, а затем переназначит параметр на новый список?
+
+**Answer (RU):** Изменение исходного списка через `append()` будет видно вызывающему коду. Последующее присваивание параметру нового списка изменит только локальную привязку имени параметра. Внешняя переменная продолжит ссылаться на исходный список, уже содержащий добавленный элемент.
+
+**Answer (EN):** The append operation mutates the original list, so the caller observes that change. Reassigning the parameter to a new list only changes the local binding. The caller's variable still refers to the original list, including the appended item.
+
+#### FU-2
+
+**EN:** Why are mutable default arguments dangerous, and when are defaults evaluated?  
+**RU:** Почему изменяемые значения по умолчанию опасны и когда вычисляются значения по умолчанию?
+
+**Answer (RU):** Выражение значения по умолчанию вычисляется один раз при определении функции. Поэтому один и тот же список или словарь может использоваться несколькими вызовами. Если функция изменяет его, состояние сохраняется между вызовами. Обычно используют sentinel и создают новый объект внутри функции.
+
+**Answer (EN):** A default expression is evaluated once when the function is defined. The same list or dictionary can therefore be reused across calls. If the function mutates it, the state persists. A common solution is to use a sentinel and create a fresh object inside the function.
+
+#### FU-3
+
+**EN:** What exactly do `*args` and `**kwargs` collect, and are the contained objects copied?  
+**RU:** Что именно собирают `*args` и `**kwargs` и копируются ли содержащиеся в них объекты?
+
+**Answer (RU):** `*args` собирает дополнительные позиционные аргументы в кортеж, а `**kwargs` — дополнительные именованные аргументы в словарь. Создаются контейнеры для сбора аргументов, но сами переданные объекты автоматически не копируются: элементы контейнеров ссылаются на исходные объекты.
+
+**Answer (EN):** `*args` collects extra positional arguments into a tuple, and `**kwargs` collects extra keyword arguments into a dictionary. The collection containers are created, but the supplied objects are not automatically copied; the entries refer to the original objects.
+
+#### FU-4
+
+**EN:** How would you use a sentinel when `None` is a valid argument value?  
+**RU:** Как использовать sentinel, если `None` является допустимым значением аргумента?
+
+**Answer (RU):** Нужно создать отдельный уникальный объект-сентинел и использовать его как значение по умолчанию. Внутри функции проверять идентичность через `is`, а не равенство. Тогда можно отличить отсутствие аргумента от явной передачи `None`.
+
+**Answer (EN):** I would create a unique sentinel object and use it as the default. Inside the function, I would check it with `is`, not equality. This distinguishes an omitted argument from an explicit `None` value.
+
+#### FU-5
+
+**EN:** What is the difference between positional-only, positional-or-keyword, and keyword-only parameters?  
+**RU:** Чем отличаются positional-only, positional-or-keyword и keyword-only параметры?
+
+**Answer (RU):** Positional-only параметры можно передать только позиционно и они располагаются до `/`. Positional-or-keyword параметры допускают оба способа передачи. Keyword-only параметры должны передаваться по имени и располагаются после отдельного `*` в сигнатуре. Эти ограничения помогают сделать API яснее и сохранить совместимость при эволюции интерфейса.
+
+**Answer (EN):** Positional-only parameters can be supplied only positionally and appear before `/`. Positional-or-keyword parameters support either calling style. Keyword-only parameters must be supplied by name and appear after a standalone `*` in the signature. These constraints make APIs clearer and can help preserve compatibility as interfaces evolve.
+
+### Pharmaviyum connection
+
+**Hypothetical interview scenario — not a claim about the current implementation:** a service function receives search filters or a list of medication identifiers. If it mutates caller-owned input or stores request-specific data in a mutable default, one request may affect later operations. A robust implementation uses per-call state, explicit ownership and mutation contracts, and tests repeated calls to detect state leakage.
+
+Do not claim that a particular Pharmaviyum function has this defect without inspecting its implementation.
+
+### Senior-level evaluation
+
+| Level | Expected evidence |
+|---|---|
+| Weak | Says Python passes mutable values by reference and immutable values by value; cannot explain mutable defaults. |
+| Competent | Explains mutation versus rebinding and correctly describes `*args`, `**kwargs`, and default evaluation. |
+| Strong Senior | Explains call by sharing precisely, identifies aliasing and state-leak risks, designs sentinel-based APIs, understands parameter-kind markers, and discusses compatibility and test strategy. |
+
+### Common pitfalls
+
+- Describing Python argument passing as a split between pass-by-reference and pass-by-value based on mutability.
+- Assuming parameter reassignment changes the caller's variable.
+- Assuming default expressions are evaluated on every call.
+- Using a mutable list or dictionary as a default accumulator unintentionally.
+- Assuming `*args` or `**kwargs` deep-copy argument values.
+- Using `None` as a sentinel when `None` is a valid domain value.
+
+### References
+
+- Python tutorial — defining functions: https://docs.python.org/3/tutorial/controlflow.html#defining-functions
+- Python FAQ — mutable default arguments: https://docs.python.org/3/faq/programming.html#why-are-default-values-shared-between-objects
+- Python language reference — function definitions: https://docs.python.org/3/reference/compound_stmts.html#function-definitions
+- Python glossary — call by sharing / object reference concepts: https://docs.python.org/3/glossary.html
