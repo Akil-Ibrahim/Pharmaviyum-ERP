@@ -263,3 +263,76 @@ Follow-up IDs are assigned sequentially from FU-001 to FU-180, four per Main Que
 | FU-063 | Edge cases and trade-offs | How should a decorator handle coroutine functions, generator functions, exceptions, and cancellation without changing their execution semantics? | Как декоратору обрабатывать coroutine functions, generator functions, исключения и отмену задач, не изменяя семантику их выполнения? |
 | FU-064 | Senior judgment | How would you test and document a reusable decorator so that its signature, metadata, typing, composition order, and runtime behavior remain reliable? | Как тестировать и документировать переиспользуемый декоратор, чтобы его сигнатура, метаданные, типизация, порядок композиции и поведение во время выполнения оставались надёжными? |
 
+
+### PY-017 — What is the iterator protocol, and how does iteration work in Python?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-065 | Mechanism | What methods define the iterator protocol, and how does a `for` loop obtain and consume an iterator? | Какие методы определяют протокол итератора и как цикл `for` получает и использует итератор? |
+| FU-066 | Application | How would you implement a custom iterable domain object that supports repeated independent iterations? | Как реализовать собственный итерируемый доменный объект, поддерживающий повторные независимые проходы? |
+| FU-067 | Edge cases and trade-offs | What is the difference between an iterable and an iterator, and what problems arise when an exhausted or stateful iterator is reused? | В чём разница между iterable и iterator и какие проблемы возникают при повторном использовании исчерпанного или хранящего состояние итератора? |
+| FU-068 | Senior judgment | When should an API return a reusable collection, a fresh iterator, or a one-shot streaming iterator, and how should that contract be communicated? | Когда API должен возвращать повторно используемую коллекцию, новый итератор или одноразовый потоковый итератор и как документировать этот контракт? |
+
+### PY-018 — How do generators work, including `yield`, suspension, and resumption?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-069 | Mechanism | What execution state does a generator preserve when it suspends at `yield`, and how does execution resume on the next request? | Какое состояние выполнения сохраняет генератор при приостановке на `yield` и как выполнение возобновляется при следующем запросе? |
+| FU-070 | Application | How would you build a generator pipeline that reads, transforms, and validates a large input without loading it entirely into memory? | Как построить конвейер генераторов для чтения, преобразования и проверки большого входного потока без полной загрузки в память? |
+| FU-071 | Edge cases and trade-offs | How do `send()`, `throw()`, `close()`, generator return values, and exceptions affect generator control flow and cleanup? | Как `send()`, `throw()`, `close()`, возвращаемые значения генератора и исключения влияют на управление потоком и очистку ресурсов? |
+| FU-072 | Senior judgment | What operational risks should be considered when generators hold files, database cursors, network responses, or other resources across suspension points? | Какие эксплуатационные риски следует учитывать, если генераторы удерживают файлы, курсоры БД, сетевые ответы или другие ресурсы между точками приостановки? |
+
+### PY-019 — When should you use generators instead of materialized collections?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-073 | Mechanism | How do lazy evaluation and materialization differ in evaluation timing, memory allocation, and exception timing? | Чем ленивое вычисление отличается от материализации с точки зрения времени вычисления, выделения памяти и момента возникновения исключений? |
+| FU-074 | Application | How would you choose between a generator pipeline and a materialized list for a paginated database export or large file-processing task? | Как выбрать между конвейером генераторов и материализованным списком для постраничного экспорта из БД или обработки большого файла? |
+| FU-075 | Edge cases and trade-offs | How can one-shot consumption, repeated traversal, debugging difficulty, and downstream buffering undermine the expected benefits of laziness? | Как одноразовое потребление, повторный обход, сложность отладки и буферизация на следующих этапах могут нивелировать преимущества ленивых вычислений? |
+| FU-076 | Senior judgment | How would you define backpressure, batching, resource lifetime, and failure handling in a production streaming pipeline? | Как определить backpressure, пакетную обработку, жизненный цикл ресурсов и обработку ошибок в production-потоке данных? |
+
+### PY-020 — How does Python's method resolution order work in multiple inheritance?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-077 | Mechanism | How does C3 linearization construct a class's method resolution order, and what consistency constraints must it satisfy? | Как алгоритм линеаризации C3 строит порядок разрешения методов класса и каким ограничениям согласованности он должен удовлетворять? |
+| FU-078 | Application | How would you trace a cooperative method call across a multiple-inheritance hierarchy that uses `super()`? | Как проследить кооперативную цепочку вызовов методов в иерархии множественного наследования, использующей `super()`? |
+| FU-079 | Edge cases and trade-offs | Why can inconsistent base-class ordering make a class hierarchy invalid, and what assumptions about `super()` commonly cause bugs? | Почему несогласованный порядок базовых классов может сделать иерархию недопустимой и какие распространённые предположения о `super()` вызывают ошибки? |
+| FU-080 | Senior judgment | What criteria would make multiple inheritance acceptable in a framework, and when would composition or explicit delegation be safer? | По каким критериям множественное наследование можно считать приемлемым во фреймворке и когда композиция или явное делегирование безопаснее? |
+
+### PY-021 — How do inheritance and composition differ, and when should each be preferred?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-081 | Mechanism | How do inheritance and composition differ in terms of type relationships, method reuse, and runtime collaboration between objects? | Чем наследование и композиция отличаются с точки зрения отношений типов, повторного использования методов и взаимодействия объектов во время выполнения? |
+| FU-082 | Application | How would you refactor a base class with many conditional branches into collaborators composed around explicit responsibilities? | Как переработать базовый класс с большим количеством условных ветвей, выделив collaborators с явно заданными обязанностями? |
+| FU-083 | Edge cases and trade-offs | What coupling, fragile-base-class, initialization, and behavioral-subtyping problems can arise with inheritance, and what complexity can composition introduce? | Какие проблемы связанности, хрупкого базового класса, инициализации и поведенческой подстановки возникают при наследовании и какую сложность может добавить композиция? |
+| FU-084 | Senior judgment | How would you choose an extension mechanism for a public library whose users need customization without being tightly coupled to internal implementation? | Как выбрать механизм расширения публичной библиотеки, пользователям которой нужна настройка без жёсткой зависимости от внутренней реализации? |
+
+### PY-022 — How do polymorphism, abstract base classes, and duck typing relate?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-085 | Mechanism | How do duck typing, abstract base classes, and structural protocols express or enforce different forms of substitutability? | Как duck typing, абстрактные базовые классы и структурные протоколы выражают или обеспечивают разные формы взаимозаменяемости? |
+| FU-086 | Application | How would you define an interface for interchangeable storage backends while keeping business logic independent of a specific implementation? | Как определить интерфейс взаимозаменяемых backend-хранилищ, сохранив независимость бизнес-логики от конкретной реализации? |
+| FU-087 | Edge cases and trade-offs | What can go wrong when an object satisfies an interface syntactically but violates its behavioral expectations or invariants? | Что может пойти не так, если объект синтаксически соответствует интерфейсу, но нарушает ожидаемое поведение или инварианты? |
+| FU-088 | Senior judgment | How would you balance runtime validation, static typing, explicit registration, and duck typing at plugin or integration boundaries? | Как сбалансировать runtime-валидацию, статическую типизацию, явную регистрацию и duck typing на границах плагинов или интеграций? |
+
+### PY-023 — What are descriptors, and how do they participate in attribute access?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-089 | Mechanism | What distinguishes data descriptors from non-data descriptors, and how does their precedence affect instance attribute lookup? | Чем data descriptors отличаются от non-data descriptors и как их приоритет влияет на поиск атрибутов экземпляра? |
+| FU-090 | Application | How would you implement a reusable descriptor for validation, lazy computation, or managed per-instance attributes? | Как реализовать переиспользуемый дескриптор для валидации, ленивого вычисления или управляемых атрибутов экземпляра? |
+| FU-091 | Edge cases and trade-offs | How do descriptor binding, `__set_name__`, inheritance, and storage strategy affect correctness when the same descriptor is used by multiple classes? | Как связывание дескрипторов, `__set_name__`, наследование и стратегия хранения влияют на корректность, если один дескриптор используется несколькими классами? |
+| FU-092 | Senior judgment | When does a descriptor provide a meaningful abstraction over a property or explicit method, and how would you test its lifecycle and isolation guarantees? | Когда дескриптор даёт значимую абстракцию по сравнению со свойством или явным методом и как проверить его жизненный цикл и гарантии изоляции? |
+
+### PY-024 — What does `__slots__` change, and what trade-offs does it introduce?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-093 | Mechanism | How does declaring `__slots__` affect instance attribute storage and the availability of an instance `__dict__`? | Как объявление `__slots__` влияет на хранение атрибутов экземпляра и наличие у экземпляра `__dict__`? |
+| FU-094 | Application | How would you determine whether using `__slots__` is worthwhile for a high-volume population of small Python objects? | Как определить, оправдано ли использование `__slots__` для большого количества небольших объектов Python? |
+| FU-095 | Edge cases and trade-offs | What inheritance, multiple-inheritance, weak-reference, subclassing, and dynamic-attribute constraints can arise with `__slots__`? | Какие ограничения, связанные с наследованием, множественным наследованием, weak references, созданием подклассов и динамическими атрибутами, возникают при использовании `__slots__`? |
+| FU-096 | Senior judgment | What measurements and compatibility checks should precede introducing `__slots__` into a public model or widely used library type? | Какие измерения и проверки совместимости должны предшествовать добавлению `__slots__` в публичную модель или широко используемый тип библиотеки? |
+
