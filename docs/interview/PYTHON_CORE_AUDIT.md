@@ -1,6 +1,6 @@
 # Python Core Completeness Audit
 
-**Status:** Preliminary audit — findings recorded; remediation and final validation remain open.  
+**Status:** Remediation applied to both EN and RU question banks; final technical consistency review remains open.  
 **Scope:** The 30-question bilingual bank in `PYTHON_CORE_QUESTIONS.md` and `PYTHON_CORE_QUESTIONS.ru.md`.  
 **Reference baseline:** Official Python 3.14 Language Reference and Library Reference, with version-specific changes checked against the Python 3.14 What's New documentation.  
 **Review principle:** Distinguish language guarantees from CPython implementation details and from backend-engineering practices.
@@ -137,7 +137,7 @@ At minimum, review these version-sensitive areas:
 
 Do not silently rewrite general Python semantics to match one CPython version.
 
-## 7. Recommended remediation plan
+## 7. Initial remediation plan (completed in first pass)
 
 | Order | Action | Target |
 |---|---|---|
@@ -151,7 +151,28 @@ Do not silently rewrite general Python semantics to match one CPython version.
 | 8 | Label the curriculum as Python Core + Advanced Python + Backend Engineering competencies | Both question-bank introductions |
 | 9 | Re-read both language versions and perform a technical consistency check | EN and RU files |
 
-## 8. Official references
+## 8. Remediation status
+
+The first remediation pass has been applied to both bilingual question-bank files. The primary-question count remains **30**.
+
+| Gap | Remediation | Target | Status |
+|---|---|---|---|
+| G-01 | Added precedence, associativity, evaluation-order, short-circuit, chained-comparison, conditional-expression and assignment-expression coverage | Q6 | Addressed; final review pending |
+| G-02 | Added eager/lazy comprehension semantics, scope, nested evaluation, side effects and exception timing | Q9 | Addressed; final review pending |
+| G-03 | Added sequence, mapping, class, OR and guarded structural patterns; clarified validation/authorization boundary | Q6 | Addressed; final review pending |
+| G-04 | Added Python 3.14 deferred annotation semantics and annotationlib guidance | Q5, Q21 | Addressed; final review pending |
+| G-05 | Added subinterpreters and InterpreterPoolExecutor, distinguished from free-threaded execution | Q17 | Addressed; final review pending |
+| G-06 | Added a concise selection matrix for decimal, fractions, secrets, contextvars, memoryview and the buffer protocol | Q22 | Addressed; final review pending |
+
+### Explicit boundaries for overlapping questions
+
+- **Q1 vs Q4:** Q1 owns the foundational object model (identity, type, value, name binding and call-by-sharing). Q4 owns comparison semantics (is/==), the equality/hash contract and correctness consequences of aliasing. Avoid repeating the full object-model explanation in Q4.
+- **Q13 vs Q29:** Q13 owns object lifetime, reference graphs, cyclic GC, weak references and Python-level retention. Q29 owns process/container memory signals, system capacity and memory as one dimension of service-level performance.
+- **Q14 vs Q29:** Q14 owns local algorithmic reasoning, Python profiling tools and code-level optimization. Q29 owns end-to-end workload design, latency percentiles, load generation, saturation, capacity, performance SLOs and regression controls.
+
+These boundaries are editorial guidance for the final pass; they do not imply that all overlap has already been removed from every paragraph.
+
+## 9. Official references
 
 - Python 3.14 Language Reference: https://docs.python.org/3.14/reference/
 - Python 3.14 Execution Model: https://docs.python.org/3.14/reference/executionmodel.html
