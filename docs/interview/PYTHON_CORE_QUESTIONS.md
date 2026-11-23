@@ -1,7 +1,7 @@
 # Python Core — Question Bank
 
 **Status:** In progress  
-**Coverage:** 6 of 30 primary questions drafted  
+**Coverage:** 7 of 30 primary questions drafted  
 **Review rule:** Draft answers must be technically reviewed before being marked validated.
 
 ---
@@ -839,3 +839,167 @@ Do not claim that a particular Pharmaviyum class implements these protocols with
 - Iterator types: https://docs.python.org/3/library/stdtypes.html#iterator-types
 - Context manager types: https://docs.python.org/3/library/stdtypes.html#typecontextmanager
 - PEP 343 — The "with" statement: https://peps.python.org/pep-0343/
+
+---
+
+## PY-CORE-007 — Python scope, the LEGB rule, closures, and namespaces
+
+### Question (EN)
+
+**Explain how Python resolves names. Describe the LEGB rule, the roles of `global` and `nonlocal`, how closures retain state, and why late binding can cause bugs.**
+
+### Перевод (RU)
+
+**Объясните, как Python разрешает имена. Расскажите о правиле LEGB, назначении `global` и `nonlocal`, о том, как closures сохраняют состояние, и почему late binding может приводить к ошибкам.**
+
+### What the interviewer evaluates
+
+- Accurate understanding of namespaces versus scopes.
+- Ability to explain LEGB lookup order and built-in fallback.
+- Understanding that assignment affects compile-time scope classification within a function.
+- Correct distinction between `global` and `nonlocal`.
+- Understanding closure cells and lexical scoping.
+- Ability to diagnose `UnboundLocalError` and late-binding behaviour.
+- Awareness of decorator and nested-function implications.
+- Ability to design predictable, testable code without accidental shared state.
+
+### Model answer (RU)
+
+В Python **namespace** — это отображение имён на объекты, а **scope** — область программы, в которой имя доступно при разрешении. Эти понятия связаны, но не тождественны: namespace хранит bindings, а scope определяет правила доступа к ним.
+
+Для обычного разрешения имён в функции используется правило **LEGB**:
+
+1. **Local** — локальные имена текущей функции.
+2. **Enclosing** — имена во внешних охватывающих функциях, если функция вложенная.
+3. **Global** — имена на уровне модуля, в котором определена функция.
+4. **Built-in** — встроенные имена, например `len`, `str`, `Exception`.
+
+Поиск идёт от ближайшей области к более внешней. Global здесь означает namespace модуля, а не глобальное пространство всего процесса. Если имя не найдено ни в одной области, возникает `NameError`.
+
+**Важная особенность: локальная классификация имён.** Внутри функции, если имя где-либо связывается присваиванием, Python обычно классифицирует его как локальное во всей функции, если не указаны `global` или `nonlocal`. Поэтому попытка сначала прочитать такое имя до присваивания приводит к `UnboundLocalError`, даже если существует одноимённое имя на уровне модуля. Это не обычный случай отсутствующего имени: `UnboundLocalError` является подклассом `NameError` и указывает на проблему доступа к локальной переменной до её связывания.
+
+`global` сообщает, что присваивание имени внутри функции должно относиться к namespace текущего модуля. Это не означает, что значение становится глобальным для всех модулей или потоков.
+
+`nonlocal` указывает, что имя относится к ближайшей охватывающей функциональной области, в которой оно уже существует. Оно используется во вложенных функциях для изменения binding во внешней функции. `nonlocal` не обращается к namespace модуля и не создаёт имя в enclosing scope, если подходящего binding там нет.
+
+**Closures** возникают, когда вложенная функция использует имя из enclosing scope и сохраняет доступ к этому binding после завершения внешнего вызова. Python сохраняет необходимое состояние через closure cells. Closure захватывает не обязательно неизменяемую копию значения, а доступ к binding. Поэтому изменение binding через `nonlocal` может быть видно последующим вызовам замыкания. Если захваченный объект mutable, его внутреннее состояние также может изменяться.
+
+**Late binding** означает, что замыкание обычно разрешает захваченное имя при выполнении функции, а не фиксирует текущее значение в момент создания функции. Классический случай — создание функций в цикле: все функции могут обратиться к одному и тому же имени цикла и увидеть его итоговое значение при последующем вызове. Один из вариантов решения — явно передать значение через аргумент функции с default value, но это нужно применять осознанно: default expressions вычисляются один раз при определении функции. Другие варианты — фабрика функций или отдельная функция-обёртка, создающая собственную enclosing scope для каждой итерации.
+
+**Decorators** используют те же правила областей видимости. Функция-декоратор часто возвращает вложенную wrapper-функцию, которая замыкает исходную функцию и параметры конфигурации. Нужно следить за тем, какие bindings разделяются между вызовами, и сохранять метаданные обёрнутой функции, обычно через `functools.wraps`. Если wrapper хранит изменяемое состояние в closure, это состояние может разделяться между всеми вызовами данного wrapper.
+
+Также важно не путать правила scope функций с особенностями других конструкций. Например, comprehension в Python 3 имеет собственную область видимости для переменной цикла, а тело класса не является обычной enclosing function scope для методов: имя, объявленное в теле класса, не становится автоматически лексической переменной метода.
+
+На Senior-уровне я объясняю не только порядок LEGB, но и последствия для состояния, конкурентного выполнения, тестируемости и API. Я избегаю неявных глобальных зависимостей, делаю конфигурацию явной, а изменяемое состояние храню в объекте с понятным жизненным циклом или передаю через зависимости. Для closure и decorator пишу тесты на повторные вызовы, независимость экземпляров и поведение при изменении захваченного состояния.
+
+### Model answer (EN)
+
+In Python, a **namespace** is a mapping from names to objects, while a **scope** is the region of a program where a name can be accessed through name resolution. They are related but not identical: a namespace stores bindings, while scope determines the rules used to access them.
+
+For ordinary name resolution inside a function, Python follows **LEGB**:
+
+1. **Local** — names in the current function.
+2. **Enclosing** — names in surrounding function scopes when functions are nested.
+3. **Global** — names in the module where the function was defined.
+4. **Built-in** — built-in names such as `len`, `str`, and `Exception`.
+
+Lookup proceeds from the nearest applicable scope outward. Here, global means the module namespace, not a process-wide global namespace. If a name cannot be found, Python raises `NameError`.
+
+**An important detail is local-name classification.** If a name is bound by an assignment anywhere in a function, Python generally classifies it as local throughout that function unless `global` or `nonlocal` declares otherwise. Reading that name before the assignment therefore raises `UnboundLocalError`, even if a module-level name with the same spelling exists. This is not simply a missing-name case: `UnboundLocalError` is a subclass of `NameError` and indicates access to a local variable before it has been bound.
+
+`global` declares that assignments to a name in the function refer to the current module's namespace. It does not make the value global to every module or thread in the process.
+
+`nonlocal` declares that a name refers to the nearest enclosing function scope where that name is already bound. It allows a nested function to rebind a name in an outer function. It does not refer to the module namespace, and it cannot create a name in an enclosing scope where no suitable binding exists.
+
+A **closure** occurs when a nested function uses a name from an enclosing scope and retains access to that binding after the outer call has returned. Python preserves the required state through closure cells. A closure does not necessarily capture an immutable snapshot of a value; it retains access to a binding. Rebinding it through `nonlocal` can therefore be observed by later calls. If the captured object is mutable, its internal state can also change.
+
+**Late binding** means that a closure normally resolves a captured name when the function executes, rather than freezing its current value when the function is created. A classic example is creating functions in a loop: all functions may refer to the same loop variable and observe its final value when called later. One solution is to pass the current value through a function parameter with a default value, but this should be used deliberately because default expressions are evaluated once when the function is defined. Other solutions include a function factory or wrapper that creates a separate enclosing scope for each iteration.
+
+**Decorators** follow the same scope rules. A decorator often returns a nested wrapper function that closes over the original function and configuration parameters. It is important to understand which bindings are shared across calls and to preserve wrapped-function metadata, commonly with `functools.wraps`. If a wrapper stores mutable state in a closure, that state may be shared by every call to that wrapper.
+
+Do not confuse function-scope rules with the behaviour of other constructs. For example, in Python 3 a comprehension has its own scope for its iteration variable. A class body is also not an ordinary enclosing function scope for methods: a name defined in a class body does not automatically become a lexical variable inside a method.
+
+At Senior level, I explain not only LEGB lookup but also its consequences for state, concurrent execution, testability, and API design. I avoid implicit global dependencies, make configuration explicit, and keep mutable state in objects with clear lifecycles or pass it through dependencies. For closures and decorators, I test repeated calls, instance independence, and behaviour when captured state changes.
+
+### Follow-up questions and model answers
+
+#### FU-1
+
+**EN:** Why can reading a module-level variable inside a function raise `UnboundLocalError` if the function assigns to the same name later?  
+**RU:** Почему чтение переменной уровня модуля внутри функции может вызвать `UnboundLocalError`, если позднее в этой функции выполняется присваивание тому же имени?
+
+**Answer (RU):** Наличие присваивания имени внутри функции обычно приводит к тому, что Python классифицирует это имя как локальное во всей функции на этапе анализа кода. Поэтому чтение до локального присваивания обращается к ещё не связанному локальному имени, а не к одноимённому имени модуля. Если намерение действительно состоит в изменении module-level binding, требуется декларация `global`; чаще лучше передать значение явно.
+
+**Answer (EN):** An assignment to a name anywhere in a function generally causes Python to classify that name as local throughout the function during code analysis. A read before the local assignment therefore accesses an unbound local name rather than the same-named module variable. If changing the module-level binding is truly intended, `global` is required; explicit parameter passing is often a better design.
+
+#### FU-2
+
+**EN:** What is the difference between `global` and `nonlocal`?  
+**RU:** В чём разница между `global` и `nonlocal`?
+
+**Answer (RU):** `global` направляет присваивание в namespace текущего модуля. `nonlocal` направляет его в ближайшую enclosing function scope, где имя уже связано. `nonlocal` применяется к вложенным функциям и не работает как способ изменить переменную модуля.
+
+**Answer (EN):** `global` directs assignment to the current module namespace. `nonlocal` directs assignment to the nearest enclosing function scope where the name is already bound. It is used by nested functions and is not a way to modify a module variable.
+
+#### FU-3
+
+**EN:** Does a closure capture a value or a variable binding?  
+**RU:** Closure захватывает значение или binding переменной?
+
+**Answer (RU):** Концептуально closure сохраняет доступ к binding в enclosing scope, а не обязательно копию значения на момент создания функции. Поэтому последующее изменение binding через `nonlocal` может быть видно при вызове closure. Если binding указывает на mutable object, изменения самого объекта также будут наблюдаемы.
+
+**Answer (EN):** Conceptually, a closure retains access to a binding in an enclosing scope, not necessarily a copy of the value at function-creation time. Rebinding through `nonlocal` can therefore be observed when the closure is called. If the binding refers to a mutable object, mutations to that object are observable as well.
+
+#### FU-4
+
+**EN:** Why do functions created in a loop often exhibit late-binding behaviour, and how can you avoid it?  
+**RU:** Почему функции, созданные в цикле, часто демонстрируют late binding и как этого избежать?
+
+**Answer (RU):** Вложенные функции обычно разрешают имя переменной цикла во время вызова. Если все функции замыкают одно и то же имя, они могут увидеть его итоговое значение. Можно использовать default argument для фиксации текущего binding, фабрику функций или отдельную enclosing scope. При использовании default argument нужно помнить, что значение по умолчанию вычисляется один раз при определении функции.
+
+**Answer (EN):** Nested functions normally resolve the loop variable when they are called. If all functions close over the same name, they may observe its final value. A default argument can capture the current binding, or a function factory can create a separate enclosing scope. Remember that a default argument expression is evaluated once when the function is defined.
+
+#### FU-5
+
+**EN:** Why should mutable state captured by a decorator or closure be treated carefully in a web application?  
+**RU:** Почему к изменяемому состоянию, захваченному декоратором или closure, нужно относиться осторожно в веб-приложении?
+
+**Answer (RU):** Wrapper, созданный декоратором, часто является одним объектом функции, который вызывается множеством запросов. Изменяемое состояние в его closure может разделяться между запросами, что создаёт риск утечки контекста, гонок данных и недетерминированного поведения. Состояние запроса следует хранить в request-scoped dependency или другом объекте с корректным жизненным циклом, а не в общем closure без синхронизации и чёткого контракта.
+
+**Answer (EN):** A decorator-created wrapper is often a single function object invoked by many requests. Mutable state in its closure may therefore be shared across requests, creating risks of context leakage, race conditions, and nondeterministic behaviour. Request-specific state should live in a request-scoped dependency or another correctly scoped object, not in a shared closure without synchronization and an explicit contract.
+
+### Pharmaviyum connection
+
+**Hypothetical interview scenario — not a claim about the current implementation:** a FastAPI dependency or decorator could close over immutable application configuration, while request-specific identity, authorization context, and database-session state should be supplied through request-scoped dependencies. A shared closure containing mutable patient or request data would be an unsafe design because concurrent requests could observe each other's state.
+
+Any claim that a current Pharmaviyum component uses a particular closure, decorator, or dependency scope must be verified against the source code and tests.
+
+### Senior-level evaluation
+
+| Level | Expected evidence |
+|---|---|
+| Weak | Recites LEGB but cannot explain `UnboundLocalError`, or treats `global` and `nonlocal` as interchangeable. |
+| Competent | Correctly explains LEGB, rebinding, closures, and late binding. |
+| Strong Senior | Connects lexical scope to closure cells, decorator state, request lifecycles, concurrency, test isolation, and explicit dependency design. |
+
+### Common pitfalls
+
+- Treating global scope as a process-wide namespace rather than a module namespace.
+- Assuming a name is global merely because it was declared outside the function.
+- Forgetting that assignment can make a name local throughout a function.
+- Confusing `NameError` with the more specific `UnboundLocalError`.
+- Using `nonlocal` when no binding exists in an enclosing function scope.
+- Assuming closures always capture immutable snapshots.
+- Missing late binding in functions created in loops.
+- Using mutable closure state for request-specific data in a concurrent server.
+- Forgetting that default argument expressions are evaluated once at function definition.
+- Assuming class attributes are automatically lexical variables inside methods.
+
+### References
+
+- Python execution model — naming and binding: https://docs.python.org/3/reference/executionmodel.html
+- `global` statement: https://docs.python.org/3/reference/simple_stmts.html#the-global-statement
+- `nonlocal` statement: https://docs.python.org/3/reference/simple_stmts.html#the-nonlocal-statement
+- Function definitions and default parameter values: https://docs.python.org/3/reference/compound_stmts.html#function-definitions
+- PEP 227 — Statically Nested Scopes: https://peps.python.org/pep-0227/
+- `functools.wraps`: https://docs.python.org/3/library/functools.html#functools.wraps
