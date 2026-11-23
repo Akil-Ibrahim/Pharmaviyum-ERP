@@ -1,7 +1,7 @@
 # Python Core — Question Bank
 
 **Status:** In progress  
-**Coverage:** 9 of 30 primary questions drafted  
+**Coverage:** 10 of 30 primary questions drafted  
 **Review rule:** Draft answers must be technically reviewed before being marked validated.
 
 ---
@@ -1325,3 +1325,148 @@ Any claim that Pharmaviyum currently implements streaming endpoints or generator
 - Generator expressions: https://docs.python.org/3/reference/expressions.html#generator-expressions
 - `contextlib`: https://docs.python.org/3/library/contextlib.html
 - Asynchronous generator functions: https://docs.python.org/3/reference/expressions.html#asynchronous-generator-functions
+
+
+## PY-CORE-010 — Python exception handling and custom exceptions
+
+### Interview question
+
+Explain Python's exception model and how you design exception handling in a production backend. Cover the exception hierarchy, the roles of `try`, `except`, `else`, and `finally`, exception propagation and chaining, custom exception classes, exception groups, and the boundary between domain errors and HTTP responses.
+
+### Русский перевод вопроса
+
+Объясните модель исключений Python и то, как вы проектируете обработку ошибок в production backend. Раскройте иерархию исключений, назначение `try`, `except`, `else` и `finally`, распространение и связывание исключений, собственные классы исключений, группы исключений и границу между domain errors и HTTP-ответами.
+
+### What the interviewer evaluates
+
+- Understanding of Python's exception hierarchy and the distinction between `BaseException` and `Exception`.
+- Precise control-flow semantics of `try/except/else/finally`.
+- Ability to preserve causal information with exception chaining.
+- Design of meaningful, stable custom exception taxonomies.
+- Correct use of narrow exception handling and cleanup guarantees.
+- Awareness of `ExceptionGroup` and `except*` in concurrent or task-group code.
+- Separation of domain, application, infrastructure, and transport concerns.
+- Production practices: safe logging, observability, redaction, retries, and stable client-facing errors.
+
+### Model answer (RU)
+
+В Python исключение — это объект, представляющий ошибочную или особую ситуацию во время выполнения. Исключение прерывает обычный поток выполнения и распространяется вверх по стеку вызовов, пока не будет обработано подходящим обработчиком. Если обработчика нет, выполнение завершается с traceback.
+
+**Иерархия исключений.** В верхней части находятся `BaseException` и его подклассы. `Exception` — базовый класс для большинства обычных ошибок приложения: `ValueError`, `TypeError`, `RuntimeError`, `OSError` и многих других. Системные сигналы завершения, например `KeyboardInterrupt` и `SystemExit`, наследуются непосредственно от `BaseException`, а не от `Exception`. Поэтому прикладной код почти всегда должен перехватывать `Exception` или более узкий тип, а не `BaseException`: иначе можно случайно подавить сигналы завершения процесса.
+
+**Семантика конструкции.**
+- `try` содержит код, для которого ожидается обработка исключений.
+- `except` выбирает подходящий обработчик по типу исключения. Следует перехватывать наиболее узкий тип, который код действительно умеет обработать.
+- `else` выполняется только тогда, когда блок `try` завершился без исключения. Он полезен для отделения успешного пути от кода, который должен находиться под защитой `except`.
+- `finally` выполняется при обычном выходе из конструкции, включая выход через исключение или `return`. Его используют для гарантированного cleanup, но для владения ресурсами обычно предпочтительнее context manager.
+
+Исключение, которое не обработано в текущем кадре, распространяется к вызывающему коду. Обработчик не должен просто поглощать ошибку: он должен либо восстановить корректное состояние, либо преобразовать ошибку на подходящем уровне, либо позволить ей распространиться дальше.
+
+**Exception chaining.** Если низкоуровневая ошибка преобразуется в ошибку более высокого уровня, `raise DomainError(...) from exc` сохраняет исходную причину в `__cause__`. Это помогает сохранить диагностический контекст, не заставляя верхние слои зависеть от деталей драйвера или библиотеки. Конструкция `raise NewError(...) from None` подавляет отображение неявного контекста в traceback; её следует использовать осознанно, поскольку она скрывает причинную цепочку от стандартного отображения.
+
+**Пользовательские исключения.** Обычно собственные исключения наследуются от `Exception`. Их иерархия должна отражать стабильные категории ошибок предметной области или приложения, а не дублировать каждый внутренний сбой отдельным классом. Например, можно определить `MedicationNotFoundError` или `InventoryConflictError`, если эти состояния имеют отдельную семантику для вызывающего слоя. Полезно сохранять структурированные атрибуты, необходимые для обработки, а не анализировать текст сообщения. Сообщение исключения не является стабильным API-контрактом.
+
+**Exception groups.** Начиная с Python 3.11, `ExceptionGroup` позволяет представить несколько исключений как одну группу, например когда несколько concurrent tasks завершаются ошибками. `except*` обрабатывает совпадающие подмножества группы, сохраняя структуру оставшихся исключений. Это не замена обычному `except`; механизм предназначен для сценариев, где несколько ошибок могут возникнуть независимо в одной операции.
+
+**Архитектура backend.** Domain layer должен выражать ошибки в терминах предметной области и не зависеть от FastAPI или HTTP. Application layer координирует use cases и решает, какие ошибки преобразовать или передать выше. Infrastructure layer может преобразовывать ошибки драйвера в инфраструктурные исключения, сохраняя причину через `raise ... from exc`. На границе FastAPI exception handlers преобразуют известные application/domain errors в стабильные HTTP status codes и безопасные response bodies.
+
+В production нельзя возвращать клиенту traceback, SQL, внутренние пути, секреты или необработанные сообщения драйвера. Логи и traces должны содержать correlation/request ID и достаточный диагностический контекст, но не секреты и персональные/медицинские данные. Повторять операцию следует только при классифицированной временной ошибке и с учётом идемпотентности, deadline и retry budget. Не следует автоматически повторять validation errors или постоянные domain conflicts.
+
+### Professional answer (EN)
+
+Python exceptions are objects that represent abnormal or exceptional conditions during execution. Raising an exception interrupts the normal control flow. The exception propagates through the call stack until a compatible handler catches it; if it remains unhandled, the operation terminates and Python reports a traceback.
+
+**Hierarchy.** `BaseException` is the root of the built-in exception hierarchy. `Exception` is the base class for most application-level errors, including `ValueError`, `TypeError`, `RuntimeError`, and `OSError`. Process-control exceptions such as `KeyboardInterrupt` and `SystemExit` inherit directly from `BaseException`. Application code should generally catch `Exception` or a narrower subclass, not `BaseException`, so that process-control signals are not accidentally swallowed.
+
+**Control flow.** The `try` suite contains operations whose failures may be handled. An `except` clause handles a matching exception type. An `else` clause runs only if the `try` suite completes without raising, which keeps success-path code outside the protected region. A `finally` clause runs as the construct is left, including during exception propagation and returns, and is useful for cleanup. Context managers are usually the clearer abstraction for deterministic resource management.
+
+Exceptions propagate to callers unless handled. A handler should recover, translate the failure at an appropriate abstraction boundary, or re-raise it; silently swallowing an error usually hides a broken invariant.
+
+**Exception chaining** preserves causality when translating low-level failures. `raise HigherLevelError(...) from exc` explicitly sets the original exception as `__cause__`, retaining diagnostic context while decoupling upper layers from implementation details. `raise ... from None` suppresses display of the implicit context and should be used sparingly because it can make diagnosis harder.
+
+**Custom exceptions** should normally inherit from `Exception`. A useful taxonomy models stable domain or application conditions rather than every implementation detail. Structured attributes are preferable to parsing exception-message strings. Exception messages are not a reliable machine-readable contract.
+
+**Exception groups.** Python 3.11 introduced `ExceptionGroup` and `except*` to represent and selectively handle multiple failures, especially when concurrent tasks can fail independently. `except*` handles matching portions of a group while preserving unmatched failures. It complements rather than replaces ordinary exception handling.
+
+**Backend boundaries.** Domain exceptions should express business semantics without depending on FastAPI or HTTP. Application services coordinate use cases; infrastructure adapters may translate driver-specific failures while preserving their cause. FastAPI exception handlers then map known application/domain failures to stable HTTP status codes and safe response schemas.
+
+In production, never expose tracebacks, SQL statements, internal paths, credentials, or raw driver messages to clients. Logs and traces should carry correlation identifiers and useful diagnostic context while excluding secrets and sensitive patient/customer data. Retries must be limited to classified transient failures and must respect idempotency, deadlines, and retry budgets. Validation failures and permanent domain conflicts should not be blindly retried.
+
+### Follow-up questions and model answers
+
+**FU-1 — Why is catching `BaseException` usually a design error?**
+
+RU: Потому что `BaseException` включает не только обычные ошибки приложения, но и управляющие сигналы вроде `KeyboardInterrupt` и `SystemExit`. Перехват такого базового класса может помешать остановке процесса. В обычном application code следует перехватывать `Exception` или конкретный подкласс. Узкое использование `BaseException` допустимо только в специализированном коде инфраструктуры, который действительно обязан выполнить cleanup и затем корректно повторно поднять исключение.
+
+EN: Because `BaseException` also includes process-control signals such as `KeyboardInterrupt` and `SystemExit`. Catching it broadly can prevent normal process termination. Application code should generally catch `Exception` or a specific subclass. Specialized infrastructure code may need broader handling for cleanup, but it must preserve and re-raise control-flow signals correctly.
+
+**FU-2 — What is the practical difference between `raise`, `raise exc`, and `raise NewError(...) from exc`?**
+
+RU: Голый `raise` внутри обработчика повторно поднимает текущее исключение, сохраняя исходный traceback. `raise exc` явно поднимает объект исключения заново и может изменить traceback, добавив текущую точку. `raise NewError(...) from exc` создаёт исключение более высокого уровня и явно сохраняет исходную ошибку как причину. Для прозрачного повторного проброса предпочтителен голый `raise`.
+
+EN: A bare `raise` re-raises the active exception and preserves its traceback. `raise exc` raises the exception object explicitly and can alter the traceback by adding the current raise location. `raise NewError(...) from exc` translates the failure while explicitly retaining the original exception as its cause. Use bare `raise` when the intent is simply to propagate the same exception.
+
+**FU-3 — When should an exception be translated, and when should it propagate unchanged?**
+
+RU: Переводить исключение следует на границе абстракции, когда нижний слой сообщает детали реализации, которые не должны протекать выше. Например, ошибка драйвера PostgreSQL может быть преобразована в инфраструктурную или application-level ошибку с сохранением причины. Если текущий слой не может восстановиться, классифицировать или осмысленно преобразовать ошибку, лучше позволить ей распространиться. Нельзя превращать все ошибки в один общий тип и терять возможность различать retryable и permanent failures.
+
+EN: Translate an exception at an abstraction boundary when a lower layer exposes implementation-specific details that should not leak upward. For example, a PostgreSQL driver error may become an infrastructure or application-level exception while retaining its cause. If a layer cannot recover from, classify, or meaningfully translate the failure, it should generally propagate unchanged. Do not collapse all failures into one generic type, because callers may need to distinguish transient from permanent errors.
+
+**FU-4 — How do `ExceptionGroup` and `except*` differ from ordinary exception handling?**
+
+RU: Обычный `except` выбирает обработчик для одного поднятого исключения по его типу. `ExceptionGroup` содержит несколько исключений, а `except*` выбирает совпадающие исключения внутри группы и позволяет обработать их отдельно, сохраняя неперехваченные элементы. Это важно при structured concurrency, когда несколько задач могут завершиться независимо и вернуть несколько ошибок. Если операция гарантирует только одну ошибку, обычная модель проще.
+
+EN: An ordinary `except` matches the type of a raised exception. An `ExceptionGroup` contains multiple exceptions, while `except*` selects matching members for handling and leaves unmatched members in the group. This is useful with structured concurrency, where multiple tasks may fail independently. If an operation can produce only one failure, ordinary exception handling is simpler.
+
+**FU-5 — How would you design error handling for a FastAPI endpoint without coupling the domain layer to HTTP?**
+
+RU: Domain layer определяет собственные ошибки предметной области, например отсутствие лекарства или конфликт остатка, и не импортирует FastAPI. Application service поднимает эти ошибки или преобразует ошибки портов/адаптеров на границах. FastAPI exception handlers в presentation layer отображают известные типы в стабильные HTTP-коды и публичную схему ошибки. Неизвестные ошибки остаются 500, логируются с correlation ID и traceback на серверной стороне, а клиент получает безопасное обобщённое сообщение. Контракт ответа не должен раскрывать внутренние детали.
+
+EN: The domain layer defines domain-specific exceptions, such as a missing medication or an inventory conflict, without importing FastAPI. Application services propagate these errors or translate adapter failures at explicit boundaries. FastAPI exception handlers in the presentation layer map known types to stable HTTP status codes and public error schemas. Unknown failures remain 500 responses, are logged server-side with a correlation ID and traceback, and produce a safe generic client message. The response contract must not expose internal implementation details.
+
+### Pharmaviyum application scenario (hypothetical)
+
+**Status: Hypothetical interview scenario — not a claim about the current implementation.**
+
+Imagine a medication lookup or inventory operation in Pharmaviyum. The domain layer could raise a typed error such as `MedicationNotFoundError` or `InventoryConflictError`. A repository adapter could translate a database-specific failure into an infrastructure exception using exception chaining. The FastAPI boundary could map known domain errors to safe 404 or 409 responses, while unexpected failures remain generic 500 responses. Logs and traces should use request correlation identifiers and must not include patient records, credentials, or sensitive medication/prescription context.
+
+The senior-level design question is not merely which status code to return. It is where the error belongs, which layer owns its translation, whether a retry is safe, what information is observable internally, and what information is allowed to cross the API boundary.
+
+### Senior-level evaluation rubric
+
+A strong Senior answer should demonstrate that the candidate:
+
+1. Explains the `BaseException` / `Exception` distinction accurately and avoids broad catch-all handlers.
+2. Describes the exact semantics of `else` and `finally`, including exception propagation and cleanup.
+3. Uses exception chaining to preserve causal context during abstraction-boundary translation.
+4. Designs custom exception hierarchies around stable domain semantics, not implementation details.
+5. Understands `ExceptionGroup` and `except*` as mechanisms for handling multiple concurrent failures.
+6. Separates domain errors from HTTP transport concerns and defines stable public error contracts.
+7. Covers observability, sensitive-data redaction, idempotency, retry classification, and failure budgets.
+
+**Evaluation signals**
+- Mid-level: knows `try/except/finally` and can define custom exceptions.
+- Strong Senior: explains propagation, chaining, abstraction boundaries, and safe API mapping.
+- Staff-level signal: designs consistent error taxonomy and observability/retry policies across services while preserving domain independence and operational safety.
+
+### Common pitfalls
+
+- Catching `BaseException` or using a broad `except Exception` as routine control flow.
+- Returning success after swallowing an exception.
+- Using `else` as if it ran when an exception occurred.
+- Treating `finally` as a substitute for context managers and explicit resource ownership.
+- Raising a new exception without preserving the original cause when that cause matters.
+- Parsing exception-message text instead of using types and structured attributes.
+- Exposing tracebacks, SQL, driver messages, secrets, or patient data in HTTP responses.
+- Mapping every failure to the same status code or one generic domain exception.
+- Retrying permanent failures or non-idempotent operations without safeguards.
+- Assuming `except*` is interchangeable with ordinary `except`.
+
+### References
+
+- Python tutorial — Errors and Exceptions: https://docs.python.org/3/tutorial/errors.html
+- Built-in Exceptions: https://docs.python.org/3/library/exceptions.html
+- Compound statements — `try`: https://docs.python.org/3/reference/compound_stmts.html#the-try-statement
+- Exception context and chaining: https://docs.python.org/3/library/exceptions.html#exception-context
+- PEP 654 — Exception Groups and `except*`: https://peps.python.org/pep-0654/
+- FastAPI — Handling Errors: https://fastapi.tiangolo.com/tutorial/handling-errors/
