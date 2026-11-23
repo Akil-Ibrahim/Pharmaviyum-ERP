@@ -197,3 +197,26 @@ These boundaries are editorial guidance for the final pass; they do not imply th
 **Основные пересечения:** Q1/Q4 (identity и object references), Q14/Q29 (performance), Q13/Q29 (memory). Их нужно разграничить, а не механически удалять темы.
 
 **Рекомендация:** сохранить 30 основных вопросов, исправить и расширить существующие, а саму программу позиционировать как три взаимосвязанных уровня: Python Core, Advanced Python/CPython и Senior Backend Engineering. После внесения исправлений провести повторную техническую проверку EN и RU версий. До этого аудит остаётся предварительным.
+
+
+## 10. Stage 4 — technical consistency review (in progress)
+
+### Structural and bilingual checks
+
+- Both question-bank files contain exactly 30 primary question sections (PY-CORE-001 through PY-CORE-030).
+- Both EN and RU files contain 148 follow-up questions: Q1 has 3; Q2–Q30 have 5 each.
+- Each follow-up question has Russian and English model answers in both files. The files use different heading conventions in some sections, so automated checks must inspect content rather than rely on one exact heading string.
+- Core section structure is semantically aligned, but heading wording and some section labels differ between files. This is a consistency/maintainability issue, not by itself evidence of missing answers.
+
+### Corrections made during review
+
+- **Q17:** clarified that `concurrent.interpreters` is an interpreter-management API and does not start threads by itself; parallel execution requires threads or an executor such as `InterpreterPoolExecutor`. Added the warning that subinterpreters are not a security boundary and native extensions can violate isolation assumptions.
+- **Q21:** added the security caveat that annotation introspection can execute annotation code; `ForwardRef` evaluation may use `eval()`. Untrusted inputs must not be passed into annotation-introspection APIs.
+
+### Remaining review work
+
+- Verify the technical claims and follow-up answers across all 30 questions against the Python language reference and standard-library documentation.
+- Compare EN/RU meaning question by question, especially version-specific details, examples, and Senior evaluation criteria.
+- Review Q1/Q4, Q13/Q29, and Q14/Q29 for actual content overlap, not only editorial boundaries.
+- Check references for version pinning, validity, and whether each source supports the associated claim.
+- Do not mark Python Core as technically approved until the full pass is complete.
