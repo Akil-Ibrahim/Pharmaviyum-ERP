@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 20 из 30 основных вопросов подготовлено  
+**Охват:** 21 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -2654,3 +2654,111 @@ Serialization testing should include round-trip tests, compatibility tests using
 - Python `pickle` — what can be pickled and unpickled: https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
 - Python `json` documentation: https://docs.python.org/3/library/json.html
 - Python Security Considerations: https://docs.python.org/3/library/security_warnings.html
+
+
+## PY-CORE-021 — Типизация Python, Generics и продвинутые аннотации типов
+
+### Вопрос на собеседовании
+Как система статической типизации Python поддерживает generic API и как спроектировать точные, переиспользуемые типовые контракты для production backend? Объясните TypeVar, Generic, ParamSpec, TypeVarTuple, variance, TypedDict, Literal, Annotated, Any, object, Never и NoReturn. Разграничьте статический анализ и runtime validation.
+
+### Что проверяет интервьюер
+- Понимание того, что Python сохраняет динамическую модель выполнения, а annotations сами по себе не обеспечивают runtime enforcement.
+- Умение проектировать generic functions и classes без потери полезной информации о типах.
+- Понимание variance и substitutability для параметризованных типов.
+- Умение выбирать между Any, object, Protocol, TypedDict, Literal и Annotated.
+- Понимание границы между static type checking и runtime validation.
+- Способность использовать typing как архитектурный контракт, а не как декоративные комментарии.
+
+### Эталонный ответ
+Python сохраняет динамическую модель выполнения. Type annotations в основном предоставляют метаданные для статических анализаторов, IDE и инструментов. Интерпретатор обычно не проверяет автоматически соответствие фактических аргументов и возвращаемых значений аннотациям. Runtime validation должна выполняться отдельно: например, с помощью Pydantic, явных проверок или валидатора на границе системы.
+
+Generics позволяют описывать алгоритм или контейнер, работающий с разными типами, сохраняя связь между входами и выходами. TypeVar обозначает параметр типа. Например, generic-функция identity принимает значение типа T и возвращает T, поэтому анализатор сохраняет конкретный тип для каждого вызова. Generic-класс параметризуется аналогично, чтобы методы и атрибуты могли выражать отношения между типами. Новый синтаксис параметров типов зависит от версии Python, поэтому библиотека, поддерживающая несколько версий, должна выбирать синтаксис с учётом минимальной поддерживаемой версии.
+
+У TypeVar могут быть bound и constraints. Bound задаёт верхнюю границу, которой должен соответствовать аргумент типа. Constraints перечисляют допустимые альтернативы и обычно приводят к выбору одного из перечисленных типов, а не произвольного подтипа. Это разные модели ограничений. ParamSpec сохраняет спецификацию параметров callable и особенно полезен для decorators и higher-order functions, которые должны сохранить сигнатуру оборачиваемой функции. TypeVarTuple представляет вариативную последовательность параметров типов и полезен, когда типовая форма API зависит от переменного количества типов, например для типизированных tuple или абстракций массивов.
+
+Variance описывает, как отношения подтипов распространяются на параметризованные типы. Invariant означает, что автоматическая подстановка между Generic[Derived] и Generic[Base] не допускается. Covariant разрешает подстановку от более конкретного типа к более общему и подходит для read-only producer-интерфейсов. Contravariant разрешает обратное направление и подходит для consumer-интерфейсов, принимающих значения. Mutable containers обычно invariant: если бы список Dog можно было считать списком Animal, вызывающий код смог бы добавить Cat и нарушить гарантию списка Dog. Variance нужно выбирать по способу использования параметра типа, а не ради удобства аннотации.
+
+Any отключает значительную часть статической проверки для соответствующего значения и может распространять неопределённость дальше по коду. object, напротив, допускает любой объект Python, но до уточнения типа разрешает только операции, безопасные для всех объектов. Поэтому object часто безопаснее Any на границах, где неизвестное значение должно быть проверено или сужено. Never обозначает тип без возможных значений и полезен для недостижимых ветвей и exhaustiveness checks. NoReturn традиционно описывает функцию, которая не возвращается обычным образом, например всегда выбрасывает исключение; в современной системе typing для этого смысла также применяется Never. Следует учитывать поддерживаемую версию Python и соглашения выбранного type checker.
+
+TypedDict описывает структуру словаря с известными ключами и типами значений. Это статический контракт формы mapping, а не runtime validator. Required и NotRequired позволяют выразить обязательность ключей; total=False меняет обязательность по умолчанию. Literal ограничивает значение конечным набором литералов и полезен для discriminators и конечных режимов. Annotated добавляет метаданные к базовому типу. Сам Python не придаёт этим метаданным универсальную runtime-семантику: их могут интерпретировать библиотеки и фреймворки по собственным правилам. FastAPI и Pydantic используют annotations для построения схем и обработки данных, но точное поведение зависит от версий и конфигурации.
+
+В production backend я разделяю три уровня: статические контракты между компонентами, runtime validation недоверенных входных данных и доменные инварианты. Type checker проверяет согласованность кода до выполнения. Pydantic или другой валидатор проверяет входные данные во время выполнения. Доменный слой обеспечивает бизнес-правила, которые нельзя выразить только структурой данных. TypedDict может описывать уже проверенный mapping для статического анализа, но не заменяет parsing и validation внешнего JSON. Для расширяемых интерфейсов Protocol часто лучше, чем жёсткая зависимость от конкретного класса.
+
+Я избегаю чрезмерно сложных generic API. Система типов должна помогать выражать корректные состояния, сохранять полезную информацию и оставаться читаемой. Сложные overloads, cast и Any должны иметь обоснование и узкую область применения. Выбранный checker следует запускать в CI, его конфигурацию фиксировать, публичные интерфейсы проверять, а для недоверенных данных добавлять runtime tests, поскольку статический анализ не может гарантировать корректность внешнего ввода.
+
+### Professional answer (EN)
+Python remains dynamically executed. Type annotations primarily provide metadata for static analyzers, IDEs, and tooling; the interpreter does not generally enforce argument or return annotations. Runtime validation must be implemented separately, for example with Pydantic, explicit checks, or a validation layer at a system boundary.
+
+Generics let an API operate over multiple types while preserving relationships between inputs and outputs. A TypeVar represents a type parameter. A generic identity function can accept a value of T and return T, allowing a checker to retain the concrete type at each call site. Generic classes use the same principle to express relationships across attributes and methods. The newer type-parameter syntax is version-dependent, so a library supporting multiple Python versions must select syntax compatible with its declared minimum version.
+
+A TypeVar can have a bound or constraints. A bound specifies an upper bound that a type argument must satisfy; constraints enumerate permitted alternatives and generally resolve to one of those alternatives rather than an arbitrary subtype. They model different requirements. ParamSpec captures a callable's parameter specification and is particularly useful for decorators and higher-order functions that must preserve the wrapped callable's signature. TypeVarTuple represents a variadic sequence of type parameters, useful when an API's type shape depends on a variable number of types, such as typed tuples or array-like abstractions.
+
+Variance defines how subtyping relationships apply to parameterized types. Invariant parameters do not allow automatic substitution between Generic[Derived] and Generic[Base]. Covariance permits substitution from a more specific type to a more general one and is appropriate for read-only producer interfaces. Contravariance permits the reverse direction and is appropriate for consumer interfaces. Mutable containers are commonly invariant: treating a list of Dog as a list of Animal would allow a Cat to be inserted, violating the original list's guarantee. Variance should follow the parameter's usage, not annotation convenience.
+
+Any opts out of substantial static checking and can spread uncertainty through an expression. object accepts any Python object but permits only operations valid for all objects until the value is narrowed. Therefore object is often safer than Any when an unknown value must be validated or narrowed. Never represents an uninhabited type and supports unreachable branches and exhaustiveness checks. NoReturn traditionally describes a function that does not return normally, such as one that always raises; Never is also used for this meaning in modern typing. Check the supported Python version and type-checker conventions.
+
+TypedDict describes a dictionary shape with known keys and value types. It is a static structural contract, not a runtime validator. Required and NotRequired express key presence, while total=False changes the default requiredness. Literal restricts a value to a finite set of literal values and is useful for discriminators and finite modes. Annotated attaches metadata to an underlying type. Python itself does not assign universal runtime behavior to that metadata; frameworks may interpret it according to their own rules. FastAPI and Pydantic use annotations for schema generation and data processing, but exact behavior depends on their versions and configuration.
+
+For a production backend, I separate static contracts between components, runtime validation of untrusted input, and domain invariants. A type checker verifies code consistency before execution. Pydantic or another validator checks incoming data at runtime. The domain layer enforces business rules that cannot be represented by a data shape alone. TypedDict can describe a validated mapping for static analysis, but it does not replace parsing or validation of external JSON. Protocol is often preferable to coupling an abstraction to a concrete class.
+
+I avoid making generic APIs unnecessarily complex. The type system should make invalid states harder to express, preserve useful information, and remain understandable. Complex overloads, casts, and Any should have a clear justification and narrow scope. I run the selected checker in CI, pin its configuration, check public interfaces, and add runtime tests for malformed inputs that static analysis cannot prevent.
+
+### Follow-up questions and эталонные ответы
+
+#### FU-1. Чем отличаются TypeVar bound и constraints?
+**Ответ:** Bound требует, чтобы аргумент типа удовлетворял верхней границе. Constraints задают конечный список допустимых альтернатив. Bound допускает подходящие подтипы, constraints ограничивают выбор перечисленными вариантами. Выбор зависит от того, нужен ли открытый контракт подтипов или закрытый набор типов.
+
+**Answer (EN):** A bound requires a type argument to satisfy an upper-bound type. Constraints define a finite set of permitted alternatives. A bound allows suitable subtypes, whereas constraints restrict the choice to the declared alternatives. Choose based on whether the API needs an open subtype contract or a closed set of types.
+
+#### FU-2. Почему изменяемый generic container обычно invariant?
+**Ответ:** Контейнер одновременно читает и записывает значения. Если MutableBox[Dog] считать MutableBox[Animal], вызывающий код сможет записать Cat и нарушить гарантию, что внутри находятся Dog. Covariance обычно подходит read-only producer, contravariance — consumer, а mutable producer/consumer требует invariance.
+
+**Answer (EN):** A mutable container both produces and consumes values. If MutableBox[Dog] were accepted as MutableBox[Animal], a caller could insert a Cat and violate the original Dog guarantee. Covariance generally fits read-only producers, contravariance fits consumers, and a mutable producer/consumer is typically invariant.
+
+#### FU-3. Когда декоратору нужен ParamSpec вместо Callable[..., Any]?
+**Ответ:** Когда требуется сохранить спецификацию параметров оборачиваемой функции, чтобы вызывающий код продолжал получать полезную статическую проверку аргументов. Callable[..., Any] стирает информацию о параметрах и ослабляет проверку. ParamSpec связывает параметры исходного callable с параметрами возвращаемого callable; для типа результата можно отдельно использовать TypeVar.
+
+**Answer (EN):** Use ParamSpec when a decorator must preserve the wrapped callable's parameter specification so callers retain useful checking of arguments. Callable[..., Any] erases parameter information and weakens checking. ParamSpec connects the input callable's parameters to the returned callable; a separate TypeVar can represent the return value.
+
+#### FU-4. Чем Any отличается от object на границе недоверенных данных?
+**Ответ:** Any фактически отключает проверки операций над значением и может распространять непроверенную неопределённость. object требует сначала сузить тип или проверить значение, прежде чем использовать специфичные операции. Но ни Any, ни object не выполняют runtime validation: нужны parsing и отдельная проверка входных данных.
+
+**Answer (EN):** Any effectively disables checking for operations on the value and can propagate unchecked uncertainty. object requires narrowing or validation before type-specific operations are used. Neither Any nor object performs runtime validation; parsing and an explicit validation layer are still required.
+
+#### FU-5. Выполняют ли Annotated или TypedDict runtime validation?
+**Ответ:** Нет, сами по себе не выполняют. TypedDict в первую очередь описывает ключи и типы значений словаря для статического анализа. Annotated прикрепляет метаданные, которые могут интерпретировать внешние инструменты. Runtime-поведение возникает только тогда, когда конкретная библиотека реализует его, например валидатор, использующий эти метаданные. Нужно проверять фактические версии и конфигурацию библиотек.
+
+**Answer (EN):** No, not by themselves. TypedDict primarily describes dictionary keys and value types for static analysis. Annotated attaches metadata that external tools may interpret. Runtime behavior exists only when a specific library implements it, such as a validator consuming that metadata. Test the actual library version and configuration.
+
+### Связь с Pharmaviyum — гипотетический сценарий для интервью
+Предположим, backend-модуль предоставляет generic repository или service interface и получает medication-catalog payloads из внешнего источника. Generics могут сохранять связь между типом сущности repository и возвращаемыми значениями. TypedDict может описывать нормализованный mapping после parsing, Literal — конечные состояния обработки, а Annotated — метаданные для конкретного framework. Pydantic или эквивалентный runtime validator всё равно должен проверять недоверенные payloads, а доменный слой — отдельно обеспечивать medication-specific invariants. Это гипотетическое архитектурное упражнение, а не утверждение, что именно такие абстракции уже реализованы в Pharmaviyum.
+
+### Критерии оценки Senior
+| Уровень | Ожидаемые признаки |
+|---|---|
+| Mid-level | Объясняет annotations, TypeVar, Generic, TypedDict и различие static checking и runtime validation. |
+| Senior | Корректно объясняет bound и constraints, ParamSpec, variance, Any и object; выбирает абстракции исходя из поведения API. |
+| Staff-level signal | Определяет общую typing policy репозитория, совместимость версий checker и Python, границы gradual typing, стратегию миграции и CI enforcement, сохраняя баланс между точностью, поддерживаемостью и runtime safety. |
+
+### Типичные ошибки
+- Утверждать, что Python автоматически проверяет annotations во время выполнения.
+- Считать TypeVar bound и constraints эквивалентными.
+- Использовать Any там, где object с narrowing сохранял бы безопасность.
+- Считать mutable generic containers безопасно covariant.
+- Использовать Callable[..., Any] в декораторах, когда важно сохранить сигнатуру callable.
+- Считать TypedDict runtime validation.
+- Предполагать, что Annotated имеет универсальную семантику интерпретатора.
+- Путать Never с типом, имеющим реальные значения.
+- Создавать сложные типы, которые затрудняют понимание публичного API.
+- Полагаться на static typing для проверки недоверенных внешних payloads.
+
+### Источники
+- Python typing documentation: https://docs.python.org/3/library/typing.html
+- Python typing — generics: https://docs.python.org/3/library/typing.html#generics
+- Python typing — ParamSpec: https://docs.python.org/3/library/typing.html#typing.ParamSpec
+- Python typing — TypeVarTuple: https://docs.python.org/3/library/typing.html#typing.TypeVarTuple
+- Python typing — TypedDict: https://docs.python.org/3/library/typing.html#typing.TypedDict
+- Python typing — Annotated: https://docs.python.org/3/library/typing.html#typing.Annotated
+- Python typing specification: https://typing.readthedocs.io/en/latest/spec/index.html
+- Mypy documentation: https://mypy.readthedocs.io/
+- Pyright documentation: https://microsoft.github.io/pyright/
