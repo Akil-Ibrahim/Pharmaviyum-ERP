@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 17 из 30 основных вопросов подготовлено  
+**Охват:** 18 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -2280,3 +2280,107 @@ Validate the design with profiling and representative load tests. Measure throug
 - Python FAQ — Global Interpreter Lock: https://docs.python.org/3/faq/library.html#what-kinds-of-global-value-mutation-are-thread-safe
 - Python free-threading guide: https://docs.python.org/3/howto/free-threading-python.html
 - PEP 703 — Making the Global Interpreter Lock Optional in CPython: https://peps.python.org/pep-0703/
+
+
+## PY-CORE-018 — Доступ к атрибутам Python, дескрипторы, properties и механизм поиска
+
+### Вопрос интервью
+**Объясните, как в Python работает доступ к атрибутам. Расскажите о протоколе дескрипторов, data и non-data descriptors, свойствах, связывании методов и роли __getattribute__ и __getattr__.**
+
+### English translation
+Explain how attribute access works in Python. Discuss the descriptor protocol, data and non-data descriptors, properties, method binding, and the roles of __getattribute__ and __getattr__.
+
+### Что проверяет интервьюер
+- Понимание модели доступа к атрибутам Python, а не только запоминание синтаксиса.
+- Умение объяснить descriptors и приоритеты поиска атрибутов экземпляра и класса.
+- Корректное различие между data и non-data descriptors.
+- Понимание function descriptors и bound methods.
+- Безопасное применение properties и перехвата доступа к атрибутам.
+- Понимание того, как ORM, validation и framework abstractions используют descriptors.
+
+### Эталонный ответ (RU)
+Доступ к атрибуту через выражение obj.name — это не просто чтение словаря экземпляра. Python использует механизм attribute lookup, который учитывает тип объекта, его MRO, instance namespace, class namespace и descriptor protocol. Точная последовательность зависит от того, является ли найденный объект data descriptor, non-data descriptor или обычным атрибутом.
+
+**Descriptor** — объект, определяющий один или несколько методов протокола: __get__, __set__ и/или __delete__. Если атрибут класса является descriptor, Python может делегировать ему чтение, присваивание или удаление атрибута. Descriptor обычно реализуется как атрибут класса, а не экземпляра.
+
+**Data descriptor** определяет __set__ и/или __delete__. При обычном доступе к атрибуту экземпляра data descriptor имеет приоритет над записью в instance.__dict__. **Non-data descriptor** определяет только __get__; значение из instance namespace может перекрыть его. Если descriptor не участвует, поиск учитывает атрибуты экземпляра и класса согласно правилам lookup и MRO. В частности, функции, размещённые в классе, являются non-data descriptors.
+
+Функция, полученная через экземпляр, обычно превращается в **bound method**: механизм функции __get__ связывает функцию с экземпляром, и экземпляр автоматически передаётся как первый аргумент при вызове. При обращении через класс функция обычно остаётся несвязанной. Это объясняет поведение self без необходимости считать его специальным синтаксисом языка.
+
+**property** — встроенный descriptor, предоставляющий управляемый доступ к атрибуту через getter, setter и deleter. Он позволяет сохранить стабильный публичный API, добавив валидацию, вычисление или совместимость с прежним интерфейсом. Property не следует превращать в место для скрытого I/O, дорогих запросов или неожиданного изменения состояния: чтение атрибута должно оставаться предсказуемым.
+
+__getattribute__ вызывается для обычного доступа к атрибутам и может перехватить практически каждое такое чтение. Переопределение требует осторожности: прямое обращение к self.name внутри него может вызвать рекурсию. Для стандартного поведения обычно делегируют в object.__getattribute__(self, name). __getattr__ вызывается как fallback, когда обычный поиск атрибута завершился AttributeError. Он подходит для вычисляемых или динамических fallback-атрибутов, но не заменяет понимание основного lookup.
+
+При проектировании descriptor важно учитывать повторное использование одного descriptor-объекта всеми экземплярами класса, хранение per-instance state, наследование, thread safety и поведение при class access. Состояние конкретного экземпляра обычно хранится в его namespace либо в другом подходящем хранилище, а не в единственном поле descriptor, иначе значения разных экземпляров могут смешиваться.
+
+### Профессиональный ответ (EN)
+Attribute access through obj.name is not merely a lookup in the instance dictionary. Python's attribute machinery considers the object's type, its method resolution order, instance and class namespaces, and the descriptor protocol. Lookup precedence depends in particular on whether a class attribute is a data descriptor, a non-data descriptor, or an ordinary attribute.
+
+A **descriptor** is an object that defines one or more of __get__, __set__, and __delete__. When a descriptor is placed on a class, Python can delegate attribute reads, assignments, and deletions to it. Descriptors are typically installed as class attributes.
+
+A **data descriptor** defines __set__ and/or __delete__. During ordinary instance attribute lookup, a data descriptor takes precedence over an entry in the instance dictionary. A **non-data descriptor** defines only __get__; an instance attribute can shadow it. If no descriptor takes precedence, lookup proceeds through the instance and class namespaces according to Python's lookup and MRO rules. Functions stored on classes are non-data descriptors.
+
+A function retrieved through an instance is normally transformed into a **bound method**: the function descriptor's __get__ binds the instance, which is then supplied as the first argument when the method is called. Access through the class normally returns the function without an instance bound. This explains self without treating it as special syntax.
+
+property is a built-in descriptor that exposes controlled attribute access through getter, setter, and deleter methods. It can preserve a stable public API while adding validation, computation, or backward compatibility. A property should not hide surprising I/O, expensive database work, or unexpected state changes; attribute reads should remain predictable.
+
+__getattribute__ participates in every ordinary attribute access and can intercept nearly all such reads. Overriding it requires care: accessing self.name inside the override can recurse. Delegate to object.__getattribute__(self, name) for standard lookup behavior. __getattr__ is a fallback invoked when normal lookup raises AttributeError. It can provide computed or dynamic fallback attributes, but it is not a replacement for understanding the primary lookup process.
+
+When designing descriptors, consider that one descriptor object is shared by all instances of its owner class, how per-instance state is stored, inheritance, thread safety, and class-level access. Per-instance values should normally live in the instance namespace or another appropriate store; putting them in a single mutable descriptor field can accidentally mix state between instances.
+
+### Дополнительные вопросы и эталонные ответы
+
+**FU-1 — Каков приоритет data descriptors, атрибутов экземпляра и non-data descriptors?**  
+**Ответ (RU):** При стандартном lookup атрибута экземпляра data descriptor, найденный в классе, имеет приоритет над записью в instance dictionary. Затем учитывается instance attribute. Non-data descriptor и обычные атрибуты класса используются позже, если значение экземпляра не перекрывает non-data descriptor. Детали class-level lookup отличаются, поэтому важно уточнять, идёт ли речь об экземпляре или самом классе.  
+**Answer (EN):** In standard instance lookup, a class-level data descriptor takes precedence over the instance dictionary. The instance attribute is considered before a non-data descriptor or ordinary class attribute, so it can shadow a non-data descriptor. Class-level lookup has different details, so specify whether the access is through an instance or the class.
+
+**FU-2 — Почему атрибут экземпляра может перекрыть метод, определённый в классе?**  
+**Ответ (RU):** Функции в class namespace являются non-data descriptors: они реализуют __get__, но не __set__. Поэтому значение с тем же именем в instance namespace может перекрыть функцию при доступе через экземпляр. Присваивание obj.method = value может затенить метод класса для данного экземпляра.  
+**Answer (EN):** Functions in a class namespace are non-data descriptors: they implement __get__ but not __set__. An instance attribute with the same name can therefore shadow the function during instance lookup. Assigning obj.method = value can shadow the class method for that instance.
+
+**FU-3 — В чём разница между __getattribute__ и __getattr__?**  
+**Ответ (RU):** __getattribute__ участвует в каждом обычном обращении к атрибуту и отвечает за основной механизм доступа. __getattr__ вызывается как fallback, только если обычный lookup завершился AttributeError. Переопределяя __getattribute__, нужно избегать рекурсии и делегировать стандартный поиск через object.__getattribute__.  
+**Answer (EN):** __getattribute__ participates in every ordinary attribute access and implements the primary access hook. __getattr__ is a fallback called only when normal lookup raises AttributeError. When overriding __getattribute__, avoid recursion and delegate standard lookup through object.__getattribute__.
+
+**FU-4 — Как Python связывает instance method и почему self не является keyword?**  
+**Ответ (RU):** Функция в классе является descriptor. При чтении через экземпляр её __get__ возвращает bound method, связанный с этим экземпляром; при вызове экземпляр автоматически передаётся первым аргументом. Имя self — обычное соглашение об имени параметра, а не ключевое слово.  
+**Answer (EN):** A function stored on a class is a descriptor. Access through an instance invokes its __get__ and produces a bound method; calling it supplies that instance as the first argument. self is a conventional parameter name, not a keyword.
+
+**FU-5 — Какие ошибки в проектировании descriptors могут вызвать проблемы в ORM или validation framework?**  
+**Ответ (RU):** Типичные ошибки — хранить значение экземпляра в общем поле descriptor и смешивать данные разных объектов; не учитывать class access и наследование; некорректно реализовать __set_name__; создавать рекурсивный lookup; не учитывать thread safety и lifecycle объекта. В ORM также важно отличать чтение уже загруженного значения от lazy loading, который может неожиданно выполнять I/O.  
+**Answer (EN):** Common mistakes include storing per-instance values in one shared descriptor field, mishandling class access or inheritance, incorrectly implementing __set_name__, causing recursive lookup, and ignoring thread safety or object lifecycle. In an ORM, also distinguish reading an already-loaded value from lazy loading that may unexpectedly perform I/O.
+
+### Сценарий применения в Pharmaviyum (гипотетический)
+Гипотетический ORM или validation layer Pharmaviyum предоставляет типизированные поля, например strength лекарства или product status, через descriptors. Нужно объяснить, как descriptor валидирует присваивание, изолирует значения разных model instances, взаимодействует с inheritance и избегает скрытых database queries при обычном доступе к атрибуту. Это сценарий интервью, а не утверждение о текущей реализации.
+
+### Критерии оценки Senior
+Сильный ответ уровня Senior должен:
+1. Объяснять descriptor protocol methods и размещение descriptor на уровне класса.
+2. Корректно различать data и non-data descriptors и их приоритет при lookup.
+3. Объяснять binding функций и почему self — соглашение об имени.
+4. Различать __getattribute__ и fallback __getattr__, избегая рекурсии.
+5. Использовать properties для инкапсуляции без скрытых неожиданных side effects.
+6. Безопасно проектировать per-instance storage для descriptors с учётом нескольких объектов и inheritance.
+7. Понимать descriptor-based поведение framework, включая компромиссы ORM lazy loading.
+
+**Сигналы уровня**
+- Mid-level: использует properties и понимает базовый доступ к атрибутам.
+- Strong Senior: точно рассуждает о descriptor precedence, binding и безопасном custom attribute behavior.
+- Staff-level signal: проектирует повторно используемые descriptor abstractions с ясными lifecycle, isolation, compatibility и observability contracts.
+
+### Типичные ошибки
+- Предполагать, что все атрибуты читаются напрямую из obj.__dict__.
+- Путать data descriptors и non-data descriptors.
+- Считать методы специальным синтаксисом, а не функциями, использующими descriptor protocol.
+- Считать self ключевым словом Python.
+- Вызывать бесконечную рекурсию внутри __getattribute__.
+- Хранить per-instance values в общем состоянии descriptor.
+- Предполагать, что property должен выполнять произвольный I/O или дорогие операции.
+- Игнорировать наследование descriptors и class-level access.
+
+### Источники
+- Python Descriptor HowTo Guide: https://docs.python.org/3/howto/descriptor.html
+- Python Data Model — Implementing Descriptors: https://docs.python.org/3/reference/datamodel.html#implementing-descriptors
+- Python Data Model — Customizing Attribute Access: https://docs.python.org/3/reference/datamodel.html#customizing-attribute-access
+- Python Built-in Functions — property: https://docs.python.org/3/library/functions.html#property
+- Python Classes Tutorial: https://docs.python.org/3/tutorial/classes.html
