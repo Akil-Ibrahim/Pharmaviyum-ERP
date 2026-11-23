@@ -462,12 +462,12 @@ At Senior level, I check whether equality reflects the type's domain semantics, 
 
 #### FU-3
 
-**EN:** Can two unequal objects have the same hash, and how do dictionaries handle that situation?  
-**RU:** Могут ли два неравных объекта иметь одинаковый хеш и как словари обрабатывают такую ситуацию?
+**EN:** How should a custom __eq__ method handle comparison with an unrelated type?  
+**RU:** Как пользовательский метод __eq__ должен обрабатывать сравнение с объектом постороннего типа?
 
-**Answer (RU):** Да. Хеш-коллизия возникает, когда разные объекты имеют одинаковый hash. Словарь использует хеш для выбора области поиска, но затем применяет проверку равенства, чтобы определить нужный ключ. Поэтому совпадение хешей не означает равенства объектов, а корректная реализация __eq__ остаётся необходимой.
+**Answer (RU):** Если реализация не поддерживает сравнение с переданным типом, обычно следует вернуть NotImplemented, а не принудительно вернуть False. Это позволяет механизму rich comparison попробовать отражённую операцию другого операнда или предусмотренный языком fallback. NotImplemented — специальный объект протокола сравнения, а не исключение NotImplementedError.
 
-**Answer (EN):** Yes. A hash collision occurs when distinct objects produce the same hash. A dictionary uses the hash to locate a candidate position, then applies equality checks to identify the matching key. Equal hashes therefore do not imply equal objects, and a correct __eq__ implementation remains essential.
+**Answer (EN):** If an implementation does not support comparison with the other operand's type, it should generally return NotImplemented rather than forcing False. This allows the rich-comparison machinery to try the other operand's reflected operation or the language-defined fallback. NotImplemented is a special protocol value, not the NotImplementedError exception.
 
 #### FU-4
 
