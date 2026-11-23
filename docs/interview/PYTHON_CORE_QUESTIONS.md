@@ -1,7 +1,7 @@
 # Python Core — Question Bank
 
 **Status:** In progress  
-**Coverage:** 5 of 30 primary questions drafted  
+**Coverage:** 6 of 30 primary questions drafted  
 **Review rule:** Draft answers must be technically reviewed before being marked validated.
 
 ---
@@ -659,3 +659,183 @@ At an API boundary, request models can define and validate incoming data. Type a
 - Pyright documentation: https://github.com/microsoft/pyright
 - Pydantic documentation: https://docs.pydantic.dev/
 - Python glossary — duck typing: https://docs.python.org/3/glossary.html#term-duck-typing
+
+---
+
+## PY-CORE-006 — Python's data model and special methods
+
+### Question (EN)
+
+**Explain Python's data model and the role of special methods (dunder methods). How does Python use them to provide object construction, representation, iteration, operators, truth testing, and context management?**
+
+### Перевод (RU)
+
+**Объясните модель данных Python и роль специальных методов (dunder methods). Как Python использует их для создания объектов, представления, итерации, операторов, проверки истинности и управления контекстом?**
+
+### What the interviewer evaluates
+
+- Understanding that special methods implement protocols integrated into the language.
+- Distinguishing object creation via `__new__` from initialization via `__init__`.
+- Knowing why special-method lookup may bypass ordinary instance attribute lookup.
+- Designing useful `__repr__` and `__str__` implementations.
+- Understanding iteration and container protocols.
+- Understanding truth-value testing and operator overloading.
+- Correctly implementing context-manager cleanup and exception propagation.
+- Avoiding surprising or inconsistent behaviour in custom classes.
+
+### Model answer (RU)
+
+**Python Data Model** — это набор соглашений и протоколов, через которые пользовательские объекты интегрируются с синтаксисом и встроенными операциями языка. Специальные методы, обычно называемые dunder methods из-за двойного подчёркивания в именах, позволяют объектам вести себя как последовательности, итераторы, контекстные менеджеры, числовые типы и другие встроенные абстракции.
+
+Эти методы не следует воспринимать как произвольные callback-функции. Интерпретатор вызывает их в определённых ситуациях: например, `len(obj)` связан с `__len__`, оператор `+` — с протоколом арифметических операций, а конструкция `with` — с протоколом context manager. Для специальных операций поиск специальных методов обычно выполняется на уровне типа, а не как обычный поиск атрибута экземпляра. Поэтому присваивание `obj.__len__` не является надёжным способом изменить поведение `len(obj)`.
+
+**Создание и инициализация объекта:**
+
+- `__new__(cls, ...)` отвечает за создание и возвращение экземпляра. Это метод уровня класса, который обычно нужен при наследовании от неизменяемых типов, контроле создания экземпляров или реализации специальных паттернов.
+- `__init__(self, ...)` инициализирует уже созданный экземпляр и должен вернуть `None`. Он не создаёт объект и не может заменить его другим объектом.
+
+Обычный вызов класса проходит через механизм создания экземпляра, который вызывает `__new__`, а затем, если возвращён экземпляр соответствующего класса, вызывает `__init__`. В повседневном коде чаще всего достаточно определить `__init__`.
+
+**Представление объекта:**
+
+- `__repr__` предназначен прежде всего для разработчика: полезное, однозначное представление для отладки. В идеале оно позволяет восстановить объект, если это разумно и возможно.
+- `__str__` предназначен для удобного отображения пользователю.
+- Если `__str__` не определён, Python обычно использует `__repr__` как fallback.
+
+Представления должны быть информативными и не должны раскрывать секреты, токены или персональные данные.
+
+**Протоколы контейнеров и итерации:**
+
+- `__len__` возвращает неотрицательное целое число, описывающее размер объекта.
+- `__iter__` возвращает итератор.
+- `__next__` возвращает следующий элемент, а при завершении итерации выбрасывает `StopIteration`.
+- `__getitem__` может реализовать доступ по индексу или ключу и участвовать в поведении пользовательского контейнера.
+
+Итерируемый объект и итератор — не одно и то же. Iterable предоставляет итератор через `iter(obj)`; iterator хранит состояние обхода, возвращает себя из `__iter__` и реализует `__next__`. Итератор обычно исчерпывается после завершения. Реализация `__getitem__` с последовательной индексацией исторически может позволить итерацию как fallback, но для ясного контракта лучше явно реализовать соответствующий протокол.
+
+**Truth-value testing** использует `__bool__`, если он определён; иначе для пользовательского объекта может использоваться `__len__`. Если оба отсутствуют, экземпляр по умолчанию считается истинным. `__bool__` должен возвращать именно `True` или `False`. Не следует делать truthiness неоднозначной, например для объектов, представляющих набор значений, где «истинность» не имеет очевидного смысла.
+
+**Operator overloading** позволяет определить поведение операций через специальные методы, например `__add__`, `__eq__` и их reflected/in-place варианты. Если операция для данного типа не поддерживается, метод может вернуть `NotImplemented`, чтобы Python мог попробовать альтернативный dispatch, например reflected method другого операнда. Это отличается от выбрасывания `NotImplementedError`, который является исключением. Операторы должны соответствовать ожидаемой математической или доменной семантике, а не удивлять потребителей.
+
+**Context managers** реализуют `__enter__` и `__exit__`. `__enter__` возвращает значение, которое связывается с переменной после `as`. `__exit__` вызывается при нормальном завершении блока и при исключении; при исключении он получает сведения об исключении. Если `__exit__` возвращает truthy value, исключение подавляется; иначе оно распространяется дальше. Очистка ресурсов должна быть надёжной и выполняться даже при ошибках внутри блока. Для асинхронного управления контекстом существуют `__aenter__` и `__aexit__`.
+
+На Senior-уровне важно не просто перечислить dunder methods, а объяснить, какой протокол нужен типу, какие инварианты он обязан соблюдать и как избежать неожиданного поведения. Я реализую только те протоколы, которые отражают реальный контракт объекта, и тестирую их граничные случаи: пустое значение, исчерпание итератора, неподдерживаемые операции и исключения при освобождении ресурсов.
+
+### Model answer (EN)
+
+The **Python Data Model** is a set of conventions and protocols through which user-defined objects integrate with the language's syntax and built-in operations. Special methods, commonly called dunder methods because of their double-underscore names, allow objects to behave like sequences, iterators, context managers, numeric types, and other built-in abstractions.
+
+These methods are not arbitrary callbacks. The interpreter invokes them in defined situations: for example, `len(obj)` is associated with `__len__`, the `+` operator uses the arithmetic protocol, and the `with` statement uses the context-manager protocol. For special operations, special-method lookup generally happens on the type rather than through ordinary instance attribute lookup. Therefore, assigning `obj.__len__` is not a reliable way to change the behaviour of `len(obj)`.
+
+**Object creation and initialization:**
+
+- `__new__(cls, ...)` is responsible for creating and returning an instance. It is a class-level method and is commonly relevant when subclassing immutable types, controlling instance creation, or implementing specialized construction patterns.
+- `__init__(self, ...)` initializes an instance that has already been created and must return `None`. It does not create the object and cannot replace it with another object.
+
+A normal class call goes through the instance-creation machinery, which calls `__new__` and then, if an instance of the appropriate class is returned, calls `__init__`. In everyday code, defining `__init__` is usually sufficient.
+
+**Object representation:**
+
+- `__repr__` is primarily for developers: a useful, ideally unambiguous representation for debugging. Where reasonable and possible, it may be designed so that it can recreate the object.
+- `__str__` is intended for a user-friendly display.
+- If `__str__` is not defined, Python normally falls back to `__repr__`.
+
+Representations should be informative and must not expose secrets, tokens, or personal data.
+
+**Container and iteration protocols:**
+
+- `__len__` returns a non-negative integer describing the object's size.
+- `__iter__` returns an iterator.
+- `__next__` returns the next item and raises `StopIteration` when iteration is exhausted.
+- `__getitem__` can implement indexed or keyed access and can participate in the behaviour of a custom container.
+
+An iterable and an iterator are not the same thing. An iterable provides an iterator through `iter(obj)`; an iterator maintains traversal state, returns itself from `__iter__`, and implements `__next__`. An iterator is normally exhausted after completion. A legacy sequence-style `__getitem__` implementation can also enable iteration as a fallback, but explicitly implementing the intended protocol gives a clearer contract.
+
+**Truth-value testing** uses `__bool__` when it is defined; otherwise, for a user-defined object, Python may use `__len__`. If neither exists, an instance is true by default. `__bool__` must return exactly `True` or `False`. Avoid ambiguous truthiness for objects such as multi-value containers when there is no obvious meaning of "truth".
+
+**Operator overloading** defines operation behaviour through special methods such as `__add__`, `__eq__`, and their reflected or in-place variants. If an operation is unsupported for a particular type, a method can return `NotImplemented`, allowing Python to try alternative dispatch, such as the other operand's reflected method. This is different from raising `NotImplementedError`, which is an exception. Operators should follow expected mathematical or domain semantics rather than surprise callers.
+
+**Context managers** implement `__enter__` and `__exit__`. `__enter__` returns the value bound to the variable after `as`. `__exit__` is called when the block finishes normally and when an exception occurs; in the latter case it receives exception information. If `__exit__` returns a truthy value, the exception is suppressed; otherwise, it propagates. Resource cleanup must be reliable even when the block fails. Asynchronous context management uses `__aenter__` and `__aexit__`.
+
+At Senior level, it is not enough to list dunder methods. I explain which protocol a type needs, which invariants it must preserve, and how to avoid surprising behaviour. I implement only protocols that reflect the object's actual contract and test edge cases such as empty values, exhausted iterators, unsupported operations, and exceptions during resource cleanup.
+
+### Follow-up questions and model answers
+
+#### FU-1
+
+**EN:** What is the difference between `__new__` and `__init__`?  
+**RU:** В чём разница между `__new__` и `__init__`?
+
+**Answer (RU):** `__new__` создаёт и возвращает экземпляр, а `__init__` инициализирует уже созданный экземпляр и возвращает `None`. `__new__` особенно важен для неизменяемых типов и нестандартного контроля создания объектов. В обычных классах чаще достаточно `__init__`.
+
+**Answer (EN):** `__new__` creates and returns an instance, while `__init__` initializes an already-created instance and returns `None`. `__new__` is particularly relevant for immutable types and specialized instance-creation control. For ordinary classes, `__init__` is usually sufficient.
+
+#### FU-2
+
+**EN:** Why might assigning `obj.__len__` not affect the result of `len(obj)`?  
+**RU:** Почему присваивание `obj.__len__` может не повлиять на результат `len(obj)`?
+
+**Answer (RU):** Специальные методы для неявных языковых операций обычно ищутся на уровне типа, а не через обычный поиск атрибутов экземпляра. Поэтому изменение одноимённого атрибута конкретного экземпляра не обязано менять поведение встроенной операции. Протокол следует реализовывать в классе.
+
+**Answer (EN):** Special methods used by implicit language operations are generally looked up on the type rather than through ordinary instance attribute lookup. Changing a same-named attribute on one instance therefore does not necessarily change the built-in operation. The protocol should be implemented on the class.
+
+#### FU-3
+
+**EN:** What is the difference between an iterable and an iterator?  
+**RU:** Чем iterable отличается от iterator?
+
+**Answer (RU):** Iterable предоставляет итератор через `__iter__`. Iterator реализует `__next__`, хранит состояние обхода и обычно возвращает себя из `__iter__`. Один iterable может создавать несколько независимых итераторов, тогда как конкретный iterator обычно потребляется по мере обхода.
+
+**Answer (EN):** An iterable provides an iterator through `__iter__`. An iterator implements `__next__`, maintains traversal state, and normally returns itself from `__iter__`. One iterable can create multiple independent iterators, while a particular iterator is usually consumed as it is traversed.
+
+#### FU-4
+
+**EN:** What is the difference between returning `NotImplemented` and raising `NotImplementedError` in an overloaded operator?  
+**RU:** В чём разница между возвратом `NotImplemented` и выбрасыванием `NotImplementedError` в перегруженном операторе?
+
+**Answer (RU):** `NotImplemented` — специальное значение, сообщающее механизму диспетчеризации Python, что данный операнд не поддерживает эту операцию; интерпретатор может попробовать reflected-метод второго операнда. `NotImplementedError` — обычное исключение, сигнализирующее, что реализация не выполнена. Для неподдерживаемого сочетания типов в operator overloading обычно используют `NotImplemented`, а не исключение.
+
+**Answer (EN):** `NotImplemented` is a special value telling Python's dispatch machinery that this operand does not support the operation; the interpreter may try the other operand's reflected method. `NotImplementedError` is an exception indicating that an implementation has not been provided. For an unsupported operand combination in operator overloading, returning `NotImplemented` is normally appropriate.
+
+#### FU-5
+
+**EN:** When does a context manager suppress an exception?  
+**RU:** В каком случае context manager подавляет исключение?
+
+**Answer (RU):** Если исключение возникло внутри блока `with`, Python передаёт сведения о нём в `__exit__`. Если `__exit__` возвращает truthy value, исключение подавляется; если возвращает falsey value или `None`, исключение продолжает распространяться. Подавлять исключения следует только тогда, когда это явно соответствует контракту контекстного менеджера.
+
+**Answer (EN):** If an exception occurs inside a `with` block, Python passes its details to `__exit__`. If `__exit__` returns a truthy value, the exception is suppressed; if it returns a falsey value or `None`, the exception propagates. Exceptions should be suppressed only when that behaviour is explicitly part of the context manager's contract.
+
+### Pharmaviyum connection
+
+**Hypothetical interview scenario — not a claim about the current implementation:** a database session or external-resource adapter may expose context-manager semantics so that acquisition and cleanup are explicit and exception-safe. A medication collection or search-result object may implement iteration and length protocols if those behaviours are part of its public contract. Its representation should be useful for diagnostics while excluding patient information, credentials, and other sensitive values.
+
+Do not claim that a particular Pharmaviyum class implements these protocols without inspecting its source.
+
+### Senior-level evaluation
+
+| Level | Expected evidence |
+|---|---|
+| Weak | Lists dunder methods but confuses object creation with initialization or `NotImplemented` with `NotImplementedError`. |
+| Competent | Explains construction, representation, iteration, truthiness, operators, and context managers correctly. |
+| Strong Senior | Explains protocol dispatch, invariants, iterator state, exception suppression, resource safety, and secure representations; chooses protocols based on explicit API contracts. |
+
+### Common pitfalls
+
+- Returning a non-`None` value from `__init__`.
+- Using `__init__` when custom object creation requires `__new__`.
+- Assuming special-method lookup always uses the instance dictionary.
+- Returning a negative or non-integer value from `__len__`.
+- Confusing an iterable with its iterator.
+- Raising `StopIteration` before the iterator is exhausted or failing to raise it at exhaustion.
+- Raising `NotImplementedError` instead of returning `NotImplemented` for unsupported operator dispatch.
+- Accidentally suppressing exceptions in `__exit__`.
+- Exposing secrets or personal data in `__repr__` or `__str__`.
+
+### References
+
+- Python data model: https://docs.python.org/3/reference/datamodel.html
+- Python built-in functions — `len()`, `iter()`, `next()`: https://docs.python.org/3/library/functions.html
+- Iterator types: https://docs.python.org/3/library/stdtypes.html#iterator-types
+- Context manager types: https://docs.python.org/3/library/stdtypes.html#typecontextmanager
+- PEP 343 — The "with" statement: https://peps.python.org/pep-0343/
