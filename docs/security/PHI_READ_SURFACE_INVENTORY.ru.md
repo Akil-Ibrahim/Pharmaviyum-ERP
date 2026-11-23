@@ -95,19 +95,20 @@
 
 **Исправление в PR #387:** общие query builders добавляют `Patient.pharmacy_id == scope` в patient, order и purchase lookups, если tenant scope определён. Существующее глобальное поведение superuser при scope `None` сохраняется. PostgreSQL SQL-compilation regression tests и полный CI прошли. Database-backed integration coverage на двух tenant всё ещё необходима.
 
-### F-07 — MCP patient-history tool ограничен аптекой, но не patient-context/purpose-bound и не записывает PHI audit
+### F-07 — MCP patient-history tool теперь проверяет selected-patient/purpose binding и пишет metadata audit; минимизация ответа остаётся открытой
 
-Файлы: `src/pharmaviyum/ai/mcp/context.py`, `src/pharmaviyum/api/v1/ai.py`, `src/pharmaviyum/ai/mcp/schemas.py`, `src/pharmaviyum/ai/mcp/tools/patient_history.py`
+Файлы: `src/pharmaviyum/ai/mcp/context.py`, `src/pharmaviyum/api/v1/ai.py`, `src/pharmaviyum/ai/mcp/registry.py`, `src/pharmaviyum/ai/mcp/schemas.py`, `src/pharmaviyum/ai/mcp/tools/patient_history.py`
 
-- `MCPAuthorizationContext` содержит только `user_id`, `pharmacy_id` и `user_role`. AI API передаёт эти поля; выбранный `patient_id`, используемый для HMAC session namespace, не включён в MCP authorization context.
-- `PatientHistoryRequest` принимает `patient_id`, переданный моделью, и не содержит purpose-of-use.
-- Запрос инструмента проверяет `Patient.id`, доверенный `pharmacy_id` и active status. Это блокирует cross-pharmacy lookup, но не доказывает, что запрошенный пациент совпадает с пациентом, выбранным для текущей AI-сессии.
-- Инструмент возвращает full name, age, gender, blood type, allergies, conditions, active-prescription count, recent-order count, loyalty tier и preferred language.
-- Инструмент не записывает `PHIAccessAudit`. Текущий log содержит только counts и latency, не записывая patient ID или clinical payload.
+- `MCPAuthorizationContext` теперь содержит `user_id`, `pharmacy_id`, `user_role`, `selected_patient_id`, контролируемую `purpose` и server-generated request ID. Registry сохраняет эти поля при dispatch.
+- AI API требует передавать `patient_id` и одну purpose (`dispensing_review`, `medication_reconciliation`, `patient_request`) вместе; выбранный active patient проверяется относительно authenticated pharmacy до запуска harness. Purpose классифицирует workflow, но не является согласием пациента или support-access grant.
+- `PatientHistoryRequest` по-прежнему принимает положительный patient ID от модели, но инструмент требует точного совпадения с trusted `selected_patient_id`, требует роль pharmacist и повторно проверяет active patient ownership в trusted pharmacy.
+- Инструмент записывает metadata-only `PHIAccessAudit` decisions для отказов по selected-patient/purpose, недоступного пациента и успешного чтения. Для отказа из-за отсутствующей purpose используется sentinel `unspecified`. Audit row фиксируется до возврата данных; ошибка commit приводит к fail-closed. Registry role filtering может отклонить вызов не-pharmacist до data-access function, поэтому такие pre-execution RBAC denials не становятся PHI audit rows.
+- Инструмент всё ещё возвращает full name, age, gender, blood type, allergies, conditions, active-prescription count, recent-order count, loyalty tier и preferred language. Такой ответ шире minimum-necessary contract.
+- Unit tests проверяют patient mismatch, missing purpose, role denial на границе инструмента, trusted-context propagation и audit-commit failure с использованием test double. Database-backed MCP audit tests, минимизация ответа и staged verification остаются открытыми.
 
-**Риск:** AI session, привязанная к Patient A, потенциально может запросить Patient B в той же аптеке, потому что trusted MCP context не содержит/не проверяет выбранного пациента и purpose. Это authorization gap в исходном коде, а не доказательство раскрытия данных в Production.
+**Остаточный риск:** selected-patient binding закрывает ранее выявленный путь подмены пациента внутри одной аптеки на границе MCP tool, но не завершает PHI governance. PostgreSQL application credential по-прежнему является bootstrap superuser, поэтому trigger-only audit immutability не доказана против runtime credential. Это запись о remediation на уровне исходного кода, а не доказательство Production deployment или clinical/regulatory acceptance.
 
-**Требуемые действия:** связать MCP context с выбранным patient и purpose; требовать совпадение patient ID инструмента с этим context либо отдельный authorization для смены пациента; записывать allowed/denied `PHIAccessAudit`; сузить output schema; добавить mismatch, missing-purpose, denied-access и audit-failure integration tests.
+**Оставшиеся действия:** добавить database-backed MCP audit/denial tests, сократить tool response до minimum-necessary DTO, разделить PostgreSQL bootstrap/runtime/migration privileges, проверить audit-failure на PostgreSQL и завершить staged patient-switch validation.
 
 ### F-08 — Runtime database credential является PostgreSQL bootstrap superuser; audit triggers не обеспечивают полную неизменяемость
 

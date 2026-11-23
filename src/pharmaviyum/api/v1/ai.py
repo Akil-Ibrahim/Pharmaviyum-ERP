@@ -6,11 +6,11 @@ import hashlib
 import hmac
 import json
 import uuid
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import select
 
 from src.pharmaviyum.ai.dependencies import get_agent_harness
@@ -18,6 +18,7 @@ from src.pharmaviyum.ai.harness import AgentResponse
 from src.pharmaviyum.ai.mcp import tool_registry
 from src.pharmaviyum.ai.mcp.context import (
     MCPAuthorizationContext,
+    PatientAccessPurpose,
     reset_mcp_context,
     set_mcp_context,
 )
@@ -47,7 +48,13 @@ class QueryRequest(BaseModel):
         description="Conversation session ID (max 64 characters)",
     )
     patient_id: int | None = Field(
-        default=None, strict=True, description="Patient ID for history lookup"
+        default=None, strict=True, gt=0, description="Patient ID for history lookup"
+    )
+    purpose: (
+        Literal["dispensing_review", "medication_reconciliation", "patient_request"]
+        | None
+    ) = Field(
+        default=None, description="Controlled purpose for selected-patient PHI access"
     )
     pharmacy_id: int = Field(
         ..., strict=True, gt=0, description="Authorized pharmacy tenant"
@@ -61,6 +68,14 @@ class QueryRequest(BaseModel):
         default=False, description="Enable strict halal compliance check"
     )
     force_fresh: bool = Field(default=False, description="Bypass prompt cache")
+
+    @model_validator(mode="after")
+    def validate_patient_purpose(self) -> QueryRequest:
+        if (self.patient_id is None) != (self.purpose is None):
+            raise ValueError(
+                "A selected patient and a controlled purpose must be supplied together"
+            )
+        return self
 
     @field_validator("session_id")
     @classmethod
@@ -96,12 +111,20 @@ async def _validate_patient_scope(
         )
 
 
-def _set_mcp_context(tenant, current_user: CurrentUser):
+def _set_mcp_context(
+    tenant,
+    current_user: CurrentUser,
+    patient_id: int | None,
+    purpose: PatientAccessPurpose | None,
+):
     return set_mcp_context(
         MCPAuthorizationContext(
             user_id=tenant.user_id,
             pharmacy_id=tenant.pharmacy_id,
             user_role=cast(UserRole, current_user.role),
+            selected_patient_id=patient_id,
+            purpose=purpose,
+            request_id=uuid.uuid4().hex,
         )
     )
 
@@ -111,6 +134,7 @@ def _scoped_session_id(
     tenant,
     current_user: CurrentUser,
     patient_id: int | None,
+    purpose: PatientAccessPurpose | None = None,
 ) -> str:
     """Return an opaque conversation namespace bound to the authenticated scope."""
     if (
@@ -123,13 +147,22 @@ def _scoped_session_id(
         patient_id is not None and (not isinstance(patient_id, int) or patient_id <= 0)
     ):
         raise ValueError("AI patient_id must be a positive integer or None")
+    if (patient_id is None) != (purpose is None):
+        raise ValueError("AI selected patient and purpose must be supplied together")
+    if purpose is not None and purpose not in (
+        "dispensing_review",
+        "medication_reconciliation",
+        "patient_request",
+    ):
+        raise ValueError("AI purpose must be a recognized patient-access purpose")
 
     scope = json.dumps(
         [
-            "mortarium-session:v3",
+            "mortarium-session:v4",
             tenant.pharmacy_id,
             current_user.id,
             patient_id,
+            purpose,
             session_id,
         ],
         separators=(",", ":"),
@@ -145,7 +178,7 @@ def _scoped_session_id(
     digest = hmac.new(
         secret.encode("utf-8"), scope.encode("utf-8"), hashlib.sha256
     ).hexdigest()
-    return f"mortarium-session:v3:{digest}"
+    return f"mortarium-session:v4:{digest}"
 
 
 @router.get("/context")
@@ -191,22 +224,28 @@ async def query_agent(
 ):
     """Synchronous AI query bound to the authenticated pharmacy tenant."""
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
+    if (request.patient_id is None) != (request.purpose is None):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="A selected patient and a controlled purpose must be supplied together",
+        )
     await _validate_patient_scope(request.patient_id, tenant.pharmacy_id, session)
     raw_session_id = request.session_id or str(uuid.uuid4())
     session_id = _scoped_session_id(
-        raw_session_id, tenant, current_user, request.patient_id
+        raw_session_id, tenant, current_user, request.patient_id, request.purpose
     )
     context = {
         "user_id": tenant.user_id,
         "pharmacy_id": tenant.pharmacy_id,
         "patient_id": request.patient_id,
+        "purpose": request.purpose,
         "country": request.country,
         "language": request.language,
         "halal_filter": request.halal_filter,
         "force_fresh": request.force_fresh,
     }
 
-    token = _set_mcp_context(tenant, current_user)
+    token = _set_mcp_context(tenant, current_user, request.patient_id, request.purpose)
     try:
         try:
             result = await harness.run(
@@ -307,15 +346,21 @@ async def query_agent_stream(
 ):
     """Streaming AI query bound to the authenticated pharmacy tenant."""
     tenant = await _tenant_context(request.pharmacy_id, current_user, session)
+    if (request.patient_id is None) != (request.purpose is None):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="A selected patient and a controlled purpose must be supplied together",
+        )
     await _validate_patient_scope(request.patient_id, tenant.pharmacy_id, session)
     raw_session_id = request.session_id or str(uuid.uuid4())
     session_id = _scoped_session_id(
-        raw_session_id, tenant, current_user, request.patient_id
+        raw_session_id, tenant, current_user, request.patient_id, request.purpose
     )
     context = {
         "user_id": tenant.user_id,
         "pharmacy_id": tenant.pharmacy_id,
         "patient_id": request.patient_id,
+        "purpose": request.purpose,
         "country": request.country,
         "language": request.language,
         "halal_filter": request.halal_filter,
@@ -323,7 +368,9 @@ async def query_agent_stream(
     }
 
     async def event_generator():
-        token = _set_mcp_context(tenant, current_user)
+        token = _set_mcp_context(
+            tenant, current_user, request.patient_id, request.purpose
+        )
         try:
             async for event in harness.astream(
                 session_id=session_id,

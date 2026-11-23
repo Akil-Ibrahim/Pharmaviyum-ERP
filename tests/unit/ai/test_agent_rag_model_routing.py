@@ -496,14 +496,22 @@ def test_api_session_scope_separates_patients_and_explicit_no_patient_scope(
     monkeypatch.setattr(app_settings, "SECRET_KEY", "api-session-test-secret")
     tenant = SimpleNamespace(pharmacy_id=7)
     user = SimpleNamespace(id=42)
-    patient_a = _scoped_session_id("conversation-123", tenant, user, 101)
-    patient_b = _scoped_session_id("conversation-123", tenant, user, 202)
+    patient_a = _scoped_session_id(
+        "conversation-123", tenant, user, 101, "dispensing_review"
+    )
+    patient_b = _scoped_session_id(
+        "conversation-123", tenant, user, 202, "dispensing_review"
+    )
+    different_purpose = _scoped_session_id(
+        "conversation-123", tenant, user, 101, "medication_reconciliation"
+    )
     no_patient = _scoped_session_id("conversation-123", tenant, user, None)
 
     assert patient_a != patient_b
+    assert patient_a != different_purpose
     assert patient_a != no_patient
     assert patient_b != no_patient
-    assert patient_a.startswith("mortarium-session:v3:")
+    assert patient_a.startswith("mortarium-session:v4:")
     assert "conversation-123" not in patient_a
     assert "101" not in patient_a
     assert "202" not in patient_b
@@ -550,9 +558,13 @@ def test_api_session_scope_changes_when_secret_rotates(
     tenant = SimpleNamespace(pharmacy_id=7)
     user = SimpleNamespace(id=42)
     monkeypatch.setattr(app_settings, "SECRET_KEY", "first-session-secret")
-    first = _scoped_session_id("conversation-123", tenant, user, 101)
+    first = _scoped_session_id(
+        "conversation-123", tenant, user, 101, "dispensing_review"
+    )
     monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-session-secret")
-    second = _scoped_session_id("conversation-123", tenant, user, 101)
+    second = _scoped_session_id(
+        "conversation-123", tenant, user, 101, "dispensing_review"
+    )
     assert first != second
 
 
@@ -573,6 +585,7 @@ def test_api_session_scope_fails_closed_without_production_secret(
             SimpleNamespace(pharmacy_id=7),
             SimpleNamespace(id=42),
             101,
+            "dispensing_review",
         )
 
 
@@ -583,3 +596,46 @@ def test_query_request_rejects_whitespace_session_id() -> None:
 
     with pytest.raises(ValidationError, match="session_id"):
         QueryRequest(query="Check this medication", session_id="   ", pharmacy_id=7)
+
+
+@pytest.mark.unit
+def test_prompt_cache_identity_preserves_patient_access_purpose():
+    from src.pharmaviyum.ai.harness.agent_harness import AgentHarness
+
+    context = AgentHarness._cache_context(
+        {
+            "session_id": "opaque-purpose-scoped-session",
+            "patient_id": 101,
+            "purpose": "dispensing_review",
+            "untrusted_extra": "must-not-enter-cache-key",
+        }
+    )
+
+    assert context == {
+        "session_id": "opaque-purpose-scoped-session",
+        "patient_id": 101,
+        "purpose": "dispensing_review",
+    }
+
+
+@pytest.mark.parametrize(
+    ("patient_id", "purpose"),
+    [
+        (101, None),
+        (None, "dispensing_review"),
+        (101, "free_text_reason"),
+    ],
+)
+def test_api_session_scope_rejects_missing_or_unrecognized_purpose(patient_id, purpose):
+    from types import SimpleNamespace
+
+    from src.pharmaviyum.api.v1.ai import _scoped_session_id
+
+    with pytest.raises(ValueError, match="purpose"):
+        _scoped_session_id(
+            "conversation-123",
+            SimpleNamespace(pharmacy_id=7),
+            SimpleNamespace(id=42),
+            patient_id,
+            purpose,
+        )

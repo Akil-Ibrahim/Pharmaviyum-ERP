@@ -6,13 +6,15 @@
 
 Состояние диалога Mortarium изолируется по кортежу:
 
-`pharmacy_id + authenticated user_id + patient_id + client session_id`
+`pharmacy_id + authenticated user_id + patient_id + purpose + client session_id`
 
 Отсутствие пациента является отдельной областью `patient:none`. Это не wildcard и такая сессия никогда не должна разделять состояние с диалогом, привязанным к конкретному пациенту.
 
 ## Точки применения контроля
 
-1. **Граница API** — синхронный `/api/v1/ai/query` и потоковый `/api/v1/ai/query/stream` формируют одинаковую версионированную внутреннюю область сессии после авторизации tenant и проверки принадлежности пациента аптеке.
+1. **Граница API** — синхронный `/api/v1/ai/query` и потоковый `/api/v1/ai/query/stream` формируют одинаковую версионированную внутреннюю область сессии после авторизации tenant, проверки принадлежности пациента аптеке и controlled-purpose validation. Patient-bound sessions используют purpose-bound HMAC namespace (`mortarium-session:v4`), поэтому смена purpose не переиспользует memory/checkpoints предыдущей цели.
+Purpose-bound namespace v4 намеренно не мигрирует и не переиспользует v3 session keys/checkpoint thread IDs. Он также не удаляет старые v3 Redis entries или checkpoint rows; legacy state остаётся под действием утверждённой retention/cleanup policy.
+
 2. **Память диалога Redis** — ключи памяти выводятся через HMAC из API-scoped идентификатора сессии. Поэтому сводка, краткосрочные сообщения, архив и эпизодические факты наследуют область пациента.
 3. **Agent checkpoint** — `PharmacistAgent._thread_id()` включает аутентифицированные аптеку, пользователя, пациента и область сессии во входные данные HMAC.
 4. **RAG checkpoint** — `LangGraphRAG._thread_id()` включает аптеку, пользователя, пациента и область сессии во входные данные HMAC. Сохраняемый идентификатор thread checkpoint является непрозрачным digest `rag:v2:<sha256>`.
@@ -22,7 +24,8 @@
 
 - Повторное использование одного client session ID для пациента A и пациента B НЕ ДОЛЖНО приводить к повторному использованию памяти, Agent checkpoints, RAG checkpoints или кешированных ответов.
 - Пациент A и запрос без пациента ДОЛЖНЫ использовать разные namespace состояния.
-- AI API принимает patient ID запроса только после подтверждения, что активный пациент относится к аутентифицированному tenant аптеки. **Однако это сейчас не ограничивает собственный patient ID argument MCP tool:** `MCPAuthorizationContext` не содержит выбранного пациента или purpose, поэтому `get_patient_history` может запросить другого активного пациента в той же аптеке. Он также не записывает `PHIAccessAudit`. Рассматривайте MCP patient binding и audit как отдельный открытый release gate; HMAC session/checkpoint namespaces сами по себе этого не обеспечивают.
+- Один и тот же пациент и client session при разных controlled purposes ДОЛЖНЫ использовать разные namespace состояния.
+- AI API принимает выбранного пациента только после проверки active ownership в аутентифицированной аптеке и требует вместе с ним контролируемую purpose. Trusted MCP context переносит оба значения через registry dispatch. `get_patient_history` требует точного совпадения patient ID из аргумента модели с выбранным пациентом, повторно проверяет active pharmacy ownership и записывает metadata-only allowed/denied `PHIAccessAudit` до возврата данных. Unit tests покрывают mismatch, отсутствие purpose, отказ по роли, propagation context и ошибку commit аудита. Ответ пока шире целевого minimum-necessary набора; database-backed MCP audit tests, DB-role hardening и staged end-to-end validation остаются открытыми. HMAC session/checkpoint namespaces не заменяют tool-level authorization.
 - Прямое создание Agent/RAG checkpoint также проверяет формат ID пациента и включает его в HMAC scope checkpoint.
 - Необработанные идентификаторы пациента, пользователя, tenant и сессии НЕ ДОЛЖНЫ присутствовать в RAG checkpoint thread ID.
 - `SECRET_KEY` приложения должен оставаться стабильным между экземплярами и deployment. Ротация меняет HMAC-derived namespace checkpoint и памяти и требует заранее спланированной стратегии миграции/истечения срока действия.

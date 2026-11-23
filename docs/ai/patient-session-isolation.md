@@ -6,13 +6,15 @@
 
 Mortarium conversation state is isolated by the tuple:
 
-\`pharmacy_id + authenticated user_id + patient_id + client session_id\`
+\`pharmacy_id + authenticated user_id + patient_id + purpose + client session_id\`
 
 A missing patient is an explicit \`patient:none\` scope. It is not a wildcard and must never share state with a patient-specific conversation.
 
 ## Enforcement points
 
-1. **API boundary** — both synchronous \`/api/v1/ai/query\` and streaming \`/api/v1/ai/query/stream\` derive the same versioned internal session scope after tenant authorization and patient membership validation.
+1. **API boundary** — both synchronous \`/api/v1/ai/query\` and streaming \`/api/v1/ai/query/stream\` derive the same versioned internal session scope after tenant authorization, patient membership validation and controlled-purpose validation. Patient-bound sessions use a purpose-bound HMAC namespace (\`mortarium-session:v4\`), so changing purpose does not reuse the prior purpose's memory/checkpoints.
+The purpose-bound v4 namespace intentionally does not migrate or reuse v3 session keys/checkpoint thread IDs. It also does not delete old v3 Redis entries or checkpoint rows; legacy state remains subject to the approved retention/cleanup policy.
+
 2. **Redis dialogue memory** — memory keys are HMAC-derived from the API-scoped session identifier. Summary, short-term messages, archive and episodic facts therefore inherit the patient boundary.
 3. **Agent checkpoint** — \`PharmacistAgent._thread_id()\` includes authenticated pharmacy, user, patient and session scope in its HMAC input.
 4. **RAG checkpoint** — \`LangGraphRAG._thread_id()\` includes pharmacy, user, patient and session scope in its HMAC input. The persisted checkpoint thread ID is an opaque \`rag:v2:<sha256>\` digest.
@@ -22,7 +24,8 @@ A missing patient is an explicit \`patient:none\` scope. It is not a wildcard an
 
 - Reusing one client session ID for patient A and patient B MUST NOT reuse memory, Agent checkpoints, RAG checkpoints or cached responses.
 - Patient A and a request without a patient MUST use distinct state namespaces.
-- The AI API accepts a request patient ID only after confirming that the active patient belongs to the authenticated pharmacy tenant. **This does not currently constrain the MCP tool's own patient ID argument:** `MCPAuthorizationContext` contains no selected patient or purpose, so `get_patient_history` can query another active patient within the same pharmacy. It also does not write `PHIAccessAudit`. Treat MCP patient binding and audit as a separate open release gate; HMAC session/checkpoint namespaces alone do not enforce it.
+- The same patient and client session under different controlled purposes MUST use distinct state namespaces.
+- The AI API accepts a selected patient only after confirming active ownership in the authenticated pharmacy and requires a controlled purpose with that patient. The trusted MCP context carries both values through registry dispatch. `get_patient_history` requires exact equality between its model-supplied patient ID and the selected patient, rechecks active pharmacy ownership, and writes metadata-only allowed/denied `PHIAccessAudit` decisions before returning data. Unit tests cover mismatch, missing purpose, role denial, context propagation and audit-commit failure. The output is still broader than the minimum-necessary target; database-backed MCP audit tests, DB-role hardening and staged end-to-end validation remain open. HMAC session/checkpoint namespaces are not a substitute for tool-level authorization.
 - Direct Agent/RAG checkpoint construction also validates patient ID shape and includes it in the checkpoint HMAC scope.
 - Raw patient, user, tenant and session identifiers MUST NOT appear in the RAG checkpoint thread ID.
 - The application \`SECRET_KEY\` must remain stable across instances and deployments. Rotation changes HMAC-derived checkpoint and memory namespaces and requires a planned migration/expiry strategy.

@@ -68,7 +68,7 @@ async def test_sync_and_stream_routes_bind_reused_session_to_patient_scope(
     patient_factory,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """One client session must produce distinct scopes for A, B and no patient."""
+    """One client session must separate patients, purposes and explicit no-patient scope."""
     monkeypatch.setattr(
         app_settings, "SECRET_KEY", "patient-isolation-integration-secret"
     )
@@ -90,11 +90,18 @@ async def test_sync_and_stream_routes_bind_reused_session_to_patient_scope(
     harness = RecordingHarness()
     app.dependency_overrides[get_agent_harness] = lambda: harness
     try:
-        for patient_id in (patient_a.id, patient_b.id, None):
+        request_scopes = [
+            (patient_a.id, "dispensing_review"),
+            (patient_a.id, "medication_reconciliation"),
+            (patient_b.id, "dispensing_review"),
+            (None, None),
+        ]
+        for patient_id, purpose in request_scopes:
             payload = {
                 "query": "Synthetic isolation test; no clinical facts.",
                 "session_id": "same-browser-session",
                 "patient_id": patient_id,
+                "purpose": purpose,
                 "pharmacy_id": pharmacy.id,
                 "language": "en",
             }
@@ -114,28 +121,24 @@ async def test_sync_and_stream_routes_bind_reused_session_to_patient_scope(
     assert [call["mode"] for call in harness.calls] == [
         "sync",
         "stream",
-        "sync",
-        "stream",
-        "sync",
-        "stream",
-    ]
-    scopes = {
-        patient_id: (
+    ] * len(request_scopes)
+    scopes = [
+        (
             harness.calls[position * 2]["session_id"],
             harness.calls[position * 2 + 1]["session_id"],
         )
-        for position, patient_id in enumerate((patient_a.id, patient_b.id, None))
-    }
-    for sync_scope, stream_scope in scopes.values():
+        for position in range(len(request_scopes))
+    ]
+    for sync_scope, stream_scope in scopes:
         assert sync_scope == stream_scope
 
-    assert len({scope[0] for scope in scopes.values()}) == 3
+    assert len({sync_scope for sync_scope, _ in scopes}) == len(request_scopes)
+    expected_contexts = [scope for scope in request_scopes for _ in range(2)]
     assert all(
         call["context"]["patient_id"] == expected_patient_id
-        for call, expected_patient_id in zip(
-            harness.calls,
-            (patient_a.id, patient_a.id, patient_b.id, patient_b.id, None, None),
-            strict=True,
+        and call["context"]["purpose"] == expected_purpose
+        for call, (expected_patient_id, expected_purpose) in zip(
+            harness.calls, expected_contexts, strict=True
         )
     )
 
@@ -146,15 +149,22 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
     test_redis,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """Real Redis must not return one patient's dialogue to another patient."""
+    """Real Redis must isolate patient dialogue across patient and purpose scopes."""
     monkeypatch.setattr(app_settings, "SECRET_KEY", "patient-isolation-redis-secret")
     memory = DialogueMemory(redis_client=test_redis)
     tenant = TenantContext(user_id=42, pharmacy_id=7)
     user = type("AuthenticatedUser", (), {"id": 42})()
     client_session = "same-browser-session"
 
-    patient_a_scope = _scoped_session_id(client_session, tenant, user, 101)
-    patient_b_scope = _scoped_session_id(client_session, tenant, user, 202)
+    patient_a_scope = _scoped_session_id(
+        client_session, tenant, user, 101, "dispensing_review"
+    )
+    patient_b_scope = _scoped_session_id(
+        client_session, tenant, user, 202, "dispensing_review"
+    )
+    patient_a_reconciliation_scope = _scoped_session_id(
+        client_session, tenant, user, 101, "medication_reconciliation"
+    )
     no_patient_scope = _scoped_session_id(client_session, tenant, user, None)
 
     await memory.save(
@@ -168,6 +178,11 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
         "synthetic patient B answer",
     )
     await memory.save(
+        patient_a_reconciliation_scope,
+        "synthetic patient A medication reconciliation prompt",
+        "synthetic patient A medication reconciliation answer",
+    )
+    await memory.save(
         no_patient_scope,
         "general pharmacy prompt",
         "general pharmacy answer",
@@ -177,6 +192,7 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
     memory_scopes = {
         patient_a_scope: "patient A",
         patient_b_scope: "patient B",
+        patient_a_reconciliation_scope: "patient A medication reconciliation",
         no_patient_scope: "no-patient",
     }
     for scope, label in memory_scopes.items():
@@ -187,10 +203,16 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
 
     patient_a_messages = await memory.load(patient_a_scope)
     patient_b_messages = await memory.load(patient_b_scope)
+    patient_a_reconciliation_messages = await memory.load(
+        patient_a_reconciliation_scope
+    )
     no_patient_messages = await memory.load(no_patient_scope)
 
     patient_a_content = " ".join(str(message.content) for message in patient_a_messages)
     patient_b_content = " ".join(str(message.content) for message in patient_b_messages)
+    patient_a_reconciliation_content = " ".join(
+        str(message.content) for message in patient_a_reconciliation_messages
+    )
     no_patient_content = " ".join(
         str(message.content) for message in no_patient_messages
     )
@@ -202,10 +224,19 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
     assert "general pharmacy answer" in no_patient_content
     assert "patient B" not in patient_a_content
     assert "patient A" not in patient_b_content
+    assert (
+        "synthetic patient A medication reconciliation prompt"
+        in patient_a_reconciliation_content
+    )
+    assert "medication reconciliation" not in patient_a_content
 
     # Summary and episodic state are also patient-scoped.
     assert any("summary for patient A" in str(m.content) for m in patient_a_messages)
     assert any("summary for patient B" in str(m.content) for m in patient_b_messages)
+    assert any(
+        "summary for patient A medication reconciliation" in str(m.content)
+        for m in patient_a_reconciliation_messages
+    )
     assert any("summary for no-patient" in str(m.content) for m in no_patient_messages)
     assert await memory.get_episodic_facts(patient_a_scope) == {
         "scope-marker": "patient A"
@@ -220,11 +251,17 @@ async def test_patient_scoped_redis_memory_isolated_for_reused_client_session(
     # Explicit clearing must remove every tier for A without affecting B or no-patient.
     patient_a_prefix = memory._session_prefix(patient_a_scope)
     patient_b_prefix = memory._session_prefix(patient_b_scope)
+    patient_a_reconciliation_prefix = memory._session_prefix(
+        patient_a_reconciliation_scope
+    )
     no_patient_prefix = memory._session_prefix(no_patient_scope)
     await memory.clear(patient_a_scope)
     for suffix in ("messages", "summary", "episodic", "archive"):
         assert await test_redis.exists(f"{patient_a_prefix}:{suffix}") == 0
         assert await test_redis.exists(f"{patient_b_prefix}:{suffix}") == 1
+        assert (
+            await test_redis.exists(f"{patient_a_reconciliation_prefix}:{suffix}") == 1
+        )
         assert await test_redis.exists(f"{no_patient_prefix}:{suffix}") == 1
 
 
@@ -236,35 +273,54 @@ def test_api_session_scope_binds_tenant_user_patient_and_secret(
     monkeypatch.setattr(app_settings, "SECRET_KEY", "stable-test-secret")
     tenant = TenantContext(user_id=42, pharmacy_id=7)
     user = type("AuthenticatedUser", (), {"id": 42})()
-    base = _scoped_session_id("reused-session", tenant, user, 101)
+    base = _scoped_session_id("reused-session", tenant, user, 101, "dispensing_review")
 
-    different_patient = _scoped_session_id("reused-session", tenant, user, 202)
+    different_patient = _scoped_session_id(
+        "reused-session", tenant, user, 202, "dispensing_review"
+    )
+    different_purpose = _scoped_session_id(
+        "reused-session", tenant, user, 101, "medication_reconciliation"
+    )
     no_patient = _scoped_session_id("reused-session", tenant, user, None)
     different_user = _scoped_session_id(
         "reused-session",
         TenantContext(user_id=43, pharmacy_id=7),
         type("AuthenticatedUser", (), {"id": 43})(),
         101,
+        "dispensing_review",
     )
     different_pharmacy = _scoped_session_id(
         "reused-session",
         TenantContext(user_id=42, pharmacy_id=8),
         user,
         101,
+        "dispensing_review",
     )
 
     assert (
-        len({base, different_patient, no_patient, different_user, different_pharmacy})
-        == 5
+        len(
+            {
+                base,
+                different_patient,
+                different_purpose,
+                no_patient,
+                different_user,
+                different_pharmacy,
+            }
+        )
+        == 6
     )
+    assert different_purpose != base
     prefix, digest = base.split(":", maxsplit=2)[1:]
-    assert prefix == "v3"
+    assert prefix == "v4"
     assert len(digest) == 64
     assert all(character in "0123456789abcdef" for character in digest)
     assert "reused-session" not in base
 
     monkeypatch.setattr(app_settings, "SECRET_KEY", "rotated-test-secret")
-    rotated = _scoped_session_id("reused-session", tenant, user, 101)
+    rotated = _scoped_session_id(
+        "reused-session", tenant, user, 101, "dispensing_review"
+    )
     assert rotated != base
 
 
@@ -279,7 +335,7 @@ def test_api_session_scope_fails_closed_without_production_secret(
     user = type("AuthenticatedUser", (), {"id": 42})()
 
     with pytest.raises(RuntimeError, match="SECRET_KEY is required"):
-        _scoped_session_id("reused-session", tenant, user, 101)
+        _scoped_session_id("reused-session", tenant, user, 101, "dispensing_review")
 
 
 @pytest.mark.integration
@@ -324,6 +380,7 @@ async def test_ai_api_rejects_patient_from_another_pharmacy_before_harness(
                 "query": "Synthetic isolation test.",
                 "session_id": "same-browser-session",
                 "patient_id": foreign_patient.id,
+                "purpose": "dispensing_review",
                 "pharmacy_id": pharmacy_a.id,
             },
         )

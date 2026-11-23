@@ -91,7 +91,7 @@ Registry фильтрует инструменты по ролям; выполн
 
 Документированные на данный момент инструменты аптечных операций доступны только для чтения. Не делайте вывод о наличии возможности записи лишь из факта существования MCP.
 
-**Текущее ограничение PHI boundary:** `MCPAuthorizationContext` сейчас содержит user, pharmacy и role, но не выбранного пациента и purpose. `get_patient_history` принимает patient ID от модели и проверяет только, что активный пациент принадлежит доверенной аптеке; он не доказывает, что это пациент, выбранный для текущей AI-сессии, и не записывает `PHIAccessAudit`. Инструмент возвращает широкий demographic/clinical summary. Пока context не связан с выбранным patient и purpose, с allowed/denied PHI audit и mismatch tests, нельзя заявлять MCP patient-context isolation. Этот gap отличается от HMAC-изоляции Redis memory и LangGraph checkpoints.
+**Текущая граница реализации:** AI API теперь требует передавать выбранного пациента и одну контролируемую purpose (`dispensing_review`, `medication_reconciliation` или `patient_request`) вместе. Доверенный `MCPAuthorizationContext` содержит выбранного пациента, purpose и сгенерированный сервером request ID; registry сохраняет эти поля при вызове инструмента. `get_patient_history` доступен только роли pharmacist, требует точного совпадения patient ID из аргумумента модели с выбранным пациентом, повторно проверяет active pharmacy ownership и записывает metadata-only allowed/denied `PHIAccessAudit` до возврата данных. Для отказа из-за отсутствующей purpose используется явный audit sentinel `unspecified`. Если commit audit-записи завершается ошибкой, инструмент не возвращает данные пациента. Purpose — это контролируемая классификация workflow, а не доказательство согласия пациента и не отдельное разрешение на support access. Инструмент по-прежнему возвращает широкий demographic/clinical summary; минимизация ответа остаётся открытой задачей. Unit tests проверяют несовпадение пациента, отсутствие purpose, отказ по роли, propagation context и ошибку commit аудита; database-backed MCP audit tests и staged verification ещё не выполнены. Это изменение не устраняет отдельное ограничение PostgreSQL runtime-superuser для trigger-only audit immutability.
 
 ## 8. Изоляция контекста пациента
 
@@ -99,7 +99,7 @@ PR #287 объединил реализацию session namespace и checkpoint 
 
 Это не доказывает активацию в production или завершение staging release gate. Обязательный end-to-end тест остаётся открытым: повторно использовать одну client session для пациента A → пациента B → отсутствия пациента в синхронном и потоковом режимах, включая PostgreSQL checkpoint persistence и Redis memory. Пока результат такого теста не подтверждён и релиз явно не развернут, нельзя утверждать, что изоляция контекста пациента доказана в production.
 
-Обязательный инвариант: аптека + аутентифицированный пользователь + пациент (включая явное отсутствие пациента) + client session.
+Обязательный инвариант: аптека + аутентифицированный пользователь + пациент (включая явное отсутствие пациента) + controlled purpose для patient-bound запросов + client session. Purpose входит в API HMAC session namespace (`mortarium-session:v4`), поэтому смена purpose не переиспользует Redis memory и downstream session/checkpoint state предыдущей цели.
 
 Изменения namespace требуют плана совместимости, хранения и rollback. См. [ADR-0003](../adr/ADR-0003-patient-scoped-ai-state.md) и [PR #287](https://github.com/Akil-Ibrahim/Pharmaviyum-ERP/pull/287).
 

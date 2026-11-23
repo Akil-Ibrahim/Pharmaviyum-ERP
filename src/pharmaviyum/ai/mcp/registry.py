@@ -204,6 +204,9 @@ class MCPToolRegistry:
                     user_id=user_id,
                     pharmacy_id=pharmacy_id,
                     user_role=user_role,
+                    selected_patient_id=context.selected_patient_id,
+                    purpose=context.purpose,
+                    request_id=context.request_id,
                 )
             )
             try:

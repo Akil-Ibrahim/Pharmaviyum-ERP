@@ -55,10 +55,14 @@ same model output being evaluated.
 
 Patient-context isolation is a deterministic authorization regression check,
 not an authorization control. It must also be tested at the retriever/database
-boundary with cross-pharmacy and cross-patient decoy records. The current MCP
-`get_patient_history` tool is not bound to the selected patient/purpose and is
-not covered by this metric; add dedicated tool-context and PHI-audit tests.
-Do not use real patient data in the golden set.
+boundary with cross-pharmacy and cross-patient decoy records. The MCP
+`get_patient_history` tool now binds its model-supplied patient selector to the
+trusted selected patient and controlled purpose, and records metadata-only
+allowed/denied PHI audit decisions. The deterministic RAG metric does not
+replace those tool-level controls. Unit tests cover mismatch, missing purpose,
+context propagation and audit-commit failure; database-backed MCP audit tests
+and staged verification remain outstanding. Do not use real patient data in
+the golden set.
 
 ## Dataset requirements
 
