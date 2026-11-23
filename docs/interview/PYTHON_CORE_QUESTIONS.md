@@ -1,7 +1,7 @@
 # Python Core — Question Bank
 
 **Status:** In progress  
-**Coverage:** 16 of 30 primary questions drafted  
+**Coverage:** 17 of 30 primary questions drafted  
 **Review rule:** Draft answers must be technically reviewed before being marked validated.
 
 ---
@@ -2167,3 +2167,120 @@ A strong Senior answer should:
 - Python re documentation: https://docs.python.org/3/library/re.html
 - Unicode Standard Annex #29 — Text Segmentation: https://www.unicode.org/reports/tr29/
 - Unicode Technical Standard #15 — Normalization: https://www.unicode.org/reports/tr15/
+
+
+## PY-CORE-017 — Python Concurrency Fundamentals: Threads, Processes and the GIL
+
+### Interview question
+**Explain concurrency and parallelism in Python. Compare threads and processes, describe the Global Interpreter Lock (GIL), and explain how you would choose an execution model for a production backend.**
+
+### Перевод вопроса
+Объясните concurrency и parallelism в Python. Сравните потоки и процессы, опишите Global Interpreter Lock (GIL) и расскажите, как выбрать модель выполнения для production backend.
+
+### What the interviewer evaluates
+- Distinguishing concurrency from parallel execution.
+- Understanding CPython's GIL without treating it as a universal Python-language guarantee.
+- Selecting threads, processes, or asynchronous I/O based on workload characteristics.
+- Understanding shared-state hazards, synchronization, and process isolation.
+- Accounting for serialization, memory, startup, scheduling, cancellation, and observability.
+- Awareness of evolving CPython builds, including optional free-threaded builds.
+
+### Model answer (RU)
+**Concurrency** — способность системы организовывать выполнение нескольких задач так, чтобы их прогресс перекрывался во времени. **Parallelism** означает фактическое одновременное выполнение нескольких вычислений, например на разных CPU cores. Concurrency не обязательно требует нескольких ядер: event loop может переключаться между I/O-bound задачами на одном потоке, пока они ожидают завершения операций ввода-вывода.
+
+В традиционной GIL-enabled сборке CPython Global Interpreter Lock ограничивает выполнение Python bytecode одним потоком одновременно в рамках одного interpreter. Поэтому дополнительные threads обычно не дают линейного ускорения для CPU-bound Python-кода. Однако потоки полезны для I/O-bound операций: пока один поток ожидает сеть, диск или блокирующий системный вызов, другой может продвигаться. Некоторые native extensions освобождают GIL во время отдельных операций, поэтому фактическое поведение зависит от используемой библиотеки.
+
+**Threads** используют общее адресное пространство процесса. Совместное использование объектов удобно, но shared mutable state создаёт риск race conditions. Наличие GIL не делает составные операции или бизнес-инварианты автоматически атомарными. Для синхронизации применяют Lock, RLock, Semaphore, Condition и потокобезопасные структуры. Критические секции должны быть небольшими; порядок захвата блокировок следует проектировать так, чтобы снижать contention и риск deadlock.
+
+**Processes** имеют отдельные адресные пространства и позволяют выполнять CPU-bound работу параллельно на нескольких ядрах. Цена — более высокие затраты на запуск и память, IPC, сериализацию/десериализацию и управление жизненным циклом. Передача больших объёмов данных между процессами может оказаться дороже самой работы. Для независимых CPU-bound задач подходит process pool; его размер следует ограничивать и согласовывать с количеством доступных CPU, лимитами контейнера и общей нагрузкой сервиса.
+
+Для backend я выбираю модель по характеру работы:
+- Для большого числа сетевых операций и поддерживаемых async-библиотек — asyncio и async I/O.
+- Для блокирующих I/O-библиотек — ограниченный thread pool или перенос вызова в подходящий worker.
+- Для CPU-bound Python-кода — process pool или отдельный worker service; threads в обычной GIL-enabled сборке обычно не обеспечивают параллельное исполнение Python bytecode.
+- Для тяжёлой или длительной фоновой работы — очередь задач и отдельные workers, а не выполнение внутри HTTP request lifecycle.
+
+GIL — деталь реализации конкретного runtime, прежде всего традиционного CPython, а не гарантия языка Python. Начиная с Python 3.13 доступны optional free-threaded builds, в которых GIL может быть отключён; это не означает, что любая установка Python автоматически работает без GIL. Совместимость расширений, внутренние блокировки runtime и реальная производительность требуют проверки на целевой сборке. Даже без GIL остаются race conditions и необходимость корректной синхронизации.
+
+В production решение нужно подтверждать profiling и нагрузочными тестами. Следует измерять throughput, latency (включая p95/p99), CPU, memory, queue depth, context switching, lock contention и ошибки. Также необходимо учитывать graceful shutdown, cancellation, timeouts, backpressure и ограничение параллелизма. Нельзя выбирать threads или processes только по общему правилу без измерения конкретной нагрузки.
+
+### Professional answer (EN)
+**Concurrency** is the ability to structure multiple tasks so that their progress overlaps in time. **Parallelism** is the simultaneous execution of multiple computations, for example on separate CPU cores. A system can be concurrent without executing work in parallel: a single-threaded event loop can interleave I/O-bound tasks while they wait.
+
+In a traditional GIL-enabled CPython build, the Global Interpreter Lock allows only one thread at a time to execute Python bytecode within an interpreter. Consequently, adding threads generally does not scale CPU-bound pure-Python code across cores. Threads are still useful for I/O-bound workloads because another thread can make progress while one is blocked on network, disk, or a blocking system call. Some native extensions release the GIL around selected operations, so library behavior matters.
+
+**Threads** share a process address space. Sharing data is convenient, but shared mutable state introduces race conditions. The GIL does not make compound application-level operations or business invariants automatically atomic. Use synchronization primitives such as Lock, RLock, Semaphore, and Condition, or prefer message passing and immutable data where practical. Keep critical sections small and define lock ordering to reduce contention and deadlock risk.
+
+**Processes** have separate address spaces and can execute CPU-bound work in parallel across cores. They introduce additional costs: process startup, memory, inter-process communication, serialization, and lifecycle management. Large payload transfer can outweigh the computation itself. A bounded process pool is appropriate for independent CPU-bound tasks, with capacity chosen against available CPU resources, container limits, and overall service load.
+
+For a backend, choose based on the workload:
+- Use asyncio and async I/O for high-concurrency network workloads when the libraries support non-blocking operation.
+- Use a bounded thread pool for blocking I/O libraries that cannot be made asynchronous.
+- Use a process pool or separate worker service for CPU-bound Python workloads on a conventional GIL-enabled build.
+- Use a task queue and dedicated workers for long-running or resource-intensive background jobs rather than tying them to an HTTP request lifecycle.
+
+The GIL is a runtime implementation detail, primarily associated with conventional CPython builds, not a universal Python language guarantee. Optional free-threaded CPython builds have been available since Python 3.13; a normal Python installation should not be assumed to be free-threaded. Extension compatibility, runtime synchronization, and actual performance must be validated on the target build. Removing the GIL does not remove data races or the need for synchronization.
+
+Validate the design with profiling and representative load tests. Measure throughput, p95/p99 latency, CPU and memory usage, queue depth, context switching, lock contention, and errors. Account for graceful shutdown, cancellation, timeouts, backpressure, and bounded concurrency. Do not select threads or processes by slogan; select them from measured workload behavior.
+
+### Follow-up questions and model answers
+
+**FU-1 — Why does adding more threads usually not speed up CPU-bound pure-Python code in a traditional CPython build?**  
+**Answer (RU):** В GIL-enabled CPython потоки конкурируют за GIL, поэтому в каждый момент Python bytecode исполняет один поток на interpreter. Дополнительные потоки добавляют переключения контекста и синхронизацию, но обычно не дают параллельного исполнения Python bytecode на нескольких ядрах. Исключения возможны, когда вычисления выполняются в native code, освобождающем GIL.  
+**Answer (EN):** In a GIL-enabled CPython build, threads contend for the GIL, so only one thread executes Python bytecode in an interpreter at a time. Additional threads add scheduling and synchronization overhead without usually providing multi-core parallel execution of Python bytecode. Native code that releases the GIL is an important exception.
+
+**FU-2 — If the GIL exists, why can a threaded program still have race conditions?**  
+**Answer (RU):** GIL не является application-level mutex и не защищает бизнес-инварианты. Между отдельными операциями поток может уступить управление; операции над общим состоянием могут состоять из нескольких шагов, а native code может освобождать GIL. Нужны явная синхронизация, thread-safe abstractions или передача сообщений.  
+**Answer (EN):** The GIL is not an application-level mutex and does not protect business invariants. Threads can interleave between operations, compound state changes involve multiple steps, and native code may release the GIL. Use explicit synchronization, thread-safe abstractions, or message passing.
+
+**FU-3 — When would you choose asyncio, threads, or processes for a FastAPI endpoint?**  
+**Answer (RU):** Asyncio подходит для большого числа I/O-bound операций, если весь путь использует неблокирующие библиотеки. Thread pool уместен для ограниченного числа блокирующих I/O-вызовов. Process pool или отдельный worker нужен для CPU-bound Python-вычислений. Выбор зависит также от latency budget, отмены, размера payload, лимитов ресурсов и измерений под нагрузкой.  
+**Answer (EN):** Use asyncio for high-concurrency I/O when the full call path uses non-blocking libraries. Use a bounded thread pool for blocking I/O calls. Use a process pool or dedicated worker for CPU-bound Python computation. Also consider latency budgets, cancellation, payload size, resource limits, and load-test results.
+
+**FU-4 — What are the main costs and failure modes of multiprocessing?**  
+**Answer (RU):** Основные затраты — запуск процессов, дополнительная память, serialization, IPC и управление жизненным циклом. Типичные проблемы: слишком большой pool, исчерпание памяти/CPU, дорогая передача больших объектов, зависшие workers, некорректная обработка ошибок и shutdown. Нужны ограниченные очереди и pool, timeouts, мониторинг и идемпотентная обработка задач там, где возможны повторы.  
+**Answer (EN):** The main costs are process startup, additional memory, serialization, IPC, and lifecycle management. Failure modes include oversized pools, resource exhaustion, expensive large-payload transfers, stuck workers, and incorrect error or shutdown handling. Use bounded pools and queues, timeouts, monitoring, and idempotent task handling where retries are possible.
+
+**FU-5 — What changes with free-threaded CPython, and what does not change?**  
+**Answer (RU):** Free-threaded build может позволить нескольким потокам выполнять Python code параллельно, но это не гарантирует ускорение каждого приложения. Возможны дополнительные затраты синхронизации, а C extensions должны быть совместимы с free-threaded runtime. Race conditions, deadlocks и необходимость защиты shared mutable state остаются. Нужно проверять фактическую конфигурацию runtime и измерять приложение на ней.  
+**Answer (EN):** A free-threaded build can allow multiple threads to execute Python code in parallel, but it does not guarantee that every application becomes faster. Synchronization overhead may remain, and C extensions must support the free-threaded runtime. Race conditions, deadlocks, and the need to protect shared mutable state remain. Verify the actual runtime configuration and benchmark the application on it.
+
+### Pharmaviyum application scenario (hypothetical)
+A hypothetical Pharmaviyum API endpoint retrieves medicine and customer data from PostgreSQL, calls an external service, and performs CPU-intensive document processing. Explain which parts could use async I/O, which blocking library calls might require a bounded thread pool, and which CPU-intensive tasks should be moved to a process pool or background worker. Include limits, timeouts, cancellation, tenant/patient data isolation, and metrics. This is an interview scenario, not a claim about the current implementation.
+
+### Senior-level evaluation rubric
+A strong Senior answer should:
+1. Clearly distinguish concurrency from parallelism.
+2. Explain the GIL accurately and scope the claim to the relevant CPython build/runtime.
+3. Select async I/O, threads, and processes based on workload characteristics.
+4. Recognize that the GIL does not eliminate race conditions or protect business invariants.
+5. Discuss synchronization, deadlocks, contention, and message-passing alternatives.
+6. Account for process startup, memory, serialization, IPC, and worker lifecycle.
+7. Understand optional free-threaded builds without assuming universal compatibility or speedup.
+8. Define operational limits and validate decisions with representative profiling and load tests.
+
+**Evaluation signals**
+- Mid-level: knows the basic differences between threads and processes and the conventional GIL limitation.
+- Strong Senior: chooses execution models from workload evidence and designs safe, bounded concurrency.
+- Staff-level signal: establishes service-wide concurrency budgets, isolation boundaries, worker topology, and observability standards.
+
+### Common pitfalls
+- Claiming that Python threads can never run in parallel under any circumstances.
+- Treating the GIL as a language-level guarantee or as a lock protecting application data.
+- Assuming the GIL makes compound operations thread-safe.
+- Using threads for CPU-bound pure-Python work without benchmarking.
+- Moving large objects between processes without considering serialization and IPC cost.
+- Creating unbounded threads, tasks, queues, or process pools.
+- Calling blocking I/O directly from an async event loop.
+- Assuming free-threaded builds are the default or automatically faster.
+- Ignoring cancellation, timeouts, graceful shutdown, and backpressure.
+- Making architecture decisions without representative load tests.
+
+### References
+- Python threading documentation: https://docs.python.org/3/library/threading.html
+- Python multiprocessing documentation: https://docs.python.org/3/library/multiprocessing.html
+- Python concurrent.futures documentation: https://docs.python.org/3/library/concurrent.futures.html
+- Python asyncio documentation: https://docs.python.org/3/library/asyncio.html
+- Python FAQ — Global Interpreter Lock: https://docs.python.org/3/faq/library.html#what-kinds-of-global-value-mutation-are-thread-safe
+- Python free-threading guide: https://docs.python.org/3/howto/free-threading-python.html
+- PEP 703 — Making the Global Interpreter Lock Optional in CPython: https://peps.python.org/pep-0703/
