@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 10 из 30 основных вопросов подготовлено  
+**Охват:** 11 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -1466,3 +1466,120 @@ Senior-level вопрос заключается не только в выбор
 - Exception context and chaining: https://docs.python.org/3/library/exceptions.html#exception-context
 - PEP 654 — Exception Groups and `except*`: https://peps.python.org/pep-0654/
 - FastAPI — Handling Errors: https://fastapi.tiangolo.com/tutorial/handling-errors/
+
+
+## PY-CORE-011 — Контекстные менеджеры Python и управление ресурсами
+
+**Вопрос (EN):** Explain the context manager protocol and how Python guarantees resource cleanup with the `with` statement. Compare synchronous and asynchronous context managers, and discuss how you would manage database sessions, locks, files, and other resources in a production backend.
+
+**Перевод (RU):** Объясните протокол context manager и то, как Python обеспечивает освобождение ресурсов с помощью оператора `with`. Сравните синхронные и асинхронные контекстные менеджеры и расскажите, как управлять DB sessions, locks, файлами и другими ресурсами в production backend.
+
+### Что проверяет интервьюер
+
+- Точное понимание протокола context manager и потока управления.
+- Владение жизненным циклом ресурсов, детерминированным cleanup и распространением исключений.
+- Корректное применение `contextlib`, `ExitStack` и асинхронных контекстных менеджеров.
+- Понимание cancellation, concurrency, границ транзакций и ошибок при освобождении ресурсов.
+- Умение отделять управление жизненным циклом ресурсов от бизнес-логики.
+
+### Эталонный ответ (RU)
+
+Context manager — объект, который задаёт ограниченную область управления ресурсом или временным состоянием. Синхронный протокол состоит из `__enter__()` и `__exit__(exc_type, exc_value, traceback)`. При входе в блок `with` Python вызывает `__enter__`; возвращаемое значение связывается с переменной после `as`. При выходе из блока `__exit__` вызывается как при нормальном завершении, так и при исключении, распространяющемся из блока.
+
+Если исключения не было, три аргумента `__exit__` равны `None`. Если исключение было, метод получает его тип, объект и traceback. Возвращение truthy value означает подавление исключения; falsey value, включая `None`, позволяет ему распространяться дальше. Исключение, возникшее внутри `__exit__`, само становится результатом выхода и может заменить исходное исключение, поэтому cleanup-код должен быть предсказуемым и не скрывать первопричину.
+
+Оператор `with` обеспечивает детерминированный вызов протокола выхода при нормальном управлении потоком и при распространении исключения через блок. Это не означает защиту от любого завершения процесса: например, принудительное завершение процесса или авария интерпретатора не дают универсальной гарантии cleanup.
+
+Для простого случая протокол можно реализовать напрямую. Для генераторного стиля применяется `contextlib.contextmanager`: код до `yield` выполняет setup, код после — cleanup, а исключение из тела with при необходимости передаётся обратно в точку `yield`. Исключение нельзя случайно проглотить: если генератор перехватил его только для логирования и не поднял повторно, оно будет подавлено. Для асинхронного кода используются `async with`, `__aenter__`, `__aexit__` и `contextlib.asynccontextmanager`; операции setup/cleanup могут ожидать завершения async I/O.
+
+`ExitStack` полезен, когда количество ресурсов или контекстных менеджеров определяется во время выполнения. Он регистрирует callbacks и exit handlers и закрывает ресурсы в обратном порядке — по принципу LIFO. Это помогает корректно откатывать частично выполненный setup, если получение следующего ресурса завершилось ошибкой.
+
+В backend важно определить владельца каждого ресурса и его lifetime. Database session должна иметь ограниченную область действия, обычно одну операцию или транзакцию; commit/rollback должны быть явными и согласованными с unit-of-work. Не следует удерживать соединение или lock во время долгих внешних вызовов без необходимости. Файлы, временные каталоги и locks должны освобождаться в гарантированной точке. Для async ресурсов необходимо учитывать cancellation: cleanup может требовать await, поэтому он должен быть реализован в async exit path и не должен бесконтрольно подавлять cancellation. Контекстный менеджер сам по себе не делает операцию потокобезопасной, транзакционной или идемпотентной — он только задаёт lifecycle и правила выхода.
+
+### Профессиональный ответ (EN)
+
+A context manager defines a bounded execution scope for a resource or temporary state. The synchronous protocol consists of `__enter__()` and `__exit__(exc_type, exc_value, traceback)`. Entering a `with` block invokes `__enter__`, and its return value is assigned to the target after `as`. On leaving the block, Python invokes `__exit__` both after normal completion and when an exception propagates out of the block.
+
+When no exception occurred, the three exception arguments are `None`. Otherwise, `__exit__` receives the exception type, instance, and traceback. A truthy return value suppresses the exception; a falsey value, including `None`, allows propagation. An exception raised by `__exit__` can replace the exception from the block, so cleanup code should be predictable and should not obscure the primary failure.
+
+The `with` statement provides deterministic protocol exit for normal control flow and exceptions crossing the block. It is not a universal guarantee under process termination or interpreter failure.
+
+A class can implement the protocol directly. `contextlib.contextmanager` offers a generator-based alternative: setup runs before `yield`, cleanup after it, and an exception from the with-body can be thrown back at the yield point. If the generator catches an exception only to log it and does not re-raise it, that exception is suppressed. Asynchronous code uses `async with`, `__aenter__`, `__aexit__`, and `contextlib.asynccontextmanager`, allowing setup and cleanup to await asynchronous operations.
+
+`ExitStack` is useful when the number of resources or context managers is dynamic. It registers exit handlers and callbacks and unwinds them in reverse order (LIFO), including when later acquisition fails partway through setup.
+
+In a backend, every resource needs an explicit owner and lifetime. A database session should be scoped narrowly—often to one operation or transaction—with deliberate commit/rollback semantics consistent with the unit-of-work boundary. Avoid holding connections or locks across slow external calls without a clear reason. Files, temporary directories, and locks need deterministic release. Async cleanup must account for cancellation and should not accidentally suppress it. A context manager does not by itself make an operation thread-safe, transactional, or idempotent; it defines lifecycle and exit behavior.
+
+### Дополнительные вопросы и эталонные ответы
+
+**FU-1 — What exactly happens when an exception leaves a `with` block? / Что именно происходит, когда исключение выходит из блока `with`?**
+
+RU: Python вызывает `__exit__`, передавая тип, объект исключения и traceback. Если `__exit__` возвращает truthy value, исключение подавляется; иначе оно продолжает распространяться. Если `__exit__` само поднимает исключение, оно может заменить исходное, поэтому ошибки cleanup требуют аккуратной политики.
+
+EN: Python calls `__exit__` with the exception type, instance, and traceback. A truthy return suppresses the exception; otherwise it propagates. If `__exit__` raises, that new exception can replace the original, so cleanup failures need an explicit policy.
+
+**FU-2 — When would you choose `contextlib.contextmanager` over a class-based context manager? / Когда выбрать `contextlib.contextmanager`, а не классический context manager?**
+
+RU: Генераторный вариант удобен для компактного setup/cleanup, когда не нужны сложное состояние и несколько методов. Класс предпочтительнее, если lifecycle сложный, состояние должно быть явно представлено, нужны дополнительные методы или объект должен поддерживать более богатый контракт. В обоих случаях важно корректно передавать исключения и не подавлять их случайно.
+
+EN: The generator form is concise for straightforward setup and cleanup when no substantial object state is needed. A class is clearer when the lifecycle is complex, state must be explicit, additional methods are required, or the object has a richer contract. Both forms must preserve exception semantics and avoid accidental suppression.
+
+**FU-3 — What problem does `ExitStack` solve? / Какую проблему решает `ExitStack`?**
+
+RU: Он управляет переменным количеством ресурсов и позволяет регистрировать их по мере успешного получения. При выходе handlers выполняются в обратном порядке. Это особенно важно, если получение второго или третьего ресурса завершается ошибкой: ранее полученные ресурсы всё равно будут освобождены.
+
+EN: It manages a dynamic number of resources and lets the program register them as acquisition succeeds. Exit handlers run in reverse order. If acquiring a later resource fails, previously acquired resources are still released.
+
+**FU-4 — How should an async context manager behave during task cancellation? / Как async context manager должен вести себя при cancellation задачи?**
+
+RU: `__aexit__` должен выполнить необходимый async cleanup, например закрыть ресурс или вернуть соединение в pool. Реализация должна учитывать, что cancellation — часть управления потоком, а не обычная бизнес-ошибка. Нельзя бездумно подавлять cancellation; при необходимости применяются ограниченные cleanup-процедуры и повторное распространение cancellation согласно контракту используемого async framework.
+
+EN: `__aexit__` should perform required asynchronous cleanup, such as closing a resource or returning a connection to a pool. Cancellation is a control-flow signal, not an ordinary business error. Do not suppress it indiscriminately; use bounded cleanup and preserve cancellation according to the async framework's contract.
+
+**FU-5 — How would you scope a database session in a FastAPI application? / Как определить scope database session в FastAPI application?**
+
+RU: Session должна создаваться на ограниченный request или unit-of-work scope и гарантированно закрываться после завершения. Граница транзакции должна быть явной: application service либо unit-of-work отвечает за commit, а при ошибке выполняется rollback; закрытие session не следует путать с успешным commit. Для streaming response или фоновых задач lifecycle может выходить за пределы обычного request, поэтому ресурс нельзя закрывать раньше времени или неограниченно удерживать. Конкретная схема зависит от sync/async driver и выбранной архитектуры.
+
+EN: Scope the session to a bounded request or unit-of-work lifetime and guarantee closure afterward. Make the transaction boundary explicit: the application service or unit of work owns commit, and failures trigger rollback; closing a session is not equivalent to a successful commit. Streaming responses and background tasks may outlive the ordinary request scope, so resources must neither be closed too early nor held indefinitely. The exact pattern depends on the sync/async driver and application architecture.
+
+### Сценарий применения в Pharmaviyum (гипотетический)
+
+**Статус: Hypothetical interview scenario — не утверждение о текущей реализации.**
+
+Представим use case изменения складского остатка, которому нужны database transaction и краткоживущий distributed lock. Application boundary может получить оба ресурса через context managers, применить изменение, выполнить commit только после успешной валидации и освободить lock при любом нормальном или исключительном выходе. Архитектура должна определить lock timeout, владельца транзакции, поведение при cancellation и действия при ошибке самого cleanup. Context manager не должен скрывать неопределённый результат commit или создавать ложное обещание exactly-once execution.
+
+### Критерии оценки Senior
+
+Сильный ответ Senior должен показывать, что кандидат:
+
+1. Объясняет точный протокол `__enter__` / `__exit__` и семантику подавления исключений.
+2. Отличает детерминированный cleanup от гарантий при аварии или принудительном завершении процесса.
+3. Умеет выбирать между class-based managers, generator-based managers и `ExitStack`.
+4. Понимает async context managers и cleanup с учётом cancellation.
+5. Определяет явные ownership, lifetime и transaction boundaries ресурсов.
+6. Понимает, что context managers автоматически не обеспечивают thread safety, atomicity или idempotency.
+7. Учитывает частичное получение ресурсов, обратный порядок cleanup и ошибки освобождения.
+
+**Сигналы уровня**
+- Mid-level: использует `with open(...)` и понимает базовый cleanup.
+- Strong Senior: проектирует корректные resource scopes, transaction boundaries и exception behavior.
+- Staff-level signal: задаёт согласованные lifecycle conventions и failure semantics для компонентов приложения.
+
+### Типичные ошибки
+
+- Считать, что `__exit__` вызывается при любом возможном отказе процесса.
+- Возвращать truthy value и случайно подавлять исключение.
+- Перехватывать исключение в generator context manager без повторного raise.
+- Предполагать, что закрытие database session автоматически выполняет commit.
+- Удерживать locks или database connections во время долгих сетевых вызовов.
+- Игнорировать cancellation при асинхронном cleanup.
+- Получать несколько ресурсов без обработки частичного сбоя setup.
+- Считать context manager заменой проектированию транзакций, синхронизации или idempotency.
+
+### Источники
+
+- Python language reference — The `with` statement: https://docs.python.org/3/reference/compound_stmts.html#the-with-statement
+- Python data model — With Statement Context Managers: https://docs.python.org/3/reference/datamodel.html#with-statement-context-managers
+- `contextlib`: https://docs.python.org/3/library/contextlib.html
+- `contextlib.ExitStack`: https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack
+- Async context managers: https://docs.python.org/3/reference/datamodel.html#asynchronous-context-managers
