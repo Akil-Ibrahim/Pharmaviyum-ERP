@@ -6,7 +6,7 @@
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
-English study material for PY-001–PY-004 and FU-001–FU-016. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
+English study material for PY-001–PY-006 and FU-001–FU-024. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
 
 **Review status:** Authored; independent technical and editorial review pending. Do not treat this material as finally approved until both reviews are complete.
 
@@ -1169,3 +1169,100 @@ This is different from explicitly evaluating `obj.__len__()`, which is ordinary 
 
 “Implicit protocol operations such as `len(obj)` generally resolve special methods on the object's type rather than through the instance dictionary. Assigning `obj.__len__` therefore does not normally affect `len(obj)`; the class must provide the protocol implementation. An explicit call to `obj.__len__()` is ordinary attribute lookup, so it can behave differently. This distinction is part of Python's data model and matters when implementing custom container and operator behavior.”
 
+
+
+# PY-006 — Main Question
+
+**Question (EN):** How do Python lists, tuples, sets, and dictionaries differ internally and semantically?
+
+**What the interviewer evaluates:** Collection semantics, mutability, ordering, hashability, complexity, and memory/performance trade-offs.
+
+**Short Answer**
+
+A list is a mutable ordered sequence; a tuple is an immutable ordered sequence; a set stores unique hashable elements; and a dictionary maps unique hashable keys to values while preserving insertion order. Choose by required semantics first, then validate performance and memory against the workload. In CPython, lists and tuples are array-like containers of object references, while sets and dictionaries use hash-table-based structures.
+
+**Explanation**
+
+- **List:** supports indexed access, in-place updates, append, and removal. Indexing is O(1); appending is amortized O(1); inserting or deleting near the beginning or middle is O(n) because elements may move.
+- **Tuple:** an immutable sequence with indexed access and iteration. Immutability applies to the tuple's references, not recursively to contained objects. A tuple is hashable only if all its elements are hashable.
+- **Set:** stores unique hashable elements and is optimized for membership, deduplication, and set algebra. Membership, insertion, and deletion are average-case O(1), but can degrade under heavy collisions.
+- **Dictionary:** maps hashable keys to values, preserves insertion order as a language guarantee since Python 3.7, and provides average-case O(1) lookup, insertion, and deletion. Updating an existing key does not move it; deleting and reinserting it places it at the end.
+
+These complexity figures are typical, not worst-case guarantees. They depend on hashing, collisions, resizing, and equality comparisons. CPython implementation details can change between versions and are not language guarantees.
+
+**Choosing a Collection**
+
+Use a list for an ordered, mutable sequence; a tuple for a fixed record or immutable sequence; a set when uniqueness and membership dominate; and a dictionary for key-based lookup. Do not choose a set or dictionary merely because O(1) sounds faster: consider ordering, memory overhead, hashability, and actual access patterns.
+
+**Important Distinctions**
+
+A shallow copy creates a new outer container but retains references to the same nested objects. Mutating a nested list or dictionary can therefore be visible through both containers. A tuple is not deeply immutable if it contains mutable objects. Dictionary keys and set elements must maintain stable hash and equality behavior while stored.
+
+**Senior-Level Perspective**
+
+Start with semantics and correctness, then profile representative data sizes and operation mixes. Consider memory per entry, allocation patterns, mutation frequency, iteration order, and whether a specialized structure is justified. Treat CPython layout and microbenchmark results as version- and workload-dependent evidence, not universal rules.
+
+**Interview-Ready Answer (EN)**
+
+“Lists and tuples are ordered sequences: lists are mutable, while tuples are immutable at the container level. Sets hold unique hashable elements and are useful for membership checks and set operations. Dictionaries map unique hashable keys to values and preserve insertion order. In CPython, lists and tuples are array-like containers of references, whereas sets and dictionaries use hash tables. Their common lookup and membership operations are typically average O(1), while list indexing is O(1) and middle insertion or deletion is O(n). I choose based on required semantics first, then benchmark realistic workloads and account for memory, mutation patterns, and hash behavior.”
+
+**References**
+
+- [Python 3.15 documentation: Built-in Types](https://docs.python.org/3.15/library/stdtypes.html)
+- [Python 3.15 documentation: Data model](https://docs.python.org/3.15/reference/datamodel.html)
+
+---
+
+## FU-021 — Collection semantics and CPython representations
+
+**Question (EN):** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython?
+
+**Answer**
+
+Lists and tuples are ordered sequences indexed by position; lists allow item replacement and resizing, while tuples do not. Sets contain unique hashable elements, and dictionaries associate hashable keys with values while preserving insertion order. CPython typically implements sequences as arrays of object references and sets/dictionaries with hash-table structures. The semantic contract should be separated from implementation: exact layouts, resizing policies, and memory costs may evolve.
+
+**Interview-Ready Answer (EN)**
+
+“Lists and tuples are ordered sequences, with mutability being the main semantic difference. Sets represent unique hashable members, while dictionaries represent key-value mappings with insertion-ordered iteration. In CPython, sequences use array-like reference storage, and sets and dictionaries use hash tables. I distinguish these implementation details from language-level guarantees.”
+
+---
+
+## FU-022 — Selecting a collection for a service
+
+**Question (EN):** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service?
+
+**Answer**
+
+Use a list for an ordered sequence that may change, a tuple for a fixed sequence, a set for uniqueness and membership, and a dictionary for lookup by key. A request pipeline might use a list to preserve processing order, a set to track processed identifiers, and a dictionary to retrieve records by identifier. Maintaining duplicate structures adds memory and consistency costs, so do it only when the access pattern justifies it.
+
+**Interview-Ready Answer (EN)**
+
+“I map the collection to the dominant operation: list or tuple for sequence semantics, set for uniqueness and membership, and dict for keyed retrieval. If both stable order and fast membership are required, I may use a list plus a set, but I make update ownership explicit and test consistency.”
+
+---
+
+## FU-023 — Ordering, copying, and complexity edge cases
+
+**Question (EN):** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity?
+
+**Answer**
+
+Dictionary insertion order is guaranteed by the language, but set iteration order is not a stable ordering contract. Shallow copies retain references to nested objects. Average-case hash-table complexity is not a worst-case guarantee, and tuples are only shallowly immutable. Since Python 3.7, dictionary insertion order is guaranteed. Do not rely on set iteration order for deterministic presentation. A shallow list or dictionary copy duplicates only the outer container. Hash collisions and expensive equality methods can increase lookup cost; a tuple containing a list is unhashable.
+
+**Interview-Ready Answer (EN)**
+
+“I rely on dictionary insertion order because it is a language guarantee, but I do not rely on set iteration order. Shallow copies share nested objects, and tuple immutability does not make referenced objects immutable. Average O(1) hash-table operations are not worst-case guarantees, so I consider collision behavior and real data.”
+
+---
+
+## FU-024 — Collection choice under production constraints
+
+**Question (EN):** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy?
+
+**Answer**
+
+Identify the operation mix, data volume, ordering requirements, mutation frequency, and memory budget, then benchmark representative workloads. Measure latency, throughput, and memory rather than extrapolating from small synthetic examples. Include realistic key distributions, hit/miss ratios, object sizes, and construction/update costs. Avoid redundant indexes unless their measured latency benefit outweighs memory and consistency costs.
+
+**Interview-Ready Answer (EN)**
+
+“I start from the production access pattern: reads versus writes, lookup versus iteration, ordering, data size, and memory limits. Then I benchmark representative distributions and measure latency and memory, including build and update costs. I avoid choosing from asymptotic complexity alone, and keep redundant indexes only when their measured benefit justifies their operational cost.”
