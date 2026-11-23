@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 26 из 30 основных вопросов подготовлено  
+**Охват:** 27 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -3471,3 +3471,152 @@ A Senior engineer should explain not only the control, but **which threat it mit
 - Python pathlib documentation: https://docs.python.org/3/library/pathlib.html
 - NIST Digital Identity Guidelines: https://pages.nist.gov/800-63-4/
 - OWASP Password Storage: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+
+
+## PY-CORE-027 — Проектирование Python API, семантика HTTP и backend-контракты
+
+**Question (EN):** How do you design a reliable, evolvable HTTP API in Python, and which HTTP semantics and contract guarantees must a Senior backend engineer preserve?
+
+**Вопрос (RU):** Как проектировать надёжный и развиваемый HTTP API на Python и какие HTTP-семантики и гарантии контракта должен обеспечивать Senior backend engineer?
+
+### Что проверяет интервьюер
+
+- Понимание HTTP-семантики, а не сведение REST к именованию CRUD endpoints.
+- Корректное применение методов, status codes, idempotency, conditional requests и caching.
+- Умение проектировать явные request/response contracts и безопасно их развивать.
+- Pagination, filtering, sorting, validation и стабильную семантику ошибок.
+- Разделение transport, application и domain concerns в Python backend.
+- Качество OpenAPI, стратегия совместимости и contract/integration testing.
+- Эксплуатационные аспекты: timeouts, rate limits, retries, observability и ограничения ресурсов.
+
+### Эталонный ответ (RU)
+
+Надёжный API начинается с **контракта и семантики ресурса**, а не с выбора URL или FastAPI decorator. Сначала определяю ресурсы, допустимые операции, инварианты предметной области, субъектов доступа и ожидаемое поведение при ошибках. Затем фиксирую request/response schemas, HTTP semantics, правила совместимости и тестируемые гарантии.
+
+**Ресурсы и методы HTTP.** URL обычно идентифицирует ресурс или коллекцию, а HTTP method задаёт семантику операции. GET предназначен для безопасного чтения и не должен иметь намеренных побочных эффектов; HEAD возвращает метаданные без тела; POST обычно инициирует обработку или создание подчинённого ресурса; PUT заменяет представление ресурса и по семантике идемпотентен; PATCH частично изменяет ресурс, но идемпотентность зависит от формата и конкретной операции; DELETE идемпотентен по требуемому эффекту, даже если повторный ответ может отличаться. Не выбираю метод только по названию функции.
+
+**Идемпотентность и повторы.** Idempotency означает, что повтор одного и того же запроса приводит к тому же целевому эффекту, что и один запрос. Это особенно важно при сетевых сбоях, когда клиент не знает, был ли запрос обработан. Для повторяемых команд, например создания продажи или проведения платежа, можно определить idempotency key, область уникальности, срок хранения результата и правила обработки одновременных повторов. Запись ключа и бизнес-операции должна быть согласована транзакционно; иначе дублирование всё ещё возможно. Не обещаю exactly-once delivery на уровне HTTP: обычно проектирую at-least-once retries вместе с идемпотентной обработкой и дедупликацией.
+
+**Status codes и ошибки.** Использую коды по смыслу: 200 для успешного ответа с представлением, 201 для созданного ресурса (часто с Location), 202 для принятой асинхронной обработки, 204 для успеха без тела, 400 для некорректного запроса, 401 для отсутствующей/недействительной аутентификации, 403 для запрещённого действия, 404 когда ресурс не найден или его существование намеренно скрывается, 409 для конфликта состояния, 412 при невыполненном условии precondition, 422 для синтаксически корректного, но семантически невалидного содержимого в принятой API-конвенции, 429 для rate limit и 5xx для серверных ошибок. Не использую 200 с полем success=false для обычных ошибок. Единый error envelope должен иметь стабильный machine-readable code, безопасное сообщение, при необходимости field-level details и correlation/request ID. Внутренние stack traces, SQL, credentials и чувствительные данные клиенту не возвращаются.
+
+**Request и response contracts.** Входные данные валидируются на границе API: типы, обязательность, диапазоны, длины, форматы и cross-field constraints. Валидация формы не заменяет domain validation, authorization или проверку конкурентных инвариантов в базе данных. Response schema — явная проекция публичного контракта, а не автоматическая сериализация ORM-модели: это снижает риск утечки внутренних полей и связывания API с persistence model. Для денежных значений, дат/времени, timezone и decimal precision определяю однозначные представления. Различаю omitted field, explicit null и default, если это имеет смысл в контракте.
+
+**Pagination, filtering и sorting.** Для небольших или изменяемых наборов offset/limit может быть приемлем, но большие смещения дороги, а concurrent inserts/deletes способны приводить к пропускам и повторам между страницами. Для больших или активно меняющихся коллекций предпочитаю cursor/keyset pagination с детерминированной сортировкой и уникальным tie-breaker, например (created_at, id). Cursor следует считать непрозрачным контрактным токеном, валидировать и при необходимости подписывать; он не должен раскрывать секреты. Ограничиваю максимальный page size, allowlist-ю поля сортировки и фильтров, валидирую комбинации и индексирую реальные query patterns. Порядок сортировки обязан быть стабильным.
+
+**Versioning и backward compatibility.** Сначала стараюсь расширять контракт обратно совместимым способом: добавлять optional поля, новые endpoints или новые значения только после оценки поведения старых клиентов. Удаление/переименование полей, изменение типов, обязательности, значения по умолчанию или семантики существующего поля может быть breaking change. Версионирование может быть path-based, header-based или media-type-based; важнее единая политика, documented deprecation window, telemetry использования старых версий и migration plan. Не считаю добавление поля автоматически безопасным: строгие клиенты, enum parsing и generated SDK могут ломаться на неизвестных значениях или полях.
+
+**Concurrency и conditional requests.** Для предотвращения lost updates использую optimistic concurrency control: version column, ETag/If-Match или эквивалентную проверку. Сервер сравнивает версию, которую видел клиент, с текущей и отклоняет устаревшее изменение, обычно через 412 или согласованный 409. Проверка должна быть атомарной с update, иначе остаётся race condition. Для кэширования применимы Cache-Control, ETag и Last-Modified; приватные или персональные ответы не должны случайно попадать в shared cache.
+
+**Python/FastAPI architecture.** Router отвечает за HTTP binding, parsing, status codes и serialization. Application/use-case layer координирует сценарий и транзакционные границы; domain layer содержит бизнес-правила; repositories/adapters изолируют persistence и внешние системы. Pydantic schemas задают transport contract, но не должны автоматически становиться domain entities. Dependencies FastAPI подходят для request-scoped concerns (authenticated principal, session, services), однако скрытая магия dependency graph не должна заменять явные границы и управление жизненным циклом ресурсов. DB session и транзакции должны иметь предсказуемый scope; не держу транзакцию открытой во время медленных внешних HTTP-вызовов без веской причины.
+
+**OpenAPI и тестирование контракта.** OpenAPI должен отражать реальные schemas, status codes, authentication, error responses, pagination и operation semantics. Проверяю generated schema в CI и не допускаю случайного breaking change без review. Тестирую не только happy path, но и authorization, validation boundaries, concurrency, idempotency, pagination stability, error shape и backward compatibility. Contract tests полезны для проверки ожиданий между producer и consumer; интеграционные тесты с реальной СУБД нужны для транзакций, constraints и конкурентного поведения. Snapshot OpenAPI сам по себе не доказывает корректность runtime.
+
+**Надёжность и эксплуатация.** Задаю request/body/page-size limits, timeouts, rate limits и понятную retry policy. Не повторяю автоматически неидемпотентные операции без idempotency mechanism. Отделяю client errors от server errors, логирую correlation ID и метрики latency/error rate, но не записываю токены, медицинские данные или полный чувствительный payload. Для длительных задач возвращаю 202 и ресурс статуса, а не удерживаю HTTP connection неопределённо долго. API должен иметь наблюдаемое поведение при перегрузке и деградации зависимостей.
+
+Senior-инженер должен уметь обосновать каждую гарантию: **какая семантика обещана клиенту, где она обеспечивается технически, как проверяется и что происходит при timeout, retry, race condition или частичном отказе**.
+
+### Professional answer (EN)
+
+A reliable API starts with **resource semantics and an explicit contract**, not with choosing a URL or a FastAPI decorator. I identify resources, permitted operations, domain invariants, access boundaries, and failure behavior. Then I define request/response schemas, HTTP semantics, compatibility rules, and verifiable guarantees.
+
+**Resources and HTTP methods.** A URI identifies a resource or collection; the method defines the operation's semantics. GET is safe and intended for retrieval, without intentional state-changing side effects. HEAD returns metadata without a response body. POST commonly creates a subordinate resource or initiates processing. PUT replaces a resource representation and is idempotent by semantics. PATCH applies a partial modification; whether a particular patch is idempotent depends on its format and operation. DELETE is idempotent in its intended effect, although repeated responses may differ. I do not choose methods merely to mirror function names.
+
+**Idempotency and retries.** An operation is idempotent when applying the same request repeatedly has the same intended effect as applying it once. This matters when a network failure leaves the client uncertain whether the server processed the request. For retryable commands such as creating a sale or initiating a payment, I can define an idempotency key, its uniqueness scope, retention period, response replay behavior, and concurrent-duplicate handling. Persisting the key and business operation must be transactionally coordinated; otherwise duplicates remain possible. I do not promise HTTP-level exactly-once delivery. I generally design at-least-once retries around idempotent processing and deduplication.
+
+**Status codes and errors.** I use status codes according to their meaning: 200 for a successful representation, 201 for resource creation (often with Location), 202 for accepted asynchronous work, 204 for success without a body, 400 for a malformed request, 401 for missing or invalid authentication, 403 for a forbidden action, 404 when a resource is absent or its existence is intentionally concealed, 409 for a state conflict, 412 for a failed precondition, 422 for semantically invalid content under the API's chosen convention, 429 for rate limiting, and 5xx for server failures. I avoid returning 200 with success=false for ordinary errors. A stable error envelope should expose a machine-readable code, safe message, optional field-level details, and a correlation/request ID. It must not disclose stack traces, SQL, credentials, or sensitive data.
+
+**Request and response contracts.** Validate input at the API boundary: types, required fields, ranges, lengths, formats, and cross-field constraints. Structural validation is not a substitute for domain validation, authorization, or database-enforced concurrency invariants. A response schema should be an explicit projection of the public contract, not an automatic dump of an ORM model; this prevents accidental exposure of internal fields and decouples the API from persistence. Define unambiguous representations for money, dates, timestamps, time zones, and decimal precision. Where relevant, distinguish an omitted field from explicit null and from a default value.
+
+**Pagination, filtering, and sorting.** Offset/limit pagination can be adequate for small or relatively static collections. Large offsets can be expensive, and concurrent inserts or deletes may cause duplicates or omissions across pages. For large or frequently changing collections, I prefer cursor/keyset pagination with deterministic ordering and a unique tie-breaker, such as (created_at, id). Treat cursors as opaque contract tokens; validate and, where appropriate, sign them without exposing secrets. Enforce a maximum page size, allowlist sortable/filterable fields, validate combinations, and index actual query patterns. Ordering must be stable.
+
+**Versioning and compatibility.** Prefer backward-compatible evolution where possible: add optional fields, new endpoints, or new capabilities only after considering old clients. Removing or renaming fields, changing types or requiredness, altering defaults, or changing existing field semantics can be breaking changes. Versioning may use paths, headers, or media types; consistency matters more than the mechanism. Define a deprecation window, observe old-version usage, and provide a migration plan. Adding a field is not universally safe: strict clients, enum parsing, and generated SDKs may fail on unknown fields or values.
+
+**Concurrency and conditional requests.** Prevent lost updates with optimistic concurrency control, for example a version column or ETag/If-Match. The server compares the version observed by the client with the current version and rejects stale writes, commonly with 412 or a documented 409 convention. The comparison and update must be atomic; otherwise a race remains. For caching, use Cache-Control, ETag, and Last-Modified deliberately. Private or personalized responses must not accidentally enter a shared cache.
+
+**Python/FastAPI architecture.** The router handles HTTP binding, parsing, status codes, and serialization. An application/use-case layer coordinates workflows and transaction boundaries; the domain layer owns business rules; repositories and adapters isolate persistence and external systems. Pydantic schemas define transport contracts but should not automatically become domain entities. FastAPI dependencies are useful for request-scoped concerns such as the authenticated principal, database session, and services, but an implicit dependency graph must not replace explicit boundaries or resource lifecycle management. Database sessions and transactions need predictable scopes; I avoid holding a transaction open across slow external HTTP calls without a strong reason.
+
+**OpenAPI and contract testing.** OpenAPI should accurately describe schemas, status codes, authentication, error responses, pagination, and operation semantics. Validate the generated schema in CI and review accidental breaking changes. Test more than the happy path: authorization, validation boundaries, concurrency, idempotency, pagination stability, error shape, and backward compatibility. Consumer/provider contract tests verify assumptions between services; integration tests against the real database are needed for transaction, constraint, and concurrency behavior. An OpenAPI snapshot alone does not prove runtime correctness.
+
+**Reliability and operations.** Set request/body/page-size limits, timeouts, rate limits, and a deliberate retry policy. Do not automatically retry non-idempotent operations without an idempotency mechanism. Distinguish client errors from server failures, record correlation IDs and latency/error metrics, and avoid logging tokens, medical data, or complete sensitive payloads. For long-running work, return 202 with a status resource rather than holding an HTTP connection indefinitely. The API should have observable behavior under overload and dependency degradation.
+
+A Senior engineer should justify every guarantee: **what semantics are promised to clients, where they are enforced, how they are tested, and what happens under timeouts, retries, races, or partial failures**.
+
+### Follow-up questions and эталонные ответы
+
+#### FU-1 — What is the difference between safe and idempotent HTTP methods?
+
+**RU:** Чем отличаются safe и idempotent HTTP methods?
+
+**Ответ (RU):** Safe означает, что клиент не запрашивает изменение состояния ресурса; GET и HEAD должны быть safe. Idempotent означает, что повторение одного и того же запроса имеет тот же предполагаемый эффект, что и однократное выполнение. PUT и DELETE идемпотентны, но не safe: они изменяют состояние. POST обычно не идемпотентен, хотя конкретный API может добавить idempotency key. Safe не означает отсутствие логов, метрик или иных побочных эффектов реализации — речь о семантике запрошенной операции.
+
+**Answer (EN):** Safe means the client is not requesting a state change; GET and HEAD are expected to be safe. Idempotent means repeating the same request has the same intended effect as performing it once. PUT and DELETE are idempotent but not safe because they change state. POST is generally not idempotent, although an API can add an idempotency-key mechanism. Safe does not prohibit incidental implementation effects such as logging or metrics; it describes the requested operation's semantics.
+
+#### FU-2 — How would you make a POST operation safe to retry after a client timeout?
+
+**RU:** Как сделать POST-операцию безопасной для повторения после client timeout?
+
+**Ответ (RU):** Определяю idempotency key и его scope, например tenant + authenticated client + operation. На сервере атомарно резервирую ключ с уникальным ограничением, связываю его с хешем значимых параметров и результатом операции. Повтор с тем же ключом и тем же payload получает сохранённый результат; тот же ключ с другим payload отклоняется. Конкурентные запросы обрабатываются через транзакцию/уникальный constraint и определённое состояние in-progress. Устанавливаю retention policy и не полагаюсь только на Redis cache, если бизнес-эффект хранится в PostgreSQL.
+
+**Answer (EN):** Define an idempotency key and its scope, such as tenant, authenticated client, and operation. Atomically reserve the key with a uniqueness constraint and associate it with a hash of the relevant request parameters and the operation result. A retry with the same key and payload replays the stored result; reuse with a different payload is rejected. Handle concurrent requests through a transaction/unique constraint and an explicit in-progress state. Define retention, and do not rely solely on a Redis cache when the business effect is persisted in PostgreSQL.
+
+#### FU-3 — When would you choose cursor pagination over offset pagination?
+
+**RU:** Когда cursor pagination предпочтительнее offset pagination?
+
+**Ответ (RU):** Cursor/keyset pagination предпочтительна для больших или часто изменяющихся коллекций, когда важны стабильное продвижение и предсказуемая стоимость запроса. Cursor должен опираться на уникальный детерминированный порядок, обычно с tie-breaker. Offset проще для произвольного перехода на страницу и небольших наборов, но большие offsets могут быть дорогими, а изменения набора между запросами приводят к пропускам или повторам. Cursor не даёт автоматически snapshot consistency: это зависит от модели данных и транзакций.
+
+**Answer (EN):** Cursor/keyset pagination is preferable for large or frequently changing collections when stable traversal and predictable query cost matter. The cursor must use a deterministic ordering with a unique tie-breaker. Offset pagination is simpler for jumping to an arbitrary page and for small collections, but large offsets can be expensive and concurrent changes can cause omissions or duplicates. Cursor pagination does not automatically provide snapshot consistency; that depends on the data and transaction model.
+
+#### FU-4 — How do you evolve an API without breaking existing clients?
+
+**RU:** Как развивать API без поломки существующих клиентов?
+
+**Ответ (RU):** Сначала классифицирую изменения по совместимости и проверяю реальные consumer assumptions. Добавление optional field обычно безопаснее удаления или изменения типа, но строгие parsers и generated clients могут ломаться даже на неизвестных полях/enum values. Использую contract tests, schema diff в CI, telemetry версий и deprecation policy с migration window. Breaking change оформляю как новую версию или отдельный endpoint, документирую rollout и rollback. Не считаю OpenAPI diff единственным источником истины: важны runtime semantics и поведение клиентов.
+
+**Answer (EN):** Classify changes by compatibility and verify actual consumer assumptions first. Adding an optional field is usually safer than removing a field or changing its type, but strict parsers and generated clients may still fail on unknown fields or enum values. Use contract tests, schema diffs in CI, version-usage telemetry, and a deprecation policy with a migration window. Introduce breaking changes through a new version or endpoint, and document rollout and rollback. An OpenAPI diff is not the only source of truth; runtime semantics and client behavior matter.
+
+#### FU-5 — How do ETag/If-Match and database transactions help prevent lost updates?
+
+**RU:** Как ETag/If-Match и транзакции помогают предотвращать lost updates?
+
+**Ответ (RU):** Сервер возвращает ETag, отражающий версию представления или ресурса. Клиент отправляет If-Match при изменении; сервер выполняет compare-and-update так, чтобы проверка версии и запись были атомарны. Если версия устарела, сервер не перезаписывает чужое изменение и возвращает 412 Precondition Failed либо документированный конфликтный код. Реализация может использовать SQL UPDATE ... WHERE id = ? AND version = ?, затем проверять affected rows. Простая проверка версии отдельным SELECT перед UPDATE без атомарной защиты подвержена race condition.
+
+**Answer (EN):** The server returns an ETag representing a resource or representation version. The client sends If-Match on modification; the server performs an atomic compare-and-update. If the version is stale, it does not overwrite another client's change and returns 412 Precondition Failed or a documented conflict response. One implementation is an UPDATE ... WHERE id = ? AND version = ? followed by checking the affected-row count. A separate version SELECT followed by an unguarded UPDATE is vulnerable to a race condition.
+
+### Связь с Pharmaviyum
+
+**Гипотетический сценарий для интервью — не утверждение о текущей реализации:** pharmacy API может предоставлять поиск каталога лекарств, корректировки остатков, продажи и процессы, связанные с рецептами. Кандидат должен объяснить стабильную pagination результатов каталога, явные response DTO без внутренних или пациентских полей, object-level authorization для tenant-scoped ресурсов, idempotency для повторяемых команд продажи и optimistic concurrency для обновления остатков. Любое утверждение, что эти механизмы реализованы в Pharmaviyum, требует проверки исходного кода и тестов.
+
+### Критерии оценки Senior
+
+| Уровень | Ожидаемые признаки |
+|---|---|
+| Mid-level | Использует подходящие методы и status codes, валидирует запросы, определяет schemas и реализует базовые pagination и error handling. |
+| Senior | Рассуждает о safe/idempotent semantics, неопределённости retries, атомарной idempotency, стабильности cursor, conditional updates, совместимости, transaction boundaries и contract testing. |
+| Staff-level signal | Определяет API governance, version/deprecation policy, стратегию контрактов между сервисами, reliability SLO и практики миграции между командами. |
+
+### Типичные ошибки
+
+- Сводить REST к CRUD routes с множественным числом в URL.
+- Использовать GET для изменения состояния или считать любой POST безопасным для retry.
+- Обещать exactly-once processing без транзакционной дедупликации.
+- Возвращать 200 для всех исходов или раскрывать внутренние exception details.
+- Сериализовать ORM-модели напрямую как публичный response contract.
+- Разрешать неограниченный page size, произвольную сортировку или нестабильный порядок pagination.
+- Считать, что cursor pagination автоматически обеспечивает snapshot consistency.
+- Вносить breaking schema changes без проверки поведения consumers.
+- Проверять версию отдельным запросом, а затем обновлять без атомарного concurrency control.
+- Держать DB transactions открытыми во время медленных внешних вызовов.
+- Считать generated OpenAPI или schema snapshots доказательством runtime correctness.
+- Логировать чувствительные request/response payloads ради observability.
+
+### Источники
+
+- RFC 9110 — HTTP Semantics: https://www.rfc-editor.org/rfc/rfc9110
+- RFC 9111 — HTTP Caching: https://www.rfc-editor.org/rfc/rfc9111
+- RFC 9457 — Problem Details for HTTP APIs: https://www.rfc-editor.org/rfc/rfc9457
+- RFC 6585 — Additional HTTP Status Codes (including 429): https://www.rfc-editor.org/rfc/rfc6585
+- OpenAPI Specification: https://spec.openapis.org/oas/latest.html
+- FastAPI documentation: https://fastapi.tiangolo.com/
+- Pydantic documentation: https://docs.pydantic.dev/
+- Microsoft REST API Guidelines: https://github.com/microsoft/api-guidelines
