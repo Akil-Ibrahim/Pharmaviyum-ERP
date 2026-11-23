@@ -45,3 +45,21 @@ Follow-ups:
 - **FU-006 — Application:** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service?
 - **FU-007 — Edge cases and lifecycle:** How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call?
 - **FU-008 — Senior judgment:** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile?
+
+
+
+## PY-003 — Python Object Model: Identity, Type & Value
+
+**Main Question:** Explain Python's object model: identity, type, and value.
+
+**Evaluation focus:** Name binding, identity versus equality, mutability, type checks, and domain identity.  
+**Level:** L3 — Advanced/Senior  
+**Priority:** P0 — Core
+
+Follow-ups:
+
+- **FU-009 — Mechanism:** Which of an object's identity, type, and value can change during its lifetime?
+- **FU-010 — Application:** How would you choose between identity checks, equality checks, and type checks in a code review?
+- **FU-011 — Edge cases and trade-offs:** Why can using is to compare strings, numbers, or other values produce unreliable results?
+- **FU-012 — Senior judgment:** How should API design avoid accidental dependencies on object identity, mutability, or concrete implementation types?
+
