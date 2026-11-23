@@ -10,4 +10,4 @@ English-language curriculum and answer bank for international technical intervie
 
 ## Migration status
 
-The language-separated structure is being introduced starting with PY-001. The current scope includes PY-001 and FU-001–FU-004. Remaining questions will be migrated in order. The previous bilingual source file is retained until the full migration is verified.
+The language-separated structure is being introduced starting with PY-001 and PY-002. The current scope includes PY-001–PY-002 and FU-001–FU-008. Remaining questions will be migrated in order. The previous bilingual source file is retained until the full migration is verified.
