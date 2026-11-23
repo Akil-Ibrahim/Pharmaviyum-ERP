@@ -1,7 +1,7 @@
 # Python Core — Question Bank
 
 **Status:** In progress  
-**Coverage:** 18 of 30 primary questions drafted  
+**Coverage:** 19 of 30 primary questions drafted  
 **Review rule:** Draft answers must be technically reviewed before being marked validated.
 
 ---
@@ -2388,3 +2388,145 @@ A strong Senior answer should:
 - Python Data Model — Customizing Attribute Access: https://docs.python.org/3/reference/datamodel.html#customizing-attribute-access
 - Python Built-in Functions — property: https://docs.python.org/3/library/functions.html#property
 - Python Classes Tutorial: https://docs.python.org/3/tutorial/classes.html
+
+---
+
+## PY-CORE-019 — Python metaclasses and class creation
+
+### Question (EN)
+**How does Python create a class, what is a metaclass, and when would you choose a metaclass over a class decorator or __init_subclass__?**
+
+### Перевод (RU)
+**Как Python создаёт класс, что такое метакласс и когда следует выбрать метакласс вместо декоратора класса или __init_subclass__?**
+
+### What the interviewer evaluates
+- Understanding that classes are objects and ordinary classes are instances of `type`.
+- Knowledge of class creation, namespace preparation, and metaclass selection.
+- Correct distinction between metaclass `__new__` and `__init__`.
+- Understanding of `__prepare__`, `__init_subclass__`, class decorators, and descriptor hooks.
+- Ability to reason about multiple inheritance and metaclass conflicts.
+- Engineering judgement about complexity, testability, and maintainability.
+
+### Model answer (RU)
+В Python **классы сами являются объектами**. Обычный класс, объявленный через `class MyClass:`, обычно является экземпляром метакласса `type`. Метакласс — это класс, экземплярами которого являются другие классы. Обычный класс создаёт экземпляры, а метакласс создаёт объекты-классы.
+
+Упрощённо процесс создания класса выглядит так:
+
+1. Python определяет базовые классы и выбирает метакласс. Если он явно не указан, выбор выводится из метаклассов базовых классов. При множественном наследовании должен существовать совместимый наиболее производный метакласс.
+2. Метакласс может предоставить пространство имён через `__prepare__(name, bases, **kwargs)`. Стандартный `type.__prepare__` возвращает подходящий namespace. Пользовательский metaclass может предоставить другой mapping, если требуется контролировать сборку namespace.
+3. Python выполняет тело класса в этом namespace. Это реальное выполнение кода: выражения и присваивания на уровне класса могут иметь побочные эффекты.
+4. Выбранный метакласс вызывается для создания объекта-класса. Для стандартного `type` создание выполняет `type.__new__`, после чего `type.__init__` выполняет инициализацию.
+
+При наследовании от `type` метакласс обычно переопределяет **свой `__new__`**, чтобы изменить создание объекта-класса: проверить или преобразовать namespace, добавить атрибуты либо метаданные. **`__init__` метакласса** инициализирует уже созданный объект-класс. Это не методы создания обычного экземпляра: в данном случае объектом является сам класс.
+
+Функция `type(name, bases, namespace)` позволяет динамически создать класс. Однако динамическое создание класса само по себе не означает, что обязательно нужен пользовательский метакласс.
+
+Есть более простые механизмы расширения. **`__init_subclass__`** позволяет базовому классу реагировать на создание подклассов, например проверять или регистрировать их. **Декоратор класса** получает уже созданный класс и может изменить его либо вернуть другой объект. Следовательно, декоратор применяется после процесса создания класса. Эти механизмы обычно предпочтительнее, если не требуется управлять самим процессом создания или поведением классов как объектов.
+
+Метакласс оправдан, когда общая политика должна применяться на уровне создания многих классов: например, при построении декларативной модели framework, контроле namespace или согласованной регистрации типов. ORM и validation frameworks могут собирать поля, схемы и метаданные с помощью metaprogramming. Но конкретная библиотека может использовать descriptors, decorators, `__init_subclass__` или комбинацию механизмов — нельзя утверждать, что она использует metaclass, не проверив исходный код.
+
+Важны и соседние hooks. Во время создания класса `type.__new__` обрабатывает descriptors в namespace и вызывает их `__set_name__(owner, name)`. Механизм создания подкласса вызывает `__init_subclass__` базового класса. Эти возможности часто позволяют обойтись без собственного метакласса. Если пользовательский metaclass переопределяет создание класса, он должен корректно делегировать в `super().__new__`, чтобы сохранить стандартное поведение. В сложных сценариях нельзя нарушать обработку специальных элементов namespace, например `__classcell__`.
+
+**Metaclass conflict** возникает, когда метаклассы базовых классов несовместимы: итоговый метакласс должен быть подклассом метаклассов всех базовых классов. Возможные решения — создать совместимый общий метакласс, пересмотреть иерархию наследования или удалить ненужную зависимость от metaclass. Простое указание одного из конфликтующих метаклассов не устраняет причину конфликта.
+
+Мой принцип на уровне Senior: сначала рассмотреть обычные классы, композицию, class decorators и `__init_subclass__`. Метакласс следует выбирать только при доказанной необходимости управлять созданием классов и при наличии тестов на наследование, namespace, descriptors и интеграцию. Это мощный механизм, но он увеличивает когнитивную нагрузку и стоимость сопровождения.
+
+### Model answer (EN)
+In Python, **classes are objects**. A class declared with `class MyClass:` is normally an instance of the metaclass `type`. A metaclass is a class whose instances are classes: ordinary classes create instances, while metaclasses create class objects.
+
+At a high level, class creation proceeds as follows:
+
+1. Python determines the base classes and selects a metaclass. If no metaclass is explicitly specified, it is derived from the metaclasses of the bases. With multiple inheritance, a compatible most-derived metaclass must exist.
+2. The metaclass may provide a namespace through `__prepare__(name, bases, **kwargs)`. The standard `type.__prepare__` supplies a suitable namespace. A custom metaclass can return another mapping when namespace construction genuinely needs to be controlled.
+3. Python executes the class body in that namespace. This is actual code execution: class-level expressions and assignments can have side effects.
+4. Python calls the selected metaclass to create the class object. With the standard `type` metaclass, `type.__new__` creates the class and `type.__init__` performs initialization.
+
+When subclassing `type`, a metaclass typically overrides **its `__new__`** to customize class-object creation: it can validate or transform the namespace, add attributes, or attach metadata. **The metaclass's `__init__`** initializes the already-created class object. These are not the methods that create an ordinary instance; the object being created here is the class itself.
+
+`type(name, bases, namespace)` can create a class dynamically. Dynamic class creation, however, does not by itself require a custom metaclass.
+
+Python provides simpler extension points. **`__init_subclass__`** lets a base class react when subclasses are created, for example to validate or register them. A **class decorator** receives a class after it has been created and can modify it or return another object. A decorator therefore runs after class creation. These mechanisms are usually preferable when there is no need to control the class-creation process or the behaviour of classes as objects.
+
+A metaclass is justified when a common policy must operate at class-creation level across many classes—for example, declarative framework model construction, namespace control, or coordinated type registration. ORMs and validation frameworks may collect fields, schemas, and metadata through metaprogramming. A particular library may instead use descriptors, decorators, `__init_subclass__`, or a combination; do not claim it uses a metaclass without inspecting its implementation.
+
+Related hooks matter. During class creation, `type.__new__` processes descriptors in the namespace and calls `__set_name__(owner, name)`. The subclass creation mechanism invokes the base class's `__init_subclass__`. These hooks often eliminate the need for a custom metaclass. A custom metaclass overriding class creation should delegate correctly to `super().__new__` to preserve standard behaviour. Advanced implementations must also preserve special namespace entries such as `__classcell__`.
+
+A **metaclass conflict** occurs when the metaclasses of base classes are incompatible. The resulting metaclass must be a subclass of the metaclasses of all bases. Solutions include defining a compatible combined metaclass, revisiting the inheritance hierarchy, or removing an unnecessary metaclass dependency. Simply choosing one conflicting metaclass does not resolve the underlying incompatibility.
+
+My Senior-level approach is to consider ordinary classes, composition, class decorators, and `__init_subclass__` first. I choose a metaclass only when there is a demonstrated need to control class creation and when inheritance, namespace handling, descriptors, and integration are tested. Metaclasses are powerful, but they increase cognitive load and maintenance cost.
+
+### Follow-up questions and model answers
+
+#### FU-1
+**EN:** What is the difference between a class and a metaclass in Python?  
+**RU:** В чём разница между классом и метаклассом в Python?
+
+**Answer (RU):** Класс обычно создаёт экземпляры, а метакласс создаёт объекты-классы. Сам класс тоже является объектом. У обычного класса метакласс — `type`, поэтому `type(MyClass)` обычно возвращает `type`. Пользовательский метакласс обычно наследуется от `type`.
+
+**Answer (EN):** A class normally creates instances, while a metaclass creates class objects. A class is itself an object. An ordinary class has `type` as its metaclass, so `type(MyClass)` normally returns `type`. A custom metaclass usually subclasses `type`.
+
+#### FU-2
+**EN:** What are `__prepare__`, metaclass `__new__`, and metaclass `__init__` responsible for?  
+**RU:** За что отвечают `__prepare__`, `__new__` и `__init__` метакласса?
+
+**Answer (RU):** `__prepare__` предоставляет namespace для выполнения тела класса. Метаклассный `__new__` создаёт объект-класс и может преобразовать namespace или добавить метаданные. Метаклассный `__init__` инициализирует уже созданный объект-класс. Их нельзя путать с методами создания обычных экземпляров.
+
+**Answer (EN):** `__prepare__` supplies the namespace in which the class body executes. Metaclass `__new__` creates the class object and may transform its namespace or attach metadata. Metaclass `__init__` initializes the already-created class object. These must not be confused with the methods that create ordinary instances.
+
+#### FU-3
+**EN:** When would you prefer `__init_subclass__` or a class decorator over a metaclass?  
+**RU:** Когда вы предпочтёте `__init_subclass__` или декоратор класса метаклассу?
+
+**Answer (RU):** `__init_subclass__` подходит, если базовому классу нужно проверять, настраивать или регистрировать подклассы. Декоратор класса обрабатывает уже созданный класс. Метакласс нужен, когда требуется управлять самим созданием классов или поведением class objects. Следует выбирать наименее сложный механизм, решающий задачу.
+
+**Answer (EN):** Use `__init_subclass__` when a base class needs to validate, configure, or register subclasses. A class decorator processes a class after creation. A metaclass is appropriate when class creation itself or class-object behaviour must be controlled. Choose the least complex mechanism that meets the requirement.
+
+#### FU-4
+**EN:** What causes a metaclass conflict with multiple inheritance, and how can it be resolved?  
+**RU:** Что вызывает конфликт метаклассов при множественном наследовании и как его устранить?
+
+**Answer (RU):** Конфликт возникает, если Python не может выбрать итоговый метакласс, который является подклассом метаклассов всех базовых классов. Решения: создать совместимый общий метакласс, пересмотреть иерархию или отказаться от ненужной зависимости от metaclass. Необходимо учитывать MRO и совместимость поведения.
+
+**Answer (EN):** A conflict occurs when Python cannot select a resulting metaclass that is a subclass of the metaclasses of all base classes. Solutions include defining a compatible combined metaclass, revisiting the hierarchy, or removing an unnecessary metaclass dependency. MRO and behavioural compatibility must be considered.
+
+#### FU-5
+**EN:** How can a metaclass-based model framework collect fields, and what risks should a Senior engineer consider?  
+**RU:** Как framework моделей на основе метакласса может собирать поля и какие риски должен учитывать Senior-инженер?
+
+**Answer (RU):** Метакласс может анализировать namespace при создании класса, находить поля и descriptors, объединять унаследованные метаданные и строить схему модели. Риски: сложное наследование, metaclass conflicts, неожиданный порядок выполнения class body, import-time side effects, скрытая логика, проблемы с type checkers и сложная отладка. Сначала нужно оценить descriptors, `__set_name__`, `__init_subclass__` и decorators, затем покрыть выбранное поведение тестами.
+
+**Answer (EN):** A metaclass can inspect the namespace during class creation, identify fields and descriptors, merge inherited metadata, and construct a model schema. Risks include complex inheritance, metaclass conflicts, surprising class-body execution order, import-time side effects, hidden behaviour, typing-tool compatibility, and difficult debugging. First evaluate descriptors, `__set_name__`, `__init_subclass__`, and decorators, then test the chosen design.
+
+### Pharmaviyum connection
+
+**Hypothetical interview scenario — not a claim about the current implementation:** imagine a declarative medication-catalogue model framework that collects field metadata, validation declarations, and index hints from model classes. Explain whether descriptors with `__init_subclass__`, a class decorator, or a metaclass would be the simplest reliable design. Discuss inherited fields, duplicate declarations, import-time work, type-checker support, and tests for the resulting metadata.
+
+Inspect the repository before claiming that Pharmaviyum currently uses a custom metaclass or a particular ORM field-registration mechanism.
+
+### Senior-level evaluation
+
+| Level | Expected evidence |
+|---|---|
+| Weak | Calls a metaclass merely a class factory; cannot describe class creation or confuses metaclass hooks with instance hooks. |
+| Competent | Explains `type`, basic metaclass creation, and an alternative such as a class decorator. |
+| Strong Senior | Explains namespace preparation, metaclass selection, `__new__` versus `__init__`, alternative hooks, descriptor interaction, and metaclass conflicts; chooses the least complex viable design. |
+| Staff-level signal | Defines framework-wide metaprogramming conventions, compatibility constraints, migration strategy, testability, and safeguards for class-creation behaviour. |
+
+### Common pitfalls
+- Claiming every class needs a custom metaclass; ordinary classes normally use `type`.
+- Describing a metaclass only as a function returning a class.
+- Confusing metaclass `__new__` and `__init__` with ordinary instance methods.
+- Assuming a class decorator runs during the class body; it receives the created class.
+- Using a metaclass when `__init_subclass__`, descriptors, or a decorator would suffice.
+- Ignoring metaclass compatibility under multiple inheritance.
+- Overriding class creation without delegating to `super().__new__` and preserving standard behaviour.
+- Performing expensive or external I/O during import-time class creation.
+- Claiming a particular ORM uses a metaclass without verifying its implementation.
+
+### References
+- Python Data Model — Customizing class creation: https://docs.python.org/3/reference/datamodel.html#customizing-class-creation
+- Python Data Model — Metaclasses: https://docs.python.org/3/reference/datamodel.html#metaclasses
+- Python built-in `type`: https://docs.python.org/3/library/functions.html#type
+- Python Classes Tutorial: https://docs.python.org/3/tutorial/classes.html
+- PEP 3115 — Metaclasses in Python 3000: https://peps.python.org/pep-3115/
+- PEP 487 — Simpler customization of class creation: https://peps.python.org/pep-0487/
