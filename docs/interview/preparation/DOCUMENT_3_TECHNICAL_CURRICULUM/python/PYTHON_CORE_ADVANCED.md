@@ -1929,6 +1929,141 @@ I use `==` for value comparisons and reserve `is` for identity-sensitive cases s
 
 ---
 
+### FU-012 — Designing APIs and domain models around identity, mutability, and types
+
+**Parent Main Question:** PY-003 — Explain Python's object model: identity, type, and value.
+
+**Question (EN):** How should API and domain-model design avoid exposing accidental assumptions about object identity, mutability, or concrete implementation types?
+
+**Перевод (RU):** Как при проектировании API и доменных моделей избежать случайных зависимостей от идентичности объектов, их изменяемости и конкретных типов реализации?
+
+**What the interviewer evaluates**
+
+- Distinguishing Python object identity from domain identity.
+- Understanding ownership, aliasing, mutability, and API contracts.
+- Appropriate use of stable identifiers and value objects.
+- Awareness of polymorphism, protocols, abstraction boundaries, and substitutability.
+- Senior-level judgment about persistence, concurrency, serialization, and distributed boundaries.
+
+**Short Answer**
+
+APIs should expose semantic contracts rather than incidental implementation details. Domain entities should be identified by stable domain identifiers, not by Python object identity or id(). APIs should make ownership and mutation behavior explicit: whether inputs are read, retained, mutated, copied, or returned as shared references. Immutable value objects and behavior-oriented interfaces can reduce accidental coupling. Type checks should enforce meaningful boundary contracts, while protocols and polymorphism should be preferred when callers need behavior rather than a specific concrete class.
+
+**Detailed Answer**
+
+1. **Separate object identity from domain identity.** Python object identity answers whether two references designate the same in-memory object. Domain identity answers whether two representations refer to the same logical entity. Two ORM instances loaded in separate sessions may represent the same database row while being distinct Python objects. Use stable identifiers such as customer_id or order_id when identity must survive database reloads, serialization, process restarts, or network communication. Do not use is, id(), or memory-address assumptions as persistence or distributed identity contracts.
+
+2. **Define ownership and mutation semantics.** An API accepting a mutable object should make clear whether it reads the object without modifying it, mutates it in place, retains a reference, creates a shallow or deep copy, or transfers ownership under an explicit convention. Aliases observe mutations to the same object. Undocumented in-place changes can therefore create action-at-a-distance bugs, especially when collections are shared between components, tasks, or requests. Prefer narrow mutation boundaries. Defensive copying can protect boundaries, but it has allocation costs and may be invalid for resource-owning objects such as sessions, locks, or open handles.
+
+3. **Use immutable value objects when their semantics fit.** Value objects are compared by the data they represent rather than by a unique lifecycle identity. Examples include a money amount with currency or a date range. Immutability makes such values easier to share, cache, compare, and reason about. However, a frozen outer object does not automatically make nested mutable members immutable. Equality and hashing must also be consistent: equal hashable objects must have compatible hash values, and fields participating in a hash must not change in a way that violates hash stability while the object is used as a dictionary key or set member.
+
+4. **Expose behavior through abstractions, not accidental concrete types.** If callers need an object that can be read, stored, iterated, or processed, define the required behavior through an appropriate abstraction: a standard collection interface, an abstract base class, a Protocol, or a domain-specific interface. This allows multiple implementations to satisfy the same contract. Prefer isinstance() at validation boundaries when runtime classification is necessary. Avoid exact type(x) is SomeClass checks unless rejecting subclasses is an explicit requirement. A concrete type is appropriate when it is deliberately part of the public contract.
+
+5. **Validate and normalize at system boundaries.** External inputs arrive as serialized data, primitive values, or third-party objects. Validate their shape and meaning at the boundary, then convert them into application-owned domain representations. This prevents internal business logic from depending unnecessarily on web frameworks, database drivers, ORMs, or external SDKs. It also creates a clear place to enforce invariants and reject invalid states.
+
+6. **Consider concurrency and distributed execution.** Shared mutable objects can introduce race conditions when accessed by multiple threads or tasks. Clarify whether returned objects are shared, request-scoped, immutable, or safe for concurrent use. Across process and network boundaries, Python object identity is not a meaningful application contract. Serialize stable identifiers and explicit data, then reconstruct objects according to domain rules on the receiving side.
+
+**Practical Design Example**
+
+~~~python
+from dataclasses import dataclass
+from typing import Protocol
+
+
+@dataclass(frozen=True)
+class Money:
+    amount: int
+    currency: str
+
+
+@dataclass(frozen=True)
+class CustomerId:
+    value: str
+
+
+class CustomerReader(Protocol):
+    def get_name(self, customer_id: CustomerId) -> str:
+        ...
+
+
+def display_customer(
+    reader: CustomerReader,
+    customer_id: CustomerId,
+) -> str:
+    return reader.get_name(customer_id)
+~~~
+
+Here, CustomerId expresses domain identity explicitly; Money is a value object; and CustomerReader describes required behavior without coupling callers to one concrete repository. Production code would additionally validate invariants and define currency semantics.
+
+**Best Practices**
+
+- Use stable domain identifiers for entities crossing persistence or process boundaries.
+- Treat Python object identity as an in-process concept, not a business key.
+- Document whether APIs mutate, retain, copy, or inspect caller-owned objects.
+- Prefer immutable value objects for concepts whose semantics are value-based.
+- Keep mutable state behind clear ownership boundaries.
+- Use protocols, abstract interfaces, or standard abstractions when callers need behavior rather than a specific implementation.
+- Validate external data at boundaries and convert it into domain-owned representations.
+- Ensure equality and hashing semantics are consistent for hashed objects.
+- Define concurrency expectations for shared mutable state.
+- Use defensive copying selectively, based on correctness requirements and measured costs.
+
+**Trade-offs & Edge Cases**
+
+- Stable identifiers support persistence and distributed references, but require explicit uniqueness and lifecycle rules.
+- Immutable objects simplify reasoning and sharing, but updates require replacement values and may allocate.
+- Shallow copies do not isolate nested mutable objects; deep copies may be expensive or invalid for resource-owning objects.
+- Protocols improve substitutability, but overly broad interfaces can obscure the actual contract.
+- Exact type checks enforce narrow requirements but reject subclasses and alternative implementations.
+- ORM identity maps are useful within a unit of work, but should not define domain identity across sessions.
+- Equality based on mutable fields can be dangerous when objects are used in hashed collections.
+- Thread or task safety cannot be inferred merely from an object's type or an apparently read-only API.
+
+**Common Mistakes**
+
+- Using is or id() as a database or business identifier.
+- Assuming two ORM objects representing the same row must be the same Python object.
+- Returning an internal mutable collection and allowing callers to mutate it unintentionally.
+- Mutating caller-provided arguments without documenting that behavior.
+- Assuming a shallow copy isolates nested mutable state.
+- Calling an object immutable merely because its outer container is frozen.
+- Defining equality using mutable fields while also making the object hashable.
+- Requiring an exact concrete class when any implementation satisfying the behavior would work.
+- Leaking ORM, framework, or SDK types through domain interfaces without a deliberate reason.
+- Assuming an object is safe to share between requests, threads, or tasks without a concurrency contract.
+
+**Senior-Level Perspective**
+
+A senior engineer treats identity, ownership, mutability, and type as architectural contract decisions. The question is not simply whether an implementation works today, but whether callers can use the API correctly without relying on undocumented runtime behavior.
+
+At the domain level, distinguish entities, whose identity is stable across state changes, from value objects, whose meaning is defined by their values. At application boundaries, translate external representations into domain-owned types and expose only the behavior callers require. At persistence boundaries, avoid allowing ORM identity-map behavior to define business identity. At concurrency boundaries, define who may mutate shared state and under what synchronization or isolation guarantees.
+
+These decisions should be proportionate. Immutability, copying, and abstraction are tools, not universal rules. Evaluate correctness, coupling, lifecycle, performance, and operational complexity, then choose the narrowest contract that safely supports the use case.
+
+**Interview-Ready Answer (EN)**
+
+“I design APIs around explicit semantic contracts rather than incidental object implementation details. First, I separate Python object identity from domain identity. Two ORM instances or deserialized objects may represent the same logical entity without being the same Python object, so I use stable domain identifiers when identity must survive persistence or process boundaries.
+
+Second, I make ownership and mutation behavior explicit. Callers should know whether an API mutates an input, retains a reference, returns shared mutable state, or creates a copy. I use immutable value objects where value-based semantics are appropriate, while accounting for nested mutability and equality and hashing requirements.
+
+Third, I expose required behavior through protocols or suitable abstractions instead of coupling callers to concrete implementation classes. I use runtime type checks at boundaries when they enforce a real contract, not as a substitute for polymorphism.
+
+Finally, I consider concurrency and distributed execution: shared mutable state needs clear ownership and synchronization, while serialized communication should carry explicit data and stable identifiers rather than Python object identity. The objective is to make the API predictable, substitutable, and safe across lifecycle and system boundaries without adding unnecessary abstraction or copying costs.”
+
+**Interview-Ready Answer (RU)**
+
+«Я проектирую API на основе явных семантических контрактов, а не случайных особенностей реализации объектов. Прежде всего, я разделяю идентичность Python-объекта и идентичность сущности предметной области. Два экземпляра ORM или два десериализованных объекта могут представлять одну логическую сущность, не являясь одним и тем же Python-объектом. Поэтому, когда идентичность должна сохраняться после обращения к базе данных или между процессами, я использую устойчивые доменные идентификаторы.
+
+Во-вторых, я явно определяю владение данными и поведение при изменении состояния. Вызывающий код должен понимать, изменяет ли API входной объект, сохраняет ли ссылку на него, возвращает ли общее изменяемое состояние или создаёт копию. Неизменяемые объекты-значения я использую там, где семантика действительно основана на значениях, учитывая при этом вложенную изменяемость, а также требования к равенству и хешированию.
+
+В-третьих, я предоставляю необходимое поведение через протоколы или подходящие абстракции, вместо того чтобы связывать вызывающий код с конкретными классами реализации. Проверки типов на границах системы применяю тогда, когда они обеспечивают реальный контракт, а не заменяют полиморфизм.
+
+Наконец, я учитываю конкурентное выполнение и распределённую архитектуру: для общего изменяемого состояния необходимы чёткие правила владения и синхронизации, а при передаче данных между системами следует использовать явные данные и устойчивые идентификаторы, а не идентичность Python-объектов. Цель — сделать API предсказуемым, расширяемым и безопасным на границах жизненного цикла и системы, не добавляя неоправданных абстракций или затрат на копирование».
+
+**Status:** Authored; independent technical and editorial review pending.
+
+---
+
 ## PY-003 answer review checklist
 
 - [x] Main question includes English and Russian wording.
