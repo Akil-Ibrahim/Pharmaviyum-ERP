@@ -5,13 +5,199 @@
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
-English study material for PY-001–PY-003 and FU-001–FU-012. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
+English study material for PY-001–PY-004 and FU-001–FU-016. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
 
 **Review status:** Authored; independent technical and editorial review pending. Do not treat this material as finally approved until both reviews are complete.
 
+# PY-001 — Main Question
+
+**Question (EN):** What is the Global Interpreter Lock (GIL) in CPython, and how does it affect concurrency and parallelism?
+
+**What the interviewer evaluates**
+
+- Understanding of the GIL's role in traditional CPython builds.
+- Ability to distinguish concurrency, parallelism, and thread safety.
+- Practical choice of threads, processes, and asynchronous I/O.
+- Awareness of free-threaded CPython and its compatibility trade-offs.
+
+**Short Answer**
+
+The Global Interpreter Lock is a synchronization mechanism used by the conventional CPython build. It ensures that, at a given moment, only one thread executes Python bytecode while holding the GIL. This simplifies coordination around interpreter state and object management, but it limits CPU-bound pure-Python threads from executing Python code in parallel across multiple cores. Threads can still provide concurrency, especially for I/O-bound work, and some native extensions release the GIL while performing work outside the Python runtime.
+
+The GIL is a CPython implementation detail, not a guarantee of the Python language. Since Python 3.13, CPython has also provided an optional free-threaded build; it became an officially supported, still-optional build configuration in Python 3.14. It is not the default, and extension compatibility and workload performance must be evaluated.
+
+**Explanation**
+
+The GIL is a process-wide lock in a conventional CPython interpreter. A thread generally needs to hold it to execute Python bytecode and interact with interpreter-managed objects through the usual C API. The lock coordinates access to interpreter state and historically made memory management, especially reference counting, and C-extension integration simpler.
+
+The GIL does not mean that a Python process can have only one thread, nor does it prevent threads from overlapping their work. The operating system schedules threads, and CPython switches which thread holds the GIL. Blocking I/O commonly releases the GIL, allowing another thread to run. Native extensions can also release it around suitable CPU-intensive native operations. Therefore, multiple threads can make progress concurrently, even though conventional CPython does not execute multiple threads' Python bytecode in parallel while the GIL is held.
+
+**Concurrency is not the same as parallelism.** Concurrency means multiple tasks make progress during overlapping periods; parallelism means work is executed at the same time, for example on separate CPU cores. With the conventional GIL-enabled CPython build, threads are useful for overlapping I/O, but pure-Python CPU-bound threads generally do not scale across cores through simultaneous bytecode execution.
+
+**Thread safety is a separate concern.** The GIL does not make application-level operations or multi-step invariants automatically safe. A thread switch can occur between operations, and native code may run without the GIL. Shared mutable state still requires appropriate synchronization, such as locks, queues, or ownership-based designs. Do not rely on incidental atomicity of individual operations as a substitute for an explicit concurrency contract.
+
+**How to choose a concurrency model**
+
+- **Threading:** useful when tasks spend substantial time waiting for network, disk, or other blocking I/O, or when native libraries release the GIL. Use synchronization for shared state.
+- **Multiprocessing:** useful for CPU-bound Python work when process isolation and parallel execution justify the extra memory, serialization, startup, and coordination costs.
+- **Asyncio:** useful for large numbers of I/O-bound tasks when the libraries support non-blocking operations. It provides cooperative concurrency, not CPU parallelism by itself.
+- **Native code:** numerical, compression, cryptographic, and other libraries may perform work outside the interpreter and may release the GIL. Measure the actual library and workload.
+
+**Free-threaded CPython**
+
+PEP 703 introduced an optional CPython build configuration in which the GIL can be disabled. Free-threaded builds were introduced experimentally in Python 3.13 and became officially supported as an optional configuration in Python 3.14. They are not the default build. Removing the GIL requires additional interpreter-level synchronization and changes to memory-management and extension APIs. Some C extensions are not ready for free-threading and may cause the GIL to be enabled. A free-threaded build can improve CPU parallelism for suitable workloads, but it does not guarantee a speedup: single-thread performance, extension compatibility, contention, and application-level data races must be considered.
+
+**Practical Example**
+
+A web service that makes many independent HTTP requests may benefit from threads because each worker often waits for network I/O. A CPU-heavy pure-Python image transformation is unlikely to become faster merely by adding threads under the conventional GIL-enabled build; a process pool or an optimized native implementation may be more appropriate.
+
+**Senior-Level Perspective**
+
+Do not answer “Python is single-threaded.” Explain which interpreter build is in use, what work is performed while the GIL is held, and whether native code releases it. Choose a concurrency model from measured workload characteristics, not from a blanket rule. For free-threaded deployment, verify the exact interpreter build, dependencies and C-extension support, then benchmark representative workloads and audit shared mutable state for races.
+
+**Interview-Ready Answer (EN)**
+
+“The GIL, or Global Interpreter Lock, is a synchronization mechanism in the conventional CPython build. It allows only one thread at a time to execute Python bytecode while holding the lock. This simplifies coordination around interpreter state and object management, but it limits parallel execution of CPU-bound pure-Python threads across multiple cores.
+
+It does not prevent concurrency. Threads can overlap I/O because blocking operations commonly release the GIL, and native extensions may release it while doing work outside the interpreter. For CPU-bound Python code, multiprocessing is often a better fit; for high-volume I/O, threading or asyncio may be appropriate depending on the libraries and architecture.
+
+The GIL also does not make shared application state automatically thread-safe, so synchronization is still necessary. Finally, free-threaded CPython is available as an optional build: it was introduced experimentally in 3.13 and became officially supported, but remains optional, in 3.14. I would validate dependency compatibility and benchmark the real workload before adopting it.”
+
+**References**
+
+- [Python documentation: Global Interpreter Lock FAQ](https://docs.python.org/3/faq/library.html#what-is-the-global-interpreter-lock)
+- [Python documentation: Support for free threading](https://docs.python.org/3/howto/free-threading-python.html)
+- [What's New in Python 3.14: Free-threaded Python is officially supported](https://docs.python.org/3/whatsnew/3.14.html#free-threaded-python-is-officially-supported)
+- [PEP 703 — Making the Global Interpreter Lock Optional in CPython](https://peps.python.org/pep-0703/)
+
 ---
 
-# PY-001 — Main Question
+## FU-001 — Purpose and scope of the GIL
+
+**Question (EN):** Why does the conventional CPython build use the GIL, and what does the lock actually protect?
+
+**What the interviewer evaluates:** Understanding of interpreter-state coordination, reference counting, and the limits of the GIL's guarantees.
+
+**Short Answer**
+
+The GIL provides a central synchronization mechanism for parts of CPython's runtime and object-management machinery. Historically, it simplified safe access to interpreter state and reference-counted objects, and reduced the need for fine-grained locking throughout the runtime and many C extensions. It is not a universal application lock and does not protect arbitrary external resources or multi-step business invariants.
+
+**Detailed Answer**
+
+CPython manages Python objects and runtime state internally. In the conventional build, the GIL ensures that only one thread at a time executes Python bytecode while holding the lock. This makes many internal operations easier to coordinate, including updates to reference counts and access to interpreter data structures.
+
+The historical design trade-off was implementation simplicity and lower synchronization overhead in a single-threaded execution model, at the cost of limiting parallel execution of Python bytecode across threads. The GIL is not part of Python's language specification, and other Python implementations may use different execution and synchronization models.
+
+The lock's protection must not be generalized to all state. It does not automatically serialize a sequence of application operations, make a check-then-act sequence safe, protect a database transaction, or guarantee the thread safety of a third-party native library. Extensions that release the GIL must provide their own synchronization for native shared state.
+
+**Senior-Level Judgment**
+
+Describe the GIL as a runtime synchronization mechanism with a specific scope. Avoid saying that it makes Python thread-safe or that it locks every operation in an application. When investigating a race, identify the shared state and the synchronization boundary rather than assuming the GIL is sufficient.
+
+**Interview-Ready Answer (EN)**
+
+“The GIL is a CPython runtime lock that coordinates execution of Python bytecode and access to interpreter-managed state in the conventional build. It historically simplified reference counting, object management, and C-extension integration by avoiding fine-grained locking across much of the runtime. However, its scope is limited: it does not protect arbitrary application invariants, external resources, or native code that runs after releasing the lock. I treat thread safety as an explicit property of the data structure and operation, not as something guaranteed by the GIL.”
+
+---
+
+## FU-002 — GIL, threads, and workload type
+
+**Question (EN):** How does the GIL affect CPU-bound and I/O-bound multithreaded workloads in conventional CPython?
+
+**What the interviewer evaluates:** Ability to reason about scheduling, blocking I/O, CPU utilization, and actual workload behavior.
+
+**Short Answer**
+
+For CPU-bound pure-Python work, threads generally cannot execute Python bytecode in parallel across cores while sharing a conventional GIL-enabled CPython interpreter. For I/O-bound work, threads can overlap waiting because blocking operations commonly release the GIL, allowing another thread to run. The benefit depends on the workload, libraries, contention, and coordination overhead.
+
+**Detailed Answer**
+
+When a thread holds the GIL and executes Python bytecode, another thread in the same interpreter must wait to acquire it before executing Python bytecode. CPython periodically gives other threads an opportunity to run, so threads can interleave rather than execute Python bytecode simultaneously.
+
+Blocking operations such as socket or file I/O commonly release the GIL while waiting. Other threads can then execute Python code. Some native libraries also release the GIL around long-running native computations. Therefore, the effect cannot be determined from the label “CPU-bound” or “I/O-bound” alone: inspect where the time is spent and whether the relevant native code releases the lock.
+
+**Common Mistakes**
+
+- Saying that threads are useless in Python.
+- Assuming the GIL prevents all parallel work, including native code that releases it.
+- Assuming I/O-bound automatically means threads are the best choice; asynchronous I/O may be more suitable.
+- Treating the GIL as a guarantee that compound operations are race-free.
+
+**Interview-Ready Answer (EN)**
+
+“In conventional CPython, CPU-bound pure-Python threads contend for the GIL, so they generally do not execute Python bytecode in parallel across cores. They may add scheduling and synchronization overhead without improving throughput. I/O-bound threads can still be effective because blocking I/O commonly releases the GIL, allowing other threads to run while one waits. Native extensions may also release the GIL during computation. I choose based on profiling and the behavior of the libraries involved, not simply on whether the task is described as CPU-bound or I/O-bound.”
+
+---
+
+## FU-003 — Choosing threads, processes, or asyncio
+
+**Question (EN):** How would you choose between threading, multiprocessing, and asyncio for a Python backend workload?
+
+**What the interviewer evaluates:** Concurrency-model selection, operational trade-offs, and understanding that asyncio does not remove the GIL.
+
+**Short Answer**
+
+Use threading when blocking I/O or GIL-releasing native operations make threads effective; multiprocessing when CPU-bound Python work needs parallel execution and process overhead is acceptable; and asyncio when many I/O-bound tasks can use non-blocking libraries. Asyncio provides cooperative concurrency, not CPU parallelism by itself.
+
+**Detailed Answer**
+
+The decision starts with the workload and its dependencies:
+
+- **Threading** shares one process's memory and is often straightforward for blocking I/O. Shared mutable state needs explicit synchronization. Under the conventional GIL, pure-Python CPU work does not gain multi-core bytecode parallelism.
+- **Multiprocessing** uses separate processes, each with its own interpreter and GIL in the conventional configuration. This enables CPU parallelism but introduces process startup, memory use, data transfer, serialization, failure handling, and coordination costs.
+- **Asyncio** runs cooperative tasks on an event loop. It scales well for many concurrent I/O operations when code uses non-blocking APIs and avoids blocking the event-loop thread. CPU-heavy synchronous work can stall the loop and should be offloaded appropriately.
+
+A backend may combine these models, but complexity should be justified by measured throughput, latency, resource use, and operational requirements.
+
+**Senior-Level Judgment**
+
+Choose the simplest model that satisfies throughput and latency objectives. Account for cancellation, backpressure, bounded queues, failure isolation, resource limits, and observability—not only raw execution speed.
+
+**Interview-Ready Answer (EN)**
+
+“I first profile the workload and inspect whether it spends time waiting for I/O or executing CPU-heavy Python code. I use threads for blocking I/O or libraries that release the GIL, multiprocessing for CPU-bound Python work when process overhead is justified, and asyncio for high-concurrency I/O when the full call path supports non-blocking operations. Asyncio does not make CPU work parallel. In production, I also consider cancellation, backpressure, memory use, failure isolation, and operational complexity.”
+
+---
+
+## FU-004 — Free-threaded CPython and migration trade-offs
+
+**Question (EN):** What changes in free-threaded CPython, and what should an engineering team verify before adopting it?
+
+**What the interviewer evaluates:** Current Python runtime knowledge, compatibility assessment, performance validation, and race-condition analysis.
+
+**Short Answer**
+
+Free-threaded CPython provides an optional build that can execute Python threads in parallel without the traditional GIL. It was introduced experimentally in Python 3.13 and became officially supported as an optional build configuration in Python 3.14. It is not the default. Teams must verify C-extension compatibility, runtime configuration, synchronization correctness, and real workload performance.
+
+**Detailed Answer**
+
+PEP 703 describes the changes needed to make the GIL optional in CPython. Free-threaded builds use additional synchronization and memory-management techniques so that multiple threads can safely access interpreter-managed objects without relying on one global lock.
+
+The feature does not mean that existing multithreaded applications automatically become faster or race-free. Code that relied on the GIL for accidental serialization may expose data races. C extensions must explicitly support free-threaded execution; an incompatible extension can cause the GIL to be enabled at runtime. The free-threaded build may also have different single-thread performance and memory characteristics.
+
+A practical adoption process includes:
+
+1. Confirm the exact interpreter build and whether the GIL is actually disabled at runtime.
+2. Audit dependencies, especially C extensions, wheels, and native libraries.
+3. Test shared mutable state, compound operations, caches, registries, and extension boundaries.
+4. Run correctness and stress tests under realistic concurrency.
+5. Benchmark representative production workloads, including single-thread and multi-thread cases.
+6. Roll out gradually with observability and a rollback path.
+
+**Senior-Level Judgment**
+
+Treat free-threading as a deployment and compatibility decision, not a switch that guarantees performance. Measure the target workload and verify the whole dependency graph. Keep explicit synchronization around shared invariants even when the GIL is disabled.
+
+**Interview-Ready Answer (EN)**
+
+“Free-threaded CPython is an optional build that allows Python threads to execute in parallel without the traditional GIL. It was introduced experimentally in Python 3.13 and became officially supported, while remaining optional, in Python 3.14. The interpreter needs additional synchronization and memory-management mechanisms, and C extensions must explicitly support the free-threaded model; otherwise, an extension may cause the GIL to be enabled.
+
+Before adopting it, I would verify the interpreter configuration and dependency compatibility, audit shared mutable state for races, run concurrency stress tests, and benchmark representative workloads. I would not assume it improves every workload, because single-thread performance, memory use, contention, and extension support can change the result.”
+
+---
+---
+
+# PY-002 — Main Question
 
 **Question (EN):** How does Python execute a program from source code to runtime behavior?
 
@@ -121,7 +307,7 @@ I distinguish Python language semantics from CPython implementation details. Byt
 
 ---
 
-## FU-001 — Execution stages in CPython
+## FU-005 — Execution stages in CPython
 
 **Question (EN):** What are the main stages between Python source code and the execution of its instructions in CPython?
 
@@ -173,7 +359,7 @@ For a startup incident, identify whether failure occurs during parsing, import r
 
 ---
 
-## FU-002 — Script execution versus module import
+## FU-006 — Script execution versus module import
 
 **Question (EN):** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module?
 
@@ -226,7 +412,7 @@ Standardize one entry point across local development, tests, containers, and dep
 
 ---
 
-## FU-003 — Language guarantees versus implementation details
+## FU-007 — Language guarantees versus implementation details
 
 **Question (EN):** Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter?
 
@@ -271,7 +457,7 @@ Classify assumptions as language contract, documented library contract, implemen
 
 ---
 
-## FU-004 — Choosing the diagnostic layer in production
+## FU-008 — Choosing the diagnostic layer in production
 
 **Question (EN):** When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment?
 
@@ -330,7 +516,7 @@ I avoid starting with internals without a hypothesis. I correlate evidence acros
 
 ---
 
-## PY-001 answer review checklist
+## PY-002 answer review checklist
 
 - [x] Main question has an English answer and Russian explanation.
 - [x] Short and detailed answers are present.
@@ -338,17 +524,17 @@ I avoid starting with internals without a hypothesis. I correlate evidence acros
 - [x] Practical examples and a relevant code example are included.
 - [x] Best practices, trade-offs, common mistakes, and senior-level judgment are covered.
 - [x] Interview-ready English answer is included.
-- [x] FU-001–FU-004 each have substantive answers.
+- [x] FU-005–FU-008 each have substantive answers.
 - [x] CPython-specific behavior is distinguished from language guarantees.
 - [ ] Independent technical review against the target Python/CPython version.
 - [ ] Final editorial review and mastery assessment.
 
 **Completion rule:** This record is authored, but not finally approved, until the technical and editorial review items above are completed.
 
-## Answer Development — PY-002
+## Answer Development — PY-003
 
 **Status:** Initial complete answer set authored; technical and editorial review remain pending.  
-**Scope:** PY-002 and FU-005–FU-008. CPython call mechanics are described conceptually; internal structures and optimizations are version-dependent.
+**Scope:** PY-003 and FU-009–FU-012. CPython call mechanics are described conceptually; internal structures and optimizations are version-dependent.
 
 ---
 
@@ -356,7 +542,7 @@ I avoid starting with internals without a hypothesis. I correlate evidence acros
 
 ---
 
-# PY-002 — Main Question
+# PY-003 — Main Question
 
 **Question (EN):** What happens during a function call in CPython?
 
@@ -476,7 +662,7 @@ For performance, I profile representative workloads before optimizing call bound
 
 ---
 
-## FU-005 — Execution state during a function call
+## FU-009 — Execution state during a function call
 
 **Question (EN):** What execution state does CPython need to establish or maintain when entering and executing a Python function?
 
@@ -538,7 +724,7 @@ When debugging memory retention, inspect whether closures, tracebacks, or stored
 
 ---
 
-## FU-006 — Profiling function-call overhead
+## FU-010 — Profiling function-call overhead
 
 **Question (EN):** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service?
 
@@ -600,7 +786,7 @@ The optimization decision should be based on service-level impact, not an attrac
 
 ---
 
-## FU-007 — Different execution lifecycles
+## FU-011 — Different execution lifecycles
 
 **Question (EN):** How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call?
 
@@ -680,7 +866,7 @@ Choose the execution model according to workload and lifecycle requirements. Use
 
 ---
 
-## FU-008 — When call mechanics matter for optimization
+## FU-012 — When call mechanics matter for optimization
 
 **Question (EN):** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile?
 
@@ -746,9 +932,9 @@ The decision should connect a measured low-level cost to a meaningful service-le
 
 
 
-## PY-002 review checklist
+## PY-003 review checklist
 
-- [x] Main question and FU-005–FU-008 included.
+- [x] Main question and FU-009–FU-012 included.
 - [x] Argument binding, execution state, frames, closures, return and exception paths covered.
 - [x] Ordinary functions distinguished from generators and coroutines.
 - [x] Profiling methodology and optimization trade-offs covered.
@@ -761,7 +947,7 @@ The decision should connect a measured low-level cost to a meaningful service-le
 
 ---
 
-# PY-003 — Main Question
+# PY-004 — Main Question
 
 **Question (EN):** Explain Python's object model: identity, type, and value.
 
@@ -792,7 +978,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-009 — Identity, type, and value over an object's lifetime
+## FU-013 — Identity, type, and value over an object's lifetime
 
 **Question (EN):** Which of an object's identity, type, and value can change during its lifetime?
 
@@ -804,7 +990,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-010 — Choosing identity, equality, and type checks
+## FU-014 — Choosing identity, equality, and type checks
 
 **Question (EN):** How would you choose between identity checks, equality checks, and type checks in a code review?
 
@@ -816,7 +1002,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-011 — Why is is not a value comparison?
+## FU-015 — Why is is not a value comparison?
 
 **Question (EN):** Why can using is to compare strings, numbers, or other values produce unreliable results?
 
@@ -828,7 +1014,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-012 — Identity and mutability in API design
+## FU-016 — Identity and mutability in API design
 
 **Question (EN):** How should API design avoid accidental dependencies on object identity, mutability, or concrete implementation types?
 
