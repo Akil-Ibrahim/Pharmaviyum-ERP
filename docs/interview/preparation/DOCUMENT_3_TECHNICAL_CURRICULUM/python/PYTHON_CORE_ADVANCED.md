@@ -1478,6 +1478,146 @@ The four mapped follow-ups FU-009–FU-012 are developed as separate answer sect
 
 ---
 
+
+### FU-009 — Identity, type, and value during an object's lifetime
+
+**Parent Main Question:** PY-003 — Explain Python's object model: identity, type, and value.
+
+**Question (EN):** How are an object's identity, type, and value represented conceptually, and which of them can change during an object's lifetime?
+
+**Перевод (RU):** Как концептуально представлены идентичность, тип и значение объекта и какие из этих характеристик могут изменяться в течение его жизненного цикла?
+
+**What the interviewer evaluates**
+
+- Precise understanding of Python object semantics.
+- Ability to distinguish an object's identity from its representation or memory location.
+- Understanding of type stability, mutability, and object lifetime.
+- Awareness of name binding, aliasing, and implementation-specific explanations.
+
+**Short Answer**
+
+Conceptually, every Python object has an identity, a type, and a value. Identity distinguishes the particular object; type defines its behavior and supported operations; value is the data or state it represents.
+
+An object's identity and type remain constant during its lifetime. Its value may change when the object is mutable. A name can be rebound to another object, but rebinding the name does not change the identity, type, or value of the original object.
+
+**Detailed Answer**
+
+Python's data model describes objects through three fundamental properties:
+
+1. **Identity** — the object's identity distinguishes it from every other simultaneously existing object. The is operator tests whether two references designate the same object. The built-in id(obj) returns an integer representing that identity. The identity is guaranteed to remain constant during the object's lifetime. The language does not require this integer to be a memory address.
+2. **Type** — an object's type determines the operations it supports and the semantics of those operations. It is available through type(obj). The type of an object does not change during that object's lifetime. Python is dynamically typed because names are not permanently attached to a declared type; a name may be rebound to an object of another type.
+3. **Value** — the value is the information or state represented by the object. Whether that value can change depends on the object's mutability. A mutable object can expose state changes while retaining the same identity and type. An immutable object does not support changing its own value after creation.
+
+**Object lifetime and identity**
+
+Identity is meaningful for the lifetime of an object. Once an object is no longer reachable and its lifetime ends, its identity value may later be reused for another object. Therefore, id() is not a durable identifier and must not be stored as a business key or assumed unique across time, processes, or machines.
+
+In CPython, an object's identity is commonly associated with its memory address. This is an implementation detail, not a portable Python-language guarantee. Other Python implementations may represent identity differently.
+
+**Mutation versus rebinding**
+
+These are different operations:
+
+- **Mutation** changes the state of an existing mutable object.
+- **Rebinding** changes which object a name refers to; it does not mutate the old object.
+
+~~~python
+items = [10, 20]
+alias = items
+
+items.append(30)       # Mutates the existing list.
+print(alias)           # [10, 20, 30]
+print(items is alias)  # True
+
+items = ["new"]        # Rebinds the name items.
+print(items)           # ['new']
+print(alias)           # [10, 20, 30]
+print(items is alias)  # False
+~~~
+
+After the append, both names still refer to the same list object, whose value has changed. After the assignment to items, that name refers to a different list; the object referenced by alias remains unchanged.
+
+**Immutable objects and nested state**
+
+An immutable object's own value cannot be changed in place. An operation that appears to modify an immutable object produces another result rather than changing the original object. However, immutability is not necessarily deep: an immutable container can hold references to mutable objects.
+
+~~~python
+record = (["draft"],)
+record[0].append("published")
+
+print(record)  # (['draft', 'published'],)
+~~~
+
+The tuple's structure and references are unchanged, but the list referenced by the tuple is mutable and has changed. This distinction matters when reasoning about shared state and hashability.
+
+**How to inspect the properties**
+
+- Use is when the question is whether two expressions refer to the same object.
+- Use id(obj) when investigating identity during the object's lifetime, not as a persistent identifier.
+- Use type(obj) to inspect the concrete type.
+- Use == to compare values according to the object's equality semantics.
+- Use controlled mutation tests or state inspection to understand whether an object's value can change.
+
+These operations answer different questions and should not be substituted for one another.
+
+**Best Practices**
+
+- Explain identity independently of physical memory layout.
+- Treat id() as lifetime-scoped diagnostic information, not a database key or distributed identifier.
+- Distinguish rebinding from mutation when reviewing assignments and function arguments.
+- Document whether APIs retain, mutate, copy, or return caller-owned mutable objects.
+- Consider nested mutable members when describing an object as immutable.
+- Avoid depending on CPython-specific memory behavior unless the application explicitly targets a known CPython version and the dependency is justified.
+
+**Trade-offs & Edge Cases**
+
+- Mutable objects can be updated efficiently in place, but aliases observe those changes and may create hidden coupling.
+- Immutable objects simplify reasoning about state and sharing, but nested mutable references can still introduce state changes.
+- id() is useful for debugging aliasing, but its value is not stable after object destruction and is not portable as a memory address.
+- Rebinding is local to a namespace binding; it does not alter other names that still reference the previous object.
+- A type may define complex or customized behavior, but the object's type itself remains stable throughout its lifetime.
+
+**Common Mistakes**
+
+- Claiming that an object's identity is necessarily its memory address in Python.
+- Assuming an id() value can never be reused after the original object is destroyed.
+- Confusing a name's rebinding with mutation of the object previously referenced by that name.
+- Saying that an object's type changes when a variable is assigned a value of another type.
+- Assuming immutable containers guarantee that all reachable state is immutable.
+- Treating identity, equality, and value as interchangeable concepts.
+
+**Senior-Level Perspective**
+
+This distinction is important when designing APIs and diagnosing state-related defects. If a function receives a mutable object and modifies it, every alias to that object can observe the change. If a function instead rebinds one of its local parameter names, the caller's binding is not changed by that rebinding.
+
+At application boundaries, object identity should not be confused with domain identity. ORM instances, deserialized values, and objects reconstructed in another process may represent the same logical entity while having different Python identities. Use explicit stable identifiers for domain entities and distributed references.
+
+A senior engineer should also make ownership and mutation contracts explicit: whether a component may mutate an input, whether it retains a reference, whether it returns a copy, and how shared mutable state is synchronized.
+
+**Interview-Ready Answer (EN)**
+
+“Conceptually, every Python object has an identity, a type, and a value. Identity distinguishes the particular object, type defines its behavior and supported operations, and value represents its data or state.
+
+An object's identity and type remain constant throughout its lifetime. Its value can change if it is mutable. For example, appending to a list changes the state of the existing list without changing its identity or type. By contrast, assigning a new object to a variable rebinds the name; it does not mutate the object that the name previously referenced.
+
+The id() function exposes an identity value that is guaranteed to remain constant during the object's lifetime, but Python does not guarantee that it is a memory address. In CPython it is commonly related to the object's address, which is an implementation detail. The identity value may also be reused after the object's lifetime ends.
+
+This distinction is useful when reasoning about aliasing, API ownership contracts, mutable state, and the difference between Python object identity and stable domain identity.”
+
+**Interview-Ready Answer (RU)**
+
+«Концептуально каждый объект Python обладает идентичностью, типом и значением. Идентичность отличает конкретный объект от других объектов, тип определяет его поведение и поддерживаемые операции, а значение представляет его данные или состояние.
+
+Идентичность и тип объекта остаются неизменными на протяжении всего его жизненного цикла. Значение может изменяться, если объект является изменяемым. Например, добавление элемента в список изменяет состояние существующего объекта списка, не меняя его идентичность и тип. Напротив, присваивание новой ссылки переменной означает переназначение имени: оно не изменяет объект, на который это имя ссылалось ранее.
+
+Функция id() возвращает идентификатор, который гарантированно остаётся постоянным в течение жизненного цикла объекта, однако Python не гарантирует, что это адрес памяти. В CPython он обычно связан с адресом объекта, но это деталь реализации. После завершения жизненного цикла объекта его идентификатор может быть использован повторно.
+
+Это различие важно при анализе aliasing, контрактов владения данными в API, изменяемого состояния и при отделении идентичности Python-объекта от устойчивой идентичности сущности предметной области.»
+
+**Status:** Authored; independent technical and editorial review pending.
+
+---
+
 ## PY-003 answer review checklist
 
 - [x] Main question includes English and Russian wording.
