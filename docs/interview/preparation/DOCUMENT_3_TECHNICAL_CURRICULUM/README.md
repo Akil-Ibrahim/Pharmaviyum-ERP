@@ -13,7 +13,7 @@ This document set contains the actual technical question bank, organized by the 
 
 | Domain | Main | Follow-ups | Total | Status |
 |---|---:|---:|---:|---|
-| [Python Core & Advanced Python](./python/PYTHON_CORE_ADVANCED.md) | 45 | 180 | 225 | Map in progress |
+| [Python Core & Advanced Python — EN/RU index](./python/README.md) | 45 | 180 | 225 | Map in progress |
 | Algorithms & Data Structures | 20 | 80 | 100 | Not started |
 | Backend & Database Engineering | 45 | 180 | 225 | Not started |
 | Operating Systems & Networking | 20 | 80 | 100 | Not started |
