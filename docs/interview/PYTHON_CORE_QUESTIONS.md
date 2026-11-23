@@ -1,7 +1,7 @@
 # Python Core — Question Bank
 
 **Status:** In progress  
-**Coverage:** 1 of 30 primary questions drafted  
+**Coverage:** 2 of 30 primary questions drafted  
 **Review rule:** Draft answers must be technically reviewed before being marked validated.
 
 ---
@@ -110,3 +110,132 @@ The candidate should inspect the actual repository before claiming that a partic
 - Python data model: https://docs.python.org/3/reference/datamodel.html
 - Python expressions — identity comparisons: https://docs.python.org/3/reference/expressions.html#is-not
 - Programming FAQ — identity and equality: https://docs.python.org/3/faq/programming.html#why-did-changing-list-y-also-change-list-x
+
+---
+
+## PY-CORE-002 — Mutability and immutability
+
+### Question (EN)
+
+**What is the difference between mutable and immutable objects in Python, and how does that distinction affect program design, hashing, and function behaviour?**
+
+### Перевод (RU)
+
+**В чём разница между изменяемыми и неизменяемыми объектами в Python и как это различие влияет на проектирование программ, хеширование и поведение функций?**
+
+### What the interviewer evaluates
+
+- Distinguishing mutation of an object from rebinding a name.
+- Knowing common mutable and immutable built-in types.
+- Understanding hashability and dictionary/set key requirements.
+- Understanding shallow versus deep copying and nested mutable state.
+- Designing APIs with explicit ownership and side-effect contracts.
+
+### Model answer (RU)
+
+**Изменяемость (mutability)** описывает, может ли состояние существующего объекта изменяться после его создания. Изменение объекта не обязательно означает создание нового объекта.
+
+К типичным изменяемым встроенным типам относятся **list, dict, set и bytearray**. К типичным неизменяемым — **int, float, bool, str, bytes, tuple и frozenset**. Это классификация конкретных типов; пользовательские объекты не становятся автоматически неизменяемыми.
+
+У неизменяемого объекта его значение нельзя изменить на месте. Операции, которые выглядят как изменение, обычно создают новый объект. Например, конкатенация строк создаёт новую строку. Напротив, **list.append()** изменяет существующий список, поэтому все имена-алиасы этого списка увидят изменение.
+
+Важно различать **мутацию** и **переназначение**. Вызов **items.append(x)** меняет объект списка. Выражение **items = items + [x]** создаёт новый список и переназначает имя items; другие имена, ссылавшиеся на исходный список, продолжат ссылаться на него.
+
+Изменяемость связана с **hashability**, но это не одно и то же. Хешируемый объект имеет хеш, который должен оставаться стабильным, пока объект находится в хеш-коллекции; равные объекты должны иметь одинаковые хеши. Встроенные изменяемые контейнеры list, dict и set не хешируются. Неизменяемые типы часто хешируемы, но не всегда: tuple хешируется только тогда, когда хешируемы все его элементы. Поэтому кортеж может содержать список, но такой кортеж нельзя использовать как ключ словаря.
+
+При проектировании API я явно определяю, кто владеет переданными данными и разрешено ли функции изменять их на месте. Если функция не должна создавать побочные эффекты, можно принимать неизменяемые структуры, создавать копию на границе владения или возвращать новое значение. Копирование имеет стоимость. Поверхностная копия создаёт новый внешний контейнер, но сохраняет ссылки на вложенные объекты; глубокая копия рекурсивно копирует вложенные объекты, насколько это поддерживается протоколом, и может быть дороже или неприменима к некоторым ресурсам.
+
+Неизменяемые значения упрощают reasoning, безопасное совместное использование и применение в качестве ключей. Изменяемые объекты полезны для эффективного обновления состояния, но требуют ясного контракта владения, контроля алиасов и побочных эффектов.
+
+### Model answer (EN)
+
+**Mutability** describes whether an object's state can be changed after creation. Mutating an object does not necessarily create a new object.
+
+Common mutable built-in types include **list, dict, set, and bytearray**. Common immutable built-in types include **int, float, bool, str, bytes, tuple, and frozenset**. This is a property of particular types; user-defined objects are not automatically immutable.
+
+An immutable object's value cannot be changed in place. An operation that appears to modify it generally creates a new object. String concatenation, for example, creates a new string. By contrast, **list.append()** mutates the existing list, so every alias to that list observes the change.
+
+I distinguish **mutation** from **rebinding**. **items.append(x)** changes the list object. **items = items + [x]** creates a new list and rebinds the name items; other names referring to the original list remain bound to it.
+
+Mutability is related to **hashability**, but the concepts are not identical. A hashable object's hash must remain stable while it is stored in a hash-based collection, and equal objects must have equal hashes. Mutable built-in containers such as lists, dictionaries, and sets are unhashable. Many immutable types are hashable, but not all: a tuple is hashable only if all its elements are hashable. A tuple can therefore contain a list, but that tuple cannot be used as a dictionary key.
+
+When designing APIs, I make ownership and mutation contracts explicit. If a function must not cause side effects, I can accept immutable structures, copy data at an ownership boundary, or return a new value. Copying has a cost. A shallow copy creates a new outer container but retains references to nested objects; a deep copy recursively copies nested objects where supported and may be more expensive or unsuitable for certain resources.
+
+Immutable values make reasoning, safe sharing, and use as mapping keys easier. Mutable objects are useful for efficient state updates, but they require clear ownership, aliasing, and side-effect contracts.
+
+### Follow-up questions and model answers
+
+#### FU-1
+
+**EN:** Why is a list unhashable, and why does a dictionary key need a stable hash?  
+**RU:** Почему список не хешируется и зачем ключу словаря нужен стабильный хеш?
+
+**Answer (RU):** Содержимое списка может измениться, поэтому хеш мог бы измениться после помещения объекта в словарь или множество. Это нарушило бы поиск по хеш-таблице. Ключ должен сохранять хеш, согласованный с равенством, пока находится в коллекции.
+
+**Answer (EN):** A list can change, so its hash could change after insertion into a dictionary or set, breaking hash-table lookup. A key must maintain a hash consistent with equality while stored in the collection.
+
+#### FU-2
+
+**EN:** Is every immutable object hashable? Explain the tuple case.  
+**RU:** Каждый ли неизменяемый объект хешируем? Объясните случай с tuple.
+
+**Answer (RU):** Нет. Неизменяемость сама по себе не гарантирует hashability. Кортеж хешируется, только если хешируются все его элементы. Кортеж из целых чисел может быть ключом словаря, а кортеж со списком — нет.
+
+**Answer (EN):** No. Immutability alone does not guarantee hashability. A tuple is hashable only when all its elements are hashable. A tuple of integers can be a dictionary key, while a tuple containing a list cannot.
+
+#### FU-3
+
+**EN:** What is the difference between a shallow copy and a deep copy?  
+**RU:** Чем поверхностное копирование отличается от глубокого?
+
+**Answer (RU):** Поверхностная копия создаёт новый внешний объект, но сохраняет ссылки на вложенные объекты. Глубокая копия рекурсивно копирует вложенные объекты, насколько это поддерживается. Она может быть дороже и не всегда подходит для ресурсов вроде соединений или файловых дескрипторов.
+
+**Answer (EN):** A shallow copy creates a new outer object but retains references to nested objects. A deep copy recursively copies nested objects where supported. It can be more expensive and may be inappropriate for resources such as connections or file descriptors.
+
+#### FU-4
+
+**EN:** Can an immutable tuple contain a mutable object? What does that imply?  
+**RU:** Может ли неизменяемый tuple содержать изменяемый объект? К чему это приводит?
+
+**Answer (RU):** Да. Неизменяемость кортежа запрещает заменять его элементы, но не делает неизменяемыми объекты, на которые эти элементы ссылаются. Вложенный список можно изменить; кортеж с таким списком не будет хешируемым.
+
+**Answer (EN):** Yes. Tuple immutability prevents replacing its elements, but it does not make referenced objects immutable. A nested list can still be mutated, and a tuple containing that list is unhashable.
+
+#### FU-5
+
+**EN:** How would you prevent a function from unexpectedly mutating caller-owned data?  
+**RU:** Как предотвратить неожиданное изменение данных вызывающего кода внутри функции?
+
+**Answer (RU):** Сначала нужно определить контракт владения. Можно принимать неизменяемые структуры, копировать данные на границе владения, преобразовывать вход во внутреннее представление или возвращать новое значение. Не следует применять глубокое копирование автоматически: оно может быть дорогим и неподходящим для некоторых ресурсов.
+
+**Answer (EN):** I would define the ownership contract first. Options include accepting immutable structures, copying at an ownership boundary, converting input into an internally owned representation, or returning a new value. I would not use deep copying indiscriminately because it can be expensive or unsuitable for certain resources.
+
+### Pharmaviyum connection
+
+**Hypothetical interview scenario — not a claim about the current implementation:** a medication-search workflow passes filters through validation, retrieval, and ranking layers. If one layer mutates a shared dictionary or list, later layers may observe unexpected state. A robust design defines ownership at each boundary, uses immutable request/value objects where practical, and makes intentional mutations explicit.
+
+Do not claim that a specific Pharmaviyum model is immutable or mutable without checking its actual implementation.
+
+### Senior-level evaluation
+
+| Level | Expected evidence |
+|---|---|
+| Weak | Confuses mutation with rebinding and assumes every immutable object is hashable. |
+| Competent | Correctly classifies common built-in types and explains list/dictionary key behaviour. |
+| Strong Senior | Explains hash/equality invariants, nested mutability, copy trade-offs, ownership boundaries, aliasing, API side effects, and performance implications. |
+
+### Common pitfalls
+
+- Assuming an immutable container makes its contents immutable.
+- Assuming every immutable object is hashable.
+- Mutating an object used as a key in a hash-based collection.
+- Assuming a shallow copy recursively copies nested objects.
+- Using deep copy as a universal solution without considering cost and resource semantics.
+- Ignoring ownership and side-effect contracts in APIs.
+
+### References
+
+- Python glossary — hashable: https://docs.python.org/3/glossary.html#term-hashable
+- Python data model: https://docs.python.org/3/reference/datamodel.html
+- Built-in types: https://docs.python.org/3/library/stdtypes.html
+- copy module: https://docs.python.org/3/library/copy.html
