@@ -3,7 +3,7 @@
 **Language:** English  
 **Python baseline:** 3.15.2 — label version-specific behavior and distinguish Python language guarantees from CPython implementation details.  
 **Domain allocation:** 45 Main Questions + 180 Follow-ups = 225  
-**Current coverage:** PY-001–PY-005 and FU-001–FU-020  
+**Current coverage:** PY-001–PY-006 and FU-001–FU-024  
 **Answer file:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Russian version:** [RU Question Map](../RU/PYTHON_CORE_ADVANCED.md)
 
@@ -39,8 +39,8 @@ Follow-ups:
 
 ## Coverage status
 
-- PY-001–PY-004 and FU-001–FU-016: authored in English; independent technical and editorial review pending.
-- Remaining Main Questions PY-006–PY-045 and FU-021–FU-180: not yet migrated into the language-separated structure.
+- PY-001–PY-006 and FU-001–FU-024: authored in English; independent technical and editorial review pending.
+- Remaining Main Questions PY-007–PY-045 and FU-025–FU-180: not yet migrated into the language-separated structure.
 
 **Allocation rule:** Every Main Question receives exactly four Follow-ups covering mechanism, practical application, edge cases/trade-offs, and senior-level judgment or production implications.
 
@@ -92,3 +92,19 @@ Follow-ups:
 - **FU-019 — Edge cases:** What is the difference between `__getattribute__` and `__getattr__`, and what risks arise when overriding them?
 - **FU-020 — Senior judgment:** Why can assigning a special method to an instance fail to change the behavior of an implicit operation such as `len(obj)`?
 
+
+
+## PY-006 — Built-in Collections: Semantics & Selection
+
+**Main Question:** How do Python lists, tuples, sets, and dictionaries differ internally and semantically?
+
+**Evaluation focus:** Collection contracts, mutability, ordering, hashability, typical complexity, and memory/performance trade-offs.  
+**Level:** L2–L3 — Intermediate/Advanced  
+**Priority:** P0 — Core
+
+Follow-ups:
+
+- **FU-021 — Mechanism:** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython?
+- **FU-022 — Application:** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service?
+- **FU-023 — Edge cases and trade-offs:** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity?
+- **FU-024 — Senior judgment:** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy?
