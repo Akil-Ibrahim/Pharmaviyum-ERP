@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 15 из 30 основных вопросов подготовлено  
+**Охват:** 16 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -2041,3 +2041,125 @@ A Senior engineer should explain expected and worst-case behavior, key-contract 
 - Python Built-in Types — Set Types: https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset
 - Python collections.deque: https://docs.python.org/3/library/collections.html#collections.deque
 - Python Data Model — __hash__: https://docs.python.org/3/reference/datamodel.html#object.__hash__
+
+
+## PY-CORE-016 — Строки, Unicode, кодировки и обработка текста в Python
+
+### Что проверяет интервьюер
+- Понимание Unicode-модели текста Python и различий между текстом и закодированными байтами.
+- Code points, grapheme clusters, normalization и длина отображаемого текста.
+- Корректная обработка encoding и decoding на границах системы.
+- Риски безопасности и корректности при обработке multilingual input.
+- Проектирование надёжных API и тестов текстовой обработки.
+
+### Эталонный ответ (RU)
+В Python 3 тип str представляет текст как последовательность Unicode code points, а не байтов. Строки неизменяемы: операции, которые концептуально изменяют строку, создают новый объект. len(str) возвращает количество code points, а не байтов и не обязательно количество видимых пользователю символов. Визуально один символ может состоять из нескольких code points, например базовой буквы и комбинируемого диакритического знака; такая последовательность может образовывать один grapheme cluster.
+
+Нужно различать три уровня:
+- **Code point** — числовая позиция Unicode, например U+0065.
+- **Grapheme cluster** — последовательность code points, воспринимаемая пользователем как один графический символ.
+- **Encoded bytes** — байтовое представление текста в конкретной кодировке, например UTF-8.
+
+Python str не предоставляет универсального встроенного метода подсчёта grapheme clusters. Если приложению нужно ограничивать длину текста по количеству символов, воспринимаемых пользователем, следует использовать библиотеку с поддержкой Unicode grapheme segmentation, а не полагаться только на len().
+
+bytes — неизменяемая последовательность байтов, bytearray — изменяемая. Индексация bytes возвращает целое число от 0 до 255, а индексация str возвращает строку длиной один code point. Преобразование должно быть явным: text.encode("utf-8") кодирует str в bytes, а data.decode("utf-8") декодирует bytes в str. Не любой набор байтов является корректным UTF-8.
+
+Стандартный режим обработки ошибок encoding/decoding — strict, который поднимает UnicodeEncodeError или UnicodeDecodeError. Режимы replace и ignore подходят для отдельных recovery workflows, но ignore способен незаметно уничтожить данные. Для медицинских, идентификационных и иных критичных полей молчаливая потеря символов особенно опасна. Нужно явно определить ожидаемую кодировку на границе системы, а не угадывать её без надёжного протокола.
+
+Unicode normalization решает проблему канонически эквивалентных представлений. Символ с диакритикой может быть представлен одним предварительно составленным code point или базовым символом плюс combining mark. unicodedata.normalize() поддерживает NFC, NFD, NFKC и NFKD. NFC часто полезна для канонической нормализации. NFKC дополнительно применяет compatibility transformations, которые могут менять различия, значимые для домена; её нельзя бездумно применять ко всем пользовательским данным, идентификаторам или медицинским обозначениям. Нормализацию выбирают под конкретную задачу и сохраняют исходный ввод, если его точное воспроизведение важно.
+
+F-strings, str.format() и оператор % используются для форматирования. F-strings удобны для интерполяции выражений, но произвольный пользовательский шаблон нельзя считать безопасным исполняемым шаблоном. Нельзя выполнять eval() над пользовательскими строками форматирования. Для SQL, shell-команд, HTML и URL нужны контекстно-специфичные параметризованные API или escaping, а не обычное форматирование строк.
+
+Модуль re поддерживает регулярные выражения; Unicode-зависимые классы и флаги нужно оценивать в контексте задачи. Например, Unicode-класс \w не эквивалентен строгому определению латинских букв или доменного идентификатора. Regex не заменяет полноценный парсер сложных форматов. Нужно учитывать ReDoS: неудачный шаблон на специально подобранном вводе может вызвать чрезмерное время выполнения. Для недоверенного ввода нужны ограничения размера, осторожные шаблоны и подходящие механизмы таймаута либо альтернативный парсер.
+
+String interning — оптимизация реализации, при которой некоторые строки могут разделять один объект. Нельзя использовать is для сравнения содержимого строк и полагаться на интернирование. Для сравнения значений используется ==. Внутреннее представление строк CPython — деталь реализации, а не гарантия языка.
+
+В production backend текст обрабатывают на чётко определённых границах: декодируют входные байты с известной кодировкой, валидируют допустимые символы и длины, нормализуют только при обосновании доменом, сохраняют корректное Unicode-представление и правильно кодируют выход. Тесты должны включать кириллицу, латиницу, combining marks, emoji, некорректные byte sequences, смешанные письменности и визуально похожие символы. Для multilingual retrieval важно не терять исходный текст и не применять преобразования, меняющие медицинские термины или идентификаторы.
+
+### Профессиональный ответ (EN)
+In Python 3, str represents text as a sequence of Unicode code points, not bytes. Strings are immutable, so operations that conceptually modify a string create a new object. len(str) counts code points; it does not count encoded bytes and does not necessarily count user-perceived characters. A visible character can consist of multiple code points, such as a base letter followed by a combining mark, forming one grapheme cluster.
+
+Distinguish three levels:
+- **Code point**: a numbered Unicode value, such as U+0065.
+- **Grapheme cluster**: a sequence of code points perceived as one user-facing character.
+- **Encoded bytes**: text represented in a specific encoding, such as UTF-8.
+
+Python str does not provide a universal built-in grapheme-cluster counter. If an application must enforce user-perceived character limits, use a library implementing the relevant Unicode grapheme segmentation rules rather than relying on len() alone.
+
+bytes is immutable, while bytearray is mutable. Indexing bytes returns an integer from 0 to 255; indexing str returns a one-code-point string. Conversion should be explicit: text.encode("utf-8") encodes a string, and data.decode("utf-8") decodes bytes. Not every arbitrary byte sequence is valid UTF-8.
+
+Encoding and decoding default to strict error handling, raising UnicodeEncodeError or UnicodeDecodeError. Modes such as replace and ignore can be appropriate for specific recovery workflows, but ignore can silently destroy information. For medical, identity, or other critical fields, silent character loss is especially risky. Define the expected encoding at system boundaries instead of guessing without a reliable protocol.
+
+Unicode normalization addresses canonically equivalent representations. A character with a diacritic may be represented as one precomposed code point or as a base character plus a combining mark. unicodedata.normalize() supports NFC, NFD, NFKC, and NFKD. NFC is often useful for canonical normalization. NFKC also applies compatibility transformations and may erase distinctions meaningful to a domain, so it should not be applied indiscriminately to user data, identifiers, or medication terminology. Choose normalization according to domain requirements and preserve original input when exact reproduction matters.
+
+Python supports formatting through f-strings, str.format(), and the % operator. F-strings are convenient, but arbitrary user-provided format strings must not be treated as safe executable templates. Never use eval() on untrusted formatting input. SQL, shell commands, HTML, and URLs require context-specific parameterized APIs or escaping; ordinary string formatting is not a substitute.
+
+The re module supports regular expressions, but Unicode-sensitive character classes and flags must be understood in context. Unicode \w is not equivalent to a strict definition of Latin letters or a domain-specific identifier. Regular expressions are not a replacement for proper parsers for complex formats. Also consider ReDoS: a poorly designed pattern may take excessive time on crafted input. Bound untrusted input, use safe patterns, and choose timeout-capable mechanisms or another parser when appropriate.
+
+String interning is an implementation optimization under which some strings may share an object. Do not compare string values with is or rely on interning behavior. Use == for value equality. CPython's internal string representation is also an implementation detail, not a language guarantee.
+
+In a production backend, process text at explicit boundaries: decode incoming bytes using a known encoding, validate allowed characters and lengths, normalize only when the domain justifies it, preserve valid Unicode text, and encode output correctly. Tests should include Cyrillic, Latin text, combining marks, emoji, malformed byte sequences, mixed scripts, and visually confusable characters. For multilingual retrieval, preserve original text and avoid transformations that alter medication terminology or identifiers.
+
+### Дополнительные вопросы и эталонные ответы
+
+**FU-1 — Почему len("é") может отличаться от количества байтов и видимых символов?**  
+**Ответ (RU):** len() для str считает Unicode code points. В UTF-8 один code point может занимать несколько байтов. Визуально один символ также может состоять из нескольких code points, например буквы и combining mark, образующих один grapheme cluster. Это разные метрики длины.  
+**Answer (EN):** len() on a string counts Unicode code points. A code point may occupy multiple bytes in UTF-8. One visible character may also consist of multiple code points, such as a letter and combining mark forming one grapheme cluster. These are different length measurements.
+
+**FU-2 — Когда использовать str, bytes и bytearray?**  
+**Ответ (RU):** str используют для декодированного текста. bytes подходит для неизменяемых бинарных данных и результатов encoding. bytearray нужен, когда бинарный буфер требуется изменять на месте. Кодирование и декодирование должны происходить на явных границах протокола, а не произвольно внутри бизнес-логики.  
+**Answer (EN):** Use str for decoded text, bytes for immutable binary data and encoded payloads, and bytearray when a mutable binary buffer is required. Encoding and decoding should happen at explicit protocol boundaries rather than being scattered throughout business logic.
+
+**FU-3 — В чём разница между NFC и NFKC и почему это важно?**  
+**Ответ (RU):** NFC приводит канонически эквивалентные последовательности к канонической форме композиции. NFKC дополнительно применяет compatibility mappings, которые могут устранить различия между некоторыми символами. Это помогает отдельным задачам поиска, но может изменить значимые различия в идентификаторах, названиях и медицинских терминах. Выбор формы должен быть частью доменного контракта; исходный ввод следует сохранять для аудита или отображения.  
+**Answer (EN):** NFC normalizes canonically equivalent sequences toward composed canonical forms. NFKC additionally applies compatibility mappings that can remove distinctions between some characters. This can help selected search tasks but may alter distinctions meaningful in identifiers, names, and medication terminology. Normalization should be part of the domain contract, and original input should be retained when needed for audit or display.
+
+**FU-4 — Почему is неправильно использовать для сравнения строк и что такое string interning?**  
+**Ответ (RU):** is проверяет identity объектов, а == — равенство значений. Интернирование позволяет реализации повторно использовать один объект для некоторых строк, но это оптимизация, а не контракт сравнения. Поведение зависит от реализации и контекста. Сравнивать текст нужно через ==.  
+**Answer (EN):** is tests object identity, whereas == tests value equality. Interning allows an implementation to reuse an object for some strings, but it is an optimization rather than a comparison contract. Its behavior can vary by implementation and context. Compare string content with ==.
+
+**FU-5 — Какие риски обработки текста должен учитывать multilingual healthcare backend?**  
+**Ответ (RU):** Нужно явно определять encoding на границах системы, контролируемо обрабатывать некорректные byte sequences, сохранять исходный текст и применять normalization только по обоснованным правилам. Валидация должна учитывать code points, grapheme clusters, смешанные письменности и визуально похожие символы. Для поиска лекарств нельзя без тестирования менять регистр, удалять диакритические знаки или применять compatibility normalization: это может объединить разные термины. Также нужны защита от ReDoS, контекстное escaping и параметризованные запросы.  
+**Answer (EN):** Define encodings explicitly at system boundaries, handle malformed byte sequences deliberately, preserve original text, and normalize only under justified rules. Validation should account for code points, grapheme clusters, mixed scripts, and visually confusable characters. Medication search must not blindly case-fold, strip diacritics, or apply compatibility normalization because these transformations can collapse distinct terms. Also address ReDoS, context-specific escaping, and parameterized queries.
+
+### Сценарий применения в Pharmaviyum (гипотетический)
+Гипотетическое интервью-задание может касаться названий лекарств и поисковых запросов, введённых кириллицей и латиницей, с диакритикой или визуально похожими символами. Нужно объяснить, как сохранить исходный запрос, определить правила normalization и case-folding для retrieval, валидировать encoding на границах API и протестировать, что разные названия лекарств не объединяются ошибочно. Это сценарий интервью, а не утверждение о текущей реализации Pharmaviyum.
+
+### Критерии оценки Senior
+Сильный ответ уровня Senior должен:
+1. Различать Unicode code points, grapheme clusters и encoded bytes.
+2. Объяснять str, bytes, bytearray и размещать encoding/decoding на явных границах.
+3. Контролируемо обрабатывать некорректный ввод, не теряя символы молча.
+4. Выбирать normalization с учётом доменной семантики и сохранять исходный текст при необходимости.
+5. Использовать == для сравнения строк и рассматривать interning как оптимизацию реализации.
+6. Понимать Unicode-поведение и ограничения regex и распознавать риск ReDoS.
+7. Не использовать небезопасную интерполяцию для SQL, shell, HTML и других структурированных контекстов.
+8. Проектировать multilingual-тесты с combining marks, emoji, смешанными письменностями и confusables.
+
+**Сигналы уровня**
+- Mid-level: понимает Unicode strings и базовые encode/decode операции.
+- Strong Senior: проектирует явные text boundaries, normalization policies и multilingual validation.
+- Staff-level signal: определяет общие text-handling contracts, сохраняющие доменную семантику, аудитируемость и безопасность между сервисами.
+
+### Типичные ошибки
+- Предполагать, что len(str) считает видимые символы.
+- Рассматривать str как UTF-8 bytes.
+- Декодировать произвольные bytes без знания кодировки.
+- Использовать errors="ignore" для критичных данных.
+- Без разбора применять NFKC к идентификаторам или доменной терминологии.
+- Сравнивать строки через is.
+- Полагаться на string interning или детали реализации CPython.
+- Считать Unicode \w универсальным определением допустимых букв или идентификаторов.
+- Использовать regex как парсер сложных форматов.
+- Формировать небезопасные SQL или shell-команды через f-strings.
+- Игнорировать ReDoS и Unicode confusable-character риски.
+
+### Источники
+- Python Standard Types — Text Sequence Type str: https://docs.python.org/3/library/stdtypes.html#text-sequence-type-str
+- Python Standard Types — Binary Sequence Types: https://docs.python.org/3/library/stdtypes.html#binary-sequence-types-bytes-bytearray-memoryview
+- Python str.encode and bytes.decode: https://docs.python.org/3/library/stdtypes.html#str.encode
+- Python unicodedata: https://docs.python.org/3/library/unicodedata.html
+- Python Regular Expression HOWTO: https://docs.python.org/3/howto/regex.html
+- Python re documentation: https://docs.python.org/3/library/re.html
+- Unicode Standard Annex #29 — Text Segmentation: https://www.unicode.org/reports/tr29/
+- Unicode Technical Standard #15 — Normalization: https://www.unicode.org/reports/tr15/
