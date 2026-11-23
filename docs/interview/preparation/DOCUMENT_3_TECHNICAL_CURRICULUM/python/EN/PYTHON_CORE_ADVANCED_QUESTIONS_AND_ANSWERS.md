@@ -46,7 +46,7 @@ The GIL does not mean that a Python process can have only one thread, nor does i
 
 **Free-threaded CPython**
 
-PEP 703 introduced an optional CPython build configuration in which the GIL can be disabled. Free-threaded builds were introduced experimentally in Python 3.13 and became officially supported as an optional configuration in Python 3.14. They are not the default build. Removing the GIL requires additional interpreter-level synchronization and changes to memory-management and extension APIs. Some C extensions are not ready for free-threading and may cause the GIL to be enabled. A free-threaded build can improve CPU parallelism for suitable workloads, but it does not guarantee a speedup: single-thread performance, extension compatibility, contention, and application-level data races must be considered.
+PEP 703 introduced an optional CPython build configuration in which the GIL can be disabled. Free-threaded builds were introduced experimentally in Python 3.13 and became officially supported as an optional configuration in Python 3.14. They are not the default interpreter build. In Python 3.15, the official macOS installer installs a separate free-threaded build by default; the conventional GIL-enabled build remains available. Removing the GIL requires additional interpreter-level synchronization and changes to memory-management and extension APIs. Some C extensions are not ready for free-threading and may cause the GIL to be enabled. A free-threaded build can improve CPU parallelism for suitable workloads, but it does not guarantee a speedup: single-thread performance, memory use, extension compatibility, contention, and application-level data races must be considered.
 
 **Practical Example**
 
