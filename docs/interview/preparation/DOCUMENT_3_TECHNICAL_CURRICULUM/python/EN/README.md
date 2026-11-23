@@ -1,13 +1,11 @@
-# Python Core & Advanced Python — EN
+# Python Core & Advanced Python — English
 
-English-language curriculum and answer bank for international technical interviews.
+Use this folder to study and prepare interview answers in English.
 
-## Documents
+- [Question Map](./PYTHON_CORE_ADVANCED.md) — topics, IDs, and learning order.
+- [Questions and Answers](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md) — explanations and interview-ready answers.
+- [Русская версия](../RU/README.md)
 
-- [English Question Map](./PYTHON_CORE_ADVANCED.md)
-- [English Questions and Answers](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)
-- [Русская версия — RU](../RU/README.md)
+Study a Main Question first, then its four Follow-ups. Understand the explanation before practising the concise interview answer. The Russian version uses the same question IDs.
 
-## Migration status
-
-The language-separated structure is being introduced starting with PY-001 and PY-002. The current scope includes PY-001–PY-002 and FU-001–FU-008. Remaining questions will be migrated in order. The previous bilingual source file is retained until the full migration is verified.
+**Current coverage:** PY-001–PY-002 and FU-001–FU-008.
