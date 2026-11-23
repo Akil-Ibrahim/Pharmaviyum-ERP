@@ -62,12 +62,12 @@ I use **==** for value comparison and **is** for identity checks, commonly for s
 
 #### FU-1
 
-**EN:** What is the difference between is and ==?  
-**RU:** В чём разница между is и ==?
+**EN:** Can an object's value change while its identity and type remain the same? Explain with a mutable object.  
+**RU:** Может ли значение объекта измениться, если его идентичность и тип остаются прежними? Объясните на примере изменяемого объекта.
 
-**Answer (RU):** is проверяет идентичность — являются ли операнды одним объектом. == проверяет равенство значений в соответствии с методом сравнения типа, обычно __eq__. Два разных объекта могут быть равны по ==, но не идентичны по is.
+**Answer (RU):** Да. Например, вызов append() изменяет существующий список на месте: объект сохраняет свою идентичность и тип list, но его содержимое меняется. Это отличает мутацию от переназначения имени или создания нового объекта. Для неизменяемого объекта изменение значения на месте невозможно; операция, формирующая новое значение, приводит к использованию другого объекта и переназначению имени.
 
-**Answer (EN):** is checks object identity, while == checks value equality according to the object's equality implementation. Two distinct objects can compare equal without being the same object.
+**Answer (EN):** Yes. For example, calling append() mutates an existing list in place: the object retains its identity and list type while its contents change. This is different from rebinding a name or creating a new object. An immutable object cannot be changed in place; an operation that produces a different value results in another object being used and the name being rebound.
 
 #### FU-2
 
@@ -80,12 +80,12 @@ I use **==** for value comparison and **is** for identity checks, commonly for s
 
 #### FU-3
 
-**EN:** Why should you avoid using is to compare strings or integers?  
-**RU:** Почему не следует использовать is для сравнения строк или целых чисел?
+**EN:** Why does assignment not necessarily create a copy of an object?  
+**RU:** Почему присваивание не обязательно создаёт копию объекта?
 
-**Answer (RU):** Потому что is проверяет идентичность, а не равенство значений. Поведение может случайно казаться корректным из-за interning или оптимизаций конкретной реализации Python. Для сравнения содержимого нужно использовать ==. Проверки через is следует оставлять для случаев, где важна идентичность, например is None.
+**Answer (RU):** Обычное присваивание связывает имя с объектом, а не копирует его. Поэтому после присваивания second = first оба имени обычно указывают на один объект. Если нужна независимая копия, её следует создать явно и выбрать поверхностное или глубокое копирование в зависимости от структуры данных и требуемой семантики.
 
-**Answer (EN):** Because is tests identity, not value equality. Interning and compiler optimisations may make some comparisons appear to work, but that behaviour is not a reliable language contract. Use == for values and reserve is for identity checks such as is None.
+**Answer (EN):** Ordinary assignment binds a name to an object; it does not copy the object. After assigning second = first, both names therefore usually refer to the same object. If an independent copy is required, create it explicitly and choose shallow or deep copying according to the data structure and required semantics.
 
 ### Pharmaviyum connection
 
@@ -1442,17 +1442,14 @@ RU: Переводить исключение следует на границе
 
 EN: Translate an exception at an abstraction boundary when a lower layer exposes implementation-specific details that should not leak upward. For example, a PostgreSQL driver error may become an infrastructure or application-level exception while retaining its cause. If a layer cannot recover from, classify, or meaningfully translate the failure, it should generally propagate unchanged. Do not collapse all failures into one generic type, because callers may need to distinguish transient from permanent errors.
 
-**FU-4 — How do `ExceptionGroup` and `except*` differ from ordinary exception handling?**
+**FU-4 — How do you interpret total time and cumulative time in a cProfile/pstats report?**  
+**Answer (RU):** total time (internal time) measures time spent directly in a function, excluding its subcalls. cumulative time includes the function and all calls made beneath it. High cumulative time helps identify an important part of the call graph, while high total time points to expensive work inside the function itself. Interpret both alongside call counts and the call-graph structure.  
+**Answer (EN):** total time (internal time) показывает время, затраченное непосредственно в функции, без времени её подчинённых вызовов. cumulative time включает время функции и всех вызовов, выполненных из неё. Высокое cumulative time помогает найти важный участок call graph, а высокое total time указывает на дорогую работу внутри самой функции. Эти показатели нужно читать с учётом числа вызовов и структуры call graph.
 
-RU: Обычный `except` выбирает обработчик для одного поднятого исключения по его типу. `ExceptionGroup` содержит несколько исключений, а `except*` выбирает совпадающие исключения внутри группы и позволяет обработать их отдельно, сохраняя неперехваченные элементы. Это важно при structured concurrency, когда несколько задач могут завершиться независимо и вернуть несколько ошибок. Если операция гарантирует только одну ошибку, обычная модель проще.
+**FU-5 — Why should profiler output not be treated as an exact benchmark of runtime?**  
+**Answer (RU):** Профилировщик добавляет измерительный overhead, который может непропорционально влиять на короткие функции и частые вызовы. Детальный deterministic profiler регистрирует события вызовов и возвратов, поэтому меняет временные характеристики программы. Для сравнения небольших операций используйте timeit, а profiler применяйте для поиска горячих участков; итоговую производительность проверяйте отдельным benchmark без profiler и на репрезентативных условиях.  
+**Answer (EN):** A profiler adds measurement overhead, which can disproportionately affect short functions and frequent calls. A detailed deterministic profiler records call and return events, changing the program's timing characteristics. Use timeit to compare small operations and a profiler to locate hot paths; validate runtime separately with an unprofiled benchmark under representative conditions.
 
-EN: An ordinary `except` matches the type of a raised exception. An `ExceptionGroup` contains multiple exceptions, while `except*` selects matching members for handling and leaves unmatched members in the group. This is useful with structured concurrency, where multiple tasks may fail independently. If an operation can produce only one failure, ordinary exception handling is simpler.
-
-**FU-5 — How would you design error handling for a FastAPI endpoint without coupling the domain layer to HTTP?**
-
-RU: Domain layer определяет собственные ошибки предметной области, например отсутствие лекарства или конфликт остатка, и не импортирует FastAPI. Application service поднимает эти ошибки или преобразует ошибки портов/адаптеров на границах. FastAPI exception handlers в presentation layer отображают известные типы в стабильные HTTP-коды и публичную схему ошибки. Неизвестные ошибки остаются 500, логируются с correlation ID и traceback на серверной стороне, а клиент получает безопасное обобщённое сообщение. Контракт ответа не должен раскрывать внутренние детали.
-
-EN: The domain layer defines domain-specific exceptions, such as a missing medication or an inventory conflict, without importing FastAPI. Application services propagate these errors or translate adapter failures at explicit boundaries. FastAPI exception handlers in the presentation layer map known types to stable HTTP status codes and public error schemas. Unknown failures remain 500 responses, are logged server-side with a correlation ID and traceback, and produce a safe generic client message. The response contract must not expose internal implementation details.
 
 ### Pharmaviyum application scenario (hypothetical)
 
@@ -1867,7 +1864,7 @@ A strong Senior answer should:
 - Python Data Model: https://docs.python.org/3/reference/datamodel.html
 - gc — Garbage Collector interface: https://docs.python.org/3/library/gc.html
 - weakref — Weak references: https://docs.python.org/3/library/weakref.html
-- tracemalloc — Trace memory allocations: https://docs.python.org/3/library/tracemalloc.html
+- tracemalloc — Trace memory allocations: https://docs.python.org/3.14/library/tracemalloc.html
 - Python C API — Reference Counting: https://docs.python.org/3/c-api/refcounting.html
 - Python FAQ — Memory management: https://docs.python.org/3/faq/design.html#how-does-python-manage-memory
 - FastAPI — Lifespan Events: https://fastapi.tiangolo.com/advanced/events/
@@ -1936,23 +1933,23 @@ A sound benchmark uses representative data, controlled conditions, repeated runs
 **Answer (EN):** Establish a baseline and success criteria, then run the same representative workload under controlled conditions. Compare latency percentiles, throughput, CPU, memory, and error rate; run functional and regression tests; and validate concurrency behavior under production-like load. Monitor after rollout and retain a rollback path. An improvement in one metric must not conceal a regression elsewhere.
 
 ### Pharmaviyum application scenario (hypothetical)
-A hypothetical interview exercise could ask how to investigate a slow medicine-search endpoint. Start by defining a representative query mix and measuring end-to-end latency, database time, CPU, and memory. Profile the application and inspect query plans before changing code. Evaluate indexes, query shape, payload serialization, and repeated lookups. If considering caching, define tenant-aware keys, invalidation behavior, and bounded capacity. This is an interview scenario, not a claim about the current implementation or measured performance of Pharmaviyum.
+A hypothetical interview exercise could ask the candidate to profile a local Python function that normalizes search terms or transforms medicine-catalog results into DTOs. The candidate should define representative inputs and expected semantics, use cProfile/pstats to locate expensive calls, and use timeit to compare isolated alternatives. They should examine algorithmic complexity, redundant passes, and intermediate allocations without changing Unicode handling or medication-attribute correctness. This is an interview scenario, not a claim about the current implementation or measured performance of Pharmaviyum.
 
 ### Senior-level evaluation rubric
 A strong Senior answer should:
-1. Begin with workload definition, measurable objectives, and a baseline.
-2. Explain Big-O while acknowledging constant factors and real-world effects.
-3. Select profiling tools based on the suspected resource and scope.
-4. Distinguish CPU-bound, I/O-bound, and memory-bound behavior.
-5. Understand that AsyncIO improves I/O concurrency, not CPU execution speed.
-6. Treat caching as a correctness, isolation, and operations trade-off.
-7. Use repeatable benchmarks and verify improvements against regressions.
-8. Connect local profiling to production observability and rollback planning.
+1. Explain asymptotic complexity and the limits of Big-O as a predictor of actual runtime.
+2. Choose between timeit, cProfile, and pstats based on the diagnostic question.
+3. Distinguish internal time, cumulative time, call counts, and per-call cost.
+4. Account for profiler overhead and avoid confusing profiling with benchmarking.
+5. Identify algorithmic inefficiencies, redundant passes, excessive calls, and unnecessary intermediate objects.
+6. Use tracemalloc to inspect Python allocations without equating its data with total process memory.
+7. Validate local optimizations with a separate benchmark and correctness tests.
+8. Preserve code readability and semantics while documenting measured trade-offs.
 
 **Evaluation signals**
-- Mid-level: knows common complexity classes and basic timing tools.
-- Strong Senior: profiles representative workloads, identifies the dominant bottleneck, and validates trade-offs across service metrics.
-- Staff-level signal: establishes performance budgets, repeatable benchmark practices, capacity models, and cross-service optimization standards.
+- Mid-level: knows Big-O and basic timing/profiling tools.
+- Strong Senior: interprets profiler output, identifies hot paths, and validates local changes with measurements.
+- Staff-level signal: establishes repeatable profiling practices, benchmark methodology, and codebase-level performance regression standards.
 
 ### Common pitfalls
 - Optimizing based on intuition without profiling.
@@ -1967,12 +1964,12 @@ A strong Senior answer should:
 - Improving latency while silently increasing memory, errors, or operational complexity.
 
 ### References
-- Python `timeit`: https://docs.python.org/3/library/timeit.html
-- Python `cProfile` and `profile`: https://docs.python.org/3/library/profile.html
-- Python `pstats`: https://docs.python.org/3/library/pstats.html
-- Python `tracemalloc`: https://docs.python.org/3/library/tracemalloc.html
-- Python FAQ — Performance: https://docs.python.org/3/faq/programming.html#how-can-i-make-my-program-run-faster
-- Python asyncio — Developing with asyncio: https://docs.python.org/3/library/asyncio-dev.html
+- Python `timeit`: https://docs.python.org/3.14/library/timeit.html
+- Python `cProfile` and `profile`: https://docs.python.org/3.14/library/profile.html
+- Python `pstats`: https://docs.python.org/3.14/library/pstats.html
+- Python `tracemalloc`: https://docs.python.org/3.14/library/tracemalloc.html
+- Python FAQ — Performance: https://docs.python.org/3.14/faq/programming.html#how-can-i-make-my-program-run-faster
+- Python asyncio — Developing with asyncio: https://docs.python.org/3.14/library/asyncio-dev.html
 - FastAPI — Async: https://fastapi.tiangolo.com/async/
 
 
@@ -3975,15 +3972,15 @@ A strong Senior answer should demonstrate that the candidate can:
 
 ### References
 
-- Python Profilers — cProfile: https://docs.python.org/3/library/profile.html
-- Python tracemalloc: https://docs.python.org/3/library/tracemalloc.html
+- Python Profilers — cProfile: https://docs.python.org/3.14/library/profile.html
+- Python tracemalloc: https://docs.python.org/3.14/library/tracemalloc.html
 - py-spy: https://github.com/benfred/py-spy
 - PostgreSQL EXPLAIN: https://www.postgresql.org/docs/current/using-explain.html
 - PostgreSQL Monitoring Statistics: https://www.postgresql.org/docs/current/monitoring-stats.html
 - OpenTelemetry — Signals: https://opentelemetry.io/docs/concepts/signals/
 - Google SRE Book — Monitoring Distributed Systems: https://sre.google/sre-book/monitoring-distributed-systems/
 - Locust documentation: https://docs.locust.io/
-- Python asyncio — Developing with asyncio: https://docs.python.org/3/library/asyncio-dev.html
+- Python asyncio — Developing with asyncio: https://docs.python.org/3.14/library/asyncio-dev.html
 
 
 ## PY-CORE-030 — Python execution model, runtime semantics and CPython internals
