@@ -2,6 +2,8 @@
 
 Use this folder to study and prepare interview answers in English.
 
+**Version baseline:** Python 3.15.2. Version-specific behavior must be labelled, and language guarantees must be distinguished from CPython implementation details.
+
 - [Question Map](./PYTHON_CORE_ADVANCED.md) — topics, IDs, and learning order.
 - [Questions and Answers](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md) — explanations and interview-ready answers.
 - [Русская версия](../RU/README.md)
