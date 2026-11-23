@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 7 из 30 основных вопросов подготовлено  
+**Охват:** 8 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -1003,3 +1003,160 @@ At Senior level, I explain not only LEGB lookup but also its consequences for st
 - Function definitions and default parameter values: https://docs.python.org/3/reference/compound_stmts.html#function-definitions
 - PEP 227 — Statically Nested Scopes: https://peps.python.org/pep-0227/
 - `functools.wraps`: https://docs.python.org/3/library/functools.html#functools.wraps
+
+---
+
+## PY-CORE-008 — Функции Python, декораторы и функциональное программирование
+
+### Question (EN)
+
+**Explain Python's first-class functions and higher-order functions. How do decorators work, and what are the benefits and trade-offs of functional programming techniques such as pure functions, composition, `map`, `filter`, `reduce`, and caching?**
+
+### Перевод (RU)
+
+**Объясните концепции first-class functions и higher-order functions в Python. Как работают декораторы и каковы преимущества и компромиссы функционального программирования: pure functions, композиция, `map`, `filter`, `reduce` и caching?**
+
+### Что проверяет интервьюер
+
+- Понимание функций как объектов первого класса.
+- Умение отличать first-class functions от higher-order functions.
+- Понимание момента применения декораторов и порядка их вызова.
+- Корректное использование decorator factories, сохранения метаданных и контрактов callable.
+- Умение рассуждать о closures, композиции функций и partial application.
+- Понимание ленивых итераторов, возвращаемых `map` и `filter`.
+- Уместное использование `reduce`, а не его применение к любой агрегации.
+- Понимание purity, side effects, referential transparency и тестируемости.
+- Понимание ключей кеша, удержания памяти, инвалидации и concurrency.
+
+### Эталонный ответ (RU)
+
+В Python функции являются **объектами первого класса (first-class objects)**. Их можно присваивать переменным, передавать как аргументы, возвращать из других функций, хранить в структурах данных и создавать во время выполнения. Это свойство позволяет строить callback-based API, стратегии поведения, dependency injection и декораторы.
+
+**Higher-order function** — функция, которая принимает другую функцию в качестве аргумента и/или возвращает функцию. Следовательно, каждая higher-order function использует функции как значения, но не каждая функция первого класса обязательно является higher-order function.
+
+**Декоратор** — callable, который получает другой callable и обычно возвращает callable, расширяющий или изменяющий его поведение. Синтаксис `@decorator` является удобной формой переназначения имени функции результатом применения декоратора во время определения функции. Вызов декоратора происходит при выполнении определения функции, а не при каждом вызове декорируемой функции.
+
+Декоратор часто создаёт wrapper. Wrapper должен сохранять контракт исходной функции: принимать совместимые аргументы, возвращать ожидаемый результат и корректно передавать исключения. `functools.wraps` помогает сохранить метаданные и устанавливает `__wrapped__`, что полезно для introspection и tooling. Для сложных сигнатур важно учитывать introspection и аннотации, а не полагаться на то, что wrapper автоматически сохраняет исходную сигнатуру на уровне Python bytecode.
+
+**Decorator factory** — функция, которая принимает конфигурацию и возвращает собственно декоратор. Это позволяет параметризовать поведение, например выбрать политику retry или logging. Нужно контролировать, какие значения замыкаются в closure, и не хранить там request-specific mutable state.
+
+Декораторы применяются снизу вверх: при нескольких декораторах ближайший к определению функции применяется первым, а внешний декоратор оборачивает результат внутреннего. Порядок имеет значение, если декораторы управляют транзакциями, авторизацией, кешированием или логированием.
+
+**Function composition** — построение новой функции из последовательного применения других функций. Композиция полезна, когда операции небольшие, имеют ясные входы и выходы и порядок преобразований очевиден. Но чрезмерная композиция может ухудшить читаемость и трассировку ошибок. **Partial application** фиксирует часть аргументов callable; в Python для этого есть `functools.partial`. Это удобно для конфигурирования callback или адаптации интерфейсов без создания лишних wrapper-функций.
+
+Функции `map` и `filter` возвращают итераторы, вычисления выполняются лениво при обходе. Это может снижать необходимость создавать промежуточные коллекции, но значения будут вычислены только при потреблении итератора. В Python часто яснее использовать generator expressions или comprehensions, особенно если преобразование простое. `functools.reduce` сводит последовательность к одному значению, последовательно применяя бинарную функцию; для суммирования, минимума, максимума и других стандартных операций предпочтительнее специализированные встроенные функции, поскольку они обычно понятнее и эффективнее.
+
+**Pure function** при одинаковых входах возвращает одинаковый результат и не вызывает наблюдаемых внешних side effects. Чистые функции проще тестировать, повторно использовать, кешировать и рассуждать о них. Однако реальные backend-системы взаимодействуют с базой данных, сетью, часами, файловой системой и очередями. Практический подход — изолировать side effects на границах системы, а бизнес-преобразования по возможности оставлять чистыми. Это не требует превращать весь проект в функциональную архитектуру.
+
+**Caching** может быть реализован, например, через `functools.lru_cache`. Он хранит результаты вызовов по ключам, сформированным из аргументов. Кеширование корректно только тогда, когда результат действительно зависит от этих аргументов и не меняется из-за скрытого состояния. Нужно учитывать hashability аргументов, ограничение размера кеша, удержание ссылок на ключи и результаты, устаревание данных, многопоточность и безопасность контекста. `lru_cache` не является распределённым кешем и сам по себе не обеспечивает согласованность между процессами или экземплярами приложения. Для асинхронных функций обычный `lru_cache` также не превращает coroutine в кешированный результат: он кеширует возвращаемый объект coroutine, что обычно не является требуемой семантикой.
+
+На Senior-уровне выбор функционального приёма определяется ясностью контракта, тестируемостью и стоимостью сопровождения. Я использую декоратор, если он действительно добавляет сквозное поведение с понятным порядком и границами, pure functions — для детерминированной бизнес-логики, а caching — только при явной стратегии ключей, срока жизни и инвалидации.
+
+### Эталонный ответ (EN)
+
+In Python, functions are **first-class objects**. They can be assigned to variables, passed as arguments, returned from other functions, stored in data structures, and created at runtime. This enables callback-based APIs, behavioural strategies, dependency injection, and decorators.
+
+A **higher-order function** is a function that accepts another function as an argument and/or returns a function. Thus, every higher-order function uses functions as values, but not every first-class function is necessarily a higher-order function.
+
+A **decorator** is a callable that receives another callable and usually returns a callable that extends or changes its behaviour. The `@decorator` syntax is shorthand for rebinding the function name to the result of applying the decorator when the function definition executes. The decorator is applied at function-definition time, not on every call to the decorated function.
+
+A decorator often creates a wrapper. The wrapper should preserve the original callable's contract: accept compatible arguments, return the expected result, and propagate exceptions appropriately. `functools.wraps` helps preserve metadata and sets `__wrapped__`, which supports introspection and tooling. With complex signatures, consider introspection and annotations rather than assuming a wrapper automatically preserves the original signature at the Python bytecode level.
+
+A **decorator factory** is a function that accepts configuration and returns a decorator. This makes behaviour configurable, for example a retry or logging policy. Be deliberate about values captured in closures, and do not put request-specific mutable state there.
+
+When decorators are stacked, they are applied from the definition outward: the decorator closest to the function is applied first, and the outer decorator wraps the result. Order matters when decorators manage transactions, authorization, caching, or logging.
+
+**Function composition** builds a function by applying several functions in sequence. It is useful when operations are small, have clear inputs and outputs, and the transformation order is obvious. Excessive composition, however, can make code harder to read and debug. **Partial application** fixes some arguments of a callable; Python provides `functools.partial` for this purpose. It can configure callbacks or adapt interfaces without introducing unnecessary wrapper functions.
+
+`map` and `filter` return iterators and evaluate lazily as they are consumed. This can avoid intermediate collections, but values are not computed until iteration. In Python, generator expressions or comprehensions are often clearer, especially for simple transformations. `functools.reduce` folds an iterable into a single value by repeatedly applying a binary function. For common operations such as summation, minimum, and maximum, dedicated built-ins are usually clearer and often more efficient.
+
+A **pure function** returns the same result for the same inputs and causes no observable external side effects. Pure functions are easier to test, reuse, cache, and reason about. Real backend systems nevertheless interact with databases, networks, clocks, filesystems, and queues. A practical design isolates side effects at system boundaries and keeps business transformations pure where feasible. This does not require making the entire application purely functional.
+
+**Caching** can be implemented with tools such as `functools.lru_cache`. It stores call results under keys derived from arguments. Caching is correct only when the result truly depends on those arguments and is not affected by hidden mutable state. Consider argument hashability, cache size limits, references retained to keys and results, data staleness, concurrency, and context isolation. `lru_cache` is not a distributed cache and does not provide consistency across processes or application instances. For asynchronous functions, ordinary `lru_cache` does not cache the awaited result: it caches the coroutine object returned by the function, which is generally not the desired semantics.
+
+At Senior level, I choose functional techniques based on contract clarity, testability, and maintenance cost. I use decorators when they add cross-cutting behaviour with clear boundaries and ordering, pure functions for deterministic business logic, and caching only with an explicit key, lifetime, and invalidation strategy.
+
+### Follow-up questions и эталонные ответы
+
+#### FU-1
+
+**EN:** What is the difference between a first-class function and a higher-order function?  
+**RU:** В чём разница между first-class function и higher-order function?
+
+**Ответ (RU):** First-class описывает свойства функций как объектов: их можно передавать, возвращать и сохранять как значения. Higher-order описывает конкретную функцию, которая принимает функцию аргументом или возвращает функцию. Это разные уровни описания: первое — свойство языка, второе — характеристика операции.
+
+**Answer (EN):** First-class describes functions as values: they can be passed, returned, and stored. Higher-order describes a particular function that accepts a function as an argument or returns one. They are different levels of description: one is a language property, the other characterizes a function's behaviour.
+
+#### FU-2
+
+**EN:** When is a decorator evaluated, and how does stacking order work?  
+**RU:** Когда выполняется декоратор и как работает порядок нескольких декораторов?
+
+**Ответ (RU):** Декоратор применяется при выполнении определения функции. При записи нескольких декораторов ближайший к `def` применяется первым, затем его результат оборачивает следующий, внешний декоратор. Поэтому изменение порядка может менять семантику, например границы кеширования, логирования или транзакции.
+
+**Answer (EN):** A decorator is applied when the function definition executes. With stacked decorators, the one closest to `def` is applied first, and each outer decorator then wraps the previous result. Changing the order can therefore change semantics, such as caching, logging, or transaction boundaries.
+
+#### FU-3
+
+**EN:** Why should a decorator usually use `functools.wraps`?  
+**RU:** Почему декоратор обычно должен использовать `functools.wraps`?
+
+**Ответ (RU):** `wraps` копирует важные метаданные исходной функции на wrapper и устанавливает `__wrapped__`. Это помогает документации, отладчикам, introspection и инструментам, которые исследуют исходную функцию. При этом `wraps` не делает wrapper автоматически идентичным исходной функции по поведению или реальной сигнатуре вызова.
+
+**Answer (EN):** `wraps` copies important metadata from the wrapped function to the wrapper and sets `__wrapped__`. This helps documentation, debuggers, introspection, and tools that inspect the original callable. It does not make the wrapper automatically identical to the original function in behaviour or actual call signature.
+
+#### FU-4
+
+**EN:** When would you choose a comprehension over `map` and `filter`, or a built-in aggregation over `reduce`?  
+**RU:** Когда предпочтительнее comprehension вместо `map` и `filter`, или встроенная агрегирующая функция вместо `reduce`?
+
+**Ответ (RU):** Для простых преобразований comprehension часто читается естественнее и позволяет выразить фильтрацию и преобразование в одном месте. Для стандартных агрегатов вроде суммы, минимума или максимума специализированные built-ins яснее выражают намерение и обычно эффективнее. `map`, `filter` и `reduce` полезны, когда они делают преобразование или свёртку понятнее, а не просто заменяют более идиоматичный синтаксис.
+
+**Answer (EN):** For simple transformations, comprehensions are often more readable and can express filtering and transformation together. Dedicated built-ins for common aggregates such as sum, minimum, or maximum communicate intent more clearly and are often more efficient. Use `map`, `filter`, and `reduce` when they make the transformation or fold clearer, not merely to replace more idiomatic syntax.
+
+#### FU-5
+
+**EN:** What risks arise when using `lru_cache` for functions that depend on mutable or external state?  
+**RU:** Какие риски возникают при использовании `lru_cache` для функций, зависящих от изменяемого или внешнего состояния?
+
+**Ответ (RU):** Кеш может вернуть устаревший результат, потому что изменение внешнего состояния не отражается в ключе. Аргументы должны быть hashable, а кеш удерживает ссылки на ключи и результаты до вытеснения или очистки. Нужно определить TTL или инвалидацию, ограничить размер и проверить, допустимо ли разделение результата между пользователями и запросами. Для нескольких процессов потребуется отдельное решение распределённого кеширования.
+
+**Answer (EN):** The cache may return stale data because changes in external state are not represented in the key. Arguments must be hashable, and the cache retains references to keys and results until eviction or clearing. Define a TTL or invalidation strategy, bound the cache size, and verify whether sharing results across users and requests is safe. Multiple processes require a separate distributed-caching solution.
+
+### Связь с Pharmaviyum
+
+**Гипотетический сценарий для интервью — не утверждение о текущей реализации:** pure functions могут нормализовать поисковый запрос лекарства или преобразовывать валидированные доменные данные; decorators могут добавлять structured logging или timing на границах сервисов; caching можно рассматривать для справочных данных только после определения tenant/user isolation, состава ключа, актуальности и инвалидации. Request-specific authorization и patient context не должны случайно разделяться через общий function cache или изменяемое closure декоратора.
+
+Любое утверждение о том, что эти паттерны уже реализованы в Pharmaviyum, должно быть подтверждено репозиторием и тестами.
+
+### Критерии оценки уровня Senior
+
+| Уровень | Ожидаемые признаки |
+|---|---|
+| Слабый | Знает синтаксис декораторов, но не может объяснить момент их выполнения, поведение wrapper или ленивую итерацию. |
+| Компетентный | Объясняет first-class и higher-order functions, порядок декораторов, pure functions и базовое кеширование. |
+| Strong Senior | Оценивает callable contracts, метаданные, границы side effects, корректность и инвалидацию кеша, async limitations, concurrency и изоляцию данных. |
+
+### Типичные ошибки
+
+- Считать first-class и higher-order functions синонимами.
+- Предполагать, что декоратор выполняется при каждом вызове декорируемой функции.
+- Перепутать порядок применения нескольких декораторов.
+- Не использовать `functools.wraps` и нарушать introspection.
+- Создавать wrapper, который случайно меняет семантику исключений или возвращаемых значений.
+- Забывать, что `map` и `filter` в Python 3 возвращают ленивые итераторы.
+- Использовать `reduce`, когда есть понятная встроенная функция.
+- Называть функцию pure, хотя она читает скрытое состояние или выполняет side effects.
+- Кешировать результаты, зависящие от времени, состояния БД, авторизации или tenant context, не учитывая эти измерения в ключе.
+- Считать `lru_cache` распределённым кешем или механизмом общей инвалидации приложения.
+- Применять обычный `lru_cache` к async-функциям, ожидая кеширования результата после await.
+
+### Источники
+
+- Python tutorial — functional programming tools: https://docs.python.org/3/howto/functional.html
+- Function definitions and decorators: https://docs.python.org/3/reference/compound_stmts.html#function-definitions
+- `functools`: https://docs.python.org/3/library/functools.html
+- `functools.wraps`: https://docs.python.org/3/library/functools.html#functools.wraps
+- `functools.partial`: https://docs.python.org/3/library/functools.html#functools.partial
+- `functools.reduce`: https://docs.python.org/3/library/functools.html#functools.reduce
+- `functools.lru_cache`: https://docs.python.org/3/library/functools.html#functools.lru_cache
