@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 19 из 30 основных вопросов подготовлено  
+**Охват:** 20 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -2526,3 +2526,131 @@ My Senior-level approach is to consider ordinary classes, composition, class dec
 - Python Classes Tutorial: https://docs.python.org/3/tutorial/classes.html
 - PEP 3115 — Metaclasses in Python 3000: https://peps.python.org/pep-3115/
 - PEP 487 — Simpler customization of class creation: https://peps.python.org/pep-0487/
+
+---
+
+## PY-CORE-020 — Сериализация Python, Pickle и состояние объектов
+
+### Вопрос интервью
+**Как работает сериализация объектов в Python, каковы возможности и риски `pickle`, и как спроектировать безопасную и устойчивую к версиям границу сериализации в backend-системе?**
+
+### English translation
+How does Python object serialization work, what are the capabilities and risks of `pickle`, and how would you design a safe, version-tolerant serialization boundary in a backend system?
+
+### Что проверяет интервьюер
+- Понимание сериализации, десериализации и форматов представления данных.
+- Знание протокола `pickle` и специфичного для Python механизма восстановления объектов.
+- Корректное понимание `__getstate__`, `__setstate__`, `__reduce__` и `__reduce_ex__`.
+- Осознание того, что unpickling недоверенных данных может привести к выполнению произвольного кода.
+- Умение отличать форматы обмена данными от persistence Python-объектов.
+- Инженерная оценка эволюции схем, совместимости, валидации и границ доверия.
+
+### Эталонный ответ (RU)
+**Сериализация** преобразует состояние или структуру данных в представление, которое можно сохранить или передать. **Десериализация** восстанавливает данные или объект из этого представления. Формат определяет, что именно сохраняется, насколько результат переносим между языками и версиями, и какие риски возникают при восстановлении.
+
+Модуль Python **`pickle`** предназначен для сериализации и восстановления Python-объектов, включая многие встроенные типы и пользовательские классы. Он сохраняет не просто универсальную структуру данных: pickle-поток содержит инструкции и ссылки, необходимые для реконструкции объектов Python. Поддерживаются разные протоколы; более новые протоколы могут эффективнее представлять некоторые объекты, но их совместимость зависит от версии Python и потребителей. При выборе протокола нужно учитывать минимальную поддерживаемую версию и реальные требования к обмену.
+
+Критическое правило безопасности: **никогда не выполнять `pickle.loads()` или аналогичную десериализацию над недоверенными или подменяемыми данными**. Восстановление pickle может привести к вызову функций и выполнению произвольного кода. Проверка подписи или MAC может помочь установить целостность и подлинность данных, если ключи защищены и проверка выполняется до unpickling, но это не делает безопасным произвольный pickle от недоверенного источника. Не следует считать pickle безопасным только потому, что файл находится в кеше, очереди или внутреннем хранилище: нужно анализировать, кто может записывать или изменять эти данные.
+
+Для управления состоянием пользовательского объекта существуют специальные hooks. **`__getstate__`** определяет состояние, которое нужно сериализовать; **`__setstate__`** восстанавливает это состояние после создания объекта. **`__reduce__`** и **`__reduce_ex__`** задают более низкоуровневый рецепт восстановления: обычно callable, аргументы, а при необходимости состояние и дополнительные элементы восстановления. `__reduce_ex__` получает номер протокола и может учитывать его при выборе формата. Эти hooks полезны для сложных объектов, но увеличивают связанность с механизмом pickle и требуют тестирования совместимости. Их нельзя использовать как способ сериализовать любой runtime resource: открытые sockets, database connections, locks и активные event loops обычно нужно исключать из состояния и восстанавливать через отдельный lifecycle.
+
+**JSON** обычно предпочтительнее на внешних API и межсервисных границах, если достаточно ограниченного набора структур данных. Он широко поддерживается и не восстанавливает произвольные Python-объекты автоматически. Однако JSON не является схемой сам по себе: нужно определить допустимую структуру, типы, обязательные поля, ограничения и правила обработки неизвестных полей. Для строгих контрактов можно применять явную schema validation и версии схем.
+
+Устойчивость к версиям не возникает автоматически ни у pickle, ни у JSON. Для долговременного хранения следует проектировать явную схему: поле версии, стабильные идентификаторы полей, defaults, правила миграции, поведение при неизвестных или удалённых полях и стратегию отката. Нельзя полагаться на то, что импортируемый Python-класс всегда будет иметь прежнее имя или путь модуля. Переименование класса или модуля может сломать восстановление старых pickle. Также следует тестировать fixtures, созданные предыдущими версиями приложения, и определять срок поддержки старых форматов.
+
+В backend-системе я разделяю **внутренний краткоживущий кеш** и **долговременный или внешний контракт**. Для внутреннего кеша допустимы ограниченные Python-specific решения, если writer и reader контролируются, версия окружения совместима, данные имеют ограниченный TTL и предусмотрен безопасный cache miss. Для API, очередей между независимыми сервисами, файлового обмена и долговременных данных я предпочитаю JSON или schema-based формат с явной валидацией и правилами эволюции. Конкретный выбор зависит от требований к типам, размеру, производительности и interoperability.
+
+Для проверки сериализации нужны round-trip tests, тесты совместимости со старыми fixtures, проверки неизвестных/отсутствующих полей, лимиты размера и глубины входных данных, а также негативные тесты. Round-trip тест сам по себе не доказывает безопасность или совместимость. Секреты, персональные и чувствительные данные нельзя включать в сериализуемое состояние без явной необходимости, минимизации и защиты.
+
+### Профессиональный ответ (EN)
+**Serialization** transforms data or object state into a representation that can be stored or transmitted. **Deserialization** reconstructs data or an object from that representation. The chosen format determines what is preserved, how portable the representation is across languages and versions, and what risks arise during reconstruction.
+
+Python's **`pickle`** module serializes and reconstructs Python objects, including many built-in types and user-defined classes. It is not merely a generic data structure format: a pickle stream contains instructions and references used to reconstruct Python objects. Pickle supports multiple protocols. Newer protocols may represent some objects more efficiently, but compatibility depends on the Python versions and consumers involved. Select a protocol based on the minimum supported runtime and actual interoperability requirements.
+
+The critical security rule is: **never call `pickle.loads()` or equivalent deserialization on untrusted or tamperable data**. Unpickling can invoke callables and execute arbitrary code. A signature or MAC can help establish data authenticity and integrity when keys are protected and verification occurs before unpickling, but it does not make arbitrary untrusted pickle safe. Do not assume a pickle is safe merely because it comes from a cache, queue, or internal store; identify every principal that can write or modify it.
+
+Python provides hooks for controlling object state. **`__getstate__`** defines the state to serialize; **`__setstate__`** restores that state after object creation. **`__reduce__`** and **`__reduce_ex__`** provide a lower-level reconstruction recipe, typically involving a callable and arguments, with optional state and additional reconstruction elements. `__reduce_ex__` receives the protocol number and can adapt its result accordingly. These hooks are useful for complex objects, but they couple the class to pickle's reconstruction mechanism and require compatibility tests. They are not a general solution for serializing runtime resources: open sockets, database connections, locks, and active event loops should normally be excluded and re-established through a separate lifecycle.
+
+**JSON** is generally a better choice for external APIs and service boundaries when a constrained data model is sufficient. It is widely supported and does not automatically reconstruct arbitrary Python objects. However, JSON is not a schema by itself: define the permitted structure, types, required fields, constraints, and handling of unknown fields. Explicit schema validation and schema versions can provide stronger contracts.
+
+Version tolerance is not automatic with either pickle or JSON. For durable storage, design an explicit schema: include a version, use stable field identifiers, define defaults and migrations, specify how unknown or removed fields are handled, and plan rollback behaviour. Do not assume an importable Python class will always retain the same name or module path. Renaming a class or module can break old pickle payloads. Test fixtures produced by previous application versions and define how long old formats remain supported.
+
+In a backend system, I distinguish a **short-lived internal cache** from a **durable or externally consumed contract**. A constrained Python-specific format may be acceptable for an internal cache when writers and readers are controlled, runtime compatibility is known, entries have a bounded TTL, and cache misses are safe. For APIs, queues between independently deployed services, file exchange, and durable data, I prefer JSON or a schema-based format with explicit validation and evolution rules. The choice depends on type requirements, payload size, performance, and interoperability.
+
+Serialization testing should include round-trip tests, compatibility tests using old fixtures, missing/unknown-field cases, input size and depth limits, and negative tests. A round-trip test alone does not prove safety or backward compatibility. Secrets, personal data, and other sensitive information should not be included in serialized state without a clear need, minimization, and appropriate protection.
+
+### Дополнительные вопросы и эталонные ответы
+
+#### FU-1
+**EN:** Why is unpickling untrusted data dangerous, and what does signing a pickle actually protect?  
+**RU:** Почему десериализация недоверенного pickle опасна и от чего фактически защищает подпись pickle?
+
+**Ответ (RU):** Unpickling может вызывать функции, указанные в pickle-потоке, и тем самым выполнять произвольный код. Поэтому нельзя загружать pickle от недоверенного источника. Подпись или MAC могут подтвердить целостность и подлинность данных, если ключ защищён, а проверка выполняется до unpickling. Это не защищает от вредоносного содержимого, созданного доверенным, но скомпрометированным источником, и не заменяет контроль доступа и управление ключами.
+
+**Answer (EN):** Unpickling can invoke callables encoded in the pickle stream and therefore execute arbitrary code. Never load pickle from an untrusted source. A signature or MAC can establish integrity and authenticity when the key is protected and verification happens before unpickling. It does not protect against malicious content produced by a trusted but compromised source, and it does not replace access control or key management.
+
+#### FU-2
+**EN:** What is the difference between `__getstate__`, `__setstate__`, `__reduce__`, and `__reduce_ex__`?  
+**RU:** В чём разница между `__getstate__`, `__setstate__`, `__reduce__` и `__reduce_ex__`?
+
+**Ответ (RU):** `__getstate__` определяет сериализуемое состояние объекта, а `__setstate__` применяет сохранённое состояние при восстановлении. `__reduce__` задаёт рецепт реконструкции объекта на более низком уровне. `__reduce_ex__` получает версию pickle protocol и может возвращать рецепт с учётом выбранного протокола. Это hooks для pickle, а не универсальный механизм persistence для ресурсов операционной системы.
+
+**Answer (EN):** `__getstate__` defines the object's serialized state, while `__setstate__` applies saved state during reconstruction. `__reduce__` defines a lower-level reconstruction recipe. `__reduce_ex__` receives the pickle protocol version and can return a protocol-aware recipe. These are pickle hooks, not a general persistence mechanism for operating-system resources.
+
+#### FU-3
+**EN:** Why might a pickle created by an older application version fail to load after a refactor?  
+**RU:** Почему pickle, созданный старой версией приложения, может перестать загружаться после рефакторинга?
+
+**Ответ (RU):** Pickle может ссылаться на класс или функцию через модуль и имя. Переименование, перенос или удаление символа меняет путь импорта, необходимый для восстановления. Может измениться и формат состояния класса. Поэтому для долговременной совместимости нужны migration strategy, versioned schemas, сохранённые fixtures и тесты восстановления после обновления. Не следует считать pickle стабильным независимым форматом хранения.
+
+**Answer (EN):** Pickle may refer to a class or function by its module and name. Renaming, moving, or removing that symbol changes the import path needed for reconstruction. The class state format may also change. Durable compatibility therefore requires a migration strategy, versioned schemas, retained fixtures, and tests across upgrades. Pickle should not be assumed to be a stable, implementation-independent storage format.
+
+#### FU-4
+**EN:** When would you choose JSON over pickle for a backend service boundary?  
+**RU:** Когда для границы backend-сервиса вы выберете JSON вместо pickle?
+
+**Ответ (RU):** JSON предпочтительнее, когда важны interoperability, прозрачность данных, поддержка разных языков и отсутствие автоматического восстановления произвольных Python-объектов. Но нужно отдельно валидировать схему и контролировать размер, типы и неизвестные поля. Pickle может быть приемлем для строго контролируемого внутреннего сценария, но не для недоверенных API payloads или независимых межсервисных контрактов.
+
+**Answer (EN):** JSON is preferable when interoperability, inspectable data, multi-language support, and avoiding automatic reconstruction of arbitrary Python objects matter. The schema, payload size, types, and unknown fields still need explicit validation. Pickle may be acceptable in a tightly controlled internal use case, but not for untrusted API payloads or independent service contracts.
+
+#### FU-5
+**EN:** How would you evolve a serialized payload without breaking existing consumers?  
+**RU:** Как развивать сериализуемый payload, не ломая существующих потребителей?
+
+**Ответ (RU):** Я бы ввёл явную версию схемы и правила совместимости: добавление optional fields с безопасными defaults, сохранение семантики существующих полей, контролируемое удаление через deprecation period, миграцию старых payloads и обработку неизвестных полей. Развёртывание должно учитывать порядок обновления producers и consumers. Проверки должны включать fixtures предыдущих версий и сценарии mixed-version deployment. При несовместимых изменениях лучше создать новую версию контракта, а не пытаться скрыть breaking change.
+
+**Answer (EN):** I would introduce an explicit schema version and compatibility rules: add optional fields with safe defaults, preserve existing field semantics, remove fields only through a deprecation period, migrate old payloads, and define unknown-field handling. Deployment must account for producer and consumer upgrade order. Tests should include previous-version fixtures and mixed-version deployment scenarios. For incompatible changes, introduce a new contract version rather than hiding a breaking change.
+
+### Связь с Pharmaviyum
+
+**Гипотетический сценарий интервью — не утверждение о текущей реализации:** представим background job, который сохраняет payload задачи импорта каталога лекарств: идентификатор импорта, параметры обработки и версию схемы. Объясните, почему payload должен содержать стабильные идентификаторы и валидированные данные, а не живые ORM-объекты, database sessions или credentials. Сравните JSON и pickle, опишите, как worker новой версии обработает старые сообщения в очереди, и определите тесты совместимости и отклонения некорректных payloads.
+
+Не утверждайте, что Pharmaviyum сейчас использует pickle, JSON task payloads или конкретный формат сериализации очереди, пока это не проверено по реализации.
+
+### Критерии оценки Senior
+
+| Уровень | Ожидаемые признаки |
+|---|---|
+| Слабый | Считает сериализацию безопасным преобразованием в bytes; рекомендует загружать произвольный pickle или считает его переносимым. |
+| Уверенный Middle | Объясняет различия pickle и JSON и распознаёт риск недоверенного ввода. |
+| Strong Senior | Объясняет hooks восстановления, зависимость от import paths, эволюцию схем, границы доверия, валидацию и тесты совместимости; выбирает формат с учётом назначения границы. |
+| Staff-level signal | Определяет политику версионирования и миграций для независимо развёртываемых producers и consumers, threat model, rollout/rollback strategy и операционные ограничения размера, хранения и чувствительных данных. |
+
+### Типичные ошибки
+- Десериализовать недоверенные или контролируемые пользователем данные через pickle.
+- Считать подписанный pickle автоматически безопасным, не проверяя подпись до unpickling и не защищая ключи.
+- Предполагать, что pickle — межъязыковой или долгосрочно стабильный формат обмена.
+- Сериализовать активные connections, locks, sessions, event loops и другие runtime resources.
+- Считать, что `__getstate__` и `__setstate__` сами по себе обеспечивают совместимость после изменений кода.
+- Игнорировать module и class import paths, используемые при восстановлении.
+- Предполагать, что JSON автоматически валидирует данные или обеспечивает эволюцию схемы.
+- Проверять только round trip на одной версии кода.
+- Включать secrets или ненужные персональные данные в сериализуемые payloads.
+- Не ограничивать размер payload, глубину вложенности и стоимость десериализации.
+
+### Источники
+- Python `pickle` documentation — security warning and protocols: https://docs.python.org/3/library/pickle.html
+- Python `pickle` — object state and customization: https://docs.python.org/3/library/pickle.html#pickling-class-instances
+- Python `pickle` — what can be pickled and unpickled: https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
+- Python `json` documentation: https://docs.python.org/3/library/json.html
+- Python Security Considerations: https://docs.python.org/3/library/security_warnings.html
