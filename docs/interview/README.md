@@ -469,6 +469,14 @@ A senior AI engineer is responsible for the deterministic architecture around th
 
 That principle keeps the application maintainable even as models and AI frameworks evolve.
 
+## 19. Structured question bank
+
+- [Senior Python/AI curriculum](./SENIOR_PYTHON_AI_CURRICULUM.md) — full scope and interview protocol.
+- [Python Core question bank — English](./PYTHON_CORE_QUESTIONS.md)
+- [Банк вопросов Python Core — русский](./PYTHON_CORE_QUESTIONS.ru.md)
+
+The Python Core bank is being authored incrementally. The current draft contains Question PY-CORE-001 and three answered follow-ups; it is not yet a complete set of 30 questions.
+
 ---
 
 **Pharmaviyum CRM — Senior Python Engineer | AI / LLM interview documentation**  
