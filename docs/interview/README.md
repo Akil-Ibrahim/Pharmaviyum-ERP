@@ -481,3 +481,12 @@ The Python Core bank is being authored incrementally. The current draft contains
 
 **Pharmaviyum CRM — Senior Python Engineer | AI / LLM interview documentation**  
 © 2026 Pharmaviyum. All rights reserved.
+
+
+## 20. Independent interview preparation program
+
+A separate, expanded preparation program is maintained in the [preparation/](./preparation/) directory.
+
+It consists of three documents: the Interview Preparation Standard, Technical Curriculum Architecture, and domain-specific Technical Curriculum. Its current target is 300 main questions and 1,200 follow-ups, with a substantive model answer for every question.
+
+This is an independent program. The existing [Senior Python/AI curriculum](./SENIOR_PYTHON_AI_CURRICULUM.md) remains unchanged and is not replaced by the new preparation system.
