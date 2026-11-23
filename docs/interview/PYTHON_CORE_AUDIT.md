@@ -213,6 +213,13 @@ These boundaries are editorial guidance for the final pass; they do not imply th
 - **Q17:** clarified that `concurrent.interpreters` is an interpreter-management API and does not start threads by itself; parallel execution requires threads or an executor such as `InterpreterPoolExecutor`. Added the warning that subinterpreters are not a security boundary and native extensions can violate isolation assumptions.
 - **Q21:** added the security caveat that annotation introspection can execute annotation code; `ForwardRef` evaluation may use `eval()`. Untrusted inputs must not be passed into annotation-introspection APIs.
 
+
+### Scope-boundary edits applied
+
+- Added explicit ownership notes to Q1 and Q4 to separate the object model from detailed comparison/hash semantics.
+- Added explicit ownership notes to Q13, Q14, and Q29 to distinguish object lifecycle/GC, local Python profiling, and end-to-end service performance engineering.
+- These notes clarify intended scope but do not prove that every repeated explanation has been removed. Q1/Q4 follow-up overlap and Q13/Q29 memory-diagnostics overlap remain candidates for the next content-level pass; Q14/Q29 also need a final duplicate-paragraph review.
+
 ### Remaining review work
 
 - Verify the technical claims and follow-up answers across all 30 questions against the Python language reference and standard-library documentation.
