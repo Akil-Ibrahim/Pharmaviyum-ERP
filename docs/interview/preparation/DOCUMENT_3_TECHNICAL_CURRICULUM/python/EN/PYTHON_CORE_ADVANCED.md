@@ -1,0 +1,30 @@
+# Python Core & Advanced Python — Question Map (EN)
+
+**Language:** English  
+**Domain allocation:** 45 Main Questions + 180 Follow-ups = 225  
+**Current migration scope:** PY-001 and FU-001–FU-004  
+**Answer file:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
+**Russian version:** [RU Question Map](../RU/PYTHON_CORE_ADVANCED.md)
+
+## PY-001 — Python Execution Model & Runtime
+
+**Main Question:** How does Python execute a program from source code to runtime behavior?
+
+**Evaluation focus:** Compilation, bytecode, interpreter/runtime model.  
+**Level:** L3 — Advanced/Senior  
+**Priority:** P0 — Core
+
+| Follow-up ID | Focus | Follow-up question |
+|---|---|---|
+| FU-001 | Mechanism | What are the main stages between Python source code and the execution of its instructions in CPython? |
+| FU-002 | Application | How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module? |
+| FU-003 | Edge cases and trade-offs | Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter? |
+| FU-004 | Senior judgment | When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment? |
+
+## Coverage status
+
+- PY-001: authored in English; independent technical and editorial review pending.
+- FU-001–FU-004: authored in English; independent technical and editorial review pending.
+- Remaining Main Questions PY-002–PY-045 and FU-005–FU-180: not yet migrated into the language-separated structure.
+
+**Allocation rule:** Every Main Question receives exactly four Follow-ups covering mechanism, practical application, edge cases/trade-offs, and senior-level judgment or production implications.
