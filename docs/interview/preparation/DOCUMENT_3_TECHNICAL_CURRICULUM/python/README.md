@@ -31,4 +31,4 @@ Question IDs are identical in both languages, so PY-001 and FU-001 always refer 
 
 ## Current progress
 
-The separated EN/RU materials currently cover PY-001–PY-004 and FU-001–FU-016. More topics will be added in sequence. The older bilingual source file is retained as a migration reference until the separated materials have been checked.
+The separated EN/RU materials currently cover PY-001–PY-005 and FU-001–FU-020. More topics will be added in sequence. The older bilingual source file is retained as a migration reference until the separated materials have been checked.
