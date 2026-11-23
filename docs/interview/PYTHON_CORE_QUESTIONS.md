@@ -1,7 +1,7 @@
 # Python Core — Question Bank
 
 **Status:** In progress  
-**Coverage:** 28 of 30 primary questions drafted  
+**Coverage:** 29 of 30 primary questions drafted  
 **Review rule:** Draft answers must be technically reviewed before being marked validated.
 
 ---
@@ -3773,3 +3773,140 @@ A Senior engineer should be able to draw the dependency graph, identify the comp
 - SQLAlchemy asyncio: https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html
 - Martin Fowler — Dependency Injection: https://martinfowler.com/articles/injection.html
 - Microsoft — Transactional Outbox pattern: https://learn.microsoft.com/en-us/azure/architecture/databases/guide/transactional-outbox
+
+ 
+## PY-CORE-029 — Python Performance Engineering, Profiling, Optimization and Scalability
+
+### What the interviewer evaluates
+
+Whether the candidate can approach performance as an evidence-driven engineering discipline rather than a collection of micro-optimizations. A Senior engineer should define measurable service-level objectives, establish representative workloads, distinguish CPU, memory, I/O, database, network, queueing, and contention bottlenecks, select appropriate profiling and load-testing tools, interpret latency distributions, and validate that a change improves the target outcome without weakening correctness, reliability, or maintainability.
+
+This question deliberately extends the earlier Python optimization and profiling fundamentals (PY-CORE-014) into end-to-end backend performance engineering: workload characterization, measurement design, service-level indicators, scalability limits, regression control, and operational trade-offs.
+
+### Эталонный ответ (RU)
+
+Производительность backend-системы я рассматриваю как измеряемое свойство всей системы, а не только скорость отдельной функции Python. Сначала определяю пользовательский сценарий и целевую характеристику: например, p95 latency для критичного API, throughput при заданной конкурентности, допустимую долю ошибок и потребление ресурсов. Затем фиксирую базовую линию на репрезентативной нагрузке и только после этого выбираю оптимизацию.
+
+Первый шаг — классифицировать workload и найти узкое место. CPU-bound задача тратит значительную часть времени на вычисления; I/O-bound — ожидает базу данных, сеть, файловую систему или другой сервис. В реальном backend часто встречается смешанный профиль: медленный SQL-запрос, блокирующий вызов внутри async endpoint, нехватка соединений в pool, сериализация больших объектов, lock contention, чрезмерное число запросов или очередь фоновых задач. Нельзя выбирать asyncio, multiprocessing или кэширование только по общему ощущению медленной работы — сначала нужны измерения.
+
+Для CPU profiling в Python подходят cProfile и sampling-профайлеры, например py-spy. Они помогают понять, где расходуется CPU и какие вызовы доминируют. Для памяти применяю tracemalloc, сравнение snapshots и, при необходимости, специализированные memory profilers. Tracemalloc отслеживает Python allocations, но не обязан объяснять весь RSS процесса: память native extensions, allocator arenas и поведение ОС могут отличаться. Поэтому сопоставляю Python-level данные с RSS/container metrics и профилем нагрузки. Рост RSS сам по себе ещё не доказывает memory leak: allocator может удерживать освобождённую память для повторного использования.
+
+Для backend отдельно исследую внешние зависимости. Проверяю планы выполнения SQL через EXPLAIN (ANALYZE, BUFFERS) на безопасной и репрезентативной среде, индексы, селективность, N+1, объём возвращаемых строк, pagination, транзакции и connection-pool saturation. Измеряю сетевые вызовы, таймауты, retries и fan-out. Для async-приложения ищу блокирующий I/O в event loop, долгие участки CPU, неограниченное создание tasks и отсутствие backpressure. Асинхронность повышает эффективность ожидания I/O, но не ускоряет CPU-bound код автоматически.
+
+Измерения должны включать не только среднее значение. Анализирую p50, p95, p99 latency, throughput, error rate, saturation и распределение по endpoint/операции. Среднее скрывает длинный хвост. При росте concurrency задержки могут резко увеличиваться из-за очередей, lock contention, исчерпания DB pool или downstream capacity. Поэтому load test должен отражать реалистичные данные, mix запросов, прогрев, concurrency, ramp-up, длительность и поведение зависимостей. Отдельно учитываю coordinated omission и влияние самого генератора нагрузки: если load generator не способен выдавать запланированный поток запросов, результат вводит в заблуждение.
+
+Оптимизацию выполняю по циклу: сформулировать гипотезу → определить метрику и контрольные условия → измерить baseline → изменить один существенный фактор → повторить benchmark/load test → проверить корректность и побочные эффекты → сохранить результат. Микробенчмарки полезны для изолированных участков, но не заменяют end-to-end измерения. Сравнение требует одинаковых условий, достаточного числа повторов, контроля шума, прогрева и стабильной среды. Benchmark должен измерять именно интересующую операцию, а не случайные затраты setup/teardown.
+
+Кэширование оправдано, когда повторное вычисление или чтение действительно дорого, данные допускают определённую свежесть, а cache hit rate и стоимость invalidation измеримы. Нужно определить ключи, TTL, границы tenant/user, поведение при cache miss, stampede protection, eviction и отказ кэша. Кэш может скрыть проблему источника данных, создать stale reads или привести к утечке данных между пользователями при неверном ключе. Он не является универсальным решением.
+
+Масштабирование бывает vertical и horizontal. Увеличение числа workers/replicas помогает только до ограничения общего ресурса: базы данных, connection pool, внешнего API, очереди, CPU или сетевого канала. Нужно оценивать capacity каждого критического звена, а не только web workers. Для stateful компонентов важны shared state, idempotency, distributed coordination и graceful degradation. Увеличение concurrency без контроля может ухудшить tail latency и усилить перегрузку.
+
+Для предотвращения регрессий использую performance budgets, стабильные benchmark suites, нагрузочные тесты для критичных сценариев и мониторинг production SLI/SLO. В CI микробенчмарки могут быть шумными, поэтому пороги и окружение должны быть обоснованы; более тяжёлые load tests можно запускать отдельно или перед релизом. В production отслеживаю latency distributions, throughput, errors, saturation, queue depth, DB pool utilization и downstream timings с безопасной корреляцией trace/log/metric. Любая оптимизация должна сохранять функциональную корректность, безопасность, изоляцию данных и предсказуемость отказов.
+
+Senior-level подход — не «сделать быстрее любой ценой», а определить, какая задержка важна пользователю, доказать источник проблемы, выбрать минимально сложное изменение, количественно подтвердить эффект и зафиксировать trade-offs. Если система уже удовлетворяет требованиям, дополнительная сложность может быть хуже небольшой экономии времени.
+
+### Professional answer (EN)
+
+I treat backend performance as an end-to-end, measurable system property—not merely the execution speed of an individual Python function. I first define the user-visible workload and target: for example, p95 latency for a critical API, throughput at a specified concurrency, an acceptable error rate, and resource limits. I establish a baseline under representative conditions before changing the implementation.
+
+The first task is bottleneck classification. CPU-bound work spends most of its time executing instructions; I/O-bound work waits for a database, network, filesystem, or another service. Real services often have mixed bottlenecks: inefficient SQL, blocking calls inside async endpoints, connection-pool exhaustion, expensive serialization, lock contention, excessive query counts, or overloaded background queues. I do not choose asyncio, multiprocessing, or caching based on intuition; I gather evidence first.
+
+For Python CPU profiling, cProfile and sampling profilers such as py-spy help identify expensive call paths. For memory investigations, I use tracemalloc snapshots and, where appropriate, dedicated memory profilers. Tracemalloc observes Python allocations but does not necessarily explain total process RSS: native extensions, allocator arenas, and operating-system behavior may contribute. I correlate Python-level findings with process/container metrics. An increase in RSS alone does not prove a leak because an allocator may retain freed memory for reuse.
+
+I profile external dependencies separately. For PostgreSQL, I inspect query plans with EXPLAIN (ANALYZE, BUFFERS) in a safe representative environment, along with indexes, selectivity, N+1 queries, result size, pagination, transaction duration, and connection-pool saturation. I measure network calls, timeouts, retries, and fan-out. In async services, I look for blocking I/O on the event loop, long CPU sections, unbounded task creation, and missing backpressure. Async improves I/O concurrency; it does not automatically accelerate CPU-bound work.
+
+Measurements must go beyond averages. I examine p50, p95, and p99 latency, throughput, error rate, saturation, and per-operation distributions. Averages hide tail behavior. As concurrency rises, queueing, lock contention, exhausted database pools, or downstream capacity can cause latency to increase sharply. A load test should use realistic data and request mix, warm-up, concurrency, ramp-up, duration, and dependency behavior. I also account for coordinated omission and load-generator limitations: a generator that cannot sustain the intended arrival rate can produce misleading results.
+
+I optimize through a controlled loop: state a hypothesis, define the metric and controls, measure the baseline, change one material factor, rerun the benchmark or load test, verify correctness and side effects, and record the result. Microbenchmarks are useful for isolated code paths but do not replace end-to-end measurements. Comparisons require consistent conditions, repeated runs, noise control, warm-up, and a stable environment. The benchmark must measure the operation of interest rather than accidental setup or teardown work.
+
+Caching is appropriate when repeated computation or reads are demonstrably expensive, the data has an acceptable freshness model, and hit rate and invalidation costs can be measured. I define keys, TTL, tenant/user boundaries, cache-miss behavior, stampede protection, eviction, and failure behavior. A cache can conceal source-system problems, introduce stale reads, or leak data across users when keys are incorrectly scoped. It is not a universal optimization.
+
+Scaling can be vertical or horizontal. More workers or replicas help only until a shared resource becomes the limit: the database, connection pool, external API, queue, CPU, or network. I assess the capacity of every critical tier rather than only the web tier. Stateful components require deliberate shared-state handling, idempotency, distributed coordination, and graceful degradation. Increasing concurrency without admission control can worsen tail latency and amplify overload.
+
+To prevent regressions, I use performance budgets, stable benchmark suites, load tests for critical scenarios, and production SLI/SLO monitoring. CI microbenchmarks can be noisy, so thresholds and environments must be justified; heavier load tests may run separately or before release. In production I monitor latency distributions, throughput, errors, saturation, queue depth, database-pool utilization, and downstream timings, with safe correlation across traces, logs, and metrics. Every optimization must preserve functional correctness, security, data isolation, and predictable failure behavior.
+
+A Senior-level approach is not to make everything faster at any cost. It is to identify the latency that matters to users, prove the bottleneck, choose the least complex effective change, quantify its impact, and document the trade-offs. If the system already meets its requirements, added complexity may be worse than a marginal speed improvement.
+
+### Follow-up questions and model answers
+
+**FU-1. How would you investigate an API whose p95 latency increased while its average latency remained almost unchanged?**
+
+- **RU — Вопрос:** Как расследовать ситуацию, когда p95 latency API выросла, а средняя задержка почти не изменилась?
+- **Answer (RU):** Сначала проверю распределение latency по endpoint, версии приложения, региону, tenant и типу запроса, а также сравню p50, p90, p95 и p99 до и после изменения. Рост только хвоста часто указывает на небольшую долю медленных запросов: lock contention, очереди, редкие медленные SQL-планы, cache misses, retries, downstream timeouts или нехватку соединений. Затем сопоставлю traces и метрики отдельных этапов запроса, проверю deployment/configuration changes и нагрузочный профиль. Не буду оптимизировать средний путь, пока не локализую источник tail latency. После исправления повторю нагрузочный тест и проверю, что улучшились нужные percentiles без роста ошибок.
+- **Answer (EN):** I would compare latency distributions by endpoint, application version, region, tenant, and request class, including p50, p90, p95, and p99 before and after the change. A tail-only regression often points to a minority of slow requests: lock contention, queueing, occasional slow query plans, cache misses, retries, downstream timeouts, or connection scarcity. I would correlate traces with per-stage metrics, inspect deployment and configuration changes, and verify the workload profile. I would not optimize the average path until the tail-latency source is identified. After the fix, I would rerun a representative load test and confirm that the target percentiles improve without increasing errors.
+
+**FU-2. What is the difference between CPU profiling, memory profiling, and distributed tracing, and when would you use each?**
+
+- **RU — Вопрос:** Чем отличаются CPU profiling, memory profiling и distributed tracing и когда применять каждый инструмент?
+- **Answer (RU):** CPU profiling показывает, какие функции и call paths потребляют процессорное время; использую его при высокой CPU utilization или подозрении на дорогие вычисления. Memory profiling помогает понять allocation patterns, удержание объектов и возможный рост Python heap; сопоставляю snapshots и учитываю, что tracemalloc не покрывает всю native memory и RSS. Distributed tracing показывает путь запроса через процессы и внешние зависимости, включая длительность spans и межсервисные задержки; применяю его, когда проблема может находиться в БД, сети или downstream service. Эти инструменты дополняют друг друга: trace локализует медленный компонент, profiler объясняет его внутреннюю стоимость.
+- **Answer (EN):** CPU profiling identifies functions and call paths consuming processor time; I use it when CPU utilization is high or computation appears expensive. Memory profiling helps explain allocation patterns, retained objects, and possible Python-heap growth; I compare snapshots while remembering that tracemalloc does not cover all native memory or total RSS. Distributed tracing follows a request across processes and dependencies, exposing span durations and cross-service delays; I use it when the database, network, or a downstream service may be responsible. The tools complement one another: tracing locates the slow component, while a profiler explains its internal cost.
+
+**FU-3. Why can adding more workers or async concurrency make a service slower?**
+
+- **RU — Вопрос:** Почему увеличение числа workers или async concurrency может замедлить сервис?
+- **Answer (RU):** Конкурентность увеличивает давление на общие ресурсы. Дополнительные workers могут исчерпать DB connection pool, увеличить число конкурирующих SQL-запросов, усилить lock contention, context switching и memory pressure. В async-сервисе создание неограниченного числа tasks может породить очереди и нагрузить downstream dependencies. Когда arrival rate превышает capacity самого медленного звена, растёт queueing delay и tail latency. Решение — измерить saturation, ввести bounded concurrency, backpressure, admission control и разумные pool limits, а затем подобрать concurrency экспериментально. Больше workers не означает автоматически больше throughput.
+- **Answer (EN):** More concurrency increases pressure on shared resources. Additional workers can exhaust the database connection pool, increase competing SQL queries, and amplify lock contention, context switching, and memory pressure. In an async service, unbounded task creation can create queues and overload downstream dependencies. When the arrival rate exceeds the capacity of the slowest tier, queueing delay and tail latency rise. I would measure saturation, introduce bounded concurrency, backpressure, admission control, and appropriate pool limits, then tune concurrency experimentally. More workers do not automatically mean more throughput.
+
+**FU-4. How would you design a reliable performance benchmark and prevent misleading conclusions?**
+
+- **RU — Вопрос:** Как спроектировать надёжный performance benchmark и избежать ошибочных выводов?
+- **Answer (RU):** Определю измеряемую операцию, реалистичный dataset и профиль нагрузки, зафиксирую версию кода, конфигурацию, hardware/container limits и состояние зависимостей. Разделю setup, warm-up и измеряемую фазу; выполню несколько повторов и буду сравнивать распределения, а не одно число. Проверю, что load generator способен поддерживать целевую интенсивность и не создаёт coordinated omission. Изолирую шумные фоновые процессы, контролирую cache state и не сравниваю результаты из существенно разных сред без нормализации. Для regression gate использую устойчивые пороги и достаточный объём наблюдений; микробенчмарк подтверждаю интеграционным или нагрузочным измерением.
+- **Answer (EN):** I would define the operation, representative dataset, and workload profile, then record the code version, configuration, hardware or container limits, and dependency state. I would separate setup, warm-up, and measurement phases, run repeated trials, and compare distributions rather than a single number. I would verify that the load generator can sustain the target arrival rate and does not introduce coordinated omission. I would control background noise and cache state, and avoid comparing materially different environments without normalization. Regression gates need stable thresholds and sufficient observations; I would validate microbenchmark findings with integration or load measurements.
+
+**FU-5. When is caching an unsafe or ineffective performance optimization in a multi-tenant backend?**
+
+- **RU — Вопрос:** Когда кэширование является небезопасной или неэффективной оптимизацией в multi-tenant backend?
+- **Answer (RU):** Кэш может быть небезопасен, если ключ не включает tenant/user scope или authorization context: тогда возможна выдача данных другому клиенту. Он неэффективен, если низкий hit rate, высокая стоимость invalidation, данные быстро меняются или cache lookup дороже исходной операции. Нужно определить freshness contract, TTL, invalidation strategy, защиту от stampede, ограничение размера и поведение при отказе. Для чувствительных данных кэширование требует явного threat model и тестов изоляции. Я измеряю hit/miss ratio, latency, memory footprint и влияние на источник данных; не считаю сам факт добавления Redis доказательством ускорения.
+- **Answer (EN):** Caching is unsafe when a key omits tenant/user scope or relevant authorization context, potentially returning one customer's data to another. It is ineffective when the hit rate is low, invalidation is expensive, data changes rapidly, or cache lookup costs more than the original operation. I define a freshness contract, TTL, invalidation strategy, stampede protection, size limits, and failure behavior. Caching sensitive data requires an explicit threat model and isolation tests. I measure hit/miss ratio, latency, memory footprint, and impact on the source system; adding Redis is not itself evidence of a performance improvement.
+
+### Pharmaviyum connection
+
+**Status: hypothetical interview scenario; not a claim about measured or implemented production performance.**
+
+For a pharmacy ERP workflow, a useful investigation could follow a medicine-search or customer-history API from the React client through FastAPI, SQLAlchemy, PostgreSQL, and any downstream service. Define a representative request mix and measure p50/p95/p99 latency, throughput, error rate, DB query count, pool wait time, and process resource use. Use tracing to locate slow spans, SQL query plans to investigate database work, and Python profiling only after the responsible component is narrowed down. If evaluating a cache, test tenant/customer isolation and freshness requirements explicitly. Do not claim a performance gain until a repeatable before/after test demonstrates it.
+
+### Senior-level evaluation
+
+A strong Senior answer should demonstrate that the candidate can:
+
+1. Translate user experience and SLO requirements into measurable performance targets.
+2. Design representative benchmarks and load tests, including warm-up, concurrency, arrival rate, and generator capacity.
+3. Interpret latency percentiles and distinguish latency, throughput, error rate, and saturation.
+4. Select CPU, memory, tracing, database, and infrastructure tools for the right diagnostic question.
+5. Identify bottlenecks across Python, event loops, database pools, SQL, network, queues, and downstream services.
+6. Explain why concurrency and caching can create contention, stale data, isolation failures, or overload.
+7. Quantify changes with repeatable evidence and account for measurement noise.
+8. Prevent regressions through performance budgets, monitoring, and release gates.
+9. Preserve correctness, security, tenant isolation, and maintainability while optimizing.
+10. State limitations and trade-offs instead of presenting a tool or architecture as a universal solution.
+
+**Red flags:** optimizing before measuring; relying only on averages; assuming async makes CPU work faster; treating RSS growth as proof of a Python leak; increasing workers without examining shared bottlenecks; trusting a single benchmark run; caching tenant data without scoped keys; and claiming improvements without a reproducible baseline.
+
+### Common pitfalls
+
+- Optimizing a function that is not on the critical path.
+- Treating average latency as sufficient while p95/p99 regress.
+- Confusing latency with throughput or concurrency with capacity.
+- Running benchmarks with unrealistic data, request mix, warm-up, or arrival rates.
+- Ignoring coordinated omission or a saturated load generator.
+- Treating cProfile, tracemalloc, RSS, and distributed tracing as interchangeable.
+- Assuming tracemalloc accounts for every native allocation or all process memory.
+- Calling allocator-retained memory a leak without checking object reachability and trends.
+- Adding workers until the database pool or downstream service is overloaded.
+- Using unbounded asyncio task creation instead of backpressure.
+- Adding caching without freshness, invalidation, tenant isolation, and failure semantics.
+- Accepting a microbenchmark result without validating end-to-end impact.
+- Making performance gates so noisy that teams ignore them.
+- Trading away authorization, correctness, or maintainability for an unproven speedup.
+
+### References
+
+- Python Profilers — cProfile: https://docs.python.org/3/library/profile.html
+- Python tracemalloc: https://docs.python.org/3/library/tracemalloc.html
+- py-spy: https://github.com/benfred/py-spy
+- PostgreSQL EXPLAIN: https://www.postgresql.org/docs/current/using-explain.html
+- PostgreSQL Monitoring Statistics: https://www.postgresql.org/docs/current/monitoring-stats.html
+- OpenTelemetry — Signals: https://opentelemetry.io/docs/concepts/signals/
+- Google SRE Book — Monitoring Distributed Systems: https://sre.google/sre-book/monitoring-distributed-systems/
+- Locust documentation: https://docs.locust.io/
+- Python asyncio — Developing with asyncio: https://docs.python.org/3/library/asyncio-dev.html
