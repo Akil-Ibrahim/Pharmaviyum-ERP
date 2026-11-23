@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 3 из 30 основных вопросов подготовлено  
+**Охват:** 4 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -374,3 +374,137 @@ At Senior level, I explain this in terms of **name binding, object identity, mut
 - Python FAQ — mutable default arguments: https://docs.python.org/3/faq/programming.html#why-are-default-values-shared-between-objects
 - Python language reference — function definitions: https://docs.python.org/3/reference/compound_stmts.html#function-definitions
 - Python glossary: https://docs.python.org/3/glossary.html
+
+---
+
+## PY-CORE-004 — Имена, идентичность, равенство и ссылки на объекты
+
+### Question (EN)
+
+**Explain the difference between object identity and equality in Python. How do name binding, aliasing, `is`, `==`, and the equality/hash contract interact?**
+
+### Перевод (RU)
+
+**Объясните разницу между идентичностью объекта и равенством в Python. Как связаны привязка имён, aliasing, операторы `is` и `==`, а также контракт равенства и хеширования?**
+
+### Что проверяет интервьюер
+
+- Понимание того, что имена являются привязками к объектам, а не контейнерами, хранящими значения.
+- Различие между идентичностью объекта и равенством значений.
+- Понимание того, когда применять `is`, а когда `==`.
+- Понимание aliasing и его последствий для изменяемых объектов.
+- Знание инварианта equality/hash и поведения пользовательского `__eq__`.
+- Отсутствие зависимости от особенностей конкретной реализации Python.
+
+### Эталонный ответ (RU)
+
+В Python важно различать **имя, объект, идентичность и равенство**.
+
+Имя — это привязка (binding) к объекту. Присваивание обычно не копирует объект, а связывает другое имя с тем же объектом. Если два имени ссылаются на один объект, возникает **aliasing**. Для изменяемых объектов это означает, что мутация через одно имя будет видна через другое.
+
+**Идентичность (identity)** отвечает на вопрос: «Это один и тот же объект?». Оператор `is` проверяет идентичность. **Равенство (equality)** отвечает на вопрос: «Считаются ли эти объекты равными по смыслу?». Оператор `==` выполняет сравнение равенства, поведение которого может быть определено пользовательским классом через `__eq__`.
+
+Два разных объекта могут быть равны, но не идентичны. Например, два отдельно созданных списка с одинаковыми элементами обычно удовлетворяют `a == b`, но `a is b` будет ложным. И наоборот, если `a` и `b` — два имени одного объекта, то они идентичны и обычно равны.
+
+Практическое правило: используйте `is` для проверки идентичности с singleton-объектами, прежде всего `None`, например `value is None`. Для сравнения значений используйте `==`. Не следует использовать `is` для сравнения строк, чисел или других значений. Наблюдаемое совпадение идентичности некоторых литералов может быть следствием интернирования или оптимизаций реализации и не является корректным контрактом программы.
+
+Встроенная функция `id()` возвращает целочисленный идентификатор, соответствующий идентичности объекта в течение времени его жизни. В CPython это обычно адрес объекта в памяти, но язык Python не гарантирует, что `id()` является адресом памяти. Идентификаторы могут повторно использоваться для объектов, время жизни которых не пересекается. Поэтому `id()` не следует применять как постоянный глобальный идентификатор или как механизм хранения ссылок.
+
+**Контракт equality/hash** критически важен для словарей и множеств. Если два объекта сравниваются как равные, их хеши должны быть одинаковыми. Хеш объекта, находящегося в хеш-коллекции, должен оставаться стабильным. Поэтому класс, определяющий собственное равенство по изменяемым полям, должен осторожно относиться к хешированию. Если класс переопределяет `__eq__` без явного определения совместимого `__hash__`, Python обычно делает его экземпляры нехешируемыми. Нельзя проектировать `__hash__`, который зависит от состояния, меняющегося после помещения объекта в словарь или множество.
+
+На Senior-уровне я проверяю, соответствует ли equality бизнес-семантике типа, стабильны ли поля, участвующие в сравнении и хешировании, и не создаёт ли aliasing скрытые побочные эффекты. Для идентичности использую `is`, для значения — `==`, а для ключей коллекций явно обеспечиваю контракт равенства и хеша.
+
+### Эталонный ответ (EN)
+
+In Python, it is important to distinguish **a name, an object, identity, and equality**.
+
+A name is a binding to an object. Assignment usually does not copy the object; it binds another name to the same object. When two names refer to one object, we have **aliasing**. With mutable objects, a mutation made through one alias is visible through the other.
+
+**Identity** answers: "Is this the very same object?" The `is` operator tests identity. **Equality** answers: "Are these objects considered equivalent in value or meaning?" The `==` operator performs an equality comparison, whose behaviour can be customized by a class through `__eq__`.
+
+Two distinct objects can be equal without being identical. For example, two separately created lists with the same elements normally satisfy `a == b`, while `a is b` is false. Conversely, if `a` and `b` are two names bound to the same object, they are identical and normally equal.
+
+As a practical rule, use `is` for identity checks against singletons, especially `None`, as in `value is None`. Use `==` for value comparisons. Do not use `is` to compare strings, numbers, or other values. Apparent identity between some literals may result from interning or implementation optimizations and is not a valid program-level guarantee.
+
+The built-in `id()` function returns an integer identifying an object during its lifetime. In CPython, it is typically the object's memory address, but the Python language does not guarantee that `id()` is a memory address. IDs may be reused for objects whose lifetimes do not overlap. Therefore, `id()` should not be treated as a persistent global identifier or as a way to retain an object reference.
+
+The **equality/hash contract** is essential for dictionaries and sets. If two objects compare equal, their hashes must be equal. An object's hash must remain stable while it is stored in a hash-based collection. A class that defines equality using mutable fields must therefore be careful about hashability. If a class overrides `__eq__` without explicitly providing a compatible `__hash__`, Python normally makes its instances unhashable. A hash implementation must not depend on state that can change while the object is used as a dictionary key or set member.
+
+At Senior level, I check whether equality reflects the type's domain semantics, whether fields participating in equality and hashing are stable, and whether aliasing can introduce hidden side effects. I use `is` for identity, `==` for value equality, and enforce the equality/hash contract for objects used in hash-based collections.
+
+### Follow-up questions и эталонные ответы
+
+#### FU-1
+
+**EN:** Two lists contain the same elements. What do `==` and `is` tell you, and why?  
+**RU:** Два списка содержат одинаковые элементы. Что покажут `==` и `is` и почему?
+
+**Ответ (RU):** Если списки созданы отдельно, `==` обычно вернёт `True`, потому что сравнивается содержимое. `is` вернёт `False`, потому что это два разных объекта. Равенство не подразумевает идентичность.
+
+**Answer (EN):** If the lists were created separately, `==` normally returns `True` because their contents are compared. `is` returns `False` because they are distinct objects. Equality does not imply identity.
+
+#### FU-2
+
+**EN:** Why should you write `value is None` instead of `value == None`?  
+**RU:** Почему следует писать `value is None`, а не `value == None`?
+
+**Ответ (RU):** `None` — singleton, поэтому проверка должна выражать именно идентичность с этим объектом. `==` может вызывать пользовательский `__eq__` и иметь переопределённую семантику. Идиоматичная и однозначная проверка — `is None` или `is not None`.
+
+**Answer (EN):** `None` is a singleton, so the check should express identity with that exact object. `==` can invoke a custom `__eq__` implementation with different semantics. The idiomatic and unambiguous check is `is None` or `is not None`.
+
+#### FU-3
+
+**EN:** What is aliasing, and why can it create bugs with mutable objects?  
+**RU:** Что такое aliasing и почему он может приводить к ошибкам при работе с изменяемыми объектами?
+
+**Ответ (RU):** Aliasing возникает, когда несколько имён ссылаются на один объект. Мутация через любое из этих имён изменяет общий объект, поэтому другая часть программы может неожиданно увидеть изменение. Решения включают явное владение, копирование на границе владения или использование неизменяемых значений там, где это оправдано.
+
+**Answer (EN):** Aliasing occurs when multiple names refer to the same object. A mutation through any of those names changes the shared object, so another part of the program may observe an unexpected change. Mitigations include explicit ownership, copying at ownership boundaries, or using immutable values where appropriate.
+
+#### FU-4
+
+**EN:** What invariant must hold between `__eq__` and `__hash__`?  
+**RU:** Какой инвариант должен соблюдаться между `__eq__` и `__hash__`?
+
+**Ответ (RU):** Если `a == b`, то `hash(a) == hash(b)` должно быть истинно. Обратное не обязательно: совпадение хешей не означает равенства из-за возможных коллизий. Хеш также должен оставаться стабильным, пока объект находится в словаре или множестве.
+
+**Answer (EN):** If `a == b`, then `hash(a) == hash(b)` must hold. The reverse is not required because hash collisions are possible. The hash must also remain stable while the object is stored in a dictionary or set.
+
+#### FU-5
+
+**EN:** What happens to hashability when a class overrides `__eq__` but does not define `__hash__`?  
+**RU:** Что происходит с хешируемостью класса, если он переопределяет `__eq__`, но не определяет `__hash__`?
+
+**Ответ (RU):** По стандартному поведению Python такой класс становится нехешируемым: `__hash__` устанавливается в `None`. Это предотвращает случайное использование объектов с пользовательской семантикой равенства и потенциально несовместимым хешем в словарях и множествах. Если хеширование действительно требуется, нужно явно реализовать совместимый и стабильный `__hash__`.
+
+**Answer (EN):** Under Python's standard behaviour, the class becomes unhashable: `__hash__` is set to `None`. This prevents objects with custom equality semantics and potentially incompatible hashing from being used accidentally in dictionaries and sets. If hashability is required, implement a compatible and stable `__hash__` explicitly.
+
+### Связь с Pharmaviyum
+
+**Гипотетический сценарий для интервью — не утверждение о текущей реализации:** рассмотрим value objects, представляющие идентификаторы лекарств или нормализованные поисковые критерии. Equality должна отражать предполагаемую предметную идентичность, а не случайную идентичность объектов в памяти. Если такие объекты используются как ключи словарей или элементы множеств, поля equality и hash должны оставаться стабильными. Общие изменяемые фильтры также следует проверять на aliasing между этапами обработки запроса.
+
+Не утверждайте, что конкретная модель Pharmaviyum реализует такую семантику, не проверив исходный код.
+
+### Критерии оценки уровня Senior
+
+| Уровень | Ожидаемые признаки |
+|---|---|
+| Слабый | Использует `is` и `==` как взаимозаменяемые операторы; считает `id()` гарантированным адресом памяти. |
+| Компетентный | Объясняет identity, equality, aliasing и причину проверки `None` через `is`. |
+| Strong Senior | Объясняет пользовательское равенство, hash-инварианты, ограничения изменяемости, `__hash__ = None`, переносимость между реализациями и проектирование equality с учётом предметной области. |
+
+### Типичные ошибки
+
+- Использовать `is` для сравнения строк, чисел и произвольных значений.
+- Считать, что равные объекты обязательно являются одним объектом.
+- Считать `id()` постоянным адресом памяти или идентификатором.
+- Игнорировать aliasing при передаче изменяемых объектов между слоями.
+- Реализовывать `__hash__` несовместимо с `__eq__`.
+- Хешировать изменяемое состояние, которое может измениться, пока объект используется как ключ словаря или элемент множества.
+
+### Источники
+
+- Python language reference — comparisons: https://docs.python.org/3/reference/expressions.html#comparisons
+- Python data model — object identity and `id()`: https://docs.python.org/3/reference/datamodel.html
+- Python data model — `__eq__` and `__hash__`: https://docs.python.org/3/reference/datamodel.html#object.__hash__
+- Python glossary — hashable: https://docs.python.org/3/glossary.html#term-hashable
