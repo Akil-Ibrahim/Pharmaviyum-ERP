@@ -1337,3 +1337,158 @@ The decision should connect a measured low-level cost to a meaningful service-le
 - [ ] Final editorial review and mastery assessment.
 
 **Completion rule:** This record is authored, but not finally approved, until the technical and editorial review items above are completed.
+
+
+## Answer Development — PY-003
+
+**Status:** Initial complete main-question answer authored; technical and editorial review remain pending.  
+**Scope:** Main question PY-003. Follow-ups FU-009–FU-012 remain part of the question map and will receive their own complete answers.
+
+---
+
+### PY-003 — Main Question
+
+**Question (EN):** Explain Python's object model: identity, type, and value.
+
+**Перевод (RU):** Объясните объектную модель Python: идентичность, тип и значение объекта.
+
+**What the interviewer evaluates**
+
+- Understanding that Python variables are names bound to objects rather than typed storage locations.
+- Ability to distinguish object identity, type, and value.
+- Understanding of mutability and object lifetime.
+- Correct use of `is`, `==`, and `type()`.
+- Awareness of equality customization, aliasing, and implementation-specific identity behavior.
+- Ability to apply these concepts to API design, debugging, and concurrency.
+
+**Short Answer**
+
+In Python, every object has an identity, a type, and a value. Identity distinguishes a particular object instance during its lifetime; type determines the operations and behavior supported by the object; and value is the data or state represented by that object.
+
+A variable is a name bound to an object, not a container that owns a value independently. Multiple names can refer to the same object. An object's identity and type remain stable during its lifetime, while its value may change if the object is mutable. Immutable objects do not expose in-place state changes; operations that appear to modify them produce another object or value instead.
+
+The `is` operator tests identity, `==` tests equality according to the object's equality implementation, and `type()` returns the object's concrete type. These concepts should not be confused.
+
+**Detailed Answer**
+
+Python's object model is based on objects and name bindings. At runtime, values are objects, and names in namespaces refer to those objects.
+
+1. **Identity** describes which particular object an expression refers to. The `is` operator tests whether two references point to the same object. The built-in `id()` returns an identity value that is unique and constant for that object's lifetime. In CPython, this is commonly related to the object's memory address, but that is an implementation detail; portable code must not assume that `id()` is a memory address or that it is never reused after an object's lifetime ends.
+2. **Type** determines an object's behavior: which operations it supports, how it participates in protocols, and how operations such as attribute access, iteration, arithmetic, and comparison are implemented. The built-in `type(obj)` returns the object's concrete type. Python is dynamically typed: names are not declared with fixed runtime types, and a name can be rebound to objects of different types.
+3. **Value** is the information or state represented by an object. For an integer, it is the numeric value; for a list, it is the sequence of elements; for a domain object, it may be the state represented by its attributes.
+
+**Mutability and lifetime**
+
+An object's identity and type do not change during its lifetime. Its value may change if its type supports mutation. For example, a list can be modified in place while remaining the same list object. An integer is immutable: an operation such as adding one produces an integer result rather than changing the original integer object.
+
+A name can also be rebound. Rebinding a name does not mutate the original object; it changes which object that name refers to. This distinction is central to understanding assignment, argument passing, aliasing, and shared state.
+
+**Identity versus equality**
+
+The expression `a is b` asks whether `a` and `b` refer to the same object. The expression `a == b` asks whether the objects compare equal according to their equality semantics, commonly implemented through `__eq__`. Two distinct objects may compare equal. Equality may be customized, may have domain-specific meaning, and is not guaranteed to imply identity.
+
+Use identity checks for singleton sentinels such as `None`, and equality checks for value comparisons. Do not use `is` to compare strings, numbers, or other values.
+
+**Type checks and polymorphism**
+
+The concrete type can be inspected with `type()`, while `isinstance()` checks whether an object is an instance of a class or its subclasses (and can also honor the relevant abstract base class or runtime protocol mechanisms). Application code should generally prefer behavior-oriented interfaces and polymorphism over unnecessary checks for exact concrete types.
+
+**Detailed code example**
+
+~~~python
+first = [1, 2]
+alias = first
+another = [1, 2]
+
+print(first is alias)       # True: same object
+print(first == another)     # True: equal values
+print(first is another)     # False: distinct objects
+
+alias.append(3)
+
+print(first)                # [1, 2, 3]
+print(alias)                # [1, 2, 3]
+print(another)              # [1, 2]
+~~~
+
+The assignment `alias = first` binds a second name to the same list. Mutating the list through either name is visible through both references. The independently created `another` list has an equal initial value but a different identity.
+
+**Best Practices**
+
+- Use `is None` and other identity checks only when identity is the intended question.
+- Use `==` for value equality.
+- Prefer `isinstance()` when a type check is genuinely needed and subclass compatibility is intended.
+- Prefer protocols and behavior-based design over exact type checks when designing extensible APIs.
+- Be explicit about mutability and ownership in APIs that accept or return collections and domain objects.
+- Avoid relying on object identity across serialization, process boundaries, database round trips, or distributed systems.
+- When sharing mutable objects, define ownership and synchronization expectations.
+
+**Trade-offs & Alternatives**
+
+- **Identity-based comparison** is efficient and precise for singleton sentinels and object-aliasing checks, but it is unsuitable for general value comparison.
+- **Equality-based comparison** expresses value semantics and supports domain-specific comparison, but custom equality can be expensive, surprising, or inconsistent if poorly implemented.
+- **Exact type checks** can enforce a narrow contract, but they reduce substitutability and can reject valid subclasses or compatible implementations.
+- **`isinstance()` checks** support inheritance-aware contracts, but excessive branching on types can still make code rigid; polymorphic interfaces or protocols may be clearer.
+- **Mutable objects** support efficient in-place updates and shared state, but aliasing creates coupling and can introduce concurrency bugs.
+- **Immutable objects** simplify reasoning and sharing, but updates require producing replacement values and may involve allocation.
+
+**Common Mistakes**
+
+- Saying that a variable itself has a fixed type in the same sense as a statically typed storage location.
+- Confusing identity with equality.
+- Using `is` to compare strings or integers because an interactive test appeared to work.
+- Assuming `id()` is a portable memory address.
+- Assuming equal objects must be the same object.
+- Assuming assignment copies a mutable object.
+- Assuming immutability means an object can never refer to mutable state internally.
+- Using exact `type(x) is SomeClass` checks when subclasses or compatible implementations should be accepted.
+- Assuming object identity remains meaningful after serialization or across processes.
+
+**Senior-Level Perspective**
+
+A senior engineer uses the object model to reason about correctness at API and system boundaries. Aliasing and mutability affect whether callers can unexpectedly change shared state. Equality semantics affect deduplication, caching, sets, dictionary keys, and domain comparisons. Type checks affect extensibility and substitutability. Identity is process-local object identity, not a durable business identifier.
+
+For domain models, distinguish technical object identity from domain identity. Two separately loaded ORM entities may represent the same database row without being the same Python object. Likewise, two deserialized objects may represent the same logical value while having different identities. Distributed systems should use explicit stable identifiers rather than Python's `id()`.
+
+When mutable state is shared between threads or tasks, define ownership, synchronization, and mutation boundaries. Prefer immutable values or defensive copying where they reduce accidental coupling, while considering the allocation and performance costs.
+
+**Interview-Ready Answer (EN)**
+
+“Python objects have three fundamental characteristics: identity, type, and value. Identity tells us which particular object we are referring to; type defines its behavior and supported operations; and value represents the data or state it carries.
+
+Python names are references bound to objects, so multiple names can refer to the same object. An object's identity and type remain stable during its lifetime, while its value can change if the object is mutable. For example, a list can be modified in place, whereas an integer is immutable.
+
+I distinguish identity from equality: `is` checks whether two references point to the same object, while `==` checks equality according to the object's comparison semantics. I use `is None` for the None singleton and `==` for value comparisons. For type checks, I generally prefer `isinstance()` when subclass compatibility is appropriate, and I prefer protocols or polymorphic interfaces when designing extensible APIs.
+
+At the system-design level, I also distinguish Python object identity from domain identity. Object identity is not stable across serialization or process boundaries, so applications should use explicit domain identifiers when identity must persist.”
+
+**Interview-Ready Answer (RU)**
+
+«У объектов Python есть три фундаментальные характеристики: идентичность, тип и значение. Идентичность показывает, о каком конкретном объекте идёт речь; тип определяет его поведение и поддерживаемые операции; значение представляет данные или состояние, которые объект содержит.
+
+Имена в Python связываются с объектами, поэтому несколько имён могут ссылаться на один и тот же объект. Идентичность и тип объекта остаются неизменными на протяжении его жизненного цикла, тогда как значение может изменяться, если объект изменяемый. Например, список можно изменить на месте, а целое число является неизменяемым объектом.
+
+Я различаю идентичность и равенство: оператор `is` проверяет, ссылаются ли две переменные на один и тот же объект, а `==` проверяет равенство согласно правилам сравнения, определённым для этого объекта. Для проверки на `None` я использую `is None`, а для сравнения значений — `==`. При проверке типа обычно предпочитаю `isinstance()`, если требуется учитывать наследование. При проектировании расширяемых API отдаю предпочтение протоколам и полиморфным интерфейсам.
+
+На уровне архитектуры системы я также отделяю идентичность Python-объекта от идентичности сущности предметной области. Идентичность объекта не сохраняется как надёжный идентификатор после сериализации или между процессами, поэтому для устойчивой идентификации приложение должно использовать явные доменные идентификаторы.»
+
+**Follow-up Questions & Answers**
+
+The four mapped follow-ups FU-009–FU-012 are developed as separate answer sections so that each receives a complete technical explanation and bilingual interview-ready answer.
+
+---
+
+## PY-003 answer review checklist
+
+- [x] Main question includes English and Russian wording.
+- [x] Identity, type, value, name binding, and mutability are distinguished.
+- [x] Identity versus equality and `is` versus `==` are explained.
+- [x] `type()` and `isinstance()` are distinguished.
+- [x] Aliasing and mutable-state implications are covered.
+- [x] Practical code example is included.
+- [x] Best practices, trade-offs, common mistakes, and senior-level design implications are covered.
+- [x] Interview-ready answers are provided in English and Russian.
+- [ ] Independent technical review.
+- [ ] Final editorial review and mastery assessment.
+
+**Completion rule:** This record is authored, but not finally approved, until the technical and editorial review items above are completed.
