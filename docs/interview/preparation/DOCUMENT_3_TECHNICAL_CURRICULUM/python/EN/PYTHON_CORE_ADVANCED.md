@@ -2,7 +2,7 @@
 
 **Language:** English  
 **Domain allocation:** 45 Main Questions + 180 Follow-ups = 225  
-**Current coverage:** PY-001–PY-002 and FU-001–FU-008  
+**Current coverage:** PY-001–PY-003 and FU-001–FU-012  
 **Answer file:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Russian version:** [RU Question Map](../RU/PYTHON_CORE_ADVANCED.md)
 
@@ -23,10 +23,8 @@ Follow-ups:
 
 ## Coverage status
 
-- PY-001: authored in English; independent technical and editorial review pending.
-- FU-001–FU-004: authored in English; independent technical and editorial review pending.
-- PY-002 and FU-005–FU-008: authored in English; independent technical and editorial review pending.
-- Remaining Main Questions PY-003–PY-045 and FU-009–FU-180: not yet migrated into the language-separated structure.
+- PY-001–PY-003 and FU-001–FU-012: authored in English; independent technical and editorial review pending.
+- Remaining Main Questions PY-004–PY-045 and FU-013–FU-180: not yet migrated into the language-separated structure.
 
 **Allocation rule:** Every Main Question receives exactly four Follow-ups covering mechanism, practical application, edge cases/trade-offs, and senior-level judgment or production implications.
 
