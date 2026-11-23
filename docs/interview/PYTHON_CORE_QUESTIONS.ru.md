@@ -65,7 +65,7 @@ I use **==** for value comparison and **is** for identity checks, commonly for s
 **EN:** Can an object's value change while its identity and type remain the same? Explain with a mutable object.  
 **RU:** Может ли значение объекта измениться, если его идентичность и тип остаются прежними? Объясните на примере изменяемого объекта.
 
-**Answer (RU):** Да. Например, вызов append() изменяет существующий список на месте: объект сохраняет свою идентичность и тип list, но его содержимое меняется. Это отличает мутацию от переназначения имени или создания нового объекта. Для неизменяемого объекта изменение значения на месте невозможно; операция, формирующая новое значение, приводит к использованию другого объекта и переназначению имени.
+**Ответ (RU):** Да. Например, вызов append() изменяет существующий список на месте: объект сохраняет свою идентичность и тип list, но его содержимое меняется. Это отличает мутацию от переназначения имени или создания нового объекта. Для неизменяемого объекта изменение значения на месте невозможно; операция, формирующая новое значение, приводит к использованию другого объекта и переназначению имени.
 
 **Answer (EN):** Yes. For example, calling append() mutates an existing list in place: the object retains its identity and list type while its contents change. This is different from rebinding a name or creating a new object. An immutable object cannot be changed in place; an operation that produces a different value results in another object being used and the name being rebound.
 
@@ -83,7 +83,7 @@ I use **==** for value comparison and **is** for identity checks, commonly for s
 **EN:** Why does assignment not necessarily create a copy of an object?  
 **RU:** Почему присваивание не обязательно создаёт копию объекта?
 
-**Answer (RU):** Обычное присваивание связывает имя с объектом, а не копирует его. Поэтому после присваивания second = first оба имени обычно указывают на один объект. Если нужна независимая копия, её следует создать явно и выбрать поверхностное или глубокое копирование в зависимости от структуры данных и требуемой семантики.
+**Ответ (RU):** Обычное присваивание связывает имя с объектом, а не копирует его. Поэтому после присваивания second = first оба имени обычно указывают на один объект. Если нужна независимая копия, её следует создать явно и выбрать поверхностное или глубокое копирование в зависимости от структуры данных и требуемой семантики.
 
 **Answer (EN):** Ordinary assignment binds a name to an object; it does not copy the object. After assigning second = first, both names therefore usually refer to the same object. If an independent copy is required, create it explicitly and choose shallow or deep copying according to the data structure and required semantics.
 
@@ -465,7 +465,7 @@ At Senior level, I check whether equality reflects the type's domain semantics, 
 **EN:** Can two unequal objects have the same hash, and how do dictionaries handle that situation?  
 **RU:** Могут ли два неравных объекта иметь одинаковый хеш и как словари обрабатывают такую ситуацию?
 
-**Answer (RU):** Да. Хеш-коллизия возникает, когда разные объекты имеют одинаковый hash. Словарь использует хеш для выбора области поиска, но затем применяет проверку равенства, чтобы определить нужный ключ. Поэтому совпадение хешей не означает равенства объектов, а корректная реализация __eq__ остаётся необходимой.
+**Ответ (RU):** Да. Хеш-коллизия возникает, когда разные объекты имеют одинаковый hash. Словарь использует хеш для выбора области поиска, но затем применяет проверку равенства, чтобы определить нужный ключ. Поэтому совпадение хешей не означает равенства объектов, а корректная реализация __eq__ остаётся необходимой.
 
 **Answer (EN):** Yes. A hash collision occurs when distinct objects produce the same hash. A dictionary uses the hash to locate a candidate position, then applies equality checks to identify the matching key. Equal hashes therefore do not imply equal objects, and a correct __eq__ implementation remains essential.
 
