@@ -6,7 +6,7 @@
 
 > **Interview-oriented engineering guide for Pharmaviyum CRM**
 >
-> This document presents the project from the perspective of a Senior Python Engineer working on production-oriented AI/LLM systems. It focuses on architecture, engineering decisions, reliability, security, testing, observability, and trade-offs rather than on business-sensitive implementation details.
+> This document presents the project from the perspective of a Senior Python Engineer working on production-oriented AI/LLM systems. It focuses on architecture, engineering decisions, reliability, security, testing, observability, and trade-offs rather than on business-sensitive implementation details. The structured question-bank plan is maintained separately in the [Senior Python/AI interview curriculum](./SENIOR_PYTHON_AI_CURRICULUM.md), with a [Russian version](./SENIOR_PYTHON_AI_CURRICULUM.ru.md).
 
 ## 1. What this project demonstrates
 
@@ -468,6 +468,14 @@ The central engineering message of this project is:
 A senior AI engineer is responsible for the deterministic architecture around the model: data boundaries, authorization, retrieval, tool permissions, validation, reliability, observability, testing, and operational behavior.
 
 That principle keeps the application maintainable even as models and AI frameworks evolve.
+
+## 19. Structured question bank
+
+- [Senior Python/AI curriculum](./SENIOR_PYTHON_AI_CURRICULUM.md) — full scope and interview protocol.
+- [Python Core question bank — English](./PYTHON_CORE_QUESTIONS.md)
+- [Банк вопросов Python Core — русский](./PYTHON_CORE_QUESTIONS.ru.md)
+
+The Python Core bank is being authored incrementally. The current draft contains Question PY-CORE-001 and three answered follow-ups; it is not yet a complete set of 30 questions.
 
 ---
 

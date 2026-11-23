@@ -44,7 +44,7 @@ This directory is the engineering documentation home for Pharmaviyum ERP/CRM. Th
 | Observability | [OpenTelemetry](./observability/opentelemetry.md) | [OpenTelemetry на русском](./observability/opentelemetry.ru.md) | Tracing configuration and privacy boundaries |
 | Pharmacy Edge offline | [Offline capability matrix](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.md) | [Матрица офлайн-возможностей](./devops/PHARMACY_OFFLINE_CAPABILITY_MATRIX.ru.md) | Offline workflow policy and controls |
 | Pharmacy Edge | [Outbox dispatcher](./devops/PHARMACY_EDGE_OUTBOX_DISPATCHER.md) · [Ansible rollout](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.md) · [Ansible guide](./devops/ANSIBLE_PHARMACY_EDGE_GUIDE.md) | [Dispatcher Outbox](./devops/PHARMACY_EDGE_OUTBOX_DISPATCHER.ru.md) · [Руководство Ansible](./devops/ANSIBLE_PHARMACY_EDGE_GUIDE.ru.md) · [План внедрения](./devops/PHARMACY_EDGE_ANSIBLE_ROLLOUT.ru.md) | Outbox delivery, controlled rollout and fleet guardrails |
-| Interview material | [Interview index](./interview/README.md) | Russian translation not yet available | Separate learning and interview preparation material |
+| Interview material | [Interview guide](./interview/README.md) · [Senior Python/AI curriculum](./interview/SENIOR_PYTHON_AI_CURRICULUM.md) | [Программа Senior Python/AI](./interview/SENIOR_PYTHON_AI_CURRICULUM.ru.md) | 260 primary questions, ~700 answered follow-ups, bilingual model answers and Senior-level evaluation |
 
 ## Documentation map
 
