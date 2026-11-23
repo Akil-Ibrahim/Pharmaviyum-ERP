@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 27 из 30 основных вопросов подготовлено  
+**Охват:** 28 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -3620,3 +3620,152 @@ A Senior engineer should justify every guarantee: **what semantics are promised 
 - FastAPI documentation: https://fastapi.tiangolo.com/
 - Pydantic documentation: https://docs.pydantic.dev/
 - Microsoft REST API Guidelines: https://github.com/microsoft/api-guidelines
+
+
+## PY-CORE-028 — Архитектура Python backend, Clean Architecture и Dependency Injection
+
+**Question (EN):** How do you structure a maintainable Python backend using architectural boundaries and dependency injection, and how do you avoid both tight coupling and unnecessary abstraction?
+
+**Вопрос (RU):** Как построить поддерживаемый Python backend с помощью архитектурных границ и dependency injection, избегая как сильной связанности, так и ненужных абстракций?
+
+### Что проверяет интервьюер
+
+- Separation of concerns, направление зависимостей и архитектурные границы.
+- Domain, application/use-case, infrastructure и delivery layers.
+- Dependency injection, composition roots и lifecycle scopes.
+- Ports/adapters, Protocols, ABCs и тестовые границы.
+- Transaction ownership, lifecycle ресурсов и обработка ошибок.
+- Предотвращение circular dependencies, misuse Service Locator и overengineering.
+- Практичный выбор архитектуры исходя из реальных изменений и сложности системы.
+
+### Эталонный ответ (RU)
+
+Я начинаю не с названия архитектурного паттерна, а с **границ ответственности, направления зависимостей и ожидаемых изменений системы**. Цель архитектуры — локализовать изменения, сделать бизнес-правила понятными и обеспечить проверяемость поведения. Clean Architecture, Hexagonal Architecture и layered architecture — полезные модели, но не обязательный набор каталогов или интерфейсов для каждого проекта.
+
+**Разделение слоёв.** Delivery layer (HTTP routers, CLI, consumers) преобразует внешний протокол в вызов application use case и обратно. Application layer координирует сценарий: загружает данные через порты, вызывает доменную логику, управляет последовательностью действий и транзакционной границей. Domain layer содержит бизнес-понятия, правила и инварианты и не должен зависеть от FastAPI, SQLAlchemy, Redis или конкретного HTTP клиента. Infrastructure layer реализует порты: repositories, message publishers, external API clients, clocks и storage adapters. Границы нужны для изоляции причин изменения, а не ради механического разделения каждого класса.
+
+**Dependency Rule.** В Clean/Hexagonal подходах зависимости исходного кода направляются внутрь: внешние детали зависят от внутренних политик, а не наоборот. Например, use case может зависеть от абстракции repository, а SQLAlchemy adapter реализует её. В Python это можно выразить через typing.Protocol (structural typing) или abc.ABC (nominal contract). Не требуется создавать интерфейс для каждой функции: абстракция оправдана, когда она выражает стабильную границу, несколько реализаций, тестовую замену или независимость домена от инфраструктуры.
+
+**Dependency Injection и Composition Root.** Dependency injection означает, что компонент получает зависимости извне, а не создаёт их самостоятельно и не ищет глобально. Composition root — контролируемое место, где приложение собирает конкретный object graph: конфигурацию, DB engine, session factory, repositories, services и transport adapters. В небольшом FastAPI приложении это может быть app factory и lifespan setup; request-scoped зависимости могут передаваться через FastAPI Depends. Важно, чтобы сборка была явной, предсказуемой и проверяемой. Dependency injection — принцип, а FastAPI Depends — один из механизмов, не вся архитектура.
+
+**Scopes и lifecycle.** Различаю application-scoped ресурсы (например, connection pool или HTTP client), request-scoped ресурсы (например, DB session) и transient/stateless компоненты. Engine и connection pool обычно создаются один раз на процесс и корректно закрываются при shutdown; session создаётся в подходящем request/use-case scope и закрывается после него. Нельзя случайно делить одну SQLAlchemy Session между конкурентными запросами или задачами: Session не является универсально thread-safe/async-task-safe объектом. Не создаю тяжёлые клиенты на каждый запрос без необходимости и не оставляю фоновые задачи с зависимостями, чей scope уже завершился.
+
+**Транзакции и application use cases.** Транзакционная граница должна соответствовать бизнес-операции и быть видимой. Часто application service начинает транзакцию, вызывает repositories и фиксирует commit/rollback в одном месте; repositories отвечают за persistence operations, но не должны незаметно коммитить каждое изменение отдельно. Точная модель зависит от unit of work и выбранной ORM. Внешние сетевые вызовы не следует без необходимости выполнять внутри долгой DB transaction: это увеличивает lock duration и риск contention. Для согласования DB и message broker рассматриваю outbox/inbox или другие consistency patterns, а не предполагаю общую атомарную транзакцию между независимыми системами.
+
+**Ports and Adapters.** Порт описывает нужную внутренней политике возможность, например MedicineRepository, Clock или NotificationGateway; адаптер реализует её для PostgreSQL, системного времени или конкретного провайдера. Это облегчает замену инфраструктуры и тестирование, но не означает, что всё нужно скрывать за generic repository. ORM уже предоставляет unit-of-work и query capabilities; дополнительная абстракция может ухудшить выразительность сложных запросов. Проектирую узкие порты вокруг use-case needs, а не копирую весь API ORM.
+
+**Тестируемость.** Domain logic тестирую без сети и базы, application use cases — с fake/mock ports и отдельными интеграционными тестами adapters. Контрактные тесты проверяют, что реальные adapters соблюдают портовые ожидания. Для критичных транзакций, SQL semantics, constraints и locking нужны integration tests с реальной СУБД. Не подменяю все зависимости mocks: тест, в котором каждый компонент замокан, может подтвердить только внутренние ожидания самого теста. Тесты должны проверять поведение и бизнес-инварианты, а не только вызов методов.
+
+**FastAPI и границы приложения.** Router должен быть тонким: HTTP parsing, authentication context, вызов use case, response mapping. Он не должен содержать длинные бизнес-сценарии и прямую orchestration нескольких таблиц. Pydantic request/response models — транспортные схемы; domain entities и persistence models могут иметь другие формы и lifecycle. Depends хорошо подходит для сборки request context и передачи зависимостей, но глобальный mutable state и скрытый Service Locator затрудняют reasoning. Lifespan управляет application resources; request dependencies управляют request-level resources.
+
+**Конфигурация, ошибки и наблюдаемость.** Конфигурацию валидирую на старте и передаю в компоненты явно; не читаю произвольные environment variables из бизнес-логики. Ошибки переводятся на правильной границе: domain/application errors отображаются в transport-level responses, а infrastructure failures логируются с контекстом и обрабатываются согласно retry/transaction policy. Correlation context и tracing проходят через границы без передачи глобального изменяемого состояния. Чувствительные данные и секреты не должны попадать в логи.
+
+**Как не переусложнить.** Не создаю десятки слоёв, generic base repositories, абстрактные фабрики и интерфейсы без конкретной причины. Для CRUD-oriented сервиса может быть достаточно модульного layered design. Для домена со сложными инвариантами полезно более явное разделение domain/application. Критерий — не число паттернов, а локализация изменений, понятность transaction boundaries, возможность тестировать важные правила и отсутствие инфраструктурных деталей в домене.
+
+Senior-инженер должен уметь нарисовать dependency graph, назвать composition root, объяснить lifecycle каждого ресурса и показать, где проходит транзакционная граница. Также он должен обосновать, почему конкретная абстракция существует — и почему другая не нужна.
+
+### Professional answer (EN)
+
+I start with **responsibility boundaries, dependency direction, and expected change patterns**, not with the name of an architectural style. The goal is to localize change, make business rules explicit, and keep behavior verifiable. Clean Architecture, Hexagonal Architecture, and layered architecture are useful models, not mandatory directory structures or a requirement to introduce an interface for every class.
+
+**Layer responsibilities.** The delivery layer (HTTP routers, CLI handlers, message consumers) translates an external protocol into an application use-case call and maps the result back. The application layer coordinates a workflow: it obtains data through ports, invokes domain behavior, orders operations, and owns or coordinates the transaction boundary. The domain layer contains business concepts, rules, and invariants; it should not depend on FastAPI, SQLAlchemy, Redis, or a particular HTTP client. The infrastructure layer implements ports through repositories, message publishers, external API clients, clocks, and storage adapters. These boundaries isolate reasons for change; they are not a reason to split every class mechanically.
+
+**Dependency Rule.** In Clean/Hexagonal approaches, source-code dependencies point inward: external details depend on internal policies, not the reverse. A use case may depend on a repository abstraction while a SQLAlchemy adapter implements it. Python can express contracts with typing.Protocol (structural typing) or abc.ABC (nominal contracts). An interface is not needed for every function. It is justified when it represents a stable boundary, multiple implementations, a meaningful testing seam, or domain independence from infrastructure.
+
+**Dependency Injection and the Composition Root.** Dependency injection means a component receives dependencies from outside instead of constructing them internally or locating them globally. The composition root is the controlled place where the application assembles its concrete object graph: configuration, DB engine, session factory, repositories, services, and delivery adapters. In a small FastAPI application, this may be an app factory plus lifespan setup; request-scoped dependencies can be supplied through FastAPI Depends. Assembly should be explicit, predictable, and testable. Dependency injection is a principle; FastAPI Depends is one mechanism, not the architecture itself.
+
+**Scopes and lifecycle.** Distinguish application-scoped resources (for example, a connection pool or HTTP client), request-scoped resources (for example, a DB session), and transient/stateless components. An engine and connection pool are generally created once per process and closed during shutdown; a session is created within an appropriate request/use-case scope and closed afterward. Do not share one SQLAlchemy Session across concurrent requests or tasks: a Session is not a universally thread-safe or async-task-safe object. Avoid constructing expensive clients on every request without reason, and do not let background tasks retain dependencies whose scope has ended.
+
+**Transactions and application use cases.** A transaction boundary should correspond to a business operation and be visible. Often an application service starts a transaction, invokes repositories, and coordinates commit/rollback in one place; repositories perform persistence operations rather than silently committing each change. The exact model depends on the unit-of-work design and ORM. Avoid slow external network calls inside long-running database transactions unless there is a compelling reason, because they increase lock duration and contention risk. To coordinate a database write with message publication, consider an outbox/inbox or another explicit consistency pattern; do not assume independent systems share an atomic transaction.
+
+**Ports and Adapters.** A port describes a capability required by an inner policy, such as MedicineRepository, Clock, or NotificationGateway; an adapter implements it for PostgreSQL, system time, or a specific provider. This supports infrastructure replacement and testing, but does not mean every operation should be hidden behind a generic repository. An ORM already provides unit-of-work and query capabilities; an extra abstraction can reduce the expressiveness of complex queries. Design narrow ports around use-case needs instead of mirroring the entire ORM API.
+
+**Testability.** Test domain logic without network or database dependencies, application use cases with fake/mock ports, and adapters with integration tests. Contract tests verify that real adapters satisfy their port expectations. Critical transactions, SQL semantics, constraints, and locking require integration tests against the real database. Do not mock every dependency: a test in which every component is mocked may only confirm the test's own assumptions. Tests should verify behavior and business invariants, not merely method calls.
+
+**FastAPI and application boundaries.** Keep routers thin: HTTP parsing, authentication context, use-case invocation, and response mapping. They should not contain long business workflows or orchestrate multiple tables directly. Pydantic request/response models are transport schemas; domain entities and persistence models may have different shapes and lifecycles. Depends is useful for assembling request context and supplying dependencies, but global mutable state and a hidden Service Locator make reasoning harder. Lifespan manages application resources; request dependencies manage request-level resources.
+
+**Configuration, errors, and observability.** Validate configuration at startup and pass it explicitly to components; do not read arbitrary environment variables from domain logic. Translate errors at the correct boundary: domain/application errors map to transport responses, while infrastructure failures are logged with context and handled according to retry and transaction policy. Correlation context and tracing should cross boundaries without relying on global mutable state. Secrets and sensitive data must not enter logs.
+
+**Avoiding overengineering.** Do not introduce dozens of layers, generic base repositories, abstract factories, and interfaces without a concrete reason. A CRUD-oriented service may need only a modular layered design. A domain with complex invariants may benefit from explicit domain/application separation. The measure is not the number of patterns; it is change isolation, clear transaction boundaries, testability of important rules, and keeping infrastructure details out of the domain.
+
+A Senior engineer should be able to draw the dependency graph, identify the composition root, explain each resource's lifecycle, and locate the transaction boundary. They should also justify why each abstraction exists—and why another one is unnecessary.
+
+### Follow-up questions and эталонные ответы
+
+#### FU-1 — What is the Dependency Rule in Clean Architecture, and how can Python enforce it?
+
+**RU:** Что означает Dependency Rule в Clean Architecture и как его можно обеспечить в Python?
+
+**Ответ (RU):** Внутренние policy/domain layers не должны импортировать внешние infrastructure или framework modules. Внешний adapter реализует контракт, определённый ближе к внутреннему слою. В Python это можно поддержать структурой пакетов, Protocol или ABC, dependency direction checks и code review. Type hints сами по себе не гарантируют архитектурную границу: модуль всё ещё может импортировать infrastructure напрямую. Нужны явные правила импортов и тесты/линтеры архитектуры, если риск оправдывает их стоимость.
+
+**Answer (EN):** Inner policy/domain layers should not import outer infrastructure or framework modules. An outer adapter implements a contract defined closer to the inner layer. In Python, package structure, Protocol or ABC, dependency-direction checks, and code review can support this. Type hints alone do not enforce the boundary: a module can still import infrastructure directly. Use explicit import rules and architecture tests or linters when the risk justifies their cost.
+
+#### FU-2 — What is a composition root, and how is it different from a Service Locator?
+
+**RU:** Что такое composition root и чем он отличается от Service Locator?
+
+**Ответ (RU):** Composition root — ограниченное место, где приложение создаёт и связывает concrete implementations в object graph. После сборки компоненты получают нужные зависимости явно. Service Locator предоставляет глобальный или скрытый API, через который компонент самостоятельно запрашивает зависимости во время работы. Это скрывает реальные зависимости, затрудняет тестирование и может создавать runtime failures. Composition root централизует wiring; Service Locator переносит поиск зависимостей внутрь потребителей.
+
+**Answer (EN):** A composition root is a constrained place where the application creates and wires concrete implementations into an object graph. Components then receive their dependencies explicitly. A Service Locator exposes a global or hidden API through which a component looks up dependencies at runtime. This hides real dependencies, complicates testing, and can defer failures until runtime. The composition root centralizes wiring; a Service Locator moves dependency lookup into consumers.
+
+#### FU-3 — How would you manage SQLAlchemy engine and session lifecycles in a FastAPI application?
+
+**RU:** Как управлять lifecycle SQLAlchemy engine и session в FastAPI application?
+
+**Ответ (RU):** Engine и connection pool обычно создаются на уровне application/process и закрываются в lifespan shutdown. Session factory создаётся из engine; отдельная Session выдаётся на подходящий request/use-case scope и гарантированно закрывается после завершения. Для async stack применяю соответствующие AsyncEngine/AsyncSession и async lifecycle. Session не разделяется между параллельными requests/tasks. Commit/rollback выполняются в ясно определённой транзакционной границе, а не случайно в нескольких слоях одновременно.
+
+**Answer (EN):** The engine and connection pool are generally created at application/process scope and disposed during lifespan shutdown. A session factory is created from the engine; an individual Session is provided for an appropriate request/use-case scope and reliably closed afterward. For an async stack, use the corresponding AsyncEngine/AsyncSession and async lifecycle. Do not share a Session across concurrent requests or tasks. Commit/rollback belongs to a clearly defined transaction boundary rather than being scattered unpredictably across layers.
+
+#### FU-4 — When is a repository abstraction useful, and when does it become harmful?
+
+**RU:** Когда repository abstraction полезна, а когда начинает вредить?
+
+**Ответ (RU):** Она полезна, если выражает понятный domain/application port, изолирует инфраструктуру, поддерживает несколько adapters или делает use case тестируемым. Она вредна, если превращается в generic CRUD wrapper над ORM, скрывает важные query capabilities, дублирует unit-of-work или создаёт много boilerplate без реальной вариативности. Решение принимаю по изменчивости границы и сложности предметной области, а не по правилу «repository обязателен для каждого проекта».
+
+**Answer (EN):** It is useful when it expresses a meaningful domain/application port, isolates infrastructure, supports multiple adapters, or makes a use case testable. It becomes harmful when it is merely a generic CRUD wrapper over an ORM, hides important query capabilities, duplicates the unit of work, or adds boilerplate without real variability. Decide based on boundary volatility and domain complexity, not on a rule that every project must have a repository.
+
+#### FU-5 — How do you keep a database transaction consistent with publishing an event to a message broker?
+
+**RU:** Как согласовать database transaction с публикацией event в message broker?
+
+**Ответ (RU):** Нельзя предполагать атомарность между независимыми PostgreSQL и broker transactions. Если сначала commit DB, а затем publish, процесс может упасть между шагами; если сначала publish, а затем commit, consumer может увидеть событие о незафиксированном изменении. Transactional outbox записывает бизнес-изменение и event record в одной DB transaction; отдельный publisher доставляет outbox events с retry. Consumer использует idempotency/inbox deduplication, потому что доставка обычно at-least-once. Нужно также определить мониторинг backlog, retry limits и dead-letter/recovery policy.
+
+**Answer (EN):** Do not assume atomicity across independent PostgreSQL and broker transactions. If the database commits before publishing, the process may fail between the steps; if it publishes first, a consumer may observe an event for a change that never committed. A transactional outbox stores the business change and event record in one database transaction; a separate publisher delivers outbox events with retries. Consumers use idempotency or inbox deduplication because delivery is generally at least once. Define backlog monitoring, retry limits, and dead-letter/recovery policy as well.
+
+### Связь с Pharmaviyum
+
+**Гипотетический сценарий для интервью — не утверждение о текущей реализации:** pharmacy backend может разделять HTTP delivery, application workflows для продаж и остатков, domain rules для stock invariants и infrastructure adapters для PostgreSQL, Redis и внешних AI services. Кандидат должен объяснить, какой слой владеет транзакцией корректировки остатков, как предоставляется request-scoped database session, как внешние AI calls изолируются от DB transactions и как события публикуются надёжно. Фактическая архитектура и статус реализации должны быть проверены по коду репозитория, тестам и deployment evidence.
+
+### Критерии оценки Senior
+
+| Уровень | Ожидаемые признаки |
+|---|---|
+| Mid-level | Отделяет routing от бизнес-логики, внедряет базовые зависимости и понимает ответственность модулей. |
+| Senior | Объясняет dependency direction, composition root, resource scopes, transaction ownership, ports/adapters и тестовые границы; избегает скрытого global lookup и ненужных абстракций. |
+| Staff-level signal | Определяет архитектурные стандарты для команд, пути миграции, межсервисные границы, consistency patterns и governance, сохраняя соразмерность решения. |
+
+### Типичные ошибки
+
+- Считать Clean Architecture обязательным шаблоном каталогов.
+- Позволять domain modules напрямую импортировать FastAPI, ORM или vendor SDK types.
+- Путать dependency injection с конкретным вызовом Depends.
+- Использовать глобальный Service Locator или mutable singleton для скрытых зависимостей.
+- Разделять одну SQLAlchemy Session между конкурентными requests или tasks.
+- Создавать engines, pools или дорогие clients повторно без контроля lifecycle.
+- Позволять repositories коммитить независимо и дробить одну бизнес-транзакцию.
+- Держать DB transactions открытыми во время медленных внешних вызовов.
+- Предполагать, что DB write и broker publish — одна атомарная операция.
+- Мокировать все зависимости и никогда не тестировать adapters с реальной инфраструктурой.
+- Создавать generic repositories и interfaces, которые скрывают поведение вместо его прояснения.
+- Утверждать, что одних type hints достаточно для соблюдения архитектурных границ.
+
+### Источники
+
+- Python typing — Protocol: https://docs.python.org/3/library/typing.html#typing.Protocol
+- Python abc module: https://docs.python.org/3/library/abc.html
+- FastAPI Dependencies: https://fastapi.tiangolo.com/tutorial/dependencies/
+- FastAPI Lifespan Events: https://fastapi.tiangolo.com/advanced/events/
+- SQLAlchemy Session Basics: https://docs.sqlalchemy.org/en/20/orm/session_basics.html
+- SQLAlchemy asyncio: https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html
+- Martin Fowler — Dependency Injection: https://martinfowler.com/articles/injection.html
+- Microsoft — Transactional Outbox pattern: https://learn.microsoft.com/en-us/azure/architecture/databases/guide/transactional-outbox
