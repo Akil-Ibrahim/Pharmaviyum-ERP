@@ -1,7 +1,7 @@
 # Python Core — Question Bank
 
 **Status:** In progress  
-**Coverage:** 24 of 30 primary questions drafted  
+**Coverage:** 25 of 30 primary questions drafted  
 **Review rule:** Draft answers must be technically reviewed before being marked validated.
 
 ---
@@ -3170,3 +3170,149 @@ At Senior level, I expect tests to assert observable behaviour, isolate side eff
 - pytest-asyncio documentation: https://pytest-asyncio.readthedocs.io/
 - Coverage.py: https://coverage.readthedocs.io/
 - mutmut documentation: https://mutmut.readthedocs.io/
+
+
+---
+
+## PY-CORE-025 — Python Logging, Diagnostics and Observability
+
+### Question (EN)
+
+**How would you design production-grade logging and observability for a Python backend, including structured logs, correlation context, exception handling, and distributed tracing?**
+
+### Перевод (RU)
+
+**Как спроектировать production-ready логирование и наблюдаемость Python backend, включая структурированные логи, correlation context, обработку исключений и распределённую трассировку?**
+
+### What the interviewer evaluates
+
+- Python logger hierarchy and the roles of loggers, handlers, filters, and formatters.
+- Useful log levels and structured, machine-queryable event fields.
+- Safe propagation of request and trace context across async execution and service boundaries.
+- Exception logging with useful stack traces and no sensitive-data exposure.
+- Differences between logs, metrics, and traces; OpenTelemetry instrumentation.
+- Operational diagnostics, incident response, telemetry overhead, and cost control.
+
+### Model answer (RU)
+
+Production observability — это не просто запись строк в файл. Это способность понять **что произошло, где, когда, с каким запросом и каким влиянием на систему**, используя согласованные logs, metrics и traces. Начинаю с operational questions и SLO/SLI, затем выбираю сигналы и контекст, позволяющие проверять гипотезы при инциденте.
+
+**Python logging architecture.** Стандартный модуль logging разделяет создание события и его обработку. Logger создаёт LogRecord; Handler направляет запись в output; Formatter формирует представление; Filter может отбирать или обогащать записи. Имена logger обычно следуют иерархии модулей, например service.api.orders. Записи могут распространяться к ancestor loggers через propagation. Конфигурацию следует централизовать на уровне приложения, избегать дублирующих handlers и понимать взаимодействие logger levels, handler levels и propagate. Библиотеки обычно получают logger через logging.getLogger(__name__), но не должны самостоятельно перенастраивать root logger.
+
+**Log levels и события.** DEBUG предназначен для диагностических деталей, INFO — для значимых событий нормального выполнения, WARNING — для неожиданной ситуации, не остановившей операцию, ERROR — для неуспешной операции, требующей внимания, CRITICAL — для серьёзного отказа. Уровень выбирается по операционному смыслу, а не только по классу исключения. Не следует логировать каждый успешный шаг: высокочастотные события увеличивают стоимость, шум и риск раскрытия данных. Rate limiting, sampling и агрегированные метрики помогают с повторяющимися событиями, но sampling не должен удалять обязательные security/audit records.
+
+**Structured logging.** Вместо одного свободного текста событие должно содержать стабильные поля: timestamp, severity, event_name, service.name, environment, request_id, trace_id, span_id, route, duration_ms, outcome и безопасные доменные атрибуты. Значения должны иметь стабильные типы и ограниченную cardinality. Request ID полезен как поле поиска в логах, но обычно является плохим высококардинальным metric label. Не включайте целые request bodies, headers, access tokens, passwords, secrets, медицинские данные или полные персональные записи. Используйте allowlist безопасных полей, redaction до отправки в sink и тесты на отсутствие секретов. Логи не должны превращаться в копию базы данных.
+
+**Correlation context и asyncio.** Для связывания событий одного запроса подходит contextvars.ContextVar. Middleware или instrumentation устанавливает request/correlation ID на входе и сбрасывает token в finally. Context variables предназначены для контекста выполнения и обычно распространяются при создании asyncio tasks; при ручном создании threads, processes, очередей или внешних сообщений правила propagation отличаются и могут требовать явной передачи контекста. Не храните request-specific данные в глобальных изменяемых переменных. Для межсервисной трассировки используйте стандартный propagation format, например W3C Trace Context и traceparent. Проверяйте формат и длину входящего correlation ID.
+
+**Exception logging.** Логируйте исключение на том уровне, где есть контекст для решения или где ошибка становится наблюдаемым отказом. logger.exception(...) вызывается внутри обработчика исключения и добавляет traceback. Не логируйте одно исключение на каждом слое: это создаёт дублирование. Сохраняйте причинную цепочку через raise ... from ... и различайте бизнес-ошибки, validation failures, временные инфраструктурные сбои и программные дефекты. HTTP API должен возвращать безопасную ошибку и correlation/trace reference; stack trace остаётся в защищённой системе диагностики. Не раскрывайте внутренние exception messages клиенту.
+
+**Logs, metrics и traces.** Logs описывают дискретные события и их контекст. Metrics агрегируют числовые измерения во времени: request rate, error rate, latency histogram, queue depth и resource saturation. Traces показывают путь запроса через spans и сервисы, помогая локализовать задержки и зависимости. Метрика обнаруживает аномалию, trace показывает путь и узкий участок, logs объясняют конкретное событие. Для latency используйте histograms и percentiles, а не только среднее. Контролируйте cardinality: user ID, request ID и произвольные URL не должны становиться metric labels.
+
+**OpenTelemetry.** OpenTelemetry предоставляет vendor-neutral APIs, SDKs, semantic conventions и exporters для traces, metrics и logs; поддержка конкретных signal pipelines зависит от SDK и backend. Instrumentation бывает automatic и manual. Automatic instrumentation даёт базовые spans для поддерживаемых библиотек; manual instrumentation добавляет доменный контекст и важные границы. Не создавайте span для каждой тривиальной функции: span должен отражать meaningful operation. Настраивайте sampling, exporter timeouts, batching, resource attributes и flush/shutdown при завершении приложения. Сбой exporter не должен ломать пользовательский request path. Не записывайте sensitive attributes. В async services проверяйте передачу context между tasks и инструментированными клиентами.
+
+**Production diagnostics.** Логи должны быть структурированными, централизованными, ограниченными по retention и доступу. Нужны синхронизация времени, health signals, dashboards, alerts с привязкой к SLO, runbooks и связи между alert, trace и logs. При инциденте определяйте временной интервал, affected service/version, недавние deployment changes, распределения ошибок и latency, representative trace samples. Затем коррелируйте логи по trace/request ID и проверяйте saturation, database pool, queues и внешние зависимости. Не включайте DEBUG глобально в production без ограниченного по времени и scope решения. Учитывайте backpressure: logging pipeline может блокироваться или терять записи при недоступности sink. Queueing, bounded buffers, drop policy и fallback выбираются с учётом критичности событий.
+
+На Senior-уровне важен не максимальный объём логов, а наблюдаемость с понятной семантикой, низким overhead, контролем cardinality и конфиденциальности, а также возможностью восстановить причинно-следственную картину инцидента.
+
+### Professional answer (EN)
+
+Production observability is more than writing strings to a file. It is the ability to understand **what happened, where, when, for which request, and with what system impact** using coherent logs, metrics, and traces. I start with operational questions and SLOs/SLIs, then select signals and context that help validate incident hypotheses.
+
+**Python logging architecture.** The standard logging module separates event creation from event handling. A Logger creates a LogRecord; a Handler routes it to an output; a Formatter renders it; and a Filter can select or enrich records. Logger names commonly follow module hierarchy, such as service.api.orders. Records may propagate to ancestor loggers. Centralize configuration at application startup, avoid duplicate handlers, and understand logger levels, handler levels, and propagation. Libraries should obtain a logger with logging.getLogger(__name__) and should not configure the root logger themselves.
+
+**Levels and event semantics.** DEBUG is for diagnostic detail, INFO for meaningful normal-operation events, WARNING for unexpected conditions that did not prevent the operation, ERROR for failed operations requiring attention, and CRITICAL for severe failures. Choose levels based on operational meaning, not merely exception class. Avoid logging every successful step: high-volume events increase cost, noise, and exposure risk. Rate limiting, sampling, or aggregated metrics can help with repetitive events, but sampling must not discard required security or audit records.
+
+**Structured logging.** Prefer stable fields over a free-form string: timestamp, severity, event_name, service.name, environment, request_id, trace_id, span_id, route, duration_ms, outcome, and safe domain attributes. Keep types stable and cardinality bounded. A request ID is useful as a searchable log field but is usually a poor high-cardinality metric label. Do not include entire request bodies, headers, access tokens, passwords, secrets, medical data, or complete personal records. Use allowlisted fields, redact before exporting to a sink, and test that secrets are absent. Logs should not become a copy of the database.
+
+**Correlation context and asyncio.** contextvars.ContextVar can carry request-scoped context. Middleware or instrumentation sets a request/correlation ID at ingress and resets its token in a finally block. Context variables are designed for execution context and are generally propagated across asyncio task creation; manually created threads, processes, queues, or external messages have different propagation semantics and may require explicit context transfer. Do not store request-specific state in global mutable variables. Across services, use a standard propagation format such as W3C Trace Context and traceparent. Validate and length-limit inbound correlation IDs.
+
+**Exception logging.** Log an exception at the layer that has enough context to make a decision or where the failure becomes observable. Call logger.exception(...) inside an exception handler to include the traceback. Do not log the same exception at every layer. Preserve causal chains with raise ... from ... and distinguish expected business errors, validation failures, transient infrastructure failures, and programming defects. An HTTP API should return a safe error and a correlation/trace reference; the stack trace belongs in a protected diagnostic system. Never expose internal exception messages to clients.
+
+**Logs, metrics, and traces.** Logs describe discrete events and context. Metrics aggregate measurements over time, such as request rate, error rate, latency histograms, queue depth, and resource saturation. Traces show a request path through spans and services. A metric detects an anomaly, a trace identifies the path and bottleneck, and logs explain specific events. Use histograms and percentiles for latency rather than relying only on averages. Control cardinality: do not use user IDs, request IDs, or arbitrary URLs as metric labels.
+
+**OpenTelemetry.** OpenTelemetry provides vendor-neutral APIs, SDKs, semantic conventions, and exporters for traces, metrics, and logs; support for individual signal pipelines depends on the SDK and backend. Instrumentation can be automatic or manual. Automatic instrumentation provides baseline spans for supported libraries; manual instrumentation adds domain context and meaningful boundaries. Do not create a span for every trivial function. Configure sampling, exporter timeouts, batching, resource attributes, and flush/shutdown during application termination. Exporter failures should not break the user request path. Avoid sensitive span attributes. Verify context propagation across async tasks and instrumented clients.
+
+**Production diagnostics.** Logs should be structured, centralized, access-controlled, and subject to retention limits. Provide clock synchronization, health signals, dashboards, SLO-based alerts, runbooks, and links between alerts, traces, and logs. During an incident, establish the time window, affected service/version, recent deployment changes, error and latency distributions, and representative trace samples. Correlate logs by trace/request ID and inspect saturation, database pools, queues, and external dependencies. Do not enable DEBUG globally in production without a time-bounded, scoped reason. Account for backpressure: a logging pipeline can block or drop records when a sink is unavailable. Choose queueing, bounded buffers, drop policy, and fallback behaviour according to event criticality.
+
+At Senior level, the goal is not maximum log volume. It is observability with clear semantics, low overhead, controlled cardinality and privacy, and enough causal context to reconstruct an incident.
+
+### Follow-up questions and model answers
+
+#### FU-1 — Explain the roles of Logger, Handler, Formatter, and Filter in Python logging.
+
+**RU:** Объясните роли Logger, Handler, Formatter и Filter в Python logging?
+
+**Answer (RU):** Logger создаёт и передаёт LogRecord, Handler определяет destination и способ доставки, Formatter формирует представление записи, а Filter может отбрасывать или обогащать записи. Уровни logger и handler влияют на обработку записи. Propagation направляет запись к ancestor loggers, поэтому handlers на нескольких уровнях могут привести к дублированию. Конфигурацию выполняет приложение при старте; библиотечный код не должен самовольно перенастраивать root logger.
+
+**Answer (EN):** A Logger creates and passes a LogRecord, a Handler determines the destination and delivery mechanism, a Formatter renders the record, and a Filter can reject or enrich records. Logger and handler levels both affect processing. Propagation sends records to ancestor loggers, so handlers at multiple levels can cause duplicates. The application owns startup configuration; library code should not reconfigure the root logger.
+
+#### FU-2 — How do you propagate request context safely across async tasks?
+
+**RU:** Как безопасно передавать request context между async tasks?
+
+**Answer (RU):** Для request-scoped значений использую ContextVar, устанавливаю token в middleware и обязательно сбрасываю его через reset(token) в finally. asyncio поддерживает context propagation при создании tasks, но нельзя предполагать такую же семантику для threads, processes, внешних очередей и сообщений. На границах сервисов передаю trace context через W3C Trace Context. Не использую глобальные mutable variables и не помещаю чувствительные данные в context.
+
+**Answer (EN):** I use a ContextVar for request-scoped values, set its token in middleware, and always reset it in a finally block. asyncio propagates context when tasks are created, but the same semantics should not be assumed for threads, processes, external queues, or messages. Across services, propagate trace context through W3C Trace Context. Avoid global mutable variables and sensitive context values.
+
+#### FU-3 — What is the difference between logs, metrics, and distributed traces?
+
+**RU:** В чём разница между logs, metrics и distributed traces?
+
+**Answer (RU):** Logs содержат отдельные события с контекстом; metrics агрегируют измерения и подходят для трендов, alerting и SLO; traces показывают причинный путь операции через spans и сервисы. Рост latency metric обнаруживает проблему, trace локализует медленный downstream call, а связанные logs объясняют конкретную ошибку. Сигналы коррелируются через trace/span IDs, но каждый должен оставаться полезным самостоятельно. Для metrics особенно важен контроль cardinality.
+
+**Answer (EN):** Logs contain individual contextual events; metrics aggregate measurements and support trends, alerting, and SLOs; traces show an operation's causal path through spans and services. A latency metric detects a problem, a trace locates a slow downstream call, and correlated logs explain a specific failure. Signals correlate through trace and span IDs but should remain useful independently. Cardinality control is especially important for metrics.
+
+#### FU-4 — How would you prevent sensitive information from leaking into logs and traces?
+
+**RU:** Как предотвратить утечку чувствительной информации в logs и traces?
+
+**Answer (RU):** Использую allowlist безопасных полей вместо логирования произвольных объектов. Secrets, credentials, access tokens, персональные и медицинские данные исключаются или редактируются до отправки в sink/exporter. Redaction централизуется, но не считается единственной защитой: тесты ищут известные secret patterns, доступ к хранилищу ограничивается, retention минимизируется, а security audit events проектируются отдельно. Не возвращаю stack traces и внутренние exception messages клиенту. Контролирую span attributes и baggage, поскольку trace context пересекает границы доверия.
+
+**Answer (EN):** I use an allowlist of safe fields rather than logging arbitrary objects. Secrets, credentials, access tokens, personal data, and medical data must be excluded or redacted before reaching a sink or exporter. Centralize redaction but do not treat it as the only safeguard: test for known secret patterns, restrict storage access, minimize retention, and design security audit events separately. Do not return stack traces or internal exception messages to clients. Control span attributes and baggage because trace context can cross trust boundaries.
+
+#### FU-5 — How would you instrument a FastAPI service with OpenTelemetry without harming request reliability?
+
+**RU:** Как инструментировать FastAPI-сервис с OpenTelemetry, не ухудшая надёжность обработки запросов?
+
+**Answer (RU):** Начинаю с поддерживаемой automatic instrumentation для ASGI/FastAPI и используемых HTTP/database clients, затем добавляю manual spans только для важных доменных операций. Конфигурирую service/resource attributes, W3C propagation, sampling, batching и exporter timeout. Недоступность telemetry backend не должна превращаться в ошибку пользовательского запроса. При shutdown выполняю flush/shutdown SDK с ограниченным timeout. Исключаю sensitive attributes, контролирую cardinality и проверяю propagation через async tasks и downstream calls интеграционными тестами.
+
+**Answer (EN):** I start with supported automatic instrumentation for ASGI/FastAPI and the HTTP/database clients in use, then add manual spans only for meaningful domain operations. I configure service/resource attributes, W3C propagation, sampling, batching, and exporter timeouts. Telemetry backend unavailability must not become a user-request failure. On shutdown, flush and shut down the SDK with a bounded timeout. Exclude sensitive attributes, control cardinality, and verify propagation across async tasks and downstream calls with integration tests.
+
+### Pharmaviyum connection
+
+**Hypothetical interview scenario — not a claim about the current implementation:** a pharmacy workflow API could use structured events to correlate a medicine search, inventory read, and sale persistence without logging patient-identifying or prescription details. A trace could show time spent in the API, database, and an external AI/RAG dependency; metrics could track latency, error rate, queue depth, and dependency availability. If OpenTelemetry is adopted, instrumentation should preserve trace context across async operations and redact clinical/personal data before export. Inspect the actual repository, telemetry configuration, retention policy, and production deployment before claiming any of this is implemented or verified.
+
+### Senior-level evaluation
+
+| Level | Expected evidence |
+|---|---|
+| Mid-level | Uses Python logging, selects basic log levels, records exceptions, and understands handlers and formatters. |
+| Senior | Designs structured logs and correlation context; understands async propagation; distinguishes logs, metrics, and traces; instruments services with OpenTelemetry; controls sensitive data, cardinality, overhead, and exporter failure modes. |
+| Staff-level signal | Defines cross-service telemetry conventions, SLO-aligned alerting, retention/access policies, sampling strategy, incident workflows, and observability cost governance. |
+
+### Common pitfalls
+
+- Calling basicConfig independently in multiple modules or attaching duplicate handlers.
+- Confusing logger levels with handler levels and overlooking propagation.
+- Logging arbitrary request objects, headers, tokens, or clinical/personal data.
+- Using request IDs, user IDs, or unbounded values as metric labels.
+- Storing request context in global mutable state.
+- Assuming context propagation is identical across asyncio tasks, threads, processes, and message queues.
+- Logging the same exception at every layer and generating duplicate tracebacks.
+- Returning internal exception details or stack traces to API clients.
+- Treating logs as a replacement for metrics and distributed traces.
+- Creating spans for trivial functions or attaching sensitive attributes.
+- Allowing telemetry exporter failures or unbounded queues to block application requests.
+- Enabling verbose production logging indefinitely without assessing cost and exposure.
+
+### References
+
+- Python logging HOWTO: https://docs.python.org/3/howto/logging.html
+- Python logging reference: https://docs.python.org/3/library/logging.html
+- Python contextvars: https://docs.python.org/3/library/contextvars.html
+- asyncio task context: https://docs.python.org/3/library/asyncio-task.html
+- OpenTelemetry Python: https://opentelemetry.io/docs/languages/python/
+- OpenTelemetry context propagation: https://opentelemetry.io/docs/concepts/context-propagation/
+- W3C Trace Context: https://www.w3.org/TR/trace-context/
+- OpenTelemetry semantic conventions: https://opentelemetry.io/docs/specs/semconv/
