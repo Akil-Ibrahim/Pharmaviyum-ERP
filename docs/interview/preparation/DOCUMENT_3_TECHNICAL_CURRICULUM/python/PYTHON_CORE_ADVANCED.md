@@ -409,3 +409,58 @@ Follow-up IDs are assigned sequentially from FU-001 to FU-180, four per Main Que
 | FU-127 | Edge cases and trade-offs | How can finalizers, weak references, uncollectable objects, and extension-type references complicate garbage-collection behavior? | Как финализаторы, слабые ссылки, не подлежащие сборке объекты и ссылки в типах расширений могут усложнять работу сборщика мусора? |
 | FU-128 | Senior judgment | When is changing garbage-collector thresholds or disabling cyclic GC justified, and what measurements and regression safeguards are required? | Когда оправдано изменение порогов сборщика мусора или отключение циклического GC и какие измерения и меры защиты от регрессий необходимы? |
 
+
+### PY-033 — How do memory leaks and unbounded memory growth arise in long-running Python services?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-129 | Mechanism | How can references held by caches, registries, closures, callbacks, and task queues keep objects alive beyond their intended lifetime? | Как ссылки в кешах, реестрах, замыканиях, callbacks и очередях задач могут удерживать объекты дольше предполагаемого срока жизни? |
+| FU-130 | Application | How would you investigate steadily increasing memory in a worker using allocation snapshots, object counts, and workload correlation? | Как исследовать устойчивый рост памяти в worker с помощью снимков аллокаций, количества объектов и корреляции с нагрузкой? |
+| FU-131 | Edge cases and trade-offs | How would you distinguish a true retention leak from legitimate cache growth, fragmentation, allocator behavior, or native-library allocations? | Как отличить реальную утечку удержания объектов от закономерного роста кеша, фрагментации, поведения аллокатора или аллокаций нативной библиотеки? |
+| FU-132 | Senior judgment | What production safeguards would you introduce for memory-bounded workers, including cache limits, workload limits, telemetry, and restart policy? | Какие production-механизмы защиты вы внедрили бы для worker с ограниченной памятью, включая лимиты кешей и нагрузки, телеметрию и политику перезапуска? |
+
+### PY-034 — What is the GIL, and how does it affect Python thread execution?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-133 | Mechanism | What does the Global Interpreter Lock protect in conventional GIL-enabled CPython, and how does it affect execution of Python bytecode by threads? | Что защищает Global Interpreter Lock в обычной сборке CPython с GIL и как он влияет на выполнение Python-байткода потоками? |
+| FU-134 | Application | How would you determine whether a threaded workload is limited by the GIL, I/O latency, native code, or another bottleneck? | Как определить, ограничена ли многопоточная нагрузка GIL, задержками ввода-вывода, нативным кодом или другим узким местом? |
+| FU-135 | Edge cases and trade-offs | Why does the GIL not eliminate race conditions, and how can native extensions or blocking I/O change the concurrency picture? | Почему GIL не устраняет race conditions и как нативные расширения или блокирующий ввод-вывод могут изменить картину конкурентного выполнения? |
+| FU-136 | Senior judgment | How should a team document and test GIL-related assumptions across supported Python versions, builds, and deployment environments? | Как команде документировать и проверять предположения, связанные с GIL, для поддерживаемых версий Python, сборок и deployment-окружений? |
+
+### PY-035 — When should you use threads, processes, or asynchronous I/O?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-137 | Mechanism | How do threads, processes, and event-loop-based asynchronous I/O differ in scheduling, memory isolation, and communication costs? | Чем потоки, процессы и асинхронный ввод-вывод на основе event loop отличаются по планированию, изоляции памяти и стоимости взаимодействия? |
+| FU-138 | Application | How would you choose an execution model for a backend workload combining network calls, CPU-heavy transformations, and database access? | Как выбрать модель выполнения для backend-нагрузки, сочетающей сетевые вызовы, CPU-интенсивные преобразования и обращения к базе данных? |
+| FU-139 | Edge cases and trade-offs | What constraints do process startup methods, serialization, connection pools, cancellation, and shared mutable state introduce? | Какие ограничения создают способы запуска процессов, сериализация, пулы соединений, отмена задач и совместно используемое изменяемое состояние? |
+| FU-140 | Senior judgment | How would you benchmark and capacity-plan a mixed concurrency architecture while accounting for throughput, tail latency, memory, and operational complexity? | Как провести бенчмаркинг и спланировать ресурсы смешанной concurrency-архитектуры с учётом throughput, tail latency, памяти и эксплуатационной сложности? |
+
+### PY-036 — How do race conditions and synchronization problems arise in Python applications?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-141 | Mechanism | What makes a compound operation non-atomic, and how can thread interleaving expose inconsistent shared state? | Почему составная операция не является атомарной и как чередование потоков может привести к несогласованному общему состоянию? |
+| FU-142 | Application | How would you protect a shared in-memory counter, cache entry, or work queue when several threads access it concurrently? | Как защитить общий счётчик в памяти, запись кеша или очередь задач при конкурентном доступе нескольких потоков? |
+| FU-143 | Edge cases and trade-offs | How can lock ordering, re-entrant calls, condition-variable misuse, and excessive critical sections cause deadlocks or contention? | Как порядок захвата блокировок, повторные вызовы, неправильное использование condition variables и слишком большие критические секции могут приводить к deadlock или contention? |
+| FU-144 | Senior judgment | How would you decide between locks, message passing, immutable data, and database-level concurrency control for a production workflow? | Как выбрать между блокировками, обменом сообщениями, неизменяемыми данными и механизмами конкурентного доступа на уровне БД для production-процесса? |
+
+### PY-037 — What changes with free-threaded CPython, and how should engineers reason about compatibility?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-145 | Mechanism | What does a free-threaded CPython build change about interpreter-level thread serialization, and what guarantees should not be inferred from its availability? | Что free-threaded-сборка CPython меняет в сериализации потоков на уровне интерпретатора и какие гарантии нельзя автоматически выводить из её наличия? |
+| FU-146 | Application | How would you audit an existing library or service for assumptions that may fail when run on a free-threaded build? | Как провести аудит существующей библиотеки или сервиса на предмет предположений, которые могут оказаться неверными при запуске в free-threaded-сборке? |
+| FU-147 | Edge cases and trade-offs | What compatibility concerns involve C extensions, thread safety, object-level locking, build variants, and performance regressions? | Какие вопросы совместимости связаны с C-расширениями, thread safety, блокировками на уровне объектов, вариантами сборки и регрессиями производительности? |
+| FU-148 | Senior judgment | What rollout strategy and evidence would you require before adopting free-threaded Python in a latency-sensitive production service? | Какая стратегия внедрения и какие доказательства необходимы перед переходом на free-threaded Python в production-сервисе, чувствительном к задержкам? |
+
+### PY-038 — How does the asyncio event loop schedule and execute coroutines?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-149 | Mechanism | How does an event loop schedule coroutine execution, and what causes a running coroutine to suspend and allow other tasks to progress? | Как event loop планирует выполнение корутин и что заставляет выполняющуюся корутину приостановиться, позволяя другим задачам продолжить работу? |
+| FU-150 | Application | How would you trace task scheduling and identify event-loop stalls in an asynchronous web service? | Как проследить планирование задач и выявить задержки event loop в асинхронном веб-сервисе? |
+| FU-151 | Edge cases and trade-offs | What happens when synchronous code blocks the event-loop thread, when callbacks raise exceptions, or when tasks are created without being retained? | Что происходит, когда синхронный код блокирует поток event loop, callbacks вызывают исключения или задачи создаются без сохранения ссылок на них? |
+| FU-152 | Senior judgment | How would you set event-loop ownership, task lifecycle, shutdown behavior, and observability conventions in a large async application? | Как определить владение event loop, жизненный цикл задач, поведение при завершении и правила наблюдаемости в большом асинхронном приложении? |
+
