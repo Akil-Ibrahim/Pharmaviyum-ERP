@@ -12,6 +12,10 @@ The existing curriculum remains unchanged and continues to serve its original pu
 
 ## Three-document structure
 
+- [Document 1 — Interview Preparation Standard v1.3](./DOCUMENT_1_INTERVIEW_STANDARD.md)
+- [Document 2 — Technical Curriculum Architecture v1.0](./DOCUMENT_2_CURRICULUM_ARCHITECTURE.md)
+- [Document 3 — Technical Curriculum](./DOCUMENT_3_TECHNICAL_CURRICULUM/README.md)
+
 1. **Document 1 — Interview Preparation Standard**  
    Defines the preparation methodology, answer standard, question lifecycle, evaluation rubric, language format, and completion criteria.
 
