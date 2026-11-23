@@ -464,3 +464,67 @@ Follow-up IDs are assigned sequentially from FU-001 to FU-180, four per Main Que
 | FU-151 | Edge cases and trade-offs | What happens when synchronous code blocks the event-loop thread, when callbacks raise exceptions, or when tasks are created without being retained? | Что происходит, когда синхронный код блокирует поток event loop, callbacks вызывают исключения или задачи создаются без сохранения ссылок на них? |
 | FU-152 | Senior judgment | How would you set event-loop ownership, task lifecycle, shutdown behavior, and observability conventions in a large async application? | Как определить владение event loop, жизненный цикл задач, поведение при завершении и правила наблюдаемости в большом асинхронном приложении? |
 
+
+### PY-039 — What is the difference between a coroutine, Task, and Future?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-153 | Mechanism | How do coroutine objects, `asyncio.Task`, and `asyncio.Future` differ in purpose and lifecycle? | Чем объекты coroutine, `asyncio.Task` и `asyncio.Future` отличаются по назначению и жизненному циклу? |
+| FU-154 | Application | How would you coordinate several independent asynchronous operations and collect their results while preserving clear ownership of the tasks? | Как скоординировать несколько независимых асинхронных операций и собрать их результаты, сохранив понятное владение задачами? |
+| FU-155 | Edge cases and trade-offs | What happens when a coroutine is never awaited, a task fails without its result being retrieved, or a Future is completed more than once? | Что происходит, если coroutine никогда не ожидается через await, ошибка задачи остаётся без получения результата или Future завершается более одного раза? |
+| FU-156 | Senior judgment | When should application code create tasks explicitly, use structured concurrency primitives, or expose an awaitable abstraction to callers? | Когда прикладному коду следует явно создавать задачи, использовать примитивы structured concurrency или предоставлять вызывающему коду awaitable-абстракцию? |
+
+### PY-040 — How should cancellation, timeouts, and exceptions be handled in asyncio?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-157 | Mechanism | How is cancellation delivered to an asyncio task, and why is `CancelledError` part of the task's control-flow semantics? | Как отмена передаётся задаче asyncio и почему `CancelledError` является частью семантики управления потоком задачи? |
+| FU-158 | Application | How would you implement a request deadline that propagates through several asynchronous service calls and database operations? | Как реализовать deadline запроса, который распространяется через несколько асинхронных вызовов сервисов и операций с базой данных? |
+| FU-159 | Edge cases and trade-offs | What can go wrong if cancellation is swallowed, cleanup is not shielded appropriately, or timeout scopes are nested inconsistently? | Что может пойти не так, если отмена подавляется, очистка ресурсов неправильно защищена от отмены или timeout scopes вложены несогласованно? |
+| FU-160 | Senior judgment | How would you define cancellation safety, timeout budgets, partial-result behavior, and graceful shutdown for an async service? | Как определить безопасность отмены, бюджеты таймаутов, поведение при частичных результатах и graceful shutdown асинхронного сервиса? |
+
+### PY-041 — How do you prevent blocking operations from degrading an async application?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-161 | Mechanism | Why does calling blocking code on the event-loop thread prevent other tasks from making progress, even when those tasks are awaiting I/O? | Почему вызов блокирующего кода в потоке event loop мешает другим задачам выполняться, даже если они ожидают ввода-вывода? |
+| FU-162 | Application | How would you integrate a synchronous third-party SDK or CPU-intensive function into an asynchronous FastAPI endpoint safely? | Как безопасно интегрировать синхронный сторонний SDK или CPU-интенсивную функцию в асинхронный endpoint FastAPI? |
+| FU-163 | Edge cases and trade-offs | What limitations do thread and process executors introduce around cancellation, context propagation, serialization, and bounded concurrency? | Какие ограничения thread и process executors создают для отмены, передачи контекста, сериализации и ограничения конкурентности? |
+| FU-164 | Senior judgment | How would you detect, isolate, and prevent event-loop starvation under production load without simply increasing worker or thread counts? | Как обнаруживать, изолировать и предотвращать starvation event loop под production-нагрузкой, не ограничиваясь простым увеличением числа workers или threads? |
+
+### PY-042 — How does Python's import system work, including module caching and circular imports?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-165 | Mechanism | What roles do `sys.modules`, finders, loaders, and module specifications play during an import? | Какую роль во время импорта играют `sys.modules`, finders, loaders и спецификации модулей? |
+| FU-166 | Application | How would you investigate an import that resolves to an unexpected module or behaves differently across working directories and execution modes? | Как исследовать импорт, который разрешается в неожиданный модуль или ведёт себя по-разному в зависимости от рабочей директории и режима запуска? |
+| FU-167 | Edge cases and trade-offs | Why can circular imports expose partially initialized modules, and how do package re-exports and import-time side effects complicate diagnosis? | Почему циклические импорты могут открывать доступ к частично инициализированным модулям и как re-exports пакетов и побочные эффекты при импорте усложняют диагностику? |
+| FU-168 | Senior judgment | What package-boundary and initialization rules would you establish to keep imports deterministic, testable, and safe for application startup? | Какие правила границ пакетов и инициализации вы установили бы, чтобы импорты оставались детерминированными, тестируемыми и безопасными при запуске приложения? |
+
+### PY-043 — How should Python packages and dependencies be structured for reliable deployment?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-169 | Mechanism | What are the roles of project metadata, build backends, wheels, source distributions, and environment markers in Python packaging? | Какую роль в упаковке Python играют метаданные проекта, build backends, wheels, source distributions и environment markers? |
+| FU-170 | Application | How would you structure and package a Python service so that local development, CI, container builds, and production install the same application consistently? | Как структурировать и упаковать Python-сервис, чтобы local development, CI, сборка контейнеров и production согласованно устанавливали одно и то же приложение? |
+| FU-171 | Edge cases and trade-offs | What dependency-resolution risks arise from loose version constraints, transitive dependencies, optional extras, platform-specific wheels, and editable installs? | Какие риски разрешения зависимостей возникают из-за широких ограничений версий, транзитивных зависимостей, optional extras, platform-specific wheels и editable installs? |
+| FU-172 | Senior judgment | How would you balance reproducible lockfiles, security updates, dependency freshness, build isolation, and deployment rollback requirements? | Как сбалансировать воспроизводимые lockfiles, обновления безопасности, актуальность зависимостей, изоляцию сборки и требования к rollback deployment? |
+
+### PY-044 — How do you profile and optimize a Python application without premature optimization?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-173 | Mechanism | What do deterministic profilers, sampling profilers, microbenchmarks, and memory profilers measure, and what biases can each introduce? | Что измеряют детерминированные профилировщики, sampling profilers, микробенчмарки и профилировщики памяти и какие искажения может вносить каждый из них? |
+| FU-174 | Application | How would you profile a slow API endpoint end to end and determine whether time is spent in Python code, database access, serialization, or network I/O? | Как профилировать медленный API endpoint от начала до конца и определить, тратится ли время на Python-код, доступ к БД, сериализацию или сетевой ввод-вывод? |
+| FU-175 | Edge cases and trade-offs | Why can microbenchmarks mislead when they ignore warm-up, workload distribution, concurrency, cache effects, or measurement overhead? | Почему микробенчмарки могут вводить в заблуждение, если не учитывают прогрев, распределение нагрузки, конкурентность, влияние кешей или накладные расходы измерения? |
+| FU-176 | Senior judgment | How would you prioritize an optimization using user impact, latency percentiles, resource cost, complexity, and regression risk? | Как расставить приоритеты оптимизации с учётом влияния на пользователей, перцентилей задержки, стоимости ресурсов, сложности и риска регрессии? |
+
+### PY-045 — How do you investigate Python performance across CPU, memory, I/O, and concurrency?
+
+| Follow-up ID | Focus | Follow-up question (EN) | Перевод (RU) |
+|---|---|---|---|
+| FU-177 | Mechanism | How do CPU saturation, memory pressure, I/O wait, lock contention, and event-loop lag produce different performance symptoms? | Как насыщение CPU, давление на память, ожидание ввода-вывода, конкуренция за блокировки и задержка event loop создают различные симптомы производительности? |
+| FU-178 | Application | How would you investigate a service whose throughput has fallen while p95 and p99 latency have increased after a deployment? | Как исследовать сервис, у которого после deployment снизилась пропускная способность, а задержки p95 и p99 выросли? |
+| FU-179 | Edge cases and trade-offs | How can queue buildup, coordinated omission, noisy neighbors, autoscaling delays, and retry amplification distort performance diagnosis? | Как накопление очередей, coordinated omission, noisy neighbors, задержки autoscaling и усиление нагрузки повторными попытками искажают диагностику производительности? |
+| FU-180 | Senior judgment | How would you lead a production performance investigation from hypothesis and instrumentation through remediation, load validation, and regression prevention? | Как организовать production-расследование проблем производительности — от гипотезы и инструментирования до исправления, нагрузочной проверки и предотвращения регрессий? |
+
