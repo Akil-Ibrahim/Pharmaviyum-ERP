@@ -756,3 +756,86 @@ The decision should connect a measured low-level cost to a meaningful service-le
 - [ ] Final editorial review.
 
 **Completion rule:** Authored material is not finally approved until both review stages are complete.
+
+
+
+---
+
+# PY-003 — Main Question
+
+**Question (EN):** Explain Python's object model: identity, type, and value.
+
+**What it evaluates:** Name binding, identity versus equality, mutability, type checks, and API design.
+
+Every Python object has an identity, a type, and a value. Identity distinguishes the particular object; type defines its behavior and supported operations; value is the data or state it represents. An object's identity and type remain stable during its lifetime, while its value may change if it is mutable.
+
+A variable is a name bound to an object, not a typed storage container. Assignment normally binds a name; it does not copy the object. Multiple names can therefore refer to the same mutable object.
+
+~~~python
+first = [1, 2]
+alias = first
+another = [1, 2]
+
+first is alias       # True: same object
+first == another    # True: equal values, different objects
+
+alias.append(3)     # The change is visible through first as well
+~~~
+
+Use is for identity-sensitive checks such as None or a private sentinel; use == for value equality. Use isinstance() when subclasses are acceptable. Prefer protocols or polymorphism when callers need behavior rather than a specific implementation.
+
+Do not confuse Python object identity with domain identity. Two ORM instances may represent the same database row while being distinct Python objects. Use stable domain identifiers across persistence, serialization, and distributed boundaries. The id() value is lifetime-scoped, not a durable key or portable memory address.
+
+**Interview-Ready Answer (EN)**
+
+“Every Python object has an identity, a type, and a value. Identity tells us which particular object we refer to, type defines its behavior, and value represents its data or state. Names are bound to objects, so multiple names can refer to the same object. A mutable object's value can change without changing its identity or type; rebinding a name is different from mutating the object. I use is for identity checks such as None, and == for value equality. I generally prefer isinstance() when subclasses are valid, and protocols when the design should depend on behavior. For persistence and distributed systems, I use explicit domain identifiers rather than Python object identity.”
+
+---
+
+## FU-009 — Identity, type, and value over an object's lifetime
+
+**Question (EN):** Which of an object's identity, type, and value can change during its lifetime?
+
+**Explanation:** Identity and type remain stable throughout an object's lifetime. Its value may change if it is mutable. Mutation changes the existing object; rebinding changes which object a name refers to. Immutability is not necessarily deep: a tuple can contain a mutable list whose contents still change.
+
+**Interview-Ready Answer (EN)**
+
+“An object's identity and type remain constant during its lifetime, while its value may change if it is mutable. Mutation changes the state of the existing object; rebinding changes the object referenced by a name. These are different operations. An immutable container also does not guarantee that every object reachable through it is immutable.”
+
+---
+
+## FU-010 — Choosing identity, equality, and type checks
+
+**Question (EN):** How would you choose between identity checks, equality checks, and type checks in a code review?
+
+**Explanation:** Start with the contract being tested. Use is for object identity and singleton sentinels, == for value equality, and isinstance() when subclasses are accepted. An exact check such as type(value) is int deliberately rejects subclasses and should be used only when that restriction is part of the contract. Review custom __eq__ and __hash__ together when objects are dictionary keys or set members.
+
+**Interview-Ready Answer (EN)**
+
+“I first identify whether the code needs identity, value equality, or type compatibility. I use is for None and explicit sentinels, == for values, and isinstance() when subclasses should be accepted. Exact type checks are appropriate only for a deliberate strict contract. I also review custom equality and hashing because inconsistent implementations can break dictionary and set behavior.”
+
+---
+
+## FU-011 — Why is is not a value comparison?
+
+**Question (EN):** Why can using is to compare strings, numbers, or other values produce unreliable results?
+
+**Explanation:** is tests whether references designate the same object; it does not compare values. Equal values can belong to distinct objects. CPython may reuse or intern some immutable objects, making an incorrect identity comparison appear to work in one context. Such reuse is an implementation optimization, not a language guarantee.
+
+**Interview-Ready Answer (EN)**
+
+“is checks object identity, whereas == checks equality according to the type's comparison semantics. Two separately created values can be equal without being the same object. Interning or constant reuse may make identity comparisons appear to work for some strings or integers, but that behavior is implementation-dependent. I use is for sentinels and == for value comparisons.”
+
+---
+
+## FU-012 — Identity and mutability in API design
+
+**Question (EN):** How should API design avoid accidental dependencies on object identity, mutability, or concrete implementation types?
+
+**Explanation:** Define whether an API mutates, retains, copies, or returns caller-owned objects. Use stable domain IDs when identity must survive database reloads or process boundaries. Prefer immutable value objects for value-based concepts, while accounting for nested mutability and hash stability. Expose required behavior through protocols or abstractions instead of requiring a concrete class without a clear reason. Validate and normalize external data at system boundaries.
+
+**Interview-Ready Answer (EN)**
+
+“I make ownership and mutation semantics explicit: callers should know whether an API changes an input, retains a reference, or returns shared state. I use stable domain identifiers rather than Python object identity across persistence and distributed boundaries. Immutable value objects are useful when equality is value-based, provided nested state and hashing are handled correctly. I expose required behavior through suitable abstractions or protocols so callers are not coupled to an unnecessary concrete implementation.”
+
+**Status:** Authored; independent technical and editorial review pending.
