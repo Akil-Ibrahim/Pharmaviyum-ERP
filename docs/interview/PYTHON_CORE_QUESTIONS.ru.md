@@ -8,6 +8,10 @@
 
 ## PY-CORE-001 — Объектная модель Python: идентичность, тип и значение
 
+> **Scope boundary:** This question establishes the Python object model: identity, type, value, name binding, aliasing, and mutation versus rebinding. Detailed equality/identity operators, `id()` semantics, and the equality/hash contract belong to Q4. References to `is` and `==` here are introductory only.
+>
+> **Граница темы:** вопрос вводит модель объектов Python: identity, type, value, привязку имён, aliasing и различие мутации и переназначения. Подробная семантика `is` / `==`, `id()` и контракт equality/hash рассматриваются в Q4.
+
 ### Question (EN)
 
 **Can you explain Python's object model and distinguish an object's identity, type and value?**
@@ -378,6 +382,10 @@ At Senior level, I explain this in terms of **name binding, object identity, mut
 ---
 
 ## PY-CORE-004 — Имена, идентичность, равенство и ссылки на объекты
+
+> **Scope boundary:** This question owns comparison semantics: `is` versus `==`, `id()`, custom equality, and the equality/hash contract. Basic name binding and call-by-sharing are introduced in Q1 and should not be re-explained here beyond what is needed for the examples.
+>
+> **Граница темы:** вопрос отвечает за семантику сравнений: `is` и `==`, `id()`, пользовательское равенство и контракт equality/hash. Базовая привязка имён и call-by-sharing вводятся в Q1; здесь не нужно повторять их полностью.
 
 ### Question (EN)
 
@@ -1734,6 +1742,10 @@ EN: First inspect the actual dependency graph and identify the cycle instead of 
 
 ## PY-CORE-013 — Управление памятью и сборка мусора в Python
 
+> **Scope boundary:** Focus on object lifetime, reachability, reference counting as a CPython detail, cyclic GC, weak references, and Python-level retention paths. Process/container memory, RSS interpretation as a service signal, and performance-capacity decisions are handled in Q29.
+>
+> **Граница темы:** фокус — время жизни объектов, достижимость, reference counting как деталь CPython, cyclic GC, weak references и Python-level retention paths. Память процесса/контейнера, RSS как сигнал состояния сервиса и решения о capacity рассматриваются в Q29.
+
 **Вопрос (EN):** Explain object lifetime and memory reclamation in Python. Discuss reference counting, cyclic garbage collection, reference cycles, weak references, finalization, common memory-retention causes, and how to investigate memory growth in a long-running backend.
 
 **Перевод (RU):** Объясните время жизни объектов и освобождение памяти в Python. Расскажите о reference counting, cyclic garbage collection, reference cycles, weak references, финализации, распространённых причинах удержания памяти и диагностике её роста в долгоживущем backend.
@@ -1858,6 +1870,10 @@ EN: Establish a reproducible workload and baseline, measure RSS and Python alloc
 
 
 ## PY-CORE-014 — Оптимизация производительности и профилирование Python
+
+> **Scope boundary:** Focus on local Python performance: algorithmic complexity, allocation patterns, `timeit`, `cProfile`, `pstats`, and `tracemalloc`. End-to-end latency percentiles, load generation, saturation, service capacity, scaling, and performance SLOs belong to Q29. Use Q29 rather than duplicating a full service-level performance investigation here.
+>
+> **Граница темы:** фокус — производительность кода Python: алгоритмическая сложность, аллокации, `timeit`, `cProfile`, `pstats` и `tracemalloc`. End-to-end latency percentiles, нагрузочное тестирование, saturation, capacity сервиса, масштабирование и performance SLO относятся к Q29.
 
 ### Что проверяет интервьюер
 - Умение оптимизировать измеренные узкие места, а не предположения.
@@ -3826,6 +3842,10 @@ A Senior engineer should be able to draw the dependency graph, identify the comp
 
  
 ## PY-CORE-029 — Инженерия производительности Python, профилирование, оптимизация и масштабирование
+
+> **Scope boundary:** This question owns end-to-end service performance engineering: workload models, latency distributions, throughput, load tests, saturation, capacity, scaling, caching strategy, and regression controls. Use Q13 for object-lifecycle/GC mechanics and Q14 for local Python profiling tools; do not repeat their foundational explanations.
+>
+> **Граница темы:** вопрос отвечает за end-to-end performance engineering сервиса: workload, latency distributions, throughput, load tests, saturation, capacity, scaling, caching strategy и контроль регрессий. Механику жизненного цикла объектов и GC см. в Q13, локальное профилирование Python — в Q14; не повторяйте их базовые объяснения.
 
 ### Что проверяет интервьюер
 
