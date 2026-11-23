@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 21 из 30 основных вопросов подготовлено  
+**Охват:** 22 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -2762,3 +2762,131 @@ I avoid making generic APIs unnecessarily complex. The type system should make i
 - Python typing specification: https://typing.readthedocs.io/en/latest/spec/index.html
 - Mypy documentation: https://mypy.readthedocs.io/
 - Pyright documentation: https://microsoft.github.io/pyright/
+
+
+## PY-CORE-022 — Стандартная библиотека Python и ключевые встроенные модули
+
+### Вопрос на собеседовании
+Какие части стандартной библиотеки Python вы считаете обязательными для production backend engineering? Объясните, когда использовать collections, itertools, functools, contextlib, dataclasses, enum, datetime/zoneinfo, pathlib, logging и subprocess. Обсудите корректность, управление ресурсами, переносимость и эксплуатационные риски.
+
+### Что проверяет интервьюер
+- Умение выбирать стандартные abstractions вместо самописных решений.
+- Понимание семантики и trade-offs ключевых модулей стандартной библиотеки.
+- Способность писать предсказуемый, переносимый и тестируемый backend-код.
+- Понимание временных зон, локального времени и UTC.
+- Безопасную работу с файловой системой, логированием и subprocess.
+- Умение контролировать ресурсы, ошибки, memory usage и operational behavior.
+
+### Эталонный ответ
+Стандартная библиотека Python предоставляет зрелые примитивы для типичных задач backend-разработки. Senior-инженер должен знать не только API модулей, но и их семантику, ограничения и последствия для безопасности и эксплуатации. Я предпочитаю стандартную библиотеку, когда она решает задачу ясно и надёжно, но не предполагаю, что любой её модуль автоматически безопасен для любого входа или production-нагрузки.
+
+**collections.** Counter подходит для подсчёта элементов; defaultdict — для группировки и накопления по ключу; deque — для эффективных операций с обоих концов очереди; ChainMap — для объединения нескольких mapping с приоритетом первого. Важно помнить, что deque не является полноценной thread-safe очередью для сложного producer/consumer протокола; для синхронизации потоков есть queue.Queue, а для asyncio — asyncio.Queue. defaultdict может неожиданно создавать значение при обращении через отсутствующий ключ, поэтому его поведение нужно учитывать в коде и тестах.
+
+**itertools.** Модуль предоставляет ленивые iterator building blocks: chain, islice, pairwise, groupby, product, combinations и другие. Они позволяют избежать промежуточных коллекций и выражать потоковую обработку. Однако lazy iterator может быть одноразовым, удерживать исходные объекты и не гарантирует bounded memory во всей цепочке. itertools.groupby группирует последовательные соседние элементы с одинаковым ключом; он не выполняет глобальную группировку. Если нужна группировка всех одинаковых значений, вход обычно предварительно сортируют по тому же ключу.
+
+**functools.** partial фиксирует часть аргументов callable; wraps сохраняет метаданные декорируемой функции; reduce сворачивает последовательность, хотя для простых операций часто яснее обычный цикл или специализированная функция; lru_cache кеширует результаты вызовов по аргументам. Кеширование требует hashable arguments и корректной модели invalidation. Кеш не должен случайно смешивать данные разных пользователей или tenants. lru_cache не является distributed cache и не предоставляет бизнес-ориентированную invalidation. Он также не превращает async-функцию в корректное кеширование вычисленного результата автоматически: обычный lru_cache может кешировать coroutine object. Для этого нужен async-aware подход с чёткими правилами concurrency и lifecycle.
+
+**contextlib.** contextmanager и asynccontextmanager позволяют выразить setup/cleanup через генератор, а ExitStack и AsyncExitStack управляют динамическим набором ресурсов. suppress подавляет только явно указанные исключения и должен использоваться узко. closing и aclosing помогают закрывать объекты с соответствующим методом. Контекстный менеджер задаёт границу владения ресурсом: acquire, use, release. Важно не скрывать ошибки cleanup и не подавлять исключения без ясного контракта.
+
+**dataclasses.** Декоратор dataclass генерирует стандартные методы класса данных: например __init__, __repr__ и __eq__ в зависимости от параметров. field(default_factory=...) нужен для создания нового изменяемого значения для каждого экземпляра; прямой mutable default нельзя разделять между экземплярами. frozen=True запрещает обычное переназначение полей, но не делает вложенные mutable objects глубоко immutable. slots=True может уменьшить overhead экземпляров и запретить произвольные атрибуты, но влияет на наследование, weak references и совместимость. Dataclass не является автоматически валидатором входных данных и не заменяет Pydantic там, где нужны parsing и validation.
+
+**enum.** Enum задаёт конечный набор символических значений, улучшая читаемость и моделирование состояний. StrEnum доступен начиная с Python 3.11. auto() генерирует значения по правилам конкретного enum. Если значения enum попадают во внешний API или сохраняются в базе, они становятся частью контракта: их изменение может потребовать versioning или migration. Не следует полагаться на случайные числовые значения auto() как на долговечный внешний идентификатор.
+
+**datetime и zoneinfo.** Для абсолютных моментов времени обычно используют timezone-aware datetime в UTC. Naive datetime не содержит достаточной информации для однозначного определения момента времени. zoneinfo.ZoneInfo использует IANA time zone database и учитывает региональные правила. Локальное гражданское время может быть неоднозначным при переходе на зимнее время или несуществующим при переходе на летнее время. Прибавление календарного дня не всегда эквивалентно прибавлению 24 часов в UTC. В доменной логике нужно различать instant, local date/time, timezone и календарную дату. В API следует явно определять формат, timezone policy и поведение для ambiguous/nonexistent local times.
+
+**pathlib и файловая система.** pathlib предоставляет объектную модель путей и обычно предпочтительнее ручной конкатенации строк. Но нормализация пути сама по себе не защищает от path traversal. При работе с пользовательскими именами файлов нужно ограничивать доступ разрешёнными каталогами, проверять разрешённый путь после обработки ссылок и учитывать symlink/race conditions. Последовательность resolve() и последующего открытия может иметь TOCTOU weakness, если атакующий способен изменить файловую систему между операциями. Для чувствительных операций нужны подходящие OS-level permissions и, где поддерживается, безопасное открытие относительно доверенного directory descriptor.
+
+**logging.** Модуль logging предоставляет уровни, handlers, formatters, filters и logger hierarchy. Приложение обычно настраивает logging централизованно на entrypoint, а модули получают logger через getLogger(__name__). Библиотечные модули не должны бесконтрольно конфигурировать root logger. В production полезны structured fields, correlation/request IDs и единый формат логов. Нельзя записывать пароли, токены, секреты, полные платёжные или медицинские данные. Нужно учитывать log injection, redaction, retention, access control и объём логов. Исключения следует логировать на подходящей границе, избегая повторного логирования одного события на каждом уровне.
+
+**subprocess.** subprocess позволяет запускать внешние процессы и контролировать stdin/stdout/stderr, return code, timeout и environment. Для простого вызова обычно подходит subprocess.run с явным timeout и проверкой результата, например check=True, если ненулевой exit code должен считаться ошибкой. Не следует использовать shell=True с данными, контролируемыми пользователем: это создаёт риск command injection. Передача аргументов списком исключает shell parsing, но всё равно требует проверки разрешённых команд и аргументов. Нужно ограничивать время выполнения, объём вывода, права процесса и переменные окружения. Для долгоживущих или многочисленных процессов необходима явная модель управления lifecycle и concurrency.
+
+В production я выбираю модуль по контракту задачи, а не по краткости кода. Проверяю поддерживаемую версию Python, поведение на граничных случаях, обработку ошибок, потокобезопасность и ресурсные ограничения. Стандартная библиотека помогает обрабатывать внешние данные, но validation, authorization и domain invariants остаются отдельными обязанностями. Ключевые решения закрепляются тестами, документацией и observability.
+
+### Professional answer (EN)
+Python's standard library provides mature building blocks for common backend tasks. A senior engineer should understand not only the APIs but also their semantics, limitations, and security and operational consequences. I prefer standard-library solutions when they solve the problem clearly and reliably, but I do not assume that every module is automatically safe for every input or production workload.
+
+**collections.** Counter is useful for counting; defaultdict for grouping and accumulation; deque for efficient operations at both ends; ChainMap for layered mappings where the first mapping has precedence. A deque is not a full thread-safe producer/consumer protocol. Use queue.Queue for synchronized threaded communication and asyncio.Queue for async tasks. defaultdict can create a value as a side effect of accessing a missing key, which should be considered in code and tests.
+
+**itertools.** It provides lazy iterator building blocks such as chain, islice, pairwise, groupby, product, and combinations. These can avoid intermediate collections and support streaming transformations. However, a lazy iterator may be single-use, may retain references to source objects, and does not guarantee bounded memory across an entire processing pipeline. itertools.groupby groups consecutive runs with equal keys; it does not globally group all matching values. Sort by the same key first when global grouping is required.
+
+**functools.** partial fixes some callable arguments; wraps preserves metadata when writing decorators; reduce folds an iterable, although a loop or specialized function is often clearer; lru_cache caches call results by arguments. Caching requires hashable arguments and a correct invalidation model. It must not accidentally mix data across users or tenants. lru_cache is not a distributed cache and does not provide domain-aware invalidation. It also does not automatically cache the awaited result of an async function: ordinary lru_cache may cache a coroutine object. Use an async-aware design with explicit concurrency and lifecycle semantics.
+
+**contextlib.** contextmanager and asynccontextmanager express setup and cleanup around a generator. ExitStack and AsyncExitStack manage a dynamic collection of resources. suppress catches only explicitly listed exception types and should be narrow. closing and aclosing help close compatible resources. A context manager defines a resource ownership boundary: acquire, use, release. Cleanup failures and exception suppression must follow an explicit contract.
+
+**dataclasses.** The dataclass decorator generates common methods such as __init__, __repr__, and __eq__ depending on its options. field(default_factory=...) creates a fresh mutable default per instance; a direct mutable default must not be shared. frozen=True prevents ordinary field reassignment but does not make nested mutable objects deeply immutable. slots=True can reduce instance overhead and prevent arbitrary attributes, with implications for inheritance, weak references, and compatibility. A dataclass is not automatically an input validator and does not replace Pydantic when parsing and validation are required.
+
+**enum.** Enum defines a finite set of symbolic values, improving readability and state modeling. StrEnum is available from Python 3.11. auto() generates values according to the enum's rules. Once enum values are exposed through an API or persisted, they become part of a contract; changing them may require versioning or migration. Do not treat incidental auto-generated numeric values as durable external identifiers.
+
+**datetime and zoneinfo.** For absolute points in time, use timezone-aware datetimes, commonly normalized to UTC. A naive datetime lacks enough information to identify an unambiguous instant. zoneinfo.ZoneInfo uses the IANA time zone database and supports regional rules. Local civil times can be ambiguous during a fall-back transition or nonexistent during a spring-forward transition. Adding one calendar day is not always equivalent to adding 24 hours in UTC. Domain logic should distinguish an instant, local date/time, time zone, and calendar date. APIs need an explicit format, time-zone policy, and behavior for ambiguous or nonexistent local times.
+
+**pathlib and the filesystem.** pathlib provides an object-oriented path API and is generally clearer than manual string concatenation. Path normalization alone does not prevent path traversal. When handling user-supplied filenames, constrain access to approved directories, validate the resolved target, and account for symlinks and race conditions. A resolve-then-open sequence can have a TOCTOU weakness if an attacker can change the filesystem between operations. Sensitive operations require appropriate OS-level permissions and, where supported, safe operations relative to a trusted directory descriptor.
+
+**logging.** The logging module provides levels, handlers, formatters, filters, and logger hierarchy. Applications should generally configure logging centrally at the entrypoint; modules should obtain loggers with getLogger(__name__). Libraries should not unexpectedly configure the root logger. Production logging benefits from structured fields, correlation/request IDs, and a consistent schema. Never log passwords, tokens, secrets, or unnecessary payment or medical data. Account for log injection, redaction, retention, access control, and volume. Log exceptions at the appropriate boundary rather than repeatedly logging the same failure at every layer.
+
+**subprocess.** subprocess launches external processes and controls stdin/stdout/stderr, return codes, timeouts, and environment. For a simple invocation, subprocess.run with an explicit timeout and result checking (for example check=True when a non-zero exit is an error) is usually appropriate. Avoid shell=True with user-controlled data because it creates command-injection risk. Passing an argument list avoids shell parsing, but commands and arguments still require allowlisting and validation. Bound execution time and output, restrict process permissions, and control environment variables. Long-lived or high-volume process execution requires an explicit lifecycle and concurrency model.
+
+In production, I choose a module based on the task's contract rather than code brevity. I check the supported Python version, edge-case semantics, error handling, thread safety, and resource limits. The standard library can help process external data, but validation, authorization, and domain invariants remain separate responsibilities. Important decisions should be captured in tests, documentation, and observability.
+
+### Follow-up questions and эталонные ответы
+
+#### FU-1. Чем отличаются deque, queue.Queue и asyncio.Queue?
+**Ответ:** deque — контейнер с эффективными операциями с обоих концов, но сам по себе не предоставляет полноценный blocking producer/consumer protocol. queue.Queue предназначен для синхронизации потоков и поддерживает блокирующие операции и ограничения размера. asyncio.Queue предназначен для координации asyncio tasks и использует awaitable операции; он не является thread-safe. Выбор зависит от concurrency model.
+
+**Answer (EN):** deque is a container with efficient operations at both ends, but it does not provide a complete blocking producer/consumer protocol. queue.Queue supports synchronized threaded communication, blocking operations, and optional capacity limits. asyncio.Queue coordinates asyncio tasks through awaitable operations and is not thread-safe. Choose based on the concurrency model.
+
+#### FU-2. Почему itertools.groupby может давать неожиданный результат?
+**Ответ:** Потому что groupby объединяет только соседние последовательные элементы с одинаковыми ключами. Если одинаковые ключи встречаются в разных частях входа, они попадут в разные группы. Для глобальной группировки вход обычно предварительно сортируют по тому же ключу либо используют mapping или SQL GROUP BY, если это лучше соответствует задаче.
+
+**Answer (EN):** groupby combines only consecutive elements with equal keys. If the same key appears in separate parts of the input, it produces separate groups. For global grouping, sort by the same key first or use a mapping or SQL GROUP BY when that better fits the task.
+
+#### FU-3. Почему lru_cache не является готовым решением для кеширования async service calls?
+**Ответ:** Обычный lru_cache кеширует непосредственный результат вызова функции. Для async-функции это coroutine object, а не автоматически вычисленное значение. Повторное ожидание того же coroutine object некорректно. Кроме того, нужны TTL/invalidation, защита от cross-tenant leakage, concurrency control и обработка ошибок. Нужен async-aware cache с явно заданным lifecycle.
+
+**Answer (EN):** Ordinary lru_cache caches the immediate function-call result. For an async function, that result is a coroutine object, not the awaited value. Re-awaiting the same coroutine object is invalid. A real service cache also needs TTL/invalidation, tenant isolation, concurrency control, and error handling. Use an async-aware cache with an explicit lifecycle.
+
+#### FU-4. Чем timezone-aware datetime отличается от naive datetime?
+**Ответ:** Aware datetime содержит информацию о timezone или UTC offset, позволяющую интерпретировать момент времени; naive datetime такой информации не содержит. Naive значение нельзя молча считать UTC или локальным временем без внешнего контракта. Для production API нужно явно определить timezone semantics и обработать ambiguous/nonexistent local times при DST transitions.
+
+**Answer (EN):** An aware datetime contains time-zone or UTC-offset information that allows an instant to be interpreted; a naive datetime does not. A naive value must not be silently assumed to be UTC or local time without an external contract. Production APIs should define time-zone semantics and handle ambiguous or nonexistent local times around DST transitions.
+
+#### FU-5. Почему pathlib.resolve() само по себе не обеспечивает полную защиту от path traversal?
+**Ответ:** Потому что проверка разрешённого пути и последующее открытие — отдельные операции. Между ними symlink или файловая структура могут измениться, создавая TOCTOU race. Проверка также должна гарантировать, что путь остаётся внутри доверенного root directory. Для чувствительных сценариев нужны OS-level permissions и безопасные операции открытия относительно доверенного directory descriptor, где это доступно.
+
+**Answer (EN):** Because resolving and validating a path and opening it are separate operations. A symlink or filesystem change between them can create a TOCTOU race. Validation must also enforce a trusted root boundary. Sensitive cases require OS-level permissions and safe open operations relative to a trusted directory descriptor where available.
+
+### Связь с Pharmaviyum — гипотетический сценарий для интервью
+Предположим, backend worker обрабатывает файлы импорта каталога и формирует структурированные operational logs. pathlib может упростить работу с путями, contextlib — ограничить жизненный цикл временных файлов и ресурсов, dataclasses — моделировать внутренние записи, а enum — конечные состояния импорта. datetime/zoneinfo могут обеспечить корректную семантику планирования. subprocess следует вводить только при реальной необходимости внешней программы и ограничивать allowlist, timeout и изолированным environment. Это гипотетическое архитектурное упражнение, а не утверждение, что именно эти модули или паттерны реализованы в Pharmaviyum.
+
+### Критерии оценки Senior
+| Уровень | Ожидаемые признаки |
+|---|---|
+| Mid-level | Выбирает распространённые модули стандартной библиотеки и объясняет их базовые API. |
+| Senior | Объясняет lazy iterators, concurrency semantics очередей, ограничения кеша, cleanup ресурсов, DST edge cases, filesystem risks, logging hygiene и subprocess safety. |
+| Staff-level signal | Определяет общие engineering conventions для resource ownership, time handling, logging/redaction, subprocess policy, portability и operational limits между сервисами. |
+
+### Типичные ошибки
+- Считать deque взаимозаменяемым с синхронизированной очередью.
+- Предполагать, что itertools.groupby выполняет глобальную группировку.
+- Применять lru_cache к async-функциям без понимания coroutine semantics.
+- Использовать mutable defaults в dataclass вместо default_factory.
+- Считать frozen dataclass глубоко immutable.
+- Сохранять auto-generated enum values как стабильные внешние идентификаторы без политики совместимости.
+- Смешивать naive и aware datetime или предполагать, что каждое локальное время существует ровно один раз.
+- Считать нормализацию pathlib полной защитой от path traversal.
+- Записывать secrets или sensitive payloads в логи.
+- Использовать shell=True с недоверенным вводом.
+- Не задавать timeout и ограничения вывода/ресурсов для subprocess.
+- Предполагать, что стандартная библиотека отменяет необходимость validation и domain rules.
+
+### Источники
+- Python standard library: https://docs.python.org/3/library/
+- collections: https://docs.python.org/3/library/collections.html
+- itertools: https://docs.python.org/3/library/itertools.html
+- functools: https://docs.python.org/3/library/functools.html
+- contextlib: https://docs.python.org/3/library/contextlib.html
+- dataclasses: https://docs.python.org/3/library/dataclasses.html
+- enum: https://docs.python.org/3/library/enum.html
+- datetime и zoneinfo: https://docs.python.org/3/library/datetime.html и https://docs.python.org/3/library/zoneinfo.html
+- pathlib: https://docs.python.org/3/library/pathlib.html
+- logging: https://docs.python.org/3/library/logging.html
+- subprocess: https://docs.python.org/3/library/subprocess.html
