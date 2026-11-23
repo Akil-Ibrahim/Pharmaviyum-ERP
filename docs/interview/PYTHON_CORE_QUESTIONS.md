@@ -1884,11 +1884,11 @@ A strong Senior answer should:
 - Understanding of algorithmic complexity, constant factors, and memory trade-offs.
 - Ability to distinguish CPU-bound, I/O-bound, and memory-bound workloads.
 - Correct use of profiling and benchmarking tools.
-- Awareness of interpreter overhead, caching risks, and production observability.
+- Awareness of interpreter overhead, allocation costs, and profiling limitations.
 - Ability to validate that an optimization improves representative workloads without changing correctness.
 
 ### Model answer (RU)
-Оптимизация производительности должна начинаться не с переписывания кода, а с измерения и определения узкого места. Сначала нужно описать целевой workload и SLO: например, latency percentiles, throughput, CPU utilization, memory consumption и error rate. Затем воспроизвести характерную нагрузку и собрать baseline.
+Локальную оптимизацию Python-кода нужно начинать с определения конкретной операции, репрезентативных входных данных и ожидаемой семантики. Затем следует зафиксировать baseline и выяснить, ограничивает ли выполнение алгоритмическая сложность, количество вызовов, аллокации или накладные расходы интерпретатора. Не следует оптимизировать код только на основании субъективного ощущения медленной работы.
 
 Big-O описывает асимптотический рост времени или памяти при увеличении входных данных, но не предсказывает абсолютное время выполнения. На практике важны константные множители, распределение данных, аллокации, локальность памяти, I/O и накладные расходы интерпретатора. Алгоритм с худшей асимптотикой может быть быстрее на малых входах, поэтому решение следует подтверждать измерениями.
 
@@ -1896,12 +1896,12 @@ Big-O описывает асимптотический рост времени 
 
 Нужно разделять CPU-bound и I/O-bound работу. CPU-bound задачи тратят основное время на вычисления; I/O-bound задачи ожидают сеть, диск, базу данных или другие внешние системы. Асинхронность может повысить конкурентность I/O-bound сервиса, но сама по себе не ускоряет CPU-bound вычисления. Для CPU-bound нагрузки следует исследовать алгоритм, векторизацию, нативные библиотеки, multiprocessing или отдельные worker-процессы — с учётом стоимости сериализации и передачи данных.
 
-Кеширование может уменьшить повторные вычисления или обращения к зависимостям, но добавляет требования к инвалидации, ограничению размера, согласованности, конкурентному доступу и изоляции данных. В многопользовательском backend нельзя допускать, чтобы ключ кеша игнорировал tenant или контекст авторизации. Кешировать следует только после определения корректной семантики и стратегии invalidation.
 
-Корректный benchmark должен использовать репрезентативные входные данные, контролируемую среду, прогрев при необходимости, несколько повторов и статистически осмысленное сравнение. Нужно учитывать шум, cold-start, JIT/интерпретаторные эффекты, конкурирующую нагрузку и различия между локальным тестом и production. После изменения следует повторить тот же workload, сравнить baseline и результат, проверить корректность и наблюдать за production-метриками. Оптимизация считается успешной только если улучшение измеримо и не ухудшает другие SLO или надёжность.
+
+Локальный benchmark должен использовать одинаковые входные данные, контролируемые условия, прогрев при необходимости и несколько повторов. Следует учитывать шум измерений и отделять подготовку данных от измеряемого участка. После изменения нужно повторить тот же эксперимент, сравнить результат с baseline и проверить функциональную эквивалентность. Микробенчмарк отвечает на вопрос о конкретной операции, но не доказывает улучшение производительности всего сервиса.
 
 ### Professional answer (EN)
-I start performance work by defining the representative workload, the user-visible objective, and a measurable baseline. I then profile the system to locate the dominant cost before changing the implementation. Optimizing code that is not on the critical path usually adds complexity without meaningful impact.
+I start local Python optimization by defining the operation, representative inputs, and expected semantics. I establish a baseline and determine whether execution is constrained by algorithmic complexity, call volume, allocations, or interpreter overhead. I do not optimize code based only on a subjective impression that it is slow.
 
 Big-O describes asymptotic growth in time or space as input size increases; it does not predict absolute runtime. Constant factors, input distribution, allocation behavior, memory locality, I/O, and interpreter overhead also matter. I use complexity analysis to identify scalability risks and measurements to decide what matters for the actual workload.
 
@@ -1909,9 +1909,9 @@ For small, isolated timing experiments I use `timeit`. For deterministic profili
 
 I distinguish CPU-bound work from I/O-bound work. AsyncIO can improve concurrency when tasks spend substantial time awaiting non-blocking I/O, but it does not make CPU-heavy Python code execute faster. CPU-bound work may require algorithmic improvements, optimized native libraries, vectorization, process-based workers, or a dedicated compute service. Those choices must account for serialization, scheduling, and operational costs.
 
-Caching is a trade-off, not a default optimization. It introduces invalidation, bounded capacity, consistency, concurrency, and authorization-isolation concerns. Cache keys must include every dimension that affects the result, including tenant or user scope where applicable. I only introduce caching when the access pattern and invalidation contract are understood.
 
-A sound benchmark uses representative data, controlled conditions, repeated runs, and an explicit comparison against a baseline. I separate microbenchmarks from end-to-end load tests and evaluate latency percentiles, throughput, CPU, memory, and error rates together. After an optimization, I rerun the same workload, verify functional behavior, and observe the change under production-like conditions. The goal is a demonstrated improvement without regressions in correctness, reliability, or other service objectives.
+
+A local benchmark uses the same inputs, controlled conditions, warm-up where appropriate, and repeated runs. I account for measurement noise and separate setup from the measured operation. After a change, I repeat the same experiment, compare it with the baseline, and verify functional equivalence. A microbenchmark answers a question about one operation; it does not prove that the whole service became faster.
 
 ### Follow-up questions and model answers
 
@@ -1960,11 +1960,8 @@ A strong Senior answer should:
 - Using a microbenchmark as proof of production improvement.
 - Assuming AsyncIO makes CPU-bound code faster.
 - Ignoring database, network, serialization, or native-code costs.
-- Caching without bounded capacity or a clear invalidation contract.
-- Omitting tenant or authorization scope from cache keys.
 - Comparing benchmarks under materially different conditions.
-- Reporting averages while ignoring tail latency.
-- Improving latency while silently increasing memory, errors, or operational complexity.
+- Trusting a single noisy microbenchmark or ignoring profiler overhead.
 
 ### References
 - Python `timeit`: https://docs.python.org/3.14/library/timeit.html
@@ -3909,11 +3906,11 @@ A Senior-level approach is not to make everything faster at any cost. It is to i
 - **Answer (RU):** Сначала проверю распределение latency по endpoint, версии приложения, региону, tenant и типу запроса, а также сравню p50, p90, p95 и p99 до и после изменения. Рост только хвоста часто указывает на небольшую долю медленных запросов: lock contention, очереди, редкие медленные SQL-планы, cache misses, retries, downstream timeouts или нехватку соединений. Затем сопоставлю traces и метрики отдельных этапов запроса, проверю deployment/configuration changes и нагрузочный профиль. Не буду оптимизировать средний путь, пока не локализую источник tail latency. После исправления повторю нагрузочный тест и проверю, что улучшились нужные percentiles без роста ошибок.
 - **Answer (EN):** I would compare latency distributions by endpoint, application version, region, tenant, and request class, including p50, p90, p95, and p99 before and after the change. A tail-only regression often points to a minority of slow requests: lock contention, queueing, occasional slow query plans, cache misses, retries, downstream timeouts, or connection scarcity. I would correlate traces with per-stage metrics, inspect deployment and configuration changes, and verify the workload profile. I would not optimize the average path until the tail-latency source is identified. After the fix, I would rerun a representative load test and confirm that the target percentiles improve without increasing errors.
 
-**FU-2. What is the difference between CPU profiling, memory profiling, and distributed tracing, and when would you use each?**
+**FU-2. How do CPU profiling, database query analysis, and distributed tracing complement each other in a backend performance investigation?**
 
-- **RU — Вопрос:** Чем отличаются CPU profiling, memory profiling и distributed tracing и когда применять каждый инструмент?
-- **Answer (RU):** CPU profiling показывает, какие функции и call paths потребляют процессорное время; использую его при высокой CPU utilization или подозрении на дорогие вычисления. Memory profiling помогает понять allocation patterns, удержание объектов и возможный рост Python heap; сопоставляю snapshots и учитываю, что tracemalloc не покрывает всю native memory и RSS. Distributed tracing показывает путь запроса через процессы и внешние зависимости, включая длительность spans и межсервисные задержки; применяю его, когда проблема может находиться в БД, сети или downstream service. Эти инструменты дополняют друг друга: trace локализует медленный компонент, profiler объясняет его внутреннюю стоимость.
-- **Answer (EN):** CPU profiling identifies functions and call paths consuming processor time; I use it when CPU utilization is high or computation appears expensive. Memory profiling helps explain allocation patterns, retained objects, and possible Python-heap growth; I compare snapshots while remembering that tracemalloc does not cover all native memory or total RSS. Distributed tracing follows a request across processes and dependencies, exposing span durations and cross-service delays; I use it when the database, network, or a downstream service may be responsible. The tools complement one another: tracing locates the slow component, while a profiler explains its internal cost.
+- **RU — Вопрос:** Как CPU profiling, анализ SQL-запросов и distributed tracing дополняют друг друга при расследовании проблем производительности backend?
+- **Answer (RU):** Distributed tracing показывает путь запроса через сервисы и зависимости, помогая определить, где расходуется время: в приложении, базе данных, сети или downstream service. CPU profiling исследует Python call paths внутри компонента, если trace указывает на вычислительную нагрузку. Анализ SQL с EXPLAIN (ANALYZE, BUFFERS) помогает понять план выполнения, чтение страниц и стоимость запроса в PostgreSQL. Инструменты отвечают на разные вопросы и должны применяться последовательно: сначала локализовать проблемный span, затем исследовать соответствующий компонент. Жизненный цикл Python-объектов и диагностика их удержания рассматриваются в Q13, локальные инструменты профилирования — в Q14.
+- **Answer (EN):** Distributed tracing follows a request across services and dependencies, helping locate where time is spent: in the application, database, network, or a downstream service. CPU profiling examines Python call paths inside a component when the trace points to computation. SQL analysis with EXPLAIN (ANALYZE, BUFFERS) helps explain PostgreSQL execution plans, page reads, and query cost. These tools answer different questions and should be applied in sequence: locate the problematic span first, then investigate the relevant component. Python object lifetime and retention are covered in Q13; local profiling tools are covered in Q14.
 
 **FU-3. Why can adding more workers or async concurrency make a service slower?**
 
