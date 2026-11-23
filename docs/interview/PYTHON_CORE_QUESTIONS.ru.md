@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 8 из 30 основных вопросов подготовлено  
+**Охват:** 9 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -1160,3 +1160,168 @@ At Senior level, I choose functional techniques based on contract clarity, testa
 - `functools.partial`: https://docs.python.org/3/library/functools.html#functools.partial
 - `functools.reduce`: https://docs.python.org/3/library/functools.html#functools.reduce
 - `functools.lru_cache`: https://docs.python.org/3/library/functools.html#functools.lru_cache
+
+---
+
+## PY-CORE-009 — Итераторы Python, генераторы и ленивые вычисления
+
+### Question (EN)
+
+**Explain the iterable and iterator protocols in Python. How do generators work, what does lazy evaluation mean, and how do you use generator lifecycle controls and streaming safely in backend systems?**
+
+### Перевод (RU)
+
+**Объясните протоколы iterable и iterator в Python. Как работают генераторы, что означает lazy evaluation и как безопасно использовать управление жизненным циклом генератора и streaming в backend-системах?**
+
+### Что проверяет интервьюер
+
+- Точное различие между iterable и iterator.
+- Понимание `iter()`, `next()`, `__iter__()` и `__next__()`.
+- Семантика generator functions и generator expressions.
+- Ленивое выполнение, приостановка и возобновление.
+- Корректное применение `yield from`.
+- Понимание `send()`, `throw()` и `close()`.
+- Освобождение ресурсов и финализация генераторов.
+- Характеристики памяти и одноразовое потребление.
+- Streaming, backpressure, cancellation и обработка ошибок в backend-системах.
+
+### Эталонный ответ (RU)
+
+**Iterable** — объект, от которого можно получить итератор. Обычно это означает, что объект реализует `__iter__()`, возвращающий iterator. **Iterator** — объект, представляющий поток значений и реализующий `__next__()`; его `__iter__()` возвращает сам итератор. Вызов `next(iterator)` получает следующий элемент, а после исчерпания итератор поднимает `StopIteration`.
+
+Коллекция, например список, обычно является iterable и позволяет создавать несколько независимых итераторов. Сам итератор обычно является одноразовым состоянием обхода: он продвигается вперёд и после исчерпания не начинает обход заново автоматически. Поэтому iterable и iterator — разные роли, даже если один объект может выполнять обе.
+
+**Generator function** — функция, в теле которой присутствует `yield`. Вызов такой функции не выполняет тело до первого `yield`, а возвращает generator iterator. При запросе следующего значения выполнение начинается или продолжается с сохранённого места. Локальные переменные, позиция выполнения и состояние генератора сохраняются между возобновлениями. Когда функция завершается или выполняет `return`, генератор становится исчерпанным; значение `return` передаётся как значение атрибута `value` исключения `StopIteration`, а не как обычный элемент последовательности.
+
+**Generator expression** создаёт генератор через компактный синтаксис, похожий на comprehension, но вычисляет элементы по мере потребления. Это отличается от list comprehension, который сразу строит список. Ленивость снижает необходимость хранить всю последовательность в памяти, но не означает, что источник бесплатен или что любая операция становится быстрее.
+
+**Lazy evaluation** означает, что значение вычисляется по требованию. Это полезно для больших наборов данных, конвейеров преобразования и streaming. Но ленивый pipeline может быть исчерпан только один раз, а ошибки чтения источника могут проявиться не при создании генератора, а позже — во время итерации. Если потребитель не прочитал поток полностью, часть операций может вообще не выполниться.
+
+`yield from iterable` делегирует выдачу элементов другому iterable/iterator и прозрачно поддерживает передачу значений и исключений в делегируемый генератор в соответствии с протоколом. Это удобнее и точнее, чем вручную писать цикл для простого делегирования.
+
+Генератор поддерживает дополнительные операции:
+
+- `send(value)` возобновляет генератор и передаёт значение в выражение `yield`. Для только что созданного генератора сначала требуется `next()` или `send(None)`.
+- `throw(exception)` возобновляет генератор, внедряя исключение в точке приостановки.
+- `close()` сигнализирует генератору о завершении, внедряя `GeneratorExit`. Генератор может выполнить cleanup в `finally`; он не должен продолжать выдавать значения после получения `GeneratorExit`.
+
+Генераторы могут управлять ресурсами, но ресурс должен закрываться надёжно. Предпочтительно использовать context manager или `try/finally`, а не полагаться исключительно на сборщик мусора или момент уничтожения объекта генератора. Если генератор владеет файлом, курсором БД или сетевым ресурсом, вызывающий код должен иметь ясный контракт завершения и закрытия. Для async generators используются `async for`, `yield`, `aclose()` и async context management; их жизненный цикл также требует корректного завершения при отмене.
+
+В backend streaming важно учитывать **backpressure**: производитель не должен бесконтрольно создавать данные быстрее, чем потребитель способен их обработать. Синхронный генератор при обычном обходе естественным образом выдаёт следующий элемент по запросу потребителя, но это не гарантирует end-to-end backpressure через HTTP server, reverse proxy, buffers и сеть. Нужно учитывать буферизацию, таймауты, медленных клиентов, отмену запроса и освобождение ресурсов.
+
+Генератор экономит память, если данные действительно обрабатываются постепенно. Однако он не делает автоматически bounded memory весь pipeline: промежуточное накопление в списке, буферы драйвера, сериализация ответа или сторонний слой могут снова потребовать значительную память. Аналогично streaming не заменяет pagination, лимиты, контроль доступа и защиту от чрезмерного потребления ресурсов.
+
+На Senior-уровне я оцениваю полный жизненный цикл потока: кто владеет ресурсом, кто отвечает за закрытие, что происходит при исключении или отмене, может ли поток быть повторно использован, где возникает buffering и как ограничивается скорость производства данных.
+
+### Эталонный ответ (EN)
+
+An **iterable** is an object from which an iterator can be obtained. Typically, it implements `__iter__()`, returning an iterator. An **iterator** represents a stream of values and implements `__next__()`; its `__iter__()` returns itself. Calling `next(iterator)` retrieves the next item, and an exhausted iterator raises `StopIteration`.
+
+A collection such as a list is usually iterable and can create multiple independent iterators. An iterator is generally a single traversal state: it advances and does not automatically restart after exhaustion. Iterable and iterator are therefore distinct roles, even though one object can implement both.
+
+A **generator function** is a function whose body contains `yield`. Calling it does not execute the body up to the first `yield`; it returns a generator iterator. When the next value is requested, execution starts or resumes from the saved suspension point. Local variables, the instruction position, and generator state are retained between resumptions. When the function finishes or executes `return`, the generator becomes exhausted; the return value is carried as the `value` attribute of `StopIteration`, not emitted as an ordinary item.
+
+A **generator expression** creates a generator using compact syntax similar to a comprehension, but computes items as they are consumed. This differs from a list comprehension, which eagerly builds a list. Laziness reduces the need to hold an entire sequence in memory, but it does not make the source free or every operation faster.
+
+**Lazy evaluation** means computing values on demand. It is useful for large datasets, transformation pipelines, and streaming. However, a lazy pipeline may be consumed only once, and source errors may occur during iteration rather than when the generator is created. If the consumer does not exhaust the stream, some operations may never run.
+
+`yield from iterable` delegates item production to another iterable or iterator and supports forwarding values and exceptions to a delegated generator according to the protocol. It is clearer and more complete than manually writing a loop for simple delegation.
+
+A generator supports additional control operations:
+
+- `send(value)` resumes the generator and supplies a value to the suspended `yield` expression. A newly created generator must first be advanced with `next()` or `send(None)`.
+- `throw(exception)` resumes the generator by raising an exception at the suspension point.
+- `close()` signals termination by injecting `GeneratorExit`. The generator can perform cleanup in `finally`; it must not yield another value after receiving `GeneratorExit`.
+
+Generators can manage resources, but resources must be closed reliably. Prefer a context manager or `try/finally` rather than relying solely on garbage collection or generator destruction timing. If a generator owns a file, database cursor, or network resource, the caller needs a clear completion and closure contract. Async generators use `async for`, `yield`, `aclose()`, and async context management; their lifecycle also requires correct cleanup on cancellation.
+
+For backend streaming, consider **backpressure**: a producer should not generate data uncontrollably faster than the consumer can process it. A synchronous generator naturally yields the next item when the consumer requests it, but that does not guarantee end-to-end backpressure across an HTTP server, reverse proxy, buffers, and the network. Account for buffering, timeouts, slow clients, request cancellation, and resource cleanup.
+
+A generator saves memory when data is genuinely processed incrementally. It does not automatically make the entire pipeline memory-bounded: intermediate list accumulation, driver buffers, response serialization, or another layer may still consume substantial memory. Similarly, streaming does not replace pagination, limits, access control, or resource-consumption safeguards.
+
+At Senior level, I evaluate the complete stream lifecycle: who owns the resource, who closes it, what happens on exceptions or cancellation, whether the stream can be reused, where buffering occurs, and how production rate is controlled.
+
+### Follow-up questions и эталонные ответы
+
+#### FU-1
+
+**EN:** What is the difference between an iterable and an iterator?  
+**RU:** В чём разница между iterable и iterator?
+
+**Ответ (RU):** Iterable предоставляет способ получить итератор через `iter()`. Iterator хранит состояние текущего обхода, реализует `__next__()` и возвращает себя из `__iter__()`. Коллекция обычно может создавать новые итераторы, тогда как конкретный iterator обычно продвигается вперёд и исчерпывается.
+
+**Answer (EN):** An iterable provides a way to obtain an iterator through `iter()`. An iterator stores traversal state, implements `__next__()`, and returns itself from `__iter__()`. A collection can usually create new iterators, while a particular iterator normally advances and becomes exhausted.
+
+#### FU-2
+
+**EN:** When does a generator function execute, and what happens when it returns?  
+**RU:** Когда выполняется generator function и что происходит при её завершении через return?
+
+**Ответ (RU):** Вызов generator function создаёт generator iterator, но тело функции начинает выполняться при первом запросе элемента. Выполнение приостанавливается на `yield` и продолжается при следующем запросе. При завершении `return value` приводит к `StopIteration`, а возвращённое значение доступно как `StopIteration.value`; оно не становится элементом потока.
+
+**Answer (EN):** Calling a generator function creates a generator iterator, but the body starts executing when an item is first requested. Execution suspends at `yield` and resumes on the next request. On completion, `return value` results in `StopIteration`, with the returned value available as `StopIteration.value`; it is not emitted as a stream item.
+
+#### FU-3
+
+**EN:** How do `send()`, `throw()`, and `close()` differ?  
+**RU:** Чем отличаются `send()`, `throw()` и `close()`?
+
+**Ответ (RU):** `send()` передаёт значение в приостановленное выражение `yield` и возобновляет выполнение. `throw()` внедряет исключение в точку приостановки. `close()` инициирует завершение через `GeneratorExit`, позволяя выполнить cleanup в `finally`. Новый генератор нельзя начинать с ненулевого значения в `send()`: сначала его нужно продвинуть через `next()` или `send(None)`.
+
+**Answer (EN):** `send()` supplies a value to the suspended `yield` expression and resumes execution. `throw()` injects an exception at the suspension point. `close()` initiates termination through `GeneratorExit`, allowing cleanup in `finally`. A new generator cannot be started by sending a non-None value; advance it first with `next()` or `send(None)`.
+
+#### FU-4
+
+**EN:** Why is relying on garbage collection to close a generator's resources unsafe?  
+**RU:** Почему небезопасно полагаться на garbage collection для закрытия ресурсов генератора?
+
+**Ответ (RU):** Момент освобождения объекта зависит от реализации и жизненного цикла ссылок; он не должен быть контрактом управления ресурсами. Генератор может остаться удержанным ссылкой или завершиться позже ожидаемого. Используйте явное закрытие, context manager и `try/finally`, чтобы файл, cursor или другой ресурс освобождался даже при раннем выходе или исключении.
+
+**Answer (EN):** Object finalization timing depends on implementation and reference lifetimes; it should not be the resource-management contract. A generator may remain referenced or be finalized later than expected. Use explicit closure, a context manager, and `try/finally` so a file, cursor, or other resource is released even on early exit or an exception.
+
+#### FU-5
+
+**EN:** Does using a generator guarantee bounded memory and end-to-end backpressure in an HTTP streaming endpoint?  
+**RU:** Гарантирует ли генератор ограниченное потребление памяти и end-to-end backpressure в HTTP streaming endpoint?
+
+**Ответ (RU):** Нет. Генератор выдаёт элементы постепенно, но другие слои могут буферизовать данные: драйвер БД, сериализатор, ASGI server, reverse proxy или сетевой стек. Нужно проверять поведение всей цепочки, ограничивать размер страниц и буферов, обрабатывать медленных клиентов, отмену и таймауты, а также гарантировать закрытие ресурсов.
+
+**Answer (EN):** No. A generator yields incrementally, but other layers may buffer data: the database driver, serializer, ASGI server, reverse proxy, or network stack. Validate the entire pipeline, bound page and buffer sizes, handle slow clients, cancellation, and timeouts, and guarantee resource cleanup.
+
+### Связь с Pharmaviyum
+
+**Гипотетический сценарий для интервью — не утверждение о текущей реализации:** экспорт каталога лекарств или большой результат поиска можно обрабатывать постепенно, а не материализовать в один большой список. Если генератор передаёт строки из БД, database session и cursor должны оставаться действительными в течение жизни потока и закрываться при завершении, отключении клиента или ошибке. Production-дизайн также должен определять pagination или лимиты строк, проверки авторизации, поведение при отмене и буферизацию на HTTP-уровнях.
+
+Любое утверждение о том, что Pharmaviyum уже использует streaming endpoints или generator-based доступ к БД, должно быть подтверждено исходным кодом и тестами.
+
+### Критерии оценки уровня Senior
+
+| Уровень | Ожидаемые признаки |
+|---|---|
+| Слабый | Путает iterable и iterator или считает, что тело генератора выполняется сразу при вызове. |
+| Компетентный | Объясняет приостановку генератора, lazy evaluation, `StopIteration` и базовое освобождение ресурсов. |
+| Strong Senior | Рассуждает о владении ресурсами, раннем завершении, cleanup async generators, буферизации, backpressure, cancellation и ограничении памяти во всём backend pipeline. |
+
+### Типичные ошибки
+
+- Считать любой iterable итератором.
+- Предполагать, что генератор можно перезапустить после исчерпания.
+- Считать, что выполнение generator function начинается при вызове.
+- Забывать, что ошибки ленивого источника могут возникнуть во время итерации.
+- Путать return-значение генератора с элементом, выданным через yield.
+- Вызывать `send(value)` до первого продвижения нового генератора.
+- Считать `close()` заменой ясному контракту владения ресурсом.
+- Полагаться на garbage collection для закрытия файлов или database cursors.
+- Предполагать, что использование генератора само по себе гарантирует bounded memory.
+- Предполагать, что synchronous generator гарантирует end-to-end HTTP backpressure.
+- Игнорировать cancellation, медленных потребителей, таймауты и отключение клиента.
+
+### Источники
+
+- Python glossary — iterable and iterator: https://docs.python.org/3/glossary.html
+- Iterator Types: https://docs.python.org/3/library/stdtypes.html#iterator-types
+- Generator-iterator methods: https://docs.python.org/3/reference/expressions.html#generator-iterator-methods
+- Yield expressions and `yield from`: https://docs.python.org/3/reference/expressions.html#yield-expressions
+- Generator expressions: https://docs.python.org/3/reference/expressions.html#generator-expressions
+- `contextlib`: https://docs.python.org/3/library/contextlib.html
+- Asynchronous generator functions: https://docs.python.org/3/reference/expressions.html#asynchronous-generator-functions
