@@ -1,7 +1,7 @@
 # Python Core — Банк вопросов
 
 **Статус:** В работе  
-**Охват:** 4 из 30 основных вопросов подготовлено  
+**Охват:** 5 из 30 основных вопросов подготовлено  
 **Правило проверки:** Эталонные ответы должны пройти техническую проверку, прежде чем получить статус validated.
 
 ---
@@ -508,3 +508,154 @@ At Senior level, I check whether equality reflects the type's domain semantics, 
 - Python data model — object identity and `id()`: https://docs.python.org/3/reference/datamodel.html
 - Python data model — `__eq__` and `__hash__`: https://docs.python.org/3/reference/datamodel.html#object.__hash__
 - Python glossary — hashable: https://docs.python.org/3/glossary.html#term-hashable
+
+---
+
+## PY-CORE-005 — Система типов Python и динамическая типизация
+
+### Question (EN)
+
+**Explain Python's type system. What do dynamic typing, strong typing, duck typing, type annotations, and structural subtyping mean, and how do you use them to build reliable backend services?**
+
+### Перевод (RU)
+
+**Объясните систему типов Python. Что означают динамическая типизация, строгая типизация, duck typing, аннотации типов и структурная подтипизация? Как применять эти концепции для создания надёжных backend-сервисов?**
+
+### Что проверяет интервьюер
+
+- Различие между динамической и строгой/слабой типизацией.
+- Понимание того, что имена в Python связываются с объектами, типы которых определяются во время выполнения.
+- Понимание duck typing и интерфейсов, основанных на поведении.
+- Знание того, что аннотации типов автоматически не обеспечивают runtime-валидацию.
+- Различие между статическим анализом, runtime-валидацией и runtime-интроспекцией.
+- Понимание структурной типизации и `Protocol`.
+- Умение выбирать EAFP или LBYL с учётом семантики операции и обработки ошибок.
+
+### Эталонный ответ (RU)
+
+Python обычно характеризуют как язык с **динамической и сильной типизацией**.
+
+**Динамическая типизация** означает, что тип относится к объекту и определяется во время выполнения. Имя переменной не имеет фиксированного типа: в разные моменты оно может быть связано с объектами разных типов. Например, имя может сначала ссылаться на строку, а позднее — на целое число. Это не означает, что типы отсутствуют или что Python автоматически преобразует любые несовместимые значения.
+
+**Строгая типизация** означает, что Python не выполняет произвольные неявные преобразования между несовместимыми типами. Например, сложение строки и целого числа без явного преобразования приводит к `TypeError`. Термины strong и weak typing не имеют единственного формального определения для всех языков, поэтому на интервью важно приводить конкретное поведение, а не полагаться только на ярлык.
+
+**Duck typing** — подход, при котором код ориентируется на поддерживаемое объектом поведение, а не обязательно на его конкретный класс или место в иерархии наследования. Если объект предоставляет нужный метод или операцию с ожидаемым контрактом, он может быть использован. Это способствует слабой связанности, но требует чётко определять ожидаемое поведение и корректно обрабатывать ошибки.
+
+**Аннотации типов** (type annotations) описывают предполагаемые типы параметров, возвращаемых значений и переменных. Сами по себе они обычно не обеспечивают проверку типов во время выполнения. Их используют IDE, инструменты статического анализа, такие как mypy и Pyright, и другие инструменты экосистемы. Аннотации улучшают читаемость, навигацию и раннее обнаружение ошибок, но не заменяют тесты и проверку входных данных.
+
+Нужно различать три механизма:
+
+1. **Static type checking** анализирует код до выполнения и выявляет несоответствия в рамках возможностей выбранного анализатора и конфигурации.
+2. **Runtime validation** проверяет реальные данные во время выполнения. Например, Pydantic может валидировать и, в зависимости от конфигурации и режима, преобразовывать входные данные при создании модели.
+3. **Runtime introspection** позволяет исследовать фактические типы и объекты во время выполнения, например через `type()` или `isinstance()`. Само наличие аннотации не означает, что такая проверка автоматически происходит.
+
+**Structural subtyping** означает совместимость по структуре и поведению, а не только по явному наследованию. В Python typing для этого предоставляет `Protocol`. Тип может соответствовать протоколу, если реализует требуемые атрибуты и методы, даже без прямого наследования от этого протокола. Это позволяет описывать интерфейсы и зависимости без жёсткой связи с конкретными реализациями. `@runtime_checkable` позволяет ограниченные runtime-проверки через `isinstance()`, но не превращает Protocol в полноценный runtime-валидатор сигнатур и семантики методов.
+
+**EAFP** (Easier to Ask Forgiveness than Permission) — сначала выполнить операцию, затем обработать ожидаемое исключение. **LBYL** (Look Before You Leap) — предварительно проверить условие перед операцией. EAFP часто уместен при работе со словарями, файлами и ресурсами, когда сама операция является надёжной проверкой и исключение имеет понятную семантику. LBYL полезен, когда предварительная проверка необходима для понятного пользовательского сообщения или предотвращает дорогостоящую операцию. При этом проверка, а затем действие могут создавать race condition, если состояние меняется между ними.
+
+В backend-сервисе я использую аннотации для контрактов между слоями, статический анализ в CI, runtime-валидацию на границах системы и тесты для проверки поведения. Например, FastAPI использует аннотации и модели для описания API, а Pydantic валидирует данные согласно объявленной схеме и конфигурации. Я не считаю аннотации безопасной границей или гарантией корректности входных данных: доверие к внешнему запросу должно устанавливаться явной runtime-валидацией и авторизацией.
+
+### Эталонный ответ (EN)
+
+Python is commonly described as a **dynamically and strongly typed** language.
+
+**Dynamic typing** means that types belong to objects and are determined at runtime. A variable name does not have a permanently fixed type; it can be bound to objects of different types at different points in the program. For example, a name may refer to a string and later be rebound to an integer. This does not mean that types are absent or that Python freely converts incompatible values.
+
+**Strong typing** means that Python does not perform arbitrary implicit conversions between incompatible types. For example, adding a string to an integer without an explicit conversion raises `TypeError`. The terms strong and weak typing do not have one universally accepted formal definition across all languages, so a good interview answer should explain concrete behaviour rather than rely only on labels.
+
+**Duck typing** is an approach in which code depends on the behaviour an object provides rather than necessarily on its concrete class or inheritance hierarchy. If an object supports the required operation or method with the expected contract, it can be used. This can reduce coupling, but the expected behaviour must be well defined and failures must be handled deliberately.
+
+**Type annotations** describe the intended types of parameters, return values, and variables. By themselves, annotations generally do not enforce type checking at runtime. They are consumed by IDEs, static analysis tools such as mypy and Pyright, and other ecosystem tooling. Annotations improve readability, navigation, and early error detection, but they do not replace tests or input validation.
+
+It is important to distinguish three mechanisms:
+
+1. **Static type checking** analyses code before execution and detects inconsistencies within the capabilities and configuration of the selected checker.
+2. **Runtime validation** checks actual data while the program is running. For example, Pydantic can validate and, depending on configuration and mode, coerce input data when a model is created.
+3. **Runtime introspection** examines actual objects and types at runtime, for example with `type()` or `isinstance()`. The presence of an annotation does not itself trigger such a check.
+
+**Structural subtyping** means compatibility based on structure and behaviour rather than explicit inheritance alone. Python's typing system provides `Protocol` for this purpose. A type can satisfy a protocol by implementing its required attributes and methods without explicitly inheriting from that protocol. This lets us describe interfaces and dependencies without coupling consumers to concrete implementations. `@runtime_checkable` enables limited runtime checks through `isinstance()`, but it does not turn a Protocol into a full runtime validator of method signatures and semantics.
+
+**EAFP** (Easier to Ask Forgiveness than Permission) means attempting an operation and handling an expected exception. **LBYL** (Look Before You Leap) means checking a condition before performing the operation. EAFP is often appropriate for dictionary access, files, and resources when the operation itself is a reliable check and the exception has clear semantics. LBYL can be useful when a precondition is needed to produce a clear user-facing error or avoid an expensive operation. However, a check followed by an action can introduce a race condition if the state changes between the two.
+
+In a backend service, I use annotations to express contracts between layers, static analysis in CI, runtime validation at system boundaries, and tests to verify behaviour. For example, FastAPI uses annotations and models to describe API contracts, while Pydantic validates data according to the declared schema and configuration. I do not treat annotations as a security boundary or a guarantee that incoming data is valid: external input must be explicitly validated at runtime and separately authorized.
+
+### Follow-up questions и эталонные ответы
+
+#### FU-1
+
+**EN:** Is Python dynamically typed, strongly typed, or both? Explain with an example.  
+**RU:** Python — динамически типизированный, строго типизированный язык или и то и другое? Объясните на примере.
+
+**Ответ (RU):** Обычно Python описывают как динамически и строго типизированный. Динамичность означает, что тип объекта определяется во время выполнения, а имя может быть связано с объектами разных типов. Строгость проявляется, например, в том, что операция сложения строки и целого числа без явного преобразования вызывает `TypeError`. Термины strong/weak требуют контекста, поэтому важнее объяснить фактическое поведение.
+
+**Answer (EN):** Python is commonly described as both dynamically and strongly typed. Dynamic typing means an object's type is determined at runtime and a name can be rebound to objects of different types. Strong typing is illustrated by operations such as adding a string and an integer without explicit conversion raising `TypeError`. Since strong/weak terminology depends on context, explaining the actual behaviour is more useful than relying on the label.
+
+#### FU-2
+
+**EN:** Do Python type annotations validate untrusted HTTP request data at runtime?  
+**RU:** Проверяют ли аннотации типов Python недоверенные данные HTTP-запроса во время выполнения?
+
+**Ответ (RU):** Нет, сами по себе — нет. Аннотации в первую очередь служат описанием типов и входом для статических анализаторов и инструментов. Для внешних данных нужна runtime-валидация, например через Pydantic-модели в соответствующей точке приложения. Валидация также не заменяет авторизацию и проверку бизнес-правил.
+
+**Answer (EN):** No, not by themselves. Annotations primarily describe types and provide input to static analyzers and tooling. External data requires runtime validation, for example through Pydantic models at the appropriate application boundary. Validation also does not replace authorization or business-rule checks.
+
+#### FU-3
+
+**EN:** What is the difference between duck typing and a typing `Protocol`?  
+**RU:** В чём разница между duck typing и `Protocol` из модуля typing?
+
+**Ответ (RU):** Duck typing — прежде всего runtime-подход: код использует объект на основании поддерживаемого поведения. `Protocol` формализует ожидаемую структуру для статической проверки типов и документирования интерфейса. Эти подходы совместимы: реализация может соответствовать протоколу структурно, без явного наследования. Обычная статическая совместимость с Protocol не означает автоматической runtime-валидации.
+
+**Answer (EN):** Duck typing is primarily a runtime approach: code uses an object based on the behaviour it supports. A `Protocol` formalizes the expected structure for static type checking and interface documentation. The approaches are compatible: an implementation can satisfy a protocol structurally without explicit inheritance. Static compatibility with a Protocol does not imply automatic runtime validation.
+
+#### FU-4
+
+**EN:** When would you choose EAFP over LBYL, and what concurrency concern should you consider?  
+**RU:** Когда вы выберете EAFP вместо LBYL и какой concurrency-риск нужно учитывать?
+
+**Ответ (RU):** EAFP подходит, когда операция сама надёжно проверяет условие и ожидаемое исключение можно обработать локально, например при чтении ключа словаря. LBYL полезен для предварительной проверки и более понятного сообщения об ошибке. Но между проверкой и действием состояние может измениться: это TOCTOU race condition. Если операция должна быть атомарной, предпочтительнее использовать атомарную операцию или синхронизацию.
+
+**Answer (EN):** EAFP is appropriate when the operation itself reliably tests the condition and the expected exception can be handled locally, such as dictionary key access. LBYL can help with precondition checks and clearer error messages. However, state may change between the check and the action, creating a time-of-check-to-time-of-use race. If the operation must be atomic, prefer an atomic operation or synchronization.
+
+#### FU-5
+
+**EN:** What does `@runtime_checkable` add to a `Protocol`, and what does it not guarantee?  
+**RU:** Что даёт декоратор `@runtime_checkable` протоколу `Protocol` и чего он не гарантирует?
+
+**Ответ (RU):** Он позволяет выполнять ограниченную проверку соответствия протоколу во время выполнения через `isinstance()`. Такая проверка ориентирована на наличие требуемых атрибутов, а не на полноценную проверку типов параметров, возвращаемых значений или семантики методов. Поэтому она не заменяет статический анализ, runtime-валидацию данных или тестирование контракта.
+
+**Answer (EN):** It enables a limited runtime protocol check through `isinstance()`. The check focuses on the presence of required attributes rather than fully validating parameter types, return types, or method semantics. It therefore does not replace static analysis, runtime data validation, or contract testing.
+
+### Связь с Pharmaviyum
+
+**Подтверждённый контекст стека:** в документированном стеке Pharmaviyum используются FastAPI, Pydantic и SQLModel. Далее приведено архитектурное применение этих технологий, а не утверждение, что каждый пример уже реализован.
+
+На границе API request-модели могут описывать и валидировать входные данные. Аннотации типов делают явными контракты сервисных слоёв, а статический анализ помогает находить несоответствия между модулями. Protocol может описывать порты для внешних сервисов или инфраструктурных адаптеров, не связывая бизнес-логику с конкретной реализацией. Авторизация и доменные инварианты должны оставаться явными: прохождение schema validation автоматически не означает, что операция разрешена или клинически корректна.
+
+### Критерии оценки уровня Senior
+
+| Уровень | Ожидаемые признаки |
+|---|---|
+| Слабый | Утверждает, что аннотации обеспечивают runtime-проверку типов; путает динамическую типизацию с отсутствием типов. |
+| Компетентный | Объясняет динамическую и строгую типизацию, duck typing и разницу между аннотациями и валидацией. |
+| Strong Senior | Разделяет статический анализ, runtime-валидацию и интроспекцию; осознанно использует Protocol; анализирует EAFP/LBYL, race conditions и границы доверия. |
+
+### Типичные ошибки
+
+- Называть Python слабо типизированным только потому, что он динамически типизирован.
+- Считать аннотации типов автоматической runtime-валидацией.
+- Предполагать, что `isinstance()` или `@runtime_checkable` полностью проверяет контракт Protocol.
+- Использовать проверки конкретного класса там, где интерфейс на основе поведения уменьшил бы связанность.
+- Перехватывать слишком широкие исключения в EAFP и скрывать ошибки программирования.
+- Считать, что LBYL-проверка гарантирует корректность последующей операции.
+- Приравнивать schema validation к авторизации или проверке доменных правил.
+
+### Источники
+
+- Python typing documentation: https://docs.python.org/3/library/typing.html
+- Python typing — Protocols: https://docs.python.org/3/library/typing.html#typing.Protocol
+- Python function annotations: https://docs.python.org/3/reference/compound_stmts.html#function-definitions
+- mypy documentation: https://mypy.readthedocs.io/
+- Pyright documentation: https://github.com/microsoft/pyright
+- Pydantic documentation: https://docs.pydantic.dev/
+- Python glossary — duck typing: https://docs.python.org/3/glossary.html#term-duck-typing
