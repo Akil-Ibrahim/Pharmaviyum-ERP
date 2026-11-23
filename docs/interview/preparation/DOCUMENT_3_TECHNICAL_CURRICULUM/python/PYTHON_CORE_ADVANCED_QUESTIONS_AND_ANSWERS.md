@@ -6,6 +6,8 @@
 
 This file contains detailed Main Question and Follow-up answers, including explanations, examples, trade-offs, and bilingual Interview-Ready Answers. The question wording and complete follow-up map are maintained in the linked question-map file. Authored material remains pending independent technical and editorial review until those checks are completed.
 
+В этом файле собраны подробные ответы на основные вопросы (Main Questions) и дополнительные вопросы (Follow-ups), включая объяснения, примеры, компромиссы и готовые для технического собеседования ответы на английском и русском языках. Формулировки вопросов и полная карта дополнительных вопросов находятся в связанном файле Question Map. Подготовленные материалы остаются в статусе авторской версии до завершения независимой технической и редакторской проверки.
+
 ---
 
 ## Answer Development — PY-001
@@ -1706,4 +1708,171 @@ There are important qualifications: not every instance has a dictionary, custom 
 **Status:** Authored; independent technical and editorial review pending.
 
 ---
+
+### FU-014 — Investigating unexpected instance attribute behavior
+
+**Parent Main Question:** PY-004 — How do attribute lookup and special methods work in Python?
+
+**Question (EN):** How would you investigate an attribute that appears to exist on a class but is unexpectedly missing or different on an instance?
+
+**Перевод (RU):** Как бы ты исследовал ситуацию, когда атрибут, который, по-видимому, существует у класса, неожиданно отсутствует у экземпляра или имеет у него другое значение?
+
+**What the interviewer evaluates**
+
+- A systematic debugging approach to Python's attribute access protocol.
+- Understanding of inheritance, MRO, descriptors, instance storage, and attribute interception.
+- Ability to distinguish a missing attribute from an exception raised while computing its value.
+- Appropriate use of introspection tools and awareness of their side effects.
+- Awareness of dynamic mutation, slots, proxies, and framework-managed attributes.
+
+**Short Answer**
+
+I would reproduce the exact operation and capture the complete exception and traceback. Then I would inspect the runtime type and MRO, compare class-level definitions with instance storage, and check descriptors, properties, slots, and custom `__getattribute__` or `__getattr__` methods. I would distinguish failure to locate an attribute from an exception raised inside its descriptor or property getter. For non-invasive inspection, `inspect.getattr_static` can retrieve the raw attribute without invoking descriptor logic.
+
+**Detailed Answer**
+
+A key distinction is between "the name is defined somewhere in the class hierarchy" and "normal access through this particular instance successfully returns a value." They are not equivalent.
+
+1. **Reproduce the exact operation.** Determine whether the failure occurs during `obj.name`, `Class.name`, `getattr`, `hasattr`, assignment, deletion, or an implicit operation. These may follow different paths. Capture the complete exception type, message, and traceback. An `AttributeError` can indicate failed lookup, but it can also originate inside a property or descriptor after the attribute was found.
+
+2. **Identify the actual runtime type and MRO.** Inspect `type(obj)` and `type(obj).__mro__`. The object may be a subclass, proxy, dynamically generated class, or framework wrapper different from the class expected by the caller. A name may be inherited, overridden, or shadowed by another class earlier in the MRO.
+
+3. **Compare class definitions with instance storage.** Inspect class dictionaries using `vars(cls)` or `cls.__dict__`. Inspect `vars(obj)` or `obj.__dict__` only if the instance supports a dictionary. Instances using `__slots__` and some extension types may not have one. A class dictionary exposes the raw object stored on the class, not necessarily the value returned by normal instance access.
+
+4. **Check descriptor precedence.** Determine whether the class attribute is a data descriptor, non-data descriptor, property, or ordinary value. Data descriptors take precedence over an instance dictionary entry. Non-data descriptors can be shadowed by instance attributes. A property is a data descriptor; its getter may compute a value, access other state, or raise an exception. A descriptor can also behave differently on class access because its `__get__` receives `instance=None`.
+
+5. **Inspect custom attribute hooks.** `__getattribute__` intercepts ordinary attribute reads. Check whether an override delegates correctly to the standard implementation and whether it conditionally hides attributes or causes recursion. Then inspect `__getattr__`, which is a fallback after an `AttributeError`. Proxies and lazy-loading objects often use these hooks to synthesize or forward attributes.
+
+6. **Check slots and initialization.** Verify that initialization assigns the expected state on every relevant code path. With `__slots__`, storage is represented by slot descriptors rather than necessarily appearing in `__dict__`. A declared slot can remain unset on a particular object, and reading it can raise `AttributeError`. Consider alternate constructors, deserialization, partially initialized objects, and lifecycle timing.
+
+7. **Choose introspection tools carefully.** `hasattr(obj, "name")` performs normal attribute access and returns `False` when that access raises `AttributeError`. It can execute a property or descriptor and can conceal an `AttributeError` raised inside it. `getattr` also invokes normal lookup. `dir` is a convenience listing and can be customized by `__dir__`; it does not guarantee that reading a listed attribute will succeed. `inspect.getattr_static(obj, "name")` avoids dynamic descriptor lookup and custom `__getattribute__` behavior, so it is useful for examining the raw definition without triggering normal access side effects.
+
+8. **Investigate mutation and environment.** Check for monkey-patching, decorators, metaclasses, import mismatches, test fixtures, and runtime class transformation. In concurrent or asynchronous code, verify initialization and access ordering. Framework objects may use generated models, ORM instrumentation, proxy layers, or lazy-loaded fields.
+
+9. **Reduce the case and verify the hypothesis.** Create a minimal reproduction that isolates inheritance, instance storage, descriptors, and custom hooks. Test class-level and instance-level access separately. Fix the underlying contract or lifecycle issue rather than adding broad exception handling that hides the defect.
+
+**Diagnostic Checklist**
+
+- What exact expression is failing, and what is the full traceback?
+- What are the runtime type and its MRO?
+- Where is the name defined or overridden?
+- Is the class attribute a data descriptor, non-data descriptor, property, or ordinary value?
+- Does the instance have `__dict__`, or does it use `__slots__`?
+- Do custom `__getattribute__`, `__getattr__`, or `__dir__` methods participate?
+- Does a property or descriptor getter itself raise an exception?
+- Was the object fully initialized, and could it have been mutated?
+- Does static inspection differ from normal attribute access?
+
+**Practical Example**
+
+~~~python
+import inspect
+
+
+class Model:
+    @property
+    def status(self):
+        return self._status.upper()
+
+
+class Proxy(Model):
+    def __getattribute__(self, name):
+        if name == "status":
+            return "hidden by proxy"
+        return super().__getattribute__(name)
+
+
+model = Model()
+model._status = "ready"
+
+proxy = Proxy()
+proxy._status = "ready"
+
+assert model.status == "READY"
+assert proxy.status == "hidden by proxy"
+
+# Static inspection returns the property without invoking its getter.
+raw_status = inspect.getattr_static(model, "status")
+assert isinstance(raw_status, property)
+assert isinstance(Model.status, property)
+~~~
+
+The property exists on the class, but the subclass's `__getattribute__` changes the value observed through an instance. Static inspection reveals the raw property object without invoking the getter or the proxy's normal lookup path.
+
+A separate failure can occur when the property exists but its backing state has not been initialized:
+
+~~~python
+class Incomplete:
+    @property
+    def value(self):
+        return self._value
+
+
+item = Incomplete()
+
+try:
+    item.value
+except AttributeError as exc:
+    # The property exists; its getter fails because _value is absent.
+    print(type(exc).__name__, exc)
+~~~
+
+The correct diagnosis is not that `Incomplete.value` is missing. The property exists, but evaluating it fails because the backing state is absent.
+
+**Best Practices**
+
+- Diagnose the runtime object, not only the source-level class declaration.
+- Preserve full tracebacks; do not equate every `AttributeError` with failed name lookup.
+- Use `inspect.getattr_static` when raw inspection must avoid descriptor side effects.
+- Use `vars(obj)` only when the object exposes an instance dictionary.
+- Keep `__getattribute__` overrides narrow and carefully tested.
+- Maintain consistent initialization invariants across constructors, factories, and deserialization.
+- Avoid broad exception handling that hides failures inside properties or descriptors.
+- Understand framework instrumentation and lifecycle before changing framework-managed objects.
+
+**Trade-offs & Edge Cases**
+
+- `getattr` and `hasattr` may execute user-defined behavior. Static inspection avoids some side effects but does not reveal the final value normal access would return.
+- A descriptor may intentionally raise `AttributeError` to signal an unavailable value; this can trigger `__getattr__` and make a defined attribute appear absent.
+- `hasattr` suppresses `AttributeError`, including one raised inside a property getter.
+- `__slots__` changes storage assumptions; a slot may exist but remain unset.
+- Proxies and lazy loading can make access dependent on external state, initialization order, or I/O.
+- Monkey-patching may make runtime behavior differ from checked-in source and complicate diagnosis.
+- `inspect.getattr_static` is intentionally static: it may return a descriptor object rather than the value ordinary access would produce.
+
+**Common Mistakes**
+
+- Inspecting only the class source and ignoring the runtime type and MRO.
+- Assuming every instance has `__dict__`.
+- Treating `hasattr` as a side-effect-free declaration check.
+- Assuming an exception from a property getter proves that the property is absent.
+- Forgetting that data descriptors override instance dictionary entries.
+- Assuming `dir(obj)` guarantees every listed attribute can be read.
+- Ignoring custom attribute hooks, slots, and incomplete initialization.
+- Catching `AttributeError` broadly and silently substituting a default value.
+
+**Senior-Level Perspective**
+
+At senior level, I treat unexpected attribute behavior as a runtime contract and observability problem. I establish the exact operation and exception, then inspect the runtime type, MRO, raw class definitions, instance storage, descriptors, and custom lookup hooks. I deliberately distinguish attribute discovery from attribute evaluation: a property or descriptor can be present while its getter fails, performs I/O, or returns a computed value different from the raw class-level object.
+
+For production systems, I also investigate object lifecycle and concurrency. Partially initialized models, lazy ORM attributes, proxies, deserialization, monkey-patching, and generated classes can produce behavior that is not obvious from the source declaration. The durable fix is usually to make initialization and the attribute contract explicit, improve diagnostics, and add a focused regression test—not to suppress `AttributeError` indiscriminately.
+
+**Interview-Ready Answer (EN)**
+
+"I would start by reproducing the exact operation and examining the complete exception and traceback. An attribute can exist on the class while access through an instance behaves differently because Python's lookup protocol includes the runtime type's MRO, instance storage, descriptors, and custom attribute hooks.
+
+I would inspect `type(obj)` and its MRO, then compare the class dictionaries with the instance's storage, if it has a `__dict__`. I would determine whether the class attribute is a data descriptor, a non-data descriptor, a property, or an ordinary value. Data descriptors take precedence over instance dictionary entries, while non-data descriptors can be shadowed by instance attributes. I would also inspect `__getattribute__` and `__getattr__`, and check whether slots or incomplete initialization explain the behavior.
+
+I would not rely on `hasattr` or `dir` as definitive proof. `hasattr` performs normal access and suppresses `AttributeError`, including one raised inside a property getter. For non-invasive inspection, I can use `inspect.getattr_static` to retrieve the raw attribute without invoking descriptor logic. Finally, I would isolate the cause in a minimal reproduction and fix the underlying lookup, descriptor, or lifecycle issue rather than masking the exception."
+
+**Interview-Ready Answer (RU)**
+
+«Сначала я бы воспроизвёл точную операцию и изучил полное исключение вместе с traceback. Атрибут может существовать в классе, но вести себя иначе при обращении через экземпляр, поскольку протокол поиска Python учитывает фактический тип объекта и его MRO, хранилище экземпляра, дескрипторы и пользовательские механизмы доступа к атрибутам.
+
+Я бы проверил `type(obj)` и его MRO, затем сравнил словари классов с хранилищем экземпляра, если у него есть `__dict__`. Далее определил бы, является ли атрибут data descriptor, non-data descriptor, property или обычным значением. Data descriptors имеют приоритет над записями в словаре экземпляра, тогда как non-data descriptors могут быть перекрыты атрибутами экземпляра. Также я проверил бы `__getattribute__`, `__getattr__`, использование `__slots__` и полноту инициализации объекта.
+
+Я бы не считал `hasattr` или `dir` окончательным доказательством существования доступного атрибута. `hasattr` выполняет обычное обращение и подавляет `AttributeError`, в том числе исключение, возникшее внутри getter свойства. Для неинвазивной проверки можно использовать `inspect.getattr_static`, который получает исходный атрибут, не запуская логику дескриптора. В завершение я бы изолировал причину в минимальном примере и исправил проблему в механизме поиска, дескрипторе или жизненном цикле объекта, а не маскировал исключение».
+
+**Status:** Authored; independent technical and editorial review pending.
+
 
