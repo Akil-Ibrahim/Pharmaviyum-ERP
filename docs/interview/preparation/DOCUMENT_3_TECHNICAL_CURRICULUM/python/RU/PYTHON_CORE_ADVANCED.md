@@ -119,6 +119,18 @@
 - ![__iter__](https://img.shields.io/badge/-__iter__-0ea5e9?style=flat-square) — __iter__
 - ![__next__](https://img.shields.io/badge/-__next__-0ea5e9?style=flat-square) — __next__
 
+- ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) — list
+- ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) — tuple
+- ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) — set
+- ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) — dict
+- ![frozenset](https://img.shields.io/badge/-frozenset-0891b2?style=flat-square) — frozenset
+- ![frozendict](https://img.shields.io/badge/-frozendict-0891b2?style=flat-square) — frozendict
+- ![Hash Table](https://img.shields.io/badge/-Hash-Table-7c3aed?style=flat-square) — Hash Table
+- ![Insertion Order](https://img.shields.io/badge/-Insertion-Order-64748b?style=flat-square) — Insertion Order
+- ![Shallow Copy](https://img.shields.io/badge/-Shallow-Copy-d97706?style=flat-square) — Shallow Copy
+- ![Mapping](https://img.shields.io/badge/-Mapping-7c3aed?style=flat-square) — Mapping
+- ![Sequence](https://img.shields.io/badge/-Sequence-0ea5e9?style=flat-square) — Sequence
+
 ## PY-001 — GIL ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square), конкурентность и параллелизм ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Что такое Global Interpreter Lock (GIL) в CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) и как он влияет на конкурентность и параллелизм?
@@ -229,7 +241,7 @@
 
 ## PY-007 — Встроенные коллекции: семантика и выбор ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Основной вопрос:** Чем списки, кортежи, множества и словари Python отличаются по семантике и внутреннему устройству?
+**Основной вопрос:** ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) Чем списки, кортежи, множества и словари Python отличаются по семантике и внутреннему устройству?
 
 **Оригинальная формулировка (EN):** How do Python lists, tuples, sets, and dictionaries differ internally and semantically?
 
@@ -239,10 +251,10 @@
 
 Дополнительные вопросы:
 
-- **FU-1 — Механизм:** В чём ключевые семантические и типичные реализационные различия между списками, кортежами, множествами и словарями в CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-2 — Практическое применение:** Как выбрать встроенную коллекцию для упорядоченной последовательности, проверки принадлежности, удаления дубликатов и поиска по ключу в реальном сервисе? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — Граничные случаи и компромиссы:** Что учитывать при использовании порядка вставки, поверхностного копирования, вложенных изменяемых значений и средней временной сложности? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-4 — Senior-level суждение:** Как характер нагрузки, объём данных, частота изменений и давление на память влияют на выбор коллекции и стратегию бенчмаркинга? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) Механизм:** В чём ключевые семантические и типичные реализационные различия между списками, кортежами, множествами и словарями в CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) Практическое применение:** Как выбрать встроенную коллекцию для упорядоченной последовательности, проверки принадлежности, удаления дубликатов и поиска по ключу в реальном сервисе? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — ![Insertion Order](https://img.shields.io/badge/-Insertion-Order-64748b?style=flat-square) ![Shallow Copy](https://img.shields.io/badge/-Shallow-Copy-d97706?style=flat-square) ![Hashability](https://img.shields.io/badge/-Hashability-7c3aed?style=flat-square) Граничные случаи и компромиссы:** Что учитывать при использовании порядка вставки, поверхностного копирования, вложенных изменяемых значений и средней временной сложности? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — ![Hash Table](https://img.shields.io/badge/-Hash-Table-7c3aed?style=flat-square) ![Mapping](https://img.shields.io/badge/-Mapping-7c3aed?style=flat-square) Senior-level суждение:** Как характер нагрузки, объём данных, частота изменений и давление на память влияют на выбор коллекции и стратегию бенчмаркинга? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 
 ## PY-008 — Внутреннее устройство словарей и хеш-таблицы ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
