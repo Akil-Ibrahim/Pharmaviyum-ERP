@@ -384,15 +384,15 @@ Start broad with metrics, logs, and traces. Go deeper only when the evidence poi
 
 # PY-004 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Question (EN):** What happens during a function call in CPython?
+**Question (EN):** What happens during a function call ![ENTITY: Function Call](https://img.shields.io/badge/ENTITY-Function-Call-2563eb) in CPython?
 
 ## The main idea
 
-A function call is more than jumping to another line of code. Python evaluates the call expression, binds arguments to parameters, establishes the execution state, runs the function body, and then returns a result or propagates an exception.
+A function call is more than jumping to another line of code. Python evaluates the call expression, binds arguments to parameters ![ENTITY: Parameter](https://img.shields.io/badge/ENTITY-Parameter-7c3aed), establishes the execution state, runs the function body, and then returns a result or propagates an exception ![ENTITY: Exception](https://img.shields.io/badge/ENTITY-Exception-dc2626).
 
 A useful mental model:
 
-1. Evaluate the callable expression and argument expressions.
+1. Evaluate the callable ![ENTITY: Callable](https://img.shields.io/badge/ENTITY-Callable-2563eb) expression and argument expressions.
 2. Invoke the callable using Python's call semantics.
 3. Bind positional and keyword arguments to parameters.
 4. Establish or resume the function's execution state.
@@ -424,25 +424,25 @@ Important: default argument expressions are evaluated once, when the `def` state
 
 ## 3. Function object and code object
 
-- **Function object:** the callable runtime object. It refers to the compiled code and carries context such as the global namespace, defaults, and closure information.
+- **Function object:** the callable runtime object. It refers to the compiled code and carries context such as the global namespace ![ENTITY: Global Namespace](https://img.shields.io/badge/ENTITY-Global-Namespace-64748b), defaults, and closure information.
 - **Code object:** the compiled instructions and metadata. It can be reused across many calls; Python does not recompile the function body on every invocation.
 
 A function object therefore connects reusable compiled code to the context in which that code executes.
 
 ## 4. Execution state and frames
 
-Conceptually, an active function call needs an execution frame. The frame represents information needed to execute the code and continue correctly, including:
+Conceptually, an active function call needs an execution frame ![ENTITY: Execution Frame](https://img.shields.io/badge/ENTITY-Execution-Frame-0ea5e9). The frame represents information needed to execute the code and continue correctly, including:
 
 - the code being executed and the current instruction position;
 - local variables and parameter values;
-- access to global and built-in namespaces;
-- closure cells for variables captured from enclosing scopes;
+- access to global and built-in namespaces ![ENTITY: Builtins Namespace](https://img.shields.io/badge/ENTITY-Builtins-Namespace-64748b);
+- closure cells ![ENTITY: Closure Cell](https://img.shields.io/badge/ENTITY-Closure-Cell-16a34a) for variables captured from enclosing scopes;
 - control-flow and exception-handling state;
 - information needed for debugging, tracing, and returning to the caller.
 
-Do not assume that all local variables are always stored in a normal Python dictionary or that every call allocates a fully materialized `PyFrameObject`.
+Do not assume that all local variables are always stored in a normal Python dictionary or that every call allocates a fully materialized `PyFrameObject ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b)`.
 
-In modern CPython, the internal `_PyInterpreterFrame` representation is distinct from the Python-visible `PyFrameObject`. A visible frame object can be created or exposed when introspection, tracing, or debugging needs it. This is an implementation detail, not a Python language guarantee.
+In modern CPython, the internal `_PyInterpreterFrame ![ENTITY: _PyInterpreterFrame](https://img.shields.io/badge/ENTITY-_PyInterpreterFrame-64748b)` representation is distinct from the Python-visible `PyFrameObject`. A visible frame object can be created or exposed when introspection, tracing, or debugging needs it. This is an implementation detail, not a Python language guarantee.
 
 ## 5. How does the call return?
 
@@ -450,30 +450,30 @@ When the function executes `return expression`, the evaluated value is returned 
 
 If an exception is raised and not handled inside the function, it propagates to the caller. As it propagates, Python unwinds the active execution contexts until a matching handler is found or the exception reaches the top level.
 
-Tracebacks contain references to execution frames. Retaining an exception or traceback can therefore retain local variables and objects referenced by those frames.
+Tracebacks contain references to execution frames. Retaining an exception or traceback ![ENTITY: Traceback](https://img.shields.io/badge/ENTITY-Traceback-d97706) can therefore retain local variables and objects referenced by those frames.
 
 ## 6. Important CPython implementation detail: optimized calls
 
-CPython has optimized call machinery. Its C API documents the `tp_call` and `vectorcall` protocols; vectorcall can reduce argument packaging overhead for supported callables.
+CPython has optimized call machinery. Its C API documents the `tp_call ![ENTITY: tp_call](https://img.shields.io/badge/ENTITY-tp_call-0891b2)` and `vectorcall ![ENTITY: Vectorcall](https://img.shields.io/badge/ENTITY-Vectorcall-0891b2)` protocols; vectorcall can reduce argument packaging overhead for supported callables.
 
 Since CPython 3.11, ordinary Python-to-Python calls can use an optimized interpreter path that avoids the older pattern of recursively re-entering the evaluator for every Python call. Internal frames are also lighter than the traditional model.
 
 These are CPython implementation details. They explain performance behavior, but application correctness must not depend on a particular internal call path or frame layout.
 
-## 7. Generators and coroutines are different
+## 7. Generators and coroutine ![ENTITY: Coroutine](https://img.shields.io/badge/ENTITY-Coroutine-0891b2)s are different
 
 Calling an ordinary function starts executing its body immediately.
 
-Calling a generator function creates a generator object; its body advances when the generator is iterated. Calling an `async def` function creates a coroutine object; its body runs when the coroutine is awaited or scheduled.
+Calling a generator ![ENTITY: Generator](https://img.shields.io/badge/ENTITY-Generator-0891b2) function creates a generator object; its body advances when the generator is iterated. Calling an `async def` function creates a coroutine object; its body runs when the coroutine is await ![ENTITY: Await](https://img.shields.io/badge/ENTITY-Await-0891b2)ed or scheduled.
 
-Generators and coroutines preserve execution state across suspension points. Their lifecycle is not the same as an ordinary function that runs to completion in one call.
+Generators and coroutines preserve execution state across suspension points ![ENTITY: Suspension Point](https://img.shields.io/badge/ENTITY-Suspension-Point-0891b2). Their lifecycle is not the same as an ordinary function that runs to completion in one call.
 
 ## Practical example
 
 ~~~python
 def make_multiplier(factor):
     def multiply(value, *, offset=0):
-        return value * factor + offset
+        return value ![ENTITY: Return Value](https://img.shields.io/badge/ENTITY-Return-Value-16a34a) * factor + offset
     return multiply
 
 triple = make_multiplier(3)
@@ -488,11 +488,11 @@ When `make_multiplier(3)` runs, it creates and returns a function object. The re
 
 Conceptually, an execution frame represents the active call. In CPython, the internal frame representation and call path are implementation details and have changed across versions. During execution, the function can return a value or propagate an exception.
 
-A generator or coroutine function has a different lifecycle: calling it creates a generator or coroutine object rather than immediately running its body to completion. For performance, I profile representative workloads before optimizing call boundaries, because the dominant cost may be inside the function or in I/O rather than the call mechanism itself.”
+A generator or coroutine function has a different lifecycle: calling it creates a generator or coroutine object rather than immediately running its body to completion. For performance, I profile representative workloads before optimizing call boundaries, because the dominant cost may be inside the function or in I/O ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I-O-bound-0891b2) rather than the call mechanism itself.”
 
 ---
 
-## PY-004 / FU-1 — What execution state is needed during a function call? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-004 / FU-1 — What execution state is needed during a function call? ![ENTITY: Execution Frame](https://img.shields.io/badge/ENTITY-Execution-Frame-0ea5e9) ![ENTITY: _PyInterpreterFrame](https://img.shields.io/badge/ENTITY-_PyInterpreterFrame-64748b) ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b) ![ENTITY: Closure Cell](https://img.shields.io/badge/ENTITY-Closure-Cell-16a34a) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What execution state does CPython need to establish or maintain when entering and executing a Python function?
 
@@ -508,13 +508,13 @@ In CPython, internal execution frames are not identical to Python-visible `PyFra
 
 ---
 
-## PY-004 / FU-2 — How do you investigate function-call overhead? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-004 / FU-2 — How do you investigate function-call overhead? ![ENTITY: Profiler](https://img.shields.io/badge/ENTITY-Profiler-16a34a) ![ENTITY: Call Stack](https://img.shields.io/badge/ENTITY-Call-Stack-64748b) ![ENTITY: Self Time](https://img.shields.io/badge/ENTITY-Self-Time-d97706) ![ENTITY: Cumulative Time](https://img.shields.io/badge/ENTITY-Cumulative-Time-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service?
 
 **Explanation**
 
-Start with a representative workload and a measurable service objective. Use a profiler to inspect call counts, self time, and cumulative time, then correlate the results with request traces.
+Start with a representative workload and a measurable service objective. Use a profiler ![ENTITY: Profiler](https://img.shields.io/badge/ENTITY-Profiler-16a34a) to inspect call count ![ENTITY: Call Count](https://img.shields.io/badge/ENTITY-Call-Count-d97706)s, self time ![ENTITY: Self Time](https://img.shields.io/badge/ENTITY-Self-Time-d97706), and cumulative time ![ENTITY: Cumulative Time](https://img.shields.io/badge/ENTITY-Cumulative-Time-d97706), then correlate the results with request traces.
 
 - **Self time:** time attributed to the function itself, excluding subcalls.
 - **Cumulative time:** time in the function plus its subcalls.
@@ -524,11 +524,11 @@ A deterministic profiler can provide detailed call information but add overhead.
 
 **Interview answer (EN)**
 
-“I define the target metric and capture a representative workload. I inspect call counts, self time, and cumulative time, and correlate the profile with request traces. A high call count alone does not prove that call dispatch is expensive; time may be spent in a database, network request, serialization, or native code. I make a targeted change only after identifying the bottleneck, then compare latency percentiles, throughput, CPU, memory, and correctness under the same workload.”
+“I define the target metric and capture a representative workload. I inspect call counts, self time, and cumulative time, and correlate the profile with request traces. A high call count alone does not prove that call dispatch is expensive; time may be spent in a database, network request, serialization, or native code ![ENTITY: Native Code](https://img.shields.io/badge/ENTITY-Native-Code-0f766e). I make a targeted change only after identifying the bottleneck, then compare latency ![ENTITY: Latency](https://img.shields.io/badge/ENTITY-Latency-d97706) percentiles, throughput ![ENTITY: Throughput](https://img.shields.io/badge/ENTITY-Throughput-d97706), CPU, memory, and correctness under the same workload.”
 
 ---
 
-## PY-004 / FU-3 — How do recursion, exceptions, generators, and coroutines change the lifecycle? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-004 / FU-3 — How do recursion ![ENTITY: Recursion](https://img.shields.io/badge/ENTITY-Recursion-7c3aed), exceptions, generators, and coroutines change the lifecycle? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call?
 
@@ -536,26 +536,26 @@ A deterministic profiler can provide detailed call information but add overhead.
 
 - **Recursion:** creates nested logical calls with separate parameters and local execution state. Deep recursion can hit the recursion limit.
 - **Exceptions:** transfer control by unwinding execution contexts until a matching handler is found.
-- **Generators:** calling a generator function creates a generator object. Its body advances during iteration and retains state between `yield` points.
+- **Generators:** calling a generator function creates a generator object. Its body advances during iteration and retains state between `yield ![ENTITY: Yield](https://img.shields.io/badge/ENTITY-Yield-0891b2)` points.
 - **Coroutines:** calling an `async def` function creates a coroutine object. Its body runs when awaited or scheduled, and it can suspend at `await` points.
 
-An event loop schedules coroutine progress; it does not create one operating-system thread per coroutine.
+An event loop ![ENTITY: Event Loop](https://img.shields.io/badge/ENTITY-Event-Loop-0891b2) schedules coroutine progress; it does not create one operating-system thread per coroutine.
 
 **Interview answer (EN)**
 
-“An ordinary function runs when called and completes by returning or raising. Recursion creates nested calls with separate logical execution state. Exceptions unwind control flow until a handler is found. A generator call returns an object whose body advances during iteration and retains state between yields. An async function call returns a coroutine object that runs when awaited or scheduled. These differences affect stack depth, scheduling, cancellation, and resource cleanup.”
+“An ordinary function runs when called and completes by returning or raising. Recursion creates nested calls with separate logical execution state. Exceptions unwind control flow until a handler is found. A generator call returns an object whose body advances during iteration and retains state between yields. An async function call returns a coroutine object that runs when awaited or scheduled. These differences affect stack depth, scheduling, cancellation ![ENTITY: Cancellation](https://img.shields.io/badge/ENTITY-Cancellation-dc2626), and resource cleanup.”
 
 ---
 
-## PY-004 / FU-4 — When should call mechanics influence an optimization decision? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-004 / FU-4 — When should call mechanics influence an optimization decision? ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Vectorcall](https://img.shields.io/badge/ENTITY-Vectorcall-0891b2) ![ENTITY: Benchmark](https://img.shields.io/badge/ENTITY-Benchmark-d97706) ![ENTITY: Latency](https://img.shields.io/badge/ENTITY-Latency-d97706) ![ENTITY: Throughput](https://img.shields.io/badge/ENTITY-Throughput-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile?
 
 **Explanation**
 
-Call mechanics matter when profiling shows that call dispatch or repeated wrapper layers consume a meaningful part of a CPU-bound hot path. CPython optimizations such as vectorcall can reduce some overhead, but they do not make every call free.
+Call mechanics matter when profiling shows that call dispatch or repeated wrapper layers consume a meaningful part of a CPU-bound ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) hot path. CPython optimizations such as vectorcall can reduce some overhead, but they do not make every call free.
 
-Validate the hypothesis with representative benchmarks, production metrics, and the Python versions the service supports. Consider readability and maintenance cost as well as speed.
+Validate the hypothesis with representative benchmark ![ENTITY: Benchmark](https://img.shields.io/badge/ENTITY-Benchmark-d97706)s, production metrics, and the Python versions the service supports. Consider readability and maintenance cost as well as speed.
 
 **Interview answer (EN)**
 
