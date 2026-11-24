@@ -121,6 +121,101 @@ A free-threaded build can execute Python threads in parallel without the traditi
 
 ---
 
+# PY-002 — Main Question
+
+**Question (EN):** What is the difference between concurrency and parallelism, and why is the distinction important in Python?
+
+## Understand the idea
+
+- **Concurrency** means managing multiple tasks whose execution overlaps in time. The system lets each task make progress, often by switching between them.
+- **Parallelism** means actually executing multiple tasks at the same time, for example on different CPU cores.
+
+Concurrency is about coordinating multiple tasks. Parallelism is about simultaneous execution. Concurrency does not require multiple CPU cores.
+
+## How this applies to Python
+
+- **Threading:** multiple threads within one process; useful for blocking I/O and some native libraries.
+- **Multiprocessing:** separate processes that can execute on different CPU cores; often useful for CPU-bound Python workloads.
+- **Asyncio:** cooperative concurrency managed by an event loop. When one coroutine awaits I/O, the event loop can run another. Asyncio does not make CPU-heavy code parallel by itself.
+
+In a conventional GIL-enabled CPython build, multiple threads do not execute Python bytecode in parallel. They can still provide concurrency, especially while waiting for I/O.
+
+## Practical example
+
+A backend may need to call an external API, query a database, and process a large dataset. API and database operations spend much of their time waiting for I/O, so concurrency helps keep other work moving. Processing a large dataset may be CPU-bound; if it needs multiple cores, parallel execution may be appropriate.
+
+## Interview-ready answer (EN)
+
+“Concurrency is the ability to manage multiple tasks whose execution overlaps in time. Parallelism means executing multiple tasks at the same time, typically on different CPU cores.
+
+Concurrency is useful for I/O-bound workloads because a program can make progress on other tasks while one task is waiting. Parallelism is useful for CPU-bound workloads because multiple computations can run simultaneously.
+
+In Python, threading and asyncio are commonly used for concurrency, while multiprocessing can provide parallel execution. In conventional CPython builds, the GIL limits parallel execution of Python bytecode across threads.”
+
+---
+
+## FU-005 — Can concurrency exist without parallelism?
+
+**Question (EN):** Can concurrency exist without parallelism?
+
+**Explanation**
+
+Yes. A single thread can make progress on multiple tasks by switching between them, for example while some tasks are waiting for I/O. Their execution overlaps in time, but they are not running simultaneously.
+
+**Interview answer (EN)**
+
+“Yes. Concurrency can exist without parallelism. A single thread can make progress on multiple tasks by switching between them, for example while some tasks are waiting for I/O. The tasks overlap in time but are not executed simultaneously.”
+
+---
+
+## FU-006 — What is the difference between I/O-bound and CPU-bound workloads?
+
+**Question (EN):** What is the difference between I/O-bound and CPU-bound workloads?
+
+**Explanation**
+
+An **I/O-bound** workload spends much of its time waiting for external operations, such as network or database responses. A **CPU-bound** workload spends most of its time performing computations. Threading or asyncio can help with I/O-bound workloads; multiprocessing is often a better fit for CPU-bound Python workloads in conventional CPython.
+
+**Interview answer (EN)**
+
+“An I/O-bound workload spends most of its time waiting for external operations, such as network or database responses. A CPU-bound workload spends most of its time performing computations. Threading or asyncio can help with I/O-bound workloads, while multiprocessing is often a better choice for CPU-bound Python workloads.”
+
+---
+
+## FU-007 — How does the GIL affect concurrency and parallelism in CPython?
+
+**Question (EN):** How does the GIL affect concurrency and parallelism in CPython?
+
+**Explanation**
+
+In conventional CPython builds, the GIL prevents multiple threads from executing Python bytecode simultaneously. Threads can still provide concurrency, especially for I/O-bound workloads, but generally do not provide parallel execution for CPU-bound Python code. Free-threaded builds change this limitation, although extension compatibility and synchronization still matter.
+
+**Interview answer (EN)**
+
+“In conventional CPython builds, the GIL prevents multiple threads from executing Python bytecode simultaneously. Threads can still provide concurrency, especially for I/O-bound workloads, but they generally do not provide parallel execution for CPU-bound Python code. Free-threaded builds change this limitation, although thread safety and extension compatibility still matter.”
+
+---
+
+## FU-008 — How do you decide whether a workload needs concurrency or parallelism?
+
+**Question (EN):** How do you decide whether a workload needs concurrency or parallelism?
+
+**Explanation**
+
+First identify the bottleneck. If the workload mostly waits for network, database, or disk operations, concurrency is usually the first option to consider. If it mostly performs computations, parallelism may help. Benchmark before choosing asyncio, threading, or multiprocessing; each model has overhead and complexity.
+
+**Interview answer (EN)**
+
+“I first identify the workload's main bottleneck. If it spends most of its time waiting for I/O, I consider concurrency through asyncio or threading. If it is CPU-bound, I consider parallel execution, often through multiprocessing in conventional CPython. I then benchmark the solution and account for the overhead and complexity of the chosen model.”
+
+**References**
+- [Python 3.15.2 — Threading](https://docs.python.org/3.15/library/threading.html)
+- [Python 3.15.2 — asyncio](https://docs.python.org/3.15/library/asyncio.html)
+- [Python 3.15.2 — multiprocessing](https://docs.python.org/3.15/library/multiprocessing.html)
+- [Python 3.15.2 — Free-threaded Python](https://docs.python.org/3.15/howto/free-threading-python.html)
+
+---
+
 # PY-003 — Main Question
 
 **Question (EN):** How does Python execute a program from source code to runtime behavior?
@@ -254,101 +349,6 @@ Choose the diagnostic layer based on symptoms and evidence:
 - [Python 3.15.2 — Code objects](https://docs.python.org/3.15/reference/datamodel.html#code-objects)
 - [Python 3.15.2 — dis module](https://docs.python.org/3.15/library/dis.html)
 - [Python 3.15.2 — Import system](https://docs.python.org/3.15/reference/import.html)
-
----
-
-# PY-002 — Main Question
-
-**Question (EN):** What is the difference between concurrency and parallelism, and why is the distinction important in Python?
-
-## Understand the idea
-
-- **Concurrency** means managing multiple tasks whose execution overlaps in time. The system lets each task make progress, often by switching between them.
-- **Parallelism** means actually executing multiple tasks at the same time, for example on different CPU cores.
-
-Concurrency is about coordinating multiple tasks. Parallelism is about simultaneous execution. Concurrency does not require multiple CPU cores.
-
-## How this applies to Python
-
-- **Threading:** multiple threads within one process; useful for blocking I/O and some native libraries.
-- **Multiprocessing:** separate processes that can execute on different CPU cores; often useful for CPU-bound Python workloads.
-- **Asyncio:** cooperative concurrency managed by an event loop. When one coroutine awaits I/O, the event loop can run another. Asyncio does not make CPU-heavy code parallel by itself.
-
-In a conventional GIL-enabled CPython build, multiple threads do not execute Python bytecode in parallel. They can still provide concurrency, especially while waiting for I/O.
-
-## Practical example
-
-A backend may need to call an external API, query a database, and process a large dataset. API and database operations spend much of their time waiting for I/O, so concurrency helps keep other work moving. Processing a large dataset may be CPU-bound; if it needs multiple cores, parallel execution may be appropriate.
-
-## Interview-ready answer (EN)
-
-“Concurrency is the ability to manage multiple tasks whose execution overlaps in time. Parallelism means executing multiple tasks at the same time, typically on different CPU cores.
-
-Concurrency is useful for I/O-bound workloads because a program can make progress on other tasks while one task is waiting. Parallelism is useful for CPU-bound workloads because multiple computations can run simultaneously.
-
-In Python, threading and asyncio are commonly used for concurrency, while multiprocessing can provide parallel execution. In conventional CPython builds, the GIL limits parallel execution of Python bytecode across threads.”
-
----
-
-## FU-005 — Can concurrency exist without parallelism?
-
-**Question (EN):** Can concurrency exist without parallelism?
-
-**Explanation**
-
-Yes. A single thread can make progress on multiple tasks by switching between them, for example while some tasks are waiting for I/O. Their execution overlaps in time, but they are not running simultaneously.
-
-**Interview answer (EN)**
-
-“Yes. Concurrency can exist without parallelism. A single thread can make progress on multiple tasks by switching between them, for example while some tasks are waiting for I/O. The tasks overlap in time but are not executed simultaneously.”
-
----
-
-## FU-006 — What is the difference between I/O-bound and CPU-bound workloads?
-
-**Question (EN):** What is the difference between I/O-bound and CPU-bound workloads?
-
-**Explanation**
-
-An **I/O-bound** workload spends much of its time waiting for external operations, such as network or database responses. A **CPU-bound** workload spends most of its time performing computations. Threading or asyncio can help with I/O-bound workloads; multiprocessing is often a better fit for CPU-bound Python workloads in conventional CPython.
-
-**Interview answer (EN)**
-
-“An I/O-bound workload spends most of its time waiting for external operations, such as network or database responses. A CPU-bound workload spends most of its time performing computations. Threading or asyncio can help with I/O-bound workloads, while multiprocessing is often a better choice for CPU-bound Python workloads.”
-
----
-
-## FU-007 — How does the GIL affect concurrency and parallelism in CPython?
-
-**Question (EN):** How does the GIL affect concurrency and parallelism in CPython?
-
-**Explanation**
-
-In conventional CPython builds, the GIL prevents multiple threads from executing Python bytecode simultaneously. Threads can still provide concurrency, especially for I/O-bound workloads, but generally do not provide parallel execution for CPU-bound Python code. Free-threaded builds change this limitation, although extension compatibility and synchronization still matter.
-
-**Interview answer (EN)**
-
-“In conventional CPython builds, the GIL prevents multiple threads from executing Python bytecode simultaneously. Threads can still provide concurrency, especially for I/O-bound workloads, but they generally do not provide parallel execution for CPU-bound Python code. Free-threaded builds change this limitation, although thread safety and extension compatibility still matter.”
-
----
-
-## FU-008 — How do you decide whether a workload needs concurrency or parallelism?
-
-**Question (EN):** How do you decide whether a workload needs concurrency or parallelism?
-
-**Explanation**
-
-First identify the bottleneck. If the workload mostly waits for network, database, or disk operations, concurrency is usually the first option to consider. If it mostly performs computations, parallelism may help. Benchmark before choosing asyncio, threading, or multiprocessing; each model has overhead and complexity.
-
-**Interview answer (EN)**
-
-“I first identify the workload's main bottleneck. If it spends most of its time waiting for I/O, I consider concurrency through asyncio or threading. If it is CPU-bound, I consider parallel execution, often through multiprocessing in conventional CPython. I then benchmark the solution and account for the overhead and complexity of the chosen model.”
-
-**References**
-- [Python 3.15.2 — Threading](https://docs.python.org/3.15/library/threading.html)
-- [Python 3.15.2 — asyncio](https://docs.python.org/3.15/library/asyncio.html)
-- [Python 3.15.2 — multiprocessing](https://docs.python.org/3.15/library/multiprocessing.html)
-- [Python 3.15.2 — Free-threaded Python](https://docs.python.org/3.15/howto/free-threading-python.html)
 
 ---
 
