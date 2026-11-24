@@ -18,15 +18,13 @@
 
 ## Сначала поймём идею
 
-Представим, что несколько потоков работают внутри одного интерпретатора CPython. В традиционной сборке с GIL только один поток одновременно может удерживать GIL и выполнять Python bytecode.
-
-Можно представить GIL как общий ключ: он находится у одного потока, остальные ждут своей очереди. Это упрощённая аналогия, но она передаёт основную идею.
+В традиционной сборке CPython с GIL только один поток одновременно может удерживать GIL и выполнять Python bytecode. Можно представить его как общий ключ: он находится у одного потока, остальные ждут своей очереди. Это упрощённая аналогия, но она передаёт основную идею.
 
 GIL помогает CPython координировать доступ к состоянию интерпретатора и объектам Python. Исторически он также упрощал подсчёт ссылок и интеграцию C-расширений.
 
 ## Конкурентность и параллелизм — в чём разница?
 
-- **Конкурентность (concurrency):** несколько задач продвигаются в течение пересекающихся промежутков времени. Они не обязаны выполняться в одну и ту же секунду.
+- **Конкурентность (concurrency):** несколько задач продвигаются в течение пересекающихся промежутков времени. Они не обязаны выполняться одновременно в одну и ту же секунду.
 - **Параллелизм (parallelism):** несколько задач выполняются одновременно, например на разных ядрах процессора.
 
 В традиционной сборке CPython с GIL потоки могут обеспечивать конкурентность, но CPU-bound потоки на чистом Python обычно не могут выполнять Python bytecode параллельно на нескольких ядрах.
@@ -59,20 +57,6 @@ GIL помогает CPython координировать доступ к сос
 
 Также CPython поддерживает опциональные free-threaded-сборки, в которых потоки могут выполняться параллельно без GIL. Перед их внедрением я бы проверил совместимость зависимостей и измерил производительность на реальной нагрузке».
 
-## Готовый ответ для собеседования (EN)
-
-“The Global Interpreter Lock, or GIL, is an interpreter-level mutual-exclusion mechanism in the conventional CPython build. It allows only one thread at a time to hold the GIL and execute Python bytecode. This simplifies coordination around interpreter state and object management, but limits multi-core parallelism for CPU-bound pure-Python threads.
-
-Threads are still useful for I/O-bound work because blocking I/O typically releases the GIL. For CPU-bound Python workloads, multiprocessing may be more appropriate, while some native extensions can release the GIL during computation. The GIL also does not guarantee application-level thread safety, so shared state may still require explicit synchronization.
-
-Python additionally supports optional free-threaded builds, which can execute threads in parallel without the GIL. Before adopting one, I would verify dependency compatibility and benchmark the actual workload.”
-
-**Источники**
-- [Python 3.15.2 — Thread states and the GIL](https://docs.python.org/3.15/c-api/threads.html)
-- [Python 3.15.2 — Threading](https://docs.python.org/3.15/library/threading.html)
-- [Python 3.15.2 — Free-threaded Python](https://docs.python.org/3.15/howto/free-threading-python.html)
-- [Реализация GIL в CPython 3.15.2](https://github.com/python/cpython/blob/v3.15.2/Python/ceval_gil.c)
-
 ---
 
 ## FU-001 — Что защищает GIL?
@@ -81,17 +65,13 @@ Python additionally supports optional free-threaded builds, which can execute th
 
 **Оригинальная формулировка (EN):** What does the GIL protect, and why does CPython use it?
 
-**Простое объяснение**
+**Объяснение**
 
 GIL координирует доступ к внутреннему состоянию CPython и объектам Python. Исторически это упрощало подсчёт ссылок и реализацию runtime. Но GIL не защищает все ресурсы приложения.
 
 **Ответ для собеседования (RU)**
 
 «В традиционной сборке CPython GIL координирует доступ к состоянию интерпретатора и управляемым им объектам. Исторически он упрощал подсчёт ссылок и реализацию runtime. Однако его область действия ограничена: он не защищает произвольные прикладные данные, транзакции базы данных или внешние ресурсы».
-
-**Interview answer (EN)**
-
-“The GIL coordinates access to interpreter-managed state and objects in the conventional CPython build. It historically simplified reference counting and runtime implementation. Its scope is limited, however: it does not protect arbitrary application data, database transactions, or external resources.”
 
 ---
 
@@ -101,17 +81,13 @@ GIL координирует доступ к внутреннему состоя
 
 **Оригинальная формулировка (EN):** How does the GIL affect CPU-bound and I/O-bound multithreaded workloads?
 
-**Простое объяснение**
+**Объяснение**
 
 CPU-bound задачи в основном выполняют вычисления. I/O-bound задачи значительную часть времени ждут внешние операции. GIL ограничивает параллельное выполнение CPU-bound кода на чистом Python, но блокирующий I/O обычно освобождает GIL и позволяет работать другому потоку.
 
 **Ответ для собеседования (RU)**
 
 «В традиционной сборке CPython CPU-bound потоки на чистом Python конкурируют за GIL и обычно не выполняют Python bytecode параллельно на разных ядрах. I/O-bound потоки остаются полезными, поскольку блокирующие операции ввода-вывода обычно освобождают GIL и позволяют другим потокам работать во время ожидания».
-
-**Interview answer (EN)**
-
-“In a conventional CPython build, CPU-bound pure-Python threads compete for the GIL and generally do not execute Python bytecode in parallel across cores. I/O-bound threads can still be effective because blocking I/O typically releases the GIL, allowing other threads to run while one is waiting.”
 
 ---
 
@@ -121,7 +97,7 @@ CPU-bound задачи в основном выполняют вычислени
 
 **Оригинальная формулировка (EN):** How would you choose between threading, multiprocessing, and asyncio for a Python backend workload?
 
-**Простое объяснение**
+**Объяснение**
 
 - **Threading:** подходит для блокирующего I/O и некоторых нативных библиотек.
 - **Multiprocessing:** подходит для CPU-bound задач на Python; процессы могут работать на разных ядрах.
@@ -131,10 +107,6 @@ CPU-bound задачи в основном выполняют вычислени
 
 «Сначала я определяю, тратит ли нагрузка основное время на ожидание I/O или на CPU-intensive вычисления на Python. Для блокирующего I/O я использую потоки, для CPU-bound задач — multiprocessing, если оправданы затраты на процессы, а для высокой конкурентности I/O — asyncio, если весь путь вызовов поддерживает неблокирующие операции. Также учитываю задержки, память, отмену задач, backpressure и эксплуатационную сложность».
 
-**Interview answer (EN)**
-
-“I start by identifying whether the workload is mainly waiting for I/O or performing CPU-intensive Python work. I use threads for blocking I/O, multiprocessing for CPU-bound Python tasks when process overhead is justified, and asyncio for high-concurrency I/O when the call stack supports non-blocking operations. I also consider latency, memory, cancellation, backpressure, and operational complexity.”
-
 ---
 
 ## FU-004 — Что меняется в free-threaded CPython?
@@ -143,7 +115,7 @@ CPU-bound задачи в основном выполняют вычислени
 
 **Оригинальная формулировка (EN):** What changes in free-threaded CPython, and what should a team check before adopting it?
 
-**Простое объяснение**
+**Объяснение**
 
 Free-threaded-сборка позволяет потокам Python выполняться параллельно без традиционного GIL. Но зависимости, особенно C-расширения, должны поддерживать этот режим. Приложение также должно правильно синхронизировать общее состояние.
 
@@ -151,9 +123,13 @@ Free-threaded-сборка позволяет потокам Python выполн
 
 «Free-threaded CPython — это опциональная сборка, позволяющая потокам Python выполняться параллельно без традиционного GIL. Перед её внедрением я бы проверил поддержку free-threading зависимостями и C-расширениями, проанализировал общее изменяемое состояние на предмет race conditions и измерил производительность на репрезентативной нагрузке. Я бы не предполагал, что одно лишь отключение GIL автоматически ускорит приложение».
 
-**Interview answer (EN)**
+---
 
-“Free-threaded CPython is an optional build that allows Python threads to execute in parallel without the traditional GIL. Before adopting it, I would verify that dependencies and C extensions support free-threading, audit shared mutable state for race conditions, and benchmark representative workloads. I would not assume that removing the GIL automatically improves performance.”
+**Источники**
+- [Python 3.15.2 — Thread states and the GIL](https://docs.python.org/3.15/c-api/threads.html)
+- [Python 3.15.2 — Threading](https://docs.python.org/3.15/library/threading.html)
+- [Python 3.15.2 — Free-threaded Python](https://docs.python.org/3.15/howto/free-threading-python.html)
+- [Реализация GIL в CPython 3.15.2](https://github.com/python/cpython/blob/v3.15.2/Python/ceval_gil.c)
 
 ---
 
