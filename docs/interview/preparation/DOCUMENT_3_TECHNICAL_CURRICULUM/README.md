@@ -1,36 +1,68 @@
-# Document 3 — Technical Curriculum
+# Interview Preparation — How We Prepare
 
-**Parent documents:** [Document 1 — Interview Preparation Standard](../DOCUMENT_1_INTERVIEW_STANDARD.md) · [Document 2 — Technical Curriculum Architecture](../DOCUMENT_2_CURRICULUM_ARCHITECTURE.md)
+## Цель
 
-**Status:** In progress  
-**Program allocation:** 300 Main Questions + 1,200 Follow-ups. Every question must have its own substantive answer.
+Подготовка к международным собеседованиям на позицию **Senior Software Engineer — Python Backend & AI Engineering**.
 
-## Purpose
+Ориентируемся на реальные ожидания международных IT-компаний: Python, backend, databases, system design, production engineering, AI/LLM/RAG и инженерную коммуникацию.
 
-This document set contains the actual technical question bank, organized by the ten domains defined in Document 2. Question maps are planning artifacts; a question is not complete until its Russian and English answers, follow-up answers, examples, trade-offs, and quality review are complete.
+Цель — не заучить список ответов, а научиться понимать технические темы, принимать инженерные решения и уверенно объяснять их на английском языке.
 
-## Domain index
+## Как проходит подготовка
 
-| Domain | Main | Follow-ups | Total | Status |
-|---|---:|---:|---:|---|
-| [Python Core & Advanced Python — EN/RU index](./python/README.md) | 45 | 180 | 225 | EN/RU migration started (PY-001) |
-| Algorithms & Data Structures | 20 | 80 | 100 | Not started |
-| Backend & Database Engineering | 45 | 180 | 225 | Not started |
-| Operating Systems & Networking | 20 | 80 | 100 | Not started |
-| System Design & Distributed Systems | 40 | 160 | 200 | Not started |
-| Quality, Testing & Code Review | 25 | 100 | 125 | Not started |
-| Production Engineering & Debugging | 25 | 100 | 125 | Not started |
-| AI / LLM / RAG / Agent Engineering | 35 | 140 | 175 | Not started |
-| Project Deep Dive — Pharmaviyum | 20 | 80 | 100 | Not started |
-| Behavioral, Leadership & Communication | 25 | 100 | 125 | Not started |
-| **Total** | **300** | **1,200** | **1,500** | |
+Мы идём последовательно, от базовых понятий к более сложным инженерным вопросам.
 
-## Question lifecycle
+Для каждой темы:
 
-1. **Mapped** — question ID, competency, level, priority, and follow-ups are assigned.
-2. **Drafted** — Russian and English questions and answers are written.
-3. **Technically reviewed** — correctness, version-sensitive details, examples, and sources are checked.
-4. **Practiced** — candidate has answered the question and relevant follow-ups.
-5. **Validated** — the answer meets the standard and the candidate demonstrates the required mastery.
+1. Формулируем один основной вопрос, похожий на вопрос технического интервью.
+2. Разбираем идею простыми и понятными словами.
+3. Объясняем, как механизм работает внутри Python или backend-системы.
+4. Связываем тему с практическими задачами разработки и production.
+5. Формируем краткий, содержательный ответ для интервью на английском и русском.
+6. Разбираем ровно четыре Follow-up Questions с ответами на обоих языках.
+7. После прохождения темы обновляем материалы и общий прогресс.
 
-Do not mark a whole domain complete merely because its question map exists.
+Формат обучения:
+
+**Main Question → понятное объяснение → практический контекст → Interview Answer EN/RU → 4 Follow-ups с ответами EN/RU → следующая тема.**
+
+Не усложняем материал ради объёма. Таблицы, дополнительные документы и теоретические конструкции используем только тогда, когда они действительно помогают понять тему.
+
+## Объём подготовки
+
+Всего запланировано **1 500 вопросов**:
+
+- 300 Main Questions;
+- 1 200 Follow-up Questions;
+- ровно четыре Follow-ups на каждый Main Question;
+- полноценные ответы на английском и русском языках.
+
+## Технические направления
+
+1. Python Core & Advanced Python
+2. Algorithms & Data Structures
+3. Backend & Database Engineering
+4. Operating Systems & Networking
+5. System Design & Distributed Systems
+6. Quality, Testing & Code Review
+7. Production Engineering & Debugging
+8. AI / LLM / RAG / Agent Engineering
+9. Project Deep Dive — Pharmaviyum
+10. Behavioral, Leadership & Communication
+
+Этапы найма — HR Screening, Hiring Manager, Technical Interview, Practical Assessment, System Design, AI Specialization и Final Interview — готовятся отдельно от технических направлений.
+
+## Текущий раздел: Python Core & Advanced Python
+
+Основной ориентир по версии языка — **Python 3.15.2**. Версионные особенности и детали реализации CPython отделяем от гарантий самого языка.
+
+- [English — Questions and Answers](./python/EN/PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)
+- [Русский — Вопросы и ответы](./python/RU/PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)
+- [English — Question Map](./python/EN/PYTHON_CORE_ADVANCED.md)
+- [Русский — Карта вопросов](./python/RU/PYTHON_CORE_ADVANCED.md)
+
+**Текущий прогресс:** PY-001–PY-009 и FU-001–FU-036 подготовлены в обеих языковых версиях. Материалы продолжают последовательно дополняться и требуют независимой технической и редакторской проверки.
+
+---
+
+Это рабочее руководство по нашей фактической подготовке. Основное учебное содержание находится непосредственно в вопросах и ответах.
