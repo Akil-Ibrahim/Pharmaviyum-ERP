@@ -8,6 +8,8 @@
 
 English study material for PY-001–PY-009 and FU-001–FU-036. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
 
+**Numbering rule:** Every Main Question has exactly four Follow-ups. FU IDs are globally sequential across the curriculum and never restart for a new Main Question: PY-001 → FU-001–FU-004, PY-002 → FU-005–FU-008, and so on.
+
 **Review status:** Authored; independent technical and editorial review pending. Do not treat this material as finally approved until both reviews are complete.
 
 # PY-001 — Main Question
