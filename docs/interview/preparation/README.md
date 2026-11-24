@@ -1,68 +1,52 @@
-# Independent Interview Preparation Program
+# Senior Software Engineer — Python Backend & AI Engineering
 
-**Target role:** Senior Software Engineer — Python Backend & AI Engineering  
-**Status:** In progress  
-**Program target:** 300 main questions + 1,200 follow-up questions = 1,500 questions, each with a model answer.
+## Для чего нужна эта подготовка
 
-## Purpose
+Это практическая подготовка к международным техническим собеседованиям на позицию **Senior Software Engineer — Python Backend & AI Engineering**.
 
-This directory contains a new, independent interview-preparation program. It is maintained separately from the existing [Senior Python Backend Engineer | AI/LLM Interview Curriculum](../SENIOR_PYTHON_AI_CURRICULUM.md).
+Цель — научиться уверенно объяснять Python и backend-механизмы, проектировать системы, разбирать production-проблемы, работать с AI/LLM/RAG и аргументировать инженерные решения на английском языке.
 
-The existing curriculum remains unchanged and continues to serve its original purpose. The new program has its own standard, curriculum architecture, question maps, answers, review status, and practical interview exercises.
+Материал ориентирован на реальные требования международных IT-компаний, включая рынки Европы, США и Юго-Восточной Азии. Это не набор вопросов для механического заучивания: каждый ответ должен помогать понять тему и объяснить её своими словами на интервью.
 
-## Three-document structure
+## Как устроена подготовка
 
-- [Document 1 — Interview Preparation Standard v1.3](./DOCUMENT_1_INTERVIEW_STANDARD.md)
-- [Document 2 — Technical Curriculum Architecture v1.0](./DOCUMENT_2_CURRICULUM_ARCHITECTURE.md)
-- [Document 3 — Technical Curriculum](./DOCUMENT_3_TECHNICAL_CURRICULUM/README.md)
+Всё основное обучение находится непосредственно в банках вопросов и ответов.
 
-1. **Document 1 — Interview Preparation Standard**  
-   Defines the preparation methodology, answer standard, question lifecycle, evaluation rubric, language format, and completion criteria.
+- **300 основных вопросов (Main Questions).**
+- **1 200 дополнительных вопросов (Follow-ups).**
+- У каждого основного вопроса ровно **четыре Follow-ups**.
+- Для каждого вопроса есть содержательный ответ на английском и русском языках.
 
-2. **Document 2 — Technical Curriculum Architecture**  
-   Defines the competency domains, question allocation, learning progression, cross-cutting capabilities, and coverage requirements.
+Формат простой: **вопрос → объяснение и ответ EN/RU → четыре Follow-ups с ответами EN/RU → следующий вопрос.**
 
-3. **Document 3 — Technical Curriculum**  
-   Contains the domain-specific question maps and fully developed answers. The first subject area is **Python Core & Advanced Python**.
+Объяснения должны быть понятными и достаточно глубокими для уровня Senior. Не усложнять материал ради объёма, не повторять одно и то же и не добавлять разделы, которые не помогают понять тему или ответить интервьюеру.
 
-The documents are being developed and reviewed incrementally. A document or question must not be described as complete until its content and answers have been reviewed against the agreed standard.
+## Технические направления
 
-## Program architecture
+1. Python Core & Advanced Python
+2. Algorithms & Data Structures
+3. Backend & Database Engineering
+4. Operating Systems & Networking
+5. System Design & Distributed Systems
+6. Quality, Testing & Code Review
+7. Production Engineering & Debugging
+8. AI / LLM / RAG / Agent Engineering
+9. Project Deep Dive — Pharmaviyum
+10. Behavioral, Leadership & Communication
 
-The current target allocation is:
+Подготовка к этапам найма — HR, Hiring Manager, Technical, Practical Assessment, System Design и Final — рассматривается отдельно от этих десяти технических направлений.
 
-| Technical domain | Main questions | Follow-ups | Total |
-|---|---:|---:|---:|
-| Python Core & Advanced Python | 45 | 180 | 225 |
-| Algorithms & Data Structures | 20 | 80 | 100 |
-| Backend & Database Engineering | 45 | 180 | 225 |
-| Operating Systems & Networking | 20 | 80 | 100 |
-| System Design & Distributed Systems | 40 | 160 | 200 |
-| Quality, Testing & Code Review | 25 | 100 | 125 |
-| Production Engineering & Debugging | 25 | 100 | 125 |
-| AI / LLM / RAG / Agent Engineering | 35 | 140 | 175 |
-| Project Deep Dive — Pharmaviyum | 20 | 80 | 100 |
-| Behavioral, Leadership & Communication | 25 | 100 | 125 |
-| **Total** | **300** | **1,200** | **1,500** |
+## Начало обучения
 
-Each main question has four follow-ups. Every main question and every follow-up requires its own substantive answer.
+Первый предметный раздел — **Python Core & Advanced Python**.
 
-## Answer and evidence principles
+- [English — Python questions and answers](./DOCUMENT_3_TECHNICAL_CURRICULUM/python/EN/PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)
+- [Русский — вопросы и ответы по Python](./DOCUMENT_3_TECHNICAL_CURRICULUM/python/RU/PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)
+- [English — question map](./DOCUMENT_3_TECHNICAL_CURRICULUM/python/EN/PYTHON_CORE_ADVANCED.md)
+- [Русский — карта вопросов](./DOCUMENT_3_TECHNICAL_CURRICULUM/python/RU/PYTHON_CORE_ADVANCED.md)
 
-- Prepare for international Senior-level engineering interviews, using real hiring expectations rather than memorized definitions.
-- Include English interview questions, accurate Russian translations, detailed Russian explanations, and professional English model answers.
-- Explain mechanisms, practical applications, edge cases, trade-offs, failure modes, and senior-level judgment.
-- Use Pharmaviyum as a recurring case study only when repository evidence supports the claim.
-- Clearly distinguish implemented, test-verified, proposed, not-verified, and hypothetical material.
-- Do not invent implementation details, operational metrics, incidents, or personal contributions.
-- Do not disclose confidential commercial results or sensitive customer/patient information.
-- Keep the separate hiring-process preparation track distinct from the ten technical domains.
+**Текущий прогресс Python Core & Advanced:** PY-001–PY-008 и FU-001–FU-032. Материал дополняется последовательно; наличие вопроса в документе само по себе не означает, что вся программа завершена.
 
-## Working status
+---
 
-The three-document structure and the 1,500-question target are established. Detailed content is being authored and reviewed in stages. This README is the navigation entry point; it does not imply that the complete question bank or all three documents have already been published.
-
-## Separation from the existing curriculum
-
-- Existing curriculum: [SENIOR_PYTHON_AI_CURRICULUM.md](../SENIOR_PYTHON_AI_CURRICULUM.md)
-- Interview documentation home: [Interview README](../README.md)
+Существующая документация [Senior Python/AI curriculum](../SENIOR_PYTHON_AI_CURRICULUM.md) остаётся отдельным материалом проекта и не заменяется этой подготовкой.
