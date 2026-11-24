@@ -39,7 +39,7 @@ Follow-ups:
 
 ## Coverage status
 
-- PY-001–PY-007 and FU-001–FU-028: authored in English; independent technical and editorial review pending.
+- PY-001–PY-008 and FU-001–FU-032: authored in English; independent technical and editorial review pending.
 - Remaining Main Questions PY-008–PY-045 and FU-029–FU-180: not yet authored in the language-separated structure.
 
 **Allocation rule:** Every Main Question receives exactly four Follow-ups covering mechanism, practical application, edge cases/trade-offs, and senior-level judgment or production implications.
