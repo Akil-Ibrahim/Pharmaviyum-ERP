@@ -14,38 +14,38 @@ English study material for PY-001–PY-019. Each Main Question has four locally 
 
 # PY-001 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Question (EN):** What is the Global Interpreter Lock (GIL) ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square) in CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square), and how does it affect concurrency and parallelism?
+**Question (EN):** What is the Global Interpreter Lock (GIL) in CPython, and how does it affect concurrency and parallelism?
 
 ## Understand the idea
 
-In the conventional GIL-enabled CPython build, only one thread ![Thread](https://img.shields.io/badge/-Thread-16a34a?style=flat-square) at a time can hold the GIL and execute Python bytecode ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square). Think of it as a shared key: one thread has it, while the others wait for their turn. This is a simplified analogy, but it captures the main idea.
+In the conventional GIL-enabled CPython build, only one thread at a time can hold the GIL and execute Python bytecode. Think of it as a shared key: one thread has it, while the others wait for their turn. This is a simplified analogy, but it captures the main idea.
 
 The GIL helps CPython coordinate access to interpreter state and Python objects. Historically, it also simplified reference counting and the integration of C extensions.
 
-## Concurrency ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) and parallelism
+## Concurrency and parallelism
 
-- **Concurrency:** multiple tasks ![Task](https://img.shields.io/badge/-Task-0ea5e9?style=flat-square) make progress during overlapping periods; they do not have to run at exactly the same instant.
-- **Parallelism ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square):** multiple tasks execute at the same time, for example on different CPU cores.
+- **Concurrency:** multiple tasks make progress during overlapping periods; they do not have to run at exactly the same instant.
+- **Parallelism:** multiple tasks execute at the same time, for example on different CPU cores.
 
-With the conventional GIL-enabled build, threads can provide concurrency, but CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) pure-Python threads generally cannot execute Python bytecode in parallel across multiple cores.
+With the conventional GIL-enabled build, threads can provide concurrency, but CPU-bound pure-Python threads generally cannot execute Python bytecode in parallel across multiple cores.
 
 ## When does the GIL matter?
 
-- **I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) work:** threads can be useful. While one thread waits for network, file, or other block ![Lock](https://img.shields.io/badge/-Lock-be123c?style=flat-square)ing I/O, the GIL is typically released and another thread can run.
-- **CPU-bound pure-Python work:** adding threads usually does not provide multi-core parallelism. Multiprocessing ![Multiprocessing](https://img.shields.io/badge/-Multiprocessing-7c3aed?style=flat-square) may be a better fit.
-- **Native extensions ![Native Extension](https://img.shields.io/badge/-Native-Extension-0f766e?style=flat-square):** some libraries release the GIL while running native code, so their computations may run in parallel.
+- **I/O-bound work:** threads can be useful. While one thread waits for network, file, or other blocking I/O, the GIL is typically released and another thread can run.
+- **CPU-bound pure-Python work:** adding threads usually does not provide multi-core parallelism. Multiprocessing may be a better fit.
+- **Native extensions:** some libraries release the GIL while running native code, so their computations may run in parallel.
 
-## Does the GIL make code thread-safe ![Thread Safety](https://img.shields.io/badge/-Thread-Safety-16a34a?style=flat-square)?
+## Does the GIL make code thread-safe?
 
-No. The GIL protects interpreter-level operations; it does not automatically protect application-level business logic. A sequence such as “read a value, modify it, write it back” may still need an explicit lock or another synchronization ![Synchronization](https://img.shields.io/badge/-Synchronization-be123c?style=flat-square) design.
+No. The GIL protects interpreter-level operations; it does not automatically protect application-level business logic. A sequence such as “read a value, modify it, write it back” may still need an explicit lock or another synchronization design.
 
-## Is the GIL a mutex ![Mutex](https://img.shields.io/badge/-Mutex-be123c?style=flat-square)?
+## Is the GIL a mutex?
 
-At a high level, the GIL is commonly described as a global mutual-exclusion lock. More precisely, in CPython 3.15.2 its state is protected by an internal mutex, and a condition variable ![Condition Variable](https://img.shields.io/badge/-Condition-Variable-be123c?style=flat-square) is used to coordinate waiting threads. So “the GIL acts like a global mutex” is a useful simplification; “it is implemented as one ordinary mutex” is not precise.
+At a high level, the GIL is commonly described as a global mutual-exclusion lock. More precisely, in CPython 3.15.2 its state is protected by an internal mutex, and a condition variable is used to coordinate waiting threads. So “the GIL acts like a global mutex” is a useful simplification; “it is implemented as one ordinary mutex” is not precise.
 
 ## What about Python 3.15.2?
 
-CPython also has an optional **free-threaded build ![Free-threaded](https://img.shields.io/badge/-Free-threaded-0f766e?style=flat-square)**, introduced experimentally in Python 3.13 and officially supported as an optional configuration from Python 3.14. It can run Python threads in parallel without the traditional GIL.
+CPython also has an optional **free-threaded build**, introduced experimentally in Python 3.13 and officially supported as an optional configuration from Python 3.14. It can run Python threads in parallel without the traditional GIL.
 
 It is not the default build. Some C extensions are not compatible and may cause the GIL to be enabled again. Free-threading does not guarantee that every application becomes faster: compatibility, synchronization, memory use, and real workload performance must be checked.
 
@@ -55,13 +55,13 @@ For runtime verification, `sysconfig.get_config_var("Py_GIL_DISABLED")` indicate
 
 “The Global Interpreter Lock, or GIL, is an interpreter-level mutual-exclusion mechanism in the conventional CPython build. It allows only one thread at a time to hold the GIL and execute Python bytecode. This simplifies coordination around interpreter state and object management, but limits multi-core parallelism for CPU-bound pure-Python threads.
 
-Threads are still useful for I/O-bound work because blocking I/O typically releases the GIL. For CPU-bound Python workloads, multiprocessing may be more appropriate, while some native extensions can release the GIL during computation. The GIL also does not guarantee application-level thread safety, so shared state ![Shared State](https://img.shields.io/badge/-Shared-State-d97706?style=flat-square) may still require explicit synchronization.
+Threads are still useful for I/O-bound work because blocking I/O typically releases the GIL. For CPU-bound Python workloads, multiprocessing may be more appropriate, while some native extensions can release the GIL during computation. The GIL also does not guarantee application-level thread safety, so shared state may still require explicit synchronization.
 
 Python additionally supports optional free-threaded builds, which can execute threads in parallel without the GIL. Before adopting one, I would verify dependency compatibility and benchmark the actual workload.”
 
 ---
 
-## PY-001 / FU-1 — What does the GIL protect? ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-001 / FU-1 — What does the GIL protect? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What does the GIL protect, and why does CPython use it?
 
@@ -75,7 +75,7 @@ The GIL coordinates access to parts of CPython's internal state and Python objec
 
 ---
 
-## PY-001 / FU-2 — How does the GIL affect CPU-bound and I/O-bound work? ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-001 / FU-2 — How does the GIL affect CPU-bound and I/O-bound work? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How does the GIL affect CPU-bound and I/O-bound multithreaded workloads?
 
@@ -89,7 +89,7 @@ CPU-bound work spends most of its time calculating. I/O-bound work spends much o
 
 ---
 
-## PY-001 / FU-3 — How do you choose between threading, multiprocessing, and asyncio ![Asyncio](https://img.shields.io/badge/-Asyncio-0891b2?style=flat-square)? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-001 / FU-3 — How do you choose between threading, multiprocessing, and asyncio? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How would you choose between threading, multiprocessing, and asyncio for a Python backend workload?
 
@@ -105,7 +105,7 @@ CPU-bound work spends most of its time calculating. I/O-bound work spends much o
 
 ---
 
-## PY-001 / FU-4 — What changes in free-threaded CPython? ![Free-threaded](https://img.shields.io/badge/-Free-threaded-0f766e?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-001 / FU-4 — What changes in free-threaded CPython? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** What changes in free-threaded CPython, and what should a team check before adopting it?
 
@@ -131,18 +131,18 @@ A free-threaded build can execute Python threads in parallel without the traditi
 
 ## Understand the idea
 
-- **Concurrency ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square)** means managing multiple tasks whose execution overlaps in time. The system lets each task make progress, often by switching between them.
-- **Parallelism ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square)** means actually executing multiple tasks at the same time, for example on different CPU cores.
+- **Concurrency** means managing multiple tasks whose execution overlaps in time. The system lets each task make progress, often by switching between them.
+- **Parallelism** means actually executing multiple tasks at the same time, for example on different CPU cores.
 
 Concurrency is about coordinating multiple tasks. Parallelism is about simultaneous execution. Concurrency does not require multiple CPU cores.
 
 ## How this applies to Python
 
-- **Threading ![Multithreading](https://img.shields.io/badge/-Multithreading-16a34a?style=flat-square):** multiple threads within one process; useful for blocking I/O and some native libraries ![Native Extension](https://img.shields.io/badge/-Native-Extension-0f766e?style=flat-square).
-- **Multiprocessing ![Multiprocessing](https://img.shields.io/badge/-Multiprocessing-7c3aed?style=flat-square):** separate processes that can execute on different CPU cores; often useful for CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) Python workloads.
-- **Asyncio ![Asyncio](https://img.shields.io/badge/-Asyncio-0891b2?style=flat-square):** cooperative concurrency managed by an event loop ![Event Loop](https://img.shields.io/badge/-Event-Loop-0891b2?style=flat-square). When one coroutine ![Coroutine](https://img.shields.io/badge/-Coroutine-0891b2?style=flat-square) awaits I/O, the event loop can run another. Asyncio does not make CPU-heavy code parallel by itself.
+- **Threading:** multiple threads within one process; useful for blocking I/O and some native libraries.
+- **Multiprocessing:** separate processes that can execute on different CPU cores; often useful for CPU-bound Python workloads.
+- **Asyncio:** cooperative concurrency managed by an event loop. When one coroutine awaits I/O, the event loop can run another. Asyncio does not make CPU-heavy code parallel by itself.
 
-In a conventional GIL ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square)-enabled CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) build, multiple threads do not execute Python bytecode ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square) in parallel. They can still provide concurrency, especially while waiting for I/O. A free-threaded ![Free-threaded](https://img.shields.io/badge/-Free-threaded-0f766e?style=flat-square) CPython build can execute Python code in parallel when the GIL is disabled; this is optional and not the default build.
+In a conventional GIL-enabled CPython build, multiple threads do not execute Python bytecode in parallel. They can still provide concurrency, especially while waiting for I/O. A free-threaded CPython build can execute Python code in parallel when the GIL is disabled; this is optional and not the default build.
 
 Python 3.15.2 also documents asyncio's use in free-threaded environments. A single event loop still runs its Python task code serially on its thread, but separate event loops in separate threads can run in parallel when the GIL is disabled. Asyncio synchronization primitives remain scoped to their event loop and should not be used as cross-thread synchronization tools.
 
@@ -154,13 +154,13 @@ A backend may need to call an external API, query a database, and process a larg
 
 “Concurrency is the ability to manage multiple tasks whose execution overlaps in time. Parallelism means executing multiple tasks at the same time, typically on different CPU cores.
 
-Concurrency is useful for I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) workloads because a program can make progress on other tasks while one task is waiting. Parallelism is useful for CPU-bound workloads because multiple computations can run simultaneously.
+Concurrency is useful for I/O-bound workloads because a program can make progress on other tasks while one task is waiting. Parallelism is useful for CPU-bound workloads because multiple computations can run simultaneously.
 
 In Python, threading and asyncio are commonly used for concurrency, while multiprocessing can provide parallel execution. In conventional CPython builds, the GIL limits parallel execution of Python bytecode across threads.”
 
 ---
 
-## PY-002 / FU-1 — Can concurrency exist without parallelism? ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) ![Thread](https://img.shields.io/badge/-Thread-16a34a?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-002 / FU-1 — Can concurrency exist without parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** Can concurrency exist without parallelism?
 
@@ -174,7 +174,7 @@ Yes. A single thread can make progress on multiple tasks by switching between th
 
 ---
 
-## PY-002 / FU-2 — What is the difference between I/O-bound and CPU-bound workloads? ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-002 / FU-2 — What is the difference between I/O-bound and CPU-bound workloads? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What is the difference between I/O-bound and CPU-bound workloads?
 
@@ -188,7 +188,7 @@ An **I/O-bound** workload spends much of its time waiting for external operation
 
 ---
 
-## PY-002 / FU-3 — How does the GIL affect concurrency and parallelism in CPython? ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square) ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) ![Thread](https://img.shields.io/badge/-Thread-16a34a?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-002 / FU-3 — How does the GIL affect concurrency and parallelism in CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How does the GIL affect concurrency and parallelism in CPython?
 
@@ -198,11 +198,11 @@ In conventional CPython builds, the GIL prevents multiple threads from executing
 
 **Interview answer (EN)**
 
-“In conventional CPython builds, the GIL prevents multiple threads from executing Python bytecode simultaneously. Threads can still provide concurrency, especially for I/O-bound workloads, but they generally do not provide parallel execution for CPU-bound Python code. Free-threaded builds change this limitation, although thread safety ![Thread Safety](https://img.shields.io/badge/-Thread-Safety-16a34a?style=flat-square) and extension compatibility still matter.”
+“In conventional CPython builds, the GIL prevents multiple threads from executing Python bytecode simultaneously. Threads can still provide concurrency, especially for I/O-bound workloads, but they generally do not provide parallel execution for CPU-bound Python code. Free-threaded builds change this limitation, although thread safety and extension compatibility still matter.”
 
 ---
 
-## PY-002 / FU-4 — How do you decide whether a workload needs concurrency or parallelism? ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) ![Asyncio](https://img.shields.io/badge/-Asyncio-0891b2?style=flat-square) ![Multiprocessing](https://img.shields.io/badge/-Multiprocessing-7c3aed?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-002 / FU-4 — How do you decide whether a workload needs concurrency or parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How do you decide whether a workload needs concurrency or parallelism?
 
@@ -224,37 +224,37 @@ First identify the bottleneck. If the workload mostly waits for network, databas
 
 # PY-003 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Question (EN):** How does Python ![Python](https://img.shields.io/badge/-Python-2563eb?style=flat-square) execute a program from source code to runtime ![Runtime](https://img.shields.io/badge/-Runtime-0ea5e9?style=flat-square) behavior?
+**Question (EN):** How does Python execute a program from source code to runtime behavior?
 
 ## The main idea
 
-Python does not simply execute source code one line at a time as it reads it. In CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square), source code is decoded, parsed, and compiled. The resulting code object ![Code Object](https://img.shields.io/badge/-Code-Object-7c3aed?style=flat-square)s are then executed by the interpreter ![Interpreter](https://img.shields.io/badge/-Interpreter-64748b?style=flat-square).
+Python does not simply execute source code one line at a time as it reads it. In CPython, source code is decoded, parsed, and compiled. The resulting code objects are then executed by the interpreter.
 
 A useful mental model:
 
 1. **Read and decode:** CPython reads the source and decodes it into text.
-2. **Parse:** the parser ![Parser](https://img.shields.io/badge/-Parser-7c3aed?style=flat-square) checks the grammar and builds an abstract syntax tree (AST ![AST](https://img.shields.io/badge/-AST-7c3aed?style=flat-square)).
-3. **Compile:** the compiler ![Compiler](https://img.shields.io/badge/-Compiler-7c3aed?style=flat-square) turns the parsed program into code objects containing bytecode ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square) and metadata.
+2. **Parse:** the parser checks the grammar and builds an abstract syntax tree (AST).
+3. **Compile:** the compiler turns the parsed program into code objects containing bytecode and metadata.
 4. **Execute:** the interpreter executes those code objects in a runtime environment.
-5. **Interact:** the program may call native extensions ![Native Extension](https://img.shields.io/badge/-Native-Extension-0f766e?style=flat-square), libraries, and operating-system services.
+5. **Interact:** the program may call native extensions, libraries, and operating-system services.
 
 This describes the usual CPython path. Python defines language behavior, but other Python implementations may use different execution machinery.
 
-## Compilation ![Compilation](https://img.shields.io/badge/-Compilation-7c3aed?style=flat-square) is not execution
+## Compilation is not execution
 
 Keep three events separate:
 
 - **Compilation:** the function body is compiled into a code object.
-- **Function definition:** when execution reaches a `def` statement, Python creates a function object ![Function Object](https://img.shields.io/badge/-Function-Object-16a34a?style=flat-square) and binds its name.
+- **Function definition:** when execution reaches a `def` statement, Python creates a function object and binds its name.
 - **Function call:** the function body starts running when the function is called.
 
-A function body is compiled when its containing module ![Module](https://img.shields.io/badge/-Module-0ea5e9?style=flat-square) is compiled, but it does not run just because the function was defined. A runtime error inside the body may therefore appear only when the function is called. Syntax errors are detected during parsing or compilation, before the module's top-level statements execute.
+A function body is compiled when its containing module is compiled, but it does not run just because the function was defined. A runtime error inside the body may therefore appear only when the function is called. Syntax errors are detected during parsing or compilation, before the module's top-level statements execute.
 
 ## Bytecode, code objects, and function objects
 
 - **Bytecode** is an instruction format used by CPython's interpreter. It is not native CPU machine code.
 - **Code object** stores compiled instructions and metadata, such as constants, names, and source-position information.
-- **Function object** is the callable object created by executing a function definition. It refers to a code object and carries execution context such as its global namespace ![Global Namespace](https://img.shields.io/badge/-Global-Namespace-64748b?style=flat-square), defaults, and closure.
+- **Function object** is the callable object created by executing a function definition. It refers to a code object and carries execution context such as its global namespace, defaults, and closure.
 
 A useful distinction: a code object represents compiled code; a function object connects that code to the context in which it will run.
 
@@ -262,13 +262,13 @@ A useful distinction: a code object represents compiled code; a function object 
 
 The Python 3.15.2 execution model describes conceptual runtime layers:
 
-- **Process ![Process](https://img.shields.io/badge/-Process-7c3aed?style=flat-square):** operating-system resources such as memory, file descriptors ![File Descriptor](https://img.shields.io/badge/-File-Descriptor-64748b?style=flat-square), and sockets.
+- **Process:** operating-system resources such as memory, file descriptors, and sockets.
 - **Python global runtime:** state shared at the runtime level.
 - **Interpreter:** interpreter-specific state and execution environment.
-- **Thread ![Thread](https://img.shields.io/badge/-Thread-16a34a?style=flat-square):** the host thread that executes Python and native code.
+- **Thread:** the host thread that executes Python and native code.
 - **Thread state:** Python execution state associated with a thread.
 
-A runtime can contain multiple interpreters, and an interpreter can have multiple thread state ![Thread State](https://img.shields.io/badge/-Thread-State-16a34a?style=flat-square)s. This is a conceptual model: implementations do not have to represent every layer as a separate concrete object.
+A runtime can contain multiple interpreters, and an interpreter can have multiple thread states. This is a conceptual model: implementations do not have to represent every layer as a separate concrete object.
 
 Do not confuse the Python interpreter with the operating-system process. A process is an OS-level execution container; the interpreter is the Python implementation executing code within that environment.
 
@@ -280,21 +280,21 @@ Also, avoid describing the interpreter as a permanently fixed loop over an uncha
 
 ## Adaptive specialization in modern CPython
 
-Modern CPython can adapt execution to observed runtime behavior. It may specialize instructions for common cases and use inline caches ![Inline Cache](https://img.shields.io/badge/-Inline-Cache-d97706?style=flat-square) to make repeated operations faster.
+Modern CPython can adapt execution to observed runtime behavior. It may specialize instructions for common cases and use inline caches to make repeated operations faster.
 
 This is an implementation optimization, not a change to Python's language semantics. The exact instructions and specialization strategy can change between CPython releases.
 
 The `dis` module can inspect CPython bytecode. Its adaptive view can show specialized instructions (for example, with `dis.dis(function, adaptive=True)`). This is useful for investigation, but bytecode should not be treated as a stable application interface.
 
-## What is a .pyc ![.pyc Cache](https://img.shields.io/badge/-PYC-Cache-0891b2?style=flat-square) file?
+## What is a.pyc file?
 
-Python can cache compiled module bytecode in `.pyc` files, usually under `__pycache__`. When the cache is valid, an import ![Import](https://img.shields.io/badge/-Import-0ea5e9?style=flat-square) may reuse it instead of compiling the source again.
+Python can cache compiled module bytecode in `.pyc` files, usually under `__pycache__`. When the cache is valid, an import may reuse it instead of compiling the source again.
 
-This is an optimization, not a requirement for every execution. A `.pyc` file contains Python bytecode, not native machine code ![Machine Code](https://img.shields.io/badge/-Machine-Code-d97706?style=flat-square). Cache validity is checked; the existence of a file alone does not mean Python will always use it.
+This is an optimization, not a requirement for every execution. A `.pyc` file contains Python bytecode, not native machine code. Cache validity is checked; the existence of a file alone does not mean Python will always use it.
 
 ## Why this matters in a backend service
 
-Consider a FastAPI ![FastAPI](https://img.shields.io/badge/-FastAPI-16a34a?style=flat-square) application. During startup, the process starts Python and the application imports its entry-point module and dependencies. Module-level statements execute: objects are created, routes are registered, and components are initialized.
+Consider a FastAPI application. During startup, the process starts Python and the application imports its entry-point module and dependencies. Module-level statements execute: objects are created, routes are registered, and components are initialized.
 
 Later, when an HTTP request arrives, the relevant endpoint and service functions are called. An error during import or module initialization can prevent startup; an error inside an endpoint may appear only when a request reaches that code.
 
@@ -306,19 +306,19 @@ This distinction helps separate startup failures from request-time failures.
 
 Compilation and execution are different. A function body is compiled with its containing module, but executing the function definition creates a function object; the body runs only when the function is called.
 
-Bytecode is not native machine code, and its format is a CPython implementation detail. Modern CPython can adapt and specialize bytecode at runtime, but those optimizations do not change the language-level contract. Compiled module bytecode may also be cached in .pyc files.
+Bytecode is not native machine code, and its format is a CPython implementation detail. Modern CPython can adapt and specialize bytecode at runtime, but those optimizations do not change the language-level contract. Compiled module bytecode may also be cached in.pyc files.
 
 For production diagnosis, I distinguish module import and startup behavior from request-time execution, and I separate Python language guarantees from CPython and operating-system implementation details.”
 
 ---
 
-## PY-003 / FU-1 — What are the main stages of Python execution? ![Python](https://img.shields.io/badge/-Python-2563eb?style=flat-square) ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) ![AST](https://img.shields.io/badge/-AST-7c3aed?style=flat-square) ![Compiler](https://img.shields.io/badge/-Compiler-7c3aed?style=flat-square) ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square) ![Interpreter](https://img.shields.io/badge/-Interpreter-64748b?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-003 / FU-1 — What are the main stages of Python execution? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What are the main stages between Python source code and the execution of its instructions in CPython?
 
 **Explanation**
 
-The usual CPython path is: read and decode source, parse it into an AST, compile it into code objects, and execute those objects in the runtime. Execution can create objects, resolve names, call functions, and interact with native libraries or the operating system ![Operating System](https://img.shields.io/badge/-Operating-System-64748b?style=flat-square).
+The usual CPython path is: read and decode source, parse it into an AST, compile it into code objects, and execute those objects in the runtime. Execution can create objects, resolve names, call functions, and interact with native libraries or the operating system.
 
 **Interview answer (EN)**
 
@@ -326,7 +326,7 @@ The usual CPython path is: read and decode source, parse it into an AST, compile
 
 ---
 
-## PY-003 / FU-2 — Why does running a module differ from importing it? ![Module](https://img.shields.io/badge/-Module-0ea5e9?style=flat-square) ![Import](https://img.shields.io/badge/-Import-0ea5e9?style=flat-square) ![Global Namespace](https://img.shields.io/badge/-Global-Namespace-64748b?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-003 / FU-2 — Why does running a module differ from importing it? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module?
 
@@ -340,13 +340,13 @@ When a file is run directly, its `__name__` is normally `"__main__"`. When impor
 
 ---
 
-## PY-003 / FU-3 — Which execution details are implementation-specific? ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square) ![Adaptive Specialization](https://img.shields.io/badge/-Adaptive-Specialization-d97706?style=flat-square) ![PyFrameObject](https://img.shields.io/badge/-PyFrameObject-64748b?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-003 / FU-3 — Which execution details are implementation-specific? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter?
 
 **Explanation**
 
-Python specifies language semantics, not one universal bytecode format or interpreter architecture. CPython opcodes, inline caches, adaptive specialization ![Adaptive Specialization](https://img.shields.io/badge/-Adaptive-Specialization-d97706?style=flat-square), and internal frame representations are implementation details that may change between releases. In particular, do not assume every function call must materialize a Python-visible `PyFrameObject ![PyFrameObject](https://img.shields.io/badge/-PyFrameObject-64748b?style=flat-square)`; CPython's internal execution-frame representation and the frame objects exposed for introspection are distinct concepts.
+Python specifies language semantics, not one universal bytecode format or interpreter architecture. CPython opcodes, inline caches, adaptive specialization, and internal frame representations are implementation details that may change between releases. In particular, do not assume every function call must materialize a Python-visible `PyFrameObject`; CPython's internal execution-frame representation and the frame objects exposed for introspection are distinct concepts.
 
 **Interview answer (EN)**
 
@@ -354,7 +354,7 @@ Python specifies language semantics, not one universal bytecode format or interp
 
 ---
 
-## PY-003 / FU-4 — How do you choose the diagnostic layer? ![Python](https://img.shields.io/badge/-Python-2563eb?style=flat-square) ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) ![Operating System](https://img.shields.io/badge/-Operating-System-64748b?style=flat-square) ![Runtime](https://img.shields.io/badge/-Runtime-0ea5e9?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-003 / FU-4 — How do you choose the diagnostic layer? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment?
 
@@ -375,7 +375,7 @@ Start broad with metrics, logs, and traces. Go deeper only when the evidence poi
 **References**
 - [Python 3.15.2 — Execution model](https://docs.python.org/3.15/reference/executionmodel.html)
 - [Python 3.15.2 — Code objects](https://docs.python.org/3.15/reference/datamodel.html#code-objects)
-- [Python 3.15.2 — dis module ![dis Module](https://img.shields.io/badge/-Dis-Module-0891b2?style=flat-square)](https://docs.python.org/3.15/library/dis.html)
+- [Python 3.15.2 — dis module](https://docs.python.org/3.15/library/dis.html)
 - [Python 3.15.2 — Command-line and environment](https://docs.python.org/3.15/using/cmdline.html)
 - [Python 3.15.2 — Import system](https://docs.python.org/3.15/reference/import.html)
 
@@ -384,15 +384,15 @@ Start broad with metrics, logs, and traces. Go deeper only when the evidence poi
 
 # PY-004 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Question (EN):** What happens during a function call ![Function Call](https://img.shields.io/badge/-Function-Call-2563eb?style=flat-square) in CPython?
+**Question (EN):** What happens during a function call in CPython?
 
 ## The main idea
 
-A function call is more than jumping to another line of code. Python evaluates the call expression, binds arguments to parameters ![Parameter](https://img.shields.io/badge/-Parameter-7c3aed?style=flat-square), establishes the execution state, runs the function body, and then returns a result or propagates an exception ![Exception](https://img.shields.io/badge/-Exception-dc2626?style=flat-square).
+A function call is more than jumping to another line of code. Python evaluates the call expression, binds arguments to parameters, establishes the execution state, runs the function body, and then returns a result or propagates an exception.
 
 A useful mental model:
 
-1. Evaluate the callable ![Callable](https://img.shields.io/badge/-Callable-2563eb?style=flat-square) expression and argument expressions.
+1. Evaluate the callable expression and argument expressions.
 2. Invoke the callable using Python's call semantics.
 3. Bind positional and keyword arguments to parameters.
 4. Establish or resume the function's execution state.
@@ -424,25 +424,25 @@ Important: default argument expressions are evaluated once, when the `def` state
 
 ## 3. Function object and code object
 
-- **Function object:** the callable runtime object. It refers to the compiled code and carries context such as the global namespace ![Global Namespace](https://img.shields.io/badge/-Global-Namespace-64748b?style=flat-square), defaults, and closure information.
+- **Function object:** the callable runtime object. It refers to the compiled code and carries context such as the global namespace, defaults, and closure information.
 - **Code object:** the compiled instructions and metadata. It can be reused across many calls; Python does not recompile the function body on every invocation.
 
 A function object therefore connects reusable compiled code to the context in which that code executes.
 
 ## 4. Execution state and frames
 
-Conceptually, an active function call needs an execution frame ![Execution Frame](https://img.shields.io/badge/-Execution-Frame-0ea5e9?style=flat-square). The frame represents information needed to execute the code and continue correctly, including:
+Conceptually, an active function call needs an execution frame. The frame represents information needed to execute the code and continue correctly, including:
 
 - the code being executed and the current instruction position;
 - local variables and parameter values;
-- access to global and built-in namespaces ![Builtins Namespace](https://img.shields.io/badge/-Builtins-Namespace-64748b?style=flat-square);
-- closure cells ![Closure Cell](https://img.shields.io/badge/-Closure-Cell-16a34a?style=flat-square) for variables captured from enclosing scopes;
+- access to global and built-in namespaces;
+- closure cells for variables captured from enclosing scopes;
 - control-flow and exception-handling state;
 - information needed for debugging, tracing, and returning to the caller.
 
-Do not assume that all local variables are always stored in a normal Python dictionary or that every call allocates a fully materialized `PyFrameObject ![PyFrameObject](https://img.shields.io/badge/-PyFrameObject-64748b?style=flat-square)`.
+Do not assume that all local variables are always stored in a normal Python dictionary or that every call allocates a fully materialized `PyFrameObject`.
 
-In modern CPython, the internal `_PyInterpreterFrame ![_PyInterpreterFrame](https://img.shields.io/badge/-_PyInterpreterFrame-64748b?style=flat-square)` representation is distinct from the Python-visible `PyFrameObject`. A visible frame object can be created or exposed when introspection, tracing, or debugging needs it. This is an implementation detail, not a Python language guarantee.
+In modern CPython, the internal `_PyInterpreterFrame` representation is distinct from the Python-visible `PyFrameObject`. A visible frame object can be created or exposed when introspection, tracing, or debugging needs it. This is an implementation detail, not a Python language guarantee.
 
 ## 5. How does the call return?
 
@@ -450,30 +450,30 @@ When the function executes `return expression`, the evaluated value is returned 
 
 If an exception is raised and not handled inside the function, it propagates to the caller. As it propagates, Python unwinds the active execution contexts until a matching handler is found or the exception reaches the top level.
 
-Tracebacks contain references to execution frames. Retaining an exception or traceback ![Traceback](https://img.shields.io/badge/-Traceback-d97706?style=flat-square) can therefore retain local variables and objects referenced by those frames.
+Tracebacks contain references to execution frames. Retaining an exception or traceback can therefore retain local variables and objects referenced by those frames.
 
 ## 6. Important CPython implementation detail: optimized calls
 
-CPython has optimized call machinery. Its C API documents the `tp_call ![tp_call](https://img.shields.io/badge/-tp_call-0891b2?style=flat-square)` and `vectorcall ![Vectorcall](https://img.shields.io/badge/-Vectorcall-0891b2?style=flat-square)` protocols; vectorcall can reduce argument packaging overhead for supported callables.
+CPython has optimized call machinery. Its C API documents the `tp_call` and `vectorcall` protocols; vectorcall can reduce argument packaging overhead for supported callables.
 
 Since CPython 3.11, ordinary Python-to-Python calls can use an optimized interpreter path that avoids the older pattern of recursively re-entering the evaluator for every Python call. Internal frames are also lighter than the traditional model.
 
 These are CPython implementation details. They explain performance behavior, but application correctness must not depend on a particular internal call path or frame layout.
 
-## 7. Generators and coroutine ![Coroutine](https://img.shields.io/badge/-Coroutine-0891b2?style=flat-square)s are different
+## 7. Generators and coroutines are different
 
 Calling an ordinary function starts executing its body immediately.
 
-Calling a generator ![Generator](https://img.shields.io/badge/-Generator-0891b2?style=flat-square) function creates a generator object; its body advances when the generator is iterated. Calling an `async def` function creates a coroutine object; its body runs when the coroutine is await ![Await](https://img.shields.io/badge/-Await-0891b2?style=flat-square)ed or scheduled.
+Calling a generator function creates a generator object; its body advances when the generator is iterated. Calling an `async def` function creates a coroutine object; its body runs when the coroutine is awaited or scheduled.
 
-Generators and coroutines preserve execution state across suspension points ![Suspension Point](https://img.shields.io/badge/-Suspension-Point-0891b2?style=flat-square). Their lifecycle is not the same as an ordinary function that runs to completion in one call.
+Generators and coroutines preserve execution state across suspension points. Their lifecycle is not the same as an ordinary function that runs to completion in one call.
 
 ## Practical example
 
 ~~~python
 def make_multiplier(factor):
     def multiply(value, *, offset=0):
-        return value ![Return Value](https://img.shields.io/badge/-Return-Value-16a34a?style=flat-square) * factor + offset
+        return value * factor + offset
     return multiply
 
 triple = make_multiplier(3)
@@ -488,11 +488,11 @@ When `make_multiplier(3)` runs, it creates and returns a function object. The re
 
 Conceptually, an execution frame represents the active call. In CPython, the internal frame representation and call path are implementation details and have changed across versions. During execution, the function can return a value or propagate an exception.
 
-A generator or coroutine function has a different lifecycle: calling it creates a generator or coroutine object rather than immediately running its body to completion. For performance, I profile representative workloads before optimizing call boundaries, because the dominant cost may be inside the function or in I/O ![I/O-bound](https://img.shields.io/badge/-I-O-bound-0891b2?style=flat-square) rather than the call mechanism itself.”
+A generator or coroutine function has a different lifecycle: calling it creates a generator or coroutine object rather than immediately running its body to completion. For performance, I profile representative workloads before optimizing call boundaries, because the dominant cost may be inside the function or in I/O rather than the call mechanism itself.”
 
 ---
 
-## PY-004 / FU-1 — What execution state is needed during a function call? ![Execution Frame](https://img.shields.io/badge/-Execution-Frame-0ea5e9?style=flat-square) ![_PyInterpreterFrame](https://img.shields.io/badge/-_PyInterpreterFrame-64748b?style=flat-square) ![PyFrameObject](https://img.shields.io/badge/-PyFrameObject-64748b?style=flat-square) ![Closure Cell](https://img.shields.io/badge/-Closure-Cell-16a34a?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-004 / FU-1 — What execution state is needed during a function call? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What execution state does CPython need to establish or maintain when entering and executing a Python function?
 
@@ -508,13 +508,13 @@ In CPython, internal execution frames are not identical to Python-visible `PyFra
 
 ---
 
-## PY-004 / FU-2 — How do you investigate function-call overhead? ![Profiler](https://img.shields.io/badge/-Profiler-16a34a?style=flat-square) ![Call Stack](https://img.shields.io/badge/-Call-Stack-64748b?style=flat-square) ![Self Time](https://img.shields.io/badge/-Self-Time-d97706?style=flat-square) ![Cumulative Time](https://img.shields.io/badge/-Cumulative-Time-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-004 / FU-2 — How do you investigate function-call overhead? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service?
 
 **Explanation**
 
-Start with a representative workload and a measurable service objective. Use a profiler ![Profiler](https://img.shields.io/badge/-Profiler-16a34a?style=flat-square) to inspect call count ![Call Count](https://img.shields.io/badge/-Call-Count-d97706?style=flat-square)s, self time ![Self Time](https://img.shields.io/badge/-Self-Time-d97706?style=flat-square), and cumulative time ![Cumulative Time](https://img.shields.io/badge/-Cumulative-Time-d97706?style=flat-square), then correlate the results with request traces.
+Start with a representative workload and a measurable service objective. Use a profiler to inspect call counts, self time, and cumulative time, then correlate the results with request traces.
 
 - **Self time:** time attributed to the function itself, excluding subcalls.
 - **Cumulative time:** time in the function plus its subcalls.
@@ -524,11 +524,11 @@ A deterministic profiler can provide detailed call information but add overhead.
 
 **Interview answer (EN)**
 
-“I define the target metric and capture a representative workload. I inspect call counts, self time, and cumulative time, and correlate the profile with request traces. A high call count alone does not prove that call dispatch is expensive; time may be spent in a database, network request, serialization, or native code ![Native Code](https://img.shields.io/badge/-Native-Code-0f766e?style=flat-square). I make a targeted change only after identifying the bottleneck, then compare latency ![Latency](https://img.shields.io/badge/-Latency-d97706?style=flat-square) percentiles, throughput ![Throughput](https://img.shields.io/badge/-Throughput-d97706?style=flat-square), CPU, memory, and correctness under the same workload.”
+“I define the target metric and capture a representative workload. I inspect call counts, self time, and cumulative time, and correlate the profile with request traces. A high call count alone does not prove that call dispatch is expensive; time may be spent in a database, network request, serialization, or native code. I make a targeted change only after identifying the bottleneck, then compare latency percentiles, throughput, CPU, memory, and correctness under the same workload.”
 
 ---
 
-## PY-004 / FU-3 — How do recursion ![Recursion](https://img.shields.io/badge/-Recursion-7c3aed?style=flat-square), exceptions, generators, and coroutines change the lifecycle? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-004 / FU-3 — How do recursion, exceptions, generators, and coroutines change the lifecycle? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call?
 
@@ -536,26 +536,26 @@ A deterministic profiler can provide detailed call information but add overhead.
 
 - **Recursion:** creates nested logical calls with separate parameters and local execution state. Deep recursion can hit the recursion limit.
 - **Exceptions:** transfer control by unwinding execution contexts until a matching handler is found.
-- **Generators:** calling a generator function creates a generator object. Its body advances during iteration and retains state between `yield ![Yield](https://img.shields.io/badge/-Yield-0891b2?style=flat-square)` points.
+- **Generators:** calling a generator function creates a generator object. Its body advances during iteration and retains state between `yield` points.
 - **Coroutines:** calling an `async def` function creates a coroutine object. Its body runs when awaited or scheduled, and it can suspend at `await` points.
 
-An event loop ![Event Loop](https://img.shields.io/badge/-Event-Loop-0891b2?style=flat-square) schedules coroutine progress; it does not create one operating-system thread per coroutine.
+An event loop schedules coroutine progress; it does not create one operating-system thread per coroutine.
 
 **Interview answer (EN)**
 
-“An ordinary function runs when called and completes by returning or raising. Recursion creates nested calls with separate logical execution state. Exceptions unwind control flow until a handler is found. A generator call returns an object whose body advances during iteration and retains state between yields. An async function call returns a coroutine object that runs when awaited or scheduled. These differences affect stack depth, scheduling, cancellation ![Cancellation](https://img.shields.io/badge/-Cancellation-dc2626?style=flat-square), and resource cleanup.”
+“An ordinary function runs when called and completes by returning or raising. Recursion creates nested calls with separate logical execution state. Exceptions unwind control flow until a handler is found. A generator call returns an object whose body advances during iteration and retains state between yields. An async function call returns a coroutine object that runs when awaited or scheduled. These differences affect stack depth, scheduling, cancellation, and resource cleanup.”
 
 ---
 
-## PY-004 / FU-4 — When should call mechanics influence an optimization decision? ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) ![Vectorcall](https://img.shields.io/badge/-Vectorcall-0891b2?style=flat-square) ![Benchmark](https://img.shields.io/badge/-Benchmark-d97706?style=flat-square) ![Latency](https://img.shields.io/badge/-Latency-d97706?style=flat-square) ![Throughput](https://img.shields.io/badge/-Throughput-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-004 / FU-4 — When should call mechanics influence an optimization decision? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile?
 
 **Explanation**
 
-Call mechanics matter when profiling shows that call dispatch or repeated wrapper layers consume a meaningful part of a CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) hot path. CPython optimizations such as vectorcall can reduce some overhead, but they do not make every call free.
+Call mechanics matter when profiling shows that call dispatch or repeated wrapper layers consume a meaningful part of a CPU-bound hot path. CPython optimizations such as vectorcall can reduce some overhead, but they do not make every call free.
 
-Validate the hypothesis with representative benchmark ![Benchmark](https://img.shields.io/badge/-Benchmark-d97706?style=flat-square)s, production metrics, and the Python versions the service supports. Consider readability and maintenance cost as well as speed.
+Validate the hypothesis with representative benchmarks, production metrics, and the Python versions the service supports. Consider readability and maintenance cost as well as speed.
 
 **Interview answer (EN)**
 
@@ -577,9 +577,9 @@ Validate the hypothesis with representative benchmark ![Benchmark](https://img.s
 
 **What it evaluates:** Name binding, identity versus equality, mutability, type checks, and API design.
 
-Every Python object ![Object](https://img.shields.io/badge/-Object-2563eb?style=flat-square) has an identity, a type, and a value. Identity ![Identity](https://img.shields.io/badge/-Identity-64748b?style=flat-square) distinguishes the particular object; type ![Type](https://img.shields.io/badge/-Type-7c3aed?style=flat-square) defines its behavior and supported operations; value ![Value](https://img.shields.io/badge/-Value-0ea5e9?style=flat-square) is the data or state it represents. An object's identity and type remain stable during its lifetime, while its value may change if it is mutable.
+Every Python object has an identity, a type, and a value. Identity distinguishes the particular object; type defines its behavior and supported operations; value is the data or state it represents. An object's identity and type remain stable during its lifetime, while its value may change if it is mutable.
 
-A variable is a name bound to an object, not a typed storage container; this is Python's name binding ![Name Binding](https://img.shields.io/badge/-Name-Binding-7c3aed?style=flat-square) model. Assignment normally binds a name; it does not copy the object. Multiple names can therefore refer to the same mutable object through aliasing ![Aliasing](https://img.shields.io/badge/-Aliasing-d97706?style=flat-square) and shared references ![Reference](https://img.shields.io/badge/-Reference-64748b?style=flat-square).
+A variable is a name bound to an object, not a typed storage container; this is Python's name binding model. Assignment normally binds a name; it does not copy the object. Multiple names can therefore refer to the same mutable object through aliasing and shared references.
 
 ~~~python
 first = [1, 2]
@@ -592,9 +592,9 @@ first == another    # True: equal values, different objects
 alias.append(3)     # The change is visible through first as well
 ~~~
 
-Use is ![is](https://img.shields.io/badge/-is-2563eb?style=flat-square) for identity-sensitive checks such as None or a private sentinel; use == ![==](https://img.shields.io/badge/-%3D%3D-0ea5e9?style=flat-square) for value equality ![Equality](https://img.shields.io/badge/-Equality-0ea5e9?style=flat-square). Use isinstance() ![isinstance()](https://img.shields.io/badge/-isinstance%28%29-7c3aed?style=flat-square) when subclasses are acceptable. Prefer protocols or polymorphism when callers need behavior rather than a specific implementation.
+Use is for identity-sensitive checks such as None or a private sentinel; use == for value equality. Use isinstance() when subclasses are acceptable. Prefer protocols or polymorphism when callers need behavior rather than a specific implementation.
 
-Do not confuse Python object identity with domain identity ![Domain Identity](https://img.shields.io/badge/-Domain-Identity-16a34a?style=flat-square). Two ORM instances may represent the same database row while being distinct Python objects. Use stable domain identifiers across persistence, serialization, and distributed boundaries. The id() ![id()](https://img.shields.io/badge/-id%28%29-64748b?style=flat-square) result is guaranteed to be unique only while the object is alive; an ID may be reused after the object is destroyed. In CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square), id() is currently the object's memory address, but that is an implementation detail, not a language guarantee.
+Do not confuse Python object identity with domain identity. Two ORM instances may represent the same database row while being distinct Python objects. Use stable domain identifiers across persistence, serialization, and distributed boundaries. The id() result is guaranteed to be unique only while the object is alive; an ID may be reused after the object is destroyed. In CPython, id() is currently the object's memory address, but that is an implementation detail, not a language guarantee.
 
 **Interview-Ready Answer (EN)**
 
@@ -606,7 +606,7 @@ Do not confuse Python object identity with domain identity ![Domain Identity](ht
 
 **Question (EN):** Which of an object's identity, type, and value can change during its lifetime?
 
-**Explanation:** Identity and type remain stable throughout an object's lifetime. Its value may change if it is mutable. Mutation changes the existing object; rebinding ![Rebinding](https://img.shields.io/badge/-Rebinding-0891b2?style=flat-square) changes which object a name refers to. Immutability is not necessarily deep: a tuple can contain a mutable list whose contents still change.
+**Explanation:** Identity and type remain stable throughout an object's lifetime. Its value may change if it is mutable. Mutation changes the existing object; rebinding changes which object a name refers to. Immutability is not necessarily deep: a tuple can contain a mutable list whose contents still change.
 
 **Interview-Ready Answer (EN)**
 
@@ -618,7 +618,7 @@ Do not confuse Python object identity with domain identity ![Domain Identity](ht
 
 **Question (EN):** How would you choose between identity checks, equality checks, and type checks in a code review?
 
-**Explanation:** Start with the contract being tested. Use is for object identity and singleton sentinels, == for value equality, and isinstance() when subclasses are accepted. An exact check such as type(value) is int deliberately rejects subclasses and should be used only when that restriction is part of the contract. Review custom __eq__ ![__eq__](https://img.shields.io/badge/-__eq__-0ea5e9?style=flat-square) and __hash__ ![__hash__](https://img.shields.io/badge/-__hash__-7c3aed?style=flat-square) together when objects are dictionary keys or set members.
+**Explanation:** Start with the contract being tested. Use is for object identity and singleton sentinels, == for value equality, and isinstance() when subclasses are accepted. An exact check such as type(value) is int deliberately rejects subclasses and should be used only when that restriction is part of the contract. Review custom __eq__ and __hash__ together when objects are dictionary keys or set members.
 
 **Interview-Ready Answer (EN)**
 
@@ -663,37 +663,37 @@ Do not confuse Python object identity with domain identity ![Domain Identity](ht
 
 **Short Answer**
 
-Attribute access ![Attribute](https://img.shields.io/badge/-Attribute-2563eb?style=flat-square) in Python is governed by the object model. For ordinary instance access, the lookup process involves the instance's type, its data descriptors, the instance namespace ![Instance Namespace](https://img.shields.io/badge/-Instance-Namespace-64748b?style=flat-square), and non-data descriptors or other class attributes. Descriptors customize access through `__get__`, `__set__`, and `__delete__`. `__getattribute__` intercepts ordinary attribute access, while `__getattr__` is a fallback invoked when normal lookup raises `AttributeError` ![AttributeError](https://img.shields.io/badge/-AttributeError-dc2626?style=flat-square). Implicit special-method operations ![Implicit Lookup](https://img.shields.io/badge/-Implicit-Lookup-0ea5e9?style=flat-square) often look up methods on the type rather than through the instance attribute namespace.
+Attribute access in Python is governed by the object model. For ordinary instance access, the lookup process involves the instance's type, its data descriptors, the instance namespace, and non-data descriptors or other class attributes. Descriptors customize access through `__get__`, `__set__`, and `__delete__`. `__getattribute__` intercepts ordinary attribute access, while `__getattr__` is a fallback invoked when normal lookup raises `AttributeError`. Implicit special-method operations often look up methods on the type rather than through the instance attribute namespace.
 
 **Explanation**
 
 An expression such as `obj.name` invokes attribute access machinery; it is not simply a dictionary lookup in `obj.__dict__`. The default behavior is implemented by `object.__getattribute__`, with the object's type and descriptor protocol determining the result.
 
-For a typical instance, the important attribute lookup ![Attribute Lookup](https://img.shields.io/badge/-Attribute-Lookup-64748b?style=flat-square) precedence rules are:
+For a typical instance, the important attribute lookup precedence rules are:
 
-1. A **data descriptor** ![Data Descriptor](https://img.shields.io/badge/-Data-Descriptor-be123c?style=flat-square) found on the type takes precedence over an entry with the same name in the instance namespace. A descriptor is a data descriptor when its type provides `__set__` or `__delete__`.
+1. A **data descriptor** found on the type takes precedence over an entry with the same name in the instance namespace. A descriptor is a data descriptor when its type provides `__set__` or `__delete__`.
 2. If no data descriptor applies, Python checks the instance namespace.
-3. If the name is not found there, a **non-data descriptor** ![Non-data Descriptor](https://img.shields.io/badge/-Non-data-Descriptor-0891b2?style=flat-square) or another class attribute may provide the result. A descriptor that defines `__get__` but not `__set__` or `__delete__` is non-data.
+3. If the name is not found there, a **non-data descriptor** or another class attribute may provide the result. A descriptor that defines `__get__` but not `__set__` or `__delete__` is non-data.
 4. If normal lookup fails, `__getattr__`, when defined, may provide a fallback value.
 
 This is a useful model for ordinary instance attribute access, not a universal description of every lookup form. Class attribute access, slots, custom `__getattribute__`, metaclasses, and special-method lookup have additional rules.
 
-**The descriptor protocol ![Descriptor Protocol](https://img.shields.io/badge/-Descriptor-Protocol-7c3aed?style=flat-square)**
+**The descriptor protocol**
 
-A descriptor ![Descriptor](https://img.shields.io/badge/-Descriptor-7c3aed?style=flat-square) is an object whose type defines one or more of `__get__` ![__get__](https://img.shields.io/badge/-__get__-0891b2?style=flat-square), `__set__` ![__set__](https://img.shields.io/badge/-__set__-be123c?style=flat-square), or `__delete__` ![__delete__](https://img.shields.io/badge/-__delete__-be123c?style=flat-square). Python recognizes these protocol methods on the descriptor's type, not merely as attributes attached to an individual descriptor instance. Descriptors are the foundation of properties, method binding, and several framework features. A function stored on a class is a non-data descriptor: accessing it through an instance invokes method binding ![Method Binding](https://img.shields.io/badge/-Method-Binding-16a34a?style=flat-square) and produces a bound method ![Bound Method](https://img.shields.io/badge/-Bound-Method-16a34a?style=flat-square). A `property` ![property](https://img.shields.io/badge/-property-16a34a?style=flat-square) is a data descriptor and can control reads and writes even when an instance dictionary contains a same-named key. For instance access, `__get__` receives the instance and its type; for class access, it receives `None` and the owner class.
+A descriptor is an object whose type defines one or more of `__get__`, `__set__`, or `__delete__`. Python recognizes these protocol methods on the descriptor's type, not merely as attributes attached to an individual descriptor instance. Descriptors are the foundation of properties, method binding, and several framework features. A function stored on a class is a non-data descriptor: accessing it through an instance invokes method binding and produces a bound method. A `property` is a data descriptor and can control reads and writes even when an instance dictionary contains a same-named key. For instance access, `__get__` receives the instance and its type; for class access, it receives `None` and the owner class.
 
 **Attribute access hooks**
 
-- `__getattribute__` ![__getattribute__](https://img.shields.io/badge/-__getattribute__-d97706?style=flat-square)`(self, name)` is called for ordinary attribute access and can customize or intercept lookup. A custom implementation commonly delegates to `object.__getattribute__` ![object.__getattribute__](https://img.shields.io/badge/-object.__getattribute__-64748b?style=flat-square)`(self, name)`; otherwise, careless implementations can recurse indefinitely.
-- `__getattr__` ![__getattr__](https://img.shields.io/badge/-__getattr__-d97706?style=flat-square)`(self, name)` is called only after ordinary lookup fails with `AttributeError`. It is appropriate for fallback behavior, such as proxy objects or dynamically exposed attributes.
+- `__getattribute__``(self, name)` is called for ordinary attribute access and can customize or intercept lookup. A custom implementation commonly delegates to `object.__getattribute__``(self, name)`; otherwise, careless implementations can recurse indefinitely.
+- `__getattr__``(self, name)` is called only after ordinary lookup fails with `AttributeError`. It is appropriate for fallback behavior, such as proxy objects or dynamically exposed attributes.
 
 **Special methods**
 
-Operations such as `len(obj)` (via `__len__` ![__len__](https://img.shields.io/badge/-__len__-0ea5e9?style=flat-square)), `iter(obj)` (via `__iter__` ![__iter__](https://img.shields.io/badge/-__iter__-0ea5e9?style=flat-square)), arithmetic, and context management use special-method lookup rules. For many implicit operations, Python looks up the special method on the type rather than consulting an instance attribute of the same name. Assigning `obj.__len__` therefore does not generally make `len(obj)` use that instance attribute. This type-level lookup supports consistent protocol behavior and allows optimized dispatch.
+Operations such as `len(obj)` (via `__len__`), `iter(obj)` (via `__iter__`), arithmetic, and context management use special-method lookup rules. For many implicit operations, Python looks up the special method on the type rather than consulting an instance attribute of the same name. Assigning `obj.__len__` therefore does not generally make `len(obj)` use that instance attribute. This type-level lookup supports consistent protocol behavior and allows optimized dispatch.
 
 **Senior-Level Perspective**
 
-When debugging unexpected attribute behavior, identify the exact lookup path: instance or class access, descriptor type, custom `__getattribute__`, fallback `__getattr__`, and whether the operation uses implicit special-method lookup. Avoid treating `__dict__` ![__dict__](https://img.shields.io/badge/-__dict__-64748b?style=flat-square) as the complete object model. Frameworks that use descriptors or dynamic attribute access should make these semantics explicit because they affect correctness, introspection, inheritance, and performance.
+When debugging unexpected attribute behavior, identify the exact lookup path: instance or class access, descriptor type, custom `__getattribute__`, fallback `__getattr__`, and whether the operation uses implicit special-method lookup. Avoid treating `__dict__` as the complete object model. Frameworks that use descriptors or dynamic attribute access should make these semantics explicit because they affect correctness, introspection, inheritance, and performance.
 
 **Interview-Ready Answer (EN)**
 
@@ -703,11 +703,11 @@ When debugging unexpected attribute behavior, identify the exact lookup path: in
 
 ---
 
-## PY-006 / FU-1 — Attribute lookup precedence ![Attribute Lookup](https://img.shields.io/badge/-Attribute-Lookup-64748b?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-006 / FU-1 — Attribute lookup precedence ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** In what order does Python search for an attribute on an instance, and how can an instance attribute interact with a class attribute?
 
-**What the interviewer evaluates:** Instance and class namespace ![Class Namespace](https://img.shields.io/badge/-Class-Namespace-64748b?style=flat-square)s, descriptor precedence, and the limits of the simplified lookup model.
+**What the interviewer evaluates:** Instance and class namespaces, descriptor precedence, and the limits of the simplified lookup model.
 
 **Short Answer**
 
@@ -725,7 +725,7 @@ This explains why assigning to an attribute can shadow a method in some cases, w
 
 ---
 
-## PY-006 / FU-2 — Data descriptors and non-data descriptors ![Data Descriptor](https://img.shields.io/badge/-Data-Descriptor-be123c?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-006 / FU-2 — Data descriptors and non-data descriptors ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What is the difference between a data descriptor and a non-data descriptor, and why does the distinction matter?
 
@@ -747,7 +747,7 @@ This distinction is important in frameworks that use descriptors for validation,
 
 ---
 
-## PY-006 / FU-3 — `__getattribute__` versus `__getattr__` ![__getattribute__](https://img.shields.io/badge/-__getattribute__-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-006 / FU-3 — `__getattribute__` versus `__getattr__` ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What is the difference between `__getattribute__` and `__getattr__`, and what risks arise when overriding them?
 
@@ -769,7 +769,7 @@ A custom `__getattribute__` can implement proxies, access control, lazy resoluti
 
 ---
 
-## PY-006 / FU-4 — Implicit special-method lookup ![Special Method](https://img.shields.io/badge/-Special-Method-0ea5e9?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-006 / FU-4 — Implicit special-method lookup ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** Why can assigning a special method to an instance fail to change the behavior of an implicit operation such as `len(obj)`?
 
@@ -781,7 +781,7 @@ Implicit special-method operations generally look up the relevant method on the 
 
 **Detailed Answer**
 
-Python's data model defines protocols through special methods such as `__len__`, `__iter__`, `__next__` ![__next__](https://img.shields.io/badge/-__next__-0ea5e9?style=flat-square), and arithmetic methods. When syntax or a built-in invokes one of these protocols, the interpreter generally performs special lookup on the type. This behavior avoids treating an arbitrary instance attribute as an implementation of a type-level protocol and permits optimized dispatch.
+Python's data model defines protocols through special methods such as `__len__`, `__iter__`, `__next__`, and arithmetic methods. When syntax or a built-in invokes one of these protocols, the interpreter generally performs special lookup on the type. This behavior avoids treating an arbitrary instance attribute as an implementation of a type-level protocol and permits optimized dispatch.
 
 This is different from explicitly evaluating `obj.__len__()`, which is ordinary attribute access followed by a call and may observe an instance attribute. The two expressions are therefore not interchangeable in all circumstances.
 
@@ -803,10 +803,10 @@ A list is a mutable ordered sequence; a tuple is an immutable ordered sequence; 
 
 **Explanation**
 
-- **List:** ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) supports indexed access, in-place updates, append, and removal. Indexing is O(1); appending is amortized O(1); inserting or deleting near the beginning or middle is O(n) because elements may move.
-- **Tuple:** ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) an immutable sequence with indexed access and iteration. Immutability applies to the tuple's references, not recursively to contained objects. A tuple is hashable only if all its elements are hashable.
-- **Set:** ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) stores unique hashable elements and is optimized for membership, deduplication, and set algebra. Membership, insertion, and deletion are average-case O(1), but can degrade under heavy collisions.
-- **Dictionary:** ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) maps hashable keys to values, preserves insertion order as a language guarantee since Python 3.7, and provides average-case O(1) lookup, insertion, and deletion. Updating an existing key does not move it; deleting and reinserting it places it at the end.
+- **List:** supports indexed access, in-place updates, append, and removal. Indexing is O(1); appending is amortized O(1); inserting or deleting near the beginning or middle is O(n) because elements may move.
+- **Tuple:** an immutable sequence with indexed access and iteration. Immutability applies to the tuple's references, not recursively to contained objects. A tuple is hashable only if all its elements are hashable.
+- **Set:** stores unique hashable elements and is optimized for membership, deduplication, and set algebra. Membership, insertion, and deletion are average-case O(1), but can degrade under heavy collisions.
+- **Dictionary:** maps hashable keys to values, preserves insertion order as a language guarantee since Python 3.7, and provides average-case O(1) lookup, insertion, and deletion. Updating an existing key does not move it; deleting and reinserting it places it at the end.
 
 These complexity figures are typical, not worst-case guarantees. They depend on hashing, collisions, resizing, and equality comparisons. CPython implementation details can change between versions and are not language guarantees.
 
@@ -833,11 +833,11 @@ Start with semantics and correctness, then profile representative data sizes and
 - [Python 3.15: What's New — frozendict (PEP 814)](https://docs.python.org/3.15/whatsnew/3.15.html)
 
 
-**Python 3.15 note:** ![frozendict](https://img.shields.io/badge/-frozendict-0891b2?style=flat-square) `frozendict` is a built-in immutable mapping, not a `dict` subclass. ![frozenset](https://img.shields.io/badge/-frozenset-0891b2?style=flat-square) `frozenset` is the immutable counterpart of `set` and is hashable when all its elements are hashable. It preserves insertion order. It is hashable only when all keys and values are hashable; immutability is shallow, so mutable values can still change. This is distinct from `types.MappingProxyType`, which is a read-only dynamic view of an underlying mapping.
+**Python 3.15 note:** `frozendict` is a built-in immutable mapping, not a `dict` subclass. `frozenset` is the immutable counterpart of `set` and is hashable when all its elements are hashable. It preserves insertion order. It is hashable only when all keys and values are hashable; immutability is shallow, so mutable values can still change. This is distinct from `types.MappingProxyType`, which is a read-only dynamic view of an underlying mapping.
 
 ---
 
-## PY-007 / FU-1 — Collection semantics and CPython representations ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b) ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square)
+## PY-007 / FU-1 — Collection semantics and CPython representations ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython?
 
@@ -851,7 +851,7 @@ Lists and tuples are ordered sequences indexed by position; lists allow item rep
 
 ---
 
-## PY-007 / FU-2 — Selecting a collection for a service ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b) ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square)
+## PY-007 / FU-2 — Selecting a collection for a service ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service?
 
@@ -865,7 +865,7 @@ Use a list for an ordered sequence that may change, a tuple for a fixed sequence
 
 ---
 
-## PY-007 / FU-3 — Ordering, copying, and complexity edge cases ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b) ![Insertion Order](https://img.shields.io/badge/-Insertion-Order-64748b?style=flat-square) ![Shallow Copy](https://img.shields.io/badge/-Shallow-Copy-d97706?style=flat-square) ![Hashability](https://img.shields.io/badge/-Hashability-7c3aed?style=flat-square)
+## PY-007 / FU-3 — Ordering, copying, and complexity edge cases ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity?
 
@@ -879,7 +879,7 @@ Dictionary insertion order is guaranteed by the language, but set iteration orde
 
 ---
 
-## PY-007 / FU-4 — Collection choice under production constraints ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b) ![Hash Table](https://img.shields.io/badge/-Hash-Table-7c3aed?style=flat-square) ![Mapping](https://img.shields.io/badge/-Mapping-7c3aed?style=flat-square)
+## PY-007 / FU-4 — Collection choice under production constraints ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy?
 
@@ -1494,7 +1494,7 @@ Define application exceptions by deriving from `Exception` or a suitable applica
 
 **Interview Answer (EN)**
 
-“Python exceptions derive from `BaseException`, with `Exception` as the base for ordinary application errors. I normally catch specific exception types and avoid catching `BaseException`, because that can intercept signals such as `KeyboardInterrupt` and `SystemExit`. A `try` suite is handled by matching `except` clauses; `else` runs only on success, and `finally` is for cleanup. Unhandled exceptions propagate up the call stack. When translating an exception across architectural layers, I preserve its cause with `raise ... from ...`. For multiple independent failures, Python 3.11 introduced `ExceptionGroup` and `except*`, which allow selective handling of subgroups. My general rule is to handle errors where recovery or meaningful translation is possible and preserve unexpected failures and their diagnostic context.”
+“Python exceptions derive from `BaseException`, with `Exception` as the base for ordinary application errors. I normally catch specific exception types and avoid catching `BaseException`, because that can intercept signals such as `KeyboardInterrupt` and `SystemExit`. A `try` suite is handled by matching `except` clauses; `else` runs only on success, and `finally` is for cleanup. Unhandled exceptions propagate up the call stack. When translating an exception across architectural layers, I preserve its cause with `raise... from...`. For multiple independent failures, Python 3.11 introduced `ExceptionGroup` and `except*`, which allow selective handling of subgroups. My general rule is to handle errors where recovery or meaningful translation is possible and preserve unexpected failures and their diagnostic context.”
 
 **Official references (Python 3.15.2)**
 
@@ -1531,11 +1531,11 @@ Translate at an abstraction boundary where the new layer can add meaning. For ex
 
 “I translate exceptions at architectural boundaries where the new abstraction adds useful meaning. I preserve the original cause with explicit chaining, map known domain errors to stable API responses, and avoid exposing internal details or misclassifying unexpected failures as client errors.”
 
-### PY-012 / FU-3 — Edge cases: What is the difference between `__cause__`, `__context__`, and `raise ... from None`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+### PY-012 / FU-3 — Edge cases: What is the difference between `__cause__`, `__context__`, and `raise... from None`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
-**Question (EN):** What is the difference between `__cause__`, `__context__`, and `raise ... from None`?
+**Question (EN):** What is the difference between `__cause__`, `__context__`, and `raise... from None`?
 
-**Question (RU):** В чём разница между `__cause__`, `__context__` и `raise ... from None`?
+**Question (RU):** В чём разница между `__cause__`, `__context__` и `raise... from None`?
 
 **Answer**
 
@@ -1543,7 +1543,7 @@ Translate at an abstraction boundary where the new layer can add meaning. For ex
 
 **Interview-Ready Answer (EN)**
 
-“`__context__` records an exception that was active when another exception was raised. `__cause__` records an explicit cause supplied with `raise ... from ...`. `from None` suppresses display of the implicit context but does not remove it from the exception object.”
+“`__context__` records an exception that was active when another exception was raised. `__cause__` records an explicit cause supplied with `raise... from...`. `from None` suppresses display of the implicit context but does not remove it from the exception object.”
 
 ### PY-012 / FU-4 — Senior judgment: When should you use `ExceptionGroup` and `except*` in concurrent systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
