@@ -8,7 +8,7 @@
 **Файл ответов:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Английская версия:** [EN Question Map](../EN/PYTHON_CORE_ADVANCED.md)
 
-## PY-001 — GIL, конкурентность и параллелизм
+## PY-001 — GIL, конкурентность и параллелизм ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Что такое Global Interpreter Lock (GIL) в CPython и как он влияет на конкурентность и параллелизм?
 
@@ -25,7 +25,7 @@
 - **FU-003 — Архитектурный выбор:** Как выбрать между threading, multiprocessing и asyncio для нагрузки Python backend?
 - **FU-004 — Senior-level суждение:** Что меняется в free-threaded CPython и что инженерной команде следует проверить перед его внедрением?
 
-## PY-002 — Конкурентность и параллелизм
+## PY-002 — Конкурентность и параллелизм ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** В чём разница между конкурентностью и параллелизмом и почему это различие важно в Python?
 
@@ -42,7 +42,7 @@
 - **FU-007 — Поведение CPython:** Как GIL влияет на конкурентность и параллелизм в CPython?
 - **FU-008 — Senior-level суждение:** Как определить, нужна ли задаче конкурентность или параллелизм?
 
-## PY-003 — Модель исполнения Python и runtime
+## PY-003 — Модель исполнения Python и runtime ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Как Python выполняет программу: от исходного кода до поведения во время выполнения?
 
@@ -65,7 +65,7 @@
 **Правило распределения:** для каждого Main Question предусматриваются ровно четыре Follow-up: механизм, практическое применение, граничные случаи и компромиссы, а также Senior-level суждение или production-последствия.
 
 
-## PY-004 — Вызовы функций и состояние выполнения
+## PY-004 — Вызовы функций и состояние выполнения ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Что происходит при вызове функции в CPython?
 
@@ -82,7 +82,7 @@
 
 
 
-## PY-005 — Объектная модель Python: идентичность, тип и значение
+## PY-005 — Объектная модель Python: идентичность, тип и значение ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Объясните объектную модель Python: идентичность, тип и значение объекта.
 
@@ -97,7 +97,7 @@
 - **FU-019 — Граничные случаи и компромиссы:** Почему использование is для сравнения строк, чисел и других значений может приводить к ненадёжным результатам?
 - **FU-020 — Senior-level суждение:** Как при проектировании API избежать случайной зависимости от идентичности объектов, их изменяемости или конкретных типов реализации?
 
-## PY-006 — Поиск атрибутов, дескрипторы и специальные методы
+## PY-006 — Поиск атрибутов, дескрипторы и специальные методы ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Как Python выполняет поиск атрибутов и какую роль в этом процессе играют дескрипторы и специальные методы?
 
@@ -116,7 +116,7 @@
 
 
 
-## PY-007 — Встроенные коллекции: семантика и выбор
+## PY-007 — Встроенные коллекции: семантика и выбор ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Чем списки, кортежи, множества и словари Python отличаются по семантике и внутреннему устройству?
 
@@ -134,7 +134,7 @@
 - **FU-028 — Senior-level суждение:** Как характер нагрузки, объём данных, частота изменений и давление на память влияют на выбор коллекции и стратегию бенчмаркинга?
 
 
-## PY-008 — Внутреннее устройство словарей и хеш-таблицы
+## PY-008 — Внутреннее устройство словарей и хеш-таблицы ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Как словари Python работают внутри и какие последствия для производительности и корректности имеет поведение хеш-таблиц?
 
@@ -151,7 +151,7 @@
 - **FU-031 — Корректность и проектирование:** Почему опасно использовать изменяемый объект как ключ словаря и как следует проектировать пользовательский тип ключа?
 - **FU-032 — Безопасность и production:** Как рандомизация хешей помогает защищать Python-сервисы и почему hash() нельзя использовать как постоянный идентификатор?
 
-## PY-009 — Управление памятью и сборка мусора
+## PY-009 — Управление памятью и сборка мусора ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Как работает управление памятью в Python и как взаимодействуют подсчёт ссылок и сборка мусора?
 
