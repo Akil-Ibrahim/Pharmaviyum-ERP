@@ -3,8 +3,8 @@
 **Язык:** Русский  
 **Базовая версия Python:** 3.15.2 — отмечать поведение, зависящее от версии, и отделять гарантии языка Python от деталей реализации CPython.  
 **Распределение раздела:** 45 основных вопросов + 180 дополнительных вопросов = 225  
-**Текущее покрытие:** PY-001–PY-010 и FU-001–FU-040  
-**Правило нумерации:** Ровно четыре Follow-up на каждый основной вопрос; идентификаторы FU нумеруются сквозным образом и не сбрасываются между основными вопросами.  
+**Текущее покрытие:** PY-001–PY-018; 18 основных вопросов и 72 дополнительных (FU-1–FU-4 для каждого основного вопроса)  
+**Правило нумерации:** Ровно четыре Follow-up на каждый основной вопрос с локальной нумерацией FU-1–FU-4. Дополнительные вопросы находятся внутри соответствующего основного PY-вопроса.  
 **Файл ответов:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Английская версия:** [EN Question Map](../EN/PYTHON_CORE_ADVANCED.md)
 
@@ -20,10 +20,10 @@
 
 Дополнительные вопросы:
 
-- **FU-001 — Механизм:** Почему традиционная сборка CPython использует GIL и что именно защищает эта блокировка? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-002 — Практическое применение:** Как GIL влияет на CPU-bound и I/O-bound многопоточные нагрузки в традиционной сборке CPython? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-003 — Архитектурный выбор:** Как выбрать между threading, multiprocessing и asyncio для нагрузки Python backend? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-004 — Senior-level суждение:** Что меняется в free-threaded CPython и что инженерной команде следует проверить перед его внедрением? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Механизм:** Почему традиционная сборка CPython использует GIL и что именно защищает эта блокировка? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Практическое применение:** Как GIL влияет на CPU-bound и I/O-bound многопоточные нагрузки в традиционной сборке CPython? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Архитектурный выбор:** Как выбрать между threading, multiprocessing и asyncio для нагрузки Python backend? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Что меняется в free-threaded CPython и что инженерной команде следует проверить перед его внедрением? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-002 — Конкурентность и параллелизм ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
@@ -37,10 +37,10 @@
 
 Дополнительные вопросы:
 
-- **FU-005 — Основы:** Может ли конкурентность существовать без параллелизма? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-006 — Анализ нагрузки:** Чем отличаются I/O-bound и CPU-bound задачи? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-007 — Поведение CPython:** Как GIL влияет на конкурентность и параллелизм в CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-008 — Senior-level суждение:** Как определить, нужна ли задаче конкурентность или параллелизм? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Основы:** Может ли конкурентность существовать без параллелизма? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Анализ нагрузки:** Чем отличаются I/O-bound и CPU-bound задачи? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Поведение CPython:** Как GIL влияет на конкурентность и параллелизм в CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Как определить, нужна ли задаче конкурентность или параллелизм? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-003 — Модель исполнения Python и runtime ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
@@ -52,10 +52,10 @@
 
 Дополнительные вопросы:
 
-- **FU-009 — Механизм:** Какие основные этапы проходит исходный код Python до выполнения инструкций в CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-010 — Практическое применение:** Как бы вы исследовали ситуацию, когда модуль Python ведёт себя по-разному при запуске как скрипт и при импорте из другого модуля? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-011 — Граничные случаи и компромиссы:** Какие аспекты байткода и поведения интерпретатора являются деталями реализации, а не гарантиями языка, и почему это различие важно? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-012 — Senior-level суждение:** Как при диагностике production-проблемы определить, нужно ли исследовать поведение на уровне Python, внутреннее устройство CPython или окружение операционной системы и runtime? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Механизм:** Какие основные этапы проходит исходный код Python до выполнения инструкций в CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Практическое применение:** Как бы вы исследовали ситуацию, когда модуль Python ведёт себя по-разному при запуске как скрипт и при импорте из другого модуля? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Граничные случаи и компромиссы:** Какие аспекты байткода и поведения интерпретатора являются деталями реализации, а не гарантиями языка, и почему это различие важно? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Как при диагностике production-проблемы определить, нужно ли исследовать поведение на уровне Python, внутреннее устройство CPython или окружение операционной системы и runtime? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## Статус покрытия
 
@@ -75,10 +75,10 @@
 
 Дополнительные вопросы:
 
-- **FU-013 — Механизм:** Какое состояние выполнения CPython должен создать или поддерживать при входе в Python-функцию и во время её выполнения? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-014 — Практическое применение:** Как с помощью профилирования и информации о стеке вызовов исследовать чрезмерные накладные расходы на вызовы функций в Python-сервисе? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-015 — Граничные случаи и жизненный цикл:** Как рекурсия, исключения, генераторы и асинхронные функции влияют на жизненный цикл выполнения по сравнению с обычным вызовом функции? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-016 — Senior-level суждение:** В каких случаях знание механики вызовов CPython может существенно повлиять на решение об оптимизации и как проверить, что такая оптимизация действительно оправданна? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Механизм:** Какое состояние выполнения CPython должен создать или поддерживать при входе в Python-функцию и во время её выполнения? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Практическое применение:** Как с помощью профилирования и информации о стеке вызовов исследовать чрезмерные накладные расходы на вызовы функций в Python-сервисе? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Граничные случаи и жизненный цикл:** Как рекурсия, исключения, генераторы и асинхронные функции влияют на жизненный цикл выполнения по сравнению с обычным вызовом функции? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** В каких случаях знание механики вызовов CPython может существенно повлиять на решение об оптимизации и как проверить, что такая оптимизация действительно оправданна? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 
 
@@ -92,10 +92,10 @@
 
 Дополнительные вопросы:
 
-- **FU-017 — Механизм:** Какие из характеристик объекта — идентичность, тип и значение — могут изменяться в течение его жизненного цикла? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-018 — Практическое применение:** Как выбирать между проверками идентичности, равенства и типа при code review? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-019 — Граничные случаи и компромиссы:** Почему использование is для сравнения строк, чисел и других значений может приводить к ненадёжным результатам? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-020 — Senior-level суждение:** Как при проектировании API избежать случайной зависимости от идентичности объектов, их изменяемости или конкретных типов реализации? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Механизм:** Какие из характеристик объекта — идентичность, тип и значение — могут изменяться в течение его жизненного цикла? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Практическое применение:** Как выбирать между проверками идентичности, равенства и типа при code review? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Граничные случаи и компромиссы:** Почему использование is для сравнения строк, чисел и других значений может приводить к ненадёжным результатам? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Как при проектировании API избежать случайной зависимости от идентичности объектов, их изменяемости или конкретных типов реализации? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-006 — Поиск атрибутов, дескрипторы и специальные методы ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
@@ -109,10 +109,10 @@
 
 Дополнительные вопросы:
 
-- **FU-021 — Механизм:** В каком порядке Python ищет атрибут экземпляра и как атрибут экземпляра взаимодействует с атрибутом класса? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-022 — Механизм и применение:** Чем data descriptor отличается от non-data descriptor и почему это различие важно? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-023 — Граничные случаи:** Чем отличаются `__getattribute__` и `__getattr__` и какие риски возникают при их переопределении? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-024 — Senior-level суждение:** Почему присваивание специального метода экземпляру может не изменить поведение неявной операции, например `len(obj)`? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Механизм:** В каком порядке Python ищет атрибут экземпляра и как атрибут экземпляра взаимодействует с атрибутом класса? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Механизм и применение:** Чем data descriptor отличается от non-data descriptor и почему это различие важно? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Граничные случаи:** Чем отличаются `__getattribute__` и `__getattr__` и какие риски возникают при их переопределении? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Почему присваивание специального метода экземпляру может не изменить поведение неявной операции, например `len(obj)`? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 
 
@@ -128,10 +128,10 @@
 
 Дополнительные вопросы:
 
-- **FU-025 — Механизм:** В чём ключевые семантические и типичные реализационные различия между списками, кортежами, множествами и словарями в CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-026 — Практическое применение:** Как выбрать встроенную коллекцию для упорядоченной последовательности, проверки принадлежности, удаления дубликатов и поиска по ключу в реальном сервисе? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-027 — Граничные случаи и компромиссы:** Что учитывать при использовании порядка вставки, поверхностного копирования, вложенных изменяемых значений и средней временной сложности? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-028 — Senior-level суждение:** Как характер нагрузки, объём данных, частота изменений и давление на память влияют на выбор коллекции и стратегию бенчмаркинга? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Механизм:** В чём ключевые семантические и типичные реализационные различия между списками, кортежами, множествами и словарями в CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Практическое применение:** Как выбрать встроенную коллекцию для упорядоченной последовательности, проверки принадлежности, удаления дубликатов и поиска по ключу в реальном сервисе? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Граничные случаи и компромиссы:** Что учитывать при использовании порядка вставки, поверхностного копирования, вложенных изменяемых значений и средней временной сложности? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Как характер нагрузки, объём данных, частота изменений и давление на память влияют на выбор коллекции и стратегию бенчмаркинга? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 
 ## PY-008 — Внутреннее устройство словарей и хеш-таблицы ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
@@ -146,10 +146,10 @@
 
 Дополнительные вопросы:
 
-- **FU-029 — Базовый контракт:** Какие требования должны соблюдать __hash__() и __eq__() у объектов, используемых в качестве ключей словаря? ![TYPE](https://img.shields.io/badge/TYPE-Core_contract-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-030 — Внутренний механизм:** Что происходит при коллизии ключей словаря и почему поиск или вставка могут замедляться? ![TYPE](https://img.shields.io/badge/TYPE-Internal_mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-031 — Корректность и проектирование:** Почему опасно использовать изменяемый объект как ключ словаря и как следует проектировать пользовательский тип ключа? ![TYPE](https://img.shields.io/badge/TYPE-Correctness_and_design-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-032 — Безопасность и production:** Как рандомизация хешей помогает защищать Python-сервисы и почему hash() нельзя использовать как постоянный идентификатор? ![TYPE](https://img.shields.io/badge/TYPE-Security_and_production-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Базовый контракт:** Какие требования должны соблюдать __hash__() и __eq__() у объектов, используемых в качестве ключей словаря? ![TYPE](https://img.shields.io/badge/TYPE-Core_contract-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Внутренний механизм:** Что происходит при коллизии ключей словаря и почему поиск или вставка могут замедляться? ![TYPE](https://img.shields.io/badge/TYPE-Internal_mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Корректность и проектирование:** Почему опасно использовать изменяемый объект как ключ словаря и как следует проектировать пользовательский тип ключа? ![TYPE](https://img.shields.io/badge/TYPE-Correctness_and_design-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Безопасность и production:** Как рандомизация хешей помогает защищать Python-сервисы и почему hash() нельзя использовать как постоянный идентификатор? ![TYPE](https://img.shields.io/badge/TYPE-Security_and_production-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-009 — Управление памятью и сборка мусора ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
@@ -163,10 +163,10 @@
 
 Дополнительные вопросы:
 
-- **FU-033 — Механизм:** Чем подсчёт ссылок отличается от сборки циклического мусора в CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-034 — Достижимость:** Почему цикл ссылок может оставаться в памяти, даже если приложение больше не использует ни один из его объектов? ![TYPE](https://img.shields.io/badge/TYPE-Reachability-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-035 — Жизненный цикл ресурсов:** Гарантируют ли del или определение __del__() немедленное уничтожение объекта или освобождение его ресурсов? ![TYPE](https://img.shields.io/badge/TYPE-Resource_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-036 — Production-диагностика:** Как бы вы исследовали устойчивый рост потребления памяти в долго работающем Python-сервисе? ![TYPE](https://img.shields.io/badge/TYPE-Production_diagnosis-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Механизм:** Чем подсчёт ссылок отличается от сборки циклического мусора в CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Достижимость:** Почему цикл ссылок может оставаться в памяти, даже если приложение больше не использует ни один из его объектов? ![TYPE](https://img.shields.io/badge/TYPE-Reachability-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Жизненный цикл ресурсов:** Гарантируют ли del или определение __del__() немедленное уничтожение объекта или освобождение его ресурсов? ![TYPE](https://img.shields.io/badge/TYPE-Resource_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Production-диагностика:** Как бы вы исследовали устойчивый рост потребления памяти в долго работающем Python-сервисе? ![TYPE](https://img.shields.io/badge/TYPE-Production_diagnosis-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-010 — Слабые ссылки, время жизни объектов и владение памятью ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
@@ -180,10 +180,10 @@
 
 Дополнительные вопросы:
 
-- **FU-037 — Механизм:** Что именно меняется во времени жизни объекта, когда сильная ссылка заменяется слабой? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-038 — Практическое применение:** Когда в реальном приложении следует выбирать `WeakValueDictionary`, `WeakKeyDictionary` или `WeakSet`? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-039 — Граничные случаи:** Можно ли создать слабую ссылку на любой объект Python и что необходимо учитывать, если класс использует `__slots__`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-040 — Senior-level суждение:** Как спроектировать реестр на основе слабых ссылок так, чтобы не создать новую утечку памяти и ненадёжную очистку? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Механизм:** Что именно меняется во времени жизни объекта, когда сильная ссылка заменяется слабой? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Практическое применение:** Когда в реальном приложении следует выбирать `WeakValueDictionary`, `WeakKeyDictionary` или `WeakSet`? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Граничные случаи:** Можно ли создать слабую ссылку на любой объект Python и что необходимо учитывать, если класс использует `__slots__`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Как спроектировать реестр на основе слабых ссылок так, чтобы не создать новую утечку памяти и ненадёжную очистку? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 ## PY-011 — Context Managers, Resource Management & RAII ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Как работают контекстные менеджеры Python, как они обеспечивают детерминированное управление ресурсами и чем отличаются от RAII?
@@ -196,10 +196,10 @@
 
 Дополнительные вопросы:
 
-- **FU-041 — Механизм:** Что именно происходит, когда блок `with` завершается из-за исключения? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-042 — Практическое применение:** Когда следует использовать `ExitStack` вместо вложенных операторов `with`? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-043 — Граничные случаи:** Что происходит, если `__enter__()` завершается ошибкой или если исключение возникает внутри самого `__exit__()`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-044 — Senior-level суждение:** Как спроектировать надёжное управление ресурсами в синхронном и асинхронном backend-приложении? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Механизм:** Что именно происходит, когда блок `with` завершается из-за исключения? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Практическое применение:** Когда следует использовать `ExitStack` вместо вложенных операторов `with`? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Граничные случаи:** Что происходит, если `__enter__()` завершается ошибкой или если исключение возникает внутри самого `__exit__()`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Как спроектировать надёжное управление ресурсами в синхронном и асинхронном backend-приложении? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 ## PY-012 — Exception Handling, Exception Hierarchy & Exception Groups ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Объясните иерархию исключений и модель обработки исключений в Python. Как работают распространение исключений, связывание причин и группы исключений?
@@ -212,10 +212,10 @@
 
 Дополнительные вопросы:
 
-- **FU-045 — Механизм:** Почему прикладной код обычно должен перехватывать `Exception`, а не `BaseException`? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-046 — Практическое применение:** Как backend должен преобразовывать низкоуровневое исключение в доменную ошибку или ошибку API? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-047 — Граничные случаи:** В чём разница между `__cause__`, `__context__` и `raise ... from None`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-048 — Senior-level суждение:** Когда следует использовать `ExceptionGroup` и `except*` в конкурентных системах? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Механизм:** Почему прикладной код обычно должен перехватывать `Exception`, а не `BaseException`? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Практическое применение:** Как backend должен преобразовывать низкоуровневое исключение в доменную ошибку или ошибку API? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Граничные случаи:** В чём разница между `__cause__`, `__context__` и `raise ... from None`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Когда следует использовать `ExceptionGroup` и `except*` в конкурентных системах? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-013 — Iterators, Generators & Lazy Evaluation ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
@@ -229,10 +229,10 @@
 
 Дополнительные вопросы:
 
-- **FU-049 — Механизм:** В чём разница между iterable и iterator и почему итератор обычно хранит состояние? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-050 — Практическое применение:** Когда в backend-пайплайне обработки данных следует выбрать генератор вместо списка? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-051 — Граничные случаи:** Что происходит, если внутри генератора возникает `StopIteration`, и как `yield from` выполняет делегирование? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-052 — Senior-level суждение:** Какие production-риски следует учитывать при использовании генераторов и асинхронных генераторов для потоков, связанных с ресурсами? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Механизм:** В чём разница между iterable и iterator и почему итератор обычно хранит состояние? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Практическое применение:** Когда в backend-пайплайне обработки данных следует выбрать генератор вместо списка? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Граничные случаи:** Что происходит, если внутри генератора возникает `StopIteration`, и как `yield from` выполняет делегирование? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Какие production-риски следует учитывать при использовании генераторов и асинхронных генераторов для потоков, связанных с ресурсами? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-014 — Decorators, Closures & Function Wrapping ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
@@ -246,27 +246,27 @@
 
 Дополнительные вопросы:
 
-- **FU-053 — Механизм:** Как Python применяет декоратор и когда именно он выполняется? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-054 — Практическое применение:** Как спроектировать настраиваемый декоратор для логирования, повторных попыток или контроля доступа? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-055 — Граничные случаи:** Что такое замыкание, как работает `nonlocal` и какие проблемы может создавать изменяемое состояние замыкания? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-056 — Senior-level суждение:** Почему `functools.wraps`, порядок декораторов и поддержка async важны в production-системах? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Механизм:** Как Python применяет декоратор и когда именно он выполняется? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Практическое применение:** Как спроектировать настраиваемый декоратор для логирования, повторных попыток или контроля доступа? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Граничные случаи:** Что такое замыкание, как работает `nonlocal` и какие проблемы может создавать изменяемое состояние замыкания? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Почему `functools.wraps`, порядок декораторов и поддержка async важны в production-системах? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 - **PY-015 — Scope, LEGB Rule & Name Resolution** ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
-  - **FU-057 — Механизм:** Как Python применяет LEGB и определяет локальные имена? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-  - **FU-058 — Применение:** Как диагностировать UnboundLocalError и выбрать local, global или nonlocal? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-  - **FU-059 — Граничные случаи:** Почему методы не замыкают namespace класса и что такое late binding? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-  - **FU-060 — Senior-level суждение:** Как управлять областями видимости и динамическим поиском имён в production? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+  - **FU-1 — Механизм:** Как Python применяет LEGB и определяет локальные имена? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+  - **FU-2 — Применение:** Как диагностировать UnboundLocalError и выбрать local, global или nonlocal? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+  - **FU-3 — Граничные случаи:** Почему методы не замыкают namespace класса и что такое late binding? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+  - **FU-4 — Senior-level суждение:** Как управлять областями видимости и динамическим поиском имён в production? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 - **PY-016 — Mutable vs Immutable Objects, Aliasing & Object Sharing** ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
-  - **FU-061 — Механизм:** В чём разница между mutation, rebinding и aliasing? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-  - **FU-062 — Применение:** Чем отличаются shallow copy и deep copy и когда применять каждый вариант? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-  - **FU-063 — Граничные случаи:** Почему tuple может содержать изменяемое состояние и что происходит при передаче mutable-объектов в функцию? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-  - **FU-064 — Senior-level суждение:** Как предотвращать непреднамеренное совместное использование mutable-состояния в production? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+  - **FU-1 — Механизм:** В чём разница между mutation, rebinding и aliasing? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+  - **FU-2 — Применение:** Чем отличаются shallow copy и deep copy и когда применять каждый вариант? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+  - **FU-3 — Граничные случаи:** Почему tuple может содержать изменяемое состояние и что происходит при передаче mutable-объектов в функцию? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+  - **FU-4 — Senior-level суждение:** Как предотвращать непреднамеренное совместное использование mutable-состояния в production? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 - **PY-017 — Python Argument Passing, Parameter Semantics & Function Signatures** ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
-  - **FU-065 — Механизм:** Как Python связывает позиционные и именованные аргументы и какие ошибки могут возникнуть? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-  - **FU-066 — Применение:** Когда API следует использовать positional-only и keyword-only параметры? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-  - **FU-067 — Граничные случаи:** Почему изменяемые значения по умолчанию опасны и какова роль аннотаций? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-  - **FU-068 — Senior-level суждение:** Как анализировать и проверять сигнатуры callable в production-инструментах и фреймворках? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+  - **FU-1 — Механизм:** Как Python связывает позиционные и именованные аргументы и какие ошибки могут возникнуть? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+  - **FU-2 — Применение:** Когда API следует использовать positional-only и keyword-only параметры? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+  - **FU-3 — Граничные случаи:** Почему изменяемые значения по умолчанию опасны и какова роль аннотаций? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+  - **FU-4 — Senior-level суждение:** Как анализировать и проверять сигнатуры callable в production-инструментах и фреймворках? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 - **PY-018 — Python Functions: First-Class Objects, Higher-Order Functions & Functional Programming** ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
-  - **FU-069 — Механизм:** Что означает, что функция является объектом первого класса, и чем это отличается от callable? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-  - **FU-070 — Применение:** Как применять функции высшего порядка в backend-приложении? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-  - **FU-071 — Граничные случаи:** Какие риски связаны с late binding и общим изменяемым состоянием замыкания? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-  - **FU-072 — Senior-level суждение:** Когда выбирать функциональную композицию вместо классов или императивного кода? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+  - **FU-1 — Механизм:** Что означает, что функция является объектом первого класса, и чем это отличается от callable? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+  - **FU-2 — Применение:** Как применять функции высшего порядка в backend-приложении? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+  - **FU-3 — Граничные случаи:** Какие риски связаны с late binding и общим изменяемым состоянием замыкания? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+  - **FU-4 — Senior-level суждение:** Когда выбирать функциональную композицию вместо классов или императивного кода? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
