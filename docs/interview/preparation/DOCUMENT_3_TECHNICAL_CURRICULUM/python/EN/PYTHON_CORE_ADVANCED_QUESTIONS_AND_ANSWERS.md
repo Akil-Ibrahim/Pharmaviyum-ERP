@@ -1555,3 +1555,87 @@ Use exception groups when multiple independent operations can fail and the syste
 **Interview-Ready Answer (EN)**
 
 “I use `ExceptionGroup` when several independent tasks can fail and all relevant failures need to be reported. I use `except*` to handle matching categories independently while allowing unmatched failures to propagate. This is particularly useful with structured concurrency, where a task group may surface multiple errors.”
+
+## PY-013 — Iterators, Generators & Lazy Evaluation ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Main Question:** Explain Python's iteration model. What is the difference between an iterable, an iterator, and a generator, and how do generators enable lazy evaluation?
+
+**Core explanation**
+
+An **iterable** is an object that provides an iterator, normally through `__iter__()`. An **iterator** implements `__iter__()` (returning itself) and `__next__()` (returning the next item or raising `StopIteration`). An iterable is a source from which iteration can be requested; an iterator is the stateful object that performs the traversal. Reusable containers commonly create a fresh iterator on each call to `iter()`, while an iterator is normally consumed as it advances. Once exhausted, a conforming iterator must continue raising `StopIteration`.
+
+A **generator** is a specialized iterator produced by a generator function or generator expression. A function containing `yield` is a generator function. Calling it creates a generator object without immediately executing the function body. Execution starts when the generator is advanced. At each `yield`, the generator produces a value and suspends while retaining its local bindings, instruction position, evaluation state, and exception-handling state. A later `next()` resumes it; the value of the suspended `yield` expression is `None` when resumed through `next()`.
+
+**Lazy evaluation** computes values only when requested. A list comprehension eagerly creates a list; a generator expression produces values incrementally. This can reduce intermediate memory use and enable streaming pipelines, but does not guarantee bounded memory for the whole application: a consumer that stores every result still materializes the data. Laziness also changes when side effects and exceptions occur.
+
+Generators support `send()`, `throw()`, and `close()`. `send(value)` resumes a started generator and makes the suspended `yield` expression evaluate to that value; a non-`None` value cannot be sent before the generator has started. `throw()` raises an exception at the suspension point. `close()` injects `GeneratorExit` to initiate cleanup. A generator should not yield another value while handling closure.
+
+`yield from` delegates iteration and generator control operations to a subiterator. It forwards relevant `send()`, `throw()`, and close behavior and evaluates to the subgenerator's return value when that subgenerator terminates. A `return value` from a generator is conveyed through `StopIteration.value`. Under PEP 479, a `StopIteration` escaping from inside generator code is converted to `RuntimeError`, preventing accidental silent termination.
+
+Asynchronous iteration is a separate protocol: `__aiter__()` returns an asynchronous iterator, `__anext__()` returns an awaitable for the next item, and `StopAsyncIteration` signals exhaustion. Asynchronous generators are defined with `async def` containing `yield` and are consumed with `async for`; they are not ordinary synchronous generators. If an asynchronous generator exits early, its asynchronous cleanup must be driven, normally through `aclose()` or the event loop's async-generator finalization machinery.
+
+**Production considerations**
+
+Generators are useful for large files, paginated APIs, ETL, database result streaming, and incremental transformations. Consider one-shot consumption, exception timing, side effects, cancellation, backpressure, and whether the consumer buffers results. If a generator owns a file, cursor, transaction, or network resource, use deterministic cleanup with context managers or explicit close semantics. Do not rely on garbage collection for timely release. For async generators, handle early exit and cancellation and ensure `aclose()` is awaited where required.
+
+**Interview-Ready Answer (EN)**
+
+“An iterable provides an iterator, while an iterator maintains traversal state and produces values through `__next__()`. A generator is a specialized iterator whose execution can suspend at `yield` and resume later, retaining its local state. Generator expressions enable lazy, incremental processing and can reduce intermediate memory use, which is useful for streaming and large datasets. However, laziness does not guarantee bounded memory or backpressure across the whole pipeline. In production I also account for one-shot consumption, exception and side-effect timing, cancellation, and deterministic cleanup of resources held by generators.”
+
+**Follow-ups**
+
+### FU-049 — Mechanism: What is the difference between an iterable and an iterator, and why is an iterator usually stateful? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** What is the difference between an iterable and an iterator, and why is an iterator usually stateful?
+
+**Question (RU):** В чём разница между iterable и iterator и почему итератор обычно хранит состояние?
+
+**Answer**
+
+An iterable provides a way to obtain an iterator through `__iter__()`. An iterator implements `__next__()` and maintains its current traversal state. A reusable iterable can commonly create multiple independent iterators, while a particular iterator is normally consumed as it advances. Once `StopIteration` has been raised, a conforming iterator continues to raise it.
+
+**Interview-Ready Answer (EN)**
+
+“An iterable provides an iterator, while an iterator produces values through `__next__()` and maintains traversal state. A reusable iterable can usually create multiple independent iterators, whereas a particular iterator is generally consumed as it advances.”
+
+### FU-050 — Application: When would you choose a generator instead of a list in a backend data-processing pipeline? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** When would you choose a generator instead of a list in a backend data-processing pipeline?
+
+**Question (RU):** Когда в backend-пайплайне обработки данных следует выбрать генератор вместо списка?
+
+**Answer**
+
+Choose a generator when data can be processed incrementally and the complete result does not need to be retained at once: large files, ETL, paginated API responses, or streaming transformations. It reduces intermediate materialization and lets a consumer process each item as it arrives. It does not automatically provide backpressure, bounded memory for the whole system, or repeatable traversal; those properties depend on the consumer and pipeline design.
+
+**Interview-Ready Answer (EN)**
+
+“I choose generators when data can be processed incrementally and the full result does not need to be retained. They reduce intermediate memory usage and support streaming pipelines, but I still design consumer behavior, backpressure, error handling, and resource cleanup explicitly.”
+
+### FU-051 — Edge cases: What happens when `StopIteration` is raised inside a generator, and how does `yield from` handle delegation? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** What happens when `StopIteration` is raised inside a generator, and how does `yield from` handle delegation?
+
+**Question (RU):** Что происходит, если внутри генератора возникает `StopIteration`, и как `yield from` выполняет делегирование?
+
+**Answer**
+
+Under PEP 479, a `StopIteration` that escapes from generator code is transformed into `RuntimeError`, preventing an internal error from looking like normal exhaustion. `yield from` delegates iteration to a subiterator and forwards generator control operations. If the subgenerator returns a value, that value becomes the result of the `yield from` expression.
+
+**Interview-Ready Answer (EN)**
+
+“PEP 479 converts an escaping `StopIteration` raised inside a generator into `RuntimeError`, preventing accidental silent termination. `yield from` delegates iteration and generator control operations to a subiterator, and it can capture the subgenerator's return value.”
+
+### FU-052 — Senior judgment: What production risks should you consider when using generators and asynchronous generators for resource-backed streams? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** What production risks should you consider when using generators and asynchronous generators for resource-backed streams?
+
+**Question (RU):** Какие production-риски необходимо учитывать при использовании генераторов и асинхронных генераторов для потоков, связанных с ресурсами?
+
+**Answer**
+
+Account for early termination, exceptions, task cancellation, connection closure, and execution of `finally` blocks. A generator may retain a file descriptor, transaction, cursor, or network connection while suspended. Use context managers or explicit close semantics for deterministic synchronous cleanup. For asynchronous generators, ensure early-exit cleanup is driven with `aclose()` and awaited where required. Do not depend on nondeterministic garbage-collection finalization for timely resource release.
+
+**Interview-Ready Answer (EN)**
+
+“For resource-backed generators, I explicitly handle early termination, exceptions, cancellation, and cleanup. I use context managers for deterministic synchronous resource management and ensure asynchronous generators are closed with `aclose()` or an equivalent lifecycle mechanism. I never rely on garbage collection for timely resource release.”
