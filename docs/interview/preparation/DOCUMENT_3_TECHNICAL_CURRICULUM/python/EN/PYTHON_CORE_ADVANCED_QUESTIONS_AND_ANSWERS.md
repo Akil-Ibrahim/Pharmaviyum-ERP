@@ -1299,3 +1299,120 @@ Do not use weak references as a substitute for closing resources. Use context ma
 **Interview-Ready Answer (EN)**
 
 “I separate ownership from observation. The registry stores weak references so it does not keep subscribers alive, and I ensure callbacks and closures do not capture the target strongly. I handle expired references as a normal case and use WeakMethod for bound-method subscriptions where appropriate. For external resources, I still use context managers; weak references and finalizers are not deterministic resource-management mechanisms.”
+---
+
+## PY-011 — Context Managers, Resource Management & RAII ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Main Question (EN):** How do Python context managers work, how do they provide deterministic resource management, and how do they compare with RAII?
+
+**Question (RU):** Как работают контекстные менеджеры Python, как они обеспечивают детерминированное управление ресурсами и чем отличаются от RAII?
+
+**Simple explanation**
+
+A context manager defines what happens when execution enters and leaves a block. The `with` statement makes cleanup predictable: after successful entry, the exit protocol is invoked when the block finishes, including when an exception occurs inside it.
+
+The key distinction is that resource cleanup is tied to the block boundary, not to when the garbage collector eventually destroys the object.
+
+**Protocol and execution lifecycle**
+
+A synchronous context manager implements:
+
+- `__enter__()`: prepares or acquires the resource and returns the value bound by `as`.
+- `__exit__(exc_type, exc_value, traceback)`: performs cleanup and receives exception details if the block exits because of an exception.
+
+The order is: evaluate the context expression, resolve the special methods, call `__enter__()`, bind its return value to `as`, execute the body, then call `__exit__()`.
+
+If `__enter__()` raises, that manager's `__exit__()` is not called. If `__enter__()` returns successfully, `__exit__()` is called when the suite exits. With multiple managers, entry is left-to-right and exit is right-to-left, as with nested `with` statements.
+
+If the body raises, `__exit__()` receives the exception type, value, and traceback. A truthy return value suppresses the exception; a false value or `None` allows it to propagate. On normal exit, all three arguments are `None`, and the return value is ignored. An exception raised by `__exit__()` becomes the new propagating exception.
+
+**Deterministic cleanup versus garbage collection**
+
+Use context managers for resources that require timely release: files, sockets, database connections and transactions, locks, temporary directories, and sessions. Garbage collection and finalizers do not provide a reliable application-level schedule for releasing such resources.
+
+A context manager does not necessarily destroy the Python object at block exit. It ends the managed context and performs the cleanup defined by that manager; the object itself may remain reachable.
+
+**Asynchronous context managers**
+
+An asynchronous context manager implements `__aenter__()` and `__aexit__()` and is used with `async with`. These methods are awaited, allowing asynchronous acquisition and cleanup, for example when managing network or database connections.
+
+**The contextlib toolkit**
+
+- `@contextmanager`: creates a synchronous context manager from a generator that yields exactly once. Code before `yield` enters the context; code after it performs exit/cleanup.
+- `@asynccontextmanager`: asynchronous-generator counterpart for `async with`.
+- `ExitStack`: manages a dynamic collection of synchronous context managers and cleanup callbacks; unwinds them in reverse registration order.
+- `AsyncExitStack`: manages asynchronous contexts and cleanup, and can combine synchronous and asynchronous managers.
+
+**RAII comparison**
+
+RAII in C++ associates resource release with object destruction and scope-bound lifetime. Python's `with` offers a similar practical guarantee for a block, but it is an explicit context-management protocol rather than a guarantee that object destruction occurs at block exit. Python does not have Rust-style borrow checking or ownership guarantees.
+
+**Senior-level design guidance**
+
+Acquire resources as close as possible to the scope that owns them. Register cleanup immediately after acquisition, preserve exception propagation by default, and use `ExitStack` when acquisition is conditional or dynamic. Do not use `__del__` or garbage-collection timing as the primary cleanup strategy for external resources.
+
+**Interview Answer (EN)**
+
+“Python context managers provide deterministic setup and cleanup around a block through the `with` statement. A synchronous manager implements `__enter__` and `__exit__`; the asynchronous protocol uses `__aenter__` and `__aexit__` with `async with`. Once entry succeeds, the exit method is called whether the block completes normally or raises. It receives exception details and can suppress an exception only by returning a truthy value. I use context managers for files, locks, transactions, sockets, and other external resources rather than relying on garbage collection or finalizers. Compared with C++ RAII, Python provides explicit block-scoped cleanup through a protocol; it does not require the managed object itself to be destroyed when the block ends.”
+
+**Official references (Python 3.15.2)**
+
+- [The with statement](https://docs.python.org/3.15/reference/compound_stmts.html#the-with-statement)
+- [With Statement Context Managers](https://docs.python.org/3.15/reference/datamodel.html#with-statement-context-managers)
+- [contextlib](https://docs.python.org/3.15/library/contextlib.html)
+
+### FU-041 — Mechanism: What exactly happens when a `with` block exits because of an exception? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** What exactly happens when a `with` block exits because of an exception?
+
+**Question (RU):** Что именно происходит, когда блок `with` завершается из-за исключения?
+
+**Answer**
+
+Python invokes `__exit__()` with the exception type, exception instance, and traceback. If the method returns a truthy value, the exception is suppressed and execution continues after the `with` statement. If it returns a false value or `None`, the exception propagates. If no exception occurred, `__exit__()` receives three `None` values and its return value is ignored. The method should normally not re-raise the supplied exception; propagation is controlled by its return value.
+
+**Interview-Ready Answer (EN)**
+
+“On exceptional exit, Python passes the exception details to `__exit__`. A truthy return value suppresses the exception; otherwise it propagates. On normal exit, the method receives three `None` values. I preserve propagation by default and suppress only explicitly expected exceptions.”
+
+### FU-042 — Application: When should you use `ExitStack` instead of nested `with` statements? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** When should you use `ExitStack` instead of nested `with` statements?
+
+**Question (RU):** Когда следует использовать `ExitStack` вместо вложенных операторов `with`?
+
+**Answer**
+
+Use `ExitStack` when the number of resources is dynamic, acquisition is conditional, or cleanup callbacks must be registered incrementally. Each successfully entered context or registered callback is unwound in reverse order. This also protects already-acquired resources if a later acquisition fails. For a small, fixed set of resources, ordinary nested or multi-item `with` statements are clearer.
+
+**Interview-Ready Answer (EN)**
+
+“I choose `ExitStack` when resource acquisition is dynamic or conditional. It lets me register cleanup immediately after each successful acquisition and unwinds the stack in reverse order, including when a later acquisition fails. For a fixed small set, regular `with` statements are simpler.”
+
+### FU-043 — Edge cases: What happens if `__enter__()` fails, or if `__exit__()` itself raises? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** What happens if `__enter__()` fails, or if `__exit__()` itself raises?
+
+**Question (RU):** Что происходит, если `__enter__()` завершается ошибкой или если исключение возникает внутри самого `__exit__()`?
+
+**Answer**
+
+If `__enter__()` raises before returning, the context manager has not successfully entered, so its `__exit__()` is not invoked automatically. Therefore, an `__enter__()` implementation that acquires one resource and then performs another fallible operation must clean up the first resource itself if the later operation fails. `ExitStack` can help register cleanup during partial acquisition. If `__exit__()` raises while handling an exception from the body, the new exception propagates and the original exception is generally retained as its context.
+
+**Interview-Ready Answer (EN)**
+
+“Automatic exit is guaranteed only after `__enter__` returns successfully. Partial acquisition inside `__enter__` therefore needs its own rollback or an `ExitStack`. If `__exit__` raises, that new failure propagates, with the earlier exception available through exception chaining.”
+
+### FU-044 — Senior judgment: How would you design reliable resource management in a synchronous and asynchronous backend? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How would you design reliable resource management in a synchronous and asynchronous backend?
+
+**Question (RU):** Как спроектировать надёжное управление ресурсами в синхронном и асинхронном backend-приложении?
+
+**Answer**
+
+Define ownership and lifetime at the layer that acquires the resource. Use synchronous context managers for synchronous resources and asynchronous context managers for resources whose acquisition or cleanup requires awaiting. Keep transaction boundaries explicit, release locks in all exit paths, and register cleanup immediately after acquisition. Use `ExitStack` or `AsyncExitStack` for optional or variable resource sets. Preserve unexpected exceptions, make cleanup idempotent where practical, and do not rely on garbage collection or `__del__` for timely release. Also ensure that a resource is not used after its context has ended.
+
+**Interview-Ready Answer (EN)**
+
+“I make resource ownership and lifetime explicit. Synchronous resources use `with`; asynchronous resources use `async with`. I keep database transaction and lock scopes narrow, register cleanup immediately, and use the appropriate exit stack for dynamic acquisition. Unexpected exceptions propagate, cleanup is safe on every exit path, and no correctness property depends on garbage-collection timing.”
