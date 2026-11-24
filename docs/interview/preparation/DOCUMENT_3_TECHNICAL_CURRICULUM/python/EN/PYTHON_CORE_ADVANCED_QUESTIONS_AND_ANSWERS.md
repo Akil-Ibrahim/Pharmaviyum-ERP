@@ -31,7 +31,7 @@ With the conventional GIL-enabled build, threads can provide concurrency, but CP
 
 ## When does the GIL matter?
 
-- **I/O-bound ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) work:** threads can be useful. While one thread waits for network, file, or other block ![Lock](https://img.shields.io/badge/-Lock-be123c?style=flat-square)ing I/O, the GIL is typically released and another thread can run.
+- **I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) work:** threads can be useful. While one thread waits for network, file, or other block ![Lock](https://img.shields.io/badge/-Lock-be123c?style=flat-square)ing I/O, the GIL is typically released and another thread can run.
 - **CPU-bound pure-Python work:** adding threads usually does not provide multi-core parallelism. Multiprocessing ![Multiprocessing](https://img.shields.io/badge/-Multiprocessing-7c3aed?style=flat-square) may be a better fit.
 - **Native extensions ![Native Extension](https://img.shields.io/badge/-Native-Extension-0f766e?style=flat-square):** some libraries release the GIL while running native code, so their computations may run in parallel.
 
@@ -75,7 +75,7 @@ The GIL coordinates access to parts of CPython's internal state and Python objec
 
 ---
 
-## PY-001 / FU-2 — How does the GIL affect CPU-bound and I/O-bound work? ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-001 / FU-2 — How does the GIL affect CPU-bound and I/O-bound work? ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How does the GIL affect CPU-bound and I/O-bound multithreaded workloads?
 
@@ -154,7 +154,7 @@ A backend may need to call an external API, query a database, and process a larg
 
 “Concurrency is the ability to manage multiple tasks whose execution overlaps in time. Parallelism means executing multiple tasks at the same time, typically on different CPU cores.
 
-Concurrency is useful for I/O-bound ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) workloads because a program can make progress on other tasks while one task is waiting. Parallelism is useful for CPU-bound workloads because multiple computations can run simultaneously.
+Concurrency is useful for I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) workloads because a program can make progress on other tasks while one task is waiting. Parallelism is useful for CPU-bound workloads because multiple computations can run simultaneously.
 
 In Python, threading and asyncio are commonly used for concurrency, while multiprocessing can provide parallel execution. In conventional CPython builds, the GIL limits parallel execution of Python bytecode across threads.”
 
@@ -174,7 +174,7 @@ Yes. A single thread can make progress on multiple tasks by switching between th
 
 ---
 
-## PY-002 / FU-2 — What is the difference between I/O-bound and CPU-bound workloads? ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-002 / FU-2 — What is the difference between I/O-bound and CPU-bound workloads? ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What is the difference between I/O-bound and CPU-bound workloads?
 
