@@ -145,18 +145,18 @@ Free-threaded-сборка позволяет потокам Python выполн
 
 ## Сначала поймём идею
 
-- **Конкурентность (concurrency)** — управление несколькими задачами, выполнение которых пересекается во времени. Система позволяет каждой задаче продвигаться вперёд, часто переключаясь между ними.
-- **Параллелизм (parallelism)** — фактическое одновременное выполнение нескольких задач, например на разных ядрах процессора.
+- **Конкурентность ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) (concurrency)** — управление несколькими задачами, выполнение которых пересекается во времени. Система позволяет каждой задаче продвигаться вперёд, часто переключаясь между ними.
+- **Параллелизм ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706) (parallelism)** — фактическое одновременное выполнение нескольких задач, например на разных ядрах процессора.
 
 Конкурентность описывает координацию нескольких задач. Параллелизм означает их одновременное выполнение. Для конкурентности не обязательно иметь несколько ядер процессора.
 
 ## Как это применяется в Python
 
-- **Threading:** несколько потоков внутри одного процесса; подходит для блокирующего I/O и некоторых нативных библиотек.
-- **Multiprocessing:** отдельные процессы, которые могут выполняться на разных ядрах; часто подходит для CPU-bound задач на Python.
-- **Asyncio:** кооперативная конкурентность под управлением event loop. Когда coroutine ожидает I/O, event loop может запустить другую. Сам по себе asyncio не делает CPU-intensive код параллельным.
+- **Threading ![ENTITY: Multithreading](https://img.shields.io/badge/ENTITY-Multithreading-16a34a):** несколько потоков внутри одного процесса; подходит для блокирующего I/O и некоторых нативных библиотек ![ENTITY: Native Extension](https://img.shields.io/badge/ENTITY-Native-Extension-0f766e).
+- **Multiprocessing ![ENTITY: Multiprocessing](https://img.shields.io/badge/ENTITY-Multiprocessing-7c3aed):** отдельные процессы, которые могут выполняться на разных ядрах; часто подходит для CPU-bound ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) задач на Python.
+- **Asyncio ![ENTITY: Asyncio](https://img.shields.io/badge/ENTITY-Asyncio-0891b2):** кооперативная конкурентность под управлением event loop ![ENTITY: Event Loop](https://img.shields.io/badge/ENTITY-Event-Loop-0891b2). Когда coroutine ![ENTITY: Coroutine](https://img.shields.io/badge/ENTITY-Coroutine-0891b2) ожидает I/O, event loop может запустить другую. Сам по себе asyncio не делает CPU-intensive код параллельным.
 
-В обычной сборке CPython с GIL несколько потоков не выполняют Python bytecode параллельно. Но они всё равно могут обеспечивать конкурентность, особенно во время ожидания I/O. Free-threaded-сборка CPython может выполнять Python-код параллельно, если GIL отключён; такая сборка является опциональной и не используется по умолчанию.
+В обычной сборке CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) с GIL ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb) несколько потоков не выполняют Python bytecode ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b) параллельно. Но они всё равно могут обеспечивать конкурентность, особенно во время ожидания I/O. Free-threaded ![ENTITY: Free-threaded](https://img.shields.io/badge/ENTITY-Free-threaded-0f766e)-сборка CPython может выполнять Python-код параллельно, если GIL отключён; такая сборка является опциональной и не используется по умолчанию.
 
 В документации Python 3.15.2 также описано использование asyncio в free-threaded-среде. Один event loop по-прежнему последовательно выполняет Python-код своих задач в своём потоке, но отдельные event loop в разных потоках могут работать параллельно при отключённом GIL. Примитивы синхронизации asyncio относятся к своему event loop и не должны использоваться для синхронизации между потоками.
 
@@ -168,13 +168,13 @@ Backend может обращаться к внешнему API, выполня�
 
 «Конкурентность — это возможность управлять несколькими задачами, выполнение которых пересекается во времени. Параллелизм означает фактическое одновременное выполнение нескольких задач, обычно на разных ядрах процессора.
 
-Конкурентность полезна для I/O-bound задач, потому что программа может выполнять другие задачи, пока одна операция ожидает ответа. Параллелизм полезен для CPU-bound задач, поскольку несколько вычислений могут выполняться одновременно.
+Конкурентность полезна для I/O-bound ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) задач, потому что программа может выполнять другие задачи, пока одна операция ожидает ответа. Параллелизм полезен для CPU-bound задач, поскольку несколько вычислений могут выполняться одновременно.
 
 В Python для конкурентности часто используют threading и asyncio, а multiprocessing позволяет организовать параллельное выполнение. В обычных сборках CPython GIL ограничивает параллельное выполнение Python bytecode несколькими потоками».
 
 ---
 
-## PY-002 / FU-1 — Может ли конкурентность существовать без параллелизма? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-002 / FU-1 — Может ли конкурентность существовать без параллелизма? ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706) ![ENTITY: Thread](https://img.shields.io/badge/ENTITY-Thread-16a34a) ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Может ли конкурентность существовать без параллелизма?
 
@@ -190,7 +190,7 @@ Backend может обращаться к внешнему API, выполня�
 
 ---
 
-## PY-002 / FU-2 — Чем отличаются I/O-bound и CPU-bound задачи? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-002 / FU-2 — Чем отличаются I/O-bound и CPU-bound задачи? ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Чем отличаются I/O-bound и CPU-bound задачи?
 
@@ -206,7 +206,7 @@ Backend может обращаться к внешнему API, выполня�
 
 ---
 
-## PY-002 / FU-3 — Как GIL влияет на конкурентность и параллелизм в CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-002 / FU-3 — Как GIL влияет на конкурентность и параллелизм в CPython? ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb) ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Thread](https://img.shields.io/badge/ENTITY-Thread-16a34a) ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Как GIL влияет на конкурентность и параллелизм в CPython?
 
@@ -218,11 +218,11 @@ Backend может обращаться к внешнему API, выполня�
 
 **Ответ для собеседования (RU)**
 
-«В обычных сборках CPython GIL не позволяет нескольким потокам одновременно исполнять Python bytecode. Потоки всё равно обеспечивают конкурентность, особенно для I/O-bound задач, но обычно не обеспечивают параллельное выполнение CPU-bound Python-кода. Free-threaded-сборки меняют это ограничение, однако потокобезопасность и совместимость расширений остаются важными».
+«В обычных сборках CPython GIL не позволяет нескольким потокам одновременно исполнять Python bytecode. Потоки всё равно обеспечивают конкурентность, особенно для I/O-bound задач, но обычно не обеспечивают параллельное выполнение CPU-bound Python-кода. Free-threaded-сборки меняют это ограничение, однако потокобезопасность ![ENTITY: Thread Safety](https://img.shields.io/badge/ENTITY-Thread-Safety-16a34a) и совместимость расширений остаются важными».
 
 ---
 
-## PY-002 / FU-4 — Как определить, нужна ли задаче конкурентность или параллелизм? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-002 / FU-4 — Как определить, нужна ли задаче конкурентность или параллелизм? ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706) ![ENTITY: Asyncio](https://img.shields.io/badge/ENTITY-Asyncio-0891b2) ![ENTITY: Multiprocessing](https://img.shields.io/badge/ENTITY-Multiprocessing-7c3aed) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Как определить, нужна ли задаче конкурентность или параллелизм?
 
