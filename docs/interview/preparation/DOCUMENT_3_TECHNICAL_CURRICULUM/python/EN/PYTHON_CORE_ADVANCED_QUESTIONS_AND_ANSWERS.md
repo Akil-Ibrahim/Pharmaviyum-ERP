@@ -1266,3 +1266,112 @@ Identify the operation mix, data volume, ordering requirements, mutation frequen
 **Interview-Ready Answer (EN)**
 
 “I start from the production access pattern: reads versus writes, lookup versus iteration, ordering, data size, and memory limits. Then I benchmark representative distributions and measure latency and memory, including build and update costs. I avoid choosing from asymptotic complexity alone, and keep redundant indexes only when their measured benefit justifies their operational cost.”
+
+
+# PY-007 — Main Question
+
+**Question (EN):** How do Python dictionaries work internally, and what are the performance and correctness implications of hash-table behavior?
+
+**What the interviewer evaluates:** Understanding of hashing, key equality, collision resolution, resizing, complexity, and safe use of custom key types.
+
+**Short Answer**
+
+A dictionary is a mapping implemented in CPython with a hash-table design. For a lookup, Python computes the key's hash, uses it to locate candidate table positions, and checks equality when needed. This gives average-case O(1) lookup, insertion, and deletion, but collisions and expensive equality checks can degrade performance. Correctness depends on the key contract: equal keys must have equal hashes, and a key's hash/equality behavior must remain stable while it is stored.
+
+**How Lookup Works**
+
+1. Python obtains the key's hash through its hashing protocol.
+2. The hash is used to identify a candidate position in the table.
+3. If the position does not identify the requested key, the table follows its collision-resolution probe sequence.
+4. Candidate keys are compared for identity/equality as required.
+5. The value is returned when a matching key is found; otherwise the lookup reports absence.
+
+A hash is not a unique identifier. Different keys may have the same hash, so equality checks are essential. The dictionary must preserve correctness even when collisions occur.
+
+**Collisions, Resizing, and Complexity**
+
+A collision occurs when distinct keys map to the same candidate position or hash value. CPython resolves collisions through probing within its table; the exact algorithm and layout are implementation details and should not be treated as Python language guarantees. As entries accumulate, the table may resize and redistribute entries to preserve efficient lookup. Consequently, individual insertions can be more expensive, while insertion is generally described as amortized O(1).
+
+Lookup, insertion, and deletion are average-case O(1), not guaranteed worst-case O(1). Pathological collisions or costly equality methods can make operations much slower. Iterating over a dictionary is O(n) in the number of entries.
+
+**Key Correctness Contract**
+
+- If two keys compare equal, their hash values must be equal.
+- Unequal keys may share a hash; collisions are permitted.
+- A key's hash and equality behavior must not change while it is stored in a dictionary.
+- If a class overrides __eq__() without defining a compatible __hash__(), Python normally makes its instances unhashable by setting __hash__ to None.
+- Mutable objects whose equality depends on mutable state should generally not be hashable.
+
+**CPython 3.15.2 Perspective**
+
+CPython dictionaries use a compact, insertion-ordered hash-table design. At a high level, the table maintains indices used for lookup and entry storage containing keys and values. CPython also supports split-table dictionaries for certain instance attribute dictionaries. These are implementation details, not portable assumptions about every Python implementation. Exact layouts and probing behavior can evolve between CPython releases.
+
+**Senior-Level Perspective**
+
+Treat dictionary keys as stable values. For custom key classes, design __eq__() and __hash__() together and derive the hash from the same immutable fields used for equality. Avoid expensive or side-effecting equality methods. For untrusted input, consider algorithmic-complexity risks and keep hash randomization enabled; never use hash() as a persistent identifier, database key, or cross-process serialization value.
+
+**Interview-Ready Answer (EN)**
+
+“A Python dictionary is a hash-table-based mapping. Python hashes a key to find a candidate location, resolves collisions by probing, and uses equality to confirm the key. This provides average O(1) lookup, insertion, and deletion, but it is not a worst-case guarantee. Resizing keeps the table efficient as it grows, so insertion is generally amortized O(1). The key correctness rule is that equal objects must have equal hashes, and a key's hash and equality behavior must remain stable while it is in the dictionary. In production, I design custom keys around immutable equality fields, avoid relying on hash values across processes, and account for collision and memory costs.”
+
+**References**
+
+- [Python 3.15 data model: __hash__ and equality](https://docs.python.org/3.15/reference/datamodel.html#object.__hash__)
+- [Python 3.15 built-in types: dictionary](https://docs.python.org/3.15/library/stdtypes.html#mapping-types-dict)
+- [CPython dictionary implementation](https://github.com/python/cpython/blob/v3.15.2/Objects/dictobject.c)
+
+---
+
+## FU-025 — The hash and equality contract
+
+**Question (EN):** What contract must __hash__() and __eq__() satisfy for objects used as dictionary keys?
+
+**Answer**
+
+The essential rule is: if a == b, then hash(a) == hash(b). The reverse is not required; unequal objects may have identical hashes. A key's hash and equality behavior must remain stable while it is stored. If a class overrides __eq__() but does not provide a compatible __hash__(), Python normally marks instances as unhashable. For value-based keys, compute equality and hashing from the same immutable state.
+
+**Interview-Ready Answer (EN)**
+
+“Equal objects must have equal hashes, but equal hashes do not imply equal objects. Hash collisions are valid and are resolved by equality checks. A key must also remain stable while stored, so I base custom hashing and equality on immutable fields.”
+
+---
+
+## FU-026 — Collision resolution and resizing
+
+**Question (EN):** What happens when dictionary keys collide, and why can insertion or lookup become slower?
+
+**Answer**
+
+A collision means multiple keys compete for a candidate table position. CPython follows a probing strategy to find another slot and checks candidate keys for equality. As the table becomes more occupied, resizing allocates a larger table and redistributes entries. Typical operations remain average O(1), and insertion is amortized O(1), but pathological collision patterns or expensive equality checks can degrade performance. The exact probing algorithm is a CPython implementation detail.
+
+**Interview-Ready Answer (EN)**
+
+“Collisions are expected and do not break correctness: the table probes for candidate slots and equality determines whether a key matches. Resizing controls table occupancy as it grows. Average complexity is O(1), but worst-case behavior can be much slower, especially with pathological collisions or expensive equality methods.”
+
+---
+
+## FU-027 — Mutable custom keys and hash stability
+
+**Question (EN):** Why is it dangerous to use a mutable object as a dictionary key, and how should a custom key type be designed?
+
+**Answer**
+
+If a key's hash changes after insertion, the dictionary may search for it using a different location from the one where it was stored. If equality-relevant state changes, lookup and uniqueness behavior can also become inconsistent. A custom key should derive __eq__() and __hash__() from the same immutable fields. If equality is based on mutable state, the type should generally be unhashable.
+
+**Interview-Ready Answer (EN)**
+
+“A dictionary relies on a key's hash and equality remaining stable. Mutating fields that participate in either operation after insertion can make the entry effectively unreachable or create surprising behavior. I use immutable value fields for hashable keys, or make mutable domain objects unhashable.”
+
+---
+
+## FU-028 — Hash randomization and production security
+
+**Question (EN):** How does hash randomization help protect Python services, and why should hash() not be used as a persistent identifier?
+
+**Answer**
+
+Python salts the hashes of str and bytes with a process-specific unpredictable value by default. This makes precomputed collision attacks less practical and helps mitigate denial-of-service risks from adversarial dictionary keys. The resulting hash values can differ between process runs, so hash() is unsuitable for persistent IDs, database keys, cache keys shared across processes, or serialized identifiers. Use a stable, explicitly defined identifier or digest for those purposes.
+
+**Interview-Ready Answer (EN)**
+
+“Hash randomization makes collision attacks based on predictable string and bytes hashes harder. It is a mitigation, not a substitute for input limits and service-level protection. Since hashes are not stable across process runs, I never persist Python hash() results or use them as cross-process identifiers.”
