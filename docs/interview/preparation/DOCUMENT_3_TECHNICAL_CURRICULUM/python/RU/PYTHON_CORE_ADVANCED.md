@@ -3,7 +3,7 @@
 **Язык:** Русский  
 **Базовая версия Python:** 3.15.2 — отмечать поведение, зависящее от версии, и отделять гарантии языка Python от деталей реализации CPython.  
 **Распределение раздела:** 45 основных вопросов + 180 дополнительных вопросов = 225  
-**Текущее покрытие:** PY-001–PY-018; 18 основных вопросов и 72 дополнительных (FU-1–FU-4 для каждого основного вопроса)  
+**Текущее покрытие:** PY-001–PY-019; 19 основных вопросов и 76 дополнительных (FU-1–FU-4 для каждого основного вопроса)  
 **Правило нумерации:** Ровно четыре Follow-up на каждый основной вопрос с локальной нумерацией FU-1–FU-4. Дополнительные вопросы находятся внутри соответствующего основного PY-вопроса.  
 **Файл ответов:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Английская версия:** [EN Question Map](../EN/PYTHON_CORE_ADVANCED.md)
@@ -270,3 +270,21 @@
   - **FU-2 — Применение:** Как применять функции высшего порядка в backend-приложении? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
   - **FU-3 — Граничные случаи:** Какие риски связаны с late binding и общим изменяемым состоянием замыкания? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
   - **FU-4 — Senior-level суждение:** Когда выбирать функциональную композицию вместо классов или императивного кода? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+
+## PY-019 — Lambda-функции, анонимные функции и функциональные идиомы ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2--L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P1-d97706)
+
+**Основной вопрос:** Что такое lambda-выражения в Python, как они работают и когда их следует использовать вместо именованных функций?
+
+**Оригинальная формулировка (EN):** What are lambda expressions in Python, how do they work, and when should you use them instead of named functions?
+
+**Что оценивается:** Синтаксис и семантика lambda, объекты-функции, тело из одного выражения, замыкания, практическое применение callbacks, читаемость и выбор между lambda, def и встроенными идиомами.  
+**Уровень:** L2–L3 — Intermediate/Advanced  
+**Приоритет:** P1 — Важная тема Python Core
+
+Дополнительные вопросы:
+
+- **FU-1 — Механизм:** Какой объект-функцию создаёт lambda-выражение и чем его тело отличается от функции, определённой через def? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Практическое применение:** В каких API Python и преобразованиях данных полезны lambda-функции? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Граничные случаи:** Как lambda-выражения взаимодействуют с замыканиями, late binding, значениями параметров по умолчанию и introspection? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Когда следует заменить lambda именованной функцией или более понятным встроенным выражением? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
