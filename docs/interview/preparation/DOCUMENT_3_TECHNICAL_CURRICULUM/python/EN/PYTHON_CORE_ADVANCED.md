@@ -8,7 +8,7 @@
 **Answer file:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Russian version:** [RU Question Map](../RU/PYTHON_CORE_ADVANCED.md)
 
-## PY-001 — GIL, Concurrency & Parallelism
+## PY-001 — GIL, Concurrency & Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** What is the Global Interpreter Lock (GIL) in CPython, and how does it affect concurrency and parallelism?
 
@@ -23,7 +23,7 @@ Follow-ups:
 - **FU-003 — Design trade-offs:** How would you choose between threading, multiprocessing, and asyncio for a Python backend workload?
 - **FU-004 — Senior judgment:** What changes in free-threaded CPython, and what should an engineering team verify before adopting it?
 
-## PY-002 — Concurrency vs Parallelism
+## PY-002 — Concurrency vs Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** What is the difference between concurrency and parallelism, and why is the distinction important in Python?
 
@@ -38,7 +38,7 @@ Follow-ups:
 - **FU-007 — CPython behavior:** How does the GIL affect concurrency and parallelism in CPython?
 - **FU-008 — Senior judgment:** How do you decide whether a workload needs concurrency or parallelism?
 
-## PY-003 — Python Execution Model & Runtime
+## PY-003 — Python Execution Model & Runtime ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** How does Python execute a program from source code to runtime behavior?
 
@@ -61,7 +61,7 @@ Follow-ups:
 **Allocation rule:** Every Main Question receives exactly four Follow-ups covering mechanism, practical application, edge cases/trade-offs, and senior-level judgment or production implications.
 
 
-## PY-004 — Function Calls & Execution State
+## PY-004 — Function Calls & Execution State ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** What happens during a function call in CPython?
 
@@ -78,7 +78,7 @@ Follow-ups:
 
 
 
-## PY-005 — Python Object Model: Identity, Type & Value
+## PY-005 — Python Object Model: Identity, Type & Value ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** Explain Python's object model: identity, type, and value.
 
@@ -93,7 +93,7 @@ Follow-ups:
 - **FU-019 — Edge cases and trade-offs:** Why can using is to compare strings, numbers, or other values produce unreliable results?
 - **FU-020 — Senior judgment:** How should API design avoid accidental dependencies on object identity, mutability, or concrete implementation types?
 
-## PY-006 — Attribute Lookup, Descriptors & Special Methods
+## PY-006 — Attribute Lookup, Descriptors & Special Methods ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** How does Python resolve attribute access, and how do descriptors and special methods affect that process?
 
@@ -110,7 +110,7 @@ Follow-ups:
 
 
 
-## PY-007 — Built-in Collections: Semantics & Selection
+## PY-007 — Built-in Collections: Semantics & Selection ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** How do Python lists, tuples, sets, and dictionaries differ internally and semantically?
 
@@ -126,7 +126,7 @@ Follow-ups:
 - **FU-028 — Senior judgment:** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy?
 
 
-## PY-008 — Dictionary Internals & Hash Tables
+## PY-008 — Dictionary Internals & Hash Tables ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** How do Python dictionaries work internally, and what are the performance and correctness implications of hash-table behavior?
 
@@ -141,7 +141,7 @@ Follow-ups:
 - **FU-031 — Correctness and design:** Why is it dangerous to use a mutable object as a dictionary key, and how should a custom key type be designed?
 - **FU-032 — Security and production:** How does hash randomization help protect Python services, and why should hash() not be used as a persistent identifier?
 
-## PY-009 — Memory Management & Garbage Collection
+## PY-009 — Memory Management & Garbage Collection ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** How does memory management work in Python, and how do reference counting and garbage collection interact?
 
