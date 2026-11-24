@@ -803,10 +803,10 @@ A list is a mutable ordered sequence; a tuple is an immutable ordered sequence; 
 
 **Explanation**
 
-- **List:** supports indexed access, in-place updates, append, and removal. Indexing is O(1); appending is amortized O(1); inserting or deleting near the beginning or middle is O(n) because elements may move.
-- **Tuple:** an immutable sequence with indexed access and iteration. Immutability applies to the tuple's references, not recursively to contained objects. A tuple is hashable only if all its elements are hashable.
-- **Set:** stores unique hashable elements and is optimized for membership, deduplication, and set algebra. Membership, insertion, and deletion are average-case O(1), but can degrade under heavy collisions.
-- **Dictionary:** maps hashable keys to values, preserves insertion order as a language guarantee since Python 3.7, and provides average-case O(1) lookup, insertion, and deletion. Updating an existing key does not move it; deleting and reinserting it places it at the end.
+- **List:** ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) supports indexed access, in-place updates, append, and removal. Indexing is O(1); appending is amortized O(1); inserting or deleting near the beginning or middle is O(n) because elements may move.
+- **Tuple:** ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) an immutable sequence with indexed access and iteration. Immutability applies to the tuple's references, not recursively to contained objects. A tuple is hashable only if all its elements are hashable.
+- **Set:** ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) stores unique hashable elements and is optimized for membership, deduplication, and set algebra. Membership, insertion, and deletion are average-case O(1), but can degrade under heavy collisions.
+- **Dictionary:** ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) maps hashable keys to values, preserves insertion order as a language guarantee since Python 3.7, and provides average-case O(1) lookup, insertion, and deletion. Updating an existing key does not move it; deleting and reinserting it places it at the end.
 
 These complexity figures are typical, not worst-case guarantees. They depend on hashing, collisions, resizing, and equality comparisons. CPython implementation details can change between versions and are not language guarantees.
 
@@ -832,9 +832,12 @@ Start with semantics and correctness, then profile representative data sizes and
 - [Python 3.15 documentation: Data model](https://docs.python.org/3.15/reference/datamodel.html)
 - [Python 3.15: What's New — frozendict (PEP 814)](https://docs.python.org/3.15/whatsnew/3.15.html)
 
+
+**Python 3.15 note:** `frozendict` is a built-in immutable mapping, not a `dict` subclass. It preserves insertion order. It is hashable only when all keys and values are hashable; immutability is shallow, so mutable values can still change. This is distinct from `types.MappingProxyType`, which is a read-only dynamic view of an underlying mapping.
+
 ---
 
-## PY-007 / FU-1 — Collection semantics and CPython representations ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-007 / FU-1 — Collection semantics and CPython representations ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b) ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square)
 
 **Question (EN):** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython?
 
@@ -848,7 +851,7 @@ Lists and tuples are ordered sequences indexed by position; lists allow item rep
 
 ---
 
-## PY-007 / FU-2 — Selecting a collection for a service ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-007 / FU-2 — Selecting a collection for a service ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b) ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square)
 
 **Question (EN):** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service?
 
@@ -862,7 +865,7 @@ Use a list for an ordered sequence that may change, a tuple for a fixed sequence
 
 ---
 
-## PY-007 / FU-3 — Ordering, copying, and complexity edge cases ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-007 / FU-3 — Ordering, copying, and complexity edge cases ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b) ![Insertion Order](https://img.shields.io/badge/-Insertion-Order-64748b?style=flat-square) ![Shallow Copy](https://img.shields.io/badge/-Shallow-Copy-d97706?style=flat-square) ![Hashability](https://img.shields.io/badge/-Hashability-7c3aed?style=flat-square)
 
 **Question (EN):** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity?
 
@@ -876,7 +879,7 @@ Dictionary insertion order is guaranteed by the language, but set iteration orde
 
 ---
 
-## PY-007 / FU-4 — Collection choice under production constraints ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-007 / FU-4 — Collection choice under production constraints ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b) ![Hash Table](https://img.shields.io/badge/-Hash-Table-7c3aed?style=flat-square) ![Mapping](https://img.shields.io/badge/-Mapping-7c3aed?style=flat-square)
 
 **Question (EN):** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy?
 
