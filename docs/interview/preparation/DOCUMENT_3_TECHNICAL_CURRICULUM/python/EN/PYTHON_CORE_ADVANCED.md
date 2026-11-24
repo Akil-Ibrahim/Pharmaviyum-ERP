@@ -8,134 +8,11 @@
 **Answer file:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Russian version:** [RU Question Map](../RU/PYTHON_CORE_ADVANCED.md)
 
-## Technical Entity Badge Registry — PY-001
+## PY-001 — GIL, Concurrency & Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-Use the same entity badge and color whenever the entity appears in this curriculum. Badges identify technical concepts; they do not replace definitions or question-type badges.
+**Main Question:** What is the Global Interpreter Lock (GIL) in CPython, and how does it affect concurrency and parallelism?
 
-- ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square) — GIL
-- ![Thread](https://img.shields.io/badge/-Thread-16a34a?style=flat-square) — Thread
-- ![Process](https://img.shields.io/badge/-Process-7c3aed?style=flat-square) — Process
-- ![Multithreading](https://img.shields.io/badge/-Multithreading-16a34a?style=flat-square) — Multithreading
-- ![Multiprocessing](https://img.shields.io/badge/-Multiprocessing-7c3aed?style=flat-square) — Multiprocessing
-- ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) — Concurrency
-- ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) — Parallelism
-- ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) — CPU-bound
-- ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) — I/O-bound
-- ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) — CPython
-- ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square) — Python Bytecode
-- ![Native Extension](https://img.shields.io/badge/-Native-Extension-0f766e?style=flat-square) — Native Extension
-- ![Mutex](https://img.shields.io/badge/-Mutex-be123c?style=flat-square) — Mutex
-- ![Condition Variable](https://img.shields.io/badge/-Condition-Variable-be123c?style=flat-square) — Condition Variable
-- ![Lock](https://img.shields.io/badge/-Lock-be123c?style=flat-square) — Lock
-- ![Free-threaded](https://img.shields.io/badge/-Free-threaded-0f766e?style=flat-square) — Free-threaded
-- ![Asyncio](https://img.shields.io/badge/-Asyncio-0891b2?style=flat-square) — Asyncio
-- ![Task](https://img.shields.io/badge/-Task-0ea5e9?style=flat-square) — Task
-- ![Synchronization](https://img.shields.io/badge/-Synchronization-be123c?style=flat-square) — Synchronization
-- ![Thread Safety](https://img.shields.io/badge/-Thread-Safety-16a34a?style=flat-square) — Thread Safety
-- ![Shared State](https://img.shields.io/badge/-Shared-State-d97706?style=flat-square) — Shared State
-
-- ![Callable](https://img.shields.io/badge/-Callable-2563eb?style=flat-square) — Callable
-- ![Argument Binding](https://img.shields.io/badge/-Argument-Binding-7c3aed?style=flat-square) — Argument Binding
-- ![Parameter](https://img.shields.io/badge/-Parameter-7c3aed?style=flat-square) — Parameter
-- ![Execution Frame](https://img.shields.io/badge/-Execution-Frame-0ea5e9?style=flat-square) — Execution Frame
-- ![_PyInterpreterFrame](https://img.shields.io/badge/-_PyInterpreterFrame-64748b?style=flat-square) — _PyInterpreterFrame
-- ![PyFrameObject](https://img.shields.io/badge/-PyFrameObject-64748b?style=flat-square) — PyFrameObject
-- ![Closure Cell](https://img.shields.io/badge/-Closure-Cell-16a34a?style=flat-square) — Closure Cell
-- ![Global Namespace](https://img.shields.io/badge/-Global-Namespace-64748b?style=flat-square) — Global Namespace
-- ![Builtins Namespace](https://img.shields.io/badge/-Builtins-Namespace-64748b?style=flat-square) — Builtins Namespace
-- ![Traceback](https://img.shields.io/badge/-Traceback-d97706?style=flat-square) — Traceback
-- ![Vectorcall](https://img.shields.io/badge/-Vectorcall-0891b2?style=flat-square) — Vectorcall
-- ![tp_call](https://img.shields.io/badge/-tp_call-0891b2?style=flat-square) — tp_call
-- ![Generator](https://img.shields.io/badge/-Generator-0891b2?style=flat-square) — Generator
-- ![Coroutine](https://img.shields.io/badge/-Coroutine-0891b2?style=flat-square) — Coroutine
-- ![Event Loop](https://img.shields.io/badge/-Event-Loop-0891b2?style=flat-square) — Event Loop
-- ![Recursion](https://img.shields.io/badge/-Recursion-7c3aed?style=flat-square) — Recursion
-- ![Profiler](https://img.shields.io/badge/-Profiler-16a34a?style=flat-square) — Profiler
-- ![Sampling Profiler](https://img.shields.io/badge/-Sampling-Profiler-16a34a?style=flat-square) — Sampling Profiler
-- ![Self Time](https://img.shields.io/badge/-Self-Time-d97706?style=flat-square) — Self Time
-- ![Cumulative Time](https://img.shields.io/badge/-Cumulative-Time-d97706?style=flat-square) — Cumulative Time
-- ![Call Count](https://img.shields.io/badge/-Call-Count-d97706?style=flat-square) — Call Count
-- ![Benchmark](https://img.shields.io/badge/-Benchmark-d97706?style=flat-square) — Benchmark
-- ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) — CPU-bound
-- ![I/O-bound](https://img.shields.io/badge/-I-O-bound-0891b2?style=flat-square) — I/O-bound
-- ![Native Code](https://img.shields.io/badge/-Native-Code-0f766e?style=flat-square) — Native Code
-- ![Function Call](https://img.shields.io/badge/-Function-Call-2563eb?style=flat-square) — Function Call
-- ![Return Value](https://img.shields.io/badge/-Return-Value-16a34a?style=flat-square) — Return Value
-- ![Exception](https://img.shields.io/badge/-Exception-dc2626?style=flat-square) — Exception
-- ![Suspension Point](https://img.shields.io/badge/-Suspension-Point-0891b2?style=flat-square) — Suspension Point
-- ![Await](https://img.shields.io/badge/-Await-0891b2?style=flat-square) — Await
-- ![Yield](https://img.shields.io/badge/-Yield-0891b2?style=flat-square) — Yield
-- ![Cancellation](https://img.shields.io/badge/-Cancellation-dc2626?style=flat-square) — Cancellation
-- ![Call Stack](https://img.shields.io/badge/-Call-Stack-64748b?style=flat-square) — Call Stack
-- ![Latency](https://img.shields.io/badge/-Latency-d97706?style=flat-square) — Latency
-- ![Throughput](https://img.shields.io/badge/-Throughput-d97706?style=flat-square) — Throughput
-
-- ![Object](https://img.shields.io/badge/-Object-2563eb?style=flat-square) — Object
-- ![Identity](https://img.shields.io/badge/-Identity-64748b?style=flat-square) — Identity
-- ![Type](https://img.shields.io/badge/-Type-7c3aed?style=flat-square) — Type
-- ![Value](https://img.shields.io/badge/-Value-0ea5e9?style=flat-square) — Value
-- ![Name Binding](https://img.shields.io/badge/-Name-Binding-7c3aed?style=flat-square) — Name Binding
-- ![Equality](https://img.shields.io/badge/-Equality-0ea5e9?style=flat-square) — Equality
-- ![Mutability](https://img.shields.io/badge/-Mutability-d97706?style=flat-square) — Mutability
-- ![Mutable Object](https://img.shields.io/badge/-Mutable-Object-d97706?style=flat-square) — Mutable Object
-- ![Immutable Object](https://img.shields.io/badge/-Immutable-Object-0891b2?style=flat-square) — Immutable Object
-- ![Reference](https://img.shields.io/badge/-Reference-64748b?style=flat-square) — Reference
-- ![Aliasing](https://img.shields.io/badge/-Aliasing-d97706?style=flat-square) — Aliasing
-- ![Rebinding](https://img.shields.io/badge/-Rebinding-0891b2?style=flat-square) — Rebinding
-- ![Domain Identity](https://img.shields.io/badge/-Domain-Identity-16a34a?style=flat-square) — Domain Identity
-- ![id()](https://img.shields.io/badge/-id%28%29-64748b?style=flat-square) — id()
-- ![is](https://img.shields.io/badge/-is-2563eb?style=flat-square) — is
-- ![==](https://img.shields.io/badge/-%3D%3D-0ea5e9?style=flat-square) — ==
-- ![isinstance()](https://img.shields.io/badge/-isinstance%28%29-7c3aed?style=flat-square) — isinstance()
-- ![__eq__](https://img.shields.io/badge/-__eq__-0ea5e9?style=flat-square) — __eq__
-- ![__hash__](https://img.shields.io/badge/-__hash__-7c3aed?style=flat-square) — __hash__
-- ![Hashability](https://img.shields.io/badge/-Hashability-7c3aed?style=flat-square) — Hashability
-
-- ![Attribute](https://img.shields.io/badge/-Attribute-2563eb?style=flat-square) — Attribute
-- ![Attribute Lookup](https://img.shields.io/badge/-Attribute-Lookup-64748b?style=flat-square) — Attribute Lookup
-- ![Descriptor](https://img.shields.io/badge/-Descriptor-7c3aed?style=flat-square) — Descriptor
-- ![Data Descriptor](https://img.shields.io/badge/-Data-Descriptor-be123c?style=flat-square) — Data Descriptor
-- ![Non-data Descriptor](https://img.shields.io/badge/-Non-data-Descriptor-0891b2?style=flat-square) — Non-data Descriptor
-- ![Descriptor Protocol](https://img.shields.io/badge/-Descriptor-Protocol-7c3aed?style=flat-square) — Descriptor Protocol
-- ![Instance Namespace](https://img.shields.io/badge/-Instance-Namespace-64748b?style=flat-square) — Instance Namespace
-- ![Class Namespace](https://img.shields.io/badge/-Class-Namespace-64748b?style=flat-square) — Class Namespace
-- ![__get__](https://img.shields.io/badge/-__get__-0891b2?style=flat-square) — __get__
-- ![__set__](https://img.shields.io/badge/-__set__-be123c?style=flat-square) — __set__
-- ![__delete__](https://img.shields.io/badge/-__delete__-be123c?style=flat-square) — __delete__
-- ![property](https://img.shields.io/badge/-property-16a34a?style=flat-square) — property
-- ![Bound Method](https://img.shields.io/badge/-Bound-Method-16a34a?style=flat-square) — Bound Method
-- ![Method Binding](https://img.shields.io/badge/-Method-Binding-16a34a?style=flat-square) — Method Binding
-- ![__getattribute__](https://img.shields.io/badge/-__getattribute__-d97706?style=flat-square) — __getattribute__
-- ![__getattr__](https://img.shields.io/badge/-__getattr__-d97706?style=flat-square) — __getattr__
-- ![Special Method](https://img.shields.io/badge/-Special-Method-0ea5e9?style=flat-square) — Special Method
-- ![Implicit Lookup](https://img.shields.io/badge/-Implicit-Lookup-0ea5e9?style=flat-square) — Implicit Lookup
-- ![Type-level Lookup](https://img.shields.io/badge/-Type-level-Lookup-7c3aed?style=flat-square) — Type-level Lookup
-- ![AttributeError](https://img.shields.io/badge/-AttributeError-dc2626?style=flat-square) — AttributeError
-- ![object.__getattribute__](https://img.shields.io/badge/-object.__getattribute__-64748b?style=flat-square) — object.__getattribute__
-- ![Proxy](https://img.shields.io/badge/-Proxy-0891b2?style=flat-square) — Proxy
-- ![Metaclass](https://img.shields.io/badge/-Metaclass-7c3aed?style=flat-square) — Metaclass
-- ![__dict__](https://img.shields.io/badge/-__dict__-64748b?style=flat-square) — __dict__
-- ![__len__](https://img.shields.io/badge/-__len__-0ea5e9?style=flat-square) — __len__
-- ![__iter__](https://img.shields.io/badge/-__iter__-0ea5e9?style=flat-square) — __iter__
-- ![__next__](https://img.shields.io/badge/-__next__-0ea5e9?style=flat-square) — __next__
-
-- ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) — list
-- ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) — tuple
-- ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) — set
-- ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) — dict
-- ![frozenset](https://img.shields.io/badge/-frozenset-0891b2?style=flat-square) — frozenset
-- ![frozendict](https://img.shields.io/badge/-frozendict-0891b2?style=flat-square) — frozendict
-- ![Hash Table](https://img.shields.io/badge/-Hash-Table-7c3aed?style=flat-square) — Hash Table
-- ![Insertion Order](https://img.shields.io/badge/-Insertion-Order-64748b?style=flat-square) — Insertion Order
-- ![Shallow Copy](https://img.shields.io/badge/-Shallow-Copy-d97706?style=flat-square) — Shallow Copy
-- ![Mapping](https://img.shields.io/badge/-Mapping-7c3aed?style=flat-square) — Mapping
-- ![Sequence](https://img.shields.io/badge/-Sequence-0ea5e9?style=flat-square) — Sequence
-
-## PY-001 — GIL ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square), Concurrency & Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
-
-**Main Question:** What is the Global Interpreter Lock (GIL) in CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square), and how does it affect concurrency ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) and parallelism ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square)?
-
-**Evaluation focus:** CPython runtime synchronization, CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) versus I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) workloads, thread safety ![Thread Safety](https://img.shields.io/badge/-Thread-Safety-16a34a?style=flat-square), concurrency-model selection, and free-threaded ![Free-threaded](https://img.shields.io/badge/-Free-threaded-0f766e?style=flat-square) Python.  
+**Evaluation focus:** CPython runtime synchronization, CPU-bound versus I/O-bound workloads, thread safety, concurrency-model selection, and free-threaded Python.  
 **Level:** L3 — Advanced/Senior  
 **Priority:** P0 — Core / High interview frequency
 
@@ -143,38 +20,38 @@ Follow-ups:
 
 - **FU-1 — Mechanism:** Why does the conventional CPython build use the GIL, and what does the lock actually protect? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 - **FU-2 — Application:** How does the GIL affect CPU-bound and I/O-bound multithreaded workloads in conventional CPython? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — Design trade-offs:** How would you choose between threading ![Multithreading](https://img.shields.io/badge/-Multithreading-16a34a?style=flat-square), multiprocessing ![Multiprocessing](https://img.shields.io/badge/-Multiprocessing-7c3aed?style=flat-square), and asyncio ![Asyncio](https://img.shields.io/badge/-Asyncio-0891b2?style=flat-square) for a Python backend workload? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-3 — Design trade-offs:** How would you choose between threading, multiprocessing, and asyncio for a Python backend workload? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 - **FU-4 — Senior judgment:** What changes in free-threaded CPython, and what should an engineering team verify before adopting it? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-002 — Concurrency vs Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Main Question:** What is the difference between concurrency ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) and parallelism ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square), and why is the distinction important in Python?
+**Main Question:** What is the difference between concurrency and parallelism, and why is the distinction important in Python?
 
-**Evaluation focus:** Concurrency versus simultaneous execution, I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) and CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) workloads, and selecting an appropriate Python execution model.  
+**Evaluation focus:** Concurrency versus simultaneous execution, I/O-bound and CPU-bound workloads, and selecting an appropriate Python execution model.  
 **Level:** L2–L3 — Intermediate/Advanced  
 **Priority:** P0 — Core
 
 Follow-ups:
 
-- **FU-1 — Fundamentals:** Can concurrency exist without parallelism? ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-2 — Workload analysis:** What is the difference between I/O-bound and CPU-bound workloads? ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) behavior:** How does the GIL ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square) affect concurrency and parallelism in CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-4 — Senior judgment:** How do you decide whether a workload needs concurrency or parallelism? ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Fundamentals:** Can concurrency exist without parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Workload analysis:** What is the difference between I/O-bound and CPU-bound workloads? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — CPython behavior:** How does the GIL affect concurrency and parallelism in CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior judgment:** How do you decide whether a workload needs concurrency or parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
-## PY-003 — Python ![Python](https://img.shields.io/badge/-Python-2563eb?style=flat-square) Execution Model & Runtime ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+## PY-003 — Python Execution Model & Runtime ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Main Question:** How does Python execute a program from source code to runtime ![Runtime](https://img.shields.io/badge/-Runtime-0ea5e9?style=flat-square) behavior?
+**Main Question:** How does Python execute a program from source code to runtime behavior?
 
-**Evaluation focus:** Compilation ![Compilation](https://img.shields.io/badge/-Compilation-7c3aed?style=flat-square), bytecode, interpreter/runtime model.  
+**Evaluation focus:** Compilation, bytecode, interpreter/runtime model.  
 **Level:** L3 — Advanced/Senior  
 **Priority:** P0 — Core
 
 Follow-ups:
 
-- **FU-1 — Mechanism:** What are the main stages between Python source code and the execution of its instructions in CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square)? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-2 — Application:** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module? ![Module](https://img.shields.io/badge/-Module-0ea5e9?style=flat-square) ![Import](https://img.shields.io/badge/-Import-0ea5e9?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — Edge cases and trade-offs:** Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter? ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-4 — Senior judgment:** When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment? ![Python](https://img.shields.io/badge/-Python-2563eb?style=flat-square) ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) ![Operating System](https://img.shields.io/badge/-Operating-System-64748b?style=flat-square) ![Runtime](https://img.shields.io/badge/-Runtime-0ea5e9?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Mechanism:** What are the main stages between Python source code and the execution of its instructions in CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Application:** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Edge cases and trade-offs:** Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior judgment:** When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## Coverage status
 
@@ -186,26 +63,26 @@ Follow-ups:
 
 ## PY-004 — Function Calls & Execution State ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Main Question:** What happens during a function call ![Function Call](https://img.shields.io/badge/-Function-Call-2563eb?style=flat-square) in CPython?
+**Main Question:** What happens during a function call in CPython?
 
-**Evaluation focus:** Call semantics, argument binding ![Argument Binding](https://img.shields.io/badge/-Argument-Binding-7c3aed?style=flat-square), function/code objects, execution state, frames, closures, return and exception ![Exception](https://img.shields.io/badge/-Exception-dc2626?style=flat-square) paths.  
+**Evaluation focus:** Call semantics, argument binding, function/code objects, execution state, frames, closures, return and exception paths.  
 **Level:** L3 — Advanced/Senior  
 **Priority:** P0 — Core
 
 Follow-ups:
 
-- **FU-1 — Mechanism:** What execution state does CPython need to establish or maintain when entering and executing a Python function? ![Execution Frame](https://img.shields.io/badge/-Execution-Frame-0ea5e9?style=flat-square) ![_PyInterpreterFrame](https://img.shields.io/badge/-_PyInterpreterFrame-64748b?style=flat-square) ![PyFrameObject](https://img.shields.io/badge/-PyFrameObject-64748b?style=flat-square) ![Closure Cell](https://img.shields.io/badge/-Closure-Cell-16a34a?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-2 — Application:** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service? ![Profiler](https://img.shields.io/badge/-Profiler-16a34a?style=flat-square) ![Call Stack](https://img.shields.io/badge/-Call-Stack-64748b?style=flat-square) ![Self Time](https://img.shields.io/badge/-Self-Time-d97706?style=flat-square) ![Cumulative Time](https://img.shields.io/badge/-Cumulative-Time-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — Edge cases and lifecycle:** How do recursion ![Recursion](https://img.shields.io/badge/-Recursion-7c3aed?style=flat-square), exceptions, generator ![Generator](https://img.shields.io/badge/-Generator-0891b2?style=flat-square)s, and asynchronous functions affect the execution lifecycle compared with an ordinary function call? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-4 — Senior judgment:** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile? ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) ![Vectorcall](https://img.shields.io/badge/-Vectorcall-0891b2?style=flat-square) ![Benchmark](https://img.shields.io/badge/-Benchmark-d97706?style=flat-square) ![Latency](https://img.shields.io/badge/-Latency-d97706?style=flat-square) ![Throughput](https://img.shields.io/badge/-Throughput-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Mechanism:** What execution state does CPython need to establish or maintain when entering and executing a Python function? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Application:** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Edge cases and lifecycle:** How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior judgment:** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 
 
-## PY-005 — Python Object Model: ![Object](https://img.shields.io/badge/-Object-2563eb?style=flat-square), ![Identity](https://img.shields.io/badge/-Identity-64748b?style=flat-square), ![Type](https://img.shields.io/badge/-Type-7c3aed?style=flat-square) & ![Value](https://img.shields.io/badge/-Value-0ea5e9?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+## PY-005 — Python Object Model:,, & ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** Explain Python's object model: identity, type, and value.
 
-**Evaluation focus:** Name binding ![Name Binding](https://img.shields.io/badge/-Name-Binding-7c3aed?style=flat-square), identity versus equality ![Equality](https://img.shields.io/badge/-Equality-0ea5e9?style=flat-square), mutability ![Mutability](https://img.shields.io/badge/-Mutability-d97706?style=flat-square), type checks, and domain identity ![Domain Identity](https://img.shields.io/badge/-Domain-Identity-16a34a?style=flat-square).  
+**Evaluation focus:** Name binding, identity versus equality, mutability, type checks, and domain identity.  
 **Level:** L3 — Advanced/Senior  
 **Priority:** P0 — Core
 
@@ -213,14 +90,14 @@ Follow-ups:
 
 - **FU-1 — Mechanism:** Which of an object's identity, type, and value can change during its lifetime? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 - **FU-2 — Application:** How would you choose between identity checks, equality checks, and type checks in a code review? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — Edge cases and trade-offs:** Why can using is ![is](https://img.shields.io/badge/-is-2563eb?style=flat-square) to compare strings, numbers, or other values produce unreliable results? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-4 — Senior judgment:** How should API design avoid accidental dependencies on object identity, mutability ![Mutability](https://img.shields.io/badge/-Mutability-d97706?style=flat-square), or concrete implementation types? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-3 — Edge cases and trade-offs:** Why can using is to compare strings, numbers, or other values produce unreliable results? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior judgment:** How should API design avoid accidental dependencies on object identity, mutability, or concrete implementation types? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
-## PY-006 — Attribute Lookup ![Attribute Lookup](https://img.shields.io/badge/-Attribute-Lookup-64748b?style=flat-square), Descriptors ![Descriptor](https://img.shields.io/badge/-Descriptor-7c3aed?style=flat-square) & Special Methods ![Special Method](https://img.shields.io/badge/-Special-Method-0ea5e9?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+## PY-006 — Attribute Lookup, Descriptors & Special Methods ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** How does Python resolve attribute access, and how do descriptors and special methods affect that process?
 
-**Evaluation focus:** Attribute lookup ![Attribute Lookup](https://img.shields.io/badge/-Attribute-Lookup-64748b?style=flat-square) precedence, descriptor protocol ![Descriptor Protocol](https://img.shields.io/badge/-Descriptor-Protocol-7c3aed?style=flat-square), attribute access hooks, method binding ![Method Binding](https://img.shields.io/badge/-Method-Binding-16a34a?style=flat-square), and implicit special-method lookup ![Implicit Lookup](https://img.shields.io/badge/-Implicit-Lookup-0ea5e9?style=flat-square).  
+**Evaluation focus:** Attribute lookup precedence, descriptor protocol, attribute access hooks, method binding, and implicit special-method lookup.  
 **Level:** L3 — Advanced/Senior  
 **Priority:** P0 — Core
 
@@ -235,7 +112,7 @@ Follow-ups:
 
 ## PY-007 — Built-in Collections: Semantics & Selection ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Main Question:** ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) How do Python lists, tuples, sets, and dictionaries differ internally and semantically?
+**Main Question:** How do Python lists, tuples, sets, and dictionaries differ internally and semantically?
 
 **Evaluation focus:** Collection contracts, mutability, ordering, hashability, typical complexity, and memory/performance trade-offs.  
 **Level:** L2–L3 — Intermediate/Advanced  
@@ -243,10 +120,10 @@ Follow-ups:
 
 Follow-ups:
 
-- **FU-1 — ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) Mechanism:** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-2 — ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) Application:** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — ![frozenset](https://img.shields.io/badge/-frozenset-0891b2?style=flat-square) ![frozendict](https://img.shields.io/badge/-frozendict-0891b2?style=flat-square) ![Insertion Order](https://img.shields.io/badge/-Insertion-Order-64748b?style=flat-square) ![Shallow Copy](https://img.shields.io/badge/-Shallow-Copy-d97706?style=flat-square) ![Hashability](https://img.shields.io/badge/-Hashability-7c3aed?style=flat-square) Edge cases and trade-offs:** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-4 — ![Hash Table](https://img.shields.io/badge/-Hash-Table-7c3aed?style=flat-square) ![Mapping](https://img.shields.io/badge/-Mapping-7c3aed?style=flat-square) Senior judgment:** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Mechanism:** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Application:** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Edge cases and trade-offs:** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior judgment:** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 
 ## PY-008 — Dictionary Internals & Hash Tables ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
@@ -319,7 +196,7 @@ Follow-ups:
 
 - **FU-1 — Mechanism:** Why should application code usually catch `Exception` rather than `BaseException`? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 - **FU-2 — Application:** How should a backend translate a low-level exception into a domain-level or API error? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — Edge cases:** What is the difference between `__cause__`, `__context__`, and `raise ... from None`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-3 — Edge cases:** What is the difference between `__cause__`, `__context__`, and `raise... from None`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 - **FU-4 — Senior judgment:** When should you use `ExceptionGroup` and `except*` in concurrent systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-013 — Iterators, Generators & Lazy Evaluation ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
