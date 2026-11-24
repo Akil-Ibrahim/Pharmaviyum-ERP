@@ -45,7 +45,7 @@
 - [English — question map](./DOCUMENT_3_TECHNICAL_CURRICULUM/python/EN/PYTHON_CORE_ADVANCED.md)
 - [Русский — карта вопросов](./DOCUMENT_3_TECHNICAL_CURRICULUM/python/RU/PYTHON_CORE_ADVANCED.md)
 
-**Текущий прогресс Python Core & Advanced:** PY-001–PY-008 и FU-001–FU-032. Материал дополняется последовательно; наличие вопроса в документе само по себе не означает, что вся программа завершена.
+**Текущий прогресс Python Core & Advanced:** PY-001–PY-009 и FU-001–FU-036. Материал дополняется последовательно; наличие вопроса в документе само по себе не означает, что вся программа завершена.
 
 ---
 
