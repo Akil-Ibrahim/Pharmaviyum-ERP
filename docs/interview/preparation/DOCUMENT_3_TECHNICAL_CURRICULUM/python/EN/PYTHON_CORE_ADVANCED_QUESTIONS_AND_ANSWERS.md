@@ -226,67 +226,87 @@ First identify the bottleneck. If the workload mostly waits for network, databas
 
 ## The main idea
 
-Python does not simply read each line of source code and immediately execute it. In CPython, source code is first parsed and compiled. The resulting code objects are then executed by the interpreter.
+Python does not simply execute source code one line at a time as it reads it. In CPython, source code is decoded, parsed, and compiled. The resulting code objects are then executed by the interpreter.
 
-A simple mental model:
+A useful mental model:
 
-1. **Source code:** the Python program you write.
-2. **Parsing:** Python checks the syntax and builds an abstract syntax tree (AST).
-3. **Compilation:** CPython creates code objects containing bytecode and metadata.
-4. **Runtime execution:** the interpreter executes those code objects and creates or uses runtime objects.
-5. **External operations:** the program may call native libraries and operating-system services.
+1. **Read and decode:** CPython reads the source and decodes it into text.
+2. **Parse:** the parser checks the grammar and builds an abstract syntax tree (AST).
+3. **Compile:** the compiler turns the parsed program into code objects containing bytecode and metadata.
+4. **Execute:** the interpreter executes those code objects in a runtime environment.
+5. **Interact:** the program may call native extensions, libraries, and operating-system services.
 
-This is a conceptual model of CPython. Other Python implementations may use different execution mechanisms.
+This describes the usual CPython path. Python defines language behavior, but other Python implementations may use different execution machinery.
 
-## Compilation is not the same as execution
+## Compilation is not execution
 
-This distinction is especially important in interviews.
+Keep three events separate:
 
-When CPython compiles a module, it also compiles the body of a function defined in that module. But compiling the function body does not execute it.
+- **Compilation:** the function body is compiled into a code object.
+- **Function definition:** when execution reaches a `def` statement, Python creates a function object and binds its name.
+- **Function call:** the function body starts running when the function is called.
 
-There are three separate events:
-
-- **Compilation:** the function's source is compiled into a code object.
-- **Function definition:** when the module executes the `def` statement, Python creates a function object.
-- **Function call:** the function body executes when the function is called.
-
-A name error or other runtime problem inside a function may therefore remain unnoticed until that function is called. Syntax errors, in contrast, are detected during parsing or compilation before the module starts executing.
+A function body is compiled when its containing module is compiled, but it does not run just because the function was defined. A runtime error inside the body may therefore appear only when the function is called. Syntax errors are detected during parsing or compilation, before the module's top-level statements execute.
 
 ## Bytecode, code objects, and function objects
 
-- **Bytecode** is a set of instructions for the CPython interpreter. It is not CPU machine code.
-- **Code object** contains compiled instructions and metadata, such as constants, names, and information needed for execution.
-- **Function object** is the callable runtime object. It references a code object and carries context such as global namespace, default arguments, and closure information.
+- **Bytecode** is an instruction format used by CPython's interpreter. It is not native CPU machine code.
+- **Code object** stores compiled instructions and metadata, such as constants, names, and source-position information.
+- **Function object** is the callable object created by executing a function definition. It refers to a code object and carries execution context such as its global namespace, defaults, and closure.
 
-Think of a code object as the compiled function body, and a function object as that code connected to the context in which it will run.
+A useful distinction: a code object represents compiled code; a function object connects that code to the context in which it will run.
+
+## What happens inside the runtime?
+
+The Python 3.15.2 execution model describes conceptual runtime layers:
+
+- **Process:** operating-system resources such as memory, file descriptors, and sockets.
+- **Python global runtime:** state shared at the runtime level.
+- **Interpreter:** interpreter-specific state and execution environment.
+- **Thread:** the host thread that executes Python and native code.
+- **Thread state:** Python execution state associated with a thread.
+
+A runtime can contain multiple interpreters, and an interpreter can have multiple thread states. This is a conceptual model: implementations do not have to represent every layer as a separate concrete object.
+
+Do not confuse the Python interpreter with the operating-system process. A process is an OS-level execution container; the interpreter is the Python implementation executing code within that environment.
 
 ## Is bytecode machine code?
 
-No. Machine code is executed directly by the processor. CPython bytecode is executed by CPython's interpreter machinery. Normal CPython execution does not require producing a standalone native executable.
+No. Native machine code is executed directly by the processor. CPython bytecode is interpreted by CPython's execution machinery. Normal CPython execution does not require producing a standalone native executable.
+
+Also, avoid describing the interpreter as a permanently fixed loop over an unchanging set of opcodes. CPython's execution machinery and optimizations evolve across releases.
+
+## Adaptive specialization in modern CPython
+
+Modern CPython can adapt execution to observed runtime behavior. It may specialize instructions for common cases and use inline caches to make repeated operations faster.
+
+This is an implementation optimization, not a change to Python's language semantics. The exact instructions and specialization strategy can change between CPython releases.
+
+The `dis` module can inspect CPython bytecode. Its adaptive view can show specialized instructions (for example, with `dis.dis(function, adaptive=True)`). This is useful for investigation, but bytecode should not be treated as a stable application interface.
 
 ## What is a .pyc file?
 
-Python may cache compiled bytecode in `__pycache__` as `.pyc` files, commonly when modules are imported. When the cache is valid, Python may reuse it instead of compiling the source again.
+Python can cache compiled module bytecode in `.pyc` files, usually under `__pycache__`. When the cache is valid, an import may reuse it instead of compiling the source again.
 
-This is an optimization, not a required step for every program run. A `.pyc` file contains Python bytecode, not native machine code.
+This is an optimization, not a requirement for every execution. A `.pyc` file contains Python bytecode, not native machine code. Cache validity is checked; the existence of a file alone does not mean Python will always use it.
 
 ## Why this matters in a backend service
 
-Consider a FastAPI application. During startup, Python imports the entry-point module and its dependencies. Module-level statements execute: objects are created, routes are registered, and application components are initialized.
+Consider a FastAPI application. During startup, the process starts Python and the application imports its entry-point module and dependencies. Module-level statements execute: objects are created, routes are registered, and components are initialized.
 
-Later, when an HTTP request arrives, the corresponding endpoint and service functions are called. A failure during import or module initialization can prevent the application from starting; a failure inside an endpoint may occur only when a request reaches it.
+Later, when an HTTP request arrives, the relevant endpoint and service functions are called. An error during import or module initialization can prevent startup; an error inside an endpoint may appear only when a request reaches that code.
 
-This distinction helps separate application startup problems from request-processing problems.
+This distinction helps separate startup failures from request-time failures.
 
 ## Interview-ready answer (EN)
 
-“Python execution involves parsing and compilation before runtime execution. In CPython, source code is parsed into an abstract syntax tree and compiled into code objects containing bytecode and metadata.
+“When CPython runs a program, it reads and decodes the source, parses it into an AST, and compiles it into code objects containing bytecode and metadata. The interpreter then executes those code objects in a runtime environment.
 
-The interpreter executes these code objects in a runtime environment. When a module executes, its top-level statements run and create runtime objects and bindings. A function definition creates a function object, but its body executes only when the function is called.
+Compilation and execution are different. A function body is compiled with its containing module, but executing the function definition creates a function object; the body runs only when the function is called.
 
-Bytecode is not native machine code. CPython executes it using its interpreter machinery. Compiled bytecode may be cached in .pyc files, but this is an optimization rather than a requirement.
+Bytecode is not native machine code, and its format is a CPython implementation detail. Modern CPython can adapt and specialize bytecode at runtime, but those optimizations do not change the language-level contract. Compiled module bytecode may also be cached in .pyc files.
 
-I also distinguish Python language guarantees from CPython-specific implementation details, because bytecode and interpreter internals can change between versions.”
+For production diagnosis, I distinguish module import and startup behavior from request-time execution, and I separate Python language guarantees from CPython and operating-system implementation details.”
 
 ---
 
@@ -296,11 +316,11 @@ I also distinguish Python language guarantees from CPython-specific implementati
 
 **Explanation**
 
-The main sequence is source decoding, parsing into an AST, compilation into code objects, and runtime execution. During execution, Python creates objects, resolves names, calls functions, and may interact with native libraries or the operating system.
+The usual CPython path is: read and decode source, parse it into an AST, compile it into code objects, and execute those objects in the runtime. Execution can create objects, resolve names, call functions, and interact with native libraries or the operating system.
 
 **Interview answer (EN)**
 
-“CPython reads and decodes the source, parses it into an AST, and compiles it into code objects containing bytecode and metadata. The interpreter then executes these objects in a runtime environment. During execution, Python creates objects, resolves names, calls functions, and interacts with native libraries and operating-system services.”
+“CPython reads and decodes the source, parses it into an AST, compiles it into code objects containing bytecode and metadata, and then executes those objects in its runtime. During execution, Python creates objects, resolves names, calls functions, and may interact with native libraries and operating-system services.”
 
 ---
 
@@ -310,11 +330,11 @@ The main sequence is source decoding, parsing into an AST, compilation into code
 
 **Explanation**
 
-When a file is run directly, its `__name__` is normally `__main__`. When imported, it receives its import name. This affects name guards, package context, relative imports, and initialization behavior.
+When a file is run directly, its `__name__` is normally `"__main__"`. When imported, its `__name__` is the module's import name. The package context, import path, working directory, and module-level side effects may also differ. Running a package module with `python -m package.module` often preserves the intended package context better than executing a file by path.
 
 **Interview answer (EN)**
 
-“I first compare the execution context. Direct script execution normally sets `__name__` to `__main__`, while importing uses the module's import name. I check `__name__`, `__package__`, `sys.path`, the working directory, and the exact command. I also investigate relative imports and module-level side effects. For package applications, I prefer a consistent package-aware entry point, such as `python -m package.module`.”
+“I compare the execution context first: `__name__`, `__package__`, `sys.path`, the working directory, and the exact command. I then inspect relative imports and module-level side effects. Direct execution normally sets `__name__` to `__main__`, while importing uses the module's import name. For package applications, I prefer a consistent package-aware entry point, such as `python -m package.module`.”
 
 ---
 
@@ -324,11 +344,11 @@ When a file is run directly, its `__name__` is normally `__main__`. When importe
 
 **Explanation**
 
-Python specifies language behavior, but it does not promise that every interpreter uses the same bytecode or internal execution machinery. CPython opcodes, frame internals, and execution optimizations are implementation-specific and may change.
+Python specifies language semantics, not one universal bytecode format or interpreter architecture. CPython opcodes, inline caches, adaptive specialization, and internal frame representations are implementation details that may change between releases. In particular, do not assume every function call must materialize a Python-visible `PyFrameObject`; CPython's internal execution-frame representation and the frame objects exposed for introspection are distinct concepts.
 
 **Interview answer (EN)**
 
-“Python defines language semantics, but it does not guarantee a particular bytecode format or interpreter implementation. In CPython, opcodes, frame internals, and execution optimizations are implementation-specific and may change between versions. I rely on documented behavior for application correctness and isolate implementation-specific dependencies when they are necessary.”
+“Python defines language semantics, but it does not guarantee a particular bytecode format or interpreter implementation. CPython opcodes, specialization strategies, and internal frame representations can change between releases. I rely on documented language behavior for application correctness and use implementation-specific details only when needed for debugging or measured optimization.”
 
 ---
 
@@ -338,23 +358,27 @@ Python specifies language behavior, but it does not promise that every interpret
 
 **Explanation**
 
-Choose the diagnostic layer based on symptoms and evidence:
+Choose the layer based on symptoms and evidence:
 
-- **Application:** business logic, data, and dependency usage.
-- **Python/CPython:** exceptions, runtime behavior, memory, call stacks, and execution overhead.
-- **Operating system/runtime:** CPU and memory limits, processes, networking, file descriptors, and containers.
+- **Application:** business logic, data, dependency usage, and request flow.
+- **Python/CPython:** exceptions, imports, call stacks, object lifetime, memory behavior, and interpreter overhead.
+- **Operating system/container:** CPU and memory limits, processes, networking, file descriptors, and system-level failures.
 
-**Interview answer (EN)**
+Start broad with metrics, logs, and traces. Go deeper only when the evidence points to a lower layer.
 
-“I start with observable symptoms, metrics, logs, and traces. I inspect application-level behavior when the issue involves business logic or dependency usage. I investigate Python and CPython when evidence points to runtime behavior, memory management, or execution overhead. I inspect the operating system and container environment when there are signs of resource limits, process failures, network problems, or system-level constraints. I choose the diagnostic layer based on evidence rather than assumptions.”
+**Interview answer (EN)****
+
+“I start with symptoms, metrics, logs, and traces. I inspect application behavior when the issue involves business logic or dependency usage. I investigate Python and CPython when evidence points to imports, exceptions, memory management, call stacks, or interpreter overhead. I inspect the operating system and container when there are signs of resource limits, process failures, networking problems, or file-descriptor exhaustion. I choose the diagnostic layer from evidence rather than assumptions.”
 
 **References**
 - [Python 3.15.2 — Execution model](https://docs.python.org/3.15/reference/executionmodel.html)
 - [Python 3.15.2 — Code objects](https://docs.python.org/3.15/reference/datamodel.html#code-objects)
 - [Python 3.15.2 — dis module](https://docs.python.org/3.15/library/dis.html)
+- [Python 3.15.2 — Command-line and environment](https://docs.python.org/3.15/using/cmdline.html)
 - [Python 3.15.2 — Import system](https://docs.python.org/3.15/reference/import.html)
 
 ---
+
 
 # PY-004 — Main Question
 
