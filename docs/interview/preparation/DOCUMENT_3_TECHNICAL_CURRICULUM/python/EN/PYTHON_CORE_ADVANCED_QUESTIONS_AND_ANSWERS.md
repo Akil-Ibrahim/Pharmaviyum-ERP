@@ -1639,3 +1639,92 @@ Account for early termination, exceptions, task cancellation, connection closure
 **Interview-Ready Answer (EN)**
 
 “For resource-backed generators, I explicitly handle early termination, exceptions, cancellation, and cleanup. I use context managers for deterministic synchronous resource management and ensure asynchronous generators are closed with `aclose()` or an equivalent lifecycle mechanism. I never rely on garbage collection for timely resource release.”
+
+## PY-014 — Decorators, Closures & Function Wrapping ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Main Question:** Explain how Python decorators work. How are decorators related to closures and function wrappers, and what production concerns should you consider?
+
+**Core explanation**
+
+A **decorator** is a callable that takes a function or another callable and returns a callable, often one that adds or changes behavior. The `@` syntax is syntactic sugar: applying `@decorator` to a function is broadly equivalent to defining the function and then binding `function_name = decorator(function_name)`. The returned object, not necessarily the original function, is bound to the function's name.
+
+Decorator expressions are evaluated when the function definition executes, in the containing scope. With stacked decorators, application is nested: `@outer` above `@inner` is equivalent to `function = outer(inner(function))`. Thus the inner decorator is applied first, and the outer decorator receives its result. The wrapper logic normally runs when the decorated callable is invoked, not when the decorator is applied.
+
+A **closure** is a function together with access to variables from an enclosing function scope. The inner function can continue using those bindings after the outer function has returned. A closure retains access to the binding, not merely an immutable snapshot of its value. `nonlocal` allows rebinding a name in the nearest enclosing function scope; `global` refers to the module-level namespace. Mutable closure state can persist across calls and can be shared by multiple invocations of the same wrapper.
+
+A **wrapper** is the callable returned by a decorator. It commonly accepts `*args` and `**kwargs`, performs additional work, calls the wrapped callable, and returns or transforms its result. A well-designed wrapper should preserve the wrapped callable's observable behavior unless changing it is intentional. It should normally propagate exceptions unchanged unless the decorator has an explicit exception policy.
+
+Use `functools.wraps` on the wrapper. It applies `update_wrapper()`, copying the standard metadata attributes (including name, qualified name, module, documentation, annotations and type parameters according to the current defaults), updating the wrapper's attribute dictionary, and adding `__wrapped__` pointing to the wrapped callable. This supports introspection, documentation tools, debugging, and access to the original callable. It does not make every arbitrary wrapper's runtime signature or behavior identical to the original.
+
+A **decorator factory** is used when the decorator needs configuration. The outer function accepts configuration and returns the actual decorator; that decorator accepts the target callable and returns its wrapper. This pattern supports configurable retry limits, cache policies, timeouts, and authorization rules.
+
+**Production considerations**
+
+- Preserve arguments, return values, exceptions, and metadata intentionally.
+- Be explicit about decorator stacking order. For example, authorization must not be bypassed by returning a protected cached result before checking the caller's permissions.
+- For `async def` targets, use an async-aware wrapper when logic must surround completion: it should await the coroutine and handle its result, exceptions, or cancellation at the correct point. A synchronous wrapper that merely returns a coroutine may run its own post-call logic before the coroutine executes.
+- Treat closure state as shared state when the same wrapper is called repeatedly. Define ownership, lifecycle, and synchronization where concurrent calls can overlap.
+- Avoid expensive side effects during module import or function definition unless that timing is intentional.
+- Document retry behavior and require idempotency or an explicit safety policy before automatically repeating operations.
+
+**Interview-Ready Answer (EN)**
+
+“A decorator is a callable transformation applied to a function when its definition executes. The returned callable is bound to the function's name and often uses a wrapper to add behavior such as logging, authorization, caching, or retries. Closures let wrappers retain access to configuration or state from an enclosing scope, while `nonlocal` can rebind that state. I use `functools.wraps` to preserve metadata and `__wrapped__`, and I carefully review decorator order, exception and return-value behavior, async handling, and concurrency around mutable closure state.”
+
+**Follow-ups**
+
+### FU-053 — Mechanism: How does Python apply a decorator, and when is the decorator executed? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** How does Python apply a decorator, and when is the decorator executed?
+
+**Question (RU):** Как Python применяет декоратор и когда именно он выполняется?
+
+**Answer**
+
+When the function definition executes, Python evaluates the decorator expressions and applies them to the newly created function object. The result of the final application is bound to the function's name. Therefore, the decorator itself is applied at definition time, while the wrapper's operational logic normally runs on subsequent calls.
+
+**Interview-Ready Answer (EN)**
+
+“A decorator expression is evaluated when the function definition executes. The resulting callable is applied to the function object, and its return value is bound to the function name. The wrapper's runtime logic executes when the decorated callable is invoked.”
+
+### FU-054 — Application: How would you implement a configurable decorator for logging, retries, or access control? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** How would you implement a configurable decorator for logging, retries, or access control?
+
+**Question (RU):** Как спроектировать настраиваемый декоратор для логирования, повторных попыток или контроля доступа?
+
+**Answer**
+
+Use a decorator factory: an outer function accepts configuration and returns a decorator; the decorator receives the target callable and creates a wrapper. The wrapper should use `functools.wraps`, forward arguments correctly, and preserve the intended return and exception behavior. Retry logic needs a bounded attempt policy and an idempotency strategy; access-control checks must happen before the protected operation or any protected cached result is returned.
+
+**Interview-Ready Answer (EN)**
+
+“I use a decorator factory when configuration is required. The returned decorator wraps the target callable, preserves metadata with `functools.wraps`, and forwards arguments, results, and exceptions correctly. I also define explicit policies for retry limits, idempotency, and authorization order.”
+
+### FU-055 — Edge cases: What is a closure, how does `nonlocal` work, and what problems can mutable closure state introduce? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** What is a closure, how does `nonlocal` work, and what problems can mutable closure state introduce?
+
+**Question (RU):** Что такое замыкание, как работает `nonlocal` и какие проблемы может создавать изменяемое состояние замыкания?
+
+**Answer**
+
+A closure retains access to variables from an enclosing function scope. `nonlocal` allows rebinding a name in the nearest enclosing function scope. Mutable state can unexpectedly be shared across calls and wrapper instances that share the same closure. Under concurrent access it can introduce race conditions, so ownership, lifecycle, and synchronization must be explicit.
+
+**Interview-Ready Answer (EN)**
+
+“A closure retains access to variables from an enclosing function scope. `nonlocal` allows rebinding an existing variable in the nearest enclosing function scope. Mutable closure state can be shared across calls and may introduce race conditions, so I make its lifecycle and concurrency guarantees explicit.”
+
+### FU-056 — Senior judgment: Why are `functools.wraps`, decorator order, and async-aware wrappers important in production systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** Why are `functools.wraps`, decorator order, and async-aware wrappers important in production systems?
+
+**Question (RU):** Почему `functools.wraps`, порядок декораторов и поддержка async важны в production-системах?
+
+**Answer**
+
+`wraps` preserves important metadata and adds `__wrapped__`, supporting introspection and tooling. Decorator order determines behavior nesting and can affect security: for example, authorization should run before a protected cached result is returned. For an `async def` target, an async wrapper should await the coroutine if it needs to surround the operation's actual completion; otherwise post-call logic may run before the operation executes.
+
+**Interview-Ready Answer (EN)**
+
+“`functools.wraps` preserves metadata and exposes the wrapped callable for introspection. Decorator order defines execution nesting and can affect security and caching semantics. For asynchronous functions, the wrapper must await the coroutine when it needs to observe or control the operation's completion.”
