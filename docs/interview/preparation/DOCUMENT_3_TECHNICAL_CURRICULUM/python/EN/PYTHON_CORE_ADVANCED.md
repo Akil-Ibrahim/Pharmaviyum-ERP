@@ -91,6 +91,34 @@ Use the same entity badge and color whenever the entity appears in this curricul
 - ![__hash__](https://img.shields.io/badge/-__hash__-7c3aed?style=flat-square) — __hash__
 - ![Hashability](https://img.shields.io/badge/-Hashability-7c3aed?style=flat-square) — Hashability
 
+- ![Attribute](https://img.shields.io/badge/-Attribute-2563eb?style=flat-square) — Attribute
+- ![Attribute Lookup](https://img.shields.io/badge/-Attribute-Lookup-64748b?style=flat-square) — Attribute Lookup
+- ![Descriptor](https://img.shields.io/badge/-Descriptor-7c3aed?style=flat-square) — Descriptor
+- ![Data Descriptor](https://img.shields.io/badge/-Data-Descriptor-be123c?style=flat-square) — Data Descriptor
+- ![Non-data Descriptor](https://img.shields.io/badge/-Non-data-Descriptor-0891b2?style=flat-square) — Non-data Descriptor
+- ![Descriptor Protocol](https://img.shields.io/badge/-Descriptor-Protocol-7c3aed?style=flat-square) — Descriptor Protocol
+- ![Instance Namespace](https://img.shields.io/badge/-Instance-Namespace-64748b?style=flat-square) — Instance Namespace
+- ![Class Namespace](https://img.shields.io/badge/-Class-Namespace-64748b?style=flat-square) — Class Namespace
+- ![__get__](https://img.shields.io/badge/-__get__-0891b2?style=flat-square) — __get__
+- ![__set__](https://img.shields.io/badge/-__set__-be123c?style=flat-square) — __set__
+- ![__delete__](https://img.shields.io/badge/-__delete__-be123c?style=flat-square) — __delete__
+- ![property](https://img.shields.io/badge/-property-16a34a?style=flat-square) — property
+- ![Bound Method](https://img.shields.io/badge/-Bound-Method-16a34a?style=flat-square) — Bound Method
+- ![Method Binding](https://img.shields.io/badge/-Method-Binding-16a34a?style=flat-square) — Method Binding
+- ![__getattribute__](https://img.shields.io/badge/-__getattribute__-d97706?style=flat-square) — __getattribute__
+- ![__getattr__](https://img.shields.io/badge/-__getattr__-d97706?style=flat-square) — __getattr__
+- ![Special Method](https://img.shields.io/badge/-Special-Method-0ea5e9?style=flat-square) — Special Method
+- ![Implicit Lookup](https://img.shields.io/badge/-Implicit-Lookup-0ea5e9?style=flat-square) — Implicit Lookup
+- ![Type-level Lookup](https://img.shields.io/badge/-Type-level-Lookup-7c3aed?style=flat-square) — Type-level Lookup
+- ![AttributeError](https://img.shields.io/badge/-AttributeError-dc2626?style=flat-square) — AttributeError
+- ![object.__getattribute__](https://img.shields.io/badge/-object.__getattribute__-64748b?style=flat-square) — object.__getattribute__
+- ![Proxy](https://img.shields.io/badge/-Proxy-0891b2?style=flat-square) — Proxy
+- ![Metaclass](https://img.shields.io/badge/-Metaclass-7c3aed?style=flat-square) — Metaclass
+- ![__dict__](https://img.shields.io/badge/-__dict__-64748b?style=flat-square) — __dict__
+- ![__len__](https://img.shields.io/badge/-__len__-0ea5e9?style=flat-square) — __len__
+- ![__iter__](https://img.shields.io/badge/-__iter__-0ea5e9?style=flat-square) — __iter__
+- ![__next__](https://img.shields.io/badge/-__next__-0ea5e9?style=flat-square) — __next__
+
 ## PY-001 — GIL ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square), Concurrency & Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** What is the Global Interpreter Lock (GIL) in CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square), and how does it affect concurrency ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) and parallelism ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square)?
@@ -176,11 +204,11 @@ Follow-ups:
 - **FU-3 — Edge cases and trade-offs:** Why can using is ![is](https://img.shields.io/badge/-is-2563eb?style=flat-square) to compare strings, numbers, or other values produce unreliable results? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 - **FU-4 — Senior judgment:** How should API design avoid accidental dependencies on object identity, mutability ![Mutability](https://img.shields.io/badge/-Mutability-d97706?style=flat-square), or concrete implementation types? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
-## PY-006 — Attribute Lookup, Descriptors & Special Methods ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+## PY-006 — Attribute Lookup ![Attribute Lookup](https://img.shields.io/badge/-Attribute-Lookup-64748b?style=flat-square), Descriptors ![Descriptor](https://img.shields.io/badge/-Descriptor-7c3aed?style=flat-square) & Special Methods ![Special Method](https://img.shields.io/badge/-Special-Method-0ea5e9?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** How does Python resolve attribute access, and how do descriptors and special methods affect that process?
 
-**Evaluation focus:** Attribute lookup precedence, descriptor protocol, attribute access hooks, method binding, and implicit special-method lookup.  
+**Evaluation focus:** Attribute lookup ![Attribute Lookup](https://img.shields.io/badge/-Attribute-Lookup-64748b?style=flat-square) precedence, descriptor protocol ![Descriptor Protocol](https://img.shields.io/badge/-Descriptor-Protocol-7c3aed?style=flat-square), attribute access hooks, method binding ![Method Binding](https://img.shields.io/badge/-Method-Binding-16a34a?style=flat-square), and implicit special-method lookup ![Implicit Lookup](https://img.shields.io/badge/-Implicit-Lookup-0ea5e9?style=flat-square).  
 **Level:** L3 — Advanced/Senior  
 **Priority:** P0 — Core
 
