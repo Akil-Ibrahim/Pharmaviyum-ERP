@@ -14,13 +14,13 @@
 
 # PY-001 — Основной вопрос ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Вопрос (RU):** Что такое Global Interpreter Lock (GIL) ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb) в CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) и как он влияет на конкурентность и параллелизм?
+**Вопрос (RU):** Что такое Global Interpreter Lock (GIL) ![GIL](https://img.shields.io/badge/GIL-2563eb?style=flat-square) в CPython ![CPython](https://img.shields.io/badge/CPython-64748b?style=flat-square) и как он влияет на конкурентность и параллелизм?
 
 **Оригинальная формулировка (EN):** What is the Global Interpreter Lock (GIL) in CPython, and how does it affect concurrency and parallelism?
 
 ## Сначала поймём идею
 
-В традиционной сборке CPython с GIL только один поток одновременно может удерживать GIL и выполнять Python bytecode ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b). Можно представить его как общий ключ: он находится у одного потока, остальные ждут своей очереди. Это упрощённая аналогия, но она передаёт основную идею.
+В традиционной сборке CPython с GIL только один поток одновременно может удерживать GIL и выполнять Python bytecode ![Python Bytecode](https://img.shields.io/badge/Python-Bytecode-64748b?style=flat-square). Можно представить его как общий ключ: он находится у одного потока, остальные ждут своей очереди. Это упрощённая аналогия, но она передаёт основную идею.
 
 GIL помогает CPython координировать доступ к состоянию интерпретатора и объектам Python. Исторически он также упрощал подсчёт ссылок и интеграцию C-расширений.
 
@@ -29,11 +29,11 @@ GIL помогает CPython координировать доступ к сос
 - **Конкурентность (concurrency):** несколько задач продвигаются в течение пересекающихся промежутков времени. Они не обязаны выполняться одновременно в одну и ту же секунду.
 - **Параллелизм (parallelism):** несколько задач выполняются одновременно, например на разных ядрах процессора.
 
-В традиционной сборке CPython с GIL потоки могут обеспечивать конкурентность, но CPU-bound ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) потоки на чистом Python обычно не могут выполнять Python bytecode параллельно на нескольких ядрах.
+В традиционной сборке CPython с GIL потоки могут обеспечивать конкурентность, но CPU-bound ![CPU-bound](https://img.shields.io/badge/CPU-bound-d97706?style=flat-square) потоки на чистом Python обычно не могут выполнять Python bytecode параллельно на нескольких ядрах.
 
 ## Когда GIL влияет на производительность?
 
-- **I/O-bound ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) задачи:** потоки могут быть полезны. Пока один поток ждёт сеть, файл или другую блокирующую операцию ввода-вывода, GIL обычно освобождается и другой поток может работать.
+- **I/O-bound ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) задачи:** потоки могут быть полезны. Пока один поток ждёт сеть, файл или другую блокирующую операцию ввода-вывода, GIL обычно освобождается и другой поток может работать.
 - **CPU-bound задачи на чистом Python:** добавление потоков обычно не даёт параллельного выполнения на нескольких ядрах. Часто лучше подходит multiprocessing.
 - **Нативные расширения:** некоторые библиотеки освобождают GIL при выполнении нативного кода, поэтому их вычисления могут выполняться параллельно.
 
@@ -43,11 +43,11 @@ GIL помогает CPython координировать доступ к сос
 
 ## Является ли GIL мьютексом?
 
-На концептуальном уровне GIL обычно называют глобальной блокировкой взаимного исключения. Точнее, в CPython 3.15.2 его состояние защищается внутренним mutex ![ENTITY: Mutex](https://img.shields.io/badge/ENTITY-Mutex-be123c), а для координации ожидающих потоков используется condition variable ![ENTITY: Condition Variable](https://img.shields.io/badge/ENTITY-Condition-Variable-be123c). Поэтому фраза «GIL работает как глобальный мьютекс» — полезное упрощение, а утверждение «он реализован как один обычный мьютекс» — технически неточно.
+На концептуальном уровне GIL обычно называют глобальной блокировкой взаимного исключения. Точнее, в CPython 3.15.2 его состояние защищается внутренним mutex ![Mutex](https://img.shields.io/badge/Mutex-be123c?style=flat-square), а для координации ожидающих потоков используется condition variable ![Condition Variable](https://img.shields.io/badge/Condition-Variable-be123c?style=flat-square). Поэтому фраза «GIL работает как глобальный мьютекс» — полезное упрощение, а утверждение «он реализован как один обычный мьютекс» — технически неточно.
 
 ## Что изменилось в Python 3.15.2?
 
-В CPython также существует опциональная **free-thread ![ENTITY: Thread](https://img.shields.io/badge/ENTITY-Thread-16a34a)ed-сборка**. Она появилась в экспериментальном виде в Python 3.13 и стала официально поддерживаемой опциональной конфигурацией начиная с Python 3.14. Она позволяет потокам выполнять Python-код параллельно без традиционного GIL.
+В CPython также существует опциональная **free-thread ![Thread](https://img.shields.io/badge/Thread-16a34a?style=flat-square)ed-сборка**. Она появилась в экспериментальном виде в Python 3.13 и стала официально поддерживаемой опциональной конфигурацией начиная с Python 3.14. Она позволяет потокам выполнять Python-код параллельно без традиционного GIL.
 
 Это не сборка по умолчанию. Некоторые C-расширения несовместимы с таким режимом и могут привести к повторному включению GIL. Free-threading также не гарантирует ускорения любого приложения: необходимо проверить совместимость, синхронизацию, потребление памяти и производительность на реальной нагрузке.
 
@@ -95,7 +95,7 @@ CPU-bound задачи в основном выполняют вычислени
 
 ---
 
-## PY-001 / FU-3 — Как выбрать между threading, multiprocessing и asyncio ![ENTITY: Asyncio](https://img.shields.io/badge/ENTITY-Asyncio-0891b2)? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-001 / FU-3 — Как выбрать между threading, multiprocessing и asyncio ![Asyncio](https://img.shields.io/badge/Asyncio-0891b2?style=flat-square)? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Как выбрать между threading, multiprocessing и asyncio для нагрузки Python backend?
 
@@ -104,7 +104,7 @@ CPU-bound задачи в основном выполняют вычислени
 **Объяснение**
 
 - **Threading:** подходит для блокирующего I/O и некоторых нативных библиотек.
-- **Multiprocessing ![ENTITY: Multiprocessing](https://img.shields.io/badge/ENTITY-Multiprocessing-7c3aed):** подходит для CPU-bound задач на Python; процессы могут работать на разных ядрах.
+- **Multiprocessing ![Multiprocessing](https://img.shields.io/badge/Multiprocessing-7c3aed?style=flat-square):** подходит для CPU-bound задач на Python; процессы могут работать на разных ядрах.
 - **Asyncio:** подходит для большого количества конкурентных I/O-задач, если библиотеки поддерживают неблокирующие операции. Сам по себе asyncio не делает CPU-вычисления параллельными.
 
 **Ответ для собеседования (RU)**
@@ -145,18 +145,18 @@ Free-threaded-сборка позволяет потокам Python выполн
 
 ## Сначала поймём идею
 
-- **Конкурентность ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) (concurrency)** — управление несколькими задачами, выполнение которых пересекается во времени. Система позволяет каждой задаче продвигаться вперёд, часто переключаясь между ними.
-- **Параллелизм ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706) (parallelism)** — фактическое одновременное выполнение нескольких задач, например на разных ядрах процессора.
+- **Конкурентность ![Concurrency](https://img.shields.io/badge/Concurrency-0ea5e9?style=flat-square) (concurrency)** — управление несколькими задачами, выполнение которых пересекается во времени. Система позволяет каждой задаче продвигаться вперёд, часто переключаясь между ними.
+- **Параллелизм ![Parallelism](https://img.shields.io/badge/Parallelism-d97706?style=flat-square) (parallelism)** — фактическое одновременное выполнение нескольких задач, например на разных ядрах процессора.
 
 Конкурентность описывает координацию нескольких задач. Параллелизм означает их одновременное выполнение. Для конкурентности не обязательно иметь несколько ядер процессора.
 
 ## Как это применяется в Python
 
-- **Threading ![ENTITY: Multithreading](https://img.shields.io/badge/ENTITY-Multithreading-16a34a):** несколько потоков внутри одного процесса; подходит для блокирующего I/O и некоторых нативных библиотек ![ENTITY: Native Extension](https://img.shields.io/badge/ENTITY-Native-Extension-0f766e).
-- **Multiprocessing ![ENTITY: Multiprocessing](https://img.shields.io/badge/ENTITY-Multiprocessing-7c3aed):** отдельные процессы, которые могут выполняться на разных ядрах; часто подходит для CPU-bound ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) задач на Python.
-- **Asyncio ![ENTITY: Asyncio](https://img.shields.io/badge/ENTITY-Asyncio-0891b2):** кооперативная конкурентность под управлением event loop ![ENTITY: Event Loop](https://img.shields.io/badge/ENTITY-Event-Loop-0891b2). Когда coroutine ![ENTITY: Coroutine](https://img.shields.io/badge/ENTITY-Coroutine-0891b2) ожидает I/O, event loop может запустить другую. Сам по себе asyncio не делает CPU-intensive код параллельным.
+- **Threading ![Multithreading](https://img.shields.io/badge/Multithreading-16a34a?style=flat-square):** несколько потоков внутри одного процесса; подходит для блокирующего I/O и некоторых нативных библиотек ![Native Extension](https://img.shields.io/badge/Native-Extension-0f766e?style=flat-square).
+- **Multiprocessing ![Multiprocessing](https://img.shields.io/badge/Multiprocessing-7c3aed?style=flat-square):** отдельные процессы, которые могут выполняться на разных ядрах; часто подходит для CPU-bound ![CPU-bound](https://img.shields.io/badge/CPU-bound-d97706?style=flat-square) задач на Python.
+- **Asyncio ![Asyncio](https://img.shields.io/badge/Asyncio-0891b2?style=flat-square):** кооперативная конкурентность под управлением event loop ![Event Loop](https://img.shields.io/badge/Event-Loop-0891b2?style=flat-square). Когда coroutine ![Coroutine](https://img.shields.io/badge/Coroutine-0891b2?style=flat-square) ожидает I/O, event loop может запустить другую. Сам по себе asyncio не делает CPU-intensive код параллельным.
 
-В обычной сборке CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) с GIL ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb) несколько потоков не выполняют Python bytecode ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b) параллельно. Но они всё равно могут обеспечивать конкурентность, особенно во время ожидания I/O. Free-threaded ![ENTITY: Free-threaded](https://img.shields.io/badge/ENTITY-Free-threaded-0f766e)-сборка CPython может выполнять Python-код параллельно, если GIL отключён; такая сборка является опциональной и не используется по умолчанию.
+В обычной сборке CPython ![CPython](https://img.shields.io/badge/CPython-64748b?style=flat-square) с GIL ![GIL](https://img.shields.io/badge/GIL-2563eb?style=flat-square) несколько потоков не выполняют Python bytecode ![Python Bytecode](https://img.shields.io/badge/Python-Bytecode-64748b?style=flat-square) параллельно. Но они всё равно могут обеспечивать конкурентность, особенно во время ожидания I/O. Free-threaded ![Free-threaded](https://img.shields.io/badge/Free-threaded-0f766e?style=flat-square)-сборка CPython может выполнять Python-код параллельно, если GIL отключён; такая сборка является опциональной и не используется по умолчанию.
 
 В документации Python 3.15.2 также описано использование asyncio в free-threaded-среде. Один event loop по-прежнему последовательно выполняет Python-код своих задач в своём потоке, но отдельные event loop в разных потоках могут работать параллельно при отключённом GIL. Примитивы синхронизации asyncio относятся к своему event loop и не должны использоваться для синхронизации между потоками.
 
@@ -168,13 +168,13 @@ Backend может обращаться к внешнему API, выполня�
 
 «Конкурентность — это возможность управлять несколькими задачами, выполнение которых пересекается во времени. Параллелизм означает фактическое одновременное выполнение нескольких задач, обычно на разных ядрах процессора.
 
-Конкурентность полезна для I/O-bound ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) задач, потому что программа может выполнять другие задачи, пока одна операция ожидает ответа. Параллелизм полезен для CPU-bound задач, поскольку несколько вычислений могут выполняться одновременно.
+Конкурентность полезна для I/O-bound ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) задач, потому что программа может выполнять другие задачи, пока одна операция ожидает ответа. Параллелизм полезен для CPU-bound задач, поскольку несколько вычислений могут выполняться одновременно.
 
 В Python для конкурентности часто используют threading и asyncio, а multiprocessing позволяет организовать параллельное выполнение. В обычных сборках CPython GIL ограничивает параллельное выполнение Python bytecode несколькими потоками».
 
 ---
 
-## PY-002 / FU-1 — Может ли конкурентность существовать без параллелизма? ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706) ![ENTITY: Thread](https://img.shields.io/badge/ENTITY-Thread-16a34a) ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-002 / FU-1 — Может ли конкурентность существовать без параллелизма? ![Concurrency](https://img.shields.io/badge/Concurrency-0ea5e9?style=flat-square) ![Parallelism](https://img.shields.io/badge/Parallelism-d97706?style=flat-square) ![Thread](https://img.shields.io/badge/Thread-16a34a?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Может ли конкурентность существовать без параллелизма?
 
@@ -190,7 +190,7 @@ Backend может обращаться к внешнему API, выполня�
 
 ---
 
-## PY-002 / FU-2 — Чем отличаются I/O-bound и CPU-bound задачи? ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-002 / FU-2 — Чем отличаются I/O-bound и CPU-bound задачи? ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) ![CPU-bound](https://img.shields.io/badge/CPU-bound-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Чем отличаются I/O-bound и CPU-bound задачи?
 
@@ -206,7 +206,7 @@ Backend может обращаться к внешнему API, выполня�
 
 ---
 
-## PY-002 / FU-3 — Как GIL влияет на конкурентность и параллелизм в CPython? ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb) ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Thread](https://img.shields.io/badge/ENTITY-Thread-16a34a) ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-002 / FU-3 — Как GIL влияет на конкурентность и параллелизм в CPython? ![GIL](https://img.shields.io/badge/GIL-2563eb?style=flat-square) ![CPython](https://img.shields.io/badge/CPython-64748b?style=flat-square) ![Thread](https://img.shields.io/badge/Thread-16a34a?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Как GIL влияет на конкурентность и параллелизм в CPython?
 
@@ -218,11 +218,11 @@ Backend может обращаться к внешнему API, выполня�
 
 **Ответ для собеседования (RU)**
 
-«В обычных сборках CPython GIL не позволяет нескольким потокам одновременно исполнять Python bytecode. Потоки всё равно обеспечивают конкурентность, особенно для I/O-bound задач, но обычно не обеспечивают параллельное выполнение CPU-bound Python-кода. Free-threaded-сборки меняют это ограничение, однако потокобезопасность ![ENTITY: Thread Safety](https://img.shields.io/badge/ENTITY-Thread-Safety-16a34a) и совместимость расширений остаются важными».
+«В обычных сборках CPython GIL не позволяет нескольким потокам одновременно исполнять Python bytecode. Потоки всё равно обеспечивают конкурентность, особенно для I/O-bound задач, но обычно не обеспечивают параллельное выполнение CPU-bound Python-кода. Free-threaded-сборки меняют это ограничение, однако потокобезопасность ![Thread Safety](https://img.shields.io/badge/Thread-Safety-16a34a?style=flat-square) и совместимость расширений остаются важными».
 
 ---
 
-## PY-002 / FU-4 — Как определить, нужна ли задаче конкурентность или параллелизм? ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706) ![ENTITY: Asyncio](https://img.shields.io/badge/ENTITY-Asyncio-0891b2) ![ENTITY: Multiprocessing](https://img.shields.io/badge/ENTITY-Multiprocessing-7c3aed) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-002 / FU-4 — Как определить, нужна ли задаче конкурентность или параллелизм? ![Concurrency](https://img.shields.io/badge/Concurrency-0ea5e9?style=flat-square) ![Parallelism](https://img.shields.io/badge/Parallelism-d97706?style=flat-square) ![Asyncio](https://img.shields.io/badge/Asyncio-0891b2?style=flat-square) ![Multiprocessing](https://img.shields.io/badge/Multiprocessing-7c3aed?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Как определить, нужна ли задаче конкурентность или параллелизм?
 
@@ -246,21 +246,21 @@ Backend может обращаться к внешнему API, выполня�
 
 # PY-003 — Основной вопрос ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Вопрос (RU):** Как Python ![ENTITY: Python](https://img.shields.io/badge/ENTITY-Python-2563eb) выполняет программу — от исходного кода до поведения во время выполнения?
+**Вопрос (RU):** Как Python ![Python](https://img.shields.io/badge/Python-2563eb?style=flat-square) выполняет программу — от исходного кода до поведения во время выполнения?
 
-**Оригинальная формулировка (EN):** How does Python execute a program from source code to runtime ![ENTITY: Runtime](https://img.shields.io/badge/ENTITY-Runtime-0ea5e9) behavior?
+**Оригинальная формулировка (EN):** How does Python execute a program from source code to runtime ![Runtime](https://img.shields.io/badge/Runtime-0ea5e9?style=flat-square) behavior?
 
 ## Главная идея
 
-Python не выполняет исходный код просто построчно по мере чтения файла. В CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) исходный текст декодируется, разбирается и компилируется. Затем полученные объекты кода выполняются интерпретатор ![ENTITY: Interpreter](https://img.shields.io/badge/ENTITY-Interpreter-64748b)ом.
+Python не выполняет исходный код просто построчно по мере чтения файла. В CPython ![CPython](https://img.shields.io/badge/CPython-64748b?style=flat-square) исходный текст декодируется, разбирается и компилируется. Затем полученные объекты кода выполняются интерпретатор ![Interpreter](https://img.shields.io/badge/Interpreter-64748b?style=flat-square)ом.
 
 Удобная модель:
 
 1. **Read and decode:** CPython читает исходный файл и декодирует его в текст.
-2. **Parse:** парсер ![ENTITY: Parser](https://img.shields.io/badge/ENTITY-Parser-7c3aed) проверяет грамматику и строит абстрактное синтаксическое дерево (AST ![ENTITY: AST](https://img.shields.io/badge/ENTITY-AST-7c3aed)).
-3. **Compile:** компилятор ![ENTITY: Compiler](https://img.shields.io/badge/ENTITY-Compiler-7c3aed) преобразует разобранную программу в объекты кода с байткод ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b)ом и метаданными.
+2. **Parse:** парсер ![Parser](https://img.shields.io/badge/Parser-7c3aed?style=flat-square) проверяет грамматику и строит абстрактное синтаксическое дерево (AST ![AST](https://img.shields.io/badge/AST-7c3aed?style=flat-square)).
+3. **Compile:** компилятор ![Compiler](https://img.shields.io/badge/Compiler-7c3aed?style=flat-square) преобразует разобранную программу в объекты кода с байткод ![Python Bytecode](https://img.shields.io/badge/Python-Bytecode-64748b?style=flat-square)ом и метаданными.
 4. **Execute:** интерпретатор выполняет эти объекты кода в runtime-окружении.
-5. **Interact:** программа может вызывать нативные расширения ![ENTITY: Native Extension](https://img.shields.io/badge/ENTITY-Native-Extension-0f766e), библиотеки и сервисы операционной системы ![ENTITY: Operating System](https://img.shields.io/badge/ENTITY-Operating-System-64748b).
+5. **Interact:** программа может вызывать нативные расширения ![Native Extension](https://img.shields.io/badge/Native-Extension-0f766e?style=flat-square), библиотеки и сервисы операционной системы ![Operating System](https://img.shields.io/badge/Operating-System-64748b?style=flat-square).
 
 Это обычная модель выполнения CPython. Python определяет поведение языка, но другие реализации могут использовать другие механизмы.
 
@@ -268,17 +268,17 @@ Python не выполняет исходный код просто постро
 
 Важно разделять три события:
 
-- **Compilation ![ENTITY: Compilation](https://img.shields.io/badge/ENTITY-Compilation-7c3aed):** тело функции компилируется в code object ![ENTITY: Code Object](https://img.shields.io/badge/ENTITY-Code-Object-7c3aed).
+- **Compilation ![Compilation](https://img.shields.io/badge/Compilation-7c3aed?style=flat-square):** тело функции компилируется в code object ![Code Object](https://img.shields.io/badge/Code-Object-7c3aed?style=flat-square).
 - **Function definition:** когда выполнение доходит до инструкции `def`, Python создаёт объект функции и связывает с именем.
 - **Function call:** тело функции начинает выполняться только при вызове.
 
 Тело функции компилируется вместе с содержащим его модулем, но не выполняется только потому, что функция определена. Поэтому runtime-ошибка внутри тела может проявиться лишь при вызове функции. Синтаксические ошибки выявляются во время parsing или compilation — до выполнения инструкций верхнего уровня модуля.
 
-## Bytecode, code object и function object ![ENTITY: Function Object](https://img.shields.io/badge/ENTITY-Function-Object-16a34a)
+## Bytecode, code object и function object ![Function Object](https://img.shields.io/badge/Function-Object-16a34a?style=flat-square)
 
-- **Bytecode (байткод)** — формат инструкций, используемый интерпретатором CPython. Это не машинный код ![ENTITY: Machine Code](https://img.shields.io/badge/ENTITY-Machine-Code-d97706) процессора.
+- **Bytecode (байткод)** — формат инструкций, используемый интерпретатором CPython. Это не машинный код ![Machine Code](https://img.shields.io/badge/Machine-Code-d97706?style=flat-square) процессора.
 - **Code object** хранит скомпилированные инструкции и метаданные: константы, имена, информацию о позициях исходного кода.
-- **Function object** — вызываемый объект, который создаётся при выполнении определения функции. Он ссылается на code object и хранит контекст выполнения: глобальное пространство имён ![ENTITY: Global Namespace](https://img.shields.io/badge/ENTITY-Global-Namespace-64748b), значения аргументов по умолчанию и замыкания.
+- **Function object** — вызываемый объект, который создаётся при выполнении определения функции. Он ссылается на code object и хранит контекст выполнения: глобальное пространство имён ![Global Namespace](https://img.shields.io/badge/Global-Namespace-64748b?style=flat-square), значения аргументов по умолчанию и замыкания.
 
 Ключевое различие: code object представляет скомпилированный код, а function object связывает этот код с контекстом, в котором он будет выполняться.
 
@@ -286,13 +286,13 @@ Python не выполняет исходный код просто постро
 
 В документации Python 3.15.2 описаны следующие концептуальные уровни runtime:
 
-- **Process ![ENTITY: Process](https://img.shields.io/badge/ENTITY-Process-7c3aed):** ресурсы операционной системы — память, файловые дескрипторы ![ENTITY: File Descriptor](https://img.shields.io/badge/ENTITY-File-Descriptor-64748b), сокеты.
+- **Process ![Process](https://img.shields.io/badge/Process-7c3aed?style=flat-square):** ресурсы операционной системы — память, файловые дескрипторы ![File Descriptor](https://img.shields.io/badge/File-Descriptor-64748b?style=flat-square), сокеты.
 - **Python global runtime:** состояние, общее на уровне Python runtime.
 - **Interpreter:** состояние и окружение конкретного интерпретатора.
-- **Thread ![ENTITY: Thread](https://img.shields.io/badge/ENTITY-Thread-16a34a):** системный поток, выполняющий Python- и нативный код.
+- **Thread ![Thread](https://img.shields.io/badge/Thread-16a34a?style=flat-square):** системный поток, выполняющий Python- и нативный код.
 - **Thread state:** состояние выполнения Python, связанное с потоком.
 
-Runtime может содержать несколько интерпретаторов, а один интерпретатор — несколько thread states ![ENTITY: Thread State](https://img.shields.io/badge/ENTITY-Thread-State-16a34a). Это концептуальная модель: реализация не обязана представлять каждый уровень отдельным физическим объектом.
+Runtime может содержать несколько интерпретаторов, а один интерпретатор — несколько thread states ![Thread State](https://img.shields.io/badge/Thread-State-16a34a?style=flat-square). Это концептуальная модель: реализация не обязана представлять каждый уровень отдельным физическим объектом.
 
 Не путай Python interpreter с процессом операционной системы. Процесс — это контейнер выполнения на уровне ОС, а интерпретатор — реализация Python, которая выполняет код внутри этого окружения.
 
@@ -304,21 +304,21 @@ Runtime может содержать несколько интерпретат�
 
 ## Adaptive specialization в современном CPython
 
-Современный CPython может адаптировать выполнение к наблюдаемому поведению программы. Он способен специализировать инструкции для часто встречающихся сценариев и использовать inline caches ![ENTITY: Inline Cache](https://img.shields.io/badge/ENTITY-Inline-Cache-d97706), чтобы ускорять повторяющиеся операции.
+Современный CPython может адаптировать выполнение к наблюдаемому поведению программы. Он способен специализировать инструкции для часто встречающихся сценариев и использовать inline caches ![Inline Cache](https://img.shields.io/badge/Inline-Cache-d97706?style=flat-square), чтобы ускорять повторяющиеся операции.
 
 Это внутренняя оптимизация, а не изменение семантики языка Python. Конкретные инструкции и стратегия специализации могут меняться между версиями CPython.
 
 Модуль `dis` позволяет исследовать байткод CPython. Режим adaptive может показывать специализированные инструкции, например через `dis.dis(function, adaptive=True)`. Это полезно для диагностики, но байткод нельзя считать стабильным интерфейсом приложения.
 
-## Что такое файл .pyc ![ENTITY: .pyc Cache](https://img.shields.io/badge/ENTITY-PYC-Cache-0891b2)?
+## Что такое файл .pyc ![.pyc Cache](https://img.shields.io/badge/PYC-Cache-0891b2?style=flat-square)?
 
-Python может кэшировать скомпилированный байткод модулей в файлах `.pyc`, обычно в каталоге `__pycache__`. Если кэш подходит, при импорт ![ENTITY: Import](https://img.shields.io/badge/ENTITY-Import-0ea5e9)е Python может использовать его вместо повторной компиляции исходного файла.
+Python может кэшировать скомпилированный байткод модулей в файлах `.pyc`, обычно в каталоге `__pycache__`. Если кэш подходит, при импорт ![Import](https://img.shields.io/badge/Import-0ea5e9?style=flat-square)е Python может использовать его вместо повторной компиляции исходного файла.
 
 Это оптимизация, а не обязательный этап каждого запуска. Файл `.pyc` содержит байткод Python, а не машинный код. Python проверяет актуальность кэша; само наличие файла ещё не означает, что он обязательно будет использован.
 
 ## Как это связано с backend-сервисом?
 
-Возьмём FastAPI ![ENTITY: FastAPI](https://img.shields.io/badge/ENTITY-FastAPI-16a34a)-приложение. Во время запуска процесс запускает Python, после чего приложение импортирует entry point и зависимости. Выполняется код верхнего уровня: создаются объекты, регистрируются маршруты и инициализируются компоненты.
+Возьмём FastAPI ![FastAPI](https://img.shields.io/badge/FastAPI-16a34a?style=flat-square)-приложение. Во время запуска процесс запускает Python, после чего приложение импортирует entry point и зависимости. Выполняется код верхнего уровня: создаются объекты, регистрируются маршруты и инициализируются компоненты.
 
 Позже, когда приходит HTTP-запрос, вызываются соответствующие endpoint- и service-функции. Ошибка при импорте или инициализации модуля может помешать запуску приложения. Ошибка внутри endpoint может проявиться только тогда, когда запрос дойдёт до этого кода.
 
@@ -336,7 +336,7 @@ Python может кэшировать скомпилированный байт
 
 ---
 
-## PY-003 / FU-1 — Какие основные этапы проходит Python-программа? ![ENTITY: Python](https://img.shields.io/badge/ENTITY-Python-2563eb) ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: AST](https://img.shields.io/badge/ENTITY-AST-7c3aed) ![ENTITY: Compiler](https://img.shields.io/badge/ENTITY-Compiler-7c3aed) ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b) ![ENTITY: Interpreter](https://img.shields.io/badge/ENTITY-Interpreter-64748b) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-003 / FU-1 — Какие основные этапы проходит Python-программа? ![Python](https://img.shields.io/badge/Python-2563eb?style=flat-square) ![CPython](https://img.shields.io/badge/CPython-64748b?style=flat-square) ![AST](https://img.shields.io/badge/AST-7c3aed?style=flat-square) ![Compiler](https://img.shields.io/badge/Compiler-7c3aed?style=flat-square) ![Python Bytecode](https://img.shields.io/badge/Python-Bytecode-64748b?style=flat-square) ![Interpreter](https://img.shields.io/badge/Interpreter-64748b?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Какие основные этапы проходит исходный код Python до выполнения инструкций в CPython?
 
@@ -352,9 +352,9 @@ Python может кэшировать скомпилированный байт
 
 ---
 
-## PY-003 / FU-2 — Почему запуск модуля отличается от его импорта? ![ENTITY: Module](https://img.shields.io/badge/ENTITY-Module-0ea5e9) ![ENTITY: Import](https://img.shields.io/badge/ENTITY-Import-0ea5e9) ![ENTITY: Global Namespace](https://img.shields.io/badge/ENTITY-Global-Namespace-64748b) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-003 / FU-2 — Почему запуск модуля отличается от его импорта? ![Module](https://img.shields.io/badge/Module-0ea5e9?style=flat-square) ![Import](https://img.shields.io/badge/Import-0ea5e9?style=flat-square) ![Global Namespace](https://img.shields.io/badge/Global-Namespace-64748b?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
-**Вопрос (RU):** Как исследовать ситуацию, когда модуль ![ENTITY: Module](https://img.shields.io/badge/ENTITY-Module-0ea5e9) Python ведёт себя по-разному при запуске как скрипт и при импорте из другого модуля?
+**Вопрос (RU):** Как исследовать ситуацию, когда модуль ![Module](https://img.shields.io/badge/Module-0ea5e9?style=flat-square) Python ведёт себя по-разному при запуске как скрипт и при импорте из другого модуля?
 
 **Оригинальная формулировка (EN):** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module?
 
@@ -368,7 +368,7 @@ Python может кэшировать скомпилированный байт
 
 ---
 
-## PY-003 / FU-3 — Какие детали выполнения зависят от реализации? ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b) ![ENTITY: Adaptive Specialization](https://img.shields.io/badge/ENTITY-Adaptive-Specialization-d97706) ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b) ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-003 / FU-3 — Какие детали выполнения зависят от реализации? ![CPython](https://img.shields.io/badge/CPython-64748b?style=flat-square) ![Python Bytecode](https://img.shields.io/badge/Python-Bytecode-64748b?style=flat-square) ![Adaptive Specialization](https://img.shields.io/badge/Adaptive-Specialization-d97706?style=flat-square) ![PyFrameObject](https://img.shields.io/badge/PyFrameObject-64748b?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Какие особенности байткода и поведения интерпретатора являются деталями реализации, а не гарантиями языка Python, и почему это важно?
 
@@ -376,7 +376,7 @@ Python может кэшировать скомпилированный байт
 
 **Объяснение**
 
-Python определяет семантику языка, но не единый формат байткода или архитектуру интерпретатора. Инструкции CPython, inline caches, adaptive specialization ![ENTITY: Adaptive Specialization](https://img.shields.io/badge/ENTITY-Adaptive-Specialization-d97706) и внутреннее представление frames — детали реализации, которые могут меняться между версиями. В частности, не следует считать, что каждый вызов функции обязательно создаёт доступный Python-коду объект `PyFrameObject ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b)`: внутреннее представление execution frame в CPython и объекты frame, доступные для introspection, — разные понятия.
+Python определяет семантику языка, но не единый формат байткода или архитектуру интерпретатора. Инструкции CPython, inline caches, adaptive specialization ![Adaptive Specialization](https://img.shields.io/badge/Adaptive-Specialization-d97706?style=flat-square) и внутреннее представление frames — детали реализации, которые могут меняться между версиями. В частности, не следует считать, что каждый вызов функции обязательно создаёт доступный Python-коду объект `PyFrameObject ![PyFrameObject](https://img.shields.io/badge/PyFrameObject-64748b?style=flat-square)`: внутреннее представление execution frame в CPython и объекты frame, доступные для introspection, — разные понятия.
 
 **Ответ для собеседования (RU)**
 
@@ -384,7 +384,7 @@ Python определяет семантику языка, но не едины�
 
 ---
 
-## PY-003 / FU-4 — Как выбрать уровень диагностики? ![ENTITY: Python](https://img.shields.io/badge/ENTITY-Python-2563eb) ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Operating System](https://img.shields.io/badge/ENTITY-Operating-System-64748b) ![ENTITY: Runtime](https://img.shields.io/badge/ENTITY-Runtime-0ea5e9) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-003 / FU-4 — Как выбрать уровень диагностики? ![Python](https://img.shields.io/badge/Python-2563eb?style=flat-square) ![CPython](https://img.shields.io/badge/CPython-64748b?style=flat-square) ![Operating System](https://img.shields.io/badge/Operating-System-64748b?style=flat-square) ![Runtime](https://img.shields.io/badge/Runtime-0ea5e9?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Как при диагностике production-проблемы определить, нужно ли исследовать уровень Python, внутреннее устройство CPython или окружение операционной системы и runtime?
 
@@ -422,16 +422,16 @@ Python определяет семантику языка, но не едины�
 
 ## Главная идея
 
-Вызов функции — это не просто переход к другой строке кода. Python вычисляет выражение вызова, связывает аргументы с параметрами ![ENTITY: Parameter](https://img.shields.io/badge/ENTITY-Parameter-7c3aed), подготавливает состояние выполнения, исполняет тело функции и возвращает результат либо передаёт исключение ![ENTITY: Exception](https://img.shields.io/badge/ENTITY-Exception-dc2626) вызывающему коду.
+Вызов функции — это не просто переход к другой строке кода. Python вычисляет выражение вызова, связывает аргументы с параметрами ![Parameter](https://img.shields.io/badge/Parameter-7c3aed?style=flat-square), подготавливает состояние выполнения, исполняет тело функции и возвращает результат либо передаёт исключение ![Exception](https://img.shields.io/badge/Exception-dc2626?style=flat-square) вызывающему коду.
 
 Удобная модель:
 
-1. Вычислить вызываемый объект ![ENTITY: Callable](https://img.shields.io/badge/ENTITY-Callable-2563eb) и выражения аргументов.
+1. Вычислить вызываемый объект ![Callable](https://img.shields.io/badge/Callable-2563eb?style=flat-square) и выражения аргументов.
 2. Выполнить вызов согласно семантике Python.
 3. Связать позиционные и именованные аргументы с параметрами.
 4. Создать или восстановить состояние выполнения функции.
 5. Выполнить тело функции.
-6. Вернуть значение ![ENTITY: Return Value](https://img.shields.io/badge/ENTITY-Return-Value-16a34a) или передать исключение дальше.
+6. Вернуть значение ![Return Value](https://img.shields.io/badge/Return-Value-16a34a?style=flat-square) или передать исключение дальше.
 
 Точный внутренний путь вызова — деталь реализации. Для корректности приложения нужно опираться на семантику языка.
 
@@ -458,25 +458,25 @@ Python сопоставляет переданные аргументы с па�
 
 ## 3. Function object и code object
 
-- **Function object** — вызываемый runtime-объект. Он ссылается на скомпилированный код и хранит контекст: глобальное пространство имён ![ENTITY: Global Namespace](https://img.shields.io/badge/ENTITY-Global-Namespace-64748b), значения аргументов по умолчанию и информацию о замыканиях.
+- **Function object** — вызываемый runtime-объект. Он ссылается на скомпилированный код и хранит контекст: глобальное пространство имён ![Global Namespace](https://img.shields.io/badge/Global-Namespace-64748b?style=flat-square), значения аргументов по умолчанию и информацию о замыканиях.
 - **Code object** — скомпилированные инструкции и метаданные. Он может использоваться многими вызовами; Python не компилирует тело функции заново при каждом вызове.
 
 Таким образом, function object связывает повторно используемый скомпилированный код с контекстом, в котором он выполняется.
 
 ## 4. Execution state и frames
 
-Концептуально активному вызову функции нужен execution frame ![ENTITY: Execution Frame](https://img.shields.io/badge/ENTITY-Execution-Frame-0ea5e9). Он представляет информацию, необходимую для выполнения кода и правильного продолжения работы:
+Концептуально активному вызову функции нужен execution frame ![Execution Frame](https://img.shields.io/badge/Execution-Frame-0ea5e9?style=flat-square). Он представляет информацию, необходимую для выполнения кода и правильного продолжения работы:
 
 - выполняемый код и текущая позиция инструкции;
 - локальные переменные и значения параметров;
-- доступ к global и built-in namespaces ![ENTITY: Builtins Namespace](https://img.shields.io/badge/ENTITY-Builtins-Namespace-64748b);
-- closure cells ![ENTITY: Closure Cell](https://img.shields.io/badge/ENTITY-Closure-Cell-16a34a) для переменных из внешних областей видимости;
+- доступ к global и built-in namespaces ![Builtins Namespace](https://img.shields.io/badge/Builtins-Namespace-64748b?style=flat-square);
+- closure cells ![Closure Cell](https://img.shields.io/badge/Closure-Cell-16a34a?style=flat-square) для переменных из внешних областей видимости;
 - состояние управления потоком и обработки исключений;
 - информация для отладки, tracing и возврата к вызывающему коду.
 
-Не следует считать, что все локальные переменные всегда хранятся в обычном Python-словаре или что каждый вызов обязательно выделяет полноценный объект `PyFrameObject ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b)`.
+Не следует считать, что все локальные переменные всегда хранятся в обычном Python-словаре или что каждый вызов обязательно выделяет полноценный объект `PyFrameObject ![PyFrameObject](https://img.shields.io/badge/PyFrameObject-64748b?style=flat-square)`.
 
-В современном CPython внутреннее представление `_PyInterpreterFrame ![ENTITY: _PyInterpreterFrame](https://img.shields.io/badge/ENTITY-_PyInterpreterFrame-64748b)` отличается от доступного Python-коду объекта `PyFrameObject`. Видимый frame object может создаваться или предоставляться, когда он нужен для introspection, tracing или debugging. Это деталь реализации, а не гарантия языка Python.
+В современном CPython внутреннее представление `_PyInterpreterFrame ![_PyInterpreterFrame](https://img.shields.io/badge/_PyInterpreterFrame-64748b?style=flat-square)` отличается от доступного Python-коду объекта `PyFrameObject`. Видимый frame object может создаваться или предоставляться, когда он нужен для introspection, tracing или debugging. Это деталь реализации, а не гарантия языка Python.
 
 ## 5. Как функция возвращает управление?
 
@@ -484,23 +484,23 @@ Python сопоставляет переданные аргументы с па�
 
 Если возникает исключение, которое функция не обрабатывает, оно передаётся вызывающему коду. Python разматывает активные контексты выполнения, пока не найдёт подходящий обработчик или исключение не достигнет верхнего уровня.
 
-Traceback содержит ссылки на execution frames. Поэтому сохранение исключения или traceback ![ENTITY: Traceback](https://img.shields.io/badge/ENTITY-Traceback-d97706) может удерживать локальные переменные и объекты, на которые они ссылаются.
+Traceback содержит ссылки на execution frames. Поэтому сохранение исключения или traceback ![Traceback](https://img.shields.io/badge/Traceback-d97706?style=flat-square) может удерживать локальные переменные и объекты, на которые они ссылаются.
 
 ## 6. Важная деталь реализации CPython: оптимизированные вызовы
 
-CPython использует оптимизированные механизмы вызова. В C API документированы протоколы `tp_call ![ENTITY: tp_call](https://img.shields.io/badge/ENTITY-tp_call-0891b2)` и `vectorcall ![ENTITY: Vectorcall](https://img.shields.io/badge/ENTITY-Vectorcall-0891b2)`; vectorcall позволяет уменьшить накладные расходы на упаковку аргументов для поддерживающих его вызываемых объектов.
+CPython использует оптимизированные механизмы вызова. В C API документированы протоколы `tp_call ![tp_call](https://img.shields.io/badge/tp_call-0891b2?style=flat-square)` и `vectorcall ![Vectorcall](https://img.shields.io/badge/Vectorcall-0891b2?style=flat-square)`; vectorcall позволяет уменьшить накладные расходы на упаковку аргументов для поддерживающих его вызываемых объектов.
 
 Начиная с CPython 3.11, обычные вызовы Python-функций могут использовать оптимизированный путь интерпретатора, который избегает прежней схемы рекурсивного повторного входа в evaluator для каждого Python-вызова. Внутренние frames также стали легче по сравнению с традиционной моделью.
 
 Это детали реализации CPython. Они помогают объяснять производительность, но корректность приложения не должна зависеть от конкретного внутреннего пути вызова или расположения frame.
 
-## 7. Генераторы и корутин ![ENTITY: Coroutine](https://img.shields.io/badge/ENTITY-Coroutine-0891b2)ы имеют другой жизненный цикл
+## 7. Генераторы и корутин ![Coroutine](https://img.shields.io/badge/Coroutine-0891b2?style=flat-square)ы имеют другой жизненный цикл
 
 Вызов обычной функции сразу начинает выполнять её тело.
 
-Вызов generator function создаёт generator object; его тело выполняется по мере итерации. Вызов функции `async def` создаёт coroutine object; её тело выполняется, когда корутину await ![ENTITY: Await](https://img.shields.io/badge/ENTITY-Await-0891b2)-ят или планируют в event loop ![ENTITY: Event Loop](https://img.shields.io/badge/ENTITY-Event-Loop-0891b2).
+Вызов generator function создаёт generator object; его тело выполняется по мере итерации. Вызов функции `async def` создаёт coroutine object; её тело выполняется, когда корутину await ![Await](https://img.shields.io/badge/Await-0891b2?style=flat-square)-ят или планируют в event loop ![Event Loop](https://img.shields.io/badge/Event-Loop-0891b2?style=flat-square).
 
-Генераторы и корутины сохраняют состояние между точками приостановки ![ENTITY: Suspension Point](https://img.shields.io/badge/ENTITY-Suspension-Point-0891b2). Их жизненный цикл отличается от обычной функции, которая выполняется до завершения за один вызов.
+Генераторы и корутины сохраняют состояние между точками приостановки ![Suspension Point](https://img.shields.io/badge/Suspension-Point-0891b2?style=flat-square). Их жизненный цикл отличается от обычной функции, которая выполняется до завершения за один вызов.
 
 ## Практический пример
 
@@ -522,11 +522,11 @@ result = triple(10, offset=2)  # 32
 
 Концептуально активный вызов представлен execution frame. В CPython внутреннее представление frame и путь вызова относятся к деталям реализации и менялись между версиями. Во время выполнения функция может вернуть значение или передать исключение вызывающему коду.
 
-У генератор ![ENTITY: Generator](https://img.shields.io/badge/ENTITY-Generator-0891b2)ов и корутин другой жизненный цикл: вызов создаёт generator или coroutine object, а не выполняет тело до завершения немедленно. Перед оптимизацией вызовов я сначала профилирую реальную нагрузку, поскольку основная стоимость может находиться внутри функции или в I/O ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I-O-bound-0891b2), а не в механизме вызова».
+У генератор ![Generator](https://img.shields.io/badge/Generator-0891b2?style=flat-square)ов и корутин другой жизненный цикл: вызов создаёт generator или coroutine object, а не выполняет тело до завершения немедленно. Перед оптимизацией вызовов я сначала профилирую реальную нагрузку, поскольку основная стоимость может находиться внутри функции или в I/O ![I/O-bound](https://img.shields.io/badge/I-O-bound-0891b2?style=flat-square), а не в механизме вызова».
 
 ---
 
-## PY-004 / FU-1 — Какое состояние нужно во время вызова функции? ![ENTITY: Execution Frame](https://img.shields.io/badge/ENTITY-Execution-Frame-0ea5e9) ![ENTITY: _PyInterpreterFrame](https://img.shields.io/badge/ENTITY-_PyInterpreterFrame-64748b) ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b) ![ENTITY: Closure Cell](https://img.shields.io/badge/ENTITY-Closure-Cell-16a34a) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-004 / FU-1 — Какое состояние нужно во время вызова функции? ![Execution Frame](https://img.shields.io/badge/Execution-Frame-0ea5e9?style=flat-square) ![_PyInterpreterFrame](https://img.shields.io/badge/_PyInterpreterFrame-64748b?style=flat-square) ![PyFrameObject](https://img.shields.io/badge/PyFrameObject-64748b?style=flat-square) ![Closure Cell](https://img.shields.io/badge/Closure-Cell-16a34a?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Какое состояние CPython должен создать или поддерживать при входе в Python-функцию и во время её выполнения?
 
@@ -544,7 +544,7 @@ Runtime нужны code object функции, связанные аргумен
 
 ---
 
-## PY-004 / FU-2 — Как исследовать накладные расходы вызовов функций? ![ENTITY: Profiler](https://img.shields.io/badge/ENTITY-Profiler-16a34a) ![ENTITY: Call Stack](https://img.shields.io/badge/ENTITY-Call-Stack-64748b) ![ENTITY: Self Time](https://img.shields.io/badge/ENTITY-Self-Time-d97706) ![ENTITY: Cumulative Time](https://img.shields.io/badge/ENTITY-Cumulative-Time-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-004 / FU-2 — Как исследовать накладные расходы вызовов функций? ![Profiler](https://img.shields.io/badge/Profiler-16a34a?style=flat-square) ![Call Stack](https://img.shields.io/badge/Call-Stack-64748b?style=flat-square) ![Self Time](https://img.shields.io/badge/Self-Time-d97706?style=flat-square) ![Cumulative Time](https://img.shields.io/badge/Cumulative-Time-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Как использовать профилирование и информацию о стеке вызовов, чтобы исследовать чрезмерные накладные расходы вызовов функций в Python-сервисе?
 
@@ -552,21 +552,21 @@ Runtime нужны code object функции, связанные аргумен
 
 **Объяснение**
 
-Начинай с репрезентативной нагрузки и измеримой цели сервиса. Используй profiler ![ENTITY: Profiler](https://img.shields.io/badge/ENTITY-Profiler-16a34a) для анализа количества вызовов, self time ![ENTITY: Self Time](https://img.shields.io/badge/ENTITY-Self-Time-d97706) и cumulative time ![ENTITY: Cumulative Time](https://img.shields.io/badge/ENTITY-Cumulative-Time-d97706), затем сопоставляй результаты с request traces.
+Начинай с репрезентативной нагрузки и измеримой цели сервиса. Используй profiler ![Profiler](https://img.shields.io/badge/Profiler-16a34a?style=flat-square) для анализа количества вызовов, self time ![Self Time](https://img.shields.io/badge/Self-Time-d97706?style=flat-square) и cumulative time ![Cumulative Time](https://img.shields.io/badge/Cumulative-Time-d97706?style=flat-square), затем сопоставляй результаты с request traces.
 
 - **Self time:** время, отнесённое к самой функции без времени вложенных вызовов.
 - **Cumulative time:** время функции вместе с её вложенными вызовами.
 - **Call count:** количество вызовов; большое число само по себе не доказывает наличие узкого места.
 
-Детерминированный profiler даёт подробную информацию о вызовах, но добавляет overhead. Sampling profiler ![ENTITY: Sampling Profiler](https://img.shields.io/badge/ENTITY-Sampling-Profiler-16a34a) обычно менее инвазивен, но даёт статистическую оценку.
+Детерминированный profiler даёт подробную информацию о вызовах, но добавляет overhead. Sampling profiler ![Sampling Profiler](https://img.shields.io/badge/Sampling-Profiler-16a34a?style=flat-square) обычно менее инвазивен, но даёт статистическую оценку.
 
 **Ответ для собеседования (RU)**
 
-«Я определяю целевую метрику и снимаю профиль на репрезентативной нагрузке. Анализирую call count ![ENTITY: Call Count](https://img.shields.io/badge/ENTITY-Call-Count-d97706), self time и cumulative time, сопоставляю профиль с трассировками запросов. Большое количество вызовов само по себе не доказывает, что дорог именно механизм вызова: время может уходить в базу данных, сеть, сериализацию или native code ![ENTITY: Native Code](https://img.shields.io/badge/ENTITY-Native-Code-0f766e). После определения узкого места я делаю целевое изменение и сравниваю latency ![ENTITY: Latency](https://img.shields.io/badge/ENTITY-Latency-d97706) percentiles, throughput ![ENTITY: Throughput](https://img.shields.io/badge/ENTITY-Throughput-d97706), CPU, memory и корректность на одинаковой нагрузке».
+«Я определяю целевую метрику и снимаю профиль на репрезентативной нагрузке. Анализирую call count ![Call Count](https://img.shields.io/badge/Call-Count-d97706?style=flat-square), self time и cumulative time, сопоставляю профиль с трассировками запросов. Большое количество вызовов само по себе не доказывает, что дорог именно механизм вызова: время может уходить в базу данных, сеть, сериализацию или native code ![Native Code](https://img.shields.io/badge/Native-Code-0f766e?style=flat-square). После определения узкого места я делаю целевое изменение и сравниваю latency ![Latency](https://img.shields.io/badge/Latency-d97706?style=flat-square) percentiles, throughput ![Throughput](https://img.shields.io/badge/Throughput-d97706?style=flat-square), CPU, memory и корректность на одинаковой нагрузке».
 
 ---
 
-## PY-004 / FU-3 — Как рекурсия ![ENTITY: Recursion](https://img.shields.io/badge/ENTITY-Recursion-7c3aed), исключения, генераторы и корутины меняют жизненный цикл? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-004 / FU-3 — Как рекурсия ![Recursion](https://img.shields.io/badge/Recursion-7c3aed?style=flat-square), исключения, генераторы и корутины меняют жизненный цикл? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Как рекурсия, исключения, генераторы и асинхронные функции влияют на жизненный цикл выполнения по сравнению с обычным вызовом функции?
 
@@ -576,18 +576,18 @@ Runtime нужны code object функции, связанные аргумен
 
 - **Recursion:** создаёт вложенные логические вызовы с отдельными параметрами и локальным состоянием. Глубокая рекурсия может достичь recursion limit.
 - **Exceptions:** меняют поток управления: контексты выполнения разматываются до нахождения подходящего обработчика.
-- **Generators:** вызов generator function создаёт generator object. Тело выполняется при итерации и сохраняет состояние между точками `yield ![ENTITY: Yield](https://img.shields.io/badge/ENTITY-Yield-0891b2)`.
+- **Generators:** вызов generator function создаёт generator object. Тело выполняется при итерации и сохраняет состояние между точками `yield ![Yield](https://img.shields.io/badge/Yield-0891b2?style=flat-square)`.
 - **Coroutines:** вызов `async def` создаёт coroutine object. Тело выполняется при await или планировании, а при `await` может приостанавливаться.
 
 Event loop управляет продвижением корутин; он не создаёт отдельный системный поток для каждой корутины.
 
 **Ответ для собеседования (RU)**
 
-«Обычная функция выполняется при вызове и завершается возвратом значения или исключением. Рекурсия создаёт вложенные вызовы с отдельным логическим состоянием. Исключения разматывают поток выполнения до подходящего обработчика. Вызов генератора возвращает объект, тело которого продвигается при итерации и сохраняет состояние между yield. Вызов async-функции возвращает coroutine object, который выполняется при await или планировании. Эти различия влияют на глубину стека, scheduling, cancellation ![ENTITY: Cancellation](https://img.shields.io/badge/ENTITY-Cancellation-dc2626) и освобождение ресурсов».
+«Обычная функция выполняется при вызове и завершается возвратом значения или исключением. Рекурсия создаёт вложенные вызовы с отдельным логическим состоянием. Исключения разматывают поток выполнения до подходящего обработчика. Вызов генератора возвращает объект, тело которого продвигается при итерации и сохраняет состояние между yield. Вызов async-функции возвращает coroutine object, который выполняется при await или планировании. Эти различия влияют на глубину стека, scheduling, cancellation ![Cancellation](https://img.shields.io/badge/Cancellation-dc2626?style=flat-square) и освобождение ресурсов».
 
 ---
 
-## PY-004 / FU-4 — Когда механика вызовов должна влиять на оптимизацию? ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Vectorcall](https://img.shields.io/badge/ENTITY-Vectorcall-0891b2) ![ENTITY: Benchmark](https://img.shields.io/badge/ENTITY-Benchmark-d97706) ![ENTITY: Latency](https://img.shields.io/badge/ENTITY-Latency-d97706) ![ENTITY: Throughput](https://img.shields.io/badge/ENTITY-Throughput-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-004 / FU-4 — Когда механика вызовов должна влиять на оптимизацию? ![CPython](https://img.shields.io/badge/CPython-64748b?style=flat-square) ![Vectorcall](https://img.shields.io/badge/Vectorcall-0891b2?style=flat-square) ![Benchmark](https://img.shields.io/badge/Benchmark-d97706?style=flat-square) ![Latency](https://img.shields.io/badge/Latency-d97706?style=flat-square) ![Throughput](https://img.shields.io/badge/Throughput-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** В каких случаях знание механики вызовов CPython должно влиять на решение об оптимизации и как проверить её полезность?
 
@@ -595,9 +595,9 @@ Event loop управляет продвижением корутин; он не
 
 **Объяснение**
 
-Механика вызовов важна, когда профилирование показывает, что dispatch или повторяющиеся wrapper-слои занимают существенную часть CPU-bound ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) hot path. Оптимизации CPython, например vectorcall, могут уменьшать некоторые накладные расходы, но не делают каждый вызов бесплатным.
+Механика вызовов важна, когда профилирование показывает, что dispatch или повторяющиеся wrapper-слои занимают существенную часть CPU-bound ![CPU-bound](https://img.shields.io/badge/CPU-bound-d97706?style=flat-square) hot path. Оптимизации CPython, например vectorcall, могут уменьшать некоторые накладные расходы, но не делают каждый вызов бесплатным.
 
-Проверяй гипотезу на репрезентативных benchmark ![ENTITY: Benchmark](https://img.shields.io/badge/ENTITY-Benchmark-d97706)-нагрузках и production-метриках, учитывая поддерживаемые версии Python. Оценивай не только скорость, но и читаемость с сопровождением.
+Проверяй гипотезу на репрезентативных benchmark ![Benchmark](https://img.shields.io/badge/Benchmark-d97706?style=flat-square)-нагрузках и production-метриках, учитывая поддерживаемые версии Python. Оценивай не только скорость, но и читаемость с сопровождением.
 
 **Ответ для собеседования (RU)**
 
