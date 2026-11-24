@@ -20,7 +20,7 @@ Use the same entity badge and color whenever the entity appears in this curricul
 - ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) — Concurrency
 - ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) — Parallelism
 - ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) — CPU-bound
-- ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) — I/O-bound
+- ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) — I/O-bound
 - ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) — CPython
 - ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square) — Python Bytecode
 - ![Native Extension](https://img.shields.io/badge/-Native-Extension-0f766e?style=flat-square) — Native Extension
@@ -74,7 +74,7 @@ Use the same entity badge and color whenever the entity appears in this curricul
 
 **Main Question:** What is the Global Interpreter Lock (GIL) in CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square), and how does it affect concurrency ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) and parallelism ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square)?
 
-**Evaluation focus:** CPython runtime synchronization, CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) versus I/O-bound ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) workloads, thread safety ![Thread Safety](https://img.shields.io/badge/-Thread-Safety-16a34a?style=flat-square), concurrency-model selection, and free-threaded ![Free-threaded](https://img.shields.io/badge/-Free-threaded-0f766e?style=flat-square) Python.  
+**Evaluation focus:** CPython runtime synchronization, CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) versus I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) workloads, thread safety ![Thread Safety](https://img.shields.io/badge/-Thread-Safety-16a34a?style=flat-square), concurrency-model selection, and free-threaded ![Free-threaded](https://img.shields.io/badge/-Free-threaded-0f766e?style=flat-square) Python.  
 **Level:** L3 — Advanced/Senior  
 **Priority:** P0 — Core / High interview frequency
 
@@ -89,14 +89,14 @@ Follow-ups:
 
 **Main Question:** What is the difference between concurrency ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) and parallelism ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square), and why is the distinction important in Python?
 
-**Evaluation focus:** Concurrency versus simultaneous execution, I/O-bound ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) and CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) workloads, and selecting an appropriate Python execution model.  
+**Evaluation focus:** Concurrency versus simultaneous execution, I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) and CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) workloads, and selecting an appropriate Python execution model.  
 **Level:** L2–L3 — Intermediate/Advanced  
 **Priority:** P0 — Core
 
 Follow-ups:
 
 - **FU-1 — Fundamentals:** Can concurrency exist without parallelism? ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-2 — Workload analysis:** What is the difference between I/O-bound and CPU-bound workloads? ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-2 — Workload analysis:** What is the difference between I/O-bound and CPU-bound workloads? ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 - **FU-3 — CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) behavior:** How does the GIL ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square) affect concurrency and parallelism in CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 - **FU-4 — Senior judgment:** How do you decide whether a workload needs concurrency or parallelism? ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
