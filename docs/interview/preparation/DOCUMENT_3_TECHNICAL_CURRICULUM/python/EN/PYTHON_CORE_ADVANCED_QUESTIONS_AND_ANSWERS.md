@@ -833,7 +833,7 @@ Start with semantics and correctness, then profile representative data sizes and
 - [Python 3.15: What's New — frozendict (PEP 814)](https://docs.python.org/3.15/whatsnew/3.15.html)
 
 
-**Python 3.15 note:** `frozendict` is a built-in immutable mapping, not a `dict` subclass. It preserves insertion order. It is hashable only when all keys and values are hashable; immutability is shallow, so mutable values can still change. This is distinct from `types.MappingProxyType`, which is a read-only dynamic view of an underlying mapping.
+**Python 3.15 note:** ![frozendict](https://img.shields.io/badge/-frozendict-0891b2?style=flat-square) `frozendict` is a built-in immutable mapping, not a `dict` subclass. ![frozenset](https://img.shields.io/badge/-frozenset-0891b2?style=flat-square) `frozenset` is the immutable counterpart of `set` and is hashable when all its elements are hashable. It preserves insertion order. It is hashable only when all keys and values are hashable; immutability is shallow, so mutable values can still change. This is distinct from `types.MappingProxyType`, which is a read-only dynamic view of an underlying mapping.
 
 ---
 
