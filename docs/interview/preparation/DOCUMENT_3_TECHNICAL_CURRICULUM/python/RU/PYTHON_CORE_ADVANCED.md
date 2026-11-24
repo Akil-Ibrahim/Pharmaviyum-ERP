@@ -184,3 +184,19 @@
 - **FU-038 — Практическое применение:** Когда в реальном приложении следует выбирать `WeakValueDictionary`, `WeakKeyDictionary` или `WeakSet`? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 - **FU-039 — Граничные случаи:** Можно ли создать слабую ссылку на любой объект Python и что необходимо учитывать, если класс использует `__slots__`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 - **FU-040 — Senior-level суждение:** Как спроектировать реестр на основе слабых ссылок так, чтобы не создать новую утечку памяти и ненадёжную очистку? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-011 — Context Managers, Resource Management & RAII ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Основной вопрос:** Как работают контекстные менеджеры Python, как они обеспечивают детерминированное управление ресурсами и чем отличаются от RAII?
+
+**Оригинальная формулировка (EN):** How do Python context managers work, how do they provide deterministic resource management, and how do they compare with RAII?
+
+**Что оценивается:** Протокол контекстного менеджера, жизненный цикл `with`, распространение и подавление исключений, детерминированная очистка, синхронные и асинхронные контексты, `contextlib`, exit stacks, частичное получение ресурсов и отличие от RAII.  
+**Уровень:** L3 — Advanced/Senior  
+**Приоритет:** P0 — Core
+
+Дополнительные вопросы:
+
+- **FU-041 — Механизм:** Что именно происходит, когда блок `with` завершается из-за исключения? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-042 — Практическое применение:** Когда следует использовать `ExitStack` вместо вложенных операторов `with`? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-043 — Граничные случаи:** Что происходит, если `__enter__()` завершается ошибкой или если исключение возникает внутри самого `__exit__()`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-044 — Senior-level суждение:** Как спроектировать надёжное управление ресурсами в синхронном и асинхронном backend-приложении? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
