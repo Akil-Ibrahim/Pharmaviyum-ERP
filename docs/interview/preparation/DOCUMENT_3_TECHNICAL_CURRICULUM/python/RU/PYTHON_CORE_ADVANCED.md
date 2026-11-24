@@ -8,13 +8,39 @@
 **Файл ответов:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Английская версия:** [EN Question Map](../EN/PYTHON_CORE_ADVANCED.md)
 
-## PY-001 — GIL, конкурентность и параллелизм ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+## Реестр бейджей технических сущностей — PY-001
 
-**Основной вопрос:** Что такое Global Interpreter Lock (GIL) в CPython и как он влияет на конкурентность и параллелизм?
+Одна и та же сущность всегда использует одинаковый бейдж и цвет во всей учебной программе. Бейджи обозначают технические понятия и не заменяют определения или бейджи типов вопросов.
 
-**Оригинальная формулировка (EN):** What is the Global Interpreter Lock (GIL) in CPython, and how does it affect concurrency and parallelism?
+- ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb) — GIL
+- ![ENTITY: Thread](https://img.shields.io/badge/ENTITY-Thread-16a34a) — Thread
+- ![ENTITY: Process](https://img.shields.io/badge/ENTITY-Process-7c3aed) — Process
+- ![ENTITY: Multithreading](https://img.shields.io/badge/ENTITY-Multithreading-16a34a) — Multithreading
+- ![ENTITY: Multiprocessing](https://img.shields.io/badge/ENTITY-Multiprocessing-7c3aed) — Multiprocessing
+- ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) — Concurrency
+- ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706) — Parallelism
+- ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) — CPU-bound
+- ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) — I/O-bound
+- ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) — CPython
+- ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b) — Python Bytecode
+- ![ENTITY: Native Extension](https://img.shields.io/badge/ENTITY-Native-Extension-0f766e) — Native Extension
+- ![ENTITY: Mutex](https://img.shields.io/badge/ENTITY-Mutex-be123c) — Mutex
+- ![ENTITY: Condition Variable](https://img.shields.io/badge/ENTITY-Condition-Variable-be123c) — Condition Variable
+- ![ENTITY: Lock](https://img.shields.io/badge/ENTITY-Lock-be123c) — Lock
+- ![ENTITY: Free-threaded](https://img.shields.io/badge/ENTITY-Free-threaded-0f766e) — Free-threaded
+- ![ENTITY: Asyncio](https://img.shields.io/badge/ENTITY-Asyncio-0891b2) — Asyncio
+- ![ENTITY: Task](https://img.shields.io/badge/ENTITY-Task-0ea5e9) — Task
+- ![ENTITY: Synchronization](https://img.shields.io/badge/ENTITY-Synchronization-be123c) — Synchronization
+- ![ENTITY: Thread Safety](https://img.shields.io/badge/ENTITY-Thread-Safety-16a34a) — Thread Safety
+- ![ENTITY: Shared State](https://img.shields.io/badge/ENTITY-Shared-State-d97706) — Shared State
 
-**Что оценивается:** Синхронизация runtime CPython, CPU-bound и I/O-bound нагрузки, потокобезопасность, выбор модели конкурентности и free-threaded Python.  
+## PY-001 — GIL ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb), конкурентность и параллелизм ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Основной вопрос:** Что такое Global Interpreter Lock (GIL) в CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) и как он влияет на конкурентность и параллелизм?
+
+**Оригинальная формулировка (EN):** What is the Global Interpreter Lock (GIL) in CPython, and how does it affect concurrency ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) and parallelism ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706)?
+
+**Что оценивается:** Синхронизация runtime CPython, CPU-bound ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) и I/O-bound ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) нагрузки, потокобезопасность, выбор модели конкурентности и free-threaded ![ENTITY: Free-threaded](https://img.shields.io/badge/ENTITY-Free-threaded-0f766e) Python.  
 **Уровень:** L3 — Advanced/Senior  
 **Приоритет:** P0 — Core / высокая частота на технических интервью
 
@@ -22,7 +48,7 @@
 
 - **FU-1 — Механизм:** Почему традиционная сборка CPython использует GIL и что именно защищает эта блокировка? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 - **FU-2 — Практическое применение:** Как GIL влияет на CPU-bound и I/O-bound многопоточные нагрузки в традиционной сборке CPython? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — Архитектурный выбор:** Как выбрать между threading, multiprocessing и asyncio для нагрузки Python backend? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-3 — Архитектурный выбор:** Как выбрать между threading ![ENTITY: Multithreading](https://img.shields.io/badge/ENTITY-Multithreading-16a34a), multiprocessing ![ENTITY: Multiprocessing](https://img.shields.io/badge/ENTITY-Multiprocessing-7c3aed) и asyncio ![ENTITY: Asyncio](https://img.shields.io/badge/ENTITY-Asyncio-0891b2) для нагрузки Python backend? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 - **FU-4 — Senior-level суждение:** Что меняется в free-threaded CPython и что инженерной команде следует проверить перед его внедрением? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-002 — Конкурентность и параллелизм ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
