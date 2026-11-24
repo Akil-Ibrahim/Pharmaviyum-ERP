@@ -14,38 +14,38 @@ English study material for PY-001–PY-019. Each Main Question has four locally 
 
 # PY-001 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Question (EN):** What is the Global Interpreter Lock (GIL) in CPython, and how does it affect concurrency and parallelism?
+**Question (EN):** What is the Global Interpreter Lock (GIL) ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb) in CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b), and how does it affect concurrency and parallelism?
 
 ## Understand the idea
 
-In the conventional GIL-enabled CPython build, only one thread at a time can hold the GIL and execute Python bytecode. Think of it as a shared key: one thread has it, while the others wait for their turn. This is a simplified analogy, but it captures the main idea.
+In the conventional GIL-enabled CPython build, only one thread ![ENTITY: Thread](https://img.shields.io/badge/ENTITY-Thread-16a34a) at a time can hold the GIL and execute Python bytecode ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b). Think of it as a shared key: one thread has it, while the others wait for their turn. This is a simplified analogy, but it captures the main idea.
 
 The GIL helps CPython coordinate access to interpreter state and Python objects. Historically, it also simplified reference counting and the integration of C extensions.
 
-## Concurrency and parallelism
+## Concurrency ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) and parallelism
 
-- **Concurrency:** multiple tasks make progress during overlapping periods; they do not have to run at exactly the same instant.
-- **Parallelism:** multiple tasks execute at the same time, for example on different CPU cores.
+- **Concurrency:** multiple tasks ![ENTITY: Task](https://img.shields.io/badge/ENTITY-Task-0ea5e9) make progress during overlapping periods; they do not have to run at exactly the same instant.
+- **Parallelism ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706):** multiple tasks execute at the same time, for example on different CPU cores.
 
-With the conventional GIL-enabled build, threads can provide concurrency, but CPU-bound pure-Python threads generally cannot execute Python bytecode in parallel across multiple cores.
+With the conventional GIL-enabled build, threads can provide concurrency, but CPU-bound ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) pure-Python threads generally cannot execute Python bytecode in parallel across multiple cores.
 
 ## When does the GIL matter?
 
-- **I/O-bound work:** threads can be useful. While one thread waits for network, file, or other blocking I/O, the GIL is typically released and another thread can run.
-- **CPU-bound pure-Python work:** adding threads usually does not provide multi-core parallelism. Multiprocessing may be a better fit.
-- **Native extensions:** some libraries release the GIL while running native code, so their computations may run in parallel.
+- **I/O-bound ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) work:** threads can be useful. While one thread waits for network, file, or other block ![ENTITY: Lock](https://img.shields.io/badge/ENTITY-Lock-be123c)ing I/O, the GIL is typically released and another thread can run.
+- **CPU-bound pure-Python work:** adding threads usually does not provide multi-core parallelism. Multiprocessing ![ENTITY: Multiprocessing](https://img.shields.io/badge/ENTITY-Multiprocessing-7c3aed) may be a better fit.
+- **Native extensions ![ENTITY: Native Extension](https://img.shields.io/badge/ENTITY-Native-Extension-0f766e):** some libraries release the GIL while running native code, so their computations may run in parallel.
 
-## Does the GIL make code thread-safe?
+## Does the GIL make code thread-safe ![ENTITY: Thread Safety](https://img.shields.io/badge/ENTITY-Thread-Safety-16a34a)?
 
-No. The GIL protects interpreter-level operations; it does not automatically protect application-level business logic. A sequence such as “read a value, modify it, write it back” may still need an explicit lock or another synchronization design.
+No. The GIL protects interpreter-level operations; it does not automatically protect application-level business logic. A sequence such as “read a value, modify it, write it back” may still need an explicit lock or another synchronization ![ENTITY: Synchronization](https://img.shields.io/badge/ENTITY-Synchronization-be123c) design.
 
-## Is the GIL a mutex?
+## Is the GIL a mutex ![ENTITY: Mutex](https://img.shields.io/badge/ENTITY-Mutex-be123c)?
 
-At a high level, the GIL is commonly described as a global mutual-exclusion lock. More precisely, in CPython 3.15.2 its state is protected by an internal mutex, and a condition variable is used to coordinate waiting threads. So “the GIL acts like a global mutex” is a useful simplification; “it is implemented as one ordinary mutex” is not precise.
+At a high level, the GIL is commonly described as a global mutual-exclusion lock. More precisely, in CPython 3.15.2 its state is protected by an internal mutex, and a condition variable ![ENTITY: Condition Variable](https://img.shields.io/badge/ENTITY-Condition-Variable-be123c) is used to coordinate waiting threads. So “the GIL acts like a global mutex” is a useful simplification; “it is implemented as one ordinary mutex” is not precise.
 
 ## What about Python 3.15.2?
 
-CPython also has an optional **free-threaded build**, introduced experimentally in Python 3.13 and officially supported as an optional configuration from Python 3.14. It can run Python threads in parallel without the traditional GIL.
+CPython also has an optional **free-threaded build ![ENTITY: Free-threaded](https://img.shields.io/badge/ENTITY-Free-threaded-0f766e)**, introduced experimentally in Python 3.13 and officially supported as an optional configuration from Python 3.14. It can run Python threads in parallel without the traditional GIL.
 
 It is not the default build. Some C extensions are not compatible and may cause the GIL to be enabled again. Free-threading does not guarantee that every application becomes faster: compatibility, synchronization, memory use, and real workload performance must be checked.
 
@@ -55,13 +55,13 @@ For runtime verification, `sysconfig.get_config_var("Py_GIL_DISABLED")` indicate
 
 “The Global Interpreter Lock, or GIL, is an interpreter-level mutual-exclusion mechanism in the conventional CPython build. It allows only one thread at a time to hold the GIL and execute Python bytecode. This simplifies coordination around interpreter state and object management, but limits multi-core parallelism for CPU-bound pure-Python threads.
 
-Threads are still useful for I/O-bound work because blocking I/O typically releases the GIL. For CPU-bound Python workloads, multiprocessing may be more appropriate, while some native extensions can release the GIL during computation. The GIL also does not guarantee application-level thread safety, so shared state may still require explicit synchronization.
+Threads are still useful for I/O-bound work because blocking I/O typically releases the GIL. For CPU-bound Python workloads, multiprocessing may be more appropriate, while some native extensions can release the GIL during computation. The GIL also does not guarantee application-level thread safety, so shared state ![ENTITY: Shared State](https://img.shields.io/badge/ENTITY-Shared-State-d97706) may still require explicit synchronization.
 
 Python additionally supports optional free-threaded builds, which can execute threads in parallel without the GIL. Before adopting one, I would verify dependency compatibility and benchmark the actual workload.”
 
 ---
 
-## PY-001 / FU-1 — What does the GIL protect? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-001 / FU-1 — What does the GIL protect? ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What does the GIL protect, and why does CPython use it?
 
@@ -75,7 +75,7 @@ The GIL coordinates access to parts of CPython's internal state and Python objec
 
 ---
 
-## PY-001 / FU-2 — How does the GIL affect CPU-bound and I/O-bound work? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-001 / FU-2 — How does the GIL affect CPU-bound and I/O-bound work? ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How does the GIL affect CPU-bound and I/O-bound multithreaded workloads?
 
@@ -89,7 +89,7 @@ CPU-bound work spends most of its time calculating. I/O-bound work spends much o
 
 ---
 
-## PY-001 / FU-3 — How do you choose between threading, multiprocessing, and asyncio? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-001 / FU-3 — How do you choose between threading, multiprocessing, and asyncio ![ENTITY: Asyncio](https://img.shields.io/badge/ENTITY-Asyncio-0891b2)? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How would you choose between threading, multiprocessing, and asyncio for a Python backend workload?
 
@@ -105,7 +105,7 @@ CPU-bound work spends most of its time calculating. I/O-bound work spends much o
 
 ---
 
-## PY-001 / FU-4 — What changes in free-threaded CPython? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-001 / FU-4 — What changes in free-threaded CPython? ![ENTITY: Free-threaded](https://img.shields.io/badge/ENTITY-Free-threaded-0f766e) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** What changes in free-threaded CPython, and what should a team check before adopting it?
 
