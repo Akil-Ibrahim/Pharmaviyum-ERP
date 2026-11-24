@@ -1416,3 +1416,142 @@ Define ownership and lifetime at the layer that acquires the resource. Use synch
 **Interview-Ready Answer (EN)**
 
 “I make resource ownership and lifetime explicit. Synchronous resources use `with`; asynchronous resources use `async with`. I keep database transaction and lock scopes narrow, register cleanup immediately, and use the appropriate exit stack for dynamic acquisition. Unexpected exceptions propagate, cleanup is safe on every exit path, and no correctness property depends on garbage-collection timing.”
+---
+
+## PY-012 — Exception Handling, Exception Hierarchy & Exception Groups ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Main Question (EN):** Explain Python's exception hierarchy and exception-handling model. How do propagation, exception chaining, and exception groups work?
+
+**Question (RU):** Объясните иерархию исключений и модель обработки исключений в Python. Как работают распространение исключений, связывание причин и группы исключений?
+
+**Simple explanation**
+
+An exception is a control-flow mechanism used to report an error or another exceptional condition. Python raises it where the condition is detected and searches outward through the active call stack for a matching handler. If no handler is found, the exception remains unhandled and terminates the current execution path.
+
+Senior-level exception handling is about choosing the correct boundary: handle errors where the application can recover or translate them meaningfully, preserve the original cause, and allow unexpected failures to propagate.
+
+**Exception hierarchy**
+
+All Python exceptions derive from `BaseException`. The two important branches are:
+
+- `Exception`: ordinary application and runtime errors. Most application-specific exceptions should derive from this class.
+- Direct `BaseException` branches include `KeyboardInterrupt`, `SystemExit`, and `GeneratorExit`. These represent process interruption, termination, or generator shutdown rather than ordinary application failures.
+
+Do not normally catch `BaseException` in application code: doing so can intercept shutdown and interruption signals. Prefer specific exception classes; use `Exception` only at deliberate broad boundaries such as task supervision or a top-level request boundary.
+
+**The try / except / else / finally model**
+
+- `try`: contains the operations whose exceptions are being considered.
+- `except`: handles a matching exception raised in the `try` suite, including one raised by a function called from it.
+- `else`: runs only if the `try` suite completes without raising. It keeps success-only operations outside the protected region, avoiding accidental handling of their errors.
+- `finally`: runs as the construct exits, whether an exception occurred or not; it is intended for cleanup.
+
+An exception raised inside an `except` or `else` suite is not handled by another `except` clause belonging to the same `try`. It can be handled by an outer construct. A `finally` suite still runs during exit. Avoid `return`, `break`, or `continue` in `finally`: they can discard a pending exception or override a return value; Python 3.14+ emits a SyntaxWarning for these control-flow statements in `finally`.
+
+**Propagation and the termination model**
+
+If a function does not handle an exception, it propagates to its caller, then to the caller's caller, until a matching handler is found. Python uses termination-style exception handling: control leaves the failing operation and transfers to a handler. The handler does not automatically repair the failed operation or resume it at the exact failing instruction.
+
+At an architectural level, a repository may raise a database-related exception, a service may translate it into a domain-level exception, and an API boundary may map that into an appropriate protocol response. Translate only when the new abstraction adds meaning; do not hide unexpected errors or erase useful diagnostics.
+
+**Exception chaining**
+
+When a new exception is raised while another is being handled, Python normally records the previous exception as `__context__`.
+
+Use explicit chaining when translating an error and its direct cause matters:
+
+- `raise NewError(...) from original_error` sets `__cause__`.
+- `raise NewError(...) from None` suppresses the display of the implicit context in the traceback; the original context remains available for introspection.
+
+Preserve causal information when crossing abstraction boundaries. It is valuable for debugging, observability, and incident analysis.
+
+**ExceptionGroup and except***
+
+Added in Python 3.11, exception groups represent multiple exceptions that need to be reported together, commonly when concurrent tasks fail independently.
+
+- `ExceptionGroup` derives from `Exception` and contains only `Exception` instances.
+- `BaseExceptionGroup` derives from `BaseException` and can contain any `BaseException`. Its constructor produces an `ExceptionGroup` automatically when all members are ordinary `Exception` instances.
+- `except*` handles matching subgroups by exception type. Unmatched members remain in the group and continue propagating after the matching handlers run.
+
+A single `try` statement cannot mix `except` and `except*` clauses. Unlike ordinary `except`, `except*` can execute more than one matching handler for different subgroups of the same group.
+
+**User-defined exceptions**
+
+Define application exceptions by deriving from `Exception` or a suitable application-specific subclass. Keep the hierarchy purposeful and stable. Exception types should communicate meaningful categories that callers can handle, while attributes can carry structured context such as an entity identifier or operation name. Prefer single inheritance from built-in exception types; multiple inheritance across built-in exception classes can cause layout conflicts.
+
+**Senior-level design guidance**
+
+1. Catch the narrowest useful exception type.
+2. Catch an exception only where recovery, translation, or meaningful handling is possible.
+3. Preserve the original exception using chaining when translating it.
+4. Do not silently swallow unexpected failures.
+5. Keep cleanup in `finally` or context managers, not in ad hoc exception handlers alone.
+6. Use exception groups when multiple independent failures must be represented; use `except*` to handle their categories selectively.
+7. At service/API boundaries, map domain failures to stable external errors without leaking internal stack traces or sensitive implementation details.
+
+**Interview Answer (EN)**
+
+“Python exceptions derive from `BaseException`, with `Exception` as the base for ordinary application errors. I normally catch specific exception types and avoid catching `BaseException`, because that can intercept signals such as `KeyboardInterrupt` and `SystemExit`. A `try` suite is handled by matching `except` clauses; `else` runs only on success, and `finally` is for cleanup. Unhandled exceptions propagate up the call stack. When translating an exception across architectural layers, I preserve its cause with `raise ... from ...`. For multiple independent failures, Python 3.11 introduced `ExceptionGroup` and `except*`, which allow selective handling of subgroups. My general rule is to handle errors where recovery or meaningful translation is possible and preserve unexpected failures and their diagnostic context.”
+
+**Official references (Python 3.15.2)**
+
+- [Built-in Exceptions and hierarchy](https://docs.python.org/3.15/library/exceptions.html)
+- [Errors and Exceptions tutorial](https://docs.python.org/3.15/tutorial/errors.html)
+- [The try statement and except*](https://docs.python.org/3.15/reference/compound_stmts.html#the-try-statement)
+- [Execution model — Exceptions](https://docs.python.org/3.15/reference/executionmodel.html#exceptions)
+
+### FU-045 — Mechanism: Why should application code usually catch `Exception` rather than `BaseException`? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** Why should application code usually catch `Exception` rather than `BaseException`?
+
+**Question (RU):** Почему прикладной код обычно должен перехватывать `Exception`, а не `BaseException`?
+
+**Answer**
+
+`Exception` represents ordinary errors that application code may reasonably handle. `KeyboardInterrupt`, `SystemExit`, and `GeneratorExit` are direct branches of `BaseException`, not subclasses of `Exception`. Catching `BaseException` broadly can prevent normal interruption, process termination, or generator shutdown. Catch specific errors whenever possible; use a broad `Exception` handler only at a deliberate boundary, and re-raise when the failure cannot be handled.
+
+**Interview-Ready Answer (EN)**
+
+“I catch specific exceptions whenever possible. `Exception` covers ordinary application failures, while `BaseException` also includes control-flow signals such as `KeyboardInterrupt` and `SystemExit`. A broad `BaseException` handler can interfere with shutdown and interruption, so I avoid it in normal application code.”
+
+### FU-046 — Application: How should a backend translate a low-level exception into a domain-level or API error? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** How should a backend translate a low-level exception into a domain-level or API error?
+
+**Question (RU):** Как backend должен преобразовывать низкоуровневое исключение в доменную ошибку или ошибку API?
+
+**Answer**
+
+Translate at an abstraction boundary where the new layer can add meaning. For example, a repository can expose a database failure as a domain-specific persistence error, and the API boundary can map a known domain error to a stable HTTP response. Use explicit exception chaining, such as `raise DomainError(...) from exc`, to preserve the underlying cause. Do not convert every unknown exception into a client error: unexpected failures should remain visible to logging and error monitoring and normally become a generic server error externally.
+
+**Interview-Ready Answer (EN)**
+
+“I translate exceptions at architectural boundaries where the new abstraction adds useful meaning. I preserve the original cause with explicit chaining, map known domain errors to stable API responses, and avoid exposing internal details or misclassifying unexpected failures as client errors.”
+
+### FU-047 — Edge cases: What is the difference between `__cause__`, `__context__`, and `raise ... from None`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** What is the difference between `__cause__`, `__context__`, and `raise ... from None`?
+
+**Question (RU):** В чём разница между `__cause__`, `__context__` и `raise ... from None`?
+
+**Answer**
+
+`__context__` is set automatically when a new exception is raised while another exception is being handled. `__cause__` is set explicitly by `raise new_error from original_error`, identifying the direct cause. `raise new_error from None` sets the context-suppression flag so the implicit context is not displayed in the traceback; it does not erase the original context from the exception object. Use explicit causes when translating errors; suppress context only when hiding it from the displayed traceback is intentional and safe.
+
+**Interview-Ready Answer (EN)**
+
+“`__context__` records an exception that was active when another exception was raised. `__cause__` records an explicit cause supplied with `raise ... from ...`. `from None` suppresses display of the implicit context but does not remove it from the exception object.”
+
+### FU-048 — Senior judgment: When should you use `ExceptionGroup` and `except*` in concurrent systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** When should you use `ExceptionGroup` and `except*` in concurrent systems?
+
+**Question (RU):** Когда в конкурентных системах следует использовать `ExceptionGroup` и `except*`?
+
+**Answer**
+
+Use exception groups when multiple independent operations can fail and the system needs to report more than one failure instead of discarding all but the first. This commonly occurs in structured concurrency and task groups. Use `except*` when different exception categories require different handling policies: matching subgroups are handled separately while unmatched exceptions continue propagating. Do not use groups merely to wrap a single ordinary failure; preserve cancellation and process-control semantics, and avoid suppressing failures that the caller needs to know about.
+
+**Interview-Ready Answer (EN)**
+
+“I use `ExceptionGroup` when several independent tasks can fail and all relevant failures need to be reported. I use `except*` to handle matching categories independently while allowing unmatched failures to propagate. This is particularly useful with structured concurrency, where a task group may surface multiple errors.”
