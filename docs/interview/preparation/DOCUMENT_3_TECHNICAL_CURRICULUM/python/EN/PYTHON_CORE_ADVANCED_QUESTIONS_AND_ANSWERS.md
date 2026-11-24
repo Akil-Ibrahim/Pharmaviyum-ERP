@@ -592,7 +592,7 @@ alias.append(3)     # The change is visible through first as well
 
 Use is for identity-sensitive checks such as None or a private sentinel; use == for value equality. Use isinstance() when subclasses are acceptable. Prefer protocols or polymorphism when callers need behavior rather than a specific implementation.
 
-Do not confuse Python object identity with domain identity. Two ORM instances may represent the same database row while being distinct Python objects. Use stable domain identifiers across persistence, serialization, and distributed boundaries. The id() value is lifetime-scoped, not a durable key or portable memory address.
+Do not confuse Python object identity with domain identity. Two ORM instances may represent the same database row while being distinct Python objects. Use stable domain identifiers across persistence, serialization, and distributed boundaries. The id() result is guaranteed to be unique only while the object is alive; an ID may be reused after the object is destroyed. In CPython, id() is currently the object's memory address, but that is an implementation detail, not a language guarantee.
 
 **Interview-Ready Answer (EN)**
 
@@ -632,7 +632,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 **Interview-Ready Answer (EN)**
 
-“is checks object identity, whereas == checks equality according to the type's comparison semantics. Two separately created values can be equal without being the same object. Interning or constant reuse may make identity comparisons appear to work for some strings or integers, but that behavior is implementation-dependent. I use is for sentinels and == for value comparisons.”
+“is checks object identity, whereas == invokes the type's equality semantics, which may be customized. Two separately created values can compare equal without being the same object. Interning or constant reuse may make identity comparisons appear to work for some strings or integers, but that behavior is implementation-dependent. I use is for sentinels and == for value comparisons. I also remember that id() is only unique during an object's lifetime and is not a persistent identifier.”
 
 ---
 
@@ -646,7 +646,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 “I make ownership and mutation semantics explicit: callers should know whether an API changes an input, retains a reference, or returns shared state. I use stable domain identifiers rather than Python object identity across persistence and distributed boundaries. Immutable value objects are useful when equality is value-based, provided nested state and hashing are handled correctly. I expose required behavior through suitable abstractions or protocols so callers are not coupled to an unnecessary concrete implementation.”
 
-**Status:** Authored; independent technical and editorial review pending.
+**Status:** Audited against the Python 3.15.2 data model, comparison semantics, and programming FAQ; four follow-ups retained.
 
 # PY-006 — Main Question
 
