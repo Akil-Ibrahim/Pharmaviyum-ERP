@@ -12,7 +12,7 @@
 
 **Статус проверки:** Материал подготовлен; независимая техническая и редакторская проверки ещё не завершены. До их завершения документ не считается окончательно утверждённым.
 
-# PY-001 — Основной вопрос
+# PY-001 — Основной вопрос ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Вопрос (RU):** Что такое Global Interpreter Lock (GIL) в CPython и как он влияет на конкурентность и параллелизм?
 
@@ -63,7 +63,7 @@ GIL помогает CPython координировать доступ к сос
 
 ---
 
-## FU-001 — Что защищает GIL?
+## FU-001 — Что защищает GIL? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Что защищает GIL и зачем CPython его использует?
 
@@ -79,7 +79,7 @@ GIL координирует доступ к внутреннему состоя
 
 ---
 
-## FU-002 — Как GIL влияет на CPU-bound и I/O-bound задачи?
+## FU-002 — Как GIL влияет на CPU-bound и I/O-bound задачи? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Как GIL влияет на CPU-bound и I/O-bound многопоточные нагрузки?
 
@@ -95,7 +95,7 @@ CPU-bound задачи в основном выполняют вычислени
 
 ---
 
-## FU-003 — Как выбрать между threading, multiprocessing и asyncio?
+## FU-003 — Как выбрать между threading, multiprocessing и asyncio? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Как выбрать между threading, multiprocessing и asyncio для нагрузки Python backend?
 
@@ -113,7 +113,7 @@ CPU-bound задачи в основном выполняют вычислени
 
 ---
 
-## FU-004 — Что меняется в free-threaded CPython?
+## FU-004 — Что меняется в free-threaded CPython? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Что меняется в free-threaded CPython и что команде следует проверить перед его внедрением?
 
@@ -137,7 +137,7 @@ Free-threaded-сборка позволяет потокам Python выполн
 
 ---
 
-# PY-002 — Основной вопрос
+# PY-002 — Основной вопрос ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Вопрос (RU):** В чём разница между конкурентностью и параллелизмом и почему это различие важно в Python?
 
@@ -174,7 +174,7 @@ Backend может обращаться к внешнему API, выполня�
 
 ---
 
-## FU-005 — Может ли конкурентность существовать без параллелизма?
+## FU-005 — Может ли конкурентность существовать без параллелизма? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Может ли конкурентность существовать без параллелизма?
 
@@ -190,7 +190,7 @@ Backend может обращаться к внешнему API, выполня�
 
 ---
 
-## FU-006 — Чем отличаются I/O-bound и CPU-bound задачи?
+## FU-006 — Чем отличаются I/O-bound и CPU-bound задачи? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Чем отличаются I/O-bound и CPU-bound задачи?
 
@@ -206,7 +206,7 @@ Backend может обращаться к внешнему API, выполня�
 
 ---
 
-## FU-007 — Как GIL влияет на конкурентность и параллелизм в CPython?
+## FU-007 — Как GIL влияет на конкурентность и параллелизм в CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Как GIL влияет на конкурентность и параллелизм в CPython?
 
@@ -222,7 +222,7 @@ Backend может обращаться к внешнему API, выполня�
 
 ---
 
-## FU-008 — Как определить, нужна ли задаче конкурентность или параллелизм?
+## FU-008 — Как определить, нужна ли задаче конкурентность или параллелизм? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Как определить, нужна ли задаче конкурентность или параллелизм?
 
@@ -244,7 +244,7 @@ Backend может обращаться к внешнему API, выполня�
 
 ---
 
-# PY-003 — Основной вопрос
+# PY-003 — Основной вопрос ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Вопрос (RU):** Как Python выполняет программу — от исходного кода до поведения во время выполнения?
 
@@ -336,7 +336,7 @@ Python может кэшировать скомпилированный байт
 
 ---
 
-## FU-009 — Какие основные этапы проходит Python-программа?
+## FU-009 — Какие основные этапы проходит Python-программа? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Какие основные этапы проходит исходный код Python до выполнения инструкций в CPython?
 
@@ -352,7 +352,7 @@ Python может кэшировать скомпилированный байт
 
 ---
 
-## FU-010 — Почему запуск модуля отличается от его импорта?
+## FU-010 — Почему запуск модуля отличается от его импорта? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Как исследовать ситуацию, когда модуль Python ведёт себя по-разному при запуске как скрипт и при импорте из другого модуля?
 
@@ -368,7 +368,7 @@ Python может кэшировать скомпилированный байт
 
 ---
 
-## FU-011 — Какие детали выполнения зависят от реализации?
+## FU-011 — Какие детали выполнения зависят от реализации? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Какие особенности байткода и поведения интерпретатора являются деталями реализации, а не гарантиями языка Python, и почему это важно?
 
@@ -384,7 +384,7 @@ Python определяет семантику языка, но не едины�
 
 ---
 
-## FU-012 — Как выбрать уровень диагностики?
+## FU-012 — Как выбрать уровень диагностики? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Как при диагностике production-проблемы определить, нужно ли исследовать уровень Python, внутреннее устройство CPython или окружение операционной системы и runtime?
 
@@ -416,7 +416,7 @@ Python определяет семантику языка, но не едины�
 ---
 
 
-# PY-004 — Что происходит при вызове функции в CPython?
+# PY-004 — Что происходит при вызове функции в CPython? ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Оригинальный вопрос (EN):** What happens during a function call in CPython?
 
@@ -526,7 +526,7 @@ result = triple(10, offset=2)  # 32
 
 ---
 
-## FU-013 — Какое состояние нужно во время вызова функции?
+## FU-013 — Какое состояние нужно во время вызова функции? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Какое состояние CPython должен создать или поддерживать при входе в Python-функцию и во время её выполнения?
 
@@ -544,7 +544,7 @@ Runtime нужны code object функции, связанные аргумен
 
 ---
 
-## FU-014 — Как исследовать накладные расходы вызовов функций?
+## FU-014 — Как исследовать накладные расходы вызовов функций? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Как использовать профилирование и информацию о стеке вызовов, чтобы исследовать чрезмерные накладные расходы вызовов функций в Python-сервисе?
 
@@ -566,7 +566,7 @@ Runtime нужны code object функции, связанные аргумен
 
 ---
 
-## FU-015 — Как рекурсия, исключения, генераторы и корутины меняют жизненный цикл?
+## FU-015 — Как рекурсия, исключения, генераторы и корутины меняют жизненный цикл? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Как рекурсия, исключения, генераторы и асинхронные функции влияют на жизненный цикл выполнения по сравнению с обычным вызовом функции?
 
@@ -587,7 +587,7 @@ Event loop управляет продвижением корутин; он не
 
 ---
 
-## FU-016 — Когда механика вызовов должна влиять на оптимизацию?
+## FU-016 — Когда механика вызовов должна влиять на оптимизацию? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** В каких случаях знание механики вызовов CPython должно влиять на решение об оптимизации и как проверить её полезность?
 
@@ -613,7 +613,7 @@ Event loop управляет продвижением корутин; он не
 ---
 
 
-# PY-005 — Основной вопрос
+# PY-005 — Основной вопрос ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Вопрос (RU):** Объясните объектную модель Python: идентичность, тип и значение объекта.
 
@@ -646,7 +646,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-017 — Идентичность, тип и значение в течение жизненного цикла объекта
+## FU-017 — Идентичность, тип и значение в течение жизненного цикла объекта ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Какие из характеристик объекта — идентичность, тип и значение — могут изменяться в течение его жизненного цикла?
 
@@ -660,7 +660,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-018 — Выбор между проверкой идентичности, равенства и типа
+## FU-018 — Выбор между проверкой идентичности, равенства и типа ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Как выбирать между проверками идентичности, равенства и типа при code review?
 
@@ -674,7 +674,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-019 — Почему is не подходит для сравнения значений
+## FU-019 — Почему is не подходит для сравнения значений ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Почему использование is для сравнения строк, чисел и других значений может приводить к ненадёжным результатам?
 
@@ -688,7 +688,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-020 — Идентичность и изменяемость при проектировании API
+## FU-020 — Идентичность и изменяемость при проектировании API ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Как при проектировании API избежать случайной зависимости от идентичности объектов, их изменяемости или конкретных типов реализации?
 
@@ -703,7 +703,7 @@ alias.append(3)     # Изменение видно и через first
 **Статус:** Проверено по документации Python 3.15.2: объектная модель, семантика сравнений и Programming FAQ; сохранены четыре follow-up.
 
 
-# PY-006 — Основной вопрос
+# PY-006 — Основной вопрос ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Вопрос (RU):** Как Python выполняет поиск атрибутов и какую роль в этом процессе играют дескрипторы и специальные методы?
 
@@ -758,7 +758,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-021 — Приоритет поиска атрибутов
+## FU-021 — Приоритет поиска атрибутов ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** В каком порядке Python ищет атрибут экземпляра и как атрибут экземпляра взаимодействует с атрибутом класса?
 
@@ -782,7 +782,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-022 — Data descriptors и non-data descriptors
+## FU-022 — Data descriptors и non-data descriptors ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Чем data descriptor отличается от non-data descriptor и почему это различие важно?
 
@@ -806,7 +806,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-023 — Различие между `__getattribute__` и `__getattr__`
+## FU-023 — Различие между `__getattribute__` и `__getattr__` ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Чем отличаются `__getattribute__` и `__getattr__` и какие риски возникают при их переопределении?
 
@@ -830,7 +830,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-024 — Неявный поиск специальных методов
+## FU-024 — Неявный поиск специальных методов ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Почему присваивание специального метода экземпляру может не изменить поведение неявной операции, например `len(obj)`?
 
@@ -854,7 +854,7 @@ alias.append(3)     # Изменение видно и через first
 
 
 
-# PY-007 — Основной вопрос
+# PY-007 — Основной вопрос ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Вопрос (RU):** Чем списки, кортежи, множества и словари Python отличаются по семантике и внутреннему устройству?
 
@@ -897,7 +897,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-025 — Семантика коллекций и представление в CPython
+## FU-025 — Семантика коллекций и представление в CPython ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** В чём ключевые семантические и типичные реализационные различия между списками, кортежами, множествами и словарями в CPython?
 
@@ -911,7 +911,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-026 — Выбор коллекции для сервиса
+## FU-026 — Выбор коллекции для сервиса ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Как выбрать встроенную коллекцию для упорядоченной последовательности, проверки принадлежности, удаления дубликатов и поиска по ключу в реальном сервисе?
 
@@ -925,7 +925,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-027 — Порядок, копирование и граничные случаи сложности
+## FU-027 — Порядок, копирование и граничные случаи сложности ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Что учитывать при использовании порядка вставки, поверхностного копирования, вложенных изменяемых значений и средней временной сложности?
 
@@ -939,7 +939,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-028 — Выбор коллекции в production-условиях
+## FU-028 — Выбор коллекции в production-условиях ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Как характер нагрузки, объём данных, частота изменений и давление на память влияют на выбор коллекции и стратегию бенчмаркинга?
 
@@ -952,7 +952,7 @@ alias.append(3)     # Изменение видно и через first
 «Я начинаю с production-профиля доступа: чтение и запись, поиск и итерация, требования к порядку, объём данных и ограничения памяти. Затем измеряю репрезентативные распределения, задержку и потребление памяти, включая стоимость создания и обновления. Я не выбираю структуру только по асимптотической сложности и сохраняю дополнительные индексы лишь тогда, когда измеренная польза оправдывает их эксплуатационную стоимость».
 
 
-# PY-008 — Основной вопрос
+# PY-008 — Основной вопрос ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Вопрос (RU):** Как словари Python работают внутри и какие последствия для производительности и корректности имеет поведение хеш-таблиц?
 
@@ -1006,7 +1006,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-029 — Контракт хеширования и равенства
+## FU-029 — Контракт хеширования и равенства ![TYPE](https://img.shields.io/badge/TYPE-Core_contract-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Какие требования должны соблюдать __hash__() и __eq__() у объектов, используемых в качестве ключей словаря?
 
@@ -1020,7 +1020,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-030 — Разрешение коллизий и изменение размера
+## FU-030 — Разрешение коллизий и изменение размера ![TYPE](https://img.shields.io/badge/TYPE-Internal_mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Что происходит при коллизии ключей словаря и почему поиск или вставка могут замедляться?
 
@@ -1034,7 +1034,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-031 — Изменяемые пользовательские ключи и стабильность хеша
+## FU-031 — Изменяемые пользовательские ключи и стабильность хеша ![TYPE](https://img.shields.io/badge/TYPE-Correctness_and_design-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Почему опасно использовать изменяемый объект как ключ словаря и как следует проектировать пользовательский тип ключа?
 
@@ -1048,7 +1048,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## FU-032 — Рандомизация хешей и безопасность production
+## FU-032 — Рандомизация хешей и безопасность production ![TYPE](https://img.shields.io/badge/TYPE-Security_and_production-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Как рандомизация хешей помогает защищать Python-сервисы и почему hash() нельзя использовать как постоянный идентификатор?
 
@@ -1062,7 +1062,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-# PY-009 — Основной вопрос
+# PY-009 — Основной вопрос ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Вопрос (RU):** Как работает управление памятью в Python и как взаимодействуют подсчёт ссылок и сборка мусора?
 
@@ -1139,7 +1139,7 @@ CPython хранит информацию о количестве ссылок �
 
 ---
 
-## FU-033 — Подсчёт ссылок и циклическая сборка мусора
+## FU-033 — Подсчёт ссылок и циклическая сборка мусора ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Чем подсчёт ссылок отличается от сборки циклического мусора в CPython?
 
@@ -1157,7 +1157,7 @@ CPython хранит информацию о количестве ссылок �
 
 ---
 
-## FU-034 — Циклы ссылок и достижимость
+## FU-034 — Циклы ссылок и достижимость ![TYPE](https://img.shields.io/badge/TYPE-Reachability-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Почему цикл ссылок может оставаться в памяти, даже если приложение больше не использует ни один из его объектов?
 
@@ -1175,7 +1175,7 @@ CPython хранит информацию о количестве ссылок �
 
 ---
 
-## FU-035 — del, финализаторы и детерминированное освобождение ресурсов
+## FU-035 — del, финализаторы и детерминированное освобождение ресурсов ![TYPE](https://img.shields.io/badge/TYPE-Resource_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Гарантируют ли del или определение __del__() немедленное уничтожение объекта или освобождение его ресурсов?
 
@@ -1193,7 +1193,7 @@ CPython хранит информацию о количестве ссылок �
 
 ---
 
-## FU-036 — Диагностика роста памяти в production
+## FU-036 — Диагностика роста памяти в production ![TYPE](https://img.shields.io/badge/TYPE-Production_diagnosis-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Как бы вы исследовали устойчивый рост потребления памяти в долго работающем Python-сервисе?
 
