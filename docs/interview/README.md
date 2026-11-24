@@ -483,10 +483,12 @@ The Python Core bank is being authored incrementally. The current draft contains
 © 2026 Pharmaviyum. All rights reserved.
 
 
-## 20. Independent interview preparation program
+## 20. Independent interview preparation
 
-A separate, expanded preparation program is maintained in the [preparation/](./preparation/) directory.
+A concise preparation guide for international **Senior Software Engineer — Python Backend & AI Engineering** interviews is maintained in [Interview Preparation](./preparation/README.md).
 
-It consists of three documents: the Interview Preparation Standard, Technical Curriculum Architecture, and domain-specific Technical Curriculum. Its current target is 300 main questions and 1,200 follow-ups, with a substantive model answer for every question.
+The guide explains the goal and format, then takes the learner directly to the question banks: each Main Question has an answer in English and Russian, followed by four answered Follow-ups. The target is 300 Main Questions and 1,200 Follow-ups across ten technical domains.
 
-This is an independent program. The existing [Senior Python/AI curriculum](./SENIOR_PYTHON_AI_CURRICULUM.md) remains unchanged and is not replaced by the new preparation system.
+Start here: [Preparation overview and Python question bank](./preparation/README.md).
+
+The existing [Senior Python/AI curriculum](./SENIOR_PYTHON_AI_CURRICULUM.md) remains unchanged.
