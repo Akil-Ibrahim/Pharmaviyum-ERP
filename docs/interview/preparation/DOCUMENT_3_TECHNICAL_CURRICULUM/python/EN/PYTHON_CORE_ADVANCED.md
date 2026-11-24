@@ -22,21 +22,6 @@ Follow-ups:
 - **FU-003 — Design trade-offs:** How would you choose between threading, multiprocessing, and asyncio for a Python backend workload?
 - **FU-004 — Senior judgment:** What changes in free-threaded CPython, and what should an engineering team verify before adopting it?
 
-## PY-003 — Python Execution Model & Runtime
-
-**Main Question:** How does Python execute a program from source code to runtime behavior?
-
-**Evaluation focus:** Compilation, bytecode, interpreter/runtime model.  
-**Level:** L3 — Advanced/Senior  
-**Priority:** P0 — Core
-
-Follow-ups:
-
-- **FU-009 — Mechanism:** What are the main stages between Python source code and the execution of its instructions in CPython?
-- **FU-010 — Application:** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module?
-- **FU-011 — Edge cases and trade-offs:** Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter?
-- **FU-012 — Senior judgment:** When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment?
-
 ## PY-002 — Concurrency vs Parallelism
 
 **Main Question:** What is the difference between concurrency and parallelism, and why is the distinction important in Python?
@@ -52,10 +37,25 @@ Follow-ups:
 - **FU-007 — CPython behavior:** How does the GIL affect concurrency and parallelism in CPython?
 - **FU-008 — Senior judgment:** How do you decide whether a workload needs concurrency or parallelism?
 
+## PY-003 — Python Execution Model & Runtime
+
+**Main Question:** How does Python execute a program from source code to runtime behavior?
+
+**Evaluation focus:** Compilation, bytecode, interpreter/runtime model.  
+**Level:** L3 — Advanced/Senior  
+**Priority:** P0 — Core
+
+Follow-ups:
+
+- **FU-009 — Mechanism:** What are the main stages between Python source code and the execution of its instructions in CPython?
+- **FU-010 — Application:** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module?
+- **FU-011 — Edge cases and trade-offs:** Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter?
+- **FU-012 — Senior judgment:** When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment?
+
 ## Coverage status
 
 - PY-001–PY-009 and FU-001–FU-036: authored in English; independent technical and editorial review pending.
-- Remaining Main Questions PY-009–PY-045 and FU-033–FU-180: not yet authored in the language-separated structure.
+- Remaining Main Questions PY-010–PY-045 and FU-037–FU-180: not yet authored in the language-separated structure.
 
 **Allocation rule:** Every Main Question receives exactly four Follow-ups covering mechanism, practical application, edge cases/trade-offs, and senior-level judgment or production implications.
 
