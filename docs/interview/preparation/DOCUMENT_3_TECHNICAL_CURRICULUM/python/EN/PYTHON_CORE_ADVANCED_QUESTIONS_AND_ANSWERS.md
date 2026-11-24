@@ -6,7 +6,7 @@
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
-English study material for PY-001–PY-018. Each Main Question has four locally numbered Follow-ups (FU-1 to FU-4). The Russian version uses the same question IDs.
+English study material for PY-001–PY-019. Each Main Question has four locally numbered Follow-ups (FU-1 to FU-4). The Russian version uses the same question IDs.
 
 **Numbering rule:** Every Main Question has exactly four Follow-ups, numbered locally as FU-1, FU-2, FU-3, and FU-4. The parent PY ID keeps each GitHub heading unique (for example, PY-018 / FU-1).
 
@@ -2325,3 +2325,113 @@ Functional composition is effective for isolated transformations, stateless beha
 **Interview answer (EN)**
 
 “I choose the paradigm that makes state, dependencies, and side effects easiest to understand. I favor small composable functions for transformations and validation, classes when state and invariants have a meaningful lifecycle, and imperative orchestration when it makes control flow clearer. I evaluate testability, readability, operational behavior, and performance rather than maximizing functional purity.”
+
+
+# PY-019 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2--L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P1-d97706)
+
+**Question (EN):** What are lambda expressions in Python, how do they work, and when should you use them instead of named functions?
+
+## Understand the idea
+
+A lambda expression creates a function object. Its general form is: **lambda parameters: expression**. The expression after the colon is evaluated when the function is called, and its resulting value is returned automatically.
+
+A lambda is called *anonymous* because the expression does not define the function with a descriptive identifier. It is still an ordinary function object: it can be assigned to a variable, passed as an argument, returned from another function, or stored in a collection. The term does not describe a special execution model.
+
+Conceptually, a lambda behaves like a simplified function definition whose body consists of one returned expression. The parameter list follows the same general parameter rules used by function definitions.
+
+## What makes lambda different from def?
+
+- **Expression-only body:** a lambda body must be one expression. It cannot contain a statement suite such as assignments, loops, or try/except.
+- **Implicit return:** the value of that expression is returned automatically; there is no explicit return statement.
+- **No parameter annotations:** functions created with lambda expressions cannot declare annotations.
+- **Limited documentation and naming:** a lambda normally has the name <lambda>, which is less informative in debugging output and introspection.
+- **Same first-class nature:** a function defined with def can be passed around just as easily. Lambda is not required to make a function usable as a callback.
+
+The important distinction is syntactic convenience, not capability to participate in higher-order programming.
+
+## Where lambda is useful
+
+Lambda is most useful for a short, local operation supplied to an API that expects a callable. Typical examples include a sorting key, a key for min() or max(), or a small transformation passed to a higher-order function.
+
+A short key expression can communicate which field determines sorting without introducing a separate top-level function. If the operation needs a meaningful name, is reused, or requires several steps, a named function is usually clearer.
+
+## Closures and evaluation
+
+Lambda expressions follow the same lexical scoping rules as nested functions defined with def. They can refer to names from an enclosing scope. A captured free variable is generally a reference to an enclosing binding, not an automatic snapshot of its current value. Therefore, late-binding behavior can occur in lambdas created inside loops or callbacks.
+
+Default parameter expressions follow the normal function-definition rule: they are evaluated when the lambda expression creates the function object, not on every call. This can be used deliberately, but it should not obscure the function's intent.
+
+## Choosing lambda, def, or a built-in
+
+Prefer lambda when the function is genuinely small, local, and immediately understandable. Prefer def when behavior needs a descriptive name, multiple operations, annotations, a docstring, reuse, focused tests, or clearer tracebacks.
+
+Also consider whether a built-in, a comprehension, or a generator expression communicates the transformation more directly. Lambda does not inherently make an operation faster; choose it for concise expression of intent, not as a performance optimization.
+
+## Interview-ready answer (EN)
+
+“A lambda expression creates an ordinary function object from a single expression. Its result is returned implicitly, and it can be passed wherever a callable is expected. I use lambdas for short, local callbacks, especially key functions for sorting or selection. They follow the same closure and late-binding rules as nested functions. I prefer a named function when the behavior is reused, non-trivial, needs annotations or documentation, or would be harder to debug as an anonymous callable. The decision is mainly about readability and maintainability, not performance.”
+
+---
+
+## PY-019 / FU-1 — What function object does a lambda expression create, and how does its body differ from a function defined with def? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** What does evaluating a lambda expression produce, and what are the main syntactic restrictions of its body?
+
+**Explanation**
+
+Evaluating a lambda expression creates a function object. The lambda body is a single expression, not a block of statements. When called, that expression is evaluated and its value is returned implicitly. The object is callable and can be passed, returned, or stored like a function created with def.
+
+The lambda form cannot contain a statement suite or parameter annotations. A conditional expression can still be used, but complex nested expressions quickly become difficult to read.
+
+**Interview answer (EN)**
+
+“Evaluating a lambda expression creates a normal function object. Its body is restricted to one expression, whose value is returned implicitly. It supports a function parameter list, but unlike a function defined with def, it cannot contain statements or parameter annotations. The difference is syntactic simplicity, not a separate callable type.”
+
+---
+
+## PY-019 / FU-2 — Where are lambda functions useful in Python APIs and data transformations? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** Give practical examples of appropriate lambda use and explain why the lambda form helps.
+
+**Explanation**
+
+A lambda is useful when an API needs a small callable and the behavior is obvious at the call site. Common examples include the key argument of sorting and selection operations, small predicates, and short callbacks passed to higher-order functions.
+
+The benefit is locality: the reader can understand the operation without navigating to a separate definition. If the expression becomes dense, is reused, or encodes business rules, a named function provides a better abstraction.
+
+**Interview answer (EN)**
+
+“I use lambda for short call-site behavior, such as extracting a sort key or supplying a simple predicate. It keeps a tiny transformation next to the API that consumes it. I do not use it to hide business rules or create complicated expression chains; when the behavior deserves a name or reuse, I define a regular function.”
+
+---
+
+## PY-019 / FU-3 — How do lambda expressions interact with closures, late binding, default arguments, and introspection? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** Do lambdas capture values differently from nested functions, and what should you know about their runtime metadata?
+
+**Explanation**
+
+A lambda follows the same lexical scoping and closure rules as a nested function defined with def. Free variables are resolved through their enclosing bindings, so a lambda created in a loop may observe the final value of a loop variable when called later. This is late binding, not a special lambda behavior.
+
+Default arguments are evaluated when the lambda function object is created, just as with def. For introspection, the function's name is normally <lambda>; it also lacks parameter annotations. These characteristics can make logs, tracebacks, generated documentation, and framework introspection less descriptive.
+
+**Interview answer (EN)**
+
+“Lambdas do not have special closure semantics. Like nested def functions, they resolve free variables through enclosing scopes, so late binding can affect callbacks created in loops. Default arguments are evaluated when the function object is created. A lambda normally exposes the name <lambda> and cannot declare parameter annotations, which is another reason to use a named function when observability or introspection matters.”
+
+---
+
+## PY-019 / FU-4 — When should you replace a lambda with a named function or a clearer built-in expression? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How do you decide whether lambda, def, or a built-in transformation is the best production choice?
+
+**Explanation**
+
+Choose lambda for a short, local, self-explanatory callable. Choose def when behavior needs a meaningful name, multiple steps, annotations, documentation, reuse, direct testing, or useful stack traces. Choose a built-in, comprehension, or generator expression when it expresses the data transformation more clearly than a callback.
+
+Avoid nested conditional expressions and compressed business logic inside lambdas. A named function can improve reviewability and diagnostics without changing the fact that Python functions are first-class objects. Lambda should not be selected on the assumption that it is inherently faster.
+
+**Interview answer (EN)**
+
+“My default is to optimize for clarity. I use lambda only when the expression is short and obvious at the call site. I use def for reusable or domain-specific behavior, for logic that needs documentation or annotations, and when tracebacks or tests benefit from a stable name. I also prefer built-ins or comprehensions when they express the transformation more directly. I do not treat lambda as a performance optimization.”
+
