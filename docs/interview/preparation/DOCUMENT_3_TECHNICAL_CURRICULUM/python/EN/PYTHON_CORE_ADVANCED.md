@@ -34,6 +34,42 @@ Use the same entity badge and color whenever the entity appears in this curricul
 - ![ENTITY: Thread Safety](https://img.shields.io/badge/ENTITY-Thread-Safety-16a34a) — Thread Safety
 - ![ENTITY: Shared State](https://img.shields.io/badge/ENTITY-Shared-State-d97706) — Shared State
 
+- ![ENTITY: Callable](https://img.shields.io/badge/ENTITY-Callable-2563eb) — Callable
+- ![ENTITY: Argument Binding](https://img.shields.io/badge/ENTITY-Argument-Binding-7c3aed) — Argument Binding
+- ![ENTITY: Parameter](https://img.shields.io/badge/ENTITY-Parameter-7c3aed) — Parameter
+- ![ENTITY: Execution Frame](https://img.shields.io/badge/ENTITY-Execution-Frame-0ea5e9) — Execution Frame
+- ![ENTITY: _PyInterpreterFrame](https://img.shields.io/badge/ENTITY-_PyInterpreterFrame-64748b) — _PyInterpreterFrame
+- ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b) — PyFrameObject
+- ![ENTITY: Closure Cell](https://img.shields.io/badge/ENTITY-Closure-Cell-16a34a) — Closure Cell
+- ![ENTITY: Global Namespace](https://img.shields.io/badge/ENTITY-Global-Namespace-64748b) — Global Namespace
+- ![ENTITY: Builtins Namespace](https://img.shields.io/badge/ENTITY-Builtins-Namespace-64748b) — Builtins Namespace
+- ![ENTITY: Traceback](https://img.shields.io/badge/ENTITY-Traceback-d97706) — Traceback
+- ![ENTITY: Vectorcall](https://img.shields.io/badge/ENTITY-Vectorcall-0891b2) — Vectorcall
+- ![ENTITY: tp_call](https://img.shields.io/badge/ENTITY-tp_call-0891b2) — tp_call
+- ![ENTITY: Generator](https://img.shields.io/badge/ENTITY-Generator-0891b2) — Generator
+- ![ENTITY: Coroutine](https://img.shields.io/badge/ENTITY-Coroutine-0891b2) — Coroutine
+- ![ENTITY: Event Loop](https://img.shields.io/badge/ENTITY-Event-Loop-0891b2) — Event Loop
+- ![ENTITY: Recursion](https://img.shields.io/badge/ENTITY-Recursion-7c3aed) — Recursion
+- ![ENTITY: Profiler](https://img.shields.io/badge/ENTITY-Profiler-16a34a) — Profiler
+- ![ENTITY: Sampling Profiler](https://img.shields.io/badge/ENTITY-Sampling-Profiler-16a34a) — Sampling Profiler
+- ![ENTITY: Self Time](https://img.shields.io/badge/ENTITY-Self-Time-d97706) — Self Time
+- ![ENTITY: Cumulative Time](https://img.shields.io/badge/ENTITY-Cumulative-Time-d97706) — Cumulative Time
+- ![ENTITY: Call Count](https://img.shields.io/badge/ENTITY-Call-Count-d97706) — Call Count
+- ![ENTITY: Benchmark](https://img.shields.io/badge/ENTITY-Benchmark-d97706) — Benchmark
+- ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) — CPU-bound
+- ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I-O-bound-0891b2) — I/O-bound
+- ![ENTITY: Native Code](https://img.shields.io/badge/ENTITY-Native-Code-0f766e) — Native Code
+- ![ENTITY: Function Call](https://img.shields.io/badge/ENTITY-Function-Call-2563eb) — Function Call
+- ![ENTITY: Return Value](https://img.shields.io/badge/ENTITY-Return-Value-16a34a) — Return Value
+- ![ENTITY: Exception](https://img.shields.io/badge/ENTITY-Exception-dc2626) — Exception
+- ![ENTITY: Suspension Point](https://img.shields.io/badge/ENTITY-Suspension-Point-0891b2) — Suspension Point
+- ![ENTITY: Await](https://img.shields.io/badge/ENTITY-Await-0891b2) — Await
+- ![ENTITY: Yield](https://img.shields.io/badge/ENTITY-Yield-0891b2) — Yield
+- ![ENTITY: Cancellation](https://img.shields.io/badge/ENTITY-Cancellation-dc2626) — Cancellation
+- ![ENTITY: Call Stack](https://img.shields.io/badge/ENTITY-Call-Stack-64748b) — Call Stack
+- ![ENTITY: Latency](https://img.shields.io/badge/ENTITY-Latency-d97706) — Latency
+- ![ENTITY: Throughput](https://img.shields.io/badge/ENTITY-Throughput-d97706) — Throughput
+
 ## PY-001 — GIL ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb), Concurrency & Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** What is the Global Interpreter Lock (GIL) in CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b), and how does it affect concurrency ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) and parallelism ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706)?
@@ -89,18 +125,18 @@ Follow-ups:
 
 ## PY-004 — Function Calls & Execution State ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Main Question:** What happens during a function call in CPython?
+**Main Question:** What happens during a function call ![ENTITY: Function Call](https://img.shields.io/badge/ENTITY-Function-Call-2563eb) in CPython?
 
-**Evaluation focus:** Call semantics, argument binding, function/code objects, execution state, frames, closures, return and exception paths.  
+**Evaluation focus:** Call semantics, argument binding ![ENTITY: Argument Binding](https://img.shields.io/badge/ENTITY-Argument-Binding-7c3aed), function/code objects, execution state, frames, closures, return and exception ![ENTITY: Exception](https://img.shields.io/badge/ENTITY-Exception-dc2626) paths.  
 **Level:** L3 — Advanced/Senior  
 **Priority:** P0 — Core
 
 Follow-ups:
 
-- **FU-1 — Mechanism:** What execution state does CPython need to establish or maintain when entering and executing a Python function? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-2 — Application:** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — Edge cases and lifecycle:** How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-4 — Senior judgment:** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Mechanism:** What execution state does CPython need to establish or maintain when entering and executing a Python function? ![ENTITY: Execution Frame](https://img.shields.io/badge/ENTITY-Execution-Frame-0ea5e9) ![ENTITY: _PyInterpreterFrame](https://img.shields.io/badge/ENTITY-_PyInterpreterFrame-64748b) ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b) ![ENTITY: Closure Cell](https://img.shields.io/badge/ENTITY-Closure-Cell-16a34a) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Application:** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service? ![ENTITY: Profiler](https://img.shields.io/badge/ENTITY-Profiler-16a34a) ![ENTITY: Call Stack](https://img.shields.io/badge/ENTITY-Call-Stack-64748b) ![ENTITY: Self Time](https://img.shields.io/badge/ENTITY-Self-Time-d97706) ![ENTITY: Cumulative Time](https://img.shields.io/badge/ENTITY-Cumulative-Time-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Edge cases and lifecycle:** How do recursion ![ENTITY: Recursion](https://img.shields.io/badge/ENTITY-Recursion-7c3aed), exceptions, generator ![ENTITY: Generator](https://img.shields.io/badge/ENTITY-Generator-0891b2)s, and asynchronous functions affect the execution lifecycle compared with an ordinary function call? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior judgment:** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile? ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Vectorcall](https://img.shields.io/badge/ENTITY-Vectorcall-0891b2) ![ENTITY: Benchmark](https://img.shields.io/badge/ENTITY-Benchmark-d97706) ![ENTITY: Latency](https://img.shields.io/badge/ENTITY-Latency-d97706) ![ENTITY: Throughput](https://img.shields.io/badge/ENTITY-Throughput-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 
 
