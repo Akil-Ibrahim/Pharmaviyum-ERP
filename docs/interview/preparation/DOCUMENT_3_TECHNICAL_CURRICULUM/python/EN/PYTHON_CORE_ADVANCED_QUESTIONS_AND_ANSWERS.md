@@ -577,9 +577,9 @@ Validate the hypothesis with representative benchmark ![Benchmark](https://img.s
 
 **What it evaluates:** Name binding, identity versus equality, mutability, type checks, and API design.
 
-Every Python object has an identity, a type, and a value. Identity distinguishes the particular object; type defines its behavior and supported operations; value is the data or state it represents. An object's identity and type remain stable during its lifetime, while its value may change if it is mutable.
+Every Python object ![Object](https://img.shields.io/badge/-Object-2563eb?style=flat-square) has an identity, a type, and a value. Identity ![Identity](https://img.shields.io/badge/-Identity-64748b?style=flat-square) distinguishes the particular object; type ![Type](https://img.shields.io/badge/-Type-7c3aed?style=flat-square) defines its behavior and supported operations; value ![Value](https://img.shields.io/badge/-Value-0ea5e9?style=flat-square) is the data or state it represents. An object's identity and type remain stable during its lifetime, while its value may change if it is mutable.
 
-A variable is a name bound to an object, not a typed storage container. Assignment normally binds a name; it does not copy the object. Multiple names can therefore refer to the same mutable object.
+A variable is a name bound to an object, not a typed storage container; this is Python's name binding ![Name Binding](https://img.shields.io/badge/-Name-Binding-7c3aed?style=flat-square) model. Assignment normally binds a name; it does not copy the object. Multiple names can therefore refer to the same mutable object through aliasing ![Aliasing](https://img.shields.io/badge/-Aliasing-d97706?style=flat-square) and shared references ![Reference](https://img.shields.io/badge/-Reference-64748b?style=flat-square).
 
 ~~~python
 first = [1, 2]
@@ -592,9 +592,9 @@ first == another    # True: equal values, different objects
 alias.append(3)     # The change is visible through first as well
 ~~~
 
-Use is for identity-sensitive checks such as None or a private sentinel; use == for value equality. Use isinstance() when subclasses are acceptable. Prefer protocols or polymorphism when callers need behavior rather than a specific implementation.
+Use is ![is](https://img.shields.io/badge/-is-2563eb?style=flat-square) for identity-sensitive checks such as None or a private sentinel; use == ![==](https://img.shields.io/badge/-%3D%3D-0ea5e9?style=flat-square) for value equality ![Equality](https://img.shields.io/badge/-Equality-0ea5e9?style=flat-square). Use isinstance() ![isinstance()](https://img.shields.io/badge/-isinstance%28%29-7c3aed?style=flat-square) when subclasses are acceptable. Prefer protocols or polymorphism when callers need behavior rather than a specific implementation.
 
-Do not confuse Python object identity with domain identity. Two ORM instances may represent the same database row while being distinct Python objects. Use stable domain identifiers across persistence, serialization, and distributed boundaries. The id() result is guaranteed to be unique only while the object is alive; an ID may be reused after the object is destroyed. In CPython, id() is currently the object's memory address, but that is an implementation detail, not a language guarantee.
+Do not confuse Python object identity with domain identity ![Domain Identity](https://img.shields.io/badge/-Domain-Identity-16a34a?style=flat-square). Two ORM instances may represent the same database row while being distinct Python objects. Use stable domain identifiers across persistence, serialization, and distributed boundaries. The id() ![id()](https://img.shields.io/badge/-id%28%29-64748b?style=flat-square) result is guaranteed to be unique only while the object is alive; an ID may be reused after the object is destroyed. In CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square), id() is currently the object's memory address, but that is an implementation detail, not a language guarantee.
 
 **Interview-Ready Answer (EN)**
 
@@ -606,7 +606,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 **Question (EN):** Which of an object's identity, type, and value can change during its lifetime?
 
-**Explanation:** Identity and type remain stable throughout an object's lifetime. Its value may change if it is mutable. Mutation changes the existing object; rebinding changes which object a name refers to. Immutability is not necessarily deep: a tuple can contain a mutable list whose contents still change.
+**Explanation:** Identity and type remain stable throughout an object's lifetime. Its value may change if it is mutable. Mutation changes the existing object; rebinding ![Rebinding](https://img.shields.io/badge/-Rebinding-0891b2?style=flat-square) changes which object a name refers to. Immutability is not necessarily deep: a tuple can contain a mutable list whose contents still change.
 
 **Interview-Ready Answer (EN)**
 
@@ -618,7 +618,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 **Question (EN):** How would you choose between identity checks, equality checks, and type checks in a code review?
 
-**Explanation:** Start with the contract being tested. Use is for object identity and singleton sentinels, == for value equality, and isinstance() when subclasses are accepted. An exact check such as type(value) is int deliberately rejects subclasses and should be used only when that restriction is part of the contract. Review custom __eq__ and __hash__ together when objects are dictionary keys or set members.
+**Explanation:** Start with the contract being tested. Use is for object identity and singleton sentinels, == for value equality, and isinstance() when subclasses are accepted. An exact check such as type(value) is int deliberately rejects subclasses and should be used only when that restriction is part of the contract. Review custom __eq__ ![__eq__](https://img.shields.io/badge/-__eq__-0ea5e9?style=flat-square) and __hash__ ![__hash__](https://img.shields.io/badge/-__hash__-7c3aed?style=flat-square) together when objects are dictionary keys or set members.
 
 **Interview-Ready Answer (EN)**
 
