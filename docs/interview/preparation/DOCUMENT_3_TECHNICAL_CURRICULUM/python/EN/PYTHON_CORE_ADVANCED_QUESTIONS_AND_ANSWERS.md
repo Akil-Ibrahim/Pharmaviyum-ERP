@@ -384,46 +384,89 @@ Start broad with metrics, logs, and traces. Go deeper only when the evidence poi
 
 **Question (EN):** What happens during a function call in CPython?
 
+## The main idea
 
-**What the interviewer evaluates**
+A function call is more than jumping to another line of code. Python evaluates the call expression, binds arguments to parameters, establishes the execution state, runs the function body, and then returns a result or propagates an exception.
 
-- Understanding of Python's call semantics and argument binding.
-- Knowledge of function objects, code objects, local and global namespaces, and execution frames.
-- Understanding of return values, exception propagation, and nested calls.
-- Ability to distinguish language-level behavior from CPython's internal call implementation.
-- Ability to reason about call overhead without prematurely optimizing code.
+A useful mental model:
 
-**Short Answer**
+1. Evaluate the callable expression and argument expressions.
+2. Invoke the callable using Python's call semantics.
+3. Bind positional and keyword arguments to parameters.
+4. Establish or resume the function's execution state.
+5. Execute the body.
+6. Return a value or propagate an exception.
 
-When a Python function is called, Python evaluates the callable and its arguments, applies the call protocol, binds the supplied arguments to the function's parameters, and begins executing the function body. Conceptually, the call runs the function's code object in a new execution context with access to local, global, built-in, and closure-related state. In CPython, this involves interpreter-managed execution state and frame machinery, although the exact frame allocation and call path have evolved across versions.
+The exact internal call path is an implementation detail. The semantic behavior is what application code should rely on.
 
-The function either returns a value, raises an exception, or—in the case of a generator or coroutine function—produces a generator or coroutine object whose body is executed according to its own lifecycle.
+## 1. Evaluating the call
 
-**Detailed Answer**
+Before the function body starts, Python evaluates the callable expression and the argument expressions. Those expressions can have side effects or raise exceptions themselves.
 
-A normal Python function call can be understood as a sequence of semantic and runtime operations:
+The target does not have to be an ordinary Python function. It can be a bound method, a built-in function, a class, or an instance whose type implements `__call__`.
 
-1. **Evaluate the call expression.** Python evaluates the callable expression and the argument expressions according to the language's evaluation rules. This can itself execute arbitrary code or raise an exception before the function body starts.
-2. **Resolve the callable and perform the call protocol.** The target may be a Python function, a bound method, a class, a built-in callable, or a user-defined object implementing the __call__ method. Different callable categories may use different internal paths, but they must obey the applicable call semantics.
-3. **Bind arguments to parameters.** Positional arguments, keyword arguments, defaults, positional-only parameters, keyword-only parameters, and variadic parameters (*args and **kwargs) are handled according to the function signature. Invalid combinations raise TypeError before the function body executes. For Python functions, default argument expressions are evaluated when the function definition executes, not afresh on every call.
-4. **Establish execution state.** The function executes with local state and access to its global namespace, built-ins, and any closure cells. Conceptually, Python needs an execution frame for the active function call. CPython's internal representation and allocation strategy for this state have changed; it is not correct to assume every call always allocates a traditional heap-allocated frame object in exactly the same way.
-5. **Execute the function body.** The interpreter evaluates statements and expressions, performs name lookups, calls other functions, handles control flow, and may enter native code. Local variable access and global lookup have different semantics and may have different performance characteristics.
-6. **Complete the call.** A return statement produces the return value. Reaching the end of a function without an explicit return produces None. An exception that is not handled inside the function propagates to the caller, unwinding execution state as required.
-7. **Release or retain relevant state.** Once a call completes, its active execution state is no longer needed as an active call. Objects referenced by local variables may remain alive if other references exist—for example, through returned objects, closures, tracebacks, or other retained references. A traceback can retain frames and their local state, which is one reason long-lived exception references can contribute to memory retention.
+## 2. Argument binding
 
-A function call is therefore more than a jump to another instruction address: it includes argument evaluation and binding, execution-context management, control-flow handling, and result or exception propagation.
+Python maps the supplied arguments to the function's parameters:
 
-**Internal Mechanics**
+- Positional arguments are matched according to parameter order.
+- Keyword arguments are matched by parameter name.
+- Default values are used when an optional parameter is not supplied.
+- `*args` collects extra positional arguments.
+- `**kwargs` collects extra keyword arguments.
+- Positional-only and keyword-only parameters restrict how an argument may be supplied.
 
-- **Function object:** contains or references the function's code and runtime metadata, including its global namespace and defaults; closure information is available when applicable.
-- **Code object:** contains compiled instructions and metadata. It is reusable across calls; each call does not recompile the function body.
-- **Argument binding:** maps supplied positional and keyword arguments to the declared parameters and applies defaults and variadic collection rules.
-- **Execution frame:** represents the active execution context, including local state and links to relevant namespaces and execution information. CPython's frame internals and optimization strategy are implementation details.
-- **Call protocol:** Python supports multiple callable categories. CPython has optimized internal call paths, but their exact details are not a language guarantee.
-- **Return and exception paths:** normal completion returns a value to the caller; exceptional completion propagates an exception and associated traceback information.
-- **Closures:** nested functions can retain references to variables from enclosing scopes through closure cells, allowing those values to outlive the outer function call.
+Invalid calls—for example, a missing required argument, an unexpected keyword, or supplying the same parameter twice—raise `TypeError` before the function body executes.
 
-**Practical Example**
+Important: default argument expressions are evaluated once, when the `def` statement executes. They are not re-evaluated on every call.
+
+## 3. Function object and code object
+
+- **Function object:** the callable runtime object. It refers to the compiled code and carries context such as the global namespace, defaults, and closure information.
+- **Code object:** the compiled instructions and metadata. It can be reused across many calls; Python does not recompile the function body on every invocation.
+
+A function object therefore connects reusable compiled code to the context in which that code executes.
+
+## 4. Execution state and frames
+
+Conceptually, an active function call needs an execution frame. The frame represents information needed to execute the code and continue correctly, including:
+
+- the code being executed and the current instruction position;
+- local variables and parameter values;
+- access to global and built-in namespaces;
+- closure cells for variables captured from enclosing scopes;
+- control-flow and exception-handling state;
+- information needed for debugging, tracing, and returning to the caller.
+
+Do not assume that all local variables are always stored in a normal Python dictionary or that every call allocates a fully materialized `PyFrameObject`.
+
+In modern CPython, the internal `_PyInterpreterFrame` representation is distinct from the Python-visible `PyFrameObject`. A visible frame object can be created or exposed when introspection, tracing, or debugging needs it. This is an implementation detail, not a Python language guarantee.
+
+## 5. How does the call return?
+
+When the function executes `return expression`, the evaluated value is returned to the caller. If execution reaches the end of the function without an explicit return, the result is `None`.
+
+If an exception is raised and not handled inside the function, it propagates to the caller. As it propagates, Python unwinds the active execution contexts until a matching handler is found or the exception reaches the top level.
+
+Tracebacks contain references to execution frames. Retaining an exception or traceback can therefore retain local variables and objects referenced by those frames.
+
+## 6. Important CPython implementation detail: optimized calls
+
+CPython has optimized call machinery. Its C API documents the `tp_call` and `vectorcall` protocols; vectorcall can reduce argument packaging overhead for supported callables.
+
+Since CPython 3.11, ordinary Python-to-Python calls can use an optimized interpreter path that avoids the older pattern of recursively re-entering the evaluator for every Python call. Internal frames are also lighter than the traditional model.
+
+These are CPython implementation details. They explain performance behavior, but application correctness must not depend on a particular internal call path or frame layout.
+
+## 7. Generators and coroutines are different
+
+Calling an ordinary function starts executing its body immediately.
+
+Calling a generator function creates a generator object; its body advances when the generator is iterated. Calling an `async def` function creates a coroutine object; its body runs when the coroutine is awaited or scheduled.
+
+Generators and coroutines preserve execution state across suspension points. Their lifecycle is not the same as an ordinary function that runs to completion in one call.
+
+## Practical example
 
 ~~~python
 def make_multiplier(factor):
@@ -432,358 +475,99 @@ def make_multiplier(factor):
     return multiply
 
 triple = make_multiplier(3)
-result = triple(10, offset=2)
+result = triple(10, offset=2)  # 32
 ~~~
 
-When make_multiplier(3) is called, its parameter is bound and its body creates a nested function object. The returned multiply function retains access to factor through its closure. Later, triple(10, offset=2) binds value positionally and offset by keyword, executes the function body, resolves factor through the closure, and returns 32.
+When `make_multiplier(3)` runs, it creates and returns a function object. The returned function retains `factor` through a closure. Later, the call binds `value` positionally and `offset` by keyword, executes the body, reads `factor` from the closure, and returns `32`.
 
-**Code Example — Inspecting a Function's Metadata**
+## Interview-ready answer (EN)
 
-~~~python
-import inspect
+“When a function call is evaluated, Python first evaluates the callable and argument expressions, then applies the call semantics and binds positional and keyword arguments to the function's parameters. The function body executes using its compiled code object and a runtime context that provides local state, globals, built-ins, and closure variables where applicable.
 
-def describe(item, limit=10, *, strict=False):
-    return item[:limit]
+Conceptually, an execution frame represents the active call. In CPython, the internal frame representation and call path are implementation details and have changed across versions. During execution, the function can return a value or propagate an exception.
 
-print(inspect.signature(describe))
-print(describe.__code__.co_varnames)
-print(describe.__code__.co_freevars)
-~~~
-
-inspect.signature() exposes the callable's signature where supported. Code-object attributes provide implementation-oriented introspection. These facilities are useful for debugging and tooling, but code-object internals should not be treated as a stable application-level data format. In this example, co_freevars is empty because describe does not close over an enclosing variable.
-
-**Best Practices**
-
-- Keep function signatures explicit and avoid unnecessary positional/keyword ambiguity.
-- Understand that default values are evaluated once when the function definition executes.
-- Use closures intentionally and be aware of the objects they retain.
-- Keep exception handling close to the layer that can make a meaningful recovery decision.
-- Use profiling to establish whether call overhead is material before changing function boundaries.
-- Prefer readable decomposition over premature inlining or complicated dispatch tricks.
-- When inspecting frames or tracebacks, avoid retaining them longer than necessary if they hold large object graphs.
-
-**Trade-offs & Alternatives**
-
-- **Many small functions:** improve modularity, testing, reuse, and readability, but may add some call overhead in hot paths.
-- **Larger functions or inlining:** can reduce some call overhead but may harm maintainability and make testing harder; arbitrary source-level function inlining is not a universal Python guarantee.
-- **Closures:** provide convenient encapsulation of lexical state, but can extend object lifetimes.
-- **Decorators and wrappers:** add composability and cross-cutting behavior, but can add call layers and affect introspection unless metadata is preserved.
-- **Python versus native callables:** built-ins and extension functions may have different performance characteristics, but benchmark results depend on workload and interpreter version.
-
-**Common Mistakes**
-
-- Saying that every call recompiles the function.
-- Assuming every callable is an ordinary Python function.
-- Assuming all arguments are copied when passed to a function; Python uses object-reference assignment semantics.
-- Forgetting that argument expressions are evaluated before the call and can have side effects.
-- Assuming default expressions are evaluated on every invocation.
-- Treating a frame as necessarily a Python dictionary containing all locals at all times.
-- Assuming function-call overhead is the bottleneck without profiling.
-- Ignoring traceback and closure references when investigating retained memory.
-
-**Senior-Level Perspective**
-
-A senior engineer should understand both the semantic contract and the implementation boundary. For correctness, reason about argument binding, object references, scope, return behavior, and exception propagation. For performance, measure realistic workloads and identify whether time is spent in Python call dispatch, the function body, serialization, allocation, I/O, or downstream services.
-
-CPython has changed its internal call machinery and frame optimizations over time. Therefore, avoid basing architecture on assumptions about a specific internal frame allocation path. If an optimization depends on CPython internals, isolate it, pin and test supported versions, and document why the measured benefit justifies the coupling.
-
-**Interview-Ready Answer (EN)**
-
-“When a function call is evaluated, Python first evaluates the callable and argument expressions, then applies the call protocol and binds positional and keyword arguments to the function's parameters. The function body executes using its compiled code object and a runtime context that provides local state, globals, built-ins, and closure variables where applicable.
-
-Conceptually, an execution frame represents the active call. In CPython, the exact frame representation and call path are implementation details and have changed across versions. During execution, the function can return a value or propagate an exception. If it is a generator or coroutine function, calling it creates a generator or coroutine object rather than immediately running the body to completion.
-
-For performance, I profile representative workloads before optimizing call boundaries, because the dominant cost may be inside the function or in I/O rather than the call mechanism itself.”
-
-
-**Follow-up Questions & Answers**
+A generator or coroutine function has a different lifecycle: calling it creates a generator or coroutine object rather than immediately running its body to completion. For performance, I profile representative workloads before optimizing call boundaries, because the dominant cost may be inside the function or in I/O rather than the call mechanism itself.”
 
 ---
 
-## FU-013 — Execution state during a function call
+## FU-013 — What execution state is needed during a function call?
 
 **Question (EN):** What execution state does CPython need to establish or maintain when entering and executing a Python function?
 
+**Explanation**
 
-**What the interviewer evaluates:** Understanding of code objects, function objects, argument binding, local state, globals, built-ins, closures, and frames.
+The runtime needs the function's code, bound arguments, local execution state, access to globals and built-ins, closure cells where applicable, and control-flow information. Conceptually, this is represented by an execution frame.
 
-**Short Answer**
+In CPython, internal execution frames are not identical to Python-visible `PyFrameObject` instances. A visible frame may be exposed when introspection or debugging requires it.
 
-CPython must make the function's code and execution context available: bound arguments, local-variable state, references to the function's global namespace and built-ins, closure cells when present, and the control-flow state needed to execute and return or raise an exception. Conceptually this is represented by an execution frame. The exact internal frame layout and allocation strategy are CPython implementation details and vary by version.
+**Interview answer (EN)**
 
-**Detailed Answer**
-
-The function object provides the compiled code and associated runtime metadata. Before executing the body, the call machinery validates and binds arguments to parameters. The executing function then needs access to its local variables and parameter values, global namespace, built-ins namespace, closure cells for free variables, current instruction and exception-handling state, and caller/execution metadata needed for tracing and propagation.
-
-Not every implementation stores all of this in one Python-visible object. In CPython, internal frame and interpreter structures have evolved, and optimized execution may avoid materializing a full Python frame object until introspection or tracing requires it.
-
-**Internal Mechanics**
-
-A code object describes the compiled block. A function object connects that code to globals, defaults, and closure information. Local-variable storage is optimized for execution and should not be assumed to be a normal dictionary in every circumstance. When frame introspection is requested, CPython may expose or materialize a frame object according to the version's implementation.
-
-**Practical Example**
-
-~~~python
-def outer(prefix):
-    suffix = "!"
-    def inner(name):
-        return prefix + name + suffix
-    return inner
-
-greet = outer("Hello, ")
-print(greet("Ada"))
-~~~
-
-The inner function uses its own parameter name, but it also needs access to prefix and suffix from the enclosing scope. Those free variables are retained through closure cells after outer has returned.
-
-**Best Practices**
-
-Understand the distinction between locals, globals, built-ins, and closure variables. Use inspect and frame inspection for targeted debugging, not as a routine dependency of application logic. Avoid retaining frame and traceback objects unnecessarily.
-
-**Trade-offs & Alternatives**
-
-Materializing and inspecting frames is valuable for debuggers, profilers, and diagnostics, but introspection can add overhead and may retain references to large object graphs. Optimized execution paths can reduce overhead but make assumptions about internal frame layout less portable.
-
-**Common Mistakes**
-
-- Assuming every local namespace is always a fully materialized dictionary.
-- Assuming a function's globals are taken from the caller's module.
-- Forgetting that closures retain enclosing variables.
-- Assuming a Python-visible frame object must be allocated in exactly the same way for every call and every CPython version.
-
-**Senior-Level Perspective**
-
-When debugging memory retention, inspect whether closures, tracebacks, or stored frame references are keeping objects alive. When building profilers or debuggers, use documented introspection APIs and test against supported CPython versions rather than depending on private frame internals.
-
-**Interview-Ready Answer (EN)**
-
-“CPython needs the function's code object, bound arguments, local execution state, and access to the function's globals, built-ins, and closure cells. It also maintains control-flow and exception state so the function can continue, return, or propagate an exception. Conceptually this is an execution frame, but CPython's internal frame representation and allocation strategy have changed over time. A full Python-visible frame is not necessarily materialized in the same way for every call.”
-
+“CPython needs the function's code object, bound arguments, local execution state, and access to globals, built-ins, and closure cells. It also maintains control-flow and exception state so execution can continue, return, or propagate an exception. Conceptually this is an execution frame, but the internal frame representation is an implementation detail and is not necessarily materialized as a Python-visible frame object for every call.”
 
 ---
 
-## FU-014 — Profiling function-call overhead
+## FU-014 — How do you investigate function-call overhead?
 
 **Question (EN):** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service?
 
+**Explanation**
 
-**What the interviewer evaluates:** Profiling methodology, interpretation of cumulative and self time, sampling versus deterministic profiling, and production-safe optimization.
+Start with a representative workload and a measurable service objective. Use a profiler to inspect call counts, self time, and cumulative time, then correlate the results with request traces.
 
-**Short Answer**
+- **Self time:** time attributed to the function itself, excluding subcalls.
+- **Cumulative time:** time in the function plus its subcalls.
+- **Call count:** how often the function was invoked; a high count alone does not prove it is a bottleneck.
 
-I reproduce or capture a representative workload, measure a baseline, and use a profiler to identify functions with high call counts and meaningful cumulative or self time. I correlate profiles with traces and request-level latency so I can distinguish Python call overhead from time spent in I/O, database operations, serialization, locks, or native code. I then test a targeted change and compare results under the same workload.
+A deterministic profiler can provide detailed call information but add overhead. Sampling profilers are often less intrusive, but their results are statistical.
 
-**Detailed Answer**
+**Interview answer (EN)**
 
-1. **Define the performance objective.** Determine whether the issue is throughput, CPU utilization, p95/p99 latency, or a specific endpoint's response time.
-2. **Capture a representative workload.** Use realistic input sizes, concurrency, and request mix. Microbenchmarks alone may not reflect production behavior.
-3. **Measure a baseline.** Record wall-clock latency, CPU time, throughput, memory, and relevant service-level indicators.
-4. **Profile call paths.** A deterministic profiler such as cProfile can show call counts and time attributed to functions. Sampling profilers can often provide lower-overhead insight into production-like workloads.
-5. **Interpret the metrics correctly.** Self time estimates time spent in a function excluding subcalls; cumulative time includes time in subcalls. A function with many calls is not automatically a bottleneck.
-6. **Correlate with distributed traces.** Determine whether time is spent in Python execution, database queries, remote calls, serialization, lock contention, or other waits.
-7. **Form a specific hypothesis.** Excessive tiny helper calls in a hot CPU path may be relevant, while a high call count in a database client may simply reflect expected I/O behavior.
-8. **Change one thing and remeasure.** Compare the same workload and environment, including correctness, latency distribution, CPU, memory, and maintainability.
-
-**Internal Mechanics**
-
-Call-stack profiles reveal the hierarchy of calls and where time accumulates. Deterministic profiling instruments function-call events and can perturb timing; sampling profiling periodically samples execution state and typically has lower overhead but may miss very short events. Native extensions and blocking system calls may require tools beyond a Python-only profiler.
-
-**Practical Example**
-
-Suppose an endpoint transforms thousands of records. A profile shows a small normalization helper called millions of times with substantial cumulative CPU time. After verifying correctness, you may reduce repeated work by normalizing once, using a more suitable built-in operation, or changing the data flow. If instead the profile and traces show most latency inside a database query, merging Python helper functions is unlikely to improve endpoint latency.
-
-**Best Practices**
-
-- Profile production-representative workloads.
-- Distinguish self time from cumulative time.
-- Use sampling tools when deterministic profiling overhead is unacceptable.
-- Correlate CPU profiles with request traces and infrastructure metrics.
-- Benchmark before and after under controlled conditions.
-- Keep performance changes small and preserve readable abstractions where possible.
-
-**Trade-offs & Alternatives**
-
-Deterministic profiling gives detailed call counts but may distort timing. Sampling is less intrusive but statistically approximate. Microbenchmarks are useful for isolated operations but cannot replace end-to-end measurements. Native profilers may be necessary when time is spent in extension code or system calls.
-
-**Common Mistakes**
-
-- Optimizing the function with the highest call count without examining time.
-- Confusing cumulative time with self time.
-- Treating wall-clock waiting as Python CPU overhead.
-- Comparing benchmarks with different input sizes or environments.
-- Removing useful abstractions based on intuition rather than measured benefit.
-
-**Senior-Level Perspective**
-
-The optimization decision should be based on service-level impact, not an attractive microbenchmark. Establish whether call overhead contributes materially to the endpoint's latency or CPU budget. Estimate the maximum possible benefit, account for maintainability costs, and validate the change under realistic concurrency. If the bottleneck is downstream I/O, focus on query plans, connection pooling, batching, caching, or concurrency limits instead.
-
-**Interview-Ready Answer (EN)**
-
-“I start by defining the target metric and capturing a representative workload. I use a profiler to inspect call counts, self time, and cumulative time, and I correlate that data with request traces. A high call count alone does not prove that calls are expensive; the time may be in a database, network request, serialization routine, or native extension. Once I have a specific hypothesis, I make a targeted change and compare the same workload before and after, checking latency percentiles, CPU, memory, and correctness. I avoid sacrificing maintainability for an optimization that has no measurable service-level benefit.”
-
+“I define the target metric and capture a representative workload. I inspect call counts, self time, and cumulative time, and correlate the profile with request traces. A high call count alone does not prove that call dispatch is expensive; time may be spent in a database, network request, serialization, or native code. I make a targeted change only after identifying the bottleneck, then compare latency percentiles, throughput, CPU, memory, and correctness under the same workload.”
 
 ---
 
-## FU-015 — Different execution lifecycles
+## FU-015 — How do recursion, exceptions, generators, and coroutines change the lifecycle?
 
 **Question (EN):** How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call?
 
+**Explanation**
 
-**What the interviewer evaluates:** Control-flow semantics, suspended execution, coroutine scheduling, exception propagation, and resource-lifecycle awareness.
+- **Recursion:** creates nested logical calls with separate parameters and local execution state. Deep recursion can hit the recursion limit.
+- **Exceptions:** transfer control by unwinding execution contexts until a matching handler is found.
+- **Generators:** calling a generator function creates a generator object. Its body advances during iteration and retains state between `yield` points.
+- **Coroutines:** calling an `async def` function creates a coroutine object. Its body runs when awaited or scheduled, and it can suspend at `await` points.
 
-**Short Answer**
+An event loop schedules coroutine progress; it does not create one operating-system thread per coroutine.
 
-Recursion creates nested active calls and therefore nested execution state. Exceptions transfer control through stack unwinding until a matching handler is found. A generator function call creates a generator object and suspends its body until iteration advances it; its state is retained between yields. An async function call creates a coroutine object; its body runs when the coroutine is awaited or scheduled by an event loop. These are different lifecycles from an ordinary function that runs immediately to completion.
+**Interview answer (EN)**
 
-**Detailed Answer**
-
-- **Ordinary function:** after arguments are evaluated and bound, the function body runs until it returns or raises. Its active execution state is then left.
-- **Recursion:** each recursive invocation has its own logical call state and parameter/local values. Deep recursion can hit the interpreter's recursion limit or exhaust available resources. Tail-call elimination is not a general Python language guarantee.
-- **Exceptions:** raising an exception changes control flow. Python searches for a matching handler while unwinding execution contexts. A traceback records the propagation path and can retain references to frames and local objects.
-- **Generator functions:** calling a generator function returns a generator object without immediately executing the body to completion. Advancing it with next() or iteration runs until the next yield, return, or exception. The generator retains its suspended execution state between advances.
-- **Async functions:** calling an async def function creates a coroutine object; it does not by itself run the coroutine body. Awaiting or scheduling it allows an event loop to drive its execution. At an await that suspends, control can return to the event loop so other tasks can run. An awaitable that completes immediately may not cause a scheduling suspension.
-- **Cancellation and cleanup:** asynchronous tasks can receive cancellation, typically delivered at a suspension point. Cleanup should use try/finally and asynchronous context managers appropriately; cancellation should not be accidentally swallowed.
-
-**Internal Mechanics**
-
-Generators and coroutines preserve state across suspension points, including the information needed to resume execution. CPython has specialized runtime objects and execution machinery for generators and coroutines. The event loop schedules coroutine progress; it is not the same thing as a separate OS thread for each coroutine.
-
-**Practical Example**
-
-~~~python
-def ordinary():
-    print("body runs during call")
-    return 1
-
-def generate():
-    print("body starts on iteration")
-    yield 1
-
-async def asynchronous():
-    print("body starts when awaited/scheduled")
-    return 1
-
-ordinary()
-g = generate()
-next(g)
-coro = asynchronous()
-~~~
-
-The coroutine object in this example must be awaited or scheduled to execute; creating it alone is not enough.
-
-**Best Practices**
-
-- Bound recursive depth or use an iterative algorithm when appropriate.
-- Handle exceptions at meaningful recovery boundaries and preserve diagnostic context.
-- Close generators or use context-manager patterns when they own resources.
-- Await or schedule coroutine objects and do not leave them unawaited.
-- Make cancellation-safe cleanup explicit in asynchronous code.
-- Avoid blocking operations on an event-loop thread.
-
-**Trade-offs & Alternatives**
-
-Recursion can express tree and divide-and-conquer algorithms clearly, while iteration avoids deep call nesting. Generators provide lazy processing and lower peak memory for streams, but introduce suspended state and lifecycle concerns. Asyncio supports high concurrency for I/O-bound work, but requires cooperative non-blocking operations and does not automatically accelerate CPU-bound work.
-
-**Common Mistakes**
-
-- Assuming a generator body executes when the generator function is called.
-- Assuming an async function runs immediately when called.
-- Treating an event loop as one thread per coroutine.
-- Assuming Python performs general tail-call optimization.
-- Swallowing cancellation or failing to release resources.
-- Retaining exceptions and tracebacks indefinitely without considering referenced frames.
-
-**Senior-Level Perspective**
-
-Choose the execution model according to workload and lifecycle requirements. Use recursion when depth is bounded and clarity benefits; generators for lazy synchronous pipelines; coroutines for cooperative I/O concurrency; and threads or processes when their respective execution and isolation properties fit the workload. Design cleanup, cancellation, backpressure, and observability as part of the lifecycle—not as afterthoughts.
-
-**Interview-Ready Answer (EN)**
-
-“An ordinary function runs when called and completes by returning or raising. Recursion creates nested calls with separate logical execution state. Exceptions unwind control flow until a handler is found. A generator call returns a generator object whose body advances on iteration and retains state between yields. An async function call returns a coroutine object; it runs when awaited or scheduled, and the event loop drives it across suspension points. These differences matter for resource cleanup, cancellation, stack depth, and scheduling.”
-
+“An ordinary function runs when called and completes by returning or raising. Recursion creates nested calls with separate logical execution state. Exceptions unwind control flow until a handler is found. A generator call returns an object whose body advances during iteration and retains state between yields. An async function call returns a coroutine object that runs when awaited or scheduled. These differences affect stack depth, scheduling, cancellation, and resource cleanup.”
 
 ---
 
-## FU-016 — When call mechanics matter for optimization
+## FU-016 — When should call mechanics influence an optimization decision?
 
 **Question (EN):** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile?
 
+**Explanation**
 
-**What the interviewer evaluates:** Performance judgment, measurement discipline, version awareness, and maintainability trade-offs.
+Call mechanics matter when profiling shows that call dispatch or repeated wrapper layers consume a meaningful part of a CPU-bound hot path. CPython optimizations such as vectorcall can reduce some overhead, but they do not make every call free.
 
-**Short Answer**
+Validate the hypothesis with representative benchmarks, production metrics, and the Python versions the service supports. Consider readability and maintenance cost as well as speed.
 
-It matters when profiling demonstrates that Python-level call dispatch or repeated wrapper/dispatch layers consume a meaningful part of a CPU-bound workload. Knowledge of CPython's call optimizations can explain results and guide targeted experiments, but it should not replace measurement. I validate an optimization with representative benchmarks and service-level metrics, compare supported interpreter versions, and ensure correctness and maintainability are preserved.
+**Interview answer (EN)**
 
-**Detailed Answer**
+“I optimize call mechanics only when profiling shows that call dispatch or wrapper layers are a material cost in a representative workload. I estimate the maximum possible end-to-end gain, test a focused alternative, and compare latency percentiles, throughput, CPU, memory, correctness, and maintainability. CPython's call optimizations change over time, so I avoid depending on private internals unless that dependency is isolated and justified by measured results.”
 
-Call mechanics may matter in extremely hot loops that invoke tiny Python functions millions of times; deep wrapper or decorator chains; callback-heavy code where dispatch is a measurable fraction of CPU time; transformation pipelines with many small per-item calls; or framework paths where repeated indirection accumulates under high request volume.
-
-Even in these cases, call overhead should be isolated from the work performed by the function. A call may appear frequently in a profile but consume little self time; the actual cost may be allocations, attribute lookup, data conversion, locks, or I/O.
-
-Potential optimizations include reducing redundant wrapper layers, moving invariant work out of hot loops, batching operations, using appropriate built-ins, reducing repeated dynamic lookup, or changing the algorithm and data flow. In selected cases, a native extension or vectorized library may be appropriate. The choice should be driven by the workload and operational constraints.
-
-**Internal Mechanics**
-
-CPython versions can optimize calls and execution paths differently. Specialization, vectorcall-related mechanisms, and frame optimizations may affect measured costs. These are implementation details; a micro-optimization that helps one interpreter release may be neutral or harmful on another. Do not write code that depends on private call internals unless the dependency is intentional and isolated.
-
-**Practical Validation Plan**
-
-1. Capture a representative input distribution and concurrency profile.
-2. Establish a baseline using repeatable benchmarks and production telemetry.
-3. Confirm that call overhead is material using profiles, not only call counts.
-4. Estimate the maximum possible gain: if calls account for only a small fraction of total CPU time, the end-to-end improvement is bounded.
-5. Implement one targeted alternative while preserving behavior.
-6. Run correctness, edge-case, and regression tests.
-7. Benchmark on each supported Python implementation/version and deployment configuration.
-8. Compare p50/p95/p99 latency, throughput, CPU, memory, and operational complexity.
-9. Retain the optimization only if the measured benefit justifies its maintenance cost.
-
-**Best Practices**
-
-- Optimize algorithms and unnecessary work before relying on interpreter-specific tricks.
-- Benchmark realistic workloads, not only synthetic single-call loops.
-- Keep a before/after record and pin the runtime used for comparison.
-- Include correctness and maintainability in the decision.
-- Reassess performance-sensitive assumptions during Python upgrades.
-
-**Trade-offs & Alternatives**
-
-Inlining may reduce call overhead but can duplicate logic and reduce testability. Batching can reduce repeated calls and I/O but may increase memory use and latency for individual items. Native code can improve CPU performance but adds build, ABI, debugging, and deployment complexity. Keeping small functions may be the best choice when their overhead is negligible relative to the clarity they provide.
-
-**Common Mistakes**
-
-- Optimizing based on intuition or a single microbenchmark.
-- Assuming a specific CPython optimization will exist in every version.
-- Ignoring algorithmic complexity and data-structure costs.
-- Trading away readability for a negligible speedup.
-- Measuring only average latency while p95/p99 regresses.
-- Failing to retest after a runtime upgrade.
-
-**Senior-Level Perspective**
-
-The decision should connect a measured low-level cost to a meaningful service-level outcome. If function dispatch consumes a substantial CPU budget in a hot path, reducing redundant calls may be justified. If it contributes negligibly to end-to-end latency, preserve clean abstractions and focus on the actual bottleneck. Document the evidence, runtime scope, expected benefit, and rollback criteria.
-
-**Interview-Ready Answer (EN)**
-
-“I would only optimize call mechanics after profiling shows that Python call dispatch or repeated wrapper layers are a material cost in a representative CPU-bound workload. I would inspect self time and call paths, estimate the maximum possible end-to-end gain, and test a focused alternative such as reducing redundant calls or batching work. Then I would compare correctness, latency percentiles, throughput, CPU, memory, and maintainability on the supported Python versions. CPython call optimizations change over time, so I would avoid relying on private internals unless the dependency is isolated and justified by measured results.”
-
-
-
-## PY-004 review checklist
-
-- [x] Main question and FU-013–FU-016 included.
-- [x] Argument binding, execution state, frames, closures, return and exception paths covered.
-- [x] Ordinary functions distinguished from generators and coroutines.
-- [x] Profiling methodology and optimization trade-offs covered.
-- [ ] Independent technical review against supported CPython versions.
-- [ ] Final editorial review.
-
-**Completion rule:** Authored material is not finally approved until both review stages are complete.
-
-
+**References**
+- [Python 3.15.2 — Execution model](https://docs.python.org/3.15/reference/executionmodel.html)
+- [Python 3.15.2 — Data model: frame objects](https://docs.python.org/3.15/reference/datamodel.html#frame-objects)
+- [Python 3.15.2 — C API: Frame objects](https://docs.python.org/3.15/c-api/frame.html)
+- [Python 3.15.2 — C API: Call protocol](https://docs.python.org/3.15/c-api/call.html)
+- [Python 3.15.2 — sys.setprofile and sys.settrace](https://docs.python.org/3.15/library/sys.html)
 
 ---
+
 
 # PY-005 — Main Question
 
