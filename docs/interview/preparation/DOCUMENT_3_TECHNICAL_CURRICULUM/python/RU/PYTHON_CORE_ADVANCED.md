@@ -70,6 +70,27 @@
 - ![Latency](https://img.shields.io/badge/-Latency-d97706?style=flat-square) — Latency
 - ![Throughput](https://img.shields.io/badge/-Throughput-d97706?style=flat-square) — Throughput
 
+- ![Object](https://img.shields.io/badge/-Object-2563eb?style=flat-square) — Object
+- ![Identity](https://img.shields.io/badge/-Identity-64748b?style=flat-square) — Identity
+- ![Type](https://img.shields.io/badge/-Type-7c3aed?style=flat-square) — Type
+- ![Value](https://img.shields.io/badge/-Value-0ea5e9?style=flat-square) — Value
+- ![Name Binding](https://img.shields.io/badge/-Name-Binding-7c3aed?style=flat-square) — Name Binding
+- ![Equality](https://img.shields.io/badge/-Equality-0ea5e9?style=flat-square) — Equality
+- ![Mutability](https://img.shields.io/badge/-Mutability-d97706?style=flat-square) — Mutability
+- ![Mutable Object](https://img.shields.io/badge/-Mutable-Object-d97706?style=flat-square) — Mutable Object
+- ![Immutable Object](https://img.shields.io/badge/-Immutable-Object-0891b2?style=flat-square) — Immutable Object
+- ![Reference](https://img.shields.io/badge/-Reference-64748b?style=flat-square) — Reference
+- ![Aliasing](https://img.shields.io/badge/-Aliasing-d97706?style=flat-square) — Aliasing
+- ![Rebinding](https://img.shields.io/badge/-Rebinding-0891b2?style=flat-square) — Rebinding
+- ![Domain Identity](https://img.shields.io/badge/-Domain-Identity-16a34a?style=flat-square) — Domain Identity
+- ![id()](https://img.shields.io/badge/-id%28%29-64748b?style=flat-square) — id()
+- ![is](https://img.shields.io/badge/-is-2563eb?style=flat-square) — is
+- ![==](https://img.shields.io/badge/-%3D%3D-0ea5e9?style=flat-square) — ==
+- ![isinstance()](https://img.shields.io/badge/-isinstance%28%29-7c3aed?style=flat-square) — isinstance()
+- ![__eq__](https://img.shields.io/badge/-__eq__-0ea5e9?style=flat-square) — __eq__
+- ![__hash__](https://img.shields.io/badge/-__hash__-7c3aed?style=flat-square) — __hash__
+- ![Hashability](https://img.shields.io/badge/-Hashability-7c3aed?style=flat-square) — Hashability
+
 ## PY-001 — GIL ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square), конкурентность и параллелизм ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Что такое Global Interpreter Lock (GIL) в CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) и как он влияет на конкурентность и параллелизм?
@@ -144,11 +165,11 @@
 
 
 
-## PY-005 — Объектная модель Python: идентичность, тип и значение ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+## PY-005 — Объектная модель Python: ![Object](https://img.shields.io/badge/-Object-2563eb?style=flat-square), идентичность ![Identity](https://img.shields.io/badge/-Identity-64748b?style=flat-square), тип ![Type](https://img.shields.io/badge/-Type-7c3aed?style=flat-square) и значение ![Value](https://img.shields.io/badge/-Value-0ea5e9?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Объясните объектную модель Python: идентичность, тип и значение объекта.
 
-**Что оценивается:** Связывание имён, различие идентичности и равенства, изменяемость, проверки типов и доменная идентичность.  
+**Что оценивается:** Связывание имён ![Name Binding](https://img.shields.io/badge/-Name-Binding-7c3aed?style=flat-square), различие идентичности и равенства ![Equality](https://img.shields.io/badge/-Equality-0ea5e9?style=flat-square), изменяемость ![Mutability](https://img.shields.io/badge/-Mutability-d97706?style=flat-square), проверки типов и доменная идентичность ![Domain Identity](https://img.shields.io/badge/-Domain-Identity-16a34a?style=flat-square).  
 **Уровень:** L3 — Advanced/Senior  
 **Приоритет:** P0 — Core
 
@@ -156,8 +177,8 @@
 
 - **FU-1 — Механизм:** Какие из характеристик объекта — идентичность, тип и значение — могут изменяться в течение его жизненного цикла? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 - **FU-2 — Практическое применение:** Как выбирать между проверками идентичности, равенства и типа при code review? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — Граничные случаи и компромиссы:** Почему использование is для сравнения строк, чисел и других значений может приводить к ненадёжным результатам? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-4 — Senior-level суждение:** Как при проектировании API избежать случайной зависимости от идентичности объектов, их изменяемости или конкретных типов реализации? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-3 — Граничные случаи и компромиссы:** Почему использование is ![is](https://img.shields.io/badge/-is-2563eb?style=flat-square) для сравнения строк, чисел и других значений может приводить к ненадёжным результатам? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Как при проектировании API избежать случайной зависимости от идентичности объектов, их изменяемости ![Mutability](https://img.shields.io/badge/-Mutability-d97706?style=flat-square) или конкретных типов реализации? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-006 — Поиск атрибутов, дескрипторы и специальные методы ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
