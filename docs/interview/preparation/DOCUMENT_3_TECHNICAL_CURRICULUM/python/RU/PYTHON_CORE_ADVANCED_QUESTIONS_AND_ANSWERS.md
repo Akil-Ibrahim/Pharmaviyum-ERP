@@ -422,16 +422,16 @@ Python определяет семантику языка, но не едины�
 
 ## Главная идея
 
-Вызов функции — это не просто переход к другой строке кода. Python вычисляет выражение вызова, связывает аргументы с параметрами, подготавливает состояние выполнения, исполняет тело функции и возвращает результат либо передаёт исключение вызывающему коду.
+Вызов функции — это не просто переход к другой строке кода. Python вычисляет выражение вызова, связывает аргументы с параметрами ![ENTITY: Parameter](https://img.shields.io/badge/ENTITY-Parameter-7c3aed), подготавливает состояние выполнения, исполняет тело функции и возвращает результат либо передаёт исключение ![ENTITY: Exception](https://img.shields.io/badge/ENTITY-Exception-dc2626) вызывающему коду.
 
 Удобная модель:
 
-1. Вычислить вызываемый объект и выражения аргументов.
+1. Вычислить вызываемый объект ![ENTITY: Callable](https://img.shields.io/badge/ENTITY-Callable-2563eb) и выражения аргументов.
 2. Выполнить вызов согласно семантике Python.
 3. Связать позиционные и именованные аргументы с параметрами.
 4. Создать или восстановить состояние выполнения функции.
 5. Выполнить тело функции.
-6. Вернуть значение или передать исключение дальше.
+6. Вернуть значение ![ENTITY: Return Value](https://img.shields.io/badge/ENTITY-Return-Value-16a34a) или передать исключение дальше.
 
 Точный внутренний путь вызова — деталь реализации. Для корректности приложения нужно опираться на семантику языка.
 
@@ -458,25 +458,25 @@ Python сопоставляет переданные аргументы с па�
 
 ## 3. Function object и code object
 
-- **Function object** — вызываемый runtime-объект. Он ссылается на скомпилированный код и хранит контекст: глобальное пространство имён, значения аргументов по умолчанию и информацию о замыканиях.
+- **Function object** — вызываемый runtime-объект. Он ссылается на скомпилированный код и хранит контекст: глобальное пространство имён ![ENTITY: Global Namespace](https://img.shields.io/badge/ENTITY-Global-Namespace-64748b), значения аргументов по умолчанию и информацию о замыканиях.
 - **Code object** — скомпилированные инструкции и метаданные. Он может использоваться многими вызовами; Python не компилирует тело функции заново при каждом вызове.
 
 Таким образом, function object связывает повторно используемый скомпилированный код с контекстом, в котором он выполняется.
 
 ## 4. Execution state и frames
 
-Концептуально активному вызову функции нужен execution frame. Он представляет информацию, необходимую для выполнения кода и правильного продолжения работы:
+Концептуально активному вызову функции нужен execution frame ![ENTITY: Execution Frame](https://img.shields.io/badge/ENTITY-Execution-Frame-0ea5e9). Он представляет информацию, необходимую для выполнения кода и правильного продолжения работы:
 
 - выполняемый код и текущая позиция инструкции;
 - локальные переменные и значения параметров;
-- доступ к global и built-in namespaces;
-- closure cells для переменных из внешних областей видимости;
+- доступ к global и built-in namespaces ![ENTITY: Builtins Namespace](https://img.shields.io/badge/ENTITY-Builtins-Namespace-64748b);
+- closure cells ![ENTITY: Closure Cell](https://img.shields.io/badge/ENTITY-Closure-Cell-16a34a) для переменных из внешних областей видимости;
 - состояние управления потоком и обработки исключений;
 - информация для отладки, tracing и возврата к вызывающему коду.
 
-Не следует считать, что все локальные переменные всегда хранятся в обычном Python-словаре или что каждый вызов обязательно выделяет полноценный объект `PyFrameObject`.
+Не следует считать, что все локальные переменные всегда хранятся в обычном Python-словаре или что каждый вызов обязательно выделяет полноценный объект `PyFrameObject ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b)`.
 
-В современном CPython внутреннее представление `_PyInterpreterFrame` отличается от доступного Python-коду объекта `PyFrameObject`. Видимый frame object может создаваться или предоставляться, когда он нужен для introspection, tracing или debugging. Это деталь реализации, а не гарантия языка Python.
+В современном CPython внутреннее представление `_PyInterpreterFrame ![ENTITY: _PyInterpreterFrame](https://img.shields.io/badge/ENTITY-_PyInterpreterFrame-64748b)` отличается от доступного Python-коду объекта `PyFrameObject`. Видимый frame object может создаваться или предоставляться, когда он нужен для introspection, tracing или debugging. Это деталь реализации, а не гарантия языка Python.
 
 ## 5. Как функция возвращает управление?
 
@@ -484,23 +484,23 @@ Python сопоставляет переданные аргументы с па�
 
 Если возникает исключение, которое функция не обрабатывает, оно передаётся вызывающему коду. Python разматывает активные контексты выполнения, пока не найдёт подходящий обработчик или исключение не достигнет верхнего уровня.
 
-Traceback содержит ссылки на execution frames. Поэтому сохранение исключения или traceback может удерживать локальные переменные и объекты, на которые они ссылаются.
+Traceback содержит ссылки на execution frames. Поэтому сохранение исключения или traceback ![ENTITY: Traceback](https://img.shields.io/badge/ENTITY-Traceback-d97706) может удерживать локальные переменные и объекты, на которые они ссылаются.
 
 ## 6. Важная деталь реализации CPython: оптимизированные вызовы
 
-CPython использует оптимизированные механизмы вызова. В C API документированы протоколы `tp_call` и `vectorcall`; vectorcall позволяет уменьшить накладные расходы на упаковку аргументов для поддерживающих его вызываемых объектов.
+CPython использует оптимизированные механизмы вызова. В C API документированы протоколы `tp_call ![ENTITY: tp_call](https://img.shields.io/badge/ENTITY-tp_call-0891b2)` и `vectorcall ![ENTITY: Vectorcall](https://img.shields.io/badge/ENTITY-Vectorcall-0891b2)`; vectorcall позволяет уменьшить накладные расходы на упаковку аргументов для поддерживающих его вызываемых объектов.
 
 Начиная с CPython 3.11, обычные вызовы Python-функций могут использовать оптимизированный путь интерпретатора, который избегает прежней схемы рекурсивного повторного входа в evaluator для каждого Python-вызова. Внутренние frames также стали легче по сравнению с традиционной моделью.
 
 Это детали реализации CPython. Они помогают объяснять производительность, но корректность приложения не должна зависеть от конкретного внутреннего пути вызова или расположения frame.
 
-## 7. Генераторы и корутины имеют другой жизненный цикл
+## 7. Генераторы и корутин ![ENTITY: Coroutine](https://img.shields.io/badge/ENTITY-Coroutine-0891b2)ы имеют другой жизненный цикл
 
 Вызов обычной функции сразу начинает выполнять её тело.
 
-Вызов generator function создаёт generator object; его тело выполняется по мере итерации. Вызов функции `async def` создаёт coroutine object; её тело выполняется, когда корутину await-ят или планируют в event loop.
+Вызов generator function создаёт generator object; его тело выполняется по мере итерации. Вызов функции `async def` создаёт coroutine object; её тело выполняется, когда корутину await ![ENTITY: Await](https://img.shields.io/badge/ENTITY-Await-0891b2)-ят или планируют в event loop ![ENTITY: Event Loop](https://img.shields.io/badge/ENTITY-Event-Loop-0891b2).
 
-Генераторы и корутины сохраняют состояние между точками приостановки. Их жизненный цикл отличается от обычной функции, которая выполняется до завершения за один вызов.
+Генераторы и корутины сохраняют состояние между точками приостановки ![ENTITY: Suspension Point](https://img.shields.io/badge/ENTITY-Suspension-Point-0891b2). Их жизненный цикл отличается от обычной функции, которая выполняется до завершения за один вызов.
 
 ## Практический пример
 
@@ -522,11 +522,11 @@ result = triple(10, offset=2)  # 32
 
 Концептуально активный вызов представлен execution frame. В CPython внутреннее представление frame и путь вызова относятся к деталям реализации и менялись между версиями. Во время выполнения функция может вернуть значение или передать исключение вызывающему коду.
 
-У генераторов и корутин другой жизненный цикл: вызов создаёт generator или coroutine object, а не выполняет тело до завершения немедленно. Перед оптимизацией вызовов я сначала профилирую реальную нагрузку, поскольку основная стоимость может находиться внутри функции или в I/O, а не в механизме вызова».
+У генератор ![ENTITY: Generator](https://img.shields.io/badge/ENTITY-Generator-0891b2)ов и корутин другой жизненный цикл: вызов создаёт generator или coroutine object, а не выполняет тело до завершения немедленно. Перед оптимизацией вызовов я сначала профилирую реальную нагрузку, поскольку основная стоимость может находиться внутри функции или в I/O ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I-O-bound-0891b2), а не в механизме вызова».
 
 ---
 
-## PY-004 / FU-1 — Какое состояние нужно во время вызова функции? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-004 / FU-1 — Какое состояние нужно во время вызова функции? ![ENTITY: Execution Frame](https://img.shields.io/badge/ENTITY-Execution-Frame-0ea5e9) ![ENTITY: _PyInterpreterFrame](https://img.shields.io/badge/ENTITY-_PyInterpreterFrame-64748b) ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b) ![ENTITY: Closure Cell](https://img.shields.io/badge/ENTITY-Closure-Cell-16a34a) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Какое состояние CPython должен создать или поддерживать при входе в Python-функцию и во время её выполнения?
 
@@ -544,7 +544,7 @@ Runtime нужны code object функции, связанные аргумен
 
 ---
 
-## PY-004 / FU-2 — Как исследовать накладные расходы вызовов функций? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-004 / FU-2 — Как исследовать накладные расходы вызовов функций? ![ENTITY: Profiler](https://img.shields.io/badge/ENTITY-Profiler-16a34a) ![ENTITY: Call Stack](https://img.shields.io/badge/ENTITY-Call-Stack-64748b) ![ENTITY: Self Time](https://img.shields.io/badge/ENTITY-Self-Time-d97706) ![ENTITY: Cumulative Time](https://img.shields.io/badge/ENTITY-Cumulative-Time-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Как использовать профилирование и информацию о стеке вызовов, чтобы исследовать чрезмерные накладные расходы вызовов функций в Python-сервисе?
 
@@ -552,21 +552,21 @@ Runtime нужны code object функции, связанные аргумен
 
 **Объяснение**
 
-Начинай с репрезентативной нагрузки и измеримой цели сервиса. Используй profiler для анализа количества вызовов, self time и cumulative time, затем сопоставляй результаты с request traces.
+Начинай с репрезентативной нагрузки и измеримой цели сервиса. Используй profiler ![ENTITY: Profiler](https://img.shields.io/badge/ENTITY-Profiler-16a34a) для анализа количества вызовов, self time ![ENTITY: Self Time](https://img.shields.io/badge/ENTITY-Self-Time-d97706) и cumulative time ![ENTITY: Cumulative Time](https://img.shields.io/badge/ENTITY-Cumulative-Time-d97706), затем сопоставляй результаты с request traces.
 
 - **Self time:** время, отнесённое к самой функции без времени вложенных вызовов.
 - **Cumulative time:** время функции вместе с её вложенными вызовами.
 - **Call count:** количество вызовов; большое число само по себе не доказывает наличие узкого места.
 
-Детерминированный profiler даёт подробную информацию о вызовах, но добавляет overhead. Sampling profiler обычно менее инвазивен, но даёт статистическую оценку.
+Детерминированный profiler даёт подробную информацию о вызовах, но добавляет overhead. Sampling profiler ![ENTITY: Sampling Profiler](https://img.shields.io/badge/ENTITY-Sampling-Profiler-16a34a) обычно менее инвазивен, но даёт статистическую оценку.
 
 **Ответ для собеседования (RU)**
 
-«Я определяю целевую метрику и снимаю профиль на репрезентативной нагрузке. Анализирую call count, self time и cumulative time, сопоставляю профиль с трассировками запросов. Большое количество вызовов само по себе не доказывает, что дорог именно механизм вызова: время может уходить в базу данных, сеть, сериализацию или native code. После определения узкого места я делаю целевое изменение и сравниваю latency percentiles, throughput, CPU, memory и корректность на одинаковой нагрузке».
+«Я определяю целевую метрику и снимаю профиль на репрезентативной нагрузке. Анализирую call count ![ENTITY: Call Count](https://img.shields.io/badge/ENTITY-Call-Count-d97706), self time и cumulative time, сопоставляю профиль с трассировками запросов. Большое количество вызовов само по себе не доказывает, что дорог именно механизм вызова: время может уходить в базу данных, сеть, сериализацию или native code ![ENTITY: Native Code](https://img.shields.io/badge/ENTITY-Native-Code-0f766e). После определения узкого места я делаю целевое изменение и сравниваю latency ![ENTITY: Latency](https://img.shields.io/badge/ENTITY-Latency-d97706) percentiles, throughput ![ENTITY: Throughput](https://img.shields.io/badge/ENTITY-Throughput-d97706), CPU, memory и корректность на одинаковой нагрузке».
 
 ---
 
-## PY-004 / FU-3 — Как рекурсия, исключения, генераторы и корутины меняют жизненный цикл? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-004 / FU-3 — Как рекурсия ![ENTITY: Recursion](https://img.shields.io/badge/ENTITY-Recursion-7c3aed), исключения, генераторы и корутины меняют жизненный цикл? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Как рекурсия, исключения, генераторы и асинхронные функции влияют на жизненный цикл выполнения по сравнению с обычным вызовом функции?
 
@@ -576,18 +576,18 @@ Runtime нужны code object функции, связанные аргумен
 
 - **Recursion:** создаёт вложенные логические вызовы с отдельными параметрами и локальным состоянием. Глубокая рекурсия может достичь recursion limit.
 - **Exceptions:** меняют поток управления: контексты выполнения разматываются до нахождения подходящего обработчика.
-- **Generators:** вызов generator function создаёт generator object. Тело выполняется при итерации и сохраняет состояние между точками `yield`.
+- **Generators:** вызов generator function создаёт generator object. Тело выполняется при итерации и сохраняет состояние между точками `yield ![ENTITY: Yield](https://img.shields.io/badge/ENTITY-Yield-0891b2)`.
 - **Coroutines:** вызов `async def` создаёт coroutine object. Тело выполняется при await или планировании, а при `await` может приостанавливаться.
 
 Event loop управляет продвижением корутин; он не создаёт отдельный системный поток для каждой корутины.
 
 **Ответ для собеседования (RU)**
 
-«Обычная функция выполняется при вызове и завершается возвратом значения или исключением. Рекурсия создаёт вложенные вызовы с отдельным логическим состоянием. Исключения разматывают поток выполнения до подходящего обработчика. Вызов генератора возвращает объект, тело которого продвигается при итерации и сохраняет состояние между yield. Вызов async-функции возвращает coroutine object, который выполняется при await или планировании. Эти различия влияют на глубину стека, scheduling, cancellation и освобождение ресурсов».
+«Обычная функция выполняется при вызове и завершается возвратом значения или исключением. Рекурсия создаёт вложенные вызовы с отдельным логическим состоянием. Исключения разматывают поток выполнения до подходящего обработчика. Вызов генератора возвращает объект, тело которого продвигается при итерации и сохраняет состояние между yield. Вызов async-функции возвращает coroutine object, который выполняется при await или планировании. Эти различия влияют на глубину стека, scheduling, cancellation ![ENTITY: Cancellation](https://img.shields.io/badge/ENTITY-Cancellation-dc2626) и освобождение ресурсов».
 
 ---
 
-## PY-004 / FU-4 — Когда механика вызовов должна влиять на оптимизацию? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-004 / FU-4 — Когда механика вызовов должна влиять на оптимизацию? ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Vectorcall](https://img.shields.io/badge/ENTITY-Vectorcall-0891b2) ![ENTITY: Benchmark](https://img.shields.io/badge/ENTITY-Benchmark-d97706) ![ENTITY: Latency](https://img.shields.io/badge/ENTITY-Latency-d97706) ![ENTITY: Throughput](https://img.shields.io/badge/ENTITY-Throughput-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** В каких случаях знание механики вызовов CPython должно влиять на решение об оптимизации и как проверить её полезность?
 
@@ -595,9 +595,9 @@ Event loop управляет продвижением корутин; он не
 
 **Объяснение**
 
-Механика вызовов важна, когда профилирование показывает, что dispatch или повторяющиеся wrapper-слои занимают существенную часть CPU-bound hot path. Оптимизации CPython, например vectorcall, могут уменьшать некоторые накладные расходы, но не делают каждый вызов бесплатным.
+Механика вызовов важна, когда профилирование показывает, что dispatch или повторяющиеся wrapper-слои занимают существенную часть CPU-bound ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) hot path. Оптимизации CPython, например vectorcall, могут уменьшать некоторые накладные расходы, но не делают каждый вызов бесплатным.
 
-Проверяй гипотезу на репрезентативных benchmark-нагрузках и production-метриках, учитывая поддерживаемые версии Python. Оценивай не только скорость, но и читаемость с сопровождением.
+Проверяй гипотезу на репрезентативных benchmark ![ENTITY: Benchmark](https://img.shields.io/badge/ENTITY-Benchmark-d97706)-нагрузках и production-метриках, учитывая поддерживаемые версии Python. Оценивай не только скорость, но и читаемость с сопровождением.
 
 **Ответ для собеседования (RU)**
 
