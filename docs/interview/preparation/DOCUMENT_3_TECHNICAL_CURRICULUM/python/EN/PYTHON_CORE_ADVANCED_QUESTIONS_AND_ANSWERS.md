@@ -12,7 +12,7 @@ English study material for PY-001–PY-009 and FU-001–FU-036. Each topic expla
 
 **Review status:** Authored; independent technical and editorial review pending. Do not treat this material as finally approved until both reviews are complete.
 
-# PY-001 — Main Question
+# PY-001 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** What is the Global Interpreter Lock (GIL) in CPython, and how does it affect concurrency and parallelism?
 
@@ -61,7 +61,7 @@ Python additionally supports optional free-threaded builds, which can execute th
 
 ---
 
-## FU-001 — What does the GIL protect?
+## FU-001 — What does the GIL protect? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What does the GIL protect, and why does CPython use it?
 
@@ -75,7 +75,7 @@ The GIL coordinates access to parts of CPython's internal state and Python objec
 
 ---
 
-## FU-002 — How does the GIL affect CPU-bound and I/O-bound work?
+## FU-002 — How does the GIL affect CPU-bound and I/O-bound work? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How does the GIL affect CPU-bound and I/O-bound multithreaded workloads?
 
@@ -89,7 +89,7 @@ CPU-bound work spends most of its time calculating. I/O-bound work spends much o
 
 ---
 
-## FU-003 — How do you choose between threading, multiprocessing, and asyncio?
+## FU-003 — How do you choose between threading, multiprocessing, and asyncio? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How would you choose between threading, multiprocessing, and asyncio for a Python backend workload?
 
@@ -105,7 +105,7 @@ CPU-bound work spends most of its time calculating. I/O-bound work spends much o
 
 ---
 
-## FU-004 — What changes in free-threaded CPython?
+## FU-004 — What changes in free-threaded CPython? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** What changes in free-threaded CPython, and what should a team check before adopting it?
 
@@ -125,7 +125,7 @@ A free-threaded build can execute Python threads in parallel without the traditi
 
 ---
 
-# PY-002 — Main Question
+# PY-002 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** What is the difference between concurrency and parallelism, and why is the distinction important in Python?
 
@@ -160,7 +160,7 @@ In Python, threading and asyncio are commonly used for concurrency, while multip
 
 ---
 
-## FU-005 — Can concurrency exist without parallelism?
+## FU-005 — Can concurrency exist without parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** Can concurrency exist without parallelism?
 
@@ -174,7 +174,7 @@ Yes. A single thread can make progress on multiple tasks by switching between th
 
 ---
 
-## FU-006 — What is the difference between I/O-bound and CPU-bound workloads?
+## FU-006 — What is the difference between I/O-bound and CPU-bound workloads? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What is the difference between I/O-bound and CPU-bound workloads?
 
@@ -188,7 +188,7 @@ An **I/O-bound** workload spends much of its time waiting for external operation
 
 ---
 
-## FU-007 — How does the GIL affect concurrency and parallelism in CPython?
+## FU-007 — How does the GIL affect concurrency and parallelism in CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How does the GIL affect concurrency and parallelism in CPython?
 
@@ -202,7 +202,7 @@ In conventional CPython builds, the GIL prevents multiple threads from executing
 
 ---
 
-## FU-008 — How do you decide whether a workload needs concurrency or parallelism?
+## FU-008 — How do you decide whether a workload needs concurrency or parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How do you decide whether a workload needs concurrency or parallelism?
 
@@ -222,7 +222,7 @@ First identify the bottleneck. If the workload mostly waits for network, databas
 
 ---
 
-# PY-003 — Main Question
+# PY-003 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** How does Python execute a program from source code to runtime behavior?
 
@@ -312,7 +312,7 @@ For production diagnosis, I distinguish module import and startup behavior from 
 
 ---
 
-## FU-009 — What are the main stages of Python execution?
+## FU-009 — What are the main stages of Python execution? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What are the main stages between Python source code and the execution of its instructions in CPython?
 
@@ -326,7 +326,7 @@ The usual CPython path is: read and decode source, parse it into an AST, compile
 
 ---
 
-## FU-010 — Why does running a module differ from importing it?
+## FU-010 — Why does running a module differ from importing it? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module?
 
@@ -340,7 +340,7 @@ When a file is run directly, its `__name__` is normally `"__main__"`. When impor
 
 ---
 
-## FU-011 — Which execution details are implementation-specific?
+## FU-011 — Which execution details are implementation-specific? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter?
 
@@ -354,7 +354,7 @@ Python specifies language semantics, not one universal bytecode format or interp
 
 ---
 
-## FU-012 — How do you choose the diagnostic layer?
+## FU-012 — How do you choose the diagnostic layer? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment?
 
@@ -382,7 +382,7 @@ Start broad with metrics, logs, and traces. Go deeper only when the evidence poi
 ---
 
 
-# PY-004 — Main Question
+# PY-004 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** What happens during a function call in CPython?
 
@@ -492,7 +492,7 @@ A generator or coroutine function has a different lifecycle: calling it creates 
 
 ---
 
-## FU-013 — What execution state is needed during a function call?
+## FU-013 — What execution state is needed during a function call? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What execution state does CPython need to establish or maintain when entering and executing a Python function?
 
@@ -508,7 +508,7 @@ In CPython, internal execution frames are not identical to Python-visible `PyFra
 
 ---
 
-## FU-014 — How do you investigate function-call overhead?
+## FU-014 — How do you investigate function-call overhead? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service?
 
@@ -528,7 +528,7 @@ A deterministic profiler can provide detailed call information but add overhead.
 
 ---
 
-## FU-015 — How do recursion, exceptions, generators, and coroutines change the lifecycle?
+## FU-015 — How do recursion, exceptions, generators, and coroutines change the lifecycle? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call?
 
@@ -547,7 +547,7 @@ An event loop schedules coroutine progress; it does not create one operating-sys
 
 ---
 
-## FU-016 — When should call mechanics influence an optimization decision?
+## FU-016 — When should call mechanics influence an optimization decision? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile?
 
@@ -571,7 +571,7 @@ Validate the hypothesis with representative benchmarks, production metrics, and 
 ---
 
 
-# PY-005 — Main Question
+# PY-005 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** Explain Python's object model: identity, type, and value.
 
@@ -602,7 +602,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-017 — Identity, type, and value over an object's lifetime
+## FU-017 — Identity, type, and value over an object's lifetime ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** Which of an object's identity, type, and value can change during its lifetime?
 
@@ -614,7 +614,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-018 — Choosing identity, equality, and type checks
+## FU-018 — Choosing identity, equality, and type checks ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you choose between identity checks, equality checks, and type checks in a code review?
 
@@ -626,7 +626,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-019 — Why is is not a value comparison?
+## FU-019 — Why is is not a value comparison? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Why can using is to compare strings, numbers, or other values produce unreliable results?
 
@@ -638,7 +638,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-020 — Identity and mutability in API design
+## FU-020 — Identity and mutability in API design ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How should API design avoid accidental dependencies on object identity, mutability, or concrete implementation types?
 
@@ -650,7 +650,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 **Status:** Audited against the Python 3.15.2 data model, comparison semantics, and programming FAQ; four follow-ups retained.
 
-# PY-006 — Main Question
+# PY-006 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** How does Python resolve attribute access, and how do descriptors and special methods affect that process?
 
@@ -703,7 +703,7 @@ When debugging unexpected attribute behavior, identify the exact lookup path: in
 
 ---
 
-## FU-021 — Attribute lookup precedence
+## FU-021 — Attribute lookup precedence ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** In what order does Python search for an attribute on an instance, and how can an instance attribute interact with a class attribute?
 
@@ -725,7 +725,7 @@ This explains why assigning to an attribute can shadow a method in some cases, w
 
 ---
 
-## FU-022 — Data descriptors and non-data descriptors
+## FU-022 — Data descriptors and non-data descriptors ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What is the difference between a data descriptor and a non-data descriptor, and why does the distinction matter?
 
@@ -747,7 +747,7 @@ This distinction is important in frameworks that use descriptors for validation,
 
 ---
 
-## FU-023 — `__getattribute__` versus `__getattr__`
+## FU-023 — `__getattribute__` versus `__getattr__` ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What is the difference between `__getattribute__` and `__getattr__`, and what risks arise when overriding them?
 
@@ -769,7 +769,7 @@ A custom `__getattribute__` can implement proxies, access control, lazy resoluti
 
 ---
 
-## FU-024 — Implicit special-method lookup
+## FU-024 — Implicit special-method lookup ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** Why can assigning a special method to an instance fail to change the behavior of an implicit operation such as `len(obj)`?
 
@@ -791,7 +791,7 @@ This is different from explicitly evaluating `obj.__len__()`, which is ordinary 
 
 
 
-# PY-007 — Main Question
+# PY-007 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** How do Python lists, tuples, sets, and dictionaries differ internally and semantically?
 
@@ -834,7 +834,7 @@ Start with semantics and correctness, then profile representative data sizes and
 
 ---
 
-## FU-025 — Collection semantics and CPython representations
+## FU-025 — Collection semantics and CPython representations ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython?
 
@@ -848,7 +848,7 @@ Lists and tuples are ordered sequences indexed by position; lists allow item rep
 
 ---
 
-## FU-026 — Selecting a collection for a service
+## FU-026 — Selecting a collection for a service ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service?
 
@@ -862,7 +862,7 @@ Use a list for an ordered sequence that may change, a tuple for a fixed sequence
 
 ---
 
-## FU-027 — Ordering, copying, and complexity edge cases
+## FU-027 — Ordering, copying, and complexity edge cases ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity?
 
@@ -876,7 +876,7 @@ Dictionary insertion order is guaranteed by the language, but set iteration orde
 
 ---
 
-## FU-028 — Collection choice under production constraints
+## FU-028 — Collection choice under production constraints ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy?
 
@@ -889,7 +889,7 @@ Identify the operation mix, data volume, ordering requirements, mutation frequen
 “I start from the production access pattern: reads versus writes, lookup versus iteration, ordering, data size, and memory limits. Then I benchmark representative distributions and measure latency and memory, including build and update costs. I avoid choosing from asymptotic complexity alone, and keep redundant indexes only when their measured benefit justifies their operational cost.”
 
 
-# PY-008 — Main Question
+# PY-008 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** How do Python dictionaries work internally, and what are the performance and correctness implications of hash-table behavior?
 
@@ -943,7 +943,7 @@ Treat dictionary keys as stable values. For custom key classes, design __eq__() 
 
 ---
 
-## FU-029 — The hash and equality contract
+## FU-029 — The hash and equality contract ![TYPE](https://img.shields.io/badge/TYPE-Core_contract-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What contract must __hash__() and __eq__() satisfy for objects used as dictionary keys?
 
@@ -957,7 +957,7 @@ The essential rule is: if a == b, then hash(a) == hash(b). The reverse is not re
 
 ---
 
-## FU-030 — Collision resolution and resizing
+## FU-030 — Collision resolution and resizing ![TYPE](https://img.shields.io/badge/TYPE-Internal_mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What happens when dictionary keys collide, and why can insertion or lookup become slower?
 
@@ -971,7 +971,7 @@ A collision means multiple keys compete for a candidate table position. CPython 
 
 ---
 
-## FU-031 — Mutable custom keys and hash stability
+## FU-031 — Mutable custom keys and hash stability ![TYPE](https://img.shields.io/badge/TYPE-Correctness_and_design-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Why is it dangerous to use a mutable object as a dictionary key, and how should a custom key type be designed?
 
@@ -985,7 +985,7 @@ If a key's hash changes after insertion, the dictionary may search for it using 
 
 ---
 
-## FU-032 — Hash randomization and production security
+## FU-032 — Hash randomization and production security ![TYPE](https://img.shields.io/badge/TYPE-Security_and_production-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How does hash randomization help protect Python services, and why should hash() not be used as a persistent identifier?
 
@@ -999,7 +999,7 @@ Python salts the hashes of str and bytes with a process-specific unpredictable v
 
 ---
 
-# PY-009 — Main Question
+# PY-009 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** How does memory management work in Python, and how do reference counting and garbage collection interact?
 
@@ -1076,7 +1076,7 @@ For production memory issues, I separate live-object retention from allocator be
 
 ---
 
-## FU-033 — Reference counting versus cyclic garbage collection
+## FU-033 — Reference counting versus cyclic garbage collection ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What is the difference between reference counting and cyclic garbage collection in CPython?
 
@@ -1094,7 +1094,7 @@ The cyclic garbage collector supplements reference counting. It examines support
 
 ---
 
-## FU-034 — Reference cycles and reachability
+## FU-034 — Reference cycles and reachability ![TYPE](https://img.shields.io/badge/TYPE-Reachability-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** Why can a reference cycle remain in memory even when the application no longer uses any of its objects?
 
@@ -1112,7 +1112,7 @@ CPython's cyclic collector detects supported unreachable cycles by examining tra
 
 ---
 
-## FU-035 — del, finalizers, and deterministic cleanup
+## FU-035 — del, finalizers, and deterministic cleanup ![TYPE](https://img.shields.io/badge/TYPE-Resource_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Does using del or defining __del__() guarantee that an object or its resources are released immediately?
 
@@ -1130,7 +1130,7 @@ A __del__() finalizer is not a reliable resource-management mechanism. Its execu
 
 ---
 
-## FU-036 — Diagnosing memory growth in production
+## FU-036 — Diagnosing memory growth in production ![TYPE](https://img.shields.io/badge/TYPE-Production_diagnosis-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How would you investigate steadily increasing memory usage in a long-running Python service?
 
