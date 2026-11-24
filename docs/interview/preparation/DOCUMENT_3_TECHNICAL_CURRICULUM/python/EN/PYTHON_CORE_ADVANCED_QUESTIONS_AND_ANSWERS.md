@@ -31,6 +31,20 @@ The GIL is a CPython implementation detail, not a guarantee of the Python langua
 
 The GIL is a process-wide lock in a conventional CPython interpreter. A thread generally needs to hold it to execute Python bytecode and interact with interpreter-managed objects through the usual C API. The lock coordinates access to interpreter state and historically made memory management, especially reference counting, and C-extension integration simpler.
 
+**Is the GIL a mutex? — terminology and implementation**
+
+At the conceptual level, the GIL is commonly described as a global mutex or mutual-exclusion lock: it enforces exclusive access, so only one thread at a time may hold it in a conventional GIL-enabled interpreter. More precisely, do not confuse the GIL's role with the lower-level mutex used inside its implementation. In CPython 3.15.2, the GIL state is represented by a `locked` flag; access to that state is protected by an internal mutex (`gil_mutex`), and a condition variable (`gil_cond`) signals state changes and allows threads to wait. Thus, saying “the GIL is a mutex” is an acceptable high-level simplification, but saying “the GIL is implemented as one ordinary mutex” is inaccurate.
+
+Keep these terms distinct:
+
+- **Lock:** a general synchronization primitive used to coordinate access or execution.
+- **Mutex (mutual-exclusion lock):** a lock that allows only one owner into a protected critical section at a time.
+- **Condition variable:** a waiting/notification mechanism used together with a mutex; it is not itself the mutual-exclusion lock.
+- **Semaphore:** a synchronization primitive that permits a bounded number of concurrent holders, rather than exactly one.
+- **GIL:** the interpreter-level mutual-exclusion mechanism governing access to Python objects and execution of Python code in a conventional CPython build; it is not an application-level lock for protecting arbitrary business invariants.
+
+The GIL is also not the same thing as the operating-system scheduler: the scheduler decides which threads run, while the GIL controls which thread may enter the relevant interpreter execution/access region.
+
 The GIL does not mean that a Python process can have only one thread, nor does it prevent threads from overlapping their work. The operating system schedules threads, and CPython switches which thread holds the GIL. Blocking I/O commonly releases the GIL, allowing another thread to run. Native extensions can also release it around suitable CPU-intensive native operations. Therefore, multiple threads can make progress concurrently, even though conventional CPython does not execute multiple threads' Python bytecode in parallel while the GIL is held.
 
 **Concurrency is not the same as parallelism.** Concurrency means multiple tasks make progress during overlapping periods; parallelism means work is executed at the same time, for example on separate CPU cores. With the conventional GIL-enabled CPython build, threads are useful for overlapping I/O, but pure-Python CPU-bound threads generally do not scale across cores through simultaneous bytecode execution.
@@ -71,6 +85,8 @@ The GIL also does not make shared application state automatically thread-safe, s
 - [Python 3.15.2 documentation: C API extension support for free threading](https://docs.python.org/3.15/howto/free-threading-extensions.html)
 - [What's New in Python 3.15: Stable ABI for free-threaded builds (`abi3t`)](https://docs.python.org/3.15/whatsnew/3.15.html#pep-803-stable-abi-for-free-threaded-builds)
 - [Python 3.15.2 C API: Thread states and the GIL](https://docs.python.org/3.15/c-api/threads.html)
+- [CPython 3.15.2 source: GIL implementation (`Python/ceval_gil.c`)](https://github.com/python/cpython/blob/v3.15.2/Python/ceval_gil.c)
+- [Python 3.15.2 C API: synchronization primitives](https://docs.python.org/3.15/c-api/synchronization.html)
 - [PEP 703 — Making the Global Interpreter Lock Optional in CPython](https://peps.python.org/pep-0703/)
 
 ---
