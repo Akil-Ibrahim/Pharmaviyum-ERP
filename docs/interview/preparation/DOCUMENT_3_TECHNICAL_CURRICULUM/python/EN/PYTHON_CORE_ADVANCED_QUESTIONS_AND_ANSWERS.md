@@ -140,7 +140,9 @@ Concurrency is about coordinating multiple tasks. Parallelism is about simultane
 - **Multiprocessing:** separate processes that can execute on different CPU cores; often useful for CPU-bound Python workloads.
 - **Asyncio:** cooperative concurrency managed by an event loop. When one coroutine awaits I/O, the event loop can run another. Asyncio does not make CPU-heavy code parallel by itself.
 
-In a conventional GIL-enabled CPython build, multiple threads do not execute Python bytecode in parallel. They can still provide concurrency, especially while waiting for I/O.
+In a conventional GIL-enabled CPython build, multiple threads do not execute Python bytecode in parallel. They can still provide concurrency, especially while waiting for I/O. A free-threaded CPython build can execute Python code in parallel when the GIL is disabled; this is optional and not the default build.
+
+Python 3.15.2 also documents asyncio's use in free-threaded environments. A single event loop still runs its Python task code serially on its thread, but separate event loops in separate threads can run in parallel when the GIL is disabled. Asyncio synchronization primitives remain scoped to their event loop and should not be used as cross-thread synchronization tools.
 
 ## Practical example
 
