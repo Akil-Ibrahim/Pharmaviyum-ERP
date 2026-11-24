@@ -14,13 +14,13 @@
 
 # PY-001 — Основной вопрос ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Вопрос (RU):** Что такое Global Interpreter Lock (GIL) ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square) в CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) и как он влияет на конкурентность и параллелизм?
+**Вопрос (RU):** Что такое Global Interpreter Lock (GIL) в CPython и как он влияет на конкурентность и параллелизм?
 
 **Оригинальная формулировка (EN):** What is the Global Interpreter Lock (GIL) in CPython, and how does it affect concurrency and parallelism?
 
 ## Сначала поймём идею
 
-В традиционной сборке CPython с GIL только один поток одновременно может удерживать GIL и выполнять Python bytecode ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square). Можно представить его как общий ключ: он находится у одного потока, остальные ждут своей очереди. Это упрощённая аналогия, но она передаёт основную идею.
+В традиционной сборке CPython с GIL только один поток одновременно может удерживать GIL и выполнять Python bytecode. Можно представить его как общий ключ: он находится у одного потока, остальные ждут своей очереди. Это упрощённая аналогия, но она передаёт основную идею.
 
 GIL помогает CPython координировать доступ к состоянию интерпретатора и объектам Python. Исторически он также упрощал подсчёт ссылок и интеграцию C-расширений.
 
@@ -29,11 +29,11 @@ GIL помогает CPython координировать доступ к сос
 - **Конкурентность (concurrency):** несколько задач продвигаются в течение пересекающихся промежутков времени. Они не обязаны выполняться одновременно в одну и ту же секунду.
 - **Параллелизм (parallelism):** несколько задач выполняются одновременно, например на разных ядрах процессора.
 
-В традиционной сборке CPython с GIL потоки могут обеспечивать конкурентность, но CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) потоки на чистом Python обычно не могут выполнять Python bytecode параллельно на нескольких ядрах.
+В традиционной сборке CPython с GIL потоки могут обеспечивать конкурентность, но CPU-bound потоки на чистом Python обычно не могут выполнять Python bytecode параллельно на нескольких ядрах.
 
 ## Когда GIL влияет на производительность?
 
-- **I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) задачи:** потоки могут быть полезны. Пока один поток ждёт сеть, файл или другую блокирующую операцию ввода-вывода, GIL обычно освобождается и другой поток может работать.
+- **I/O-bound задачи:** потоки могут быть полезны. Пока один поток ждёт сеть, файл или другую блокирующую операцию ввода-вывода, GIL обычно освобождается и другой поток может работать.
 - **CPU-bound задачи на чистом Python:** добавление потоков обычно не даёт параллельного выполнения на нескольких ядрах. Часто лучше подходит multiprocessing.
 - **Нативные расширения:** некоторые библиотеки освобождают GIL при выполнении нативного кода, поэтому их вычисления могут выполняться параллельно.
 
@@ -43,11 +43,11 @@ GIL помогает CPython координировать доступ к сос
 
 ## Является ли GIL мьютексом?
 
-На концептуальном уровне GIL обычно называют глобальной блокировкой взаимного исключения. Точнее, в CPython 3.15.2 его состояние защищается внутренним mutex ![Mutex](https://img.shields.io/badge/-Mutex-be123c?style=flat-square), а для координации ожидающих потоков используется condition variable ![Condition Variable](https://img.shields.io/badge/-Condition-Variable-be123c?style=flat-square). Поэтому фраза «GIL работает как глобальный мьютекс» — полезное упрощение, а утверждение «он реализован как один обычный мьютекс» — технически неточно.
+На концептуальном уровне GIL обычно называют глобальной блокировкой взаимного исключения. Точнее, в CPython 3.15.2 его состояние защищается внутренним mutex, а для координации ожидающих потоков используется condition variable. Поэтому фраза «GIL работает как глобальный мьютекс» — полезное упрощение, а утверждение «он реализован как один обычный мьютекс» — технически неточно.
 
 ## Что изменилось в Python 3.15.2?
 
-В CPython также существует опциональная **free-thread ![Thread](https://img.shields.io/badge/-Thread-16a34a?style=flat-square)ed-сборка**. Она появилась в экспериментальном виде в Python 3.13 и стала официально поддерживаемой опциональной конфигурацией начиная с Python 3.14. Она позволяет потокам выполнять Python-код параллельно без традиционного GIL.
+В CPython также существует опциональная **free-threaded-сборка**. Она появилась в экспериментальном виде в Python 3.13 и стала официально поддерживаемой опциональной конфигурацией начиная с Python 3.14. Она позволяет потокам выполнять Python-код параллельно без традиционного GIL.
 
 Это не сборка по умолчанию. Некоторые C-расширения несовместимы с таким режимом и могут привести к повторному включению GIL. Free-threading также не гарантирует ускорения любого приложения: необходимо проверить совместимость, синхронизацию, потребление памяти и производительность на реальной нагрузке.
 
@@ -95,7 +95,7 @@ CPU-bound задачи в основном выполняют вычислени
 
 ---
 
-## PY-001 / FU-3 — Как выбрать между threading, multiprocessing и asyncio ![Asyncio](https://img.shields.io/badge/-Asyncio-0891b2?style=flat-square)? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-001 / FU-3 — Как выбрать между threading, multiprocessing и asyncio? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Как выбрать между threading, multiprocessing и asyncio для нагрузки Python backend?
 
@@ -104,7 +104,7 @@ CPU-bound задачи в основном выполняют вычислени
 **Объяснение**
 
 - **Threading:** подходит для блокирующего I/O и некоторых нативных библиотек.
-- **Multiprocessing ![Multiprocessing](https://img.shields.io/badge/-Multiprocessing-7c3aed?style=flat-square):** подходит для CPU-bound задач на Python; процессы могут работать на разных ядрах.
+- **Multiprocessing:** подходит для CPU-bound задач на Python; процессы могут работать на разных ядрах.
 - **Asyncio:** подходит для большого количества конкурентных I/O-задач, если библиотеки поддерживают неблокирующие операции. Сам по себе asyncio не делает CPU-вычисления параллельными.
 
 **Ответ для собеседования (RU)**
@@ -145,18 +145,18 @@ Free-threaded-сборка позволяет потокам Python выполн
 
 ## Сначала поймём идею
 
-- **Конкурентность ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) (concurrency)** — управление несколькими задачами, выполнение которых пересекается во времени. Система позволяет каждой задаче продвигаться вперёд, часто переключаясь между ними.
-- **Параллелизм ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) (parallelism)** — фактическое одновременное выполнение нескольких задач, например на разных ядрах процессора.
+- **Конкурентность (concurrency)** — управление несколькими задачами, выполнение которых пересекается во времени. Система позволяет каждой задаче продвигаться вперёд, часто переключаясь между ними.
+- **Параллелизм (parallelism)** — фактическое одновременное выполнение нескольких задач, например на разных ядрах процессора.
 
 Конкурентность описывает координацию нескольких задач. Параллелизм означает их одновременное выполнение. Для конкурентности не обязательно иметь несколько ядер процессора.
 
 ## Как это применяется в Python
 
-- **Threading ![Multithreading](https://img.shields.io/badge/-Multithreading-16a34a?style=flat-square):** несколько потоков внутри одного процесса; подходит для блокирующего I/O и некоторых нативных библиотек ![Native Extension](https://img.shields.io/badge/-Native-Extension-0f766e?style=flat-square).
-- **Multiprocessing ![Multiprocessing](https://img.shields.io/badge/-Multiprocessing-7c3aed?style=flat-square):** отдельные процессы, которые могут выполняться на разных ядрах; часто подходит для CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) задач на Python.
-- **Asyncio ![Asyncio](https://img.shields.io/badge/-Asyncio-0891b2?style=flat-square):** кооперативная конкурентность под управлением event loop ![Event Loop](https://img.shields.io/badge/-Event-Loop-0891b2?style=flat-square). Когда coroutine ![Coroutine](https://img.shields.io/badge/-Coroutine-0891b2?style=flat-square) ожидает I/O, event loop может запустить другую. Сам по себе asyncio не делает CPU-intensive код параллельным.
+- **Threading:** несколько потоков внутри одного процесса; подходит для блокирующего I/O и некоторых нативных библиотек.
+- **Multiprocessing:** отдельные процессы, которые могут выполняться на разных ядрах; часто подходит для CPU-bound задач на Python.
+- **Asyncio:** кооперативная конкурентность под управлением event loop. Когда coroutine ожидает I/O, event loop может запустить другую. Сам по себе asyncio не делает CPU-intensive код параллельным.
 
-В обычной сборке CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) с GIL ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square) несколько потоков не выполняют Python bytecode ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square) параллельно. Но они всё равно могут обеспечивать конкурентность, особенно во время ожидания I/O. Free-threaded ![Free-threaded](https://img.shields.io/badge/-Free-threaded-0f766e?style=flat-square)-сборка CPython может выполнять Python-код параллельно, если GIL отключён; такая сборка является опциональной и не используется по умолчанию.
+В обычной сборке CPython с GIL несколько потоков не выполняют Python bytecode параллельно. Но они всё равно могут обеспечивать конкурентность, особенно во время ожидания I/O. Free-threaded-сборка CPython может выполнять Python-код параллельно, если GIL отключён; такая сборка является опциональной и не используется по умолчанию.
 
 В документации Python 3.15.2 также описано использование asyncio в free-threaded-среде. Один event loop по-прежнему последовательно выполняет Python-код своих задач в своём потоке, но отдельные event loop в разных потоках могут работать параллельно при отключённом GIL. Примитивы синхронизации asyncio относятся к своему event loop и не должны использоваться для синхронизации между потоками.
 
@@ -168,13 +168,13 @@ Backend может обращаться к внешнему API, выполня�
 
 «Конкурентность — это возможность управлять несколькими задачами, выполнение которых пересекается во времени. Параллелизм означает фактическое одновременное выполнение нескольких задач, обычно на разных ядрах процессора.
 
-Конкурентность полезна для I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) задач, потому что программа может выполнять другие задачи, пока одна операция ожидает ответа. Параллелизм полезен для CPU-bound задач, поскольку несколько вычислений могут выполняться одновременно.
+Конкурентность полезна для I/O-bound задач, потому что программа может выполнять другие задачи, пока одна операция ожидает ответа. Параллелизм полезен для CPU-bound задач, поскольку несколько вычислений могут выполняться одновременно.
 
 В Python для конкурентности часто используют threading и asyncio, а multiprocessing позволяет организовать параллельное выполнение. В обычных сборках CPython GIL ограничивает параллельное выполнение Python bytecode несколькими потоками».
 
 ---
 
-## PY-002 / FU-1 — Может ли конкурентность существовать без параллелизма? ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) ![Thread](https://img.shields.io/badge/-Thread-16a34a?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-002 / FU-1 — Может ли конкурентность существовать без параллелизма? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Может ли конкурентность существовать без параллелизма?
 
@@ -190,7 +190,7 @@ Backend может обращаться к внешнему API, выполня�
 
 ---
 
-## PY-002 / FU-2 — Чем отличаются I/O-bound и CPU-bound задачи? ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-002 / FU-2 — Чем отличаются I/O-bound и CPU-bound задачи? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Чем отличаются I/O-bound и CPU-bound задачи?
 
@@ -206,7 +206,7 @@ Backend может обращаться к внешнему API, выполня�
 
 ---
 
-## PY-002 / FU-3 — Как GIL влияет на конкурентность и параллелизм в CPython? ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square) ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) ![Thread](https://img.shields.io/badge/-Thread-16a34a?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-002 / FU-3 — Как GIL влияет на конкурентность и параллелизм в CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Как GIL влияет на конкурентность и параллелизм в CPython?
 
@@ -218,11 +218,11 @@ Backend может обращаться к внешнему API, выполня�
 
 **Ответ для собеседования (RU)**
 
-«В обычных сборках CPython GIL не позволяет нескольким потокам одновременно исполнять Python bytecode. Потоки всё равно обеспечивают конкурентность, особенно для I/O-bound задач, но обычно не обеспечивают параллельное выполнение CPU-bound Python-кода. Free-threaded-сборки меняют это ограничение, однако потокобезопасность ![Thread Safety](https://img.shields.io/badge/-Thread-Safety-16a34a?style=flat-square) и совместимость расширений остаются важными».
+«В обычных сборках CPython GIL не позволяет нескольким потокам одновременно исполнять Python bytecode. Потоки всё равно обеспечивают конкурентность, особенно для I/O-bound задач, но обычно не обеспечивают параллельное выполнение CPU-bound Python-кода. Free-threaded-сборки меняют это ограничение, однако потокобезопасность и совместимость расширений остаются важными».
 
 ---
 
-## PY-002 / FU-4 — Как определить, нужна ли задаче конкурентность или параллелизм? ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) ![Asyncio](https://img.shields.io/badge/-Asyncio-0891b2?style=flat-square) ![Multiprocessing](https://img.shields.io/badge/-Multiprocessing-7c3aed?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-002 / FU-4 — Как определить, нужна ли задаче конкурентность или параллелизм? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Как определить, нужна ли задаче конкурентность или параллелизм?
 
@@ -246,21 +246,21 @@ Backend может обращаться к внешнему API, выполня�
 
 # PY-003 — Основной вопрос ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Вопрос (RU):** Как Python ![Python](https://img.shields.io/badge/-Python-2563eb?style=flat-square) выполняет программу — от исходного кода до поведения во время выполнения?
+**Вопрос (RU):** Как Python выполняет программу — от исходного кода до поведения во время выполнения?
 
-**Оригинальная формулировка (EN):** How does Python execute a program from source code to runtime ![Runtime](https://img.shields.io/badge/-Runtime-0ea5e9?style=flat-square) behavior?
+**Оригинальная формулировка (EN):** How does Python execute a program from source code to runtime behavior?
 
 ## Главная идея
 
-Python не выполняет исходный код просто построчно по мере чтения файла. В CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) исходный текст декодируется, разбирается и компилируется. Затем полученные объекты кода выполняются интерпретатор ![Interpreter](https://img.shields.io/badge/-Interpreter-64748b?style=flat-square)ом.
+Python не выполняет исходный код просто построчно по мере чтения файла. В CPython исходный текст декодируется, разбирается и компилируется. Затем полученные объекты кода выполняются интерпретатором.
 
 Удобная модель:
 
 1. **Read and decode:** CPython читает исходный файл и декодирует его в текст.
-2. **Parse:** парсер ![Parser](https://img.shields.io/badge/-Parser-7c3aed?style=flat-square) проверяет грамматику и строит абстрактное синтаксическое дерево (AST ![AST](https://img.shields.io/badge/-AST-7c3aed?style=flat-square)).
-3. **Compile:** компилятор ![Compiler](https://img.shields.io/badge/-Compiler-7c3aed?style=flat-square) преобразует разобранную программу в объекты кода с байткод ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square)ом и метаданными.
+2. **Parse:** парсер проверяет грамматику и строит абстрактное синтаксическое дерево (AST).
+3. **Compile:** компилятор преобразует разобранную программу в объекты кода с байткодом и метаданными.
 4. **Execute:** интерпретатор выполняет эти объекты кода в runtime-окружении.
-5. **Interact:** программа может вызывать нативные расширения ![Native Extension](https://img.shields.io/badge/-Native-Extension-0f766e?style=flat-square), библиотеки и сервисы операционной системы ![Operating System](https://img.shields.io/badge/-Operating-System-64748b?style=flat-square).
+5. **Interact:** программа может вызывать нативные расширения, библиотеки и сервисы операционной системы.
 
 Это обычная модель выполнения CPython. Python определяет поведение языка, но другие реализации могут использовать другие механизмы.
 
@@ -268,17 +268,17 @@ Python не выполняет исходный код просто постро
 
 Важно разделять три события:
 
-- **Compilation ![Compilation](https://img.shields.io/badge/-Compilation-7c3aed?style=flat-square):** тело функции компилируется в code object ![Code Object](https://img.shields.io/badge/-Code-Object-7c3aed?style=flat-square).
+- **Compilation:** тело функции компилируется в code object.
 - **Function definition:** когда выполнение доходит до инструкции `def`, Python создаёт объект функции и связывает с именем.
 - **Function call:** тело функции начинает выполняться только при вызове.
 
 Тело функции компилируется вместе с содержащим его модулем, но не выполняется только потому, что функция определена. Поэтому runtime-ошибка внутри тела может проявиться лишь при вызове функции. Синтаксические ошибки выявляются во время parsing или compilation — до выполнения инструкций верхнего уровня модуля.
 
-## Bytecode, code object и function object ![Function Object](https://img.shields.io/badge/-Function-Object-16a34a?style=flat-square)
+## Bytecode, code object и function object
 
-- **Bytecode (байткод)** — формат инструкций, используемый интерпретатором CPython. Это не машинный код ![Machine Code](https://img.shields.io/badge/-Machine-Code-d97706?style=flat-square) процессора.
+- **Bytecode (байткод)** — формат инструкций, используемый интерпретатором CPython. Это не машинный код процессора.
 - **Code object** хранит скомпилированные инструкции и метаданные: константы, имена, информацию о позициях исходного кода.
-- **Function object** — вызываемый объект, который создаётся при выполнении определения функции. Он ссылается на code object и хранит контекст выполнения: глобальное пространство имён ![Global Namespace](https://img.shields.io/badge/-Global-Namespace-64748b?style=flat-square), значения аргументов по умолчанию и замыкания.
+- **Function object** — вызываемый объект, который создаётся при выполнении определения функции. Он ссылается на code object и хранит контекст выполнения: глобальное пространство имён, значения аргументов по умолчанию и замыкания.
 
 Ключевое различие: code object представляет скомпилированный код, а function object связывает этот код с контекстом, в котором он будет выполняться.
 
@@ -286,13 +286,13 @@ Python не выполняет исходный код просто постро
 
 В документации Python 3.15.2 описаны следующие концептуальные уровни runtime:
 
-- **Process ![Process](https://img.shields.io/badge/-Process-7c3aed?style=flat-square):** ресурсы операционной системы — память, файловые дескрипторы ![File Descriptor](https://img.shields.io/badge/-File-Descriptor-64748b?style=flat-square), сокеты.
+- **Process:** ресурсы операционной системы — память, файловые дескрипторы, сокеты.
 - **Python global runtime:** состояние, общее на уровне Python runtime.
 - **Interpreter:** состояние и окружение конкретного интерпретатора.
-- **Thread ![Thread](https://img.shields.io/badge/-Thread-16a34a?style=flat-square):** системный поток, выполняющий Python- и нативный код.
+- **Thread:** системный поток, выполняющий Python- и нативный код.
 - **Thread state:** состояние выполнения Python, связанное с потоком.
 
-Runtime может содержать несколько интерпретаторов, а один интерпретатор — несколько thread states ![Thread State](https://img.shields.io/badge/-Thread-State-16a34a?style=flat-square). Это концептуальная модель: реализация не обязана представлять каждый уровень отдельным физическим объектом.
+Runtime может содержать несколько интерпретаторов, а один интерпретатор — несколько thread states. Это концептуальная модель: реализация не обязана представлять каждый уровень отдельным физическим объектом.
 
 Не путай Python interpreter с процессом операционной системы. Процесс — это контейнер выполнения на уровне ОС, а интерпретатор — реализация Python, которая выполняет код внутри этого окружения.
 
@@ -304,21 +304,21 @@ Runtime может содержать несколько интерпретат�
 
 ## Adaptive specialization в современном CPython
 
-Современный CPython может адаптировать выполнение к наблюдаемому поведению программы. Он способен специализировать инструкции для часто встречающихся сценариев и использовать inline caches ![Inline Cache](https://img.shields.io/badge/-Inline-Cache-d97706?style=flat-square), чтобы ускорять повторяющиеся операции.
+Современный CPython может адаптировать выполнение к наблюдаемому поведению программы. Он способен специализировать инструкции для часто встречающихся сценариев и использовать inline caches, чтобы ускорять повторяющиеся операции.
 
 Это внутренняя оптимизация, а не изменение семантики языка Python. Конкретные инструкции и стратегия специализации могут меняться между версиями CPython.
 
 Модуль `dis` позволяет исследовать байткод CPython. Режим adaptive может показывать специализированные инструкции, например через `dis.dis(function, adaptive=True)`. Это полезно для диагностики, но байткод нельзя считать стабильным интерфейсом приложения.
 
-## Что такое файл .pyc ![.pyc Cache](https://img.shields.io/badge/-PYC-Cache-0891b2?style=flat-square)?
+## Что такое файл.pyc?
 
-Python может кэшировать скомпилированный байткод модулей в файлах `.pyc`, обычно в каталоге `__pycache__`. Если кэш подходит, при импорт ![Import](https://img.shields.io/badge/-Import-0ea5e9?style=flat-square)е Python может использовать его вместо повторной компиляции исходного файла.
+Python может кэшировать скомпилированный байткод модулей в файлах `.pyc`, обычно в каталоге `__pycache__`. Если кэш подходит, при импорте Python может использовать его вместо повторной компиляции исходного файла.
 
 Это оптимизация, а не обязательный этап каждого запуска. Файл `.pyc` содержит байткод Python, а не машинный код. Python проверяет актуальность кэша; само наличие файла ещё не означает, что он обязательно будет использован.
 
 ## Как это связано с backend-сервисом?
 
-Возьмём FastAPI ![FastAPI](https://img.shields.io/badge/-FastAPI-16a34a?style=flat-square)-приложение. Во время запуска процесс запускает Python, после чего приложение импортирует entry point и зависимости. Выполняется код верхнего уровня: создаются объекты, регистрируются маршруты и инициализируются компоненты.
+Возьмём FastAPI-приложение. Во время запуска процесс запускает Python, после чего приложение импортирует entry point и зависимости. Выполняется код верхнего уровня: создаются объекты, регистрируются маршруты и инициализируются компоненты.
 
 Позже, когда приходит HTTP-запрос, вызываются соответствующие endpoint- и service-функции. Ошибка при импорте или инициализации модуля может помешать запуску приложения. Ошибка внутри endpoint может проявиться только тогда, когда запрос дойдёт до этого кода.
 
@@ -330,13 +330,13 @@ Python может кэшировать скомпилированный байт
 
 Компиляция и выполнение — разные этапы. Тело функции компилируется вместе с содержащим её модулем, но выполнение определения функции создаёт объект функции; само тело запускается только при вызове.
 
-Байткод не является машинным кодом, а его формат относится к деталям реализации CPython. Современный CPython может адаптировать и специализировать байткод во время выполнения, но эти оптимизации не меняют контракт языка. Скомпилированный байткод модулей также может кэшироваться в .pyc-файлах.
+Байткод не является машинным кодом, а его формат относится к деталям реализации CPython. Современный CPython может адаптировать и специализировать байткод во время выполнения, но эти оптимизации не меняют контракт языка. Скомпилированный байткод модулей также может кэшироваться в.pyc-файлах.
 
 При диагностике production-проблем я различаю импорт и запуск приложения, выполнение кода при обработке запроса, гарантии языка Python, особенности CPython и поведение операционной системы».
 
 ---
 
-## PY-003 / FU-1 — Какие основные этапы проходит Python-программа? ![Python](https://img.shields.io/badge/-Python-2563eb?style=flat-square) ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) ![AST](https://img.shields.io/badge/-AST-7c3aed?style=flat-square) ![Compiler](https://img.shields.io/badge/-Compiler-7c3aed?style=flat-square) ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square) ![Interpreter](https://img.shields.io/badge/-Interpreter-64748b?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-003 / FU-1 — Какие основные этапы проходит Python-программа? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Какие основные этапы проходит исходный код Python до выполнения инструкций в CPython?
 
@@ -352,9 +352,9 @@ Python может кэшировать скомпилированный байт
 
 ---
 
-## PY-003 / FU-2 — Почему запуск модуля отличается от его импорта? ![Module](https://img.shields.io/badge/-Module-0ea5e9?style=flat-square) ![Import](https://img.shields.io/badge/-Import-0ea5e9?style=flat-square) ![Global Namespace](https://img.shields.io/badge/-Global-Namespace-64748b?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-003 / FU-2 — Почему запуск модуля отличается от его импорта? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
-**Вопрос (RU):** Как исследовать ситуацию, когда модуль ![Module](https://img.shields.io/badge/-Module-0ea5e9?style=flat-square) Python ведёт себя по-разному при запуске как скрипт и при импорте из другого модуля?
+**Вопрос (RU):** Как исследовать ситуацию, когда модуль Python ведёт себя по-разному при запуске как скрипт и при импорте из другого модуля?
 
 **Оригинальная формулировка (EN):** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module?
 
@@ -368,7 +368,7 @@ Python может кэшировать скомпилированный байт
 
 ---
 
-## PY-003 / FU-3 — Какие детали выполнения зависят от реализации? ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square) ![Adaptive Specialization](https://img.shields.io/badge/-Adaptive-Specialization-d97706?style=flat-square) ![PyFrameObject](https://img.shields.io/badge/-PyFrameObject-64748b?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-003 / FU-3 — Какие детали выполнения зависят от реализации? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Какие особенности байткода и поведения интерпретатора являются деталями реализации, а не гарантиями языка Python, и почему это важно?
 
@@ -376,7 +376,7 @@ Python может кэшировать скомпилированный байт
 
 **Объяснение**
 
-Python определяет семантику языка, но не единый формат байткода или архитектуру интерпретатора. Инструкции CPython, inline caches, adaptive specialization ![Adaptive Specialization](https://img.shields.io/badge/-Adaptive-Specialization-d97706?style=flat-square) и внутреннее представление frames — детали реализации, которые могут меняться между версиями. В частности, не следует считать, что каждый вызов функции обязательно создаёт доступный Python-коду объект `PyFrameObject ![PyFrameObject](https://img.shields.io/badge/-PyFrameObject-64748b?style=flat-square)`: внутреннее представление execution frame в CPython и объекты frame, доступные для introspection, — разные понятия.
+Python определяет семантику языка, но не единый формат байткода или архитектуру интерпретатора. Инструкции CPython, inline caches, adaptive specialization и внутреннее представление frames — детали реализации, которые могут меняться между версиями. В частности, не следует считать, что каждый вызов функции обязательно создаёт доступный Python-коду объект `PyFrameObject`: внутреннее представление execution frame в CPython и объекты frame, доступные для introspection, — разные понятия.
 
 **Ответ для собеседования (RU)**
 
@@ -384,7 +384,7 @@ Python определяет семантику языка, но не едины�
 
 ---
 
-## PY-003 / FU-4 — Как выбрать уровень диагностики? ![Python](https://img.shields.io/badge/-Python-2563eb?style=flat-square) ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) ![Operating System](https://img.shields.io/badge/-Operating-System-64748b?style=flat-square) ![Runtime](https://img.shields.io/badge/-Runtime-0ea5e9?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-003 / FU-4 — Как выбрать уровень диагностики? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Как при диагностике production-проблемы определить, нужно ли исследовать уровень Python, внутреннее устройство CPython или окружение операционной системы и runtime?
 
@@ -422,16 +422,16 @@ Python определяет семантику языка, но не едины�
 
 ## Главная идея
 
-Вызов функции — это не просто переход к другой строке кода. Python вычисляет выражение вызова, связывает аргументы с параметрами ![Parameter](https://img.shields.io/badge/-Parameter-7c3aed?style=flat-square), подготавливает состояние выполнения, исполняет тело функции и возвращает результат либо передаёт исключение ![Exception](https://img.shields.io/badge/-Exception-dc2626?style=flat-square) вызывающему коду.
+Вызов функции — это не просто переход к другой строке кода. Python вычисляет выражение вызова, связывает аргументы с параметрами, подготавливает состояние выполнения, исполняет тело функции и возвращает результат либо передаёт исключение вызывающему коду.
 
 Удобная модель:
 
-1. Вычислить вызываемый объект ![Callable](https://img.shields.io/badge/-Callable-2563eb?style=flat-square) и выражения аргументов.
+1. Вычислить вызываемый объект и выражения аргументов.
 2. Выполнить вызов согласно семантике Python.
 3. Связать позиционные и именованные аргументы с параметрами.
 4. Создать или восстановить состояние выполнения функции.
 5. Выполнить тело функции.
-6. Вернуть значение ![Return Value](https://img.shields.io/badge/-Return-Value-16a34a?style=flat-square) или передать исключение дальше.
+6. Вернуть значение или передать исключение дальше.
 
 Точный внутренний путь вызова — деталь реализации. Для корректности приложения нужно опираться на семантику языка.
 
@@ -458,25 +458,25 @@ Python сопоставляет переданные аргументы с па�
 
 ## 3. Function object и code object
 
-- **Function object** — вызываемый runtime-объект. Он ссылается на скомпилированный код и хранит контекст: глобальное пространство имён ![Global Namespace](https://img.shields.io/badge/-Global-Namespace-64748b?style=flat-square), значения аргументов по умолчанию и информацию о замыканиях.
+- **Function object** — вызываемый runtime-объект. Он ссылается на скомпилированный код и хранит контекст: глобальное пространство имён, значения аргументов по умолчанию и информацию о замыканиях.
 - **Code object** — скомпилированные инструкции и метаданные. Он может использоваться многими вызовами; Python не компилирует тело функции заново при каждом вызове.
 
 Таким образом, function object связывает повторно используемый скомпилированный код с контекстом, в котором он выполняется.
 
 ## 4. Execution state и frames
 
-Концептуально активному вызову функции нужен execution frame ![Execution Frame](https://img.shields.io/badge/-Execution-Frame-0ea5e9?style=flat-square). Он представляет информацию, необходимую для выполнения кода и правильного продолжения работы:
+Концептуально активному вызову функции нужен execution frame. Он представляет информацию, необходимую для выполнения кода и правильного продолжения работы:
 
 - выполняемый код и текущая позиция инструкции;
 - локальные переменные и значения параметров;
-- доступ к global и built-in namespaces ![Builtins Namespace](https://img.shields.io/badge/-Builtins-Namespace-64748b?style=flat-square);
-- closure cells ![Closure Cell](https://img.shields.io/badge/-Closure-Cell-16a34a?style=flat-square) для переменных из внешних областей видимости;
+- доступ к global и built-in namespaces;
+- closure cells для переменных из внешних областей видимости;
 - состояние управления потоком и обработки исключений;
 - информация для отладки, tracing и возврата к вызывающему коду.
 
-Не следует считать, что все локальные переменные всегда хранятся в обычном Python-словаре или что каждый вызов обязательно выделяет полноценный объект `PyFrameObject ![PyFrameObject](https://img.shields.io/badge/-PyFrameObject-64748b?style=flat-square)`.
+Не следует считать, что все локальные переменные всегда хранятся в обычном Python-словаре или что каждый вызов обязательно выделяет полноценный объект `PyFrameObject`.
 
-В современном CPython внутреннее представление `_PyInterpreterFrame ![_PyInterpreterFrame](https://img.shields.io/badge/-_PyInterpreterFrame-64748b?style=flat-square)` отличается от доступного Python-коду объекта `PyFrameObject`. Видимый frame object может создаваться или предоставляться, когда он нужен для introspection, tracing или debugging. Это деталь реализации, а не гарантия языка Python.
+В современном CPython внутреннее представление `_PyInterpreterFrame` отличается от доступного Python-коду объекта `PyFrameObject`. Видимый frame object может создаваться или предоставляться, когда он нужен для introspection, tracing или debugging. Это деталь реализации, а не гарантия языка Python.
 
 ## 5. Как функция возвращает управление?
 
@@ -484,23 +484,23 @@ Python сопоставляет переданные аргументы с па�
 
 Если возникает исключение, которое функция не обрабатывает, оно передаётся вызывающему коду. Python разматывает активные контексты выполнения, пока не найдёт подходящий обработчик или исключение не достигнет верхнего уровня.
 
-Traceback содержит ссылки на execution frames. Поэтому сохранение исключения или traceback ![Traceback](https://img.shields.io/badge/-Traceback-d97706?style=flat-square) может удерживать локальные переменные и объекты, на которые они ссылаются.
+Traceback содержит ссылки на execution frames. Поэтому сохранение исключения или traceback может удерживать локальные переменные и объекты, на которые они ссылаются.
 
 ## 6. Важная деталь реализации CPython: оптимизированные вызовы
 
-CPython использует оптимизированные механизмы вызова. В C API документированы протоколы `tp_call ![tp_call](https://img.shields.io/badge/-tp_call-0891b2?style=flat-square)` и `vectorcall ![Vectorcall](https://img.shields.io/badge/-Vectorcall-0891b2?style=flat-square)`; vectorcall позволяет уменьшить накладные расходы на упаковку аргументов для поддерживающих его вызываемых объектов.
+CPython использует оптимизированные механизмы вызова. В C API документированы протоколы `tp_call` и `vectorcall`; vectorcall позволяет уменьшить накладные расходы на упаковку аргументов для поддерживающих его вызываемых объектов.
 
 Начиная с CPython 3.11, обычные вызовы Python-функций могут использовать оптимизированный путь интерпретатора, который избегает прежней схемы рекурсивного повторного входа в evaluator для каждого Python-вызова. Внутренние frames также стали легче по сравнению с традиционной моделью.
 
 Это детали реализации CPython. Они помогают объяснять производительность, но корректность приложения не должна зависеть от конкретного внутреннего пути вызова или расположения frame.
 
-## 7. Генераторы и корутин ![Coroutine](https://img.shields.io/badge/-Coroutine-0891b2?style=flat-square)ы имеют другой жизненный цикл
+## 7. Генераторы и корутины имеют другой жизненный цикл
 
 Вызов обычной функции сразу начинает выполнять её тело.
 
-Вызов generator function создаёт generator object; его тело выполняется по мере итерации. Вызов функции `async def` создаёт coroutine object; её тело выполняется, когда корутину await ![Await](https://img.shields.io/badge/-Await-0891b2?style=flat-square)-ят или планируют в event loop ![Event Loop](https://img.shields.io/badge/-Event-Loop-0891b2?style=flat-square).
+Вызов generator function создаёт generator object; его тело выполняется по мере итерации. Вызов функции `async def` создаёт coroutine object; её тело выполняется, когда корутину await-ят или планируют в event loop.
 
-Генераторы и корутины сохраняют состояние между точками приостановки ![Suspension Point](https://img.shields.io/badge/-Suspension-Point-0891b2?style=flat-square). Их жизненный цикл отличается от обычной функции, которая выполняется до завершения за один вызов.
+Генераторы и корутины сохраняют состояние между точками приостановки. Их жизненный цикл отличается от обычной функции, которая выполняется до завершения за один вызов.
 
 ## Практический пример
 
@@ -522,11 +522,11 @@ result = triple(10, offset=2)  # 32
 
 Концептуально активный вызов представлен execution frame. В CPython внутреннее представление frame и путь вызова относятся к деталям реализации и менялись между версиями. Во время выполнения функция может вернуть значение или передать исключение вызывающему коду.
 
-У генератор ![Generator](https://img.shields.io/badge/-Generator-0891b2?style=flat-square)ов и корутин другой жизненный цикл: вызов создаёт generator или coroutine object, а не выполняет тело до завершения немедленно. Перед оптимизацией вызовов я сначала профилирую реальную нагрузку, поскольку основная стоимость может находиться внутри функции или в I/O ![I/O-bound](https://img.shields.io/badge/-I-O-bound-0891b2?style=flat-square), а не в механизме вызова».
+У генераторов и корутин другой жизненный цикл: вызов создаёт generator или coroutine object, а не выполняет тело до завершения немедленно. Перед оптимизацией вызовов я сначала профилирую реальную нагрузку, поскольку основная стоимость может находиться внутри функции или в I/O, а не в механизме вызова».
 
 ---
 
-## PY-004 / FU-1 — Какое состояние нужно во время вызова функции? ![Execution Frame](https://img.shields.io/badge/-Execution-Frame-0ea5e9?style=flat-square) ![_PyInterpreterFrame](https://img.shields.io/badge/-_PyInterpreterFrame-64748b?style=flat-square) ![PyFrameObject](https://img.shields.io/badge/-PyFrameObject-64748b?style=flat-square) ![Closure Cell](https://img.shields.io/badge/-Closure-Cell-16a34a?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-004 / FU-1 — Какое состояние нужно во время вызова функции? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Какое состояние CPython должен создать или поддерживать при входе в Python-функцию и во время её выполнения?
 
@@ -544,7 +544,7 @@ Runtime нужны code object функции, связанные аргумен
 
 ---
 
-## PY-004 / FU-2 — Как исследовать накладные расходы вызовов функций? ![Profiler](https://img.shields.io/badge/-Profiler-16a34a?style=flat-square) ![Call Stack](https://img.shields.io/badge/-Call-Stack-64748b?style=flat-square) ![Self Time](https://img.shields.io/badge/-Self-Time-d97706?style=flat-square) ![Cumulative Time](https://img.shields.io/badge/-Cumulative-Time-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-004 / FU-2 — Как исследовать накладные расходы вызовов функций? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Как использовать профилирование и информацию о стеке вызовов, чтобы исследовать чрезмерные накладные расходы вызовов функций в Python-сервисе?
 
@@ -552,21 +552,21 @@ Runtime нужны code object функции, связанные аргумен
 
 **Объяснение**
 
-Начинай с репрезентативной нагрузки и измеримой цели сервиса. Используй profiler ![Profiler](https://img.shields.io/badge/-Profiler-16a34a?style=flat-square) для анализа количества вызовов, self time ![Self Time](https://img.shields.io/badge/-Self-Time-d97706?style=flat-square) и cumulative time ![Cumulative Time](https://img.shields.io/badge/-Cumulative-Time-d97706?style=flat-square), затем сопоставляй результаты с request traces.
+Начинай с репрезентативной нагрузки и измеримой цели сервиса. Используй profiler для анализа количества вызовов, self time и cumulative time, затем сопоставляй результаты с request traces.
 
 - **Self time:** время, отнесённое к самой функции без времени вложенных вызовов.
 - **Cumulative time:** время функции вместе с её вложенными вызовами.
 - **Call count:** количество вызовов; большое число само по себе не доказывает наличие узкого места.
 
-Детерминированный profiler даёт подробную информацию о вызовах, но добавляет overhead. Sampling profiler ![Sampling Profiler](https://img.shields.io/badge/-Sampling-Profiler-16a34a?style=flat-square) обычно менее инвазивен, но даёт статистическую оценку.
+Детерминированный profiler даёт подробную информацию о вызовах, но добавляет overhead. Sampling profiler обычно менее инвазивен, но даёт статистическую оценку.
 
 **Ответ для собеседования (RU)**
 
-«Я определяю целевую метрику и снимаю профиль на репрезентативной нагрузке. Анализирую call count ![Call Count](https://img.shields.io/badge/-Call-Count-d97706?style=flat-square), self time и cumulative time, сопоставляю профиль с трассировками запросов. Большое количество вызовов само по себе не доказывает, что дорог именно механизм вызова: время может уходить в базу данных, сеть, сериализацию или native code ![Native Code](https://img.shields.io/badge/-Native-Code-0f766e?style=flat-square). После определения узкого места я делаю целевое изменение и сравниваю latency ![Latency](https://img.shields.io/badge/-Latency-d97706?style=flat-square) percentiles, throughput ![Throughput](https://img.shields.io/badge/-Throughput-d97706?style=flat-square), CPU, memory и корректность на одинаковой нагрузке».
+«Я определяю целевую метрику и снимаю профиль на репрезентативной нагрузке. Анализирую call count, self time и cumulative time, сопоставляю профиль с трассировками запросов. Большое количество вызовов само по себе не доказывает, что дорог именно механизм вызова: время может уходить в базу данных, сеть, сериализацию или native code. После определения узкого места я делаю целевое изменение и сравниваю latency percentiles, throughput, CPU, memory и корректность на одинаковой нагрузке».
 
 ---
 
-## PY-004 / FU-3 — Как рекурсия ![Recursion](https://img.shields.io/badge/-Recursion-7c3aed?style=flat-square), исключения, генераторы и корутины меняют жизненный цикл? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-004 / FU-3 — Как рекурсия, исключения, генераторы и корутины меняют жизненный цикл? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Как рекурсия, исключения, генераторы и асинхронные функции влияют на жизненный цикл выполнения по сравнению с обычным вызовом функции?
 
@@ -576,18 +576,18 @@ Runtime нужны code object функции, связанные аргумен
 
 - **Recursion:** создаёт вложенные логические вызовы с отдельными параметрами и локальным состоянием. Глубокая рекурсия может достичь recursion limit.
 - **Exceptions:** меняют поток управления: контексты выполнения разматываются до нахождения подходящего обработчика.
-- **Generators:** вызов generator function создаёт generator object. Тело выполняется при итерации и сохраняет состояние между точками `yield ![Yield](https://img.shields.io/badge/-Yield-0891b2?style=flat-square)`.
+- **Generators:** вызов generator function создаёт generator object. Тело выполняется при итерации и сохраняет состояние между точками `yield`.
 - **Coroutines:** вызов `async def` создаёт coroutine object. Тело выполняется при await или планировании, а при `await` может приостанавливаться.
 
 Event loop управляет продвижением корутин; он не создаёт отдельный системный поток для каждой корутины.
 
 **Ответ для собеседования (RU)**
 
-«Обычная функция выполняется при вызове и завершается возвратом значения или исключением. Рекурсия создаёт вложенные вызовы с отдельным логическим состоянием. Исключения разматывают поток выполнения до подходящего обработчика. Вызов генератора возвращает объект, тело которого продвигается при итерации и сохраняет состояние между yield. Вызов async-функции возвращает coroutine object, который выполняется при await или планировании. Эти различия влияют на глубину стека, scheduling, cancellation ![Cancellation](https://img.shields.io/badge/-Cancellation-dc2626?style=flat-square) и освобождение ресурсов».
+«Обычная функция выполняется при вызове и завершается возвратом значения или исключением. Рекурсия создаёт вложенные вызовы с отдельным логическим состоянием. Исключения разматывают поток выполнения до подходящего обработчика. Вызов генератора возвращает объект, тело которого продвигается при итерации и сохраняет состояние между yield. Вызов async-функции возвращает coroutine object, который выполняется при await или планировании. Эти различия влияют на глубину стека, scheduling, cancellation и освобождение ресурсов».
 
 ---
 
-## PY-004 / FU-4 — Когда механика вызовов должна влиять на оптимизацию? ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) ![Vectorcall](https://img.shields.io/badge/-Vectorcall-0891b2?style=flat-square) ![Benchmark](https://img.shields.io/badge/-Benchmark-d97706?style=flat-square) ![Latency](https://img.shields.io/badge/-Latency-d97706?style=flat-square) ![Throughput](https://img.shields.io/badge/-Throughput-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-004 / FU-4 — Когда механика вызовов должна влиять на оптимизацию? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** В каких случаях знание механики вызовов CPython должно влиять на решение об оптимизации и как проверить её полезность?
 
@@ -595,9 +595,9 @@ Event loop управляет продвижением корутин; он не
 
 **Объяснение**
 
-Механика вызовов важна, когда профилирование показывает, что dispatch или повторяющиеся wrapper-слои занимают существенную часть CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) hot path. Оптимизации CPython, например vectorcall, могут уменьшать некоторые накладные расходы, но не делают каждый вызов бесплатным.
+Механика вызовов важна, когда профилирование показывает, что dispatch или повторяющиеся wrapper-слои занимают существенную часть CPU-bound hot path. Оптимизации CPython, например vectorcall, могут уменьшать некоторые накладные расходы, но не делают каждый вызов бесплатным.
 
-Проверяй гипотезу на репрезентативных benchmark ![Benchmark](https://img.shields.io/badge/-Benchmark-d97706?style=flat-square)-нагрузках и production-метриках, учитывая поддерживаемые версии Python. Оценивай не только скорость, но и читаемость с сопровождением.
+Проверяй гипотезу на репрезентативных benchmark-нагрузках и production-метриках, учитывая поддерживаемые версии Python. Оценивай не только скорость, но и читаемость с сопровождением.
 
 **Ответ для собеседования (RU)**
 
@@ -621,9 +621,9 @@ Event loop управляет продвижением корутин; он не
 
 **Что проверяется:** Связывание имён с объектами, различие идентичности и равенства, изменяемость, проверки типов и проектирование API.
 
-У каждого объекта Python ![Object](https://img.shields.io/badge/-Object-2563eb?style=flat-square) есть идентичность ![Identity](https://img.shields.io/badge/-Identity-64748b?style=flat-square), тип ![Type](https://img.shields.io/badge/-Type-7c3aed?style=flat-square) и значение ![Value](https://img.shields.io/badge/-Value-0ea5e9?style=flat-square). Идентичность отличает конкретный объект; тип определяет его поведение и поддерживаемые операции; значение представляет данные или состояние. Идентичность и тип остаются постоянными в течение жизненного цикла объекта, а значение может изменяться, если объект изменяемый.
+У каждого объекта Python есть идентичность, тип и значение. Идентичность отличает конкретный объект; тип определяет его поведение и поддерживаемые операции; значение представляет данные или состояние. Идентичность и тип остаются постоянными в течение жизненного цикла объекта, а значение может изменяться, если объект изменяемый.
 
-Переменная — это имя, связанное с объектом, а не типизированная ячейка хранения; это модель связывания имён (name binding) ![Name Binding](https://img.shields.io/badge/-Name-Binding-7c3aed?style=flat-square). Присваивание обычно связывает имя с объектом, а не копирует его. Поэтому несколько имён могут ссылаться на один изменяемый объект через алиасинг (aliasing) ![Aliasing](https://img.shields.io/badge/-Aliasing-d97706?style=flat-square) и общие ссылки ![Reference](https://img.shields.io/badge/-Reference-64748b?style=flat-square).
+Переменная — это имя, связанное с объектом, а не типизированная ячейка хранения; это модель связывания имён (name binding). Присваивание обычно связывает имя с объектом, а не копирует его. Поэтому несколько имён могут ссылаться на один изменяемый объект через алиасинг (aliasing) и общие ссылки.
 
 ~~~python
 first = [1, 2]
@@ -636,9 +636,9 @@ first == another    # True: значения равны, объекты разн
 alias.append(3)     # Изменение видно и через first
 ~~~
 
-Используйте is ![is](https://img.shields.io/badge/-is-2563eb?style=flat-square) для проверки идентичности, например при сравнении с None или отдельным sentinel-объектом; == ![==](https://img.shields.io/badge/-%3D%3D-0ea5e9?style=flat-square) — для сравнения значений (equality) ![Equality](https://img.shields.io/badge/-Equality-0ea5e9?style=flat-square). isinstance() ![isinstance()](https://img.shields.io/badge/-isinstance%28%29-7c3aed?style=flat-square) подходит, когда допустимы подклассы. Если важнее поведение, чем конкретная реализация, предпочтительнее протоколы и полиморфизм.
+Используйте is для проверки идентичности, например при сравнении с None или отдельным sentinel-объектом; == — для сравнения значений (equality). isinstance() подходит, когда допустимы подклассы. Если важнее поведение, чем конкретная реализация, предпочтительнее протоколы и полиморфизм.
 
-Не путайте идентичность Python-объекта с доменной идентичностью ![Domain Identity](https://img.shields.io/badge/-Domain-Identity-16a34a?style=flat-square). Два ORM-экземпляра могут представлять одну строку БД, оставаясь разными объектами Python. Для persistence, сериализации и распределённых систем используйте стабильные доменные идентификаторы. Результат id() ![id()](https://img.shields.io/badge/-id%28%29-64748b?style=flat-square) гарантированно уникален только пока объект существует; после уничтожения объекта это значение может быть использовано повторно. В CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) id() сейчас соответствует адресу объекта в памяти, но это деталь реализации, а не гарантия языка.
+Не путайте идентичность Python-объекта с доменной идентичностью. Два ORM-экземпляра могут представлять одну строку БД, оставаясь разными объектами Python. Для persistence, сериализации и распределённых систем используйте стабильные доменные идентификаторы. Результат id() гарантированно уникален только пока объект существует; после уничтожения объекта это значение может быть использовано повторно. В CPython id() сейчас соответствует адресу объекта в памяти, но это деталь реализации, а не гарантия языка.
 
 **Ответ для интервью (RU)**
 
@@ -652,7 +652,7 @@ alias.append(3)     # Изменение видно и через first
 
 **Оригинальная формулировка (EN):** Which of an object's identity, type, and value can change during its lifetime?
 
-**Объяснение:** Идентичность и тип остаются постоянными на протяжении жизненного цикла объекта. Значение может изменяться, если объект изменяемый; это различие между изменяемостью (mutability) ![Mutability](https://img.shields.io/badge/-Mutability-d97706?style=flat-square), изменяемым объектом ![Mutable Object](https://img.shields.io/badge/-Mutable-Object-d97706?style=flat-square) и неизменяемым объектом ![Immutable Object](https://img.shields.io/badge/-Immutable-Object-0891b2?style=flat-square). Мутация меняет существующий объект, а повторное связывание (rebinding) ![Rebinding](https://img.shields.io/badge/-Rebinding-0891b2?style=flat-square) имени меняет объект, на который оно ссылается. Неизменяемый контейнер также может содержать изменяемые объекты, например список внутри tuple.
+**Объяснение:** Идентичность и тип остаются постоянными на протяжении жизненного цикла объекта. Значение может изменяться, если объект изменяемый; это различие между изменяемостью (mutability), изменяемым объектом и неизменяемым объектом. Мутация меняет существующий объект, а повторное связывание (rebinding) имени меняет объект, на который оно ссылается. Неизменяемый контейнер также может содержать изменяемые объекты, например список внутри tuple.
 
 **Ответ для интервью (RU)**
 
@@ -666,7 +666,7 @@ alias.append(3)     # Изменение видно и через first
 
 **Оригинальная формулировка (EN):** How would you choose between identity checks, equality checks, and type checks in a code review?
 
-**Объяснение:** Сначала определите, какой контракт проверяет код. Используйте is для идентичности и singleton sentinel-значений, == для равенства согласно контракту сравнения типа, а isinstance() — когда допустимы класс и его подклассы. Проверка type(value) is int намеренно отклоняет подклассы и оправданна только при строгом контракте. Если объекты используются как ключи словаря или элементы множества, проверяйте согласованность __eq__ ![__eq__](https://img.shields.io/badge/-__eq__-0ea5e9?style=flat-square) и __hash__ ![__hash__](https://img.shields.io/badge/-__hash__-7c3aed?style=flat-square), а также их хешируемость (hashability) ![Hashability](https://img.shields.io/badge/-Hashability-7c3aed?style=flat-square).
+**Объяснение:** Сначала определите, какой контракт проверяет код. Используйте is для идентичности и singleton sentinel-значений, == для равенства согласно контракту сравнения типа, а isinstance() — когда допустимы класс и его подклассы. Проверка type(value) is int намеренно отклоняет подклассы и оправданна только при строгом контракте. Если объекты используются как ключи словаря или элементы множества, проверяйте согласованность __eq__ и __hash__, а также их хешируемость (hashability).
 
 **Ответ для интервью (RU)**
 
@@ -712,21 +712,21 @@ alias.append(3)     # Изменение видно и через first
 **Что оценивается**
 
 - Понимание поиска атрибутов и связи экземпляра с классом.
-- Протокол дескрипторов ![Descriptor Protocol](https://img.shields.io/badge/-Descriptor-Protocol-7c3aed?style=flat-square), включая приоритет data и non-data descriptors.
+- Протокол дескрипторов, включая приоритет data и non-data descriptors.
 - Роли `__getattribute__` и `__getattr__`.
 - Различие обычного доступа к атрибутам и неявного поиска специальных методов.
 
 **Коротко**
 
-Доступ к атрибутам ![Attribute](https://img.shields.io/badge/-Attribute-2563eb?style=flat-square) определяется объектной моделью Python. При обычном доступе к атрибуту экземпляра поиск учитывает data descriptors в классе, пространство имён экземпляра, а затем non-data descriptors и другие атрибуты класса. Дескрипторы настраивают доступ через `__get__`, `__set__` и `__delete__`. `__getattribute__` перехватывает обычный доступ к атрибутам, а `__getattr__` служит резервным механизмом, вызываемым при ошибке `AttributeError` ![AttributeError](https://img.shields.io/badge/-AttributeError-dc2626?style=flat-square). Неявные операции со специальными методами ![Implicit Lookup](https://img.shields.io/badge/-Implicit-Lookup-0ea5e9?style=flat-square) обычно ищут соответствующий метод на уровне типа ![Type-level Lookup](https://img.shields.io/badge/-Type-level-Lookup-7c3aed?style=flat-square), а не в пространстве имён экземпляра.
+Доступ к атрибутам определяется объектной моделью Python. При обычном доступе к атрибуту экземпляра поиск учитывает data descriptors в классе, пространство имён экземпляра, а затем non-data descriptors и другие атрибуты класса. Дескрипторы настраивают доступ через `__get__`, `__set__` и `__delete__`. `__getattribute__` перехватывает обычный доступ к атрибутам, а `__getattr__` служит резервным механизмом, вызываемым при ошибке `AttributeError`. Неявные операции со специальными методами обычно ищут соответствующий метод на уровне типа, а не в пространстве имён экземпляра.
 
 **Объяснение**
 
 Выражение `obj.name` запускает механизм доступа к атрибутам; это не просто поиск ключа в `obj.__dict__`. Поведение по умолчанию реализуется через `object.__getattribute__`, а тип объекта и протокол дескрипторов определяют результат.
 
-Для обычного доступа к атрибуту экземпляра полезно помнить следующий порядок поиска атрибутов ![Attribute Lookup](https://img.shields.io/badge/-Attribute-Lookup-64748b?style=flat-square):
+Для обычного доступа к атрибуту экземпляра полезно помнить следующий порядок поиска атрибутов:
 
-1. **Data descriptor** ![Data Descriptor](https://img.shields.io/badge/-Data-Descriptor-be123c?style=flat-square), найденный в типе объекта, имеет приоритет над одноимённой записью в пространстве имён экземпляра. Дескриптор является data descriptor, если его тип определяет `__set__` или `__delete__`.
+1. **Data descriptor**, найденный в типе объекта, имеет приоритет над одноимённой записью в пространстве имён экземпляра. Дескриптор является data descriptor, если его тип определяет `__set__` или `__delete__`.
 2. Если data descriptor не применяется, Python проверяет пространство имён экземпляра.
 3. Если атрибут там не найден, результат может предоставить **non-data descriptor** или другой атрибут класса. Дескриптор, который определяет `__get__`, но не определяет `__set__` или `__delete__`, является non-data descriptor.
 4. Если обычный поиск завершается неудачей, определённый классом `__getattr__` может предоставить резервное значение.
@@ -735,20 +735,20 @@ alias.append(3)     # Изменение видно и через first
 
 **Протокол дескрипторов**
 
-Дескриптор ![Descriptor](https://img.shields.io/badge/-Descriptor-7c3aed?style=flat-square) — это объект, тип которого определяет один или несколько методов `__get__` ![__get__](https://img.shields.io/badge/-__get__-0891b2?style=flat-square), `__set__` ![__set__](https://img.shields.io/badge/-__set__-be123c?style=flat-square) и `__delete__` ![__delete__](https://img.shields.io/badge/-__delete__-be123c?style=flat-square). Python распознаёт эти методы протокола на типе дескриптора, а не просто как атрибуты отдельного экземпляра дескриптора. Дескрипторы лежат в основе properties, связывания методов и многих возможностей фреймворков. Функция, сохранённая в классе, является non-data descriptor: при доступе через экземпляр её механизм связывания формирует bound method ![Bound Method](https://img.shields.io/badge/-Bound-Method-16a34a?style=flat-square). `property` ![property](https://img.shields.io/badge/-property-16a34a?style=flat-square) является data descriptor и может контролировать чтение и запись даже при наличии одноимённого ключа в словаре экземпляра. При доступе через экземпляр в `__get__` передаются экземпляр и его тип; при доступе через класс — `None` и класс-владелец.
+Дескриптор — это объект, тип которого определяет один или несколько методов `__get__`, `__set__` и `__delete__`. Python распознаёт эти методы протокола на типе дескриптора, а не просто как атрибуты отдельного экземпляра дескриптора. Дескрипторы лежат в основе properties, связывания методов и многих возможностей фреймворков. Функция, сохранённая в классе, является non-data descriptor: при доступе через экземпляр её механизм связывания формирует bound method. `property` является data descriptor и может контролировать чтение и запись даже при наличии одноимённого ключа в словаре экземпляра. При доступе через экземпляр в `__get__` передаются экземпляр и его тип; при доступе через класс — `None` и класс-владелец.
 
 **Перехват доступа к атрибутам**
 
-- `__getattribute__` ![__getattribute__](https://img.shields.io/badge/-__getattribute__-d97706?style=flat-square)`(self, name)` вызывается при обычном доступе к атрибуту и может перехватывать каждый такой поиск. Пользовательская реализация обычно делегирует вызов `object.__getattribute__` ![object.__getattribute__](https://img.shields.io/badge/-object.__getattribute__-64748b?style=flat-square)`(self, name)`; иначе легко получить бесконечную рекурсию.
-- `__getattr__` ![__getattr__](https://img.shields.io/badge/-__getattr__-d97706?style=flat-square)`(self, name)` вызывается только после того, как обычный поиск завершился ошибкой `AttributeError`. Он подходит для резервного поведения, например в proxy-объектах или объектах с динамически предоставляемыми атрибутами.
+- `__getattribute__``(self, name)` вызывается при обычном доступе к атрибуту и может перехватывать каждый такой поиск. Пользовательская реализация обычно делегирует вызов `object.__getattribute__``(self, name)`; иначе легко получить бесконечную рекурсию.
+- `__getattr__``(self, name)` вызывается только после того, как обычный поиск завершился ошибкой `AttributeError`. Он подходит для резервного поведения, например в proxy-объектах или объектах с динамически предоставляемыми атрибутами.
 
 **Специальные методы**
 
-Операции вроде `len(obj)` (через `__len__` ![__len__](https://img.shields.io/badge/-__len__-0ea5e9?style=flat-square)), `iter(obj)` (через `__iter__` ![__iter__](https://img.shields.io/badge/-__iter__-0ea5e9?style=flat-square)), арифметики и управления контекстом используют правила поиска специальных методов. Для многих неявных операций Python ищет специальный метод на уровне типа, а не обращается к одноимённому атрибуту экземпляра. Поэтому присваивание `obj.__len__` обычно не заставляет `len(obj)` использовать этот атрибут экземпляра. Поиск на уровне типа обеспечивает согласованное поведение протоколов и позволяет оптимизировать диспетчеризацию.
+Операции вроде `len(obj)` (через `__len__`), `iter(obj)` (через `__iter__`), арифметики и управления контекстом используют правила поиска специальных методов. Для многих неявных операций Python ищет специальный метод на уровне типа, а не обращается к одноимённому атрибуту экземпляра. Поэтому присваивание `obj.__len__` обычно не заставляет `len(obj)` использовать этот атрибут экземпляра. Поиск на уровне типа обеспечивает согласованное поведение протоколов и позволяет оптимизировать диспетчеризацию.
 
 **Senior-level суждение**
 
-При диагностике неожиданного поведения атрибутов нужно определить точный путь поиска: доступ через экземпляр или класс, тип дескриптора, пользовательский `__getattribute__`, резервный `__getattr__` и использование неявного поиска специальных методов. Не следует считать `__dict__` ![__dict__](https://img.shields.io/badge/-__dict__-64748b?style=flat-square) полной моделью объекта. Фреймворки, использующие дескрипторы и динамический доступ к атрибутам, должны явно учитывать эту семантику, поскольку она влияет на корректность, introspection, наследование и производительность.
+При диагностике неожиданного поведения атрибутов нужно определить точный путь поиска: доступ через экземпляр или класс, тип дескриптора, пользовательский `__getattribute__`, резервный `__getattr__` и использование неявного поиска специальных методов. Не следует считать `__dict__` полной моделью объекта. Фреймворки, использующие дескрипторы и динамический доступ к атрибутам, должны явно учитывать эту семантику, поскольку она влияет на корректность, introspection, наследование и производительность.
 
 **Ответ для интервью (RU)**
 
@@ -758,7 +758,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## PY-006 / FU-1 — Приоритет поиска атрибутов ![Attribute Lookup](https://img.shields.io/badge/-Attribute-Lookup-64748b?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-006 / FU-1 — Приоритет поиска атрибутов ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** В каком порядке Python ищет атрибут экземпляра и как атрибут экземпляра взаимодействует с атрибутом класса?
 
@@ -782,7 +782,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## PY-006 / FU-2 — Data descriptors и non-data descriptors ![Data Descriptor](https://img.shields.io/badge/-Data-Descriptor-be123c?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-006 / FU-2 — Data descriptors и non-data descriptors ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Чем data descriptor отличается от non-data descriptor и почему это различие важно?
 
@@ -806,7 +806,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## PY-006 / FU-3 — Различие между `__getattribute__` и `__getattr__` ![__getattribute__](https://img.shields.io/badge/-__getattribute__-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-006 / FU-3 — Различие между `__getattribute__` и `__getattr__` ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Чем отличаются `__getattribute__` и `__getattr__` и какие риски возникают при их переопределении?
 
@@ -830,7 +830,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## PY-006 / FU-4 — Неявный поиск специальных методов ![Special Method](https://img.shields.io/badge/-Special-Method-0ea5e9?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-006 / FU-4 — Неявный поиск специальных методов ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Почему присваивание специального метода экземпляру может не изменить поведение неявной операции, например `len(obj)`?
 
@@ -844,7 +844,7 @@ alias.append(3)     # Изменение видно и через first
 
 **Объяснение**
 
-Модель данных Python определяет протоколы через специальные методы, например `__len__`, `__iter__`, `__next__` ![__next__](https://img.shields.io/badge/-__next__-0ea5e9?style=flat-square) и арифметические методы. Когда синтаксис или встроенная функция вызывает один из таких протоколов, интерпретатор обычно выполняет специальный поиск на уровне типа. Это не позволяет произвольному атрибуту экземпляра подменять реализацию протокола и даёт возможность оптимизировать диспетчеризацию.
+Модель данных Python определяет протоколы через специальные методы, например `__len__`, `__iter__`, `__next__` и арифметические методы. Когда синтаксис или встроенная функция вызывает один из таких протоколов, интерпретатор обычно выполняет специальный поиск на уровне типа. Это не позволяет произвольному атрибуту экземпляра подменять реализацию протокола и даёт возможность оптимизировать диспетчеризацию.
 
 Это отличается от явного выражения `obj.__len__()`: здесь выполняется обычный поиск атрибута, а затем вызов, поэтому результат может отличаться. Следовательно, эти два выражения не всегда эквивалентны.
 
@@ -866,10 +866,10 @@ alias.append(3)     # Изменение видно и через first
 
 **Объяснение**
 
-- **List:** ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) изменяемая последовательность с доступом по индексу, заменой элементов, добавлением и удалением. Индексирование — O(1); добавление в конец — амортизированное O(1); вставка или удаление в начале и середине — O(n), поскольку элементы могут перемещаться.
-- **Tuple:** ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) неизменяемая последовательность с индексированием и итерацией. Неизменяемость относится к ссылкам внутри кортежа, а не рекурсивно ко всем объектам. Кортеж хешируем, только если все его элементы хешируемы.
-- **Set:** ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) хранит уникальные хешируемые элементы и подходит для проверки принадлежности, удаления дубликатов и операций над множествами. Проверка, добавление и удаление обычно имеют среднюю сложность O(1), но при большом числе коллизий могут замедляться.
-- **Dictionary:** ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) сопоставляет хешируемые ключи со значениями, сохраняет порядок вставки как гарантию языка начиная с Python 3.7 и обычно обеспечивает среднюю сложность поиска, вставки и удаления O(1). Обновление существующего ключа не меняет его позицию; удаление и повторная вставка помещают его в конец.
+- **List:** изменяемая последовательность с доступом по индексу, заменой элементов, добавлением и удалением. Индексирование — O(1); добавление в конец — амортизированное O(1); вставка или удаление в начале и середине — O(n), поскольку элементы могут перемещаться.
+- **Tuple:** неизменяемая последовательность с индексированием и итерацией. Неизменяемость относится к ссылкам внутри кортежа, а не рекурсивно ко всем объектам. Кортеж хешируем, только если все его элементы хешируемы.
+- **Set:** хранит уникальные хешируемые элементы и подходит для проверки принадлежности, удаления дубликатов и операций над множествами. Проверка, добавление и удаление обычно имеют среднюю сложность O(1), но при большом числе коллизий могут замедляться.
+- **Dictionary:** сопоставляет хешируемые ключи со значениями, сохраняет порядок вставки как гарантию языка начиная с Python 3.7 и обычно обеспечивает среднюю сложность поиска, вставки и удаления O(1). Обновление существующего ключа не меняет его позицию; удаление и повторная вставка помещают его в конец.
 
 Эти оценки типичны, а не являются гарантиями худшего случая. Результат зависит от хеширования, коллизий, изменения размера таблицы и стоимости сравнений на равенство. Детали реализации CPython могут меняться между версиями и не являются гарантиями языка.
 
@@ -896,11 +896,11 @@ alias.append(3)     # Изменение видно и через first
 - [Python 3.15: что нового — frozendict (PEP 814)](https://docs.python.org/3.15/whatsnew/3.15.html)
 
 
-**Примечание о Python 3.15:** ![frozendict](https://img.shields.io/badge/-frozendict-0891b2?style=flat-square) `frozendict` — встроенное неизменяемое отображение, но не подкласс `dict`. ![frozenset](https://img.shields.io/badge/-frozenset-0891b2?style=flat-square) `frozenset` — неизменяемый аналог `set`, который хешируем, если все его элементы хешируемы. Оно сохраняет порядок вставки. `frozendict` хешируем, только если все его ключи и значения хешируемы; неизменяемость поверхностная, поэтому вложенные изменяемые значения всё ещё могут изменяться. Это отличается от `types.MappingProxyType`, который представляет собой доступное только для чтения динамическое представление исходного отображения.
+**Примечание о Python 3.15:** `frozendict` — встроенное неизменяемое отображение, но не подкласс `dict`. `frozenset` — неизменяемый аналог `set`, который хешируем, если все его элементы хешируемы. Оно сохраняет порядок вставки. `frozendict` хешируем, только если все его ключи и значения хешируемы; неизменяемость поверхностная, поэтому вложенные изменяемые значения всё ещё могут изменяться. Это отличается от `types.MappingProxyType`, который представляет собой доступное только для чтения динамическое представление исходного отображения.
 
 ---
 
-## PY-007 / FU-1 — Семантика коллекций и представление в CPython ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b) ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square)
+## PY-007 / FU-1 — Семантика коллекций и представление в CPython ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** В чём ключевые семантические и типичные реализационные различия между списками, кортежами, множествами и словарями в CPython?
 
@@ -914,7 +914,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## PY-007 / FU-2 — Выбор коллекции для сервиса ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b) ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square)
+## PY-007 / FU-2 — Выбор коллекции для сервиса ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Как выбрать встроенную коллекцию для упорядоченной последовательности, проверки принадлежности, удаления дубликатов и поиска по ключу в реальном сервисе?
 
@@ -928,7 +928,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## PY-007 / FU-3 — Порядок, копирование и граничные случаи сложности ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b) ![Insertion Order](https://img.shields.io/badge/-Insertion-Order-64748b?style=flat-square) ![Shallow Copy](https://img.shields.io/badge/-Shallow-Copy-d97706?style=flat-square) ![Hashability](https://img.shields.io/badge/-Hashability-7c3aed?style=flat-square)
+## PY-007 / FU-3 — Порядок, копирование и граничные случаи сложности ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Что учитывать при использовании порядка вставки, поверхностного копирования, вложенных изменяемых значений и средней временной сложности?
 
@@ -942,7 +942,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## PY-007 / FU-4 — Выбор коллекции в production-условиях ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b) ![Hash Table](https://img.shields.io/badge/-Hash-Table-7c3aed?style=flat-square) ![Mapping](https://img.shields.io/badge/-Mapping-7c3aed?style=flat-square)
+## PY-007 / FU-4 — Выбор коллекции в production-условиях ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Как характер нагрузки, объём данных, частота изменений и давление на память влияют на выбор коллекции и стратегию бенчмаркинга?
 
@@ -1567,7 +1567,7 @@ Python вызывает `__exit__()` и передаёт ему тип искл�
 
 **Ответ для собеседования (RU)**
 
-«Все исключения Python наследуются от `BaseException`, а `Exception` является базовым классом обычных ошибок приложения. Обычно я перехватываю конкретные типы исключений и избегаю общего `except BaseException`, поскольку он может перехватить сигналы вроде `KeyboardInterrupt` и `SystemExit`. Блок `try` обрабатывается подходящими `except`; `else` выполняется только при успехе, а `finally` предназначен для очистки. Необработанные исключения распространяются вверх по стеку вызовов. При преобразовании исключения между архитектурными слоями я сохраняю его причину через `raise ... from ...`. Для нескольких независимых ошибок в Python 3.11 появились `ExceptionGroup` и `except*`, позволяющие выборочно обрабатывать подгруппы. Мой основной принцип — обрабатывать ошибки там, где возможно восстановление или осмысленное преобразование, и сохранять неожиданные сбои вместе с диагностическим контекстом».
+«Все исключения Python наследуются от `BaseException`, а `Exception` является базовым классом обычных ошибок приложения. Обычно я перехватываю конкретные типы исключений и избегаю общего `except BaseException`, поскольку он может перехватить сигналы вроде `KeyboardInterrupt` и `SystemExit`. Блок `try` обрабатывается подходящими `except`; `else` выполняется только при успехе, а `finally` предназначен для очистки. Необработанные исключения распространяются вверх по стеку вызовов. При преобразовании исключения между архитектурными слоями я сохраняю его причину через `raise... from...`. Для нескольких независимых ошибок в Python 3.11 появились `ExceptionGroup` и `except*`, позволяющие выборочно обрабатывать подгруппы. Мой основной принцип — обрабатывать ошибки там, где возможно восстановление или осмысленное преобразование, и сохранять неожиданные сбои вместе с диагностическим контекстом».
 
 **Официальная документация Python 3.15.2**
 
@@ -1604,11 +1604,11 @@ Python вызывает `__exit__()` и передаёт ему тип искл�
 
 «Я преобразую исключения на архитектурных границах, где новая абстракция добавляет полезный смысл. Сохраняю исходную причину через явное chaining, известные доменные ошибки сопоставляю со стабильными API-ответами, а неожиданные сбои не классифицирую ошибочно как клиентские ошибки и не раскрываю внутренние детали».
 
-### PY-012 / FU-3 — Граничные случаи: В чём разница между `__cause__`, `__context__` и `raise ... from None`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+### PY-012 / FU-3 — Граничные случаи: В чём разница между `__cause__`, `__context__` и `raise... from None`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
-**Вопрос (RU):** В чём разница между `__cause__`, `__context__` и `raise ... from None`?
+**Вопрос (RU):** В чём разница между `__cause__`, `__context__` и `raise... from None`?
 
-**Оригинальная формулировка (EN):** What is the difference between `__cause__`, `__context__`, and `raise ... from None`?
+**Оригинальная формулировка (EN):** What is the difference between `__cause__`, `__context__`, and `raise... from None`?
 
 **Ответ**
 
@@ -1616,7 +1616,7 @@ Python вызывает `__exit__()` и передаёт ему тип искл�
 
 **Ответ для собеседования (RU)**
 
-«`__context__` сохраняет исключение, которое обрабатывалось в момент возникновения нового. `__cause__` сохраняет явно указанную причину через `raise ... from ...`. `from None` подавляет отображение неявного контекста, но не удаляет его из объекта исключения».
+«`__context__` сохраняет исключение, которое обрабатывалось в момент возникновения нового. `__cause__` сохраняет явно указанную причину через `raise... from...`. `from None` подавляет отображение неявного контекста, но не удаляет его из объекта исключения».
 
 ### PY-012 / FU-4 — Senior-level суждение: Когда следует использовать `ExceptionGroup` и `except*` в конкурентных системах? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
