@@ -68,20 +68,20 @@
 - **FU-3 — Поведение CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b):** Как GIL ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb) влияет на конкурентность и параллелизм в CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 - **FU-4 — Senior-level суждение:** Как определить, нужна ли задаче конкурентность или параллелизм? ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
-## PY-003 — Модель исполнения Python и runtime ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+## PY-003 — Модель исполнения Python ![ENTITY: Python](https://img.shields.io/badge/ENTITY-Python-2563eb) и runtime ![ENTITY: Runtime](https://img.shields.io/badge/ENTITY-Runtime-0ea5e9) ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Основной вопрос:** Как Python выполняет программу: от исходного кода до поведения во время выполнения?
 
-**Что оценивается:** Компиляция, байткод, модель интерпретатора и runtime.  
+**Что оценивается:** Компиляция, байткод ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b), модель интерпретатор ![ENTITY: Interpreter](https://img.shields.io/badge/ENTITY-Interpreter-64748b)а и runtime.  
 **Уровень:** L3 — Advanced/Senior  
 **Приоритет:** P0 — Core
 
 Дополнительные вопросы:
 
-- **FU-1 — Механизм:** Какие основные этапы проходит исходный код Python до выполнения инструкций в CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-2 — Практическое применение:** Как бы вы исследовали ситуацию, когда модуль Python ведёт себя по-разному при запуске как скрипт и при импорте из другого модуля? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — Граничные случаи и компромиссы:** Какие аспекты байткода и поведения интерпретатора являются деталями реализации, а не гарантиями языка, и почему это различие важно? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-4 — Senior-level суждение:** Как при диагностике production-проблемы определить, нужно ли исследовать поведение на уровне Python, внутреннее устройство CPython или окружение операционной системы и runtime? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Механизм:** Какие основные этапы проходит исходный код Python до выполнения инструкций в CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b)? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Практическое применение:** Как бы вы исследовали ситуацию, когда модуль ![ENTITY: Module](https://img.shields.io/badge/ENTITY-Module-0ea5e9) Python ведёт себя по-разному при запуске как скрипт и при импорт ![ENTITY: Import](https://img.shields.io/badge/ENTITY-Import-0ea5e9)е из другого модуля? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Граничные случаи и компромиссы:** Какие аспекты байткода и поведения интерпретатора являются деталями реализации, а не гарантиями языка, и почему это различие важно? ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b) ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior-level суждение:** Как при диагностике production-проблемы определить, нужно ли исследовать поведение на уровне Python, внутреннее устройство CPython или окружение операционной системы ![ENTITY: Operating System](https://img.shields.io/badge/ENTITY-Operating-System-64748b) и runtime? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## Статус покрытия
 
