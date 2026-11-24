@@ -6,7 +6,7 @@
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
-English study material for PY-001–PY-010 and FU-001–FU-040. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
+English study material for PY-001–PY-015 and FU-001–FU-060. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
 
 **Numbering rule:** Every Main Question has exactly four Follow-ups. FU IDs are globally sequential across the curriculum and never restart for a new Main Question: PY-001 → FU-001–FU-004, PY-002 → FU-005–FU-008, and so on.
 
@@ -1728,3 +1728,134 @@ A closure retains access to variables from an enclosing function scope. `nonloca
 **Interview-Ready Answer (EN)**
 
 “`functools.wraps` preserves metadata and exposes the wrapped callable for introspection. Decorator order defines execution nesting and can affect security and caching semantics. For asynchronous functions, the wrapper must await the coroutine when it needs to observe or control the operation's completion.”
+---
+
+# PY-015 — Scope, LEGB Rule & Name Resolution ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Question (EN):** Explain Python's scope rules, the LEGB rule, and how name resolution works.
+
+## Understand the idea
+
+A name is a binding to an object, not a box that contains a value. Name resolution is the process Python uses to determine which binding an expression refers to.
+
+For ordinary name lookup in a function, the LEGB mnemonic describes the search order:
+
+- **Local:** the current function's local scope.
+- **Enclosing:** the local scopes of enclosing functions, from nearest to farthest.
+- **Global:** the current module's global namespace.
+- **Built-in:** the built-in namespace.
+
+If no binding is found, Python raises `NameError`.
+
+## How Python determines local names
+
+Python determines the scope of names from the code block's binding operations. If a name is bound anywhere in a function block, it is treated as local throughout that block unless declared `global` or `nonlocal`. This is a compile-time scope decision, not a decision made only when the assignment line executes.
+
+Consequently, reading that local name before its assignment raises `UnboundLocalError`. This is a subclass of `NameError`.
+
+## global and nonlocal
+
+- `global name` makes assignments to the name target the module's global namespace. A function can read a global name without declaring it global; the declaration is needed when rebinding it.
+- `nonlocal name` makes the name refer to an existing binding in the nearest enclosing function scope. It cannot refer to a module-level global. If no suitable enclosing binding exists, compilation raises `SyntaxError`.
+
+Both statements are parser directives applying to the current code block, not runtime commands that dynamically change another block's scope.
+
+## Closures and late binding
+
+A closure lets an inner function retain access to variables from an enclosing function after that outer function has returned. Conceptually, it retains access to the binding, not necessarily a snapshot of the value.
+
+Free-variable lookup occurs when the inner function executes. Therefore, if the enclosing binding changes before that call, the inner function observes the updated value. This is called late binding and explains common loop-created-lambda surprises.
+
+## Class scope and special cases
+
+A class body's namespace becomes the class attribute namespace, but it is not an enclosing lexical scope for methods. A method does not resolve a bare name by searching the class namespace as though it were an enclosing function. Access class data through an instance or class attribute.
+
+Python 3.12+ annotation scopes are a deliberate exception: they can access their enclosing class namespace. Comprehensions also have their own scope rules; their iteration variables do not normally leak into the containing scope.
+
+The LEGB mnemonic is a useful model for ordinary function lookup, not a complete description of every construct. Class blocks, annotation scopes, and dynamic execution through `exec()` or `eval()` have special rules. In particular, `eval()` and `exec()` do not resolve free variables through the nearest enclosing function scope in the same way as a nested function.
+
+## Interview-ready answer (EN)
+
+“Python resolves ordinary function-level names using the LEGB model: Local, Enclosing, Global, and Built-in. The compiler determines whether a name is local by examining binding operations in the function block. Therefore, assigning to a name anywhere in a function normally makes it local throughout that function, unless it is declared global or nonlocal. Reading it before the assignment can raise UnboundLocalError.
+
+The global statement directs rebinding to the module namespace, while nonlocal targets an existing binding in the nearest enclosing function scope. Closures preserve access to enclosing bindings, and free-variable lookup happens when the closure executes, which explains late binding. I also account for special cases such as class namespaces, annotation scopes, and dynamic execution rather than treating LEGB as a universal lookup algorithm.”
+
+## What to remember
+
+- LEGB is the normal function name-lookup model.
+- A binding anywhere in a function block usually makes that name local throughout the block.
+- `global` targets the module namespace; `nonlocal` targets the nearest enclosing function binding.
+- Closures retain access to bindings; they do not necessarily capture value snapshots.
+- Class namespaces are not ordinary enclosing scopes for methods.
+
+## References
+
+- Python 3.15.2 Language Reference: [Execution model](https://docs.python.org/3.15/reference/executionmodel.html)
+- [global and nonlocal statements](https://docs.python.org/3.15/reference/simple_stmts.html#the-global-statement)
+- [Compound statements](https://docs.python.org/3.15/reference/compound_stmts.html)
+
+---
+
+## FU-057 — How does Python apply LEGB, and how are local names determined? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** How does Python apply the LEGB lookup order, and how does it determine whether a name is local?
+
+**Explanation**
+
+For ordinary function lookup, Python checks the current local scope, enclosing function scopes, the module globals, and then built-ins. However, the compiler classifies names in a function block by examining binding operations such as assignment, import, function definition, and relevant binding constructs. A name assigned anywhere in that block is local throughout the block unless declared global or nonlocal.
+
+**Interview answer (EN)**
+
+“LEGB describes the ordinary lookup order: Local, Enclosing, Global, and Built-in. Local-variable classification is determined from the function block's binding operations, not from the runtime path taken. That is why a read before a conditional assignment can raise UnboundLocalError instead of falling back to a global binding.”
+
+---
+
+## FU-058 — How would you diagnose UnboundLocalError and choose local, global, or nonlocal? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** How would you diagnose an UnboundLocalError, and when would you use a local variable, global, or nonlocal?
+
+**Explanation**
+
+First identify every binding operation for the name in the function. If the function assigns to it, Python classifies it as local unless a scope declaration changes that classification. Then determine the intended ownership:
+
+- Prefer a local variable for per-call state.
+- Use `nonlocal` when a nested function intentionally updates state owned by an enclosing function.
+- Use `global` only when rebinding module-level state is genuinely part of the design.
+
+In production code, explicit objects, dependency injection, or encapsulated state are often easier to test than mutable module globals.
+
+**Interview answer (EN)**
+
+“I diagnose UnboundLocalError by checking whether the function binds the name anywhere in its block and whether the read can occur before that binding. I then choose scope based on ownership: local for call-specific state, nonlocal for intentionally shared enclosing-function state, and global only for deliberate module-level rebinding. I generally avoid mutable globals because they complicate tests, concurrency, and lifecycle management.”
+
+---
+
+## FU-059 — Why do methods not close over class namespaces, and what is late binding? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** Why is a class namespace not an enclosing scope for methods, and how does late binding affect closures?
+
+**Explanation**
+
+A class body executes in a namespace that becomes the class's attribute dictionary. That namespace is not an ordinary lexical enclosing function scope for methods. Methods should access class or instance data through attributes. Annotation scopes introduced with modern type-parameter and type-alias features are a specific exception and can access the enclosing class namespace.
+
+A closure resolves its free-variable binding when it runs. If a loop repeatedly changes the enclosing variable, functions created in that loop may all observe the final binding when later invoked. A factory function can create a separate enclosing binding per function; a default argument can also capture the current object at definition time, though it changes the function's parameter defaults and should be used deliberately.
+
+**Interview answer (EN)**
+
+“Methods do not lexically close over the class body's namespace; the class namespace becomes attributes, which methods access through the class or instance. Annotation scopes are a documented exception. Late binding means a closure reads the current enclosing binding when it executes, not necessarily the value that existed when the closure was created. I avoid loop-capture bugs by creating a distinct scope per iteration or by deliberately binding the value at definition time.”
+
+---
+
+## FU-060 — How should senior engineers manage scope and dynamic name resolution in production? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How do you manage scope and dynamic name resolution in production systems?
+
+**Explanation**
+
+Prefer explicit dependencies and state ownership over hidden mutable globals. Keep function-local state isolated per invocation, use closures only when their retained state is intentional, and document shared mutable state and its synchronization requirements.
+
+Treat `exec()` and `eval()` as dynamic execution boundaries. They complicate auditing, debugging, and security, and their namespace behavior is not identical to ordinary lexical closure lookup. Avoid using them for routine configuration or dispatch when explicit mappings, registries, or dependency injection provide clearer behavior.
+
+**Interview answer (EN)**
+
+“In production, I make state ownership explicit and minimize mutable module-level state. I use closures when encapsulated state is useful, but consider lifetime, concurrency, and test isolation. I avoid dynamic execution unless there is a compelling, controlled requirement, because exec and eval complicate security and name resolution. For extensibility, explicit registries and dependency injection are generally easier to reason about and test.”
