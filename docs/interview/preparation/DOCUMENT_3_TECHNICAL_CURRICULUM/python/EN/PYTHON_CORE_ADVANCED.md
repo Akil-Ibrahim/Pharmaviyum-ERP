@@ -198,3 +198,18 @@ Follow-ups:
 - **FU-046 — Application:** How should a backend translate a low-level exception into a domain-level or API error? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 - **FU-047 — Edge cases:** What is the difference between `__cause__`, `__context__`, and `raise ... from None`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 - **FU-048 — Senior judgment:** When should you use `ExceptionGroup` and `except*` in concurrent systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+## PY-013 — Iterators, Generators & Lazy Evaluation ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Main Question:** Explain Python's iteration model. What is the difference between an iterable, an iterator, and a generator, and how do generators enable lazy evaluation?
+
+**Evaluation focus:** Iterable versus iterator, iterator protocol (`__iter__` / `__next__`), exhaustion and `StopIteration`, generator creation and suspension, generator expressions versus eager comprehensions, lazy evaluation, `send()` / `throw()` / `close()`, `yield from`, PEP 479, asynchronous iteration and generator cleanup, streaming and resource lifecycle.  
+**Level:** L3 — Advanced/Senior  
+**Priority:** P0 — Core
+
+Follow-ups:
+
+- **FU-049 — Mechanism:** What is the difference between an iterable and an iterator, and why is an iterator usually stateful? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-050 — Application:** When would you choose a generator instead of a list in a backend data-processing pipeline? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-051 — Edge cases:** What happens when `StopIteration` is raised inside a generator, and how does `yield from` handle delegation? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-052 — Senior judgment:** What production risks should you consider when using generators and asynchronous generators for resource-backed streams? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
