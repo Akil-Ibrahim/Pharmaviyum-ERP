@@ -3,7 +3,7 @@
 **Language:** English  
 **Python baseline:** 3.15.2 — label version-specific behavior and distinguish Python language guarantees from CPython implementation details.  
 **Domain allocation:** 45 Main Questions + 180 Follow-ups = 225  
-**Current coverage:** PY-001–PY-006 and FU-001–FU-024  
+**Current coverage:** PY-001–PY-007 and FU-001–FU-028  
 **Answer file:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Russian version:** [RU Question Map](../RU/PYTHON_CORE_ADVANCED.md)
 
@@ -40,7 +40,7 @@ Follow-ups:
 ## Coverage status
 
 - PY-001–PY-006 and FU-001–FU-024: authored in English; independent technical and editorial review pending.
-- Remaining Main Questions PY-007–PY-045 and FU-025–FU-180: not yet migrated into the language-separated structure.
+- Remaining Main Questions PY-008–PY-045 and FU-029–FU-180: not yet migrated into the language-separated structure.
 
 **Allocation rule:** Every Main Question receives exactly four Follow-ups covering mechanism, practical application, edge cases/trade-offs, and senior-level judgment or production implications.
 
@@ -108,3 +108,19 @@ Follow-ups:
 - **FU-022 — Application:** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service?
 - **FU-023 — Edge cases and trade-offs:** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity?
 - **FU-024 — Senior judgment:** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy?
+
+
+## PY-007 — Dictionary Internals & Hash Tables
+
+**Main Question:** How do Python dictionaries work internally, and what are the performance and correctness implications of hash-table behavior?
+
+**Evaluation focus:** Hashing, equality, collision resolution, resizing, complexity, and custom-key correctness.  
+**Level:** L2–L3 — Intermediate/Advanced  
+**Priority:** P0 — Core
+
+Follow-ups:
+
+- **FU-025 — Core contract:** What contract must __hash__() and __eq__() satisfy for objects used as dictionary keys?
+- **FU-026 — Internal mechanism:** What happens when dictionary keys collide, and why can insertion or lookup become slower?
+- **FU-027 — Correctness and design:** Why is it dangerous to use a mutable object as a dictionary key, and how should a custom key type be designed?
+- **FU-028 — Security and production:** How does hash randomization help protect Python services, and why should hash() not be used as a persistent identifier?
