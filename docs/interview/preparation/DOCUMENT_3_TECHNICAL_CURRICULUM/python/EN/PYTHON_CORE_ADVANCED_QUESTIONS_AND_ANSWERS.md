@@ -814,7 +814,7 @@ Use a list for an ordered, mutable sequence; a tuple for a fixed record or immut
 
 **Important Distinctions**
 
-A shallow copy creates a new outer container but retains references to the same nested objects. Mutating a nested list or dictionary can therefore be visible through both containers. A tuple is not deeply immutable if it contains mutable objects. Dictionary keys and set elements must maintain stable hash and equality behavior while stored.
+A shallow copy creates a new outer container but retains references to the same nested objects. Mutating a nested list or dictionary can therefore be visible through both containers. A tuple is not deeply immutable if it contains mutable objects. Dictionary keys and set elements must maintain stable hash and equality behavior while stored. Equal keys share one mapping entry: for example, `True`, `1`, and `1.0` compare equal and address the same dictionary key.
 
 **Senior-Level Perspective**
 
@@ -822,12 +822,13 @@ Start with semantics and correctness, then profile representative data sizes and
 
 **Interview-Ready Answer (EN)**
 
-“Lists and tuples are ordered sequences: lists are mutable, while tuples are immutable at the container level. Sets hold unique hashable elements and are useful for membership checks and set operations. Dictionaries map unique hashable keys to values and preserve insertion order. In CPython, lists and tuples are array-like containers of references, whereas sets and dictionaries use hash tables. Their common lookup and membership operations are typically average O(1), while list indexing is O(1) and middle insertion or deletion is O(n). I choose based on required semantics first, then benchmark realistic workloads and account for memory, mutation patterns, and hash behavior.”
+“Lists and tuples are ordered sequences: lists are mutable, while tuples are immutable at the container level. Sets hold unique hashable elements and are useful for membership checks and set operations. Dictionaries map unique hashable keys to values and preserve insertion order. In CPython, lists and tuples are array-like containers of references, whereas sets and dictionaries use hash tables. Their common lookup and membership operations are typically average O(1), while list indexing is O(1) and middle insertion or deletion is O(n). In Python 3.15, `frozendict` adds a built-in immutable mapping. I choose based on required semantics first, then benchmark realistic workloads and account for memory, mutation patterns, and hash behavior.”
 
 **References**
 
 - [Python 3.15 documentation: Built-in Types](https://docs.python.org/3.15/library/stdtypes.html)
 - [Python 3.15 documentation: Data model](https://docs.python.org/3.15/reference/datamodel.html)
+- [Python 3.15: What's New — frozendict (PEP 814)](https://docs.python.org/3.15/whatsnew/3.15.html)
 
 ---
 
