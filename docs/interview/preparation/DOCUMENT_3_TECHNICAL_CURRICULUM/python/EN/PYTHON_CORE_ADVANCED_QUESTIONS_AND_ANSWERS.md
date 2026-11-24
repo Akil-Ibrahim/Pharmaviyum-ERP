@@ -1034,6 +1034,10 @@ The gc module exposes collection controls, statistics, debugging facilities, and
 
 The gc module documents generational collection and exposes per-generation statistics. In Python 3.15, gc.get_stats() and collection callbacks include duration and candidates, which help measure collection cost and work performed. Collection thresholds and generation behavior have changed across recent releases, including changes in 3.14 and 3.14.5; avoid memorizing old threshold behavior as a permanent contract. Consult the documentation for the exact runtime version being deployed.
 
+**Free-threaded CPython distinction**
+
+In a free-threaded build, do not assume that reaching a conventional reference-count value always causes immediate deallocation. CPython uses biased, deferred, and per-thread reference-counting techniques for selected objects; reclamation can be delayed until safe points or a GC run. QSBR can also defer reclamation of some internal data structures. Even after memory is reclaimed by the runtime, the allocator may retain it, so RSS may remain unchanged. These are free-threaded CPython implementation details, not general Python language guarantees.
+
 **Object memory is not the same as process memory**
 
 The Python memory manager allocates Python objects from a private heap and uses allocator layers. When an object is deallocated, its memory may become reusable by Python's allocator without being returned immediately to the operating system. Therefore, a process's RSS does not necessarily fall when objects are freed. A high or stable RSS alone does not prove that live Python objects are leaking.
