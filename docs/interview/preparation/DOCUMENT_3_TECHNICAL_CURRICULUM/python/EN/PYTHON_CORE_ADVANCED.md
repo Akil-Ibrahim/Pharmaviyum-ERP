@@ -8,11 +8,37 @@
 **Answer file:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Russian version:** [RU Question Map](../RU/PYTHON_CORE_ADVANCED.md)
 
-## PY-001 — GIL, Concurrency & Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+## Technical Entity Badge Registry — PY-001
 
-**Main Question:** What is the Global Interpreter Lock (GIL) in CPython, and how does it affect concurrency and parallelism?
+Use the same entity badge and color whenever the entity appears in this curriculum. Badges identify technical concepts; they do not replace definitions or question-type badges.
 
-**Evaluation focus:** CPython runtime synchronization, CPU-bound versus I/O-bound workloads, thread safety, concurrency-model selection, and free-threaded Python.  
+- ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb) — GIL
+- ![ENTITY: Thread](https://img.shields.io/badge/ENTITY-Thread-16a34a) — Thread
+- ![ENTITY: Process](https://img.shields.io/badge/ENTITY-Process-7c3aed) — Process
+- ![ENTITY: Multithreading](https://img.shields.io/badge/ENTITY-Multithreading-16a34a) — Multithreading
+- ![ENTITY: Multiprocessing](https://img.shields.io/badge/ENTITY-Multiprocessing-7c3aed) — Multiprocessing
+- ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) — Concurrency
+- ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706) — Parallelism
+- ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) — CPU-bound
+- ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) — I/O-bound
+- ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) — CPython
+- ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b) — Python Bytecode
+- ![ENTITY: Native Extension](https://img.shields.io/badge/ENTITY-Native-Extension-0f766e) — Native Extension
+- ![ENTITY: Mutex](https://img.shields.io/badge/ENTITY-Mutex-be123c) — Mutex
+- ![ENTITY: Condition Variable](https://img.shields.io/badge/ENTITY-Condition-Variable-be123c) — Condition Variable
+- ![ENTITY: Lock](https://img.shields.io/badge/ENTITY-Lock-be123c) — Lock
+- ![ENTITY: Free-threaded](https://img.shields.io/badge/ENTITY-Free-threaded-0f766e) — Free-threaded
+- ![ENTITY: Asyncio](https://img.shields.io/badge/ENTITY-Asyncio-0891b2) — Asyncio
+- ![ENTITY: Task](https://img.shields.io/badge/ENTITY-Task-0ea5e9) — Task
+- ![ENTITY: Synchronization](https://img.shields.io/badge/ENTITY-Synchronization-be123c) — Synchronization
+- ![ENTITY: Thread Safety](https://img.shields.io/badge/ENTITY-Thread-Safety-16a34a) — Thread Safety
+- ![ENTITY: Shared State](https://img.shields.io/badge/ENTITY-Shared-State-d97706) — Shared State
+
+## PY-001 — GIL ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb), Concurrency & Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Main Question:** What is the Global Interpreter Lock (GIL) in CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b), and how does it affect concurrency ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) and parallelism ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706)?
+
+**Evaluation focus:** CPython runtime synchronization, CPU-bound ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) versus I/O-bound ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) workloads, thread safety ![ENTITY: Thread Safety](https://img.shields.io/badge/ENTITY-Thread-Safety-16a34a), concurrency-model selection, and free-threaded ![ENTITY: Free-threaded](https://img.shields.io/badge/ENTITY-Free-threaded-0f766e) Python.  
 **Level:** L3 — Advanced/Senior  
 **Priority:** P0 — Core / High interview frequency
 
@@ -20,7 +46,7 @@ Follow-ups:
 
 - **FU-1 — Mechanism:** Why does the conventional CPython build use the GIL, and what does the lock actually protect? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 - **FU-2 — Application:** How does the GIL affect CPU-bound and I/O-bound multithreaded workloads in conventional CPython? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — Design trade-offs:** How would you choose between threading, multiprocessing, and asyncio for a Python backend workload? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-3 — Design trade-offs:** How would you choose between threading ![ENTITY: Multithreading](https://img.shields.io/badge/ENTITY-Multithreading-16a34a), multiprocessing ![ENTITY: Multiprocessing](https://img.shields.io/badge/ENTITY-Multiprocessing-7c3aed), and asyncio ![ENTITY: Asyncio](https://img.shields.io/badge/ENTITY-Asyncio-0891b2) for a Python backend workload? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 - **FU-4 — Senior judgment:** What changes in free-threaded CPython, and what should an engineering team verify before adopting it? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-002 — Concurrency vs Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
