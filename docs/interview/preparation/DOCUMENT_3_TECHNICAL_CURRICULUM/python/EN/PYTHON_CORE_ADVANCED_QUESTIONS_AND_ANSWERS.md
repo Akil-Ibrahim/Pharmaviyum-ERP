@@ -6,7 +6,7 @@
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
-English study material for PY-001–PY-017 and FU-001–FU-068. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
+English study material for PY-001–PY-018 and FU-001–FU-072. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
 
 **Numbering rule:** Every Main Question has exactly four Follow-ups. FU IDs are globally sequential across the curriculum and never restart for a new Main Question: PY-001 → FU-001–FU-004, PY-002 → FU-005–FU-008, and so on.
 
@@ -2167,3 +2167,161 @@ Not every callable exposes complete introspection metadata. Decorators may affec
 **Interview answer (EN)**
 
 “I use inspect.signature() to obtain a callable's declared interface and Signature.bind() to validate argument mapping before dispatch. I use bind_partial() for staged or partial invocation and apply_defaults() when the framework needs defaulted values included. I account for decorated callables and incomplete metadata, and I avoid treating introspection as a substitute for domain validation or authorization.”
+---
+
+# PY-018 — Python Functions: First-Class Objects, Higher-Order Functions & Functional Programming ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Question (EN):** Explain why functions are first-class objects in Python. How do higher-order functions, closures, and functional programming relate to this concept?
+
+## Core concepts
+
+A Python function is an object that can be:
+- assigned to a variable;
+- passed as an argument;
+- returned from another function;
+- stored in a data structure;
+- inspected and, for ordinary Python function objects, augmented with attributes.
+
+This is the meaning of **first-class functions**: functions can be manipulated as values like other objects. A function reference and a function call are different: referring to a function does not execute it; calling it does.
+
+A callable is broader than a function. Instances of classes implementing `__call__`, bound methods, built-in functions, and `functools.partial` objects can also be callable.
+
+## Higher-order functions
+
+A **higher-order function** accepts one or more functions/callables as arguments, returns a function/callable, or both.
+
+Examples:
+- `sorted(iterable, key=...)` accepts a callable used to derive sorting keys.
+- `map()` applies a callable to items and returns an iterator.
+- `filter()` uses a predicate to select items.
+- `functools.reduce()` cumulatively combines iterable elements with a callable.
+- `functools.partial()` creates a callable with some arguments pre-filled.
+- Decorators accept a callable and commonly return a wrapped callable.
+
+Do not confuse the concepts: first-class describes how the language treats functions; higher-order describes what a particular function does with callables.
+
+## Closures and lexical scope
+
+A **closure** is a function together with access to variables from its enclosing lexical scope. An inner function can continue to access enclosing-scope bindings after the outer function has returned.
+
+A variable referenced from an enclosing scope rather than locally or globally is commonly called a free variable. The function's closure retains the necessary binding context.
+
+Closures are useful for:
+- function factories and configurable behavior;
+- decorators;
+- callbacks that need context;
+- encapsulating small pieces of state without defining a class.
+
+A closure does not automatically make captured state immutable or thread-safe. If multiple calls or threads mutate shared captured state, synchronization and lifecycle need deliberate design. Late binding also matters: a closure generally observes the current value of the captured binding when the inner function executes, not necessarily a snapshot taken when it was created.
+
+## Functional programming in Python
+
+Python supports functional programming but is multi-paradigm; it does not require a purely functional style.
+
+Useful concepts include:
+- **Pure functions:** same relevant inputs produce the same result, with no externally observable side effects.
+- **Immutability:** prefer values that are not mutated, or create new values instead of changing shared state.
+- **Higher-order functions:** compose behavior by passing functions as values.
+- **Function composition:** combine smaller transformations into a larger operation.
+- **Declarative transformations:** express the desired transformation rather than manually controlling every iteration step.
+
+Purity is a design property, not something Python enforces. A function can read global state, perform I/O, mutate arguments, or raise exceptions.
+
+## Practical trade-offs
+
+Functional techniques can improve testability, reuse, and reasoning when transformations are isolated and side effects are explicit. However, excessive callbacks, nested closures, or chains of opaque transformations can make debugging and control flow harder.
+
+Choose the simplest design that makes data flow and side effects clear. Use classes when state, invariants, and lifecycle are central; use functions when behavior is naturally composable and stateless or when a small closure is sufficient.
+
+## Backend engineering applications
+
+- Middleware and decorators that wrap request handling.
+- Dependency injection through provider callables.
+- Event callbacks and hooks.
+- Validation predicates and filtering.
+- Data-processing pipelines and transformations.
+- Retry, caching, metrics, and tracing wrappers.
+- Async schedulers and APIs that accept coroutine functions or other callables.
+
+Remember that an async function is still a function object; calling it creates a coroutine object. A callable is not necessarily a synchronous function, so frameworks must understand whether the returned object needs to be awaited.
+
+## Interview-ready answer (EN)
+
+“Python functions are first-class objects: they can be assigned to variables, passed as arguments, returned from other functions, and stored in data structures. This enables higher-order functions, which accept or return callables. Examples include decorators, callbacks, map, filter, and functools.partial.
+
+Closures allow inner functions to retain access to variables from their enclosing lexical scope. They are useful for function factories, decorators, callbacks, and encapsulated state, although shared mutable closure state requires careful lifecycle and concurrency design.
+
+Python supports functional programming concepts such as pure functions, immutability, composition, and declarative transformations, but it remains a multi-paradigm language. I choose functional or object-oriented techniques based on clarity, testability, maintainability, and performance.”
+
+## What to remember
+
+- First-class means functions can be treated as values.
+- Higher-order functions accept or return callables.
+- A callable is not necessarily a Python function object.
+- Closures retain access to enclosing-scope bindings.
+- Captured mutable state is not automatically immutable or thread-safe.
+- Python supports functional programming but does not enforce purity.
+- Prefer clear data flow and explicit side effects over unnecessary abstraction.
+
+## References
+
+- [Python 3.15.2 — Functional Programming HOWTO](https://docs.python.org/3.15/howto/functional.html)
+- [Python 3.15.2 — functools](https://docs.python.org/3.15/library/functools.html)
+- [Python 3.15.2 — Built-in functions: map](https://docs.python.org/3.15/library/functions.html#map)
+- [Python 3.15.2 — Execution model and name resolution](https://docs.python.org/3.15/reference/executionmodel.html)
+
+---
+
+## FU-069 — What makes a function a first-class object, and how is that different from a callable? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** What does it mean that functions are first-class objects, and why is the term callable broader than function?
+
+**Explanation**
+
+First-class means a function can be treated as a value: assigned, passed, returned, and stored. A callable is any object that can be invoked. Ordinary functions, bound methods, built-ins, classes, and instances implementing `__call__` may be callable. Therefore, every ordinary function is callable, but not every callable is a function object.
+
+**Interview answer (EN)**
+
+“First-class describes the ability to manipulate functions as values. Callable describes the ability to invoke an object. A Python function is both, but callable objects also include instances with __call__, classes, bound methods, and partial objects. This distinction matters when designing APIs that accept behavior rather than only function objects.”
+
+---
+
+## FU-070 — How would you use higher-order functions in a backend application? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** Give practical backend examples of higher-order functions and explain when they improve a design.
+
+**Explanation**
+
+Examples include middleware wrappers, decorators for metrics or authorization, validation predicates, callbacks, dependency providers, and data transformations. They improve a design when behavior can be injected or composed without coupling the caller to a concrete implementation.
+
+**Interview answer (EN)**
+
+“I use higher-order functions when a component needs configurable behavior: middleware can wrap request handling, predicates can be injected into filtering, and decorators can add metrics or tracing. I keep the abstraction explicit and avoid deeply nested callback chains when they make execution order or error handling difficult to follow.”
+
+---
+
+## FU-071 — What are closure late binding and shared mutable state risks? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** What does a closure retain, and what problems can arise from late binding or mutable captured state?
+
+**Explanation**
+
+A closure retains access to bindings in an enclosing lexical scope. It does not necessarily capture an immutable snapshot of each value. If a captured binding changes before the inner function runs, the function observes the current binding. Multiple closures may also share the same mutable object. This can produce surprising results in loops, callbacks, and concurrent code.
+
+**Interview answer (EN)**
+
+“A closure retains access to enclosing-scope bindings, not necessarily a frozen copy of their values. Late binding means the inner function can observe a binding's later value. If closures share mutable state, calls can interfere with one another and concurrent execution may require synchronization. I make capture semantics and state ownership explicit, and avoid hidden shared mutation.”
+
+---
+
+## FU-072 — When should you choose functional composition over classes or imperative code? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How do you decide between functional composition, object-oriented design, and imperative control flow in production Python?
+
+**Explanation**
+
+Functional composition is effective for isolated transformations, stateless behavior, and explicit pipelines. Classes are useful when state, invariants, identity, and lifecycle are central. Imperative code is often clearer for complex orchestration, resource management, and control flow. Python supports all three; no paradigm should be applied dogmatically.
+
+**Interview answer (EN)**
+
+“I choose the paradigm that makes state, dependencies, and side effects easiest to understand. I favor small composable functions for transformations and validation, classes when state and invariants have a meaningful lifecycle, and imperative orchestration when it makes control flow clearer. I evaluate testability, readability, operational behavior, and performance rather than maximizing functional purity.”
