@@ -3,7 +3,7 @@
 **Language:** English  
 **Python baseline:** 3.15.2 — label version-specific behavior and distinguish Python language guarantees from CPython implementation details.  
 **Domain allocation:** 45 Main Questions + 180 Follow-ups = 225  
-**Current coverage:** PY-001–PY-009 and FU-001–FU-036  
+**Current coverage:** PY-001–PY-010 and FU-001–FU-040  
 **Numbering rule:** Exactly four Follow-ups per Main Question; FU IDs are globally sequential and never reset between Main Questions.  
 **Answer file:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Russian version:** [RU Question Map](../RU/PYTHON_CORE_ADVANCED.md)
@@ -155,3 +155,18 @@ Follow-ups:
 - **FU-034 — Reachability:** Why can a reference cycle remain in memory even when the application no longer uses any of its objects? ![TYPE](https://img.shields.io/badge/TYPE-Reachability-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 - **FU-035 — Resource lifecycle:** Does using del or defining __del__() guarantee that an object or its resources are released immediately? ![TYPE](https://img.shields.io/badge/TYPE-Resource_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 - **FU-036 — Production diagnosis:** How would you investigate steadily increasing memory usage in a long-running Python service? ![TYPE](https://img.shields.io/badge/TYPE-Production_diagnosis-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+## PY-010 — Weak References, Object Lifetime & Memory Ownership ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Main Question:** What are weak references in Python, how do they differ from strong references, and when should they be used?
+
+**Evaluation focus:** Strong versus weak reachability, the `weakref` API, weak containers, weak-referenceable types, object ownership, caches, observer registries, and finalization pitfalls.  
+**Level:** L3 — Advanced/Senior  
+**Priority:** P0 — Core
+
+Follow-ups:
+
+- **FU-037 — Mechanism:** What exactly changes in an object's lifetime when a strong reference is replaced by a weak reference? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-038 — Application:** When would you choose a `WeakValueDictionary`, a `WeakKeyDictionary`, or a `WeakSet` in a real application? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-039 — Edge cases:** Can every Python object be weakly referenced, and what should you check when a class uses `__slots__`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-040 — Senior judgment:** How would you design a weak-reference-based registry without introducing a new memory leak or unreliable cleanup behavior? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
