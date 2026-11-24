@@ -10,4 +10,4 @@ Use this folder to study and prepare interview answers in English.
 
 Study a Main Question first, then its four Follow-ups. Understand the explanation before practising the concise interview answer. The Russian version uses the same question IDs.
 
-**Current coverage:** PY-001–PY-008 and FU-001–FU-032.
+**Current coverage:** PY-001–PY-019 and 76 Follow-ups (FU-1–FU-4 per Main Question).
