@@ -866,10 +866,10 @@ alias.append(3)     # Изменение видно и через first
 
 **Объяснение**
 
-- **List:** изменяемая последовательность с доступом по индексу, заменой элементов, добавлением и удалением. Индексирование — O(1); добавление в конец — амортизированное O(1); вставка или удаление в начале и середине — O(n), поскольку элементы могут перемещаться.
-- **Tuple:** неизменяемая последовательность с индексированием и итерацией. Неизменяемость относится к ссылкам внутри кортежа, а не рекурсивно ко всем объектам. Кортеж хешируем, только если все его элементы хешируемы.
-- **Set:** хранит уникальные хешируемые элементы и подходит для проверки принадлежности, удаления дубликатов и операций над множествами. Проверка, добавление и удаление обычно имеют среднюю сложность O(1), но при большом числе коллизий могут замедляться.
-- **Dictionary:** сопоставляет хешируемые ключи со значениями, сохраняет порядок вставки как гарантию языка начиная с Python 3.7 и обычно обеспечивает среднюю сложность поиска, вставки и удаления O(1). Обновление существующего ключа не меняет его позицию; удаление и повторная вставка помещают его в конец.
+- **List:** ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) изменяемая последовательность с доступом по индексу, заменой элементов, добавлением и удалением. Индексирование — O(1); добавление в конец — амортизированное O(1); вставка или удаление в начале и середине — O(n), поскольку элементы могут перемещаться.
+- **Tuple:** ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) неизменяемая последовательность с индексированием и итерацией. Неизменяемость относится к ссылкам внутри кортежа, а не рекурсивно ко всем объектам. Кортеж хешируем, только если все его элементы хешируемы.
+- **Set:** ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) хранит уникальные хешируемые элементы и подходит для проверки принадлежности, удаления дубликатов и операций над множествами. Проверка, добавление и удаление обычно имеют среднюю сложность O(1), но при большом числе коллизий могут замедляться.
+- **Dictionary:** ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) сопоставляет хешируемые ключи со значениями, сохраняет порядок вставки как гарантию языка начиная с Python 3.7 и обычно обеспечивает среднюю сложность поиска, вставки и удаления O(1). Обновление существующего ключа не меняет его позицию; удаление и повторная вставка помещают его в конец.
 
 Эти оценки типичны, а не являются гарантиями худшего случая. Результат зависит от хеширования, коллизий, изменения размера таблицы и стоимости сравнений на равенство. Детали реализации CPython могут меняться между версиями и не являются гарантиями языка.
 
@@ -895,9 +895,12 @@ alias.append(3)     # Изменение видно и через first
 - [Документация Python 3.15: модель данных](https://docs.python.org/3.15/reference/datamodel.html)
 - [Python 3.15: что нового — frozendict (PEP 814)](https://docs.python.org/3.15/whatsnew/3.15.html)
 
+
+**Примечание о Python 3.15:** `frozendict` — встроенное неизменяемое отображение, но не подкласс `dict`. Оно сохраняет порядок вставки. `frozendict` хешируем, только если все его ключи и значения хешируемы; неизменяемость поверхностная, поэтому вложенные изменяемые значения всё ещё могут изменяться. Это отличается от `types.MappingProxyType`, который представляет собой доступное только для чтения динамическое представление исходного отображения.
+
 ---
 
-## PY-007 / FU-1 — Семантика коллекций и представление в CPython ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-007 / FU-1 — Семантика коллекций и представление в CPython ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b) ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square)
 
 **Вопрос (RU):** В чём ключевые семантические и типичные реализационные различия между списками, кортежами, множествами и словарями в CPython?
 
@@ -911,7 +914,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## PY-007 / FU-2 — Выбор коллекции для сервиса ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-007 / FU-2 — Выбор коллекции для сервиса ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b) ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square)
 
 **Вопрос (RU):** Как выбрать встроенную коллекцию для упорядоченной последовательности, проверки принадлежности, удаления дубликатов и поиска по ключу в реальном сервисе?
 
@@ -925,7 +928,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## PY-007 / FU-3 — Порядок, копирование и граничные случаи сложности ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-007 / FU-3 — Порядок, копирование и граничные случаи сложности ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b) ![Insertion Order](https://img.shields.io/badge/-Insertion-Order-64748b?style=flat-square) ![Shallow Copy](https://img.shields.io/badge/-Shallow-Copy-d97706?style=flat-square) ![Hashability](https://img.shields.io/badge/-Hashability-7c3aed?style=flat-square)
 
 **Вопрос (RU):** Что учитывать при использовании порядка вставки, поверхностного копирования, вложенных изменяемых значений и средней временной сложности?
 
@@ -939,7 +942,7 @@ alias.append(3)     # Изменение видно и через first
 
 ---
 
-## PY-007 / FU-4 — Выбор коллекции в production-условиях ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-007 / FU-4 — Выбор коллекции в production-условиях ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b) ![Hash Table](https://img.shields.io/badge/-Hash-Table-7c3aed?style=flat-square) ![Mapping](https://img.shields.io/badge/-Mapping-7c3aed?style=flat-square)
 
 **Вопрос (RU):** Как характер нагрузки, объём данных, частота изменений и давление на память влияют на выбор коллекции и стратегию бенчмаркинга?
 
