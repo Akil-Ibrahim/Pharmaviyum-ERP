@@ -663,37 +663,37 @@ Do not confuse Python object identity with domain identity ![Domain Identity](ht
 
 **Short Answer**
 
-Attribute access in Python is governed by the object model. For ordinary instance access, the lookup process involves the instance's type, its data descriptors, the instance namespace, and non-data descriptors or other class attributes. Descriptors customize access through `__get__`, `__set__`, and `__delete__`. `__getattribute__` intercepts ordinary attribute access, while `__getattr__` is a fallback invoked when normal lookup raises `AttributeError`. Implicit special-method operations often look up methods on the type rather than through the instance attribute namespace.
+Attribute access ![Attribute](https://img.shields.io/badge/-Attribute-2563eb?style=flat-square) in Python is governed by the object model. For ordinary instance access, the lookup process involves the instance's type, its data descriptors, the instance namespace ![Instance Namespace](https://img.shields.io/badge/-Instance-Namespace-64748b?style=flat-square), and non-data descriptors or other class attributes. Descriptors customize access through `__get__`, `__set__`, and `__delete__`. `__getattribute__` intercepts ordinary attribute access, while `__getattr__` is a fallback invoked when normal lookup raises `AttributeError` ![AttributeError](https://img.shields.io/badge/-AttributeError-dc2626?style=flat-square). Implicit special-method operations ![Implicit Lookup](https://img.shields.io/badge/-Implicit-Lookup-0ea5e9?style=flat-square) often look up methods on the type rather than through the instance attribute namespace.
 
 **Explanation**
 
 An expression such as `obj.name` invokes attribute access machinery; it is not simply a dictionary lookup in `obj.__dict__`. The default behavior is implemented by `object.__getattribute__`, with the object's type and descriptor protocol determining the result.
 
-For a typical instance, the important precedence rules are:
+For a typical instance, the important attribute lookup ![Attribute Lookup](https://img.shields.io/badge/-Attribute-Lookup-64748b?style=flat-square) precedence rules are:
 
-1. A **data descriptor** found on the type takes precedence over an entry with the same name in the instance namespace. A descriptor is a data descriptor when its type provides `__set__` or `__delete__`.
+1. A **data descriptor** ![Data Descriptor](https://img.shields.io/badge/-Data-Descriptor-be123c?style=flat-square) found on the type takes precedence over an entry with the same name in the instance namespace. A descriptor is a data descriptor when its type provides `__set__` or `__delete__`.
 2. If no data descriptor applies, Python checks the instance namespace.
-3. If the name is not found there, a **non-data descriptor** or another class attribute may provide the result. A descriptor that defines `__get__` but not `__set__` or `__delete__` is non-data.
+3. If the name is not found there, a **non-data descriptor** ![Non-data Descriptor](https://img.shields.io/badge/-Non-data-Descriptor-0891b2?style=flat-square) or another class attribute may provide the result. A descriptor that defines `__get__` but not `__set__` or `__delete__` is non-data.
 4. If normal lookup fails, `__getattr__`, when defined, may provide a fallback value.
 
 This is a useful model for ordinary instance attribute access, not a universal description of every lookup form. Class attribute access, slots, custom `__getattribute__`, metaclasses, and special-method lookup have additional rules.
 
-**The descriptor protocol**
+**The descriptor protocol ![Descriptor Protocol](https://img.shields.io/badge/-Descriptor-Protocol-7c3aed?style=flat-square)**
 
-A descriptor is an object whose type defines one or more of `__get__`, `__set__`, or `__delete__`. Python recognizes these protocol methods on the descriptor's type, not merely as attributes attached to an individual descriptor instance. Descriptors are the foundation of properties, method binding, and several framework features. A function stored on a class is a non-data descriptor: accessing it through an instance invokes its binding behavior and produces a bound method. A `property` is a data descriptor and can control reads and writes even when an instance dictionary contains a same-named key. For instance access, `__get__` receives the instance and its type; for class access, it receives `None` and the owner class.
+A descriptor ![Descriptor](https://img.shields.io/badge/-Descriptor-7c3aed?style=flat-square) is an object whose type defines one or more of `__get__` ![__get__](https://img.shields.io/badge/-__get__-0891b2?style=flat-square), `__set__` ![__set__](https://img.shields.io/badge/-__set__-be123c?style=flat-square), or `__delete__` ![__delete__](https://img.shields.io/badge/-__delete__-be123c?style=flat-square). Python recognizes these protocol methods on the descriptor's type, not merely as attributes attached to an individual descriptor instance. Descriptors are the foundation of properties, method binding, and several framework features. A function stored on a class is a non-data descriptor: accessing it through an instance invokes method binding ![Method Binding](https://img.shields.io/badge/-Method-Binding-16a34a?style=flat-square) and produces a bound method ![Bound Method](https://img.shields.io/badge/-Bound-Method-16a34a?style=flat-square). A `property` ![property](https://img.shields.io/badge/-property-16a34a?style=flat-square) is a data descriptor and can control reads and writes even when an instance dictionary contains a same-named key. For instance access, `__get__` receives the instance and its type; for class access, it receives `None` and the owner class.
 
 **Attribute access hooks**
 
-- `__getattribute__(self, name)` is called for ordinary attribute access and can customize or intercept lookup. A custom implementation commonly delegates to `object.__getattribute__(self, name)`; otherwise, careless implementations can recurse indefinitely.
-- `__getattr__(self, name)` is called only after ordinary lookup fails with `AttributeError`. It is appropriate for fallback behavior, such as proxy objects or dynamically exposed attributes.
+- `__getattribute__` ![__getattribute__](https://img.shields.io/badge/-__getattribute__-d97706?style=flat-square)`(self, name)` is called for ordinary attribute access and can customize or intercept lookup. A custom implementation commonly delegates to `object.__getattribute__` ![object.__getattribute__](https://img.shields.io/badge/-object.__getattribute__-64748b?style=flat-square)`(self, name)`; otherwise, careless implementations can recurse indefinitely.
+- `__getattr__` ![__getattr__](https://img.shields.io/badge/-__getattr__-d97706?style=flat-square)`(self, name)` is called only after ordinary lookup fails with `AttributeError`. It is appropriate for fallback behavior, such as proxy objects or dynamically exposed attributes.
 
 **Special methods**
 
-Operations such as `len(obj)`, `iter(obj)`, arithmetic, and context management use special-method lookup rules. For many implicit operations, Python looks up the special method on the type rather than consulting an instance attribute of the same name. Assigning `obj.__len__` therefore does not generally make `len(obj)` use that instance attribute. This type-level lookup supports consistent protocol behavior and allows optimized dispatch.
+Operations such as `len(obj)` (via `__len__` ![__len__](https://img.shields.io/badge/-__len__-0ea5e9?style=flat-square)), `iter(obj)` (via `__iter__` ![__iter__](https://img.shields.io/badge/-__iter__-0ea5e9?style=flat-square)), arithmetic, and context management use special-method lookup rules. For many implicit operations, Python looks up the special method on the type rather than consulting an instance attribute of the same name. Assigning `obj.__len__` therefore does not generally make `len(obj)` use that instance attribute. This type-level lookup supports consistent protocol behavior and allows optimized dispatch.
 
 **Senior-Level Perspective**
 
-When debugging unexpected attribute behavior, identify the exact lookup path: instance or class access, descriptor type, custom `__getattribute__`, fallback `__getattr__`, and whether the operation uses implicit special-method lookup. Avoid treating `__dict__` as the complete object model. Frameworks that use descriptors or dynamic attribute access should make these semantics explicit because they affect correctness, introspection, inheritance, and performance.
+When debugging unexpected attribute behavior, identify the exact lookup path: instance or class access, descriptor type, custom `__getattribute__`, fallback `__getattr__`, and whether the operation uses implicit special-method lookup. Avoid treating `__dict__` ![__dict__](https://img.shields.io/badge/-__dict__-64748b?style=flat-square) as the complete object model. Frameworks that use descriptors or dynamic attribute access should make these semantics explicit because they affect correctness, introspection, inheritance, and performance.
 
 **Interview-Ready Answer (EN)**
 
@@ -703,11 +703,11 @@ When debugging unexpected attribute behavior, identify the exact lookup path: in
 
 ---
 
-## PY-006 / FU-1 — Attribute lookup precedence ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-006 / FU-1 — Attribute lookup precedence ![Attribute Lookup](https://img.shields.io/badge/-Attribute-Lookup-64748b?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** In what order does Python search for an attribute on an instance, and how can an instance attribute interact with a class attribute?
 
-**What the interviewer evaluates:** Instance and class namespaces, descriptor precedence, and the limits of the simplified lookup model.
+**What the interviewer evaluates:** Instance and class namespace ![Class Namespace](https://img.shields.io/badge/-Class-Namespace-64748b?style=flat-square)s, descriptor precedence, and the limits of the simplified lookup model.
 
 **Short Answer**
 
@@ -725,7 +725,7 @@ This explains why assigning to an attribute can shadow a method in some cases, w
 
 ---
 
-## PY-006 / FU-2 — Data descriptors and non-data descriptors ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-006 / FU-2 — Data descriptors and non-data descriptors ![Data Descriptor](https://img.shields.io/badge/-Data-Descriptor-be123c?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What is the difference between a data descriptor and a non-data descriptor, and why does the distinction matter?
 
@@ -747,7 +747,7 @@ This distinction is important in frameworks that use descriptors for validation,
 
 ---
 
-## PY-006 / FU-3 — `__getattribute__` versus `__getattr__` ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-006 / FU-3 — `__getattribute__` versus `__getattr__` ![__getattribute__](https://img.shields.io/badge/-__getattribute__-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What is the difference between `__getattribute__` and `__getattr__`, and what risks arise when overriding them?
 
@@ -769,7 +769,7 @@ A custom `__getattribute__` can implement proxies, access control, lazy resoluti
 
 ---
 
-## PY-006 / FU-4 — Implicit special-method lookup ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-006 / FU-4 — Implicit special-method lookup ![Special Method](https://img.shields.io/badge/-Special-Method-0ea5e9?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** Why can assigning a special method to an instance fail to change the behavior of an implicit operation such as `len(obj)`?
 
@@ -781,7 +781,7 @@ Implicit special-method operations generally look up the relevant method on the 
 
 **Detailed Answer**
 
-Python's data model defines protocols through special methods such as `__len__`, `__iter__`, `__next__`, and arithmetic methods. When syntax or a built-in invokes one of these protocols, the interpreter generally performs special lookup on the type. This behavior avoids treating an arbitrary instance attribute as an implementation of a type-level protocol and permits optimized dispatch.
+Python's data model defines protocols through special methods such as `__len__`, `__iter__`, `__next__` ![__next__](https://img.shields.io/badge/-__next__-0ea5e9?style=flat-square), and arithmetic methods. When syntax or a built-in invokes one of these protocols, the interpreter generally performs special lookup on the type. This behavior avoids treating an arbitrary instance attribute as an implementation of a type-level protocol and permits optimized dispatch.
 
 This is different from explicitly evaluating `obj.__len__()`, which is ordinary attribute access followed by a call and may observe an instance attribute. The two expressions are therefore not interchangeable in all circumstances.
 
