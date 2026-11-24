@@ -2514,3 +2514,10 @@ Lambda подходит для короткой, локальной и само�
 
 «Мой основной критерий — ясность кода. Я выбираю lambda только тогда, когда выражение короткое и очевидное в месте вызова. Для повторно используемой или предметно-ориентированной логики, а также когда нужны документация, аннотации или информативный traceback, я использую def. Если встроенная функция или comprehension понятнее выражает преобразование, я предпочитаю их. Я не рассматриваю lambda как оптимизацию производительности».
 
+
+
+## Источники — PY-019
+
+- [Python 3.15.2 Language Reference — Lambda expressions](https://docs.python.org/3.15/reference/expressions.html#lambdas)
+- [Python 3.15.2 Tutorial — Lambda Expressions](https://docs.python.org/3.15/tutorial/controlflow.html#lambda-expressions)
+- [Python 3.15.2 Functional Programming HOWTO — Small functions and the lambda expression](https://docs.python.org/3.15/howto/functional.html#small-functions-and-the-lambda-expression)
