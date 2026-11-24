@@ -6,7 +6,7 @@
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
-English study material for PY-001–PY-008 and FU-001–FU-032. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
+English study material for PY-001–PY-009 and FU-001–FU-036. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
 
 **Review status:** Authored; independent technical and editorial review pending. Do not treat this material as finally approved until both reviews are complete.
 
@@ -121,7 +121,7 @@ A free-threaded build can execute Python threads in parallel without the traditi
 
 ---
 
-# PY-002 — Main Question
+# PY-003 — Main Question
 
 **Question (EN):** How does Python execute a program from source code to runtime behavior?
 
@@ -191,7 +191,7 @@ I also distinguish Python language guarantees from CPython-specific implementati
 
 ---
 
-## FU-005 — What are the main stages of Python execution?
+## FU-009 — What are the main stages of Python execution?
 
 **Question (EN):** What are the main stages between Python source code and the execution of its instructions in CPython?
 
@@ -205,7 +205,7 @@ The main sequence is source decoding, parsing into an AST, compilation into code
 
 ---
 
-## FU-006 — Why does running a module differ from importing it?
+## FU-010 — Why does running a module differ from importing it?
 
 **Question (EN):** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module?
 
@@ -219,7 +219,7 @@ When a file is run directly, its `__name__` is normally `__main__`. When importe
 
 ---
 
-## FU-007 — Which execution details are implementation-specific?
+## FU-011 — Which execution details are implementation-specific?
 
 **Question (EN):** Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter?
 
@@ -233,7 +233,7 @@ Python specifies language behavior, but it does not promise that every interpret
 
 ---
 
-## FU-008 — How do you choose the diagnostic layer?
+## FU-012 — How do you choose the diagnostic layer?
 
 **Question (EN):** When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment?
 
@@ -257,7 +257,102 @@ Choose the diagnostic layer based on symptoms and evidence:
 
 ---
 
-# PY-003 — Main Question
+# PY-002 — Main Question
+
+**Question (EN):** What is the difference between concurrency and parallelism, and why is the distinction important in Python?
+
+## Understand the idea
+
+- **Concurrency** means managing multiple tasks whose execution overlaps in time. The system lets each task make progress, often by switching between them.
+- **Parallelism** means actually executing multiple tasks at the same time, for example on different CPU cores.
+
+Concurrency is about coordinating multiple tasks. Parallelism is about simultaneous execution. Concurrency does not require multiple CPU cores.
+
+## How this applies to Python
+
+- **Threading:** multiple threads within one process; useful for blocking I/O and some native libraries.
+- **Multiprocessing:** separate processes that can execute on different CPU cores; often useful for CPU-bound Python workloads.
+- **Asyncio:** cooperative concurrency managed by an event loop. When one coroutine awaits I/O, the event loop can run another. Asyncio does not make CPU-heavy code parallel by itself.
+
+In a conventional GIL-enabled CPython build, multiple threads do not execute Python bytecode in parallel. They can still provide concurrency, especially while waiting for I/O.
+
+## Practical example
+
+A backend may need to call an external API, query a database, and process a large dataset. API and database operations spend much of their time waiting for I/O, so concurrency helps keep other work moving. Processing a large dataset may be CPU-bound; if it needs multiple cores, parallel execution may be appropriate.
+
+## Interview-ready answer (EN)
+
+“Concurrency is the ability to manage multiple tasks whose execution overlaps in time. Parallelism means executing multiple tasks at the same time, typically on different CPU cores.
+
+Concurrency is useful for I/O-bound workloads because a program can make progress on other tasks while one task is waiting. Parallelism is useful for CPU-bound workloads because multiple computations can run simultaneously.
+
+In Python, threading and asyncio are commonly used for concurrency, while multiprocessing can provide parallel execution. In conventional CPython builds, the GIL limits parallel execution of Python bytecode across threads.”
+
+---
+
+## FU-005 — Can concurrency exist without parallelism?
+
+**Question (EN):** Can concurrency exist without parallelism?
+
+**Explanation**
+
+Yes. A single thread can make progress on multiple tasks by switching between them, for example while some tasks are waiting for I/O. Their execution overlaps in time, but they are not running simultaneously.
+
+**Interview answer (EN)**
+
+“Yes. Concurrency can exist without parallelism. A single thread can make progress on multiple tasks by switching between them, for example while some tasks are waiting for I/O. The tasks overlap in time but are not executed simultaneously.”
+
+---
+
+## FU-006 — What is the difference between I/O-bound and CPU-bound workloads?
+
+**Question (EN):** What is the difference between I/O-bound and CPU-bound workloads?
+
+**Explanation**
+
+An **I/O-bound** workload spends much of its time waiting for external operations, such as network or database responses. A **CPU-bound** workload spends most of its time performing computations. Threading or asyncio can help with I/O-bound workloads; multiprocessing is often a better fit for CPU-bound Python workloads in conventional CPython.
+
+**Interview answer (EN)**
+
+“An I/O-bound workload spends most of its time waiting for external operations, such as network or database responses. A CPU-bound workload spends most of its time performing computations. Threading or asyncio can help with I/O-bound workloads, while multiprocessing is often a better choice for CPU-bound Python workloads.”
+
+---
+
+## FU-007 — How does the GIL affect concurrency and parallelism in CPython?
+
+**Question (EN):** How does the GIL affect concurrency and parallelism in CPython?
+
+**Explanation**
+
+In conventional CPython builds, the GIL prevents multiple threads from executing Python bytecode simultaneously. Threads can still provide concurrency, especially for I/O-bound workloads, but generally do not provide parallel execution for CPU-bound Python code. Free-threaded builds change this limitation, although extension compatibility and synchronization still matter.
+
+**Interview answer (EN)**
+
+“In conventional CPython builds, the GIL prevents multiple threads from executing Python bytecode simultaneously. Threads can still provide concurrency, especially for I/O-bound workloads, but they generally do not provide parallel execution for CPU-bound Python code. Free-threaded builds change this limitation, although thread safety and extension compatibility still matter.”
+
+---
+
+## FU-008 — How do you decide whether a workload needs concurrency or parallelism?
+
+**Question (EN):** How do you decide whether a workload needs concurrency or parallelism?
+
+**Explanation**
+
+First identify the bottleneck. If the workload mostly waits for network, database, or disk operations, concurrency is usually the first option to consider. If it mostly performs computations, parallelism may help. Benchmark before choosing asyncio, threading, or multiprocessing; each model has overhead and complexity.
+
+**Interview answer (EN)**
+
+“I first identify the workload's main bottleneck. If it spends most of its time waiting for I/O, I consider concurrency through asyncio or threading. If it is CPU-bound, I consider parallel execution, often through multiprocessing in conventional CPython. I then benchmark the solution and account for the overhead and complexity of the chosen model.”
+
+**References**
+- [Python 3.15.2 — Threading](https://docs.python.org/3.15/library/threading.html)
+- [Python 3.15.2 — asyncio](https://docs.python.org/3.15/library/asyncio.html)
+- [Python 3.15.2 — multiprocessing](https://docs.python.org/3.15/library/multiprocessing.html)
+- [Python 3.15.2 — Free-threaded Python](https://docs.python.org/3.15/howto/free-threading-python.html)
+
+---
+
+# PY-004 — Main Question
 
 **Question (EN):** What happens during a function call in CPython?
 
@@ -377,7 +472,7 @@ For performance, I profile representative workloads before optimizing call bound
 
 ---
 
-## FU-009 — Execution state during a function call
+## FU-013 — Execution state during a function call
 
 **Question (EN):** What execution state does CPython need to establish or maintain when entering and executing a Python function?
 
@@ -439,7 +534,7 @@ When debugging memory retention, inspect whether closures, tracebacks, or stored
 
 ---
 
-## FU-010 — Profiling function-call overhead
+## FU-014 — Profiling function-call overhead
 
 **Question (EN):** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service?
 
@@ -501,7 +596,7 @@ The optimization decision should be based on service-level impact, not an attrac
 
 ---
 
-## FU-011 — Different execution lifecycles
+## FU-015 — Different execution lifecycles
 
 **Question (EN):** How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call?
 
@@ -581,7 +676,7 @@ Choose the execution model according to workload and lifecycle requirements. Use
 
 ---
 
-## FU-012 — When call mechanics matter for optimization
+## FU-016 — When call mechanics matter for optimization
 
 **Question (EN):** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile?
 
@@ -647,9 +742,9 @@ The decision should connect a measured low-level cost to a meaningful service-le
 
 
 
-## PY-003 review checklist
+## PY-004 review checklist
 
-- [x] Main question and FU-009–FU-012 included.
+- [x] Main question and FU-013–FU-016 included.
 - [x] Argument binding, execution state, frames, closures, return and exception paths covered.
 - [x] Ordinary functions distinguished from generators and coroutines.
 - [x] Profiling methodology and optimization trade-offs covered.
@@ -662,7 +757,7 @@ The decision should connect a measured low-level cost to a meaningful service-le
 
 ---
 
-# PY-004 — Main Question
+# PY-005 — Main Question
 
 **Question (EN):** Explain Python's object model: identity, type, and value.
 
@@ -693,7 +788,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-013 — Identity, type, and value over an object's lifetime
+## FU-017 — Identity, type, and value over an object's lifetime
 
 **Question (EN):** Which of an object's identity, type, and value can change during its lifetime?
 
@@ -705,7 +800,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-014 — Choosing identity, equality, and type checks
+## FU-018 — Choosing identity, equality, and type checks
 
 **Question (EN):** How would you choose between identity checks, equality checks, and type checks in a code review?
 
@@ -717,7 +812,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-015 — Why is is not a value comparison?
+## FU-019 — Why is is not a value comparison?
 
 **Question (EN):** Why can using is to compare strings, numbers, or other values produce unreliable results?
 
@@ -729,7 +824,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-016 — Identity and mutability in API design
+## FU-020 — Identity and mutability in API design
 
 **Question (EN):** How should API design avoid accidental dependencies on object identity, mutability, or concrete implementation types?
 
@@ -741,7 +836,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 **Status:** Authored; independent technical and editorial review pending.
 
-# PY-005 — Main Question
+# PY-006 — Main Question
 
 **Question (EN):** How does Python resolve attribute access, and how do descriptors and special methods affect that process?
 
@@ -794,7 +889,7 @@ When debugging unexpected attribute behavior, identify the exact lookup path: in
 
 ---
 
-## FU-017 — Attribute lookup precedence
+## FU-021 — Attribute lookup precedence
 
 **Question (EN):** In what order does Python search for an attribute on an instance, and how can an instance attribute interact with a class attribute?
 
@@ -816,7 +911,7 @@ This explains why assigning to an attribute can shadow a method in some cases, w
 
 ---
 
-## FU-018 — Data descriptors and non-data descriptors
+## FU-022 — Data descriptors and non-data descriptors
 
 **Question (EN):** What is the difference between a data descriptor and a non-data descriptor, and why does the distinction matter?
 
@@ -838,7 +933,7 @@ This distinction is important in frameworks that use descriptors for validation,
 
 ---
 
-## FU-019 — `__getattribute__` versus `__getattr__`
+## FU-023 — `__getattribute__` versus `__getattr__`
 
 **Question (EN):** What is the difference between `__getattribute__` and `__getattr__`, and what risks arise when overriding them?
 
@@ -860,7 +955,7 @@ A custom `__getattribute__` can implement proxies, access control, lazy resoluti
 
 ---
 
-## FU-020 — Implicit special-method lookup
+## FU-024 — Implicit special-method lookup
 
 **Question (EN):** Why can assigning a special method to an instance fail to change the behavior of an implicit operation such as `len(obj)`?
 
@@ -882,7 +977,7 @@ This is different from explicitly evaluating `obj.__len__()`, which is ordinary 
 
 
 
-# PY-006 — Main Question
+# PY-007 — Main Question
 
 **Question (EN):** How do Python lists, tuples, sets, and dictionaries differ internally and semantically?
 
@@ -924,7 +1019,7 @@ Start with semantics and correctness, then profile representative data sizes and
 
 ---
 
-## FU-021 — Collection semantics and CPython representations
+## FU-025 — Collection semantics and CPython representations
 
 **Question (EN):** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython?
 
@@ -938,7 +1033,7 @@ Lists and tuples are ordered sequences indexed by position; lists allow item rep
 
 ---
 
-## FU-022 — Selecting a collection for a service
+## FU-026 — Selecting a collection for a service
 
 **Question (EN):** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service?
 
@@ -952,7 +1047,7 @@ Use a list for an ordered sequence that may change, a tuple for a fixed sequence
 
 ---
 
-## FU-023 — Ordering, copying, and complexity edge cases
+## FU-027 — Ordering, copying, and complexity edge cases
 
 **Question (EN):** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity?
 
@@ -966,7 +1061,7 @@ Dictionary insertion order is guaranteed by the language, but set iteration orde
 
 ---
 
-## FU-024 — Collection choice under production constraints
+## FU-028 — Collection choice under production constraints
 
 **Question (EN):** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy?
 
@@ -979,7 +1074,7 @@ Identify the operation mix, data volume, ordering requirements, mutation frequen
 “I start from the production access pattern: reads versus writes, lookup versus iteration, ordering, data size, and memory limits. Then I benchmark representative distributions and measure latency and memory, including build and update costs. I avoid choosing from asymptotic complexity alone, and keep redundant indexes only when their measured benefit justifies their operational cost.”
 
 
-# PY-007 — Main Question
+# PY-008 — Main Question
 
 **Question (EN):** How do Python dictionaries work internally, and what are the performance and correctness implications of hash-table behavior?
 
@@ -1033,7 +1128,7 @@ Treat dictionary keys as stable values. For custom key classes, design __eq__() 
 
 ---
 
-## FU-025 — The hash and equality contract
+## FU-029 — The hash and equality contract
 
 **Question (EN):** What contract must __hash__() and __eq__() satisfy for objects used as dictionary keys?
 
@@ -1047,7 +1142,7 @@ The essential rule is: if a == b, then hash(a) == hash(b). The reverse is not re
 
 ---
 
-## FU-026 — Collision resolution and resizing
+## FU-030 — Collision resolution and resizing
 
 **Question (EN):** What happens when dictionary keys collide, and why can insertion or lookup become slower?
 
@@ -1061,7 +1156,7 @@ A collision means multiple keys compete for a candidate table position. CPython 
 
 ---
 
-## FU-027 — Mutable custom keys and hash stability
+## FU-031 — Mutable custom keys and hash stability
 
 **Question (EN):** Why is it dangerous to use a mutable object as a dictionary key, and how should a custom key type be designed?
 
@@ -1075,7 +1170,7 @@ If a key's hash changes after insertion, the dictionary may search for it using 
 
 ---
 
-## FU-028 — Hash randomization and production security
+## FU-032 — Hash randomization and production security
 
 **Question (EN):** How does hash randomization help protect Python services, and why should hash() not be used as a persistent identifier?
 
@@ -1089,7 +1184,7 @@ Python salts the hashes of str and bytes with a process-specific unpredictable v
 
 ---
 
-# PY-008 — Main Question
+# PY-009 — Main Question
 
 **Question (EN):** How does memory management work in Python, and how do reference counting and garbage collection interact?
 
@@ -1162,7 +1257,7 @@ For production memory issues, I separate live-object retention from allocator be
 
 ---
 
-## FU-029 — Reference counting versus cyclic garbage collection
+## FU-033 — Reference counting versus cyclic garbage collection
 
 **Question (EN):** What is the difference between reference counting and cyclic garbage collection in CPython?
 
@@ -1180,7 +1275,7 @@ The cyclic garbage collector supplements reference counting. It examines support
 
 ---
 
-## FU-030 — Reference cycles and reachability
+## FU-034 — Reference cycles and reachability
 
 **Question (EN):** Why can a reference cycle remain in memory even when the application no longer uses any of its objects?
 
@@ -1198,7 +1293,7 @@ CPython's cyclic collector detects supported unreachable cycles by examining tra
 
 ---
 
-## FU-031 — del, finalizers, and deterministic cleanup
+## FU-035 — del, finalizers, and deterministic cleanup
 
 **Question (EN):** Does using del or defining __del__() guarantee that an object or its resources are released immediately?
 
@@ -1216,7 +1311,7 @@ A __del__() finalizer is not a reliable resource-management mechanism. Its execu
 
 ---
 
-## FU-032 — Diagnosing memory growth in production
+## FU-036 — Diagnosing memory growth in production
 
 **Question (EN):** How would you investigate steadily increasing memory usage in a long-running Python service?
 
