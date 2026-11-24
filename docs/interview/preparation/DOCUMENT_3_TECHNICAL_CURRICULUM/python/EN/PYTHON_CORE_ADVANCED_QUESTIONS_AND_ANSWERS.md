@@ -224,37 +224,37 @@ First identify the bottleneck. If the workload mostly waits for network, databas
 
 # PY-003 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Question (EN):** How does Python execute a program from source code to runtime behavior?
+**Question (EN):** How does Python ![ENTITY: Python](https://img.shields.io/badge/ENTITY-Python-2563eb) execute a program from source code to runtime ![ENTITY: Runtime](https://img.shields.io/badge/ENTITY-Runtime-0ea5e9) behavior?
 
 ## The main idea
 
-Python does not simply execute source code one line at a time as it reads it. In CPython, source code is decoded, parsed, and compiled. The resulting code objects are then executed by the interpreter.
+Python does not simply execute source code one line at a time as it reads it. In CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b), source code is decoded, parsed, and compiled. The resulting code object ![ENTITY: Code Object](https://img.shields.io/badge/ENTITY-Code-Object-7c3aed)s are then executed by the interpreter ![ENTITY: Interpreter](https://img.shields.io/badge/ENTITY-Interpreter-64748b).
 
 A useful mental model:
 
 1. **Read and decode:** CPython reads the source and decodes it into text.
-2. **Parse:** the parser checks the grammar and builds an abstract syntax tree (AST).
-3. **Compile:** the compiler turns the parsed program into code objects containing bytecode and metadata.
+2. **Parse:** the parser ![ENTITY: Parser](https://img.shields.io/badge/ENTITY-Parser-7c3aed) checks the grammar and builds an abstract syntax tree (AST ![ENTITY: AST](https://img.shields.io/badge/ENTITY-AST-7c3aed)).
+3. **Compile:** the compiler ![ENTITY: Compiler](https://img.shields.io/badge/ENTITY-Compiler-7c3aed) turns the parsed program into code objects containing bytecode ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b) and metadata.
 4. **Execute:** the interpreter executes those code objects in a runtime environment.
-5. **Interact:** the program may call native extensions, libraries, and operating-system services.
+5. **Interact:** the program may call native extensions ![ENTITY: Native Extension](https://img.shields.io/badge/ENTITY-Native-Extension-0f766e), libraries, and operating-system services.
 
 This describes the usual CPython path. Python defines language behavior, but other Python implementations may use different execution machinery.
 
-## Compilation is not execution
+## Compilation ![ENTITY: Compilation](https://img.shields.io/badge/ENTITY-Compilation-7c3aed) is not execution
 
 Keep three events separate:
 
 - **Compilation:** the function body is compiled into a code object.
-- **Function definition:** when execution reaches a `def` statement, Python creates a function object and binds its name.
+- **Function definition:** when execution reaches a `def` statement, Python creates a function object ![ENTITY: Function Object](https://img.shields.io/badge/ENTITY-Function-Object-16a34a) and binds its name.
 - **Function call:** the function body starts running when the function is called.
 
-A function body is compiled when its containing module is compiled, but it does not run just because the function was defined. A runtime error inside the body may therefore appear only when the function is called. Syntax errors are detected during parsing or compilation, before the module's top-level statements execute.
+A function body is compiled when its containing module ![ENTITY: Module](https://img.shields.io/badge/ENTITY-Module-0ea5e9) is compiled, but it does not run just because the function was defined. A runtime error inside the body may therefore appear only when the function is called. Syntax errors are detected during parsing or compilation, before the module's top-level statements execute.
 
 ## Bytecode, code objects, and function objects
 
 - **Bytecode** is an instruction format used by CPython's interpreter. It is not native CPU machine code.
 - **Code object** stores compiled instructions and metadata, such as constants, names, and source-position information.
-- **Function object** is the callable object created by executing a function definition. It refers to a code object and carries execution context such as its global namespace, defaults, and closure.
+- **Function object** is the callable object created by executing a function definition. It refers to a code object and carries execution context such as its global namespace ![ENTITY: Global Namespace](https://img.shields.io/badge/ENTITY-Global-Namespace-64748b), defaults, and closure.
 
 A useful distinction: a code object represents compiled code; a function object connects that code to the context in which it will run.
 
@@ -262,13 +262,13 @@ A useful distinction: a code object represents compiled code; a function object 
 
 The Python 3.15.2 execution model describes conceptual runtime layers:
 
-- **Process:** operating-system resources such as memory, file descriptors, and sockets.
+- **Process ![ENTITY: Process](https://img.shields.io/badge/ENTITY-Process-7c3aed):** operating-system resources such as memory, file descriptors ![ENTITY: File Descriptor](https://img.shields.io/badge/ENTITY-File-Descriptor-64748b), and sockets.
 - **Python global runtime:** state shared at the runtime level.
 - **Interpreter:** interpreter-specific state and execution environment.
-- **Thread:** the host thread that executes Python and native code.
+- **Thread ![ENTITY: Thread](https://img.shields.io/badge/ENTITY-Thread-16a34a):** the host thread that executes Python and native code.
 - **Thread state:** Python execution state associated with a thread.
 
-A runtime can contain multiple interpreters, and an interpreter can have multiple thread states. This is a conceptual model: implementations do not have to represent every layer as a separate concrete object.
+A runtime can contain multiple interpreters, and an interpreter can have multiple thread state ![ENTITY: Thread State](https://img.shields.io/badge/ENTITY-Thread-State-16a34a)s. This is a conceptual model: implementations do not have to represent every layer as a separate concrete object.
 
 Do not confuse the Python interpreter with the operating-system process. A process is an OS-level execution container; the interpreter is the Python implementation executing code within that environment.
 
@@ -280,21 +280,21 @@ Also, avoid describing the interpreter as a permanently fixed loop over an uncha
 
 ## Adaptive specialization in modern CPython
 
-Modern CPython can adapt execution to observed runtime behavior. It may specialize instructions for common cases and use inline caches to make repeated operations faster.
+Modern CPython can adapt execution to observed runtime behavior. It may specialize instructions for common cases and use inline caches ![ENTITY: Inline Cache](https://img.shields.io/badge/ENTITY-Inline-Cache-d97706) to make repeated operations faster.
 
 This is an implementation optimization, not a change to Python's language semantics. The exact instructions and specialization strategy can change between CPython releases.
 
 The `dis` module can inspect CPython bytecode. Its adaptive view can show specialized instructions (for example, with `dis.dis(function, adaptive=True)`). This is useful for investigation, but bytecode should not be treated as a stable application interface.
 
-## What is a .pyc file?
+## What is a .pyc ![ENTITY: .pyc Cache](https://img.shields.io/badge/ENTITY-PYC-Cache-0891b2) file?
 
-Python can cache compiled module bytecode in `.pyc` files, usually under `__pycache__`. When the cache is valid, an import may reuse it instead of compiling the source again.
+Python can cache compiled module bytecode in `.pyc` files, usually under `__pycache__`. When the cache is valid, an import ![ENTITY: Import](https://img.shields.io/badge/ENTITY-Import-0ea5e9) may reuse it instead of compiling the source again.
 
-This is an optimization, not a requirement for every execution. A `.pyc` file contains Python bytecode, not native machine code. Cache validity is checked; the existence of a file alone does not mean Python will always use it.
+This is an optimization, not a requirement for every execution. A `.pyc` file contains Python bytecode, not native machine code ![ENTITY: Machine Code](https://img.shields.io/badge/ENTITY-Machine-Code-d97706). Cache validity is checked; the existence of a file alone does not mean Python will always use it.
 
 ## Why this matters in a backend service
 
-Consider a FastAPI application. During startup, the process starts Python and the application imports its entry-point module and dependencies. Module-level statements execute: objects are created, routes are registered, and components are initialized.
+Consider a FastAPI ![ENTITY: FastAPI](https://img.shields.io/badge/ENTITY-FastAPI-16a34a) application. During startup, the process starts Python and the application imports its entry-point module and dependencies. Module-level statements execute: objects are created, routes are registered, and components are initialized.
 
 Later, when an HTTP request arrives, the relevant endpoint and service functions are called. An error during import or module initialization can prevent startup; an error inside an endpoint may appear only when a request reaches that code.
 
@@ -312,13 +312,13 @@ For production diagnosis, I distinguish module import and startup behavior from 
 
 ---
 
-## PY-003 / FU-1 — What are the main stages of Python execution? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-003 / FU-1 — What are the main stages of Python execution? ![ENTITY: Python](https://img.shields.io/badge/ENTITY-Python-2563eb) ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: AST](https://img.shields.io/badge/ENTITY-AST-7c3aed) ![ENTITY: Compiler](https://img.shields.io/badge/ENTITY-Compiler-7c3aed) ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b) ![ENTITY: Interpreter](https://img.shields.io/badge/ENTITY-Interpreter-64748b) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What are the main stages between Python source code and the execution of its instructions in CPython?
 
 **Explanation**
 
-The usual CPython path is: read and decode source, parse it into an AST, compile it into code objects, and execute those objects in the runtime. Execution can create objects, resolve names, call functions, and interact with native libraries or the operating system.
+The usual CPython path is: read and decode source, parse it into an AST, compile it into code objects, and execute those objects in the runtime. Execution can create objects, resolve names, call functions, and interact with native libraries or the operating system ![ENTITY: Operating System](https://img.shields.io/badge/ENTITY-Operating-System-64748b).
 
 **Interview answer (EN)**
 
@@ -326,7 +326,7 @@ The usual CPython path is: read and decode source, parse it into an AST, compile
 
 ---
 
-## PY-003 / FU-2 — Why does running a module differ from importing it? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-003 / FU-2 — Why does running a module differ from importing it? ![ENTITY: Module](https://img.shields.io/badge/ENTITY-Module-0ea5e9) ![ENTITY: Import](https://img.shields.io/badge/ENTITY-Import-0ea5e9) ![ENTITY: Global Namespace](https://img.shields.io/badge/ENTITY-Global-Namespace-64748b) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module?
 
@@ -340,13 +340,13 @@ When a file is run directly, its `__name__` is normally `"__main__"`. When impor
 
 ---
 
-## PY-003 / FU-3 — Which execution details are implementation-specific? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-003 / FU-3 — Which execution details are implementation-specific? ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b) ![ENTITY: Adaptive Specialization](https://img.shields.io/badge/ENTITY-Adaptive-Specialization-d97706) ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b) ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter?
 
 **Explanation**
 
-Python specifies language semantics, not one universal bytecode format or interpreter architecture. CPython opcodes, inline caches, adaptive specialization, and internal frame representations are implementation details that may change between releases. In particular, do not assume every function call must materialize a Python-visible `PyFrameObject`; CPython's internal execution-frame representation and the frame objects exposed for introspection are distinct concepts.
+Python specifies language semantics, not one universal bytecode format or interpreter architecture. CPython opcodes, inline caches, adaptive specialization ![ENTITY: Adaptive Specialization](https://img.shields.io/badge/ENTITY-Adaptive-Specialization-d97706), and internal frame representations are implementation details that may change between releases. In particular, do not assume every function call must materialize a Python-visible `PyFrameObject ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b)`; CPython's internal execution-frame representation and the frame objects exposed for introspection are distinct concepts.
 
 **Interview answer (EN)**
 
@@ -354,7 +354,7 @@ Python specifies language semantics, not one universal bytecode format or interp
 
 ---
 
-## PY-003 / FU-4 — How do you choose the diagnostic layer? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-003 / FU-4 — How do you choose the diagnostic layer? ![ENTITY: Python](https://img.shields.io/badge/ENTITY-Python-2563eb) ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Operating System](https://img.shields.io/badge/ENTITY-Operating-System-64748b) ![ENTITY: Runtime](https://img.shields.io/badge/ENTITY-Runtime-0ea5e9) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment?
 
@@ -375,7 +375,7 @@ Start broad with metrics, logs, and traces. Go deeper only when the evidence poi
 **References**
 - [Python 3.15.2 — Execution model](https://docs.python.org/3.15/reference/executionmodel.html)
 - [Python 3.15.2 — Code objects](https://docs.python.org/3.15/reference/datamodel.html#code-objects)
-- [Python 3.15.2 — dis module](https://docs.python.org/3.15/library/dis.html)
+- [Python 3.15.2 — dis module ![ENTITY: dis Module](https://img.shields.io/badge/ENTITY-Dis-Module-0891b2)](https://docs.python.org/3.15/library/dis.html)
 - [Python 3.15.2 — Command-line and environment](https://docs.python.org/3.15/using/cmdline.html)
 - [Python 3.15.2 — Import system](https://docs.python.org/3.15/reference/import.html)
 
