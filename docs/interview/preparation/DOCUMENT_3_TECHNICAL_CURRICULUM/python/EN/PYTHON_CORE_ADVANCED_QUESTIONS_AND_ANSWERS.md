@@ -131,18 +131,18 @@ A free-threaded build can execute Python threads in parallel without the traditi
 
 ## Understand the idea
 
-- **Concurrency** means managing multiple tasks whose execution overlaps in time. The system lets each task make progress, often by switching between them.
-- **Parallelism** means actually executing multiple tasks at the same time, for example on different CPU cores.
+- **Concurrency ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9)** means managing multiple tasks whose execution overlaps in time. The system lets each task make progress, often by switching between them.
+- **Parallelism ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706)** means actually executing multiple tasks at the same time, for example on different CPU cores.
 
 Concurrency is about coordinating multiple tasks. Parallelism is about simultaneous execution. Concurrency does not require multiple CPU cores.
 
 ## How this applies to Python
 
-- **Threading:** multiple threads within one process; useful for blocking I/O and some native libraries.
-- **Multiprocessing:** separate processes that can execute on different CPU cores; often useful for CPU-bound Python workloads.
-- **Asyncio:** cooperative concurrency managed by an event loop. When one coroutine awaits I/O, the event loop can run another. Asyncio does not make CPU-heavy code parallel by itself.
+- **Threading ![ENTITY: Multithreading](https://img.shields.io/badge/ENTITY-Multithreading-16a34a):** multiple threads within one process; useful for blocking I/O and some native libraries ![ENTITY: Native Extension](https://img.shields.io/badge/ENTITY-Native-Extension-0f766e).
+- **Multiprocessing ![ENTITY: Multiprocessing](https://img.shields.io/badge/ENTITY-Multiprocessing-7c3aed):** separate processes that can execute on different CPU cores; often useful for CPU-bound ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) Python workloads.
+- **Asyncio ![ENTITY: Asyncio](https://img.shields.io/badge/ENTITY-Asyncio-0891b2):** cooperative concurrency managed by an event loop ![ENTITY: Event Loop](https://img.shields.io/badge/ENTITY-Event-Loop-0891b2). When one coroutine ![ENTITY: Coroutine](https://img.shields.io/badge/ENTITY-Coroutine-0891b2) awaits I/O, the event loop can run another. Asyncio does not make CPU-heavy code parallel by itself.
 
-In a conventional GIL-enabled CPython build, multiple threads do not execute Python bytecode in parallel. They can still provide concurrency, especially while waiting for I/O. A free-threaded CPython build can execute Python code in parallel when the GIL is disabled; this is optional and not the default build.
+In a conventional GIL ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb)-enabled CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) build, multiple threads do not execute Python bytecode ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b) in parallel. They can still provide concurrency, especially while waiting for I/O. A free-threaded ![ENTITY: Free-threaded](https://img.shields.io/badge/ENTITY-Free-threaded-0f766e) CPython build can execute Python code in parallel when the GIL is disabled; this is optional and not the default build.
 
 Python 3.15.2 also documents asyncio's use in free-threaded environments. A single event loop still runs its Python task code serially on its thread, but separate event loops in separate threads can run in parallel when the GIL is disabled. Asyncio synchronization primitives remain scoped to their event loop and should not be used as cross-thread synchronization tools.
 
@@ -154,13 +154,13 @@ A backend may need to call an external API, query a database, and process a larg
 
 “Concurrency is the ability to manage multiple tasks whose execution overlaps in time. Parallelism means executing multiple tasks at the same time, typically on different CPU cores.
 
-Concurrency is useful for I/O-bound workloads because a program can make progress on other tasks while one task is waiting. Parallelism is useful for CPU-bound workloads because multiple computations can run simultaneously.
+Concurrency is useful for I/O-bound ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) workloads because a program can make progress on other tasks while one task is waiting. Parallelism is useful for CPU-bound workloads because multiple computations can run simultaneously.
 
 In Python, threading and asyncio are commonly used for concurrency, while multiprocessing can provide parallel execution. In conventional CPython builds, the GIL limits parallel execution of Python bytecode across threads.”
 
 ---
 
-## PY-002 / FU-1 — Can concurrency exist without parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-002 / FU-1 — Can concurrency exist without parallelism? ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706) ![ENTITY: Thread](https://img.shields.io/badge/ENTITY-Thread-16a34a) ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** Can concurrency exist without parallelism?
 
@@ -174,7 +174,7 @@ Yes. A single thread can make progress on multiple tasks by switching between th
 
 ---
 
-## PY-002 / FU-2 — What is the difference between I/O-bound and CPU-bound workloads? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-002 / FU-2 — What is the difference between I/O-bound and CPU-bound workloads? ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What is the difference between I/O-bound and CPU-bound workloads?
 
@@ -188,7 +188,7 @@ An **I/O-bound** workload spends much of its time waiting for external operation
 
 ---
 
-## PY-002 / FU-3 — How does the GIL affect concurrency and parallelism in CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-002 / FU-3 — How does the GIL affect concurrency and parallelism in CPython? ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb) ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Thread](https://img.shields.io/badge/ENTITY-Thread-16a34a) ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How does the GIL affect concurrency and parallelism in CPython?
 
@@ -198,11 +198,11 @@ In conventional CPython builds, the GIL prevents multiple threads from executing
 
 **Interview answer (EN)**
 
-“In conventional CPython builds, the GIL prevents multiple threads from executing Python bytecode simultaneously. Threads can still provide concurrency, especially for I/O-bound workloads, but they generally do not provide parallel execution for CPU-bound Python code. Free-threaded builds change this limitation, although thread safety and extension compatibility still matter.”
+“In conventional CPython builds, the GIL prevents multiple threads from executing Python bytecode simultaneously. Threads can still provide concurrency, especially for I/O-bound workloads, but they generally do not provide parallel execution for CPU-bound Python code. Free-threaded builds change this limitation, although thread safety ![ENTITY: Thread Safety](https://img.shields.io/badge/ENTITY-Thread-Safety-16a34a) and extension compatibility still matter.”
 
 ---
 
-## PY-002 / FU-4 — How do you decide whether a workload needs concurrency or parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-002 / FU-4 — How do you decide whether a workload needs concurrency or parallelism? ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706) ![ENTITY: Asyncio](https://img.shields.io/badge/ENTITY-Asyncio-0891b2) ![ENTITY: Multiprocessing](https://img.shields.io/badge/ENTITY-Multiprocessing-7c3aed) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How do you decide whether a workload needs concurrency or parallelism?
 
