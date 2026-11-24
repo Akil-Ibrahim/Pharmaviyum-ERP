@@ -70,6 +70,27 @@ Use the same entity badge and color whenever the entity appears in this curricul
 - ![Latency](https://img.shields.io/badge/-Latency-d97706?style=flat-square) — Latency
 - ![Throughput](https://img.shields.io/badge/-Throughput-d97706?style=flat-square) — Throughput
 
+- ![Object](https://img.shields.io/badge/-Object-2563eb?style=flat-square) — Object
+- ![Identity](https://img.shields.io/badge/-Identity-64748b?style=flat-square) — Identity
+- ![Type](https://img.shields.io/badge/-Type-7c3aed?style=flat-square) — Type
+- ![Value](https://img.shields.io/badge/-Value-0ea5e9?style=flat-square) — Value
+- ![Name Binding](https://img.shields.io/badge/-Name-Binding-7c3aed?style=flat-square) — Name Binding
+- ![Equality](https://img.shields.io/badge/-Equality-0ea5e9?style=flat-square) — Equality
+- ![Mutability](https://img.shields.io/badge/-Mutability-d97706?style=flat-square) — Mutability
+- ![Mutable Object](https://img.shields.io/badge/-Mutable-Object-d97706?style=flat-square) — Mutable Object
+- ![Immutable Object](https://img.shields.io/badge/-Immutable-Object-0891b2?style=flat-square) — Immutable Object
+- ![Reference](https://img.shields.io/badge/-Reference-64748b?style=flat-square) — Reference
+- ![Aliasing](https://img.shields.io/badge/-Aliasing-d97706?style=flat-square) — Aliasing
+- ![Rebinding](https://img.shields.io/badge/-Rebinding-0891b2?style=flat-square) — Rebinding
+- ![Domain Identity](https://img.shields.io/badge/-Domain-Identity-16a34a?style=flat-square) — Domain Identity
+- ![id()](https://img.shields.io/badge/-id%28%29-64748b?style=flat-square) — id()
+- ![is](https://img.shields.io/badge/-is-2563eb?style=flat-square) — is
+- ![==](https://img.shields.io/badge/-%3D%3D-0ea5e9?style=flat-square) — ==
+- ![isinstance()](https://img.shields.io/badge/-isinstance%28%29-7c3aed?style=flat-square) — isinstance()
+- ![__eq__](https://img.shields.io/badge/-__eq__-0ea5e9?style=flat-square) — __eq__
+- ![__hash__](https://img.shields.io/badge/-__hash__-7c3aed?style=flat-square) — __hash__
+- ![Hashability](https://img.shields.io/badge/-Hashability-7c3aed?style=flat-square) — Hashability
+
 ## PY-001 — GIL ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square), Concurrency & Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** What is the Global Interpreter Lock (GIL) in CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square), and how does it affect concurrency ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) and parallelism ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square)?
@@ -140,11 +161,11 @@ Follow-ups:
 
 
 
-## PY-005 — Python Object Model: Identity, Type & Value ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+## PY-005 — Python Object Model: ![Object](https://img.shields.io/badge/-Object-2563eb?style=flat-square), ![Identity](https://img.shields.io/badge/-Identity-64748b?style=flat-square), ![Type](https://img.shields.io/badge/-Type-7c3aed?style=flat-square) & ![Value](https://img.shields.io/badge/-Value-0ea5e9?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** Explain Python's object model: identity, type, and value.
 
-**Evaluation focus:** Name binding, identity versus equality, mutability, type checks, and domain identity.  
+**Evaluation focus:** Name binding ![Name Binding](https://img.shields.io/badge/-Name-Binding-7c3aed?style=flat-square), identity versus equality ![Equality](https://img.shields.io/badge/-Equality-0ea5e9?style=flat-square), mutability ![Mutability](https://img.shields.io/badge/-Mutability-d97706?style=flat-square), type checks, and domain identity ![Domain Identity](https://img.shields.io/badge/-Domain-Identity-16a34a?style=flat-square).  
 **Level:** L3 — Advanced/Senior  
 **Priority:** P0 — Core
 
@@ -152,8 +173,8 @@ Follow-ups:
 
 - **FU-1 — Mechanism:** Which of an object's identity, type, and value can change during its lifetime? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 - **FU-2 — Application:** How would you choose between identity checks, equality checks, and type checks in a code review? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — Edge cases and trade-offs:** Why can using is to compare strings, numbers, or other values produce unreliable results? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-4 — Senior judgment:** How should API design avoid accidental dependencies on object identity, mutability, or concrete implementation types? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-3 — Edge cases and trade-offs:** Why can using is ![is](https://img.shields.io/badge/-is-2563eb?style=flat-square) to compare strings, numbers, or other values produce unreliable results? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior judgment:** How should API design avoid accidental dependencies on object identity, mutability ![Mutability](https://img.shields.io/badge/-Mutability-d97706?style=flat-square), or concrete implementation types? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-006 — Attribute Lookup, Descriptors & Special Methods ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
