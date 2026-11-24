@@ -6,7 +6,7 @@
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
-English study material for PY-001–PY-009 and FU-001–FU-036. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
+English study material for PY-001–PY-010 and FU-001–FU-040. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
 
 **Numbering rule:** Every Main Question has exactly four Follow-ups. FU IDs are globally sequential across the curriculum and never restart for a new Main Question: PY-001 → FU-001–FU-004, PY-002 → FU-005–FU-008, and so on.
 
@@ -1148,3 +1148,154 @@ Also inspect caches, unbounded queues, global registries, task references, closu
 
 “I start by distinguishing live Python allocations, process RSS, and native memory. I compare tracemalloc snapshots under a repeatable workload, inspect object retention and GC statistics, and correlate that with process metrics. I also check common retention sources such as unbounded caches, queues, background tasks, and global registries. I only tune or force garbage collection after identifying a specific GC-related cause and measuring the impact.”
 
+# PY-010 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Question (EN):** What are weak references in Python, how do they differ from strong references, and when should they be used?
+
+**What the interviewer evaluates**
+- Understanding the difference between object reachability and ownership through strong references.
+- Correct use of `weakref.ref`, proxies, weak containers, and weak references to bound methods.
+- Awareness of weak-reference support limitations and the interaction with `__slots__`.
+- Ability to design caches and observer registries without accidentally extending object lifetimes.
+- Understanding that weak references do not guarantee immediate collection or deterministic resource cleanup.
+
+**Short Answer**
+
+A strong reference keeps an object reachable and therefore alive. A weak reference provides access to an object without keeping it alive. Python's `weakref` module exposes weak references and weak containers such as `WeakValueDictionary`, `WeakKeyDictionary`, and `WeakSet`. They are useful when a cache, registry, or relationship should not become the reason an object remains in memory. A weak reference must be treated as optional: its referent may disappear, so code should retrieve it once and check whether the result is `None`.
+
+**Explanation**
+
+A Python object can be referenced by variables, attributes, containers, closures, frames, and other runtime structures. An ordinary reference is strong: as long as a strong path keeps an object reachable, the object remains alive.
+
+A weak reference does not contribute to keeping its referent alive. If no strong references remain, the runtime may reclaim the object. A weak reference does not force collection; it simply does not prevent it. The exact time of reclamation is not a portable language guarantee.
+
+**The core weakref APIs**
+
+- `weakref.ref(obj)` creates a weak reference. Calling it returns the referent if it is still alive, or `None` otherwise.
+- `weakref.proxy(obj)` creates a proxy that forwards most operations to the referent. If the referent has disappeared, using the proxy raises `ReferenceError`. Proxies are not hashable.
+- `WeakValueDictionary` stores values weakly. An entry disappears when its value is no longer strongly referenced elsewhere.
+- `WeakKeyDictionary` stores keys weakly. It is useful for associating metadata with objects owned by other parts of an application.
+- `WeakSet` stores its elements weakly.
+- `WeakMethod` supports weak references to bound methods. A normal bound method object is ephemeral, so a plain weak reference to it is generally not the intended solution.
+
+Most application code should prefer weak container abstractions over manually managing low-level weak references.
+
+**Safe dereferencing**
+
+Do not check a weak reference and then call it again later. In concurrent code, the referent could disappear between those operations. Retrieve it once into a local strong reference, check for `None`, and then use that local reference.
+
+**When are weak references useful?**
+
+- **Caches:** a cache should not necessarily own large objects merely because it indexes them. A weak-value cache allows an object to disappear when the rest of the application no longer needs it.
+- **Observer and listener registries:** a publisher can avoid keeping subscribers alive solely because they registered for notifications.
+- **Metadata registries:** a `WeakKeyDictionary` can associate metadata with objects without extending their lifetime.
+- **Object relationships:** a weak back-reference can avoid an ownership path that would otherwise keep a parent or related object alive.
+
+Weak references do not automatically fix memory leaks. If another strong reference remains—for example, in a global list, closure, task, queue, or ordinary dictionary—the object remains alive.
+
+**Weak-reference support is not universal**
+
+Not every Python object can be weakly referenced. Ordinary instances of user-defined classes generally support weak references. Built-in `list` and `dict` instances do not directly support them, although subclasses can. `int` and `tuple` do not support weak references, even when subclassed. If a class defines `__slots__`, it must include `'__weakref__'` to enable weak references unless support is inherited from a base class.
+
+**Weak references and finalization**
+
+A weakref callback can be notified when its referent is about to be finalized, but the referent is no longer available through that weak reference. `weakref.finalize` offers a higher-level finalization API and keeps the finalizer registration alive until the target is collected.
+
+The finalizer callback, its arguments, or a closure must not hold a strong reference to the target, directly or indirectly. Otherwise, the target may never become collectible. Finalization is not deterministic resource management. Use context managers or `try/finally` for files, sockets, database connections, and transactions.
+
+**Senior-Level Perspective**
+
+Treat weak references as a lifetime and ownership tool, not as a general memory optimization switch. Define which component owns an object and which components merely observe or index it. Use weak references only when disappearance is valid behavior and callers can handle it. Test cleanup behavior, concurrency, callback lifetimes, and weak-reference support for the actual types involved. For caches, also define eviction, size limits, and consistency semantics; weak references alone are not a complete cache policy.
+
+**Interview-Ready Answer (EN)**
+
+“A strong reference keeps an object alive because it contributes to the object's reachability. A weak reference lets another component refer to the object without owning its lifetime. Python provides `weakref.ref`, proxies, and weak containers such as `WeakValueDictionary`, `WeakKeyDictionary`, and `WeakSet`.
+
+I use them when a cache, observer registry, or metadata mapping should not keep an otherwise unused object alive. I dereference safely by retrieving the object once and checking for `None`, because the referent may disappear. I also verify that the target type supports weak references and avoid callbacks or finalizers that accidentally retain the target. Weak references do not replace explicit resource cleanup or solve leaks caused by other strong references.”
+
+**References**
+- [Python 3.15.2 Library Reference: weakref — Weak references](https://docs.python.org/3.15/library/weakref.html)
+- [Python 3.15.2 Data Model: object.__del__()](https://docs.python.org/3.15/reference/datamodel.html#object.__del__)
+- [Python 3.15.2 Data Model: __slots__](https://docs.python.org/3.15/reference/datamodel.html#slots)
+
+---
+
+## FU-037 — Strong references versus weak references ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** What exactly changes in an object's lifetime when a strong reference is replaced by a weak reference?
+
+**What the interviewer evaluates:** Understanding of reachability, object lifetime, and safe dereferencing.
+
+**Answer**
+
+A strong reference contributes to keeping an object reachable. A weak reference does not. Replacing the last strong reference with a weak reference means that the weak reference alone will not keep the object alive. Once no strong references remain, the runtime may reclaim the object, and calling the weak reference will then return `None`.
+
+The weak reference does not destroy the object itself and does not specify when collection occurs. The important distinction is ownership: a strong reference participates in keeping the object alive; a weak reference provides conditional access without ownership.
+
+Retrieve the referent once into a local variable and check for `None`. That local variable is then a strong reference for as long as it remains bound.
+
+**Interview-Ready Answer (EN)**
+
+“A strong reference contributes to object reachability and keeps the object alive. A weak reference does not. If all strong references disappear, the object may be collected even though weak references to it still exist. I dereference once, check for `None`, and use the resulting local strong reference.”
+
+---
+
+## FU-038 — Weak references in caches and observer registries ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** When would you choose a `WeakValueDictionary`, a `WeakKeyDictionary`, or a `WeakSet` in a real application?
+
+**What the interviewer evaluates:** Practical API selection and the ability to avoid accidental object retention.
+
+**Answer**
+
+Choose based on which side should be weak:
+
+- `WeakValueDictionary`: keys remain strongly held by the mapping, but values are weak. Use it when the mapping indexes objects that should be collectible when no other component needs them.
+- `WeakKeyDictionary`: keys are weak and values are strong. Use it to attach metadata to objects owned elsewhere without making the mapping the owner of those objects.
+- `WeakSet`: elements are weak. Use it for registries of live objects, such as subscribers, when the registry should not keep them alive.
+
+For an observer system, a weak registry can prevent the publisher from retaining subscribers solely because they registered. The application must still define what happens when a subscriber disappears and manage callback and bound-method lifetimes correctly.
+
+**Interview-Ready Answer (EN)**
+
+“I choose the weak container according to which object should not be owned by the registry. WeakValueDictionary weakens values, WeakKeyDictionary weakens keys, and WeakSet weakens its elements. They are useful for caches, metadata, and observer registries, but they do not replace explicit cache policies or lifecycle design.”
+
+---
+
+## FU-039 — Weak-reference support and implementation edge cases ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** Can every Python object be weakly referenced, and what should you check when a class uses `__slots__`?
+
+**What the interviewer evaluates:** Knowledge of type capabilities and practical constraints of the weakref protocol.
+
+**Answer**
+
+No. Weak-reference support depends on the object's type. Most ordinary user-defined class instances support it, but built-in `list` and `dict` instances do not directly support weak references. Their subclasses can support weak references. Types such as `int` and `tuple` do not become weak-referenceable merely by subclassing.
+
+When a class defines `__slots__`, weak-reference support is disabled unless `'__weakref__'` is included in the slots or inherited from a base class that already provides it.
+
+Also distinguish `weakref.ref` from `weakref.proxy`: a dead reference returns `None`, while using a proxy after its referent is gone raises `ReferenceError`. For bound methods, use `WeakMethod` rather than assuming a plain weak reference will preserve the method binding.
+
+**Interview-Ready Answer (EN)**
+
+“Not every object supports weak references. I verify the target type rather than assuming the protocol is universal. With __slots__, I include __weakref__ when weak-reference support is required and is not inherited. I also account for the different failure behavior of refs and proxies, and use WeakMethod for bound methods.”
+
+---
+
+## FU-040 — Weak references, finalizers, and ownership design ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How would you design a weak-reference-based registry without introducing a new memory leak or unreliable cleanup behavior?
+
+**What the interviewer evaluates:** Senior-level lifecycle design, callback safety, and deterministic resource management.
+
+**Answer**
+
+First, define ownership explicitly: the registry observes objects but should not own them. Select a weak container based on whether keys, values, or elements should be weak. Ensure that callbacks, closures, stored arguments, and bound methods do not retain the target strongly, directly or indirectly.
+
+For bound-method subscriptions, use an approach designed for weak methods, such as `WeakMethod`, and remove stale entries safely. Treat object disappearance as a normal state and make notification or lookup code tolerate it.
+
+Do not use weak references as a substitute for closing resources. Use context managers or `try/finally` for deterministic cleanup. If finalization is genuinely needed, `weakref.finalize` is usually a safer high-level tool than a custom `__del__`, but its callback must not retain the target.
+
+**Interview-Ready Answer (EN)**
+
+“I separate ownership from observation. The registry stores weak references so it does not keep subscribers alive, and I ensure callbacks and closures do not capture the target strongly. I handle expired references as a normal case and use WeakMethod for bound-method subscriptions where appropriate. For external resources, I still use context managers; weak references and finalizers are not deterministic resource-management mechanisms.”
