@@ -233,3 +233,20 @@
 - **FU-050 — Практическое применение:** Когда в backend-пайплайне обработки данных следует выбрать генератор вместо списка? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 - **FU-051 — Граничные случаи:** Что происходит, если внутри генератора возникает `StopIteration`, и как `yield from` выполняет делегирование? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 - **FU-052 — Senior-level суждение:** Какие production-риски следует учитывать при использовании генераторов и асинхронных генераторов для потоков, связанных с ресурсами? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+## PY-014 — Decorators, Closures & Function Wrapping ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Основной вопрос:** Объясните, как работают декораторы Python. Как декораторы связаны с замыканиями и обёртками функций и какие production-аспекты необходимо учитывать?
+
+**Оригинальная формулировка (EN):** Explain how Python decorators work. How are decorators related to closures and function wrappers, and what production concerns should you consider?
+
+**Что оценивается:** Применение декораторов и вычисление при определении функции, преобразование callable, выполнение wrapper, семантика замыканий и free variables, различие `nonlocal` и `global`, фабрики декораторов, `functools.wraps` / `__wrapped__`, порядок вложенных декораторов, async-aware wrappers, изменяемое состояние замыканий и конкурентность, сохранение исключений и возвращаемых значений.  
+**Уровень:** L3 — Advanced/Senior  
+**Приоритет:** P0 — Core
+
+Дополнительные вопросы:
+
+- **FU-053 — Механизм:** Как Python применяет декоратор и когда именно он выполняется? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-054 — Практическое применение:** Как спроектировать настраиваемый декоратор для логирования, повторных попыток или контроля доступа? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-055 — Граничные случаи:** Что такое замыкание, как работает `nonlocal` и какие проблемы может создавать изменяемое состояние замыкания? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-056 — Senior-level суждение:** Почему `functools.wraps`, порядок декораторов и поддержка async важны в production-системах? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
