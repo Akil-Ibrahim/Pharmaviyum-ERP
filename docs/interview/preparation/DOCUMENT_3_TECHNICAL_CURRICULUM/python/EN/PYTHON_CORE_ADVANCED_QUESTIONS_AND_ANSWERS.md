@@ -6,7 +6,7 @@
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
-English study material for PY-001–PY-007 and FU-001–FU-028. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
+English study material for PY-001–PY-008 and FU-001–FU-032. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
 
 **Review status:** Authored; independent technical and editorial review pending. Do not treat this material as finally approved until both reviews are complete.
 
@@ -1391,3 +1391,151 @@ Python salts the hashes of str and bytes with a process-specific unpredictable v
 **Interview-Ready Answer (EN)**
 
 “Hash randomization makes collision attacks based on predictable string and bytes hashes harder. It is a mitigation, not a substitute for input limits and service-level protection. Since hashes are not stable across process runs, I never persist Python hash() results or use them as cross-process identifiers.”
+
+---
+
+# PY-008 — Main Question
+
+**Question (EN):** How does memory management work in Python, and how do reference counting and garbage collection interact?
+
+**What the interviewer evaluates**
+
+- Understanding object lifetime, strong references, and reachability.
+- Distinguishing reference counting from cyclic garbage collection.
+- Awareness of CPython-specific behavior versus Python language guarantees.
+- Ability to reason about resource cleanup and production memory growth.
+
+**Short Answer**
+
+Python manages objects through an implementation-controlled memory manager. In CPython, reference counting usually reclaims an object when its strong reference count reaches zero. Reference counting alone cannot reclaim unreachable reference cycles, so CPython also has a cyclic garbage collector that detects and collects supported cycles. These mechanisms manage object memory; they do not replace deterministic cleanup of external resources such as files, sockets, or database connections.
+
+**Explanation**
+
+A Python variable is a name bound to an object, not a manually managed memory slot. An object remains alive while it is reachable through references maintained by the runtime. Removing one name does not necessarily destroy the object: other names, containers, closures, frames, caches, or extension code may still hold references to it.
+
+**Reference counting in CPython**
+
+CPython maintains reference-count information for objects. Creating or releasing strong references changes the relevant count. When the count reaches zero, CPython can deallocate the object immediately and release references held by that object in turn. This often gives prompt reclamation for ordinary acyclic object graphs.
+
+This is a CPython implementation strategy, not a language-level promise that an object is destroyed at a particular moment. Other Python implementations may use different memory-management strategies. Code must not depend on immediate finalization merely because it happens in a particular CPython build.
+
+**Why a cyclic collector is needed**
+
+Reference counting alone cannot reclaim a group of objects that refer to one another even when the group is no longer reachable from the rest of the program. Each object in the cycle still has an internal reference, so none reaches a zero count.
+
+CPython's cyclic garbage collector supplements reference counting. It tracks relevant container objects, examines reference relationships, and identifies cycles that are unreachable from program roots. It can then clear and reclaim supported cyclic structures. Not every object needs to be tracked; atomic objects such as many integers and strings generally do not participate in reference cycles.
+
+The gc module exposes collection controls, statistics, debugging facilities, and inspection helpers. Manual gc.collect() is primarily a diagnostic or specialized operational tool, not a routine fix for unexplained memory growth.
+
+**Python 3.15.2 details**
+
+The gc module documents generational collection and exposes per-generation statistics. In Python 3.15, gc.get_stats() and collection callbacks include duration and candidates, which help measure collection cost and work performed. Collection thresholds and generation behavior have changed across recent releases, including changes in 3.14 and 3.14.5; avoid memorizing old threshold behavior as a permanent contract. Consult the documentation for the exact runtime version being deployed.
+
+**Object memory is not the same as process memory**
+
+The Python memory manager allocates Python objects from a private heap and uses allocator layers. When an object is deallocated, its memory may become reusable by Python's allocator without being returned immediately to the operating system. Therefore, a process's RSS does not necessarily fall when objects are freed. A high or stable RSS alone does not prove that live Python objects are leaking.
+
+Distinguish:
+- **Live-object retention:** objects remain reachable because references are still held.
+- **Uncollectable or delayed cycles:** cyclic structures or finalization behavior prevent immediate reclamation.
+- **Allocator retention/fragmentation:** freed blocks remain available to the allocator but are not returned to the OS.
+- **Native-memory growth:** C extensions or external libraries allocate memory outside the Python object heap.
+
+**Resource management**
+
+Memory management and resource management are related but different. Files, sockets, transactions, locks, and database connections should be released explicitly, normally with context managers or try/finally. Do not rely on __del__() or garbage collection to close them at a predictable time. Finalizers can run at uncertain times, and object resurrection or reference cycles can complicate finalization.
+
+**Senior-Level Perspective**
+
+When diagnosing memory growth, first define the symptom: increasing live objects, increasing allocation rate, rising RSS, or growth in native allocations. Reproduce under representative load, compare snapshots, identify retaining references, and inspect allocation sources. Tools such as tracemalloc, gc diagnostics, process metrics, and native profilers answer different questions. Do not disable cyclic GC or force frequent full collections without evidence; either can hide the real issue or add latency.
+
+**Interview-Ready Answer (EN)**
+
+“Python manages object memory automatically. In CPython, reference counting usually reclaims an object when its last strong reference is released. However, reference counting alone cannot reclaim unreachable groups of objects that reference one another, so CPython also has a cyclic garbage collector that detects and collects supported reference cycles.
+
+I distinguish this implementation detail from the Python language guarantee: application code should not depend on a specific object-destruction time. I also distinguish object memory from external resources. Files, sockets, and database connections should be closed deterministically with context managers or try/finally, not by relying on garbage collection.
+
+For production memory issues, I separate live-object retention from allocator behavior and native-memory growth. A process RSS that does not fall does not automatically mean Python objects are leaking. I use allocation tracing, object and GC diagnostics, and process-level metrics to find the actual source.”
+
+**References**
+
+- [Python 3.15.2 C API: Memory Management](https://docs.python.org/3.15/c-api/memory.html)
+- [Python 3.15.2 Library Reference: gc — Garbage Collector interface](https://docs.python.org/3.15/library/gc.html)
+- [Python 3.15.2 C API: Supporting Cyclic Garbage Collection](https://docs.python.org/3.15/c-api/gcsupport.html)
+- [Python 3.15.2 Data Model: object.__del__()](https://docs.python.org/3.15/reference/datamodel.html#object.__del__)
+- [Python FAQ: How does Python manage memory?](https://docs.python.org/3.15/faq/design.html#how-does-python-manage-memory)
+
+---
+
+## FU-029 — Reference counting versus cyclic garbage collection
+
+**Question (EN):** What is the difference between reference counting and cyclic garbage collection in CPython?
+
+**What the interviewer evaluates:** Understanding of object lifetime, unreachable cycles, and the complementary roles of the two mechanisms.
+
+**Answer**
+
+Reference counting tracks strong references to an object. In CPython, when the count reaches zero, the object can normally be deallocated immediately. It is effective for ordinary acyclic object graphs, but it cannot reclaim a cycle whose members keep references to one another.
+
+The cyclic garbage collector supplements reference counting. It examines supported container objects and identifies cycles that are unreachable from the program's roots. It can then reclaim those structures. The collector is not a replacement for reference counting; the two mechanisms solve different parts of the object-lifetime problem.
+
+**Interview-Ready Answer (EN)**
+
+“Reference counting handles the common case: when an object's last strong reference disappears, CPython can reclaim it. Cyclic GC handles a case reference counting cannot solve by itself—unreachable groups of objects that reference each other. CPython combines both mechanisms.”
+
+---
+
+## FU-030 — Reference cycles and reachability
+
+**Question (EN):** Why can a reference cycle remain in memory even when the application no longer uses any of its objects?
+
+**What the interviewer evaluates:** Ability to distinguish local reference counts from global reachability.
+
+**Answer**
+
+Consider two container objects that refer to each other. Even after the application drops every external reference to them, each object still has an incoming reference from the other. Their reference counts therefore remain non-zero, although the group is unreachable from the rest of the program.
+
+CPython's cyclic collector detects supported unreachable cycles by examining tracked containers and their references. A cycle is not automatically a leak: if it remains reachable, it is still live by design. The important distinction is whether the object graph can be reached from program roots, not merely whether objects refer to one another.
+
+**Interview-Ready Answer (EN)**
+
+“A cycle can keep its members' reference counts above zero even after all external references disappear. Reference counting cannot reclaim that group on its own. CPython's cyclic collector identifies supported cycles that are unreachable from the program and can reclaim them. A reachable cycle is not garbage—it is still part of the live object graph.”
+
+---
+
+## FU-031 — del, finalizers, and deterministic cleanup
+
+**Question (EN):** Does using del or defining __del__() guarantee that an object or its resources are released immediately?
+
+**What the interviewer evaluates:** Understanding name binding, finalization semantics, and reliable resource management.
+
+**Answer**
+
+The del statement removes a name binding or an item reference; it does not directly command the runtime to destroy the object. The object may remain alive if other references exist. In CPython, releasing the final strong reference often triggers deallocation promptly, but this timing is not a portable Python language guarantee.
+
+A __del__() finalizer is not a reliable resource-management mechanism. Its execution timing can be uncertain, finalization can be complicated by cycles or object resurrection, and interpreter shutdown introduces additional constraints. Use context managers (with) or try/finally to close files, sockets, and database connections deterministically.
+
+**Interview-Ready Answer (EN)**
+
+“del removes a reference; it does not guarantee object destruction. The object may still be referenced elsewhere, and prompt deallocation after the last reference is a CPython behavior rather than a portable timing guarantee. I use context managers or try/finally for deterministic resource cleanup and do not rely on __del__() for closing critical resources.”
+
+---
+
+## FU-032 — Diagnosing memory growth in production
+
+**Question (EN):** How would you investigate steadily increasing memory usage in a long-running Python service?
+
+**What the interviewer evaluates:** Production debugging, measurement discipline, and the ability to distinguish Python heap retention from process and native memory.
+
+**Answer**
+
+First, clarify what is growing: process RSS, traced Python allocations, the number of live objects, or memory allocated by native extensions. Reproduce the workload and compare measurements over time rather than assuming every RSS increase is a Python object leak.
+
+Use tracemalloc snapshots to identify Python allocation sites and compare retained allocations. Use gc statistics and carefully scoped object/referrer inspection to investigate cycles and retaining references. Correlate these findings with process-level metrics and, when necessary, native-memory profiling because C extensions and external libraries may allocate outside the Python object heap.
+
+Also inspect caches, unbounded queues, global registries, task references, closures, and long-lived request state. Do not respond by blindly calling gc.collect() or disabling GC: first establish the cause and measure the effect of any change.
+
+**Interview-Ready Answer (EN)**
+
+“I start by distinguishing live Python allocations, process RSS, and native memory. I compare tracemalloc snapshots under a repeatable workload, inspect object retention and GC statistics, and correlate that with process metrics. I also check common retention sources such as unbounded caches, queues, background tasks, and global registries. I only tune or force garbage collection after identifying a specific GC-related cause and measuring the impact.”
+
