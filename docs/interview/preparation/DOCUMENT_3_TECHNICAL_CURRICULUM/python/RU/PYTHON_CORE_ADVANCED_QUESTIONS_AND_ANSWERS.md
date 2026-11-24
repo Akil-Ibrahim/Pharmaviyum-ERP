@@ -246,21 +246,21 @@ Backend может обращаться к внешнему API, выполня�
 
 # PY-003 — Основной вопрос ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Вопрос (RU):** Как Python выполняет программу — от исходного кода до поведения во время выполнения?
+**Вопрос (RU):** Как Python ![ENTITY: Python](https://img.shields.io/badge/ENTITY-Python-2563eb) выполняет программу — от исходного кода до поведения во время выполнения?
 
-**Оригинальная формулировка (EN):** How does Python execute a program from source code to runtime behavior?
+**Оригинальная формулировка (EN):** How does Python execute a program from source code to runtime ![ENTITY: Runtime](https://img.shields.io/badge/ENTITY-Runtime-0ea5e9) behavior?
 
 ## Главная идея
 
-Python не выполняет исходный код просто построчно по мере чтения файла. В CPython исходный текст декодируется, разбирается и компилируется. Затем полученные объекты кода выполняются интерпретатором.
+Python не выполняет исходный код просто построчно по мере чтения файла. В CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) исходный текст декодируется, разбирается и компилируется. Затем полученные объекты кода выполняются интерпретатор ![ENTITY: Interpreter](https://img.shields.io/badge/ENTITY-Interpreter-64748b)ом.
 
 Удобная модель:
 
 1. **Read and decode:** CPython читает исходный файл и декодирует его в текст.
-2. **Parse:** парсер проверяет грамматику и строит абстрактное синтаксическое дерево (AST).
-3. **Compile:** компилятор преобразует разобранную программу в объекты кода с байткодом и метаданными.
+2. **Parse:** парсер ![ENTITY: Parser](https://img.shields.io/badge/ENTITY-Parser-7c3aed) проверяет грамматику и строит абстрактное синтаксическое дерево (AST ![ENTITY: AST](https://img.shields.io/badge/ENTITY-AST-7c3aed)).
+3. **Compile:** компилятор ![ENTITY: Compiler](https://img.shields.io/badge/ENTITY-Compiler-7c3aed) преобразует разобранную программу в объекты кода с байткод ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b)ом и метаданными.
 4. **Execute:** интерпретатор выполняет эти объекты кода в runtime-окружении.
-5. **Interact:** программа может вызывать нативные расширения, библиотеки и сервисы операционной системы.
+5. **Interact:** программа может вызывать нативные расширения ![ENTITY: Native Extension](https://img.shields.io/badge/ENTITY-Native-Extension-0f766e), библиотеки и сервисы операционной системы ![ENTITY: Operating System](https://img.shields.io/badge/ENTITY-Operating-System-64748b).
 
 Это обычная модель выполнения CPython. Python определяет поведение языка, но другие реализации могут использовать другие механизмы.
 
@@ -268,17 +268,17 @@ Python не выполняет исходный код просто постро
 
 Важно разделять три события:
 
-- **Compilation:** тело функции компилируется в code object.
+- **Compilation ![ENTITY: Compilation](https://img.shields.io/badge/ENTITY-Compilation-7c3aed):** тело функции компилируется в code object ![ENTITY: Code Object](https://img.shields.io/badge/ENTITY-Code-Object-7c3aed).
 - **Function definition:** когда выполнение доходит до инструкции `def`, Python создаёт объект функции и связывает с именем.
 - **Function call:** тело функции начинает выполняться только при вызове.
 
 Тело функции компилируется вместе с содержащим его модулем, но не выполняется только потому, что функция определена. Поэтому runtime-ошибка внутри тела может проявиться лишь при вызове функции. Синтаксические ошибки выявляются во время parsing или compilation — до выполнения инструкций верхнего уровня модуля.
 
-## Bytecode, code object и function object
+## Bytecode, code object и function object ![ENTITY: Function Object](https://img.shields.io/badge/ENTITY-Function-Object-16a34a)
 
-- **Bytecode (байткод)** — формат инструкций, используемый интерпретатором CPython. Это не машинный код процессора.
+- **Bytecode (байткод)** — формат инструкций, используемый интерпретатором CPython. Это не машинный код ![ENTITY: Machine Code](https://img.shields.io/badge/ENTITY-Machine-Code-d97706) процессора.
 - **Code object** хранит скомпилированные инструкции и метаданные: константы, имена, информацию о позициях исходного кода.
-- **Function object** — вызываемый объект, который создаётся при выполнении определения функции. Он ссылается на code object и хранит контекст выполнения: глобальное пространство имён, значения аргументов по умолчанию и замыкания.
+- **Function object** — вызываемый объект, который создаётся при выполнении определения функции. Он ссылается на code object и хранит контекст выполнения: глобальное пространство имён ![ENTITY: Global Namespace](https://img.shields.io/badge/ENTITY-Global-Namespace-64748b), значения аргументов по умолчанию и замыкания.
 
 Ключевое различие: code object представляет скомпилированный код, а function object связывает этот код с контекстом, в котором он будет выполняться.
 
@@ -286,13 +286,13 @@ Python не выполняет исходный код просто постро
 
 В документации Python 3.15.2 описаны следующие концептуальные уровни runtime:
 
-- **Process:** ресурсы операционной системы — память, файловые дескрипторы, сокеты.
+- **Process ![ENTITY: Process](https://img.shields.io/badge/ENTITY-Process-7c3aed):** ресурсы операционной системы — память, файловые дескрипторы ![ENTITY: File Descriptor](https://img.shields.io/badge/ENTITY-File-Descriptor-64748b), сокеты.
 - **Python global runtime:** состояние, общее на уровне Python runtime.
 - **Interpreter:** состояние и окружение конкретного интерпретатора.
-- **Thread:** системный поток, выполняющий Python- и нативный код.
+- **Thread ![ENTITY: Thread](https://img.shields.io/badge/ENTITY-Thread-16a34a):** системный поток, выполняющий Python- и нативный код.
 - **Thread state:** состояние выполнения Python, связанное с потоком.
 
-Runtime может содержать несколько интерпретаторов, а один интерпретатор — несколько thread states. Это концептуальная модель: реализация не обязана представлять каждый уровень отдельным физическим объектом.
+Runtime может содержать несколько интерпретаторов, а один интерпретатор — несколько thread states ![ENTITY: Thread State](https://img.shields.io/badge/ENTITY-Thread-State-16a34a). Это концептуальная модель: реализация не обязана представлять каждый уровень отдельным физическим объектом.
 
 Не путай Python interpreter с процессом операционной системы. Процесс — это контейнер выполнения на уровне ОС, а интерпретатор — реализация Python, которая выполняет код внутри этого окружения.
 
@@ -304,21 +304,21 @@ Runtime может содержать несколько интерпретат�
 
 ## Adaptive specialization в современном CPython
 
-Современный CPython может адаптировать выполнение к наблюдаемому поведению программы. Он способен специализировать инструкции для часто встречающихся сценариев и использовать inline caches, чтобы ускорять повторяющиеся операции.
+Современный CPython может адаптировать выполнение к наблюдаемому поведению программы. Он способен специализировать инструкции для часто встречающихся сценариев и использовать inline caches ![ENTITY: Inline Cache](https://img.shields.io/badge/ENTITY-Inline-Cache-d97706), чтобы ускорять повторяющиеся операции.
 
 Это внутренняя оптимизация, а не изменение семантики языка Python. Конкретные инструкции и стратегия специализации могут меняться между версиями CPython.
 
 Модуль `dis` позволяет исследовать байткод CPython. Режим adaptive может показывать специализированные инструкции, например через `dis.dis(function, adaptive=True)`. Это полезно для диагностики, но байткод нельзя считать стабильным интерфейсом приложения.
 
-## Что такое файл .pyc?
+## Что такое файл .pyc ![ENTITY: .pyc Cache](https://img.shields.io/badge/ENTITY-PYC-Cache-0891b2)?
 
-Python может кэшировать скомпилированный байткод модулей в файлах `.pyc`, обычно в каталоге `__pycache__`. Если кэш подходит, при импорте Python может использовать его вместо повторной компиляции исходного файла.
+Python может кэшировать скомпилированный байткод модулей в файлах `.pyc`, обычно в каталоге `__pycache__`. Если кэш подходит, при импорт ![ENTITY: Import](https://img.shields.io/badge/ENTITY-Import-0ea5e9)е Python может использовать его вместо повторной компиляции исходного файла.
 
 Это оптимизация, а не обязательный этап каждого запуска. Файл `.pyc` содержит байткод Python, а не машинный код. Python проверяет актуальность кэша; само наличие файла ещё не означает, что он обязательно будет использован.
 
 ## Как это связано с backend-сервисом?
 
-Возьмём FastAPI-приложение. Во время запуска процесс запускает Python, после чего приложение импортирует entry point и зависимости. Выполняется код верхнего уровня: создаются объекты, регистрируются маршруты и инициализируются компоненты.
+Возьмём FastAPI ![ENTITY: FastAPI](https://img.shields.io/badge/ENTITY-FastAPI-16a34a)-приложение. Во время запуска процесс запускает Python, после чего приложение импортирует entry point и зависимости. Выполняется код верхнего уровня: создаются объекты, регистрируются маршруты и инициализируются компоненты.
 
 Позже, когда приходит HTTP-запрос, вызываются соответствующие endpoint- и service-функции. Ошибка при импорте или инициализации модуля может помешать запуску приложения. Ошибка внутри endpoint может проявиться только тогда, когда запрос дойдёт до этого кода.
 
@@ -336,7 +336,7 @@ Python может кэшировать скомпилированный байт
 
 ---
 
-## PY-003 / FU-1 — Какие основные этапы проходит Python-программа? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-003 / FU-1 — Какие основные этапы проходит Python-программа? ![ENTITY: Python](https://img.shields.io/badge/ENTITY-Python-2563eb) ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: AST](https://img.shields.io/badge/ENTITY-AST-7c3aed) ![ENTITY: Compiler](https://img.shields.io/badge/ENTITY-Compiler-7c3aed) ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b) ![ENTITY: Interpreter](https://img.shields.io/badge/ENTITY-Interpreter-64748b) ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Вопрос (RU):** Какие основные этапы проходит исходный код Python до выполнения инструкций в CPython?
 
@@ -352,9 +352,9 @@ Python может кэшировать скомпилированный байт
 
 ---
 
-## PY-003 / FU-2 — Почему запуск модуля отличается от его импорта? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-003 / FU-2 — Почему запуск модуля отличается от его импорта? ![ENTITY: Module](https://img.shields.io/badge/ENTITY-Module-0ea5e9) ![ENTITY: Import](https://img.shields.io/badge/ENTITY-Import-0ea5e9) ![ENTITY: Global Namespace](https://img.shields.io/badge/ENTITY-Global-Namespace-64748b) ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
-**Вопрос (RU):** Как исследовать ситуацию, когда модуль Python ведёт себя по-разному при запуске как скрипт и при импорте из другого модуля?
+**Вопрос (RU):** Как исследовать ситуацию, когда модуль ![ENTITY: Module](https://img.shields.io/badge/ENTITY-Module-0ea5e9) Python ведёт себя по-разному при запуске как скрипт и при импорте из другого модуля?
 
 **Оригинальная формулировка (EN):** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module?
 
@@ -368,7 +368,7 @@ Python может кэшировать скомпилированный байт
 
 ---
 
-## PY-003 / FU-3 — Какие детали выполнения зависят от реализации? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-003 / FU-3 — Какие детали выполнения зависят от реализации? ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Python Bytecode](https://img.shields.io/badge/ENTITY-Python-Bytecode-64748b) ![ENTITY: Adaptive Specialization](https://img.shields.io/badge/ENTITY-Adaptive-Specialization-d97706) ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b) ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Вопрос (RU):** Какие особенности байткода и поведения интерпретатора являются деталями реализации, а не гарантиями языка Python, и почему это важно?
 
@@ -376,7 +376,7 @@ Python может кэшировать скомпилированный байт
 
 **Объяснение**
 
-Python определяет семантику языка, но не единый формат байткода или архитектуру интерпретатора. Инструкции CPython, inline caches, adaptive specialization и внутреннее представление frames — детали реализации, которые могут меняться между версиями. В частности, не следует считать, что каждый вызов функции обязательно создаёт доступный Python-коду объект `PyFrameObject`: внутреннее представление execution frame в CPython и объекты frame, доступные для introspection, — разные понятия.
+Python определяет семантику языка, но не единый формат байткода или архитектуру интерпретатора. Инструкции CPython, inline caches, adaptive specialization ![ENTITY: Adaptive Specialization](https://img.shields.io/badge/ENTITY-Adaptive-Specialization-d97706) и внутреннее представление frames — детали реализации, которые могут меняться между версиями. В частности, не следует считать, что каждый вызов функции обязательно создаёт доступный Python-коду объект `PyFrameObject ![ENTITY: PyFrameObject](https://img.shields.io/badge/ENTITY-PyFrameObject-64748b)`: внутреннее представление execution frame в CPython и объекты frame, доступные для introspection, — разные понятия.
 
 **Ответ для собеседования (RU)**
 
@@ -384,7 +384,7 @@ Python определяет семантику языка, но не едины�
 
 ---
 
-## PY-003 / FU-4 — Как выбрать уровень диагностики? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-003 / FU-4 — Как выбрать уровень диагностики? ![ENTITY: Python](https://img.shields.io/badge/ENTITY-Python-2563eb) ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) ![ENTITY: Operating System](https://img.shields.io/badge/ENTITY-Operating-System-64748b) ![ENTITY: Runtime](https://img.shields.io/badge/ENTITY-Runtime-0ea5e9) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Вопрос (RU):** Как при диагностике production-проблемы определить, нужно ли исследовать уровень Python, внутреннее устройство CPython или окружение операционной системы и runtime?
 
