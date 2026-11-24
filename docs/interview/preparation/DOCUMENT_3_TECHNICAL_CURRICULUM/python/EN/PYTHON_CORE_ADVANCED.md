@@ -119,6 +119,18 @@ Use the same entity badge and color whenever the entity appears in this curricul
 - ![__iter__](https://img.shields.io/badge/-__iter__-0ea5e9?style=flat-square) — __iter__
 - ![__next__](https://img.shields.io/badge/-__next__-0ea5e9?style=flat-square) — __next__
 
+- ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) — list
+- ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) — tuple
+- ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) — set
+- ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) — dict
+- ![frozenset](https://img.shields.io/badge/-frozenset-0891b2?style=flat-square) — frozenset
+- ![frozendict](https://img.shields.io/badge/-frozendict-0891b2?style=flat-square) — frozendict
+- ![Hash Table](https://img.shields.io/badge/-Hash-Table-7c3aed?style=flat-square) — Hash Table
+- ![Insertion Order](https://img.shields.io/badge/-Insertion-Order-64748b?style=flat-square) — Insertion Order
+- ![Shallow Copy](https://img.shields.io/badge/-Shallow-Copy-d97706?style=flat-square) — Shallow Copy
+- ![Mapping](https://img.shields.io/badge/-Mapping-7c3aed?style=flat-square) — Mapping
+- ![Sequence](https://img.shields.io/badge/-Sequence-0ea5e9?style=flat-square) — Sequence
+
 ## PY-001 — GIL ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square), Concurrency & Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Main Question:** What is the Global Interpreter Lock (GIL) in CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square), and how does it affect concurrency ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) and parallelism ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square)?
@@ -223,7 +235,7 @@ Follow-ups:
 
 ## PY-007 — Built-in Collections: Semantics & Selection ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Main Question:** How do Python lists, tuples, sets, and dictionaries differ internally and semantically?
+**Main Question:** ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) How do Python lists, tuples, sets, and dictionaries differ internally and semantically?
 
 **Evaluation focus:** Collection contracts, mutability, ordering, hashability, typical complexity, and memory/performance trade-offs.  
 **Level:** L2–L3 — Intermediate/Advanced  
@@ -231,10 +243,10 @@ Follow-ups:
 
 Follow-ups:
 
-- **FU-1 — Mechanism:** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-2 — Application:** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — Edge cases and trade-offs:** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-4 — Senior judgment:** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) Mechanism:** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — ![list](https://img.shields.io/badge/-list-2563eb?style=flat-square) ![tuple](https://img.shields.io/badge/-tuple-64748b?style=flat-square) ![set](https://img.shields.io/badge/-set-16a34a?style=flat-square) ![dict](https://img.shields.io/badge/-dict-7c3aed?style=flat-square) Application:** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — ![Insertion Order](https://img.shields.io/badge/-Insertion-Order-64748b?style=flat-square) ![Shallow Copy](https://img.shields.io/badge/-Shallow-Copy-d97706?style=flat-square) ![Hashability](https://img.shields.io/badge/-Hashability-7c3aed?style=flat-square) Edge cases and trade-offs:** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — ![Hash Table](https://img.shields.io/badge/-Hash-Table-7c3aed?style=flat-square) ![Mapping](https://img.shields.io/badge/-Mapping-7c3aed?style=flat-square) Senior judgment:** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 
 ## PY-008 — Dictionary Internals & Hash Tables ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
