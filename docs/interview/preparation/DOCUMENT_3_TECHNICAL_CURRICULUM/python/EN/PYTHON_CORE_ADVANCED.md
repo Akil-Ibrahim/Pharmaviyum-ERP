@@ -51,18 +51,18 @@ Follow-ups:
 
 ## PY-002 — Concurrency vs Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
-**Main Question:** What is the difference between concurrency and parallelism, and why is the distinction important in Python?
+**Main Question:** What is the difference between concurrency ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) and parallelism ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706), and why is the distinction important in Python?
 
-**Evaluation focus:** Concurrency versus simultaneous execution, I/O-bound and CPU-bound workloads, and selecting an appropriate Python execution model.  
+**Evaluation focus:** Concurrency versus simultaneous execution, I/O-bound ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) and CPU-bound ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) workloads, and selecting an appropriate Python execution model.  
 **Level:** L2–L3 — Intermediate/Advanced  
 **Priority:** P0 — Core
 
 Follow-ups:
 
-- **FU-1 — Fundamentals:** Can concurrency exist without parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-2 — Workload analysis:** What is the difference between I/O-bound and CPU-bound workloads? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
-- **FU-3 — CPython behavior:** How does the GIL affect concurrency and parallelism in CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
-- **FU-4 — Senior judgment:** How do you decide whether a workload needs concurrency or parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+- **FU-1 — Fundamentals:** Can concurrency exist without parallelism? ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Workload analysis:** What is the difference between I/O-bound and CPU-bound workloads? ![ENTITY: I/O-bound](https://img.shields.io/badge/ENTITY-I/O-bound-0891b2) ![ENTITY: CPU-bound](https://img.shields.io/badge/ENTITY-CPU-bound-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — CPython ![ENTITY: CPython](https://img.shields.io/badge/ENTITY-CPython-64748b) behavior:** How does the GIL ![ENTITY: GIL](https://img.shields.io/badge/ENTITY-GIL-2563eb) affect concurrency and parallelism in CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior judgment:** How do you decide whether a workload needs concurrency or parallelism? ![ENTITY: Concurrency](https://img.shields.io/badge/ENTITY-Concurrency-0ea5e9) ![ENTITY: Parallelism](https://img.shields.io/badge/ENTITY-Parallelism-d97706) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-003 — Python Execution Model & Runtime ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
