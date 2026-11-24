@@ -33,7 +33,7 @@ GIL помогает CPython координировать доступ к сос
 
 ## Когда GIL влияет на производительность?
 
-- **I/O-bound ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) задачи:** потоки могут быть полезны. Пока один поток ждёт сеть, файл или другую блокирующую операцию ввода-вывода, GIL обычно освобождается и другой поток может работать.
+- **I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) задачи:** потоки могут быть полезны. Пока один поток ждёт сеть, файл или другую блокирующую операцию ввода-вывода, GIL обычно освобождается и другой поток может работать.
 - **CPU-bound задачи на чистом Python:** добавление потоков обычно не даёт параллельного выполнения на нескольких ядрах. Часто лучше подходит multiprocessing.
 - **Нативные расширения:** некоторые библиотеки освобождают GIL при выполнении нативного кода, поэтому их вычисления могут выполняться параллельно.
 
@@ -168,7 +168,7 @@ Backend может обращаться к внешнему API, выполня�
 
 «Конкурентность — это возможность управлять несколькими задачами, выполнение которых пересекается во времени. Параллелизм означает фактическое одновременное выполнение нескольких задач, обычно на разных ядрах процессора.
 
-Конкурентность полезна для I/O-bound ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) задач, потому что программа может выполнять другие задачи, пока одна операция ожидает ответа. Параллелизм полезен для CPU-bound задач, поскольку несколько вычислений могут выполняться одновременно.
+Конкурентность полезна для I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) задач, потому что программа может выполнять другие задачи, пока одна операция ожидает ответа. Параллелизм полезен для CPU-bound задач, поскольку несколько вычислений могут выполняться одновременно.
 
 В Python для конкурентности часто используют threading и asyncio, а multiprocessing позволяет организовать параллельное выполнение. В обычных сборках CPython GIL ограничивает параллельное выполнение Python bytecode несколькими потоками».
 
@@ -190,7 +190,7 @@ Backend может обращаться к внешнему API, выполня�
 
 ---
 
-## PY-002 / FU-2 — Чем отличаются I/O-bound и CPU-bound задачи? ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-002 / FU-2 — Чем отличаются I/O-bound и CPU-bound задачи? ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Вопрос (RU):** Чем отличаются I/O-bound и CPU-bound задачи?
 
