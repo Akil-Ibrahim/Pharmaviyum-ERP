@@ -3,7 +3,7 @@
 **Язык:** Русский  
 **Базовая версия Python:** 3.15.2 — отмечать поведение, зависящее от версии, и отделять гарантии языка Python от деталей реализации CPython.  
 **Распределение раздела:** 45 основных вопросов + 180 дополнительных вопросов = 225  
-**Текущее покрытие:** PY-001–PY-009 и FU-001–FU-036  
+**Текущее покрытие:** PY-001–PY-010 и FU-001–FU-040  
 **Правило нумерации:** Ровно четыре Follow-up на каждый основной вопрос; идентификаторы FU нумеруются сквозным образом и не сбрасываются между основными вопросами.  
 **Файл ответов:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Английская версия:** [EN Question Map](../EN/PYTHON_CORE_ADVANCED.md)
@@ -167,3 +167,20 @@
 - **FU-034 — Достижимость:** Почему цикл ссылок может оставаться в памяти, даже если приложение больше не использует ни один из его объектов? ![TYPE](https://img.shields.io/badge/TYPE-Reachability-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 - **FU-035 — Жизненный цикл ресурсов:** Гарантируют ли del или определение __del__() немедленное уничтожение объекта или освобождение его ресурсов? ![TYPE](https://img.shields.io/badge/TYPE-Resource_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 - **FU-036 — Production-диагностика:** Как бы вы исследовали устойчивый рост потребления памяти в долго работающем Python-сервисе? ![TYPE](https://img.shields.io/badge/TYPE-Production_diagnosis-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+## PY-010 — Слабые ссылки, время жизни объектов и владение памятью ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Основной вопрос:** Что такое слабые ссылки (weak references) в Python, чем они отличаются от сильных ссылок и когда их следует использовать?
+
+**Оригинальная формулировка (EN):** What are weak references in Python, how do they differ from strong references, and when should they be used?
+
+**Что оценивается:** Сильные и слабые ссылки, API `weakref`, слабые контейнеры, поддержка weak references типами, владение объектами, кэши, observer-реестры и риски финализации.  
+**Уровень:** L3 — Advanced/Senior  
+**Приоритет:** P0 — Core
+
+Дополнительные вопросы:
+
+- **FU-037 — Механизм:** Что именно меняется во времени жизни объекта, когда сильная ссылка заменяется слабой? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-038 — Практическое применение:** Когда в реальном приложении следует выбирать `WeakValueDictionary`, `WeakKeyDictionary` или `WeakSet`? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-039 — Граничные случаи:** Можно ли создать слабую ссылку на любой объект Python и что необходимо учитывать, если класс использует `__slots__`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-040 — Senior-level суждение:** Как спроектировать реестр на основе слабых ссылок так, чтобы не создать новую утечку памяти и ненадёжную очистку? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
