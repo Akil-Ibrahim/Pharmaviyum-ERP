@@ -3,7 +3,7 @@
 **Language:** English  
 **Python baseline:** 3.15.2 — label version-specific behavior and distinguish Python language guarantees from CPython implementation details.  
 **Domain allocation:** 45 Main Questions + 180 Follow-ups = 225  
-**Current coverage:** PY-001–PY-018; 18 Main Questions and 72 Follow-ups (FU-1–FU-4 per Main Question)  
+**Current coverage:** PY-001–PY-019; 19 Main Questions and 76 Follow-ups (FU-1–FU-4 per Main Question)  
 **Numbering rule:** Exactly four Follow-ups per Main Question, locally numbered FU-1 through FU-4. Follow-ups are nested under their parent PY question.  
 **Answer file:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Russian version:** [RU Question Map](../RU/PYTHON_CORE_ADVANCED.md)
@@ -248,3 +248,19 @@ Follow-ups:
   - **FU-2 — Application:** How would you use higher-order functions in a backend application? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
   - **FU-3 — Edge cases:** What are closure late binding and shared mutable state risks? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
   - **FU-4 — Senior judgment:** When should you choose functional composition over classes or imperative code? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+
+## PY-019 — Lambda Functions, Anonymous Functions & Functional Idioms ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2--L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P1-d97706)
+
+**Main Question:** What are lambda expressions in Python, how do they work, and when should you use them instead of named functions?
+
+**Evaluation focus:** Lambda syntax and semantics, function objects, expression-only bodies, closures, practical callback use, readability, and choosing between lambda, def, and built-in idioms.  
+**Level:** L2–L3 — Intermediate/Advanced  
+**Priority:** P1 — Important Python Core topic
+
+Follow-ups:
+
+- **FU-1 — Mechanism:** What function object does a lambda expression create, and how does its body differ from a function defined with def? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-2 — Application:** Where are lambda functions useful in Python APIs and data transformations? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-3 — Edge cases:** How do lambda expressions interact with closures, late binding, default arguments, and introspection? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-4 — Senior judgment:** When should you replace a lambda with a named function or a clearer built-in expression? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
