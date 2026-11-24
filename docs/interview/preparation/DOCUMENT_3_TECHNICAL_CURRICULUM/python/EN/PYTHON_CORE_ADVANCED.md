@@ -3,7 +3,7 @@
 **Language:** English  
 **Python baseline:** 3.15.2 — label version-specific behavior and distinguish Python language guarantees from CPython implementation details.  
 **Domain allocation:** 45 Main Questions + 180 Follow-ups = 225  
-**Current coverage:** PY-001–PY-007 and FU-001–FU-028  
+**Current coverage:** PY-001–PY-008 and FU-001–FU-032  
 **Answer file:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Russian version:** [RU Question Map](../RU/PYTHON_CORE_ADVANCED.md)
 
@@ -124,3 +124,18 @@ Follow-ups:
 - **FU-026 — Internal mechanism:** What happens when dictionary keys collide, and why can insertion or lookup become slower?
 - **FU-027 — Correctness and design:** Why is it dangerous to use a mutable object as a dictionary key, and how should a custom key type be designed?
 - **FU-028 — Security and production:** How does hash randomization help protect Python services, and why should hash() not be used as a persistent identifier?
+
+## PY-008 — Memory Management & Garbage Collection
+
+**Main Question:** How does memory management work in Python, and how do reference counting and garbage collection interact?
+
+**Evaluation focus:** Object lifetime, strong references, reachability, reference counting, cyclic GC, deterministic resource cleanup, and production memory diagnostics.  
+**Level:** L3 — Advanced/Senior  
+**Priority:** P0 — Core
+
+Follow-ups:
+
+- **FU-029 — Mechanism:** What is the difference between reference counting and cyclic garbage collection in CPython?
+- **FU-030 — Reachability:** Why can a reference cycle remain in memory even when the application no longer uses any of its objects?
+- **FU-031 — Resource lifecycle:** Does using del or defining __del__() guarantee that an object or its resources are released immediately?
+- **FU-032 — Production diagnosis:** How would you investigate steadily increasing memory usage in a long-running Python service?
