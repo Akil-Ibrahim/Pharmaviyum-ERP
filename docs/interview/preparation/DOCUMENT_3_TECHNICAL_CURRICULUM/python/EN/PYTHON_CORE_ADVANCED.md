@@ -4,6 +4,7 @@
 **Python baseline:** 3.15.2 — label version-specific behavior and distinguish Python language guarantees from CPython implementation details.  
 **Domain allocation:** 45 Main Questions + 180 Follow-ups = 225  
 **Current coverage:** PY-001–PY-009 and FU-001–FU-036  
+**Numbering rule:** Exactly four Follow-ups per Main Question; FU IDs are globally sequential and never reset between Main Questions.  
 **Answer file:** [PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md](./PYTHON_CORE_ADVANCED_QUESTIONS_AND_ANSWERS.md)  
 **Russian version:** [RU Question Map](../RU/PYTHON_CORE_ADVANCED.md)
 
