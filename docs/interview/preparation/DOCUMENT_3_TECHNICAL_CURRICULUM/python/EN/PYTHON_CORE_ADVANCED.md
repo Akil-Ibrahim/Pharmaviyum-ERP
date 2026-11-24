@@ -18,10 +18,10 @@
 
 Follow-ups:
 
-- **FU-001 — Mechanism:** Why does the conventional CPython build use the GIL, and what does the lock actually protect?
-- **FU-002 — Application:** How does the GIL affect CPU-bound and I/O-bound multithreaded workloads in conventional CPython?
-- **FU-003 — Design trade-offs:** How would you choose between threading, multiprocessing, and asyncio for a Python backend workload?
-- **FU-004 — Senior judgment:** What changes in free-threaded CPython, and what should an engineering team verify before adopting it?
+- **FU-001 — Mechanism:** Why does the conventional CPython build use the GIL, and what does the lock actually protect? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-002 — Application:** How does the GIL affect CPU-bound and I/O-bound multithreaded workloads in conventional CPython? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-003 — Design trade-offs:** How would you choose between threading, multiprocessing, and asyncio for a Python backend workload? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-004 — Senior judgment:** What changes in free-threaded CPython, and what should an engineering team verify before adopting it? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-002 — Concurrency vs Parallelism ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
@@ -33,10 +33,10 @@ Follow-ups:
 
 Follow-ups:
 
-- **FU-005 — Fundamentals:** Can concurrency exist without parallelism?
-- **FU-006 — Workload analysis:** What is the difference between I/O-bound and CPU-bound workloads?
-- **FU-007 — CPython behavior:** How does the GIL affect concurrency and parallelism in CPython?
-- **FU-008 — Senior judgment:** How do you decide whether a workload needs concurrency or parallelism?
+- **FU-005 — Fundamentals:** Can concurrency exist without parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-006 — Workload analysis:** What is the difference between I/O-bound and CPU-bound workloads? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-007 — CPython behavior:** How does the GIL affect concurrency and parallelism in CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-008 — Senior judgment:** How do you decide whether a workload needs concurrency or parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-003 — Python Execution Model & Runtime ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
@@ -48,10 +48,10 @@ Follow-ups:
 
 Follow-ups:
 
-- **FU-009 — Mechanism:** What are the main stages between Python source code and the execution of its instructions in CPython?
-- **FU-010 — Application:** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module?
-- **FU-011 — Edge cases and trade-offs:** Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter?
-- **FU-012 — Senior judgment:** When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment?
+- **FU-009 — Mechanism:** What are the main stages between Python source code and the execution of its instructions in CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-010 — Application:** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-011 — Edge cases and trade-offs:** Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-012 — Senior judgment:** When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## Coverage status
 
@@ -71,10 +71,10 @@ Follow-ups:
 
 Follow-ups:
 
-- **FU-013 — Mechanism:** What execution state does CPython need to establish or maintain when entering and executing a Python function?
-- **FU-014 — Application:** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service?
-- **FU-015 — Edge cases and lifecycle:** How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call?
-- **FU-016 — Senior judgment:** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile?
+- **FU-013 — Mechanism:** What execution state does CPython need to establish or maintain when entering and executing a Python function? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-014 — Application:** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-015 — Edge cases and lifecycle:** How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-016 — Senior judgment:** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 
 
@@ -88,10 +88,10 @@ Follow-ups:
 
 Follow-ups:
 
-- **FU-017 — Mechanism:** Which of an object's identity, type, and value can change during its lifetime?
-- **FU-018 — Application:** How would you choose between identity checks, equality checks, and type checks in a code review?
-- **FU-019 — Edge cases and trade-offs:** Why can using is to compare strings, numbers, or other values produce unreliable results?
-- **FU-020 — Senior judgment:** How should API design avoid accidental dependencies on object identity, mutability, or concrete implementation types?
+- **FU-017 — Mechanism:** Which of an object's identity, type, and value can change during its lifetime? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-018 — Application:** How would you choose between identity checks, equality checks, and type checks in a code review? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-019 — Edge cases and trade-offs:** Why can using is to compare strings, numbers, or other values produce unreliable results? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-020 — Senior judgment:** How should API design avoid accidental dependencies on object identity, mutability, or concrete implementation types? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-006 — Attribute Lookup, Descriptors & Special Methods ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
@@ -103,10 +103,10 @@ Follow-ups:
 
 Follow-ups:
 
-- **FU-021 — Mechanism:** In what order does Python search for an attribute on an instance, and how can an instance attribute interact with a class attribute?
-- **FU-022 — Mechanism and application:** What is the difference between a data descriptor and a non-data descriptor, and why does the distinction matter?
-- **FU-023 — Edge cases:** What is the difference between `__getattribute__` and `__getattr__`, and what risks arise when overriding them?
-- **FU-024 — Senior judgment:** Why can assigning a special method to an instance fail to change the behavior of an implicit operation such as `len(obj)`?
+- **FU-021 — Mechanism:** In what order does Python search for an attribute on an instance, and how can an instance attribute interact with a class attribute? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-022 — Mechanism and application:** What is the difference between a data descriptor and a non-data descriptor, and why does the distinction matter? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-023 — Edge cases:** What is the difference between `__getattribute__` and `__getattr__`, and what risks arise when overriding them? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-024 — Senior judgment:** Why can assigning a special method to an instance fail to change the behavior of an implicit operation such as `len(obj)`? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 
 
@@ -120,10 +120,10 @@ Follow-ups:
 
 Follow-ups:
 
-- **FU-025 — Mechanism:** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython?
-- **FU-026 — Application:** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service?
-- **FU-027 — Edge cases and trade-offs:** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity?
-- **FU-028 — Senior judgment:** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy?
+- **FU-025 — Mechanism:** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-026 — Application:** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-027 — Edge cases and trade-offs:** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-028 — Senior judgment:** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 
 ## PY-008 — Dictionary Internals & Hash Tables ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
@@ -136,10 +136,10 @@ Follow-ups:
 
 Follow-ups:
 
-- **FU-029 — Core contract:** What contract must __hash__() and __eq__() satisfy for objects used as dictionary keys?
-- **FU-030 — Internal mechanism:** What happens when dictionary keys collide, and why can insertion or lookup become slower?
-- **FU-031 — Correctness and design:** Why is it dangerous to use a mutable object as a dictionary key, and how should a custom key type be designed?
-- **FU-032 — Security and production:** How does hash randomization help protect Python services, and why should hash() not be used as a persistent identifier?
+- **FU-029 — Core contract:** What contract must __hash__() and __eq__() satisfy for objects used as dictionary keys? ![TYPE](https://img.shields.io/badge/TYPE-Core_contract-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-030 — Internal mechanism:** What happens when dictionary keys collide, and why can insertion or lookup become slower? ![TYPE](https://img.shields.io/badge/TYPE-Internal_mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-031 — Correctness and design:** Why is it dangerous to use a mutable object as a dictionary key, and how should a custom key type be designed? ![TYPE](https://img.shields.io/badge/TYPE-Correctness_and_design-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-032 — Security and production:** How does hash randomization help protect Python services, and why should hash() not be used as a persistent identifier? ![TYPE](https://img.shields.io/badge/TYPE-Security_and_production-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 ## PY-009 — Memory Management & Garbage Collection ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
@@ -151,7 +151,7 @@ Follow-ups:
 
 Follow-ups:
 
-- **FU-033 — Mechanism:** What is the difference between reference counting and cyclic garbage collection in CPython?
-- **FU-034 — Reachability:** Why can a reference cycle remain in memory even when the application no longer uses any of its objects?
-- **FU-035 — Resource lifecycle:** Does using del or defining __del__() guarantee that an object or its resources are released immediately?
-- **FU-036 — Production diagnosis:** How would you investigate steadily increasing memory usage in a long-running Python service?
+- **FU-033 — Mechanism:** What is the difference between reference counting and cyclic garbage collection in CPython? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+- **FU-034 — Reachability:** Why can a reference cycle remain in memory even when the application no longer uses any of its objects? ![TYPE](https://img.shields.io/badge/TYPE-Reachability-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-035 — Resource lifecycle:** Does using del or defining __del__() guarantee that an object or its resources are released immediately? ![TYPE](https://img.shields.io/badge/TYPE-Resource_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+- **FU-036 — Production diagnosis:** How would you investigate steadily increasing memory usage in a long-running Python service? ![TYPE](https://img.shields.io/badge/TYPE-Production_diagnosis-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
