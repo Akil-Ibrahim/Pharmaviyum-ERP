@@ -678,7 +678,7 @@ This is a useful model for ordinary instance attribute access, not a universal d
 
 **The descriptor protocol**
 
-A descriptor is an object whose type defines one or more of `__get__`, `__set__`, or `__delete__`. Descriptors are the foundation of properties, many methods, and several framework features. A function stored on a class is a non-data descriptor: accessing it through an instance creates a bound method by supplying the instance as the receiver. A `property` is a data descriptor and can control reads and writes even when an instance dictionary contains a same-named key.
+A descriptor is an object whose type defines one or more of `__get__`, `__set__`, or `__delete__`. Python recognizes these protocol methods on the descriptor's type, not merely as attributes attached to an individual descriptor instance. Descriptors are the foundation of properties, method binding, and several framework features. A function stored on a class is a non-data descriptor: accessing it through an instance invokes its binding behavior and produces a bound method. A `property` is a data descriptor and can control reads and writes even when an instance dictionary contains a same-named key. For instance access, `__get__` receives the instance and its type; for class access, it receives `None` and the owner class.
 
 **Attribute access hooks**
 
