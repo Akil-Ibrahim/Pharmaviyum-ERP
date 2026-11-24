@@ -55,8 +55,8 @@ Follow-ups:
 
 ## Coverage status
 
-- PY-001–PY-018 and their 72 locally numbered Follow-ups (FU-1–FU-4 per Main Question): authored in English; independent technical and editorial review pending.
-- Remaining Main Questions PY-019–PY-045 and their 108 Follow-ups: not yet authored in the language-separated structure.
+- PY-001–PY-019 and their 76 locally numbered Follow-ups (FU-1–FU-4 per Main Question): authored in English; independent technical and editorial review pending.
+- Remaining Main Questions PY-020–PY-045 and their 104 Follow-ups: not yet authored in the language-separated structure.
 
 **Allocation rule:** Every Main Question receives exactly four Follow-ups covering mechanism, practical application, edge cases/trade-offs, and senior-level judgment or production implications.
 
