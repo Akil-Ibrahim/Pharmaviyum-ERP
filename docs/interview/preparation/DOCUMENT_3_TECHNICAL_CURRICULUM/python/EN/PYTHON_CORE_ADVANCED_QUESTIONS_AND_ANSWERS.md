@@ -6,7 +6,7 @@
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
-English study material for PY-001–PY-015 and FU-001–FU-060. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
+English study material for PY-001–PY-016 and FU-001–FU-064. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
 
 **Numbering rule:** Every Main Question has exactly four Follow-ups. FU IDs are globally sequential across the curriculum and never restart for a new Main Question: PY-001 → FU-001–FU-004, PY-002 → FU-005–FU-008, and so on.
 
@@ -1859,3 +1859,153 @@ Treat `exec()` and `eval()` as dynamic execution boundaries. They complicate aud
 **Interview answer (EN)**
 
 “In production, I make state ownership explicit and minimize mutable module-level state. I use closures when encapsulated state is useful, but consider lifetime, concurrency, and test isolation. I avoid dynamic execution unless there is a compelling, controlled requirement, because exec and eval complicate security and name resolution. For extensibility, explicit registries and dependency injection are generally easier to reason about and test.”
+---
+
+# PY-016 — Mutable vs Immutable Objects, Aliasing & Object Sharing ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Question (EN):** Explain the difference between mutable and immutable objects in Python, and how aliasing and object sharing affect program behavior.
+
+## Understand the idea
+
+In Python, names refer to objects. Assignment creates a binding between a name and an object; it does not copy the object.
+
+- **Mutable object:** its state can be changed after creation. Common examples include `list`, `dict`, `set`, and `bytearray`.
+- **Immutable object:** its state cannot be changed after creation. Common examples include `int`, `float`, `bool`, `str`, `bytes`, and `tuple`.
+
+Immutability does not prevent rebinding a variable. A name can be made to refer to another object; the original immutable object remains unchanged.
+
+## Mutation vs rebinding
+
+- **Mutation** changes the state of an existing object. Every name that refers to that same mutable object observes the change.
+- **Rebinding** changes which object a particular name refers to. Other names are not automatically redirected.
+
+This distinction is the basis of aliasing and many surprising side effects.
+
+## Aliasing and object sharing
+
+Aliasing means that multiple names or data structures hold references to the same object. If that object is mutable, a mutation through one alias is observable through the others.
+
+Assignment such as `second = first` creates another reference; it does not create an independent copy. To isolate state, choose an appropriate copy strategy or construct a new object explicitly.
+
+## Immutability is not necessarily deep
+
+An immutable container cannot change its own collection of directly referenced objects. However, it may contain references to mutable objects. For example, a tuple can contain a list: the tuple's element reference cannot be replaced, but the referenced list can still be mutated.
+
+Therefore, an immutable outer container is not automatically a deeply immutable object graph. A frozen dataclass also does not recursively freeze mutable objects stored in its fields.
+
+## Shallow copy vs deep copy
+
+- **Shallow copy** creates a new outer compound object but reuses references to its contained objects. Mutating a nested mutable object may therefore be visible through both structures.
+- **Deep copy** recursively copies contained objects where supported, aiming to create a more independent object graph.
+
+Deep copy is not always desirable: it can copy too much, has to handle cycles and shared references, and custom classes may control copying. The `copy.deepcopy()` implementation uses a memo to avoid repeatedly copying the same object and to handle recursive structures. Prefer explicit construction or shallow copying when that matches the required ownership semantics.
+
+Python 3.13+ also provides `copy.replace()` for supported types such as dataclasses and named tuples; it creates a new object with selected fields replaced, rather than performing a general deep copy.
+
+## Function arguments: object sharing
+
+Python's argument passing is often described as **call by sharing** (or object sharing). The parameter becomes a new local name bound to the same object supplied by the caller.
+
+- Mutating a passed mutable object can affect the caller's view of that object.
+- Rebinding the parameter to another object does not rebind the caller's variable.
+- Passing an immutable object does not make it mutable; operations that appear to change its value produce or return another object.
+
+This is neither traditional call by reference nor a copy of every argument.
+
+## Common production pitfalls
+
+- **Mutable default arguments:** default values are evaluated once when the function is defined. A mutable default can therefore be shared across calls. Use a sentinel such as `None` and create per-call state inside the function when sharing is not intended.
+- **Shared state:** caches, registries, and objects passed across components can introduce hidden coupling. Define ownership and mutation boundaries explicitly.
+- **Concurrency:** shared mutable state can require synchronization even if individual interpreter operations appear safe. The GIL is not an application-level consistency guarantee.
+- **Hashing:** objects used as dictionary keys or set elements must obey the hash/equality contract. Mutable value-based objects are generally unsuitable as keys because changing equality-relevant state while stored can break lookup assumptions.
+
+## A subtle case: augmented assignment
+
+The behavior of `+=` depends on the object's type and implementation. Lists typically mutate in place; integers and tuples produce a new value/object binding. Therefore, do not assume augmented assignment always mutates or always creates a new object.
+
+## Interview-ready answer (EN)
+
+“Mutable objects can change their state after creation, while immutable objects cannot. Assignment in Python creates a binding; it does not copy an object. If two names refer to the same mutable object, a mutation through either name is visible through both. Rebinding one name, however, does not redirect the other.
+
+A shallow copy creates a new outer container but retains references to nested objects; a deep copy recursively copies the object graph where supported, which may be more expensive and can copy data that should remain shared. Python passes arguments by object sharing: a function parameter refers to the caller's object, so mutation can be observable by the caller, while rebinding the parameter is local. In production, I define ownership and mutation boundaries, avoid mutable defaults, and use copying only when independent state is actually required.”
+
+## What to remember
+
+- Assignment binds names; it does not copy objects.
+- Mutation changes an object; rebinding changes a name's target.
+- Aliases to one mutable object observe the same mutations.
+- Shallow copy duplicates the outer container; deep copy recursively copies supported contents.
+- Immutable containers can still reference mutable objects.
+- Function parameters share object references with the caller.
+- Avoid unintended shared mutable defaults and state.
+
+## References
+
+- Python 3.15.2 Language Reference: [Objects, values and types](https://docs.python.org/3.15/reference/datamodel.html#objects-values-and-types)
+- [copy — Shallow and deep copy operations](https://docs.python.org/3.15/library/copy.html)
+- [Programming FAQ](https://docs.python.org/3.15/faq/programming.html)
+- [Expressions — Calls and argument binding](https://docs.python.org/3.15/reference/expressions.html#calls)
+
+---
+
+## FU-061 — What is the difference between mutation, rebinding, and aliasing? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** Explain mutation, rebinding, and aliasing. Why can changing an object through one name affect another name?
+
+**Explanation**
+
+A name is a binding to an object. Aliasing exists when multiple names refer to the same object. Mutation changes that shared object's state, so all aliases observe the changed state. Rebinding only changes one name's target and does not modify the original object or other names.
+
+**Interview answer (EN)**
+
+“Mutation changes an existing object's state; rebinding changes which object a name refers to. Assignment creates a binding rather than a copy. When two names alias the same mutable object, a mutation through either name is visible through both, but rebinding one name does not affect the other.”
+
+---
+
+## FU-062 — How do shallow copy and deep copy differ, and when would you use each? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** How do shallow and deep copying differ, and how would you choose a copying strategy in a real application?
+
+**Explanation**
+
+A shallow copy creates a new outer container but reuses references to nested objects. A deep copy recursively copies nested objects where supported. Deep copying may be expensive, may copy objects that should remain shared, and needs special handling for cycles and custom objects.
+
+Choose based on ownership requirements:
+- Use no copy when shared identity is intentional.
+- Use a shallow copy when only the outer container must be independent.
+- Use a deep copy when an independent nested object graph is required and all contained objects support the intended semantics.
+- Prefer explicit construction when only selected fields should be copied.
+
+**Interview answer (EN)**
+
+“I choose a copy strategy from the ownership contract. A shallow copy isolates the outer container but preserves nested references. A deep copy recursively duplicates supported contents and is appropriate only when an independent object graph is required. I avoid deep-copying indiscriminately because it can be costly and duplicate resources or state that should remain shared.”
+
+---
+
+## FU-063 — Why can a tuple contain mutable state, and what happens when mutable objects are passed to functions? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** How can an immutable tuple contain mutable state, and what does Python's call-by-sharing argument model imply for function calls?
+
+**Explanation**
+
+A tuple's structure—the identities of its directly referenced elements—cannot be changed, but one of those elements may itself be mutable. Mutating that nested object does not replace the tuple's element reference.
+
+For function calls, a parameter is a local name bound to the same object passed by the caller. Mutating a mutable argument can be visible to the caller; rebinding the parameter is local and does not rebind the caller's variable.
+
+**Interview answer (EN)**
+
+“Immutability applies to the tuple's own structure, not recursively to every object it references. A tuple can contain a list, and that list can still be mutated. Python uses object sharing for arguments: the parameter and caller initially refer to the same object. Mutations can be observable by the caller, but rebinding the parameter does not change the caller's binding.”
+
+---
+
+## FU-064 — How do you prevent unintended shared mutable state in production systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How do you manage object ownership and prevent unintended shared mutable state in production systems?
+
+**Explanation**
+
+Make ownership and mutation boundaries explicit. Avoid mutable default arguments because defaults are evaluated once at function definition and reused across calls. Use per-call construction when independent state is required. For shared caches or registries, document lifecycle, consistency, and synchronization. Do not rely on the GIL as a substitute for application-level synchronization.
+
+**Interview answer (EN)**
+
+“I define which component owns an object and which components may mutate it. I avoid mutable defaults unless shared state is intentional, use explicit copying or immutable data structures at boundaries, and protect shared mutable state with an appropriate synchronization strategy. I also test aliasing and mutation behavior because accidental sharing often creates order-dependent bugs and cross-request state leakage.”
